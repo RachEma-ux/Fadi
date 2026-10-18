@@ -1,3 +1,4 @@
+import { pointVisiblePlanche } from "./lib-cible-planche.mjs";
 /**
  * Recette Pousser/Tirer d'arêtes (écart Fadi, D-196 / D-197), desktop 1536 px puis téléphone 390 px tactile :
  * segment tiré vers le haut (↑, « 2,7 ») → face verticale liée ; Alt = des deux côtés ; ↓ = allonger la ligne ;
@@ -63,11 +64,8 @@ async function preparer(contexte) {
 
 /** Aides liées à une page : projection, état du brouillon (aires 3D par Newell), gestes. */
 function aides(page) {
-  const ecran = async (q) => {
-    const b = await page.locator("[data-planche-vue] canvas").first().boundingBox();
-    const e = await page.evaluate((x) => window.fadiPlanche.versEcran(x), q);
-    return e && { x: b.x + e.x, y: b.y + e.y };
-  };
+  const ecran = (q) => pointVisiblePlanche(page, q);
+
   const etat = () =>
     page.evaluate(() => {
       const P = window.fadiPlanche;

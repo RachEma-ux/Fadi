@@ -467,12 +467,14 @@ CREATE INDEX IF NOT EXISTS atelier_propositions_cle_idx ON atelier_propositions 
 -- Studio et son schéma vit ici, dans le schéma idempotent. Additif : aucune table Fadi existante n'est modifiée.
 -- Étude → variantes → révisions immuables ; la tête et la variante initiale sont des clés étrangères différées,
 -- recréées à chaque application (DROP … IF EXISTS puis ADD dans la même instruction) pour rester idempotentes.
+-- NOT VALID : appliquées à toute nouvelle écriture sans rebalayer à chaque démarrage les lignes déjà contrôlées.
 CREATE TABLE IF NOT EXISTS studio_studies (
   id text PRIMARY KEY,
   project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   name text NOT NULL CHECK (length(name) BETWEEN 1 AND 200),
   initial_variant_id text NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now()
+  created_at timestamptz NOT NULL DEFAULT now(),
+  creation_request_id text
 );
 CREATE INDEX IF NOT EXISTS studio_studies_project_idx ON studio_studies(project_id);
 CREATE TABLE IF NOT EXISTS studio_variants (
@@ -480,8 +482,12 @@ CREATE TABLE IF NOT EXISTS studio_variants (
   study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
   name text NOT NULL,
   head_revision_id text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  creation_request_id text,
   CONSTRAINT studio_variants_study_id_unique UNIQUE(study_id, id)
 );
+-- Bases créées avant l'ordre de création des variantes : colonne ajoutée sans réécrire les lignes existantes.
+ALTER TABLE studio_variants ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
 CREATE TABLE IF NOT EXISTS studio_revisions (
   id text PRIMARY KEY,
   variant_id text NOT NULL REFERENCES studio_variants(id) ON DELETE CASCADE,
@@ -494,7 +500,8 @@ CREATE TABLE IF NOT EXISTS studio_revisions (
   envelope jsonb,
   request_id text NOT NULL,
   payload_hash text NOT NULL CHECK (payload_hash ~ '^[0-9a-f]{64}$'),
-  source text NOT NULL CHECK (source IN ('authenticated-session', 'study-initialization')),
+  source text NOT NULL CONSTRAINT studio_revisions_source_check
+    CHECK (source IN ('authenticated-session', 'study-initialization', 'variant-initialization')),
   author_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   created_at timestamptz NOT NULL DEFAULT now(),
   response jsonb NOT NULL,
@@ -503,12 +510,24 @@ CREATE TABLE IF NOT EXISTS studio_revisions (
   CONSTRAINT studio_revisions_parent_same_variant FOREIGN KEY(variant_id, parent_revision_id)
     REFERENCES studio_revisions(variant_id, id) DEFERRABLE INITIALLY DEFERRED
 );
+-- Le nom explicite reprend celui que PostgreSQL donnait à l'ancien CHECK anonyme : recréé à chaque application.
+ALTER TABLE studio_revisions DROP CONSTRAINT IF EXISTS studio_revisions_source_check,
+  ADD CONSTRAINT studio_revisions_source_check
+  CHECK (source IN ('authenticated-session', 'study-initialization', 'variant-initialization')) NOT VALID;
 ALTER TABLE studio_studies DROP CONSTRAINT IF EXISTS studio_studies_initial_variant,
   ADD CONSTRAINT studio_studies_initial_variant FOREIGN KEY(id, initial_variant_id)
-  REFERENCES studio_variants(study_id, id) DEFERRABLE INITIALLY DEFERRED;
+  REFERENCES studio_variants(study_id, id) DEFERRABLE INITIALLY DEFERRED NOT VALID;
 ALTER TABLE studio_variants DROP CONSTRAINT IF EXISTS studio_variants_head_same_variant,
   ADD CONSTRAINT studio_variants_head_same_variant FOREIGN KEY(id, head_revision_id)
-  REFERENCES studio_revisions(variant_id, id) DEFERRABLE INITIALLY DEFERRED;
+  REFERENCES studio_revisions(variant_id, id) DEFERRABLE INITIALLY DEFERRED NOT VALID;
+-- Création idempotente d'étude et de variante (requestId facultatif du client) : colonnes nullables ajoutées sans
+-- réécrire les lignes existantes (NULL = création sans identifiant), uniques seulement quand elles sont renseignées.
+ALTER TABLE studio_studies ADD COLUMN IF NOT EXISTS creation_request_id text;
+ALTER TABLE studio_variants ADD COLUMN IF NOT EXISTS creation_request_id text;
+CREATE UNIQUE INDEX IF NOT EXISTS studio_studies_creation_request_unique ON studio_studies(project_id, creation_request_id)
+  WHERE creation_request_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS studio_variants_creation_request_unique ON studio_variants(study_id, creation_request_id)
+  WHERE creation_request_id IS NOT NULL;
 -- Toute UPDATE d'une révision Studio, même accidentelle, est refusée (les suppressions suivent la cascade du projet).
 CREATE OR REPLACE FUNCTION studio_v1_immutable_revision() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN

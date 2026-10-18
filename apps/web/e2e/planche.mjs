@@ -12,6 +12,7 @@
  */
 import { createRequire } from "node:module";
 import { allerEnPlan, ecarterBarreActions } from "./lib-barre.mjs";
+import { revelerPointPlanche } from "./lib-canvas-targets.mjs";
 import { chromium } from "playwright";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
@@ -223,6 +224,7 @@ const avantLot3 = await etat();
 await page.locator("[data-planche-vue]").focus();
 await page.keyboard.press("p");
 check("touche P : outil Pousser/Tirer", (await etat()).outil === "pousser-tirer", (await etat()).outil);
+const restaurerVueLot3 = await revelerPointPlanche(page, { x: 8, y: 2, z: 0 });
 await mesurer("Pousser/Tirer : rectangle 4 × 3 tiré de 2,7 m au champ Mesures", async () => {
   const f = await ecran({ x: 8, y: 2, z: 0 });
   await page.mouse.move(f.x, f.y, { steps: 4 });
@@ -231,6 +233,7 @@ await mesurer("Pousser/Tirer : rectangle 4 × 3 tiré de 2,7 m au champ Mesures"
   await page.keyboard.type("2,7");
   await page.keyboard.press("Enter");
 });
+await restaurerVueLot3();
 const boiteLot3 = await etat();
 check("Pousser/Tirer « 2,7 » (CA-PPT-1) : rectangle devenu boîte fermée, 6 faces de plus que le carré", boiteLot3.faces === avantLot3.faces + 5 && boiteLot3.aretes === avantLot3.aretes + 8, JSON.stringify({ avant: avantLot3, apres: boiteLot3 }));
 check("Pousser/Tirer : une seule opération (un pas d'annulation), outil gardé à l'étape 1", boiteLot3.pas === avantLot3.pas + 1 && boiteLot3.outil === "pousser-tirer" && boiteLot3.etape === 1, `${avantLot3.pas} → ${boiteLot3.pas}`);

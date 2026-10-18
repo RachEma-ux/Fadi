@@ -1,0 +1,66 @@
+/* Planche 2D de Studio V1 : barres groupées, cotes, accrochage, calques. Sur mobile, les panneaux passent sous la planche. */
+.studio-tools{align-items:stretch}
+.studio-tools-group{display:flex;flex-wrap:wrap;gap:4px;padding:3px;border:1px solid #e1e9eb;border-radius:9px}
+.studio-tools button[aria-pressed=true] svg{color:inherit}
+.studio-undo-scope{font-size:12px;color:#587079;margin:8px 2px}
+.studio-info{font-size:12px;color:#40575e;background:#f1f6f7;border-left:3px solid #1a6b70;padding:8px 10px;margin:8px 0}
+.studio-sheet>svg{cursor:crosshair}
+.studio-sheet>svg[data-studio-outil-actif="studio.dessin.selection"]{cursor:default}
+.studio-shape.verrouille>*{stroke:#9fb0b5;stroke-dasharray:.15 .1}
+.studio-cote line{stroke:#2f6b4f;stroke-width:.035;pointer-events:all}
+.studio-cote .studio-cote-ligne{stroke-width:.045}
+.studio-cote .studio-cote-trait{stroke-width:.06}
+.studio-cote text{font-size:.34px;fill:#2f6b4f;text-anchor:middle;dominant-baseline:central;font-family:system-ui,sans-serif;pointer-events:all;user-select:none}
+.studio-cote.selected line{stroke:#c3722f}.studio-cote.selected text{fill:#c3722f}
+.studio-cote.a-resoudre line{stroke:#b4471f;stroke-dasharray:.15 .1}.studio-cote.a-resoudre text{fill:#b4471f;font-style:italic}
+.studio-cote.verrouille line{stroke:#9fb0b5}.studio-cote.verrouille text{fill:#7f9196}
+.studio-cote:focus{outline:none}.studio-cote:focus line{stroke:#b56c22}
+.studio-apercu line,.studio-apercu rect{fill:none;stroke:#c3722f;stroke-width:.06;stroke-dasharray:.2 .15}
+.studio-apercu .studio-point-pose{fill:#d58635}
+.studio-apercu .studio-accroche{fill:none;stroke:#1a6b70;stroke-width:.05;stroke-dasharray:none}
+.studio-selection{border-top:1px solid #e0e9eb;padding-top:10px;margin-bottom:10px}
+.studio-selection button,.studio-calques button{display:inline-flex;align-items:center;gap:6px}
+.studio-calques{border-top:1px solid #e0e9eb;margin-top:18px;padding-top:14px}
+.studio-calques h3{font-size:14px;margin:0 0 10px}
+.studio-calques ul{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:6px}
+.studio-calques li{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;padding:6px 8px;border:1px solid #e3eaec;border-radius:8px}
+.studio-calques li[aria-current=true]{border-color:var(--studio-accent);background:#edf5f3}
+:is(.studio-shell,.studio-workspace) .studio-calques label.studio-calque-nom,:is(.studio-shell,.studio-workspace) .studio-calques label.studio-calque-option{flex-direction:row;align-items:center;gap:6px;margin:0;min-height:32px;overflow-wrap:anywhere}
+.studio-calques .studio-calque-nom{flex:1 1 100%;font-weight:600}
+.studio-calques .studio-calque-nom small{font-weight:400;color:#657c83}
+:is(.studio-shell,.studio-workspace) .studio-calques input[type=radio],:is(.studio-shell,.studio-workspace) .studio-calques input[type=checkbox]{width:20px;height:20px;min-width:20px;padding:0;margin:0}
+.studio-calques fieldset{border:0;padding:0;margin:0}
+.studio-calques-aide{font-size:11px;color:#657c83}
+@media(max-width:540px){.studio-tools-group{flex:1 1 100%}}
+/* Vue : gestes du pointeur (molette, panoramique, deux doigts) gérés par l'éditeur ; traits d'épaisseur constante à l'écran. */
+.studio-sheet>svg{touch-action:none;user-select:none;-webkit-user-select:none}
+.studio-sheet>svg[data-studio-glissement]{cursor:grabbing}
+.studio-shape>*,.studio-cote line,.studio-apercu line,.studio-apercu rect,.studio-apercu circle{vector-effect:non-scaling-stroke}
+.studio-shape>*{stroke-width:2px}.studio-shape line{stroke-width:3px}.studio-shape.selected>*{stroke-width:3.5px}
+.studio-cote line{stroke-width:1.2px}.studio-cote .studio-cote-ligne{stroke-width:1.5px}.studio-cote .studio-cote-trait{stroke-width:2px}
+.studio-apercu line,.studio-apercu rect{stroke-width:2px;stroke-dasharray:6 4}
+.studio-apercu .studio-accroche{stroke-width:2px}
+.studio-apercu .studio-rectangle-selection{stroke:#1a6b70;stroke-width:1.2px;fill:#1a6b7014;stroke-dasharray:none}
+.studio-apercu .studio-rectangle-selection.capture{stroke:#2f7d3a;fill:#2f7d3a14;stroke-dasharray:6 4}
+/* Exports : liens de téléchargement présentés comme les boutons de la barre. */
+.studio-tools a.studio-lien-bouton{display:flex;align-items:center;gap:8px;font-size:13px;min-height:44px;box-sizing:border-box;border:1px solid #b9cdd0;border-radius:8px;padding:9px 13px;background:white;color:var(--studio-ink);text-decoration:none}
+.studio-tools a.studio-lien-bouton:hover:not([aria-disabled]){background:#edf5f3;border-color:#1a6b70}
+.studio-tools a.studio-lien-bouton[aria-disabled]{opacity:.48;cursor:not-allowed}
+/* Gestionnaire « Outils » et palette de commandes. */
+.studio-dialogue-fond{position:fixed;inset:0;background:#0d262c66;display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px;z-index:50;box-sizing:border-box}
+.studio-dialogue{background:#fff;border-radius:14px;box-shadow:0 20px 50px #0d262c40;width:min(760px,100%);max-height:88vh;overflow:auto;padding:18px 20px;box-sizing:border-box;color:var(--studio-ink)}
+.studio-dialogue.studio-palette{width:min(560px,100%)}
+.studio-dialogue-tete{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px}
+.studio-dialogue-tete h2{font-size:18px;margin:0}
+.studio-dialogue-aide{font-size:12px;color:#587079;margin:4px 0 10px}
+.studio-dialogue h3{font-size:13px;text-transform:uppercase;letter-spacing:1px;margin:16px 0 6px;color:#40575e}
+.studio-catalogue{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.studio-catalogue li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:8px 10px;border:1px solid #e3eaec;border-radius:8px;font-size:13px;overflow-wrap:anywhere}
+.studio-catalogue li[aria-selected=true]{border-color:var(--studio-accent);background:#edf5f3}
+.studio-catalogue li[role=option]{cursor:pointer}.studio-catalogue li[aria-disabled=true]{opacity:.55;cursor:not-allowed}
+.studio-catalogue-nom{font-weight:600;flex:1 1 140px}
+.studio-catalogue-touches{display:inline-flex;gap:4px}.studio-catalogue kbd{font-size:11px;border:1px solid currentColor;padding:1px 5px;border-radius:3px;opacity:.75}
+.studio-catalogue code{font-size:11px;color:#40575e}
+.studio-catalogue-meta{font-size:11px;color:#587079}
+.studio-catalogue li button{min-height:36px;padding:4px 10px;font-size:12px;margin-left:auto}
+@media(max-width:540px){.studio-tools a.studio-lien-bouton{flex:1;justify-content:center}.studio-tools a.studio-lien-bouton kbd{display:none}}

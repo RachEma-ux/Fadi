@@ -723,11 +723,40 @@ export interface StudioContext {
   revision: { id: string; parentRevisionId: string | null; document: StudioDocument };
   canWrite: boolean;
 }
+/** Étude de Studio telle que la liste du projet la renvoie. */
+export interface StudioStudySummary { id: string; name: string; initialVariantId: string; createdAt: string }
+/** Variante d'une étude : sa tête de révision est tenue par le serveur. */
+export interface StudioVariantSummary { id: string; name: string; headRevisionId: string }
+/** Étude ouverte : ses variantes et le droit d'écriture relu par le serveur (qui reste seul juge). */
+export interface StudioStudyDetail {
+  study: { id: string; name: string; projectId: string; initialVariantId: string; createdAt: string };
+  variants: StudioVariantSummary[];
+  canWrite: boolean;
+}
+/** Entête d'une révision (historique append-only, de la plus récente à la plus ancienne). */
+export interface StudioRevisionSummary { id: string; parentRevisionId: string | null; source: string; authorId: string; createdAt: string }
+const studioRoot = (p: string) => `/projects/${encodeURIComponent(p)}/studio/studies`;
+const studioStudyPath = (p: string, s: string) => `${studioRoot(p)}/${encodeURIComponent(s)}`;
+const studioVariantPath = (p: string, s: string, v: string) => `${studioStudyPath(p, s)}/variants/${encodeURIComponent(v)}`;
+/**
+ * Adresse d'export d'une variante (pièce jointe SVG ou DXF produite par le serveur, même origine : le cookie de session
+ * suit le lien). Sans `revisionId`, le serveur exporte la tête ; avec, la révision historique affichée.
+ */
+export function studioExportUrl(p: string, s: string, v: string, format: "svg" | "dxf", revisionId?: string | null): string {
+  return `${studioVariantPath(p, s, v)}/export?format=${format}${revisionId ? `&revision=${encodeURIComponent(revisionId)}` : ""}`;
+}
 export const api = {
-  studioStudies: (p: string) => request<{ studies: { id: string; name: string; initialVariantId: string }[] }>(`/projects/${encodeURIComponent(p)}/studio/studies`),
-  createStudioStudy: (p: string, name: string) => request<StudioContext>(`/projects/${encodeURIComponent(p)}/studio/studies`, { method: "POST", body: JSON.stringify({ name }) }),
-  studioContext: (p: string, s: string, v: string) => request<StudioContext>(`/projects/${encodeURIComponent(p)}/studio/studies/${encodeURIComponent(s)}/variants/${encodeURIComponent(v)}`),
-  studioCommands: (p: string, s: string, v: string, envelope: StudioEnvelope) => request<StudioContext & { replayed: boolean }>(`/projects/${encodeURIComponent(p)}/studio/studies/${encodeURIComponent(s)}/variants/${encodeURIComponent(v)}/commands`, { method: "POST", body: JSON.stringify(envelope) }),
+  studioStudies: (p: string) => request<{ studies: StudioStudySummary[] }>(studioRoot(p)),
+  createStudioStudy: (p: string, name: string, requestId?: string) => request<StudioContext>(studioRoot(p), { method: "POST", body: JSON.stringify(requestId ? { name, requestId } : { name }) }),
+  studioStudy: (p: string, s: string) => request<StudioStudyDetail>(studioStudyPath(p, s)),
+  studioVariants: (p: string, s: string) => request<{ variants: StudioVariantSummary[] }>(`${studioStudyPath(p, s)}/variants`),
+  /** Nouvelle variante : document vide, révision initiale et tête créées par le serveur. */
+  createStudioVariant: (p: string, s: string, name: string, requestId?: string) => request<StudioContext>(`${studioStudyPath(p, s)}/variants`, { method: "POST", body: JSON.stringify(requestId ? { name, requestId } : { name }) }),
+  studioContext: (p: string, s: string, v: string) => request<StudioContext>(studioVariantPath(p, s, v)),
+  studioRevisions: (p: string, s: string, v: string) => request<{ revisions: StudioRevisionSummary[] }>(`${studioVariantPath(p, s, v)}/revisions`),
+  /** Révision historique : toujours en lecture seule (`canWrite` faux côté serveur). */
+  studioRevision: (p: string, s: string, v: string, r: string) => request<StudioContext>(`${studioVariantPath(p, s, v)}/revisions/${encodeURIComponent(r)}`),
+  studioCommands: (p: string, s: string, v: string, envelope: StudioEnvelope) => request<StudioContext & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/commands`, { method: "POST", body: JSON.stringify(envelope) }),
   register: (email: string, password: string) =>
     request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
   login: (email: string, password: string) =>

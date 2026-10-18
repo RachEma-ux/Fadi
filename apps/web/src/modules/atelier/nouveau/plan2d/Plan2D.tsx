@@ -38,7 +38,8 @@ const AUCUNE_CLE: string[] = [];
 
 export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes, externes = AUCUNE }: PropsPlan2D) {
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const [taille, setTaille] = useState({ w: 800, h: 600 });
+  // No synthetic viewport: the first fit must use the measured embedded canvas.
+  const [taille, setTaille] = useState({ w: 0, h: 0 });
   const [accroche, setAccroche] = useState<Accroche | null>(null);
   const [cadre, setCadre] = useState<{ a: Point2; b: Point2 } | null>(null);
   const glisse = useRef<{ mode: "pan" | "zoom" | "cadre" | "deplacer" | "lasso" | "trace" | "manip" | "fini" | "visee" | "tangente"; x: number; y: number; vue: EtatUi["vue"]; depart: Point2; bouge: boolean; poignee?: Poignee; tangente?: number } | null>(null);
@@ -177,7 +178,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
 
   // Cadrage automatique à la première ouverture d'un niveau.
   useEffect(() => {
-    if (!ui.niveauId || cadreInitial.current === ui.niveauId || taille.w < 10) return;
+    if (!ui.niveauId || cadreInitial.current === ui.niveauId || taille.w < 10 || taille.h < 10) return;
     cadreInitial.current = ui.niveauId;
     etatUi.set({ vue: cadrerNiveau(etat, ui.niveauId, taille.w, taille.h) });
   }, [ui.niveauId, etat, taille.w, taille.h]);

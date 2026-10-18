@@ -136,7 +136,7 @@ export function OutilEchelle({ etat, ui, readOnly, onCommandes }: Props) {
   const h = metres(hauteur), l = metres(largeur), en = metres(entraxe), z = nombre(base), cr = crinoline.trim() ? metres(crinoline) : null;
   const pret = !!a && !!b && !!h && !!l && !!en && en.value < h.value && z !== null && (!crinoline.trim() || (!!cr && cr.value < h.value));
   return (
-    <section className="outil-structure" aria-label="Échelle" data-outil-echelle>
+    <section className="outil-structure" aria-label="Échelle d'accès" data-outil-echelle>
       <p className="inspecteur-aide">Pied en a, appui vers b (ligne d'esquisse sélectionnée ou saisie) ; hauteur, largeur, entraxe des barreaux déclaré ; crinoline (cage) à partir d'une hauteur si déclarée.</p>
       {champs}
       <div className="champ"><label htmlFor="outil-echelleNom">Nom</label><input id="outil-echelleNom" value={nom} maxLength={80} onChange={(e) => setNom(e.target.value)} onKeyDown={stop} /></div>

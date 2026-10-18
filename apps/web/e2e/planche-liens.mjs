@@ -10,6 +10,7 @@
 import { mkdirSync } from "node:fs";
 import { chromium, devices } from "playwright";
 import { ecarterBarreActions } from "./lib-barre.mjs";
+import { revelerPointPlanche } from "./lib-canvas-targets.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures/planche-liens";
@@ -206,33 +207,153 @@ const message = (page) => page.locator("[data-planche-etat]").first().textConten
   await page.keyboard.press("Escape");
   check("seconde ligne tracée à l'écart : le premier lien tient", (await liens()) === 1, String(await liens()));
   await page.keyboard.press("p");
+  const restaurerVue = await revelerPointPlanche(page, { x: 1, y: -2.5, z: 0 });
   await cliquer({ x: 1, y: -2.5, z: 0 });
   await page.locator('[data-planche-option-valeur="lien:independant"]').click();
   await vue.focus();
   await page.keyboard.press("ArrowUp");
   await saisir("1");
   check("option « Indépendante » : surface créée, aucun nouveau lien", (await liens()) === 1 && (await etat()).faces >= 2, `${await liens()} lien(s), ${(await etat()).faces} face(s), ${await consigne()}`);
+  await restaurerVue();
   // L-02 : dans un groupe, la restriction « racine seulement » est dite.
+  // Dessiner une arête isolée réellement accessible, puis la suivre par ID.
+  // Une coordonnée estimée peut viser le vide après regroupement ou être
+  // interceptée par une barre flottante : cela ne doit pas invalider le test métier.
   await page.keyboard.press("Escape");
   await page.keyboard.press(" ");
   await vue.focus();
+  const candidatsL02 = [
+    [6, 3, 8, 3], [-5, 4, -3, 4], [5, 5, 7, 5],
+    [-5, -4, -3, -4], [6, -5, 8, -5], [-6, 1, -4, 1],
+  ];
+  const accessibleL02 = (q) => page.evaluate((point) => {
+    const canvas = document.querySelector("[data-planche-vue] canvas");
+    const e = window.fadiPlanche.versEcran(point);
+    if (!canvas || !e) return false;
+    const b = canvas.getBoundingClientRect();
+    const x = b.x + e.x, y = b.y + e.y;
+    return [[0,0],[-12,0],[12,0],[0,-12],[0,12]].every(([dx,dy]) =>
+      x+dx >= 8 && y+dy >= 8 && x+dx <= innerWidth-8 && y+dy <= innerHeight-8 &&
+      document.elementFromPoint(x+dx, y+dy) === canvas);
+  }, q);
+  const choisirSegmentL02 = async () => {
+    for (const [x0,y0,x1,y1] of candidatsL02) {
+      const a = { x:x0, y:y0, z:0 }, b = { x:x1, y:y1, z:0 };
+      const mid = { x:(x0+x1)/2, y:(y0+y1)/2, z:0 };
+      if ((await accessibleL02(a)) && (await accessibleL02(b)) && (await accessibleL02(mid))) return { a, b };
+    }
+    return null;
+  };
+  let cibleL02 = await choisirSegmentL02();
+  if (!cibleL02) {
+    await revelerPointPlanche(page, { x: 7, y: 3, z: 0 });
+    cibleL02 = await choisirSegmentL02();
+  }
+  if (!cibleL02) throw new Error("L-02 : aucun segment isolé entièrement accessible dans la Planche");
+  const avantL02 = await page.evaluate(() => Object.keys(window.fadiPlanche.modele().racine.aretes));
   await page.keyboard.press("l");
-  await cliquer({ x: 6, y: 3, z: 0 });
-  await survoler({ x: 7, y: 3, z: 0 });
+  await cliquer(cibleL02.a);
+  await survoler(cibleL02.b);
   await saisir("2");
   await page.keyboard.press("Escape");
+  const areteL02 = await page.evaluate((ids) => {
+    const c = window.fadiPlanche.modele().racine;
+    const ajoutes = Object.values(c.aretes).filter((a) => !ids.includes(a.id));
+    if (ajoutes.length !== 1) return { erreur: "Arêtes nouvelles : " + ajoutes.length };
+    const e = ajoutes[0], a = c.sommets[e.a]?.position, b = c.sommets[e.b]?.position;
+    if (!a || !b) return { erreur: "Sommets introuvables" };
+    return { id: e.id, a, b, milieu: { x:(a.x+b.x)/2, y:(a.y+b.y)/2, z:(a.z+b.z)/2 } };
+  }, avantL02);
+  if (!areteL02.id) throw new Error("L-02 : tracé de l'arête témoin échoué : " + JSON.stringify(areteL02));
   await page.keyboard.press(" ");
   await vue.focus();
-  await cliquer({ x: 7, y: 3, z: 0 });
+  await revelerPointPlanche(page, areteL02.milieu);
+  await cliquer(areteL02.milieu);
+  const selectionL02 = await page.evaluate(() => window.fadiPlanche.selection());
+  if (selectionL02.length !== 1 || selectionL02[0] !== areteL02.id)
+    throw new Error("L-02 : l'arête créée n'est pas sélectionnée : " + JSON.stringify({ attendu:areteL02.id, selectionL02 }));
   await page.keyboard.press("Control+g");
   await page.waitForTimeout(80);
-  const sommet = await (async () => { const b = await page.locator("[data-planche-vue] canvas").first().boundingBox(); const e = await page.evaluate(() => window.fadiPlanche.versEcran({ x: 7, y: 3, z: 0 })); return { x: b.x + e.x, y: b.y + e.y }; })();
-  await page.waitForTimeout(700);
-  await page.mouse.dblclick(sommet.x, sommet.y);
-  await page.waitForTimeout(100);
+  await revelerPointPlanche(page, areteL02.milieu);
+  const milieuEcranL02 = await aides(page).ecran(areteL02.milieu);
+  await page.mouse.dblclick(milieuEcranL02.x, milieuEcranL02.y);
+  await page.waitForFunction(() => window.fadiPlanche?.dans() !== undefined, null, { timeout: 10000 });
+  const groupeL02 = await page.evaluate((id) => {
+    const p = window.fadiPlanche, m = p.modele(), dans = p.dans();
+    const occ = m.racine.occurrences[dans];
+    const def = occ && m.definitions[occ.definition];
+    return { dans, aretes: Object.keys(def?.contenu.aretes ?? {}), attendue: id };
+  }, areteL02.id);
+  if (!groupeL02.aretes.includes(areteL02.id))
+    throw new Error("L-02 : arête témoin absente du groupe : " + JSON.stringify(groupeL02));
+  await revelerPointPlanche(page, areteL02.milieu);
+  await vue.focus();
   await page.keyboard.press("p");
-  await cliquer({ x: 7, y: 3, z: 0 });
-  check("L-02 : dans un groupe, la consigne dit « racine de la Planche seulement »", /racine de la Planche seulement/.test(await consigne()), `${await consigne()} dans=${await page.evaluate(() => window.fadiPlanche.dans() ?? null)}`);
+  // Une projection valide ne garantit pas que l'arête soit réellement visée :
+  // un mur plus proche peut intercepter le rayon du moteur CAD. Chercher le
+  // survol de l'ID attendu par de vrais mouvements de souris, sans accès
+  // direct aux méthodes d'outil ni contournement des interactions.
+  const viserAreteL02 = async () => {
+    const zones = await page.evaluate(({ a, b }) => {
+      const canvas = document.querySelector("[data-planche-vue] canvas");
+      const P = window.fadiPlanche;
+      const bounds = canvas.getBoundingClientRect();
+      const A = P.versEcran(a), B = P.versEcran(b);
+      if (!A || !B) throw new Error("L-02 : extrémités non projetables");
+      const dx = B.x-A.x, dy=B.y-A.y, long=Math.hypot(dx,dy);
+      const nx=long>0?-dy/long:0, ny=long>0?dx/long:1;
+      const positions=[];
+      for (const offset of [0,3,-3,6,-6]) {
+        for (const t of [0.5,0.35,0.65,0.2,0.8]) {
+          const x=bounds.x+A.x+dx*t+nx*offset;
+          const y=bounds.y+A.y+dy*t+ny*offset;
+          if (x<12 || y<12 || x>innerWidth-12 || y>innerHeight-12) continue;
+          if (document.elementFromPoint(x,y)!==canvas) continue;
+          positions.push({x,y,t,offset});
+        }
+      }
+      return positions;
+    }, {a:areteL02.a,b:areteL02.b});
+    for (const point of zones) {
+      await page.mouse.move(point.x,point.y,{steps:3});
+      await page.waitForTimeout(30);
+      const survol = await page.evaluate(() => {
+        const P=window.fadiPlanche;
+        return {outil:P.outil(),dans:P.dans(),arete:P.etatOutil()?.survolArete??null,etape:P.etatOutil()?.etape??null};
+      });
+      if (survol.outil!=="pousser-tirer" || survol.dans===undefined) throw new Error("L-02 : contexte ou outil perdu pendant le survol");
+      if (survol.arete!==areteL02.id || survol.etape!==1) continue;
+      await page.mouse.click(point.x,point.y);
+      await page.waitForTimeout(60);
+      const acquis=await page.evaluate(() => window.fadiPlanche.etatOutil());
+      if (acquis?.etape!==2 || !acquis.aretes?.includes(areteL02.id))
+        throw new Error("L-02 : le moteur CAD a perdu l'arête vérifiée au clic : "+JSON.stringify({point,survol,etape:acquis?.etape,aretes:acquis?.aretes}));
+      return true;
+    }
+    return false;
+  };
+  let acquisL02=await viserAreteL02();
+  // Si la géométrie voisine masque le segment, changer la vue avec une orbite
+  // utilisateur réelle. L'historique et les assertions métier restent intacts.
+  for (let tentative=0; !acquisL02 && tentative<3; tentative++) {
+    const avantPan=(await etat()).pas;
+    const origine=await aides(page).ecran(areteL02.milieu);
+    if (!origine) throw new Error("L-02 : impossible de positionner l'orbite");
+    await page.mouse.move(origine.x,origine.y);
+    await page.mouse.down({button:"middle"});
+    await page.mouse.move(origine.x+(tentative%2===0?75:-125),origine.y+35,{steps:12});
+    await page.mouse.up({button:"middle"});
+    await page.waitForTimeout(100);
+    if ((await etat()).pas!==avantPan) throw new Error("L-02 : l'orbite a modifié le modèle");
+    await revelerPointPlanche(page,areteL02.milieu);
+    acquisL02=await viserAreteL02();
+  }
+  if (!acquisL02) throw new Error("L-02 : arête interne réelle inaccessible au pointeur CAD après vérification et orbites");
+  const dansGroupe = await page.evaluate(() => window.fadiPlanche.dans() ?? null);
+  const consigneGroupe = await consigne();
+  check("L-02 : dans un groupe, la consigne dit « racine de la Planche seulement »",
+    dansGroupe !== null && /racine de la Planche seulement/.test(consigneGroupe),
+    `${consigneGroupe} dans=${dansGroupe} étape=${await page.evaluate(() => window.fadiPlanche.etatOutil()?.etape ?? null)}`);
   check("aucune commande envoyée (brouillon local)", s.commandes.length === 0, String(s.commandes.length));
   check("aucune erreur JavaScript", s.erreurs.length === 0, s.erreurs.join(" | "));
   await ctx.close();

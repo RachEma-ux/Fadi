@@ -211,11 +211,24 @@ jobs:
   # Harmonie, bibliothèque, liaisons, documents, collaboration, hors-ligne,
   # partage — contre l'API construite, qui sert elle-même le build de l'application (mode de production).
   # Les captures (docs/migration/captures/webapp/) sont publiées en artefact.
-  e2e:
+  #
+  # Tranches parallèles (#166) : chaque tranche a son propre PostGIS, sa migration, son build et son API ; chaque
+  # recette ne tourne que dans sa tranche (`if: matrix.shard == …`), dans l'ordre relatif d'origine. Chaque recette
+  # crée son compte et importe elle-même l'exemple P.118 ; la seule dépendance d'état est la sauvegarde / restauration,
+  # qui reste dans la tranche du scénario, après lui. Répartition par durées mesurées (run 39159805146, ≈ 7 min par
+  # tranche) : parcours (accueils, scénario, Studio, restauration), complements (atelier-complements seul),
+  # atelier (Atelier P1, interface anglaise, barre), planche (outils et lots Planche), p2 (P2-0 à P2-8, Planche lot 7,
+  # boutons, détachée, barres d'outils). Le job agrégé `e2e` garde le nom du contrôle requis.
+  e2e-shard:
+    name: e2e (${{ matrix.shard }})
     # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.
     if: ${{ (!((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main'))) && !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'feat/156-studio-v1' && (github.base_ref == 'main' || github.base_ref == 'fix/157-test-database-guard')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [parcours, complements, atelier, planche, p2]
     services:
       postgres:
         image: postgis/postgis:16-3.4
@@ -244,6 +257,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
       - run: npm run db:migrate
@@ -257,200 +271,255 @@ jobs:
           done
           curl -sf http://localhost:3001/health && curl -sf -o /dev/null -H "Accept: text/html" http://localhost:3001/accueil
           : > web.log
+          : > e2e.log
       - name: Recette des accueils Fadi — dossier explicite, états fiables, action avant l’aperçu
+        if: ${{ matrix.shard == 'parcours' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/accueils-design node apps/web/e2e/accueils-design.mjs 2>&1 | tee e2e.log
       - name: Scénario Playwright
+        if: ${{ matrix.shard == 'parcours' }}
         run: |
           set -o pipefail
           node apps/web/e2e/parcours-scenario.mjs 2>&1 | tee -a e2e.log
       # Studio (D-0/D-A, #166) : schéma créé par db:migrate ; étude, commandes, rejeu, refus et historique par l'API réelle.
       - name: Recette Studio par l'API — étude, commandes, rejeu, conflits, droits, historique (apps/web/e2e/studio-persistance.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
         run: |
           set -o pipefail
           node apps/web/e2e/studio-persistance.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de navigation Studio — enveloppe, étude, variantes, historique en lecture seule, adresse inconnue (apps/web/e2e/studio-navigation.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-navigation.mjs 2>&1 | tee -a e2e.log
       - name: Recette du nouvel Atelier (apps/web/e2e/atelier-nouveau.mjs)
+        if: ${{ matrix.shard == 'atelier' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/atelier-nouveau.mjs 2>&1 | tee -a e2e.log
       - name: Recette des documents dérivés et objets du lot 5 (apps/web/e2e/atelier-documents.mjs)
+        if: ${{ matrix.shard == 'atelier' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/atelier-documents.mjs 2>&1 | tee -a e2e.log
       - name: Recette des échanges du lot 6 (apps/web/e2e/atelier-echanges.mjs)
+        if: ${{ matrix.shard == 'atelier' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/atelier-echanges.mjs 2>&1 | tee -a e2e.log
       - name: Recette des versions, variantes et publications du lot 7 (apps/web/e2e/atelier-versions.mjs)
+        if: ${{ matrix.shard == 'atelier' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/atelier-versions.mjs 2>&1 | tee -a e2e.log
       - name: Recette de l'automatisation et de l'assistant du lot 8 (apps/web/e2e/atelier-automatisation.mjs)
+        if: ${{ matrix.shard == 'atelier' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/atelier-automatisation.mjs 2>&1 | tee -a e2e.log
       - name: Recette des compléments — historique, consultation, reprise, références externes (apps/web/e2e/atelier-complements.mjs)
+        if: ${{ matrix.shard == 'complements' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/atelier-complements.mjs 2>&1 | tee -a e2e.log
       - name: Recette de la disposition Canevas — ergonomie SketchUp Web (apps/web/e2e/atelier-canevas.mjs)
+        if: ${{ matrix.shard == 'atelier' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/atelier-canevas.mjs 2>&1 | tee -a e2e.log
       - name: Recette du mode Planche, lot Planche 2 — dessin, champ Mesures, toucher (apps/web/e2e/planche.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/planche.mjs 2>&1 | tee -a e2e.log
       - name: Recette des outils de modification de la Planche, lot Planche 3 (apps/web/e2e/planche-modification.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/planche-modification.mjs 2>&1 | tee -a e2e.log
       - name: Recette outil par outil de la Planche — 22 machines, caméra, grille sans outil grisé, brouillon (apps/web/e2e/planche-outils.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/planche-outils.mjs 2>&1 | tee -a e2e.log
       - name: Recette Pousser/Tirer d'arêtes de la Planche — surfaces, couronne, allongement, lien, téléphone (apps/web/e2e/planche-pousser-aretes.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-pousser-aretes node apps/web/e2e/planche-pousser-aretes.mjs 2>&1 | tee -a e2e.log
       - name: Recette des modes de Pousser/Tirer — barre d'options, vrai Étirement, téléphone (apps/web/e2e/planche-pousser-modes.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-pousser-modes node apps/web/e2e/planche-pousser-modes.mjs 2>&1 | tee -a e2e.log
       - name: Recette des objets O-1 — Grouper, Créer un composant, Éclater dans la barre d'actions, raccourcis, liens rompus (apps/web/e2e/planche-objets.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-objets node apps/web/e2e/planche-objets.mjs 2>&1 | tee -a e2e.log
       - name: Recette du clavier de la Planche (lot 9) — frappes seules des modificateurs, barres au clavier (apps/web/e2e/planche-clavier.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-clavier node apps/web/e2e/planche-clavier.mjs 2>&1 | tee -a e2e.log
       - name: Recette Pousser/Tirer complet (lot 10a) — valeur refusée, aperçu périmé, Inverser le sens (apps/web/e2e/planche-pousser-l10a.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-pousser-l10a node apps/web/e2e/planche-pousser-l10a.mjs 2>&1 | tee -a e2e.log
       - name: Recette des liens d'extrusion (lot 10b) — lié par défaut, Indépendante, racine seulement, recalcul (apps/web/e2e/planche-liens.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-liens node apps/web/e2e/planche-liens.mjs 2>&1 | tee -a e2e.log
       - name: Recette Suivez-moi complet (lot 10c) — profil percé, aperçu au survol, Capuchons, Maj+F (apps/web/e2e/planche-suivez-moi.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-suivez-moi node apps/web/e2e/planche-suivez-moi.mjs 2>&1 | tee -a e2e.log
       - name: Recette Révolution (lot 10d) — méthode de Suivez-moi, axe présélectionné, aperçu, corrections 90 et 96s (apps/web/e2e/planche-revolution.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-revolution node apps/web/e2e/planche-revolution.mjs 2>&1 | tee -a e2e.log
       - name: Recette des outils Profilé (lot L12) — catalogue d'essai, Maj+Q, Info entité, Profilés depuis arêtes, téléphone (apps/web/e2e/planche-profiles.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-profiles node apps/web/e2e/planche-profiles.mjs 2>&1 | tee -a e2e.log
       - name: Recette des assemblages de pièces (lot L13) — cadre en onglet, coupe d'un poteau par une poutre, Ctrl + Z, allonger (apps/web/e2e/planche-assemblages.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-assemblages node apps/web/e2e/planche-assemblages.mjs 2>&1 | tee -a e2e.log
       - name: Recette de la liste de débit (lot L14) — lignes, masse sourcée seulement, tri, sélection exacte, repères, étiquettes, CSV (apps/web/e2e/planche-debit.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-debit node apps/web/e2e/planche-debit.mjs 2>&1 | tee -a e2e.log
       - name: Recette du Texte 3D (lot L16) — aperçu en volume, alignement, pose sur une face verticale (apps/web/e2e/planche-texte-3d.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-texte-3d node apps/web/e2e/planche-texte-3d.mjs 2>&1 | tee -a e2e.log
       - name: Recette de l'édition des pièces (lot L17) — section régénérée, rotation axiale, Aligner une face (apps/web/e2e/planche-pieces-edition.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-pieces-edition node apps/web/e2e/planche-pieces-edition.mjs 2>&1 | tee -a e2e.log
       - name: Recette des compléments de modification (lot L18) — Décalage à trous et chevauchement, statuts de l'Instructeur, poignées de rotation, axes de l'objet (apps/web/e2e/planche-modification-l18.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-modification-l18 node apps/web/e2e/planche-modification-l18.mjs 2>&1 | tee -a e2e.log
       - name: Recette des diagnostics de l'extrusion (lot L19) — code stable et recours dans la barre d'état (apps/web/e2e/planche-diagnostics-l19.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-diagnostics-l19 node apps/web/e2e/planche-diagnostics-l19.mjs 2>&1 | tee -a e2e.log
       - name: Recette de l'Étirement à plis (lot L20) — voisine percée pliée en facettes planes, trou gardé (apps/web/e2e/planche-etirement-plis.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-etirement-plis node apps/web/e2e/planche-etirement-plis.mjs 2>&1 | tee -a e2e.log
       - name: Recette d'Épaissir et de l'extrusion multi-faces (lot L21) (apps/web/e2e/planche-epaissir.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-epaissir node apps/web/e2e/planche-epaissir.mjs 2>&1 | tee -a e2e.log
       - name: Recette d'Effilement et de Loft (lot L22) (apps/web/e2e/planche-effilement-loft.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-effilement-loft node apps/web/e2e/planche-effilement-loft.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/planche-lots-4-6.mjs 2>&1 | tee -a e2e.log
       - name: Recette du lot 5 de la Planche — composants, presse-papiers, menu contextuel, panneaux (apps/web/e2e/planche-lot-5.mjs)
+        if: ${{ matrix.shard == 'planche' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/planche-lot-5.mjs 2>&1 | tee -a e2e.log
       - name: Recette du lot 7 de la Planche — persistance par commandes, Planches nommées, IFC, PNG, téléphone, axe-core (apps/web/e2e/planche-lot-7.mjs)
+        if: ${{ matrix.shard == 'p2' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/planche-lot-7.mjs 2>&1 | tee -a e2e.log
       - name: Porte P1 réduite (P2-0) — un projet, un écran, bâtiment + esquisse + Planche + feuille + version (apps/web/e2e/porte-p1-reduite.mjs)
+        if: ${{ matrix.shard == 'p2' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/porte-p1-reduite.mjs 2>&1 | tee -a e2e.log
       - name: Noyau exact (P2-1, D-177) — Worker OCCT à la demande, révolution, booléen, STEP export / import, IFC (apps/web/e2e/p2-noyau-exact.mjs)
+        if: ${{ matrix.shard == 'p2' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/p2-noyau-exact.mjs 2>&1 | tee -a e2e.log
       - name: "Porte P1 → P2 (P2-2) — P.118-M : ontologie mécanique, CTA à 4 pièces et 2 liaisons pilotées, version, feuille éclatée, IFC, collision (apps/web/e2e/porte-p1-p2.mjs)"
+        if: ${{ matrix.shard == 'p2' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/porte-p1-p2.mjs 2>&1 | tee -a e2e.log
       - name: "Lot P2-3 structure — trame générée après aperçu, catalogue sourcé, assemblages, armatures, coulage, nomenclatures, IFC réimporté (apps/web/e2e/p2-structure.mjs)"
+        if: ${{ matrix.shard == 'p2' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/p2-structure.mjs 2>&1 | tee -a e2e.log
       - name: "Lot P2-4 bois et tôlerie — ossature générée sur un mur de P.118 après aperçu, CLT, assemblage, tôle pliée et développé, table de pliage, nomenclatures, IFC (apps/web/e2e/p2-bois-tolerie.mjs)"
+        if: ${{ matrix.shard == 'p2' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/p2-bois-tolerie.mjs 2>&1 | tee -a e2e.log
       - name: "Lot P2-5 réseaux — ontologie activée, catalogue de tubes sourcé et spécification, réseau routé depuis l'inspecteur (deux tronçons + coude connectés), pompe, connectivité vérifiée (refus, rupture signalée, réparation), nomenclature, P&ID, IFC MEP réimporté (apps/web/e2e/p2-reseaux.mjs)"
+        if: ${{ matrix.shard == 'p2' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/p2-reseaux.mjs 2>&1 | tee -a e2e.log
       - name: "Lot P2-6 coordination — bâtiment P2 (plafond, rampe, mur-rideau, terrain depuis l'inspecteur), gaine × mur signalée puis exemptée par une réservation accordée, mécanisme animé (trajectoire, obstacle), surface libre subdivisée, tableaux rénovation / chantier, IFC natif (apps/web/e2e/p2-coordination.mjs)"
+        if: ${{ matrix.shard == 'p2' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/p2-coordination.mjs 2>&1 | tee -a e2e.log
       - name: "Lot P2-7 documentation — annotation de fabrication et cote tolérancée depuis l'inspecteur, étiquette intelligente, feuille gabarit production béton, isométrique de tuyauterie, nuage de points LAS lu et posé derrière le plan (apps/web/e2e/p2-documentation.mjs)"
+        if: ${{ matrix.shard == 'p2' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/p2-documentation.mjs 2>&1 | tee -a e2e.log
       - name: "Lot P2-8 automatisation — graphe de génération dessiné, règle du graphe non tenue (échec nommé), proposition par la même boucle puis accord (4 poteaux), graphe composé dans l'éditeur visuel et déposé dans le projet, règle par ontologie sur les murs (problèmes rattachés, rejugés) (apps/web/e2e/p2-automatisation.mjs)"
+        if: ${{ matrix.shard == 'p2' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/p2-automatisation.mjs 2>&1 | tee -a e2e.log
       - name: Recette de l'interface anglaise — relevé des textes restés en français (apps/web/e2e/interface-anglais.mjs)
+        if: ${{ matrix.shard == 'atelier' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/interface-anglais.mjs 2>&1 | tee -a e2e.log
       - name: Recette des boutons de la Planche, ordinateur et téléphone (apps/web/e2e/planche-boutons.mjs)
+        if: ${{ matrix.shard == 'p2' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/planche-boutons.mjs 2>&1 | tee -a e2e.log
       - name: Recette de la Planche détachée et de la barre du mode Documents (apps/web/e2e/planche-detachee-documents.mjs)
+        if: ${{ matrix.shard == 'p2' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/planche-detachee-documents.mjs 2>&1 | tee -a e2e.log
       - name: Recette de la barre de l'Atelier — Plan à deux fonctions, Fichier, ⚙, barre d'actions flottante (apps/web/e2e/atelier-barre.mjs)
+        if: ${{ matrix.shard == 'atelier' }}
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/atelier-barre.mjs 2>&1 | tee -a e2e.log
       - name: Recette des barres d'outils de la Planche — bouton « Outils », barres d'opérations flottantes (apps/web/e2e/planche-barre-outils.mjs)
+        if: ${{ matrix.shard == 'p2' }}
         run: |
           set -o pipefail
           node apps/web/e2e/planche-barre-outils.mjs 2>&1 | tee -a e2e.log
       - name: Sauvegarde puis restauration vérifiées (scripts/verify-restore.sh) sur la base du scénario
+        if: ${{ matrix.shard == 'parcours' }}
         env:
           PGPASSWORD: fadi_ci_password
         run: sh scripts/verify-restore.sh localhost fadi fadi_e2e fadi_restore_check
@@ -467,11 +536,27 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: captures-webapp
+          name: captures-webapp-${{ matrix.shard }}
           path: |
             docs/migration/captures/webapp/
             atelier-captures/
           retention-days: 14
+
+  # Contrôle agrégé : garde le nom `e2e` attendu par la protection de branche ; vert seulement si toutes les tranches
+  # ont réussi (une tranche échouée, annulée ou sautée alors que la condition est vraie le fait échouer).
+  e2e:
+    needs: e2e-shard
+    # Même condition que les tranches : sauté exactement quand elles le sont.
+    if: ${{ always() && (!((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main'))) && !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'feat/156-studio-v1' && (github.base_ref == 'main' || github.base_ref == 'fix/157-test-database-guard')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Toutes les tranches e2e ont réussi
+        env:
+          RESULT: ${{ needs.e2e-shard.result }}
+        run: |
+          echo "tranches e2e : $RESULT"
+          test "$RESULT" = "success"
 
   image:
     # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.

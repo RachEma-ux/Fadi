@@ -693,11 +693,11 @@ check("acceptation · catalogue : 4 dessins / exports « à jour » à la révis
 const acceptanceSurfaces = await page.request.get(`${BASE}/projects/${atelierPid}/documents/surfaces`);
 check("acceptation · tableau des surfaces (CSV) produit depuis cette révision, mezzanine incluse", acceptanceSurfaces.status() === 200 && /Mezzanine/.test(await acceptanceSurfaces.text()) && ((await (await page.request.get(`${BASE}/projects/${atelierPid}/documents`)).json()).documents.find((d) => d.kind === "tableau-surfaces").freshness === "a-jour"));
 check("acceptation · aucune erreur JavaScript pendant l'acceptation", consoleErrors.length === errorsBeforeAcceptance, consoleErrors.slice(errorsBeforeAcceptance).join(" | "));
-// Référence, étape 10 : la page est l'Atelier Architectural (bandeau du prototype, enveloppe effacée) ; « Harmonie » ouvre la sous-page avec le panneau de l'exemple
+// Référence, étape 10 : Atelier Architectural dans le gabarit commun (navigation conservée) ; « Harmonie » ouvre la sous-page avec le panneau de l'exemple
 // (récit, « Lire le bilan du bâtiment conçu » / « Voir les capacités et ambiances » / « Exporter le bilan »).
 await page.goto(`${exampleUrl}?module=parcours&etape=10`);
 await atelierPret();
-check("étape 10 (référence) : page « Atelier Architectural · ÉTAPE 10 / 21 · Concevoir / Tester », enveloppe de Fadi effacée, titre de l'étape replié sous le dessin", (await page.locator(".atelier-stage-title").textContent()) === "Atelier Architectural" && (await page.locator(".top-stage").textContent()) === "ÉTAPE 10 / 21 · Concevoir / Tester" && (await page.evaluate(() => document.body.classList.contains("atelier-immersive"))) && !(await page.locator(".app-sidebar").isVisible()) && (await page.locator(".stage10-fold > summary").textContent()) === "Étude de capacité architecturale");
+check("étape 10 (référence) : page « Atelier Architectural · ÉTAPE 10 / 21 · Concevoir / Tester », enveloppe de Fadi et barre des modules conservées, titre de l'étape replié sous le dessin", (await page.locator(".atelier-stage-title").textContent()) === "Atelier Architectural" && (await page.locator(".top-stage").textContent()) === "ÉTAPE 10 / 21 · Concevoir / Tester" && (await page.evaluate(() => document.body.classList.contains("atelier-workspace") && !document.body.classList.contains("atelier-immersive"))) && (await page.locator(".app-sidebar").isVisible()) && (await page.locator(".fadi-topbar").isVisible()) && (await page.locator(".module-nav").isVisible()) && (await page.locator(".stage10-fold > summary").textContent()) === "Étude de capacité architecturale");
 await ouvrirFichier(page);
 await page.locator("#atelier-harmonie-button").click();
 await page.waitForFunction(() => !document.getElementById("atelier-harmonie-page")?.hidden);
@@ -1100,10 +1100,28 @@ await page.goto(`${exampleUrl}?module=parcours&etape=8`);
 await page.waitForSelector(".step-comments");
 await page.locator(".step-comments > summary").click();
 check("étape 08 : pli « Commentaires (0) » vide", /Commentaires \(0\)/.test(await page.locator(".step-comments > summary").textContent()) && /Aucun commentaire sur cette étape/.test(await page.locator(".step-comments").textContent()));
-await page.locator(".step-comments textarea").fill("Vérifier la hauteur sous plafond avec le BET.");
+const texteCommentaire = "Vérifier la hauteur sous plafond avec le BET.";
+await page.locator(".step-comments textarea").fill(texteCommentaire);
+// Vérifier séparément l'écriture serveur et le rafraîchissement visible :
+// un clic seul ne prouve pas que le commentaire est enregistré.
+const publication = page.waitForResponse(
+  (r) => r.request().method() === "POST" && new URL(r.url()).pathname === `/projects/${examplePid}/collaboration/comments`,
+  { timeout: 15000 },
+);
 await page.locator('.step-comments button:has-text("Publier le commentaire")').click();
-await page.waitForFunction(() => /Commentaires \(1\)/.test(document.querySelector(".step-comments > summary")?.textContent || ""), null, { timeout: 10000 });
-check("étape 08 : « Publier le commentaire » → « Commentaires (1) », auteur et date", (await page.locator(".step-comments .comment-meta").first().textContent()).includes(email) && (await page.locator(".step-comments .comment > p").first().textContent()) === "Vérifier la hauteur sous plafond avec le BET.");
+const reponsePublication = await publication;
+const commentaireCree = await reponsePublication.json().catch(() => null);
+check("étape 08 : commentaire accepté et enregistré par le serveur", reponsePublication.ok() && commentaireCree?.id && commentaireCree.stepNumber === 8 && commentaireCree.body === texteCommentaire, `${reponsePublication.status()} · ${JSON.stringify(commentaireCree).slice(0, 240)}`);
+const commentaireVisible = await page.waitForFunction(
+  () => /Commentaires \(1\)/.test(document.querySelector(".step-comments > summary")?.textContent || ""),
+  null, { timeout: 10000 },
+).then(() => true, () => false);
+if (!commentaireVisible) {
+  const enBase = await page.request.get(`${BASE}/projects/${examplePid}/collaboration/comments?step=8`);
+  const erreurUi = await page.locator(".step-comments .h7-error").textContent().catch(() => "");
+  throw new Error(`Étape 08 : commentaire accepté mais non affiché : API ${enBase.status()} · ${(await enBase.text()).slice(0, 300)} · interface ${erreurUi}`);
+}
+check("étape 08 : « Publier le commentaire » → « Commentaires (1) », auteur et date", (await page.locator(".step-comments .comment-meta").first().textContent()).includes(email) && (await page.locator(".step-comments .comment > p").first().textContent()) === texteCommentaire);
 // Réponse en fil : rattachée au commentaire d'origine, comptée, affichée en retrait.
 await page.locator('.step-comments button:has-text("Répondre")').first().click();
 await page.locator(".step-comments .comment-reply-form textarea").fill("Vu avec le BET : 3,20 m confirmés.");
@@ -1741,13 +1759,13 @@ await page.waitForTimeout(800);
 await page.screenshot({ path: `${OUT}/01-mobile.png`, fullPage: true });
 const noHorizontalScroll = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
 check("téléphone : pas de défilement horizontal", noHorizontalScroll);
-// Étape 10 sur téléphone : la page est l'Atelier Architectural (bandeau, barre d'outils, dessin), enveloppe effacée.
+// Étape 10 sur téléphone : Atelier Architectural, navigation commune conservée, dessin dans la largeur utile.
 await page.goto(`${exampleUrl}?module=parcours&etape=10`);
 await atelierPret();
 await page.waitForTimeout(600);
 await page.screenshot({ path: `${OUT}/10-mobile.png`, fullPage: false });
 check("téléphone étape 10 : outil actif signalé dans la barre d'outils (rangée défilante), onglets des panneaux en bas", /Sélection/.test((await page.locator(".atelier-n-outils .outil.est-actif").first().textContent().catch(() => "")) || "") && (await page.locator(".atelier-n-outils").evaluate((e) => e.scrollWidth > e.clientWidth && getComputedStyle(e).overflowX === "auto")) && (await page.locator(".atelier-n-onglets").isVisible()));
-check("téléphone étape 10 : bandeau « Atelier Architectural · ÉTAPE 10 / 21 · Concevoir / Tester », enveloppe effacée, dessin sur toute la largeur", (await page.locator(".atelier-stage-title").textContent()) === "Atelier Architectural" && (await page.locator(".top-stage").textContent()) === "ÉTAPE 10 / 21 · Concevoir / Tester" && (await page.evaluate(() => document.body.classList.contains("atelier-immersive"))) && !(await page.locator(".module-nav").isVisible()) && (await page.locator(".atelier-n").evaluate((e) => Math.round(e.getBoundingClientRect().width))) >= 380);
+check("téléphone étape 10 : bandeau « Atelier Architectural · ÉTAPE 10 / 21 · Concevoir / Tester », navigation commune conservée, dessin sur toute la largeur utile entre les marges", (await page.locator(".atelier-stage-title").textContent()) === "Atelier Architectural" && (await page.locator(".top-stage").textContent()) === "ÉTAPE 10 / 21 · Concevoir / Tester" && (await page.evaluate(() => document.body.classList.contains("atelier-workspace") && !document.body.classList.contains("atelier-immersive"))) && (await page.locator(".module-nav").isVisible()) && (await page.locator(".fadi-topbar").isVisible()) && (await page.locator(".app-sidebar").isVisible()) && (await page.locator(".atelier-n").evaluate((e) => { const workspace = document.getElementById("workspace-content"); const bounds = workspace.getBoundingClientRect(); const gutter = parseFloat(getComputedStyle(workspace).getPropertyValue("--project-page-gutter")); const editor = e.getBoundingClientRect(); return Math.abs(editor.left - bounds.left - gutter) <= 2 && Math.abs(bounds.right - editor.right - gutter) <= 2; })));
 
 check("aucune erreur JavaScript", consoleErrors.length === 0, consoleErrors.join(" | "));
 console.log(`⏱ mesures indicatives (Chromium headless, cette machine) : ${measures.map((m) => `${m.label} = ${m.ms} ms`).join(" ; ")}`);

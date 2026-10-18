@@ -1,0 +1,73 @@
+name: Project layout
+on:
+  pull_request:
+    paths:
+      - 'apps/web/**'
+      - '.github/workflows/project-layout.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - '.github/workflows/project-layout.yml'
+concurrency:
+  group: project-layout-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+permissions:
+  contents: read
+jobs:
+  project-layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: fadi
+          POSTGRES_PASSWORD: fadi_ci_password
+          POSTGRES_DB: fadi_layout
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://fadi:fadi_ci_password@localhost:5432/fadi_layout
+      WEB_ORIGIN: http://localhost:3001
+      WEB_DIST: apps/web/dist
+      PORT: '3001'
+      AUTH_RATE_LIMIT: '500'
+      API_RATE_LIMIT: '5000'
+      BASE_URL: http://localhost:3001
+      OUT: atelier-captures/project-layout
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm run db:migrate
+      - run: npm run build
+      - name: Start production application
+        run: |
+          nohup node apps/api/dist/server.js > api.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3001/health > /dev/null; then break; fi
+            sleep 1
+          done
+          curl -sf http://localhost:3001/health
+      - name: Nine project pages, widths, navigation and Atelier
+        run: |
+          set -o pipefail
+          node apps/web/e2e/project-layout.mjs 2>&1 | tee project-layout.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: project-layout-${{ github.run_id }}
+          path: |
+            atelier-captures/project-layout/
+            project-layout.log
+            api.log
+          retention-days: 7
