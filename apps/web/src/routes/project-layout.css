@@ -174,8 +174,11 @@ body.atelier-workspace .atelier-n-barre .barre-plan-liste {
   body.atelier-workspace .planche-outils {
     bottom: max(calc(var(--volet-h, 40px) + 8px), var(--actions-reserve-bas, 0px));
   }
+  /* The column starts at 48px + 0.5rem (planche.css): subtract that offset too,
+     so its last icon always ends above the default action bar (1rem gap),
+     whatever height the wrapped bar takes with the installed fonts. */
   body.atelier-workspace .planche-colonne {
-    max-height: calc(100% - var(--actions-reserve-bas, 0px) - 16px);
+    max-height: calc(100% - max(var(--actions-reserve-bas, 0px), var(--volet-h, 10rem)) - 48px - 1.5rem);
   }
   body.atelier-workspace .planche-options-outil,
   body.atelier-workspace .planche-profiles,
