@@ -81,6 +81,7 @@ def parse_data(payload, ids, now):
     comments = payload["comments"]
     latest = None
     reports = []
+    hourly = []
     questions = {}
     answers = {}
     acknowledgements = 0
@@ -93,6 +94,8 @@ def parse_data(payload, ids, now):
             acknowledgements += 1
         if "[CODEX-PROGRESS]" in body:
             reports.append((created, body, url))
+        if "[CHATGPT-HOURLY]" in body:
+            hourly.append((created, body, url))
         for qid in re.findall(r"\[CODEX-QUESTION\]\[(Q-[a-zA-Z0-9_-]+)\]\[OPEN\]", body):
             questions[qid] = {"url": url, "created_at": created}
         for qid in re.findall(r"\[(?:CHATGPT-ANSWER|NEEDS-USER-DECISION)\]\[(Q-[a-zA-Z0-9_-]+)\]", body):
@@ -116,6 +119,7 @@ def parse_data(payload, ids, now):
                                      "state": "signalé — vérification indépendante requise"}
     if reports:
         latest = sorted(reports, key=lambda p:p[0])[-1]
+    latest_hourly = sorted(hourly, key=lambda p:p[0])[-1] if hourly else None
     p630 = None
     pdev = "N/D"
     if latest:
@@ -141,6 +145,9 @@ def parse_data(payload, ids, now):
                   "last_progress_at": latest[0] if latest else None,
                   "last_progress_url": latest[2] if latest else None,
                   "execution_confirmed": bool(acknowledgements and reports)},
+        "hourly": {"chatgpt_report_count": len(hourly),
+                   "last_at": latest_hourly[0] if latest_hourly else None,
+                   "last_url": latest_hourly[2] if latest_hourly else None},
         "questions": {"total": len(questions), "unanswered": unanswered,
                       "unanswered_count": len(unanswered)},
         "task_signals": sorted(signals.values(), key=lambda v:(v["id"],v["stage"])),
@@ -197,14 +204,17 @@ def build_block(data):
         f'<a href="{e(data["sources"]["programme"])}" target="_blank" rel="noopener noreferrer">Programme #156</a>'
     ]
     if codex["last_progress_url"]:
-        links.append(f'<a href="{e(codex["last_progress_url"])}" target="_blank" rel="noopener noreferrer">Dernier contrôle horaire</a>')
+        links.append(f'<a href="{e(codex["last_progress_url"])}" target="_blank" rel="noopener noreferrer">Dernier rapport Codex</a>')
+    if data["hourly"]["last_url"]:
+        links.append(f'<a href="{e(data["hourly"]["last_url"])}" target="_blank" rel="noopener noreferrer">Dernier contrôle ChatGPT</a>')
     info = [
         ("Développement total vérifié", "N/D % — périmètre et baseline à valider"),
         ("Tâches Studio vérifiées", "N/D / 630 — preuves individuelles à rapprocher"),
         ("Avancement déclaré par Codex", reported),
         ("Accusés / rapports Codex", f'{codex["ack_count"]} / {codex["progress_count"]} — {code_state}'),
         ("Questions sans réponse détectée", questions["unanswered_count"]),
-        ("Dernier contrôle horaire", codex["last_progress_at"] or "Non disponible"),
+        ("Dernier contrôle Codex", codex["last_progress_at"] or "Non disponible"),
+        ("Dernier contrôle horaire ChatGPT", data["hourly"]["last_at"] or "Non disponible"),
         ("GitHub main / PR #165", (data["main_sha"] or "N/D")[:12]+" / "+(data["pr165_head_sha"] or "N/D")[:12])
     ]
     rows = "".join(f'<tr><th scope="row">{e(k)}</th><td>{e(v)}</td></tr>' for k,v in info)
