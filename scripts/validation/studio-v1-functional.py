@@ -1,63 +1,161 @@
 #!/usr/bin/env python3
-"""CI/local disposable-only Studio browser recipe; never runs historical migrations/API suites."""
-import json,os,subprocess,sys,time,signal,socket,urllib.request
+"""Run the authorized Studio recipe against an attested disposable profile only."""
+import argparse
+import json
+import os
+import signal
+import socket
+import subprocess
+import sys
+import time
+import urllib.request
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[2]
-ENV={k:v for k,v in os.environ.items() if not k.startswith(('PG','DOCKER_')) and k not in ['DATABASE_URL','TEST_DATABASE_URL','NODE_ENV','VITEST']}
-D=['docker','--host=unix:///var/run/docker.sock']
-def checked(args,**kw):
- r=subprocess.run(args,env=ENV,text=True,capture_output=True,timeout=180,**kw)
- if r.returncode:raise RuntimeError('Validation command failed; raw output retained privately, not published')
- return r.stdout.strip()
+
+ROOT = Path(__file__).resolve().parents[2]
+DOCKER = ['docker', '--host=unix:///var/run/docker.sock']
+SAFE_ENV = {
+    key: value for key, value in os.environ.items()
+    if not key.startswith(('PG', 'DOCKER_'))
+    and key not in {'DATABASE_URL', 'TEST_DATABASE_URL', 'NODE_ENV', 'VITEST'}
+}
+
+
+def checked(args, *, input=None, label='validation command'):
+    result = subprocess.run(
+        args, env=SAFE_ENV, input=input, text=True,
+        capture_output=True, timeout=180,
+    )
+    if result.returncode:
+        raise RuntimeError(f'{label} failed (exit {result.returncode}); sensitive output suppressed')
+    return result.stdout.strip()
+
+
 def main():
- for port in [3001,5173]:
-  with socket.socket() as s:s.bind(('127.0.0.1',port))
- path=Path(checked([sys.executable,str(ROOT/'scripts/validation/studio-v1-profile.py')]))
- m=json.loads(path.read_text());run=m['runId'];assert m['container']=='fadi-studio-v1-'+run and m['database']=='fadi_studio_v1_'+run and m['host']=='127.0.0.1'
- def docker(*args,input=None):return checked(D+list(args),input=input)
- def sql(text):return docker('exec','-i',m['container'],'psql','-X','-v','ON_ERROR_STOP=1','-U','postgres','-d',m['database'],'-At',input=text)
- assert sql('SELECT run_id FROM studio_validation.identity;')==run
- schema=ROOT/'apps/api/src/db/studio-v1.sql'
- checked([sys.executable,str(ROOT/'scripts/validation/studio-v1-apply.py'),str(path),str(schema)])
- env=dict(ENV)
- for line in Path(m['runtimeEnvFile']).read_text().splitlines():
-  key,value=line.split('=',1);env[key]=value
- env['HOST']='127.0.0.1'
- env['STUDIO_TEST_PROFILE']=str(path.parent/'test-profile.json');env['STUDIO_PROOF_DIR']=str(ROOT/'work/studio-v1-proof');Path(env['STUDIO_PROOF_DIR']).mkdir(parents=True,exist_ok=True,mode=0o700)
- if Path('/usr/bin/chromium').exists() and os.environ.get('CI')!='true':env['CHROMIUM_PATH']='/usr/bin/chromium'
- processes=[];logs=[]
- def start_api():
-  log=(path.parent/'api.log').open('a');logs.append(log);p=subprocess.Popen(['node','apps/api/dist/server.js'],cwd=ROOT,env=env,stdout=log,stderr=log,start_new_session=True);processes.append(p);return p
- def ready(url):
-  for _ in range(60):
-   try:
-    with urllib.request.urlopen(url,timeout=2) as r:
-     if r.status==200:return
-   except Exception:time.sleep(1)
-  raise RuntimeError('Local service not ready')
- def stop(p):
-  if p.poll() is None:os.killpg(p.pid,signal.SIGTERM);p.wait(timeout=15)
- try:
-  api=start_api();log=(path.parent/'vite.log').open('a');logs.append(log);web=subprocess.Popen(['npm','run','dev','--workspace=@fadi/web','--','--host','127.0.0.1','--port','5173','--strictPort'],cwd=ROOT,env=env,stdout=log,stderr=log,start_new_session=True);processes.append(web)
-  ready('http://127.0.0.1:3001/health');ready('http://127.0.0.1:5173/')
-  for phase in ['initial','reopen']:
-   if phase=='reopen':
-    stop(api)
-    info=json.loads(docker('inspect',m['container']))[0];assert info['Config']['Labels']['fadi.run']==run and any(x.get('Name')==m['volume'] for x in info['Mounts'])
-    docker('restart',m['container'])
-    for _ in range(45):
-     try:docker('exec',m['container'],'pg_isready','-U','postgres','-d',m['database']);break
-     except RuntimeError:time.sleep(1)
-    assert sql('SELECT run_id FROM studio_validation.identity;')==run
-    api=start_api();ready('http://127.0.0.1:3001/health')
-   recipe=subprocess.run(['node','apps/web/e2e/studio-v1.mjs'],cwd=ROOT,env={**env,'PHASE':phase},text=True,capture_output=True,timeout=240)
-   (path.parent/(phase+'.log')).write_text(recipe.stdout+recipe.stderr);os.chmod(path.parent/(phase+'.log'),0o600)
-   if recipe.returncode:raise RuntimeError('Studio '+phase+' recipe failed; private log retained')
- finally:
-  for p in processes:
-   try:stop(p)
-   except Exception:pass
-  for log in logs:log.close()
- # Keep only this run's labelled database for inspection; no automatic resource deletion.
- print('Studio initial/reopen recipes completed; disposable resources retained for inspection.')
-if __name__=='__main__':main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--profile', type=Path, help='Existing protected manifest; never creates another database')
+    parser.add_argument('--keep-running', action='store_true', help='Keep only this recipe API/Vite alive after success for a local demo')
+    args = parser.parse_args()
+    for port in (3001, 5173):
+        with socket.socket() as sock:
+            sock.bind(('127.0.0.1', port))
+
+    path = args.profile.resolve() if args.profile else Path(checked(
+        [sys.executable, str(ROOT / 'scripts/validation/studio-v1-profile.py')],
+        label='new disposable profile provisioning',
+    ))
+    apply_script = ROOT / 'scripts/validation/studio-v1-apply.py'
+
+    def preflight():
+        checked([sys.executable, str(apply_script), str(path)], label='disposable identity preflight')
+
+    preflight()
+    manifest = json.loads(path.read_text())
+    checked([
+        sys.executable, str(apply_script), str(path),
+        str(ROOT / 'apps/api/src/db/studio-v1.sql'),
+    ], label='pinned additive Studio schema verification/application')
+    manifest = json.loads(path.read_text())
+    run = manifest['runId']
+    env = dict(SAFE_ENV)
+    allowed = {'DATABASE_URL', 'NODE_ENV', 'MIGRATE_ON_START', 'PORT', 'WEB_ORIGIN', 'HOST'}
+    for line in Path(manifest['runtimeEnvFile']).read_text().splitlines():
+        key, value = line.split('=', 1)
+        if key in allowed:
+            env[key] = value
+    env.update(NODE_ENV='development', MIGRATE_ON_START='0', HOST='127.0.0.1')
+    env['STUDIO_TEST_PROFILE'] = str(path.parent / 'test-profile.json')
+    env['STUDIO_PROOF_DIR'] = str(ROOT / 'work/studio-v1-proof')
+    Path(env['STUDIO_PROOF_DIR']).mkdir(parents=True, exist_ok=True, mode=0o700)
+    if Path('/usr/bin/chromium').exists() and os.environ.get('CI') != 'true':
+        env['CHROMIUM_PATH'] = '/usr/bin/chromium'
+
+    processes = []
+    logs = []
+    success = False
+
+    def launch(command, log_name):
+        log = (path.parent / log_name).open('a')
+        os.chmod(path.parent / log_name, 0o600)
+        logs.append(log)
+        process = subprocess.Popen(
+            command, cwd=ROOT, env=env, stdout=log, stderr=log,
+            start_new_session=True,
+        )
+        processes.append(process)
+        return process
+
+    def start_api():
+        preflight()  # Recheck labels, image, volume, marker and role before EVERY launch.
+        return launch(['node', 'apps/api/dist/server.js'], 'api.log')
+
+    def ready(url, label):
+        for _ in range(60):
+            try:
+                with urllib.request.urlopen(url, timeout=2) as response:
+                    if response.status == 200:
+                        return
+            except Exception:
+                time.sleep(1)
+        raise RuntimeError(f'{label} did not become healthy; inspect protected local log')
+
+    def stop(process):
+        if process.poll() is None:
+            os.killpg(process.pid, signal.SIGTERM)
+            process.wait(timeout=15)
+
+    try:
+        api = start_api()
+        web = launch([
+            'npm', 'run', 'dev', '--workspace=@fadi/web', '--',
+            '--host', '127.0.0.1', '--port', '5173', '--strictPort',
+        ], 'vite.log')
+        ready('http://127.0.0.1:3001/health', 'API')
+        ready('http://127.0.0.1:5173/', 'Vite')
+        for phase in ('initial', 'reopen'):
+            if phase == 'reopen':
+                stop(api)
+                preflight()
+                checked(DOCKER + ['restart', manifest['container']], label='own disposable database restart')
+                for attempt in range(45):
+                    try:
+                        checked(DOCKER + [
+                            'exec', manifest['container'], 'pg_isready',
+                            '-U', 'postgres', '-d', manifest['database'],
+                        ], label='own database readiness')
+                        break
+                    except RuntimeError:
+                        if attempt == 44:
+                            raise
+                        time.sleep(1)
+                api = start_api()
+                ready('http://127.0.0.1:3001/health', 'restarted API')
+            recipe = subprocess.run(
+                ['node', 'apps/web/e2e/studio-v1.mjs'], cwd=ROOT,
+                env={**env, 'PHASE': phase}, text=True,
+                capture_output=True, timeout=240,
+            )
+            private_log = path.parent / f'{phase}.log'
+            private_log.write_text(recipe.stdout + recipe.stderr)
+            os.chmod(private_log, 0o600)
+            if recipe.returncode:
+                raise RuntimeError(f'Studio {phase} recipe failed (exit {recipe.returncode}); inspect protected {private_log.name}')
+        success = True
+        if args.keep_running:
+            private_pids = path.parent / 'demo-processes.json'
+            private_pids.write_text(json.dumps({'runId': run, 'apiPid': api.pid, 'vitePid': web.pid}) + '\n')
+            os.chmod(private_pids, 0o600)
+    finally:
+        if not (success and args.keep_running):
+            for process in processes:
+                try:
+                    stop(process)
+                except Exception:
+                    pass
+        for log in logs:
+            log.close()
+    print('Studio initial/reopen completed; own disposable database retained.' +
+          (' Local API/Vite retained for demo.' if args.keep_running else ' API/Vite stopped.'))
+
+
+if __name__ == '__main__':
+    main()

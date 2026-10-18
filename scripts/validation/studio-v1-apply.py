@@ -16,6 +16,11 @@ def main():
  assert sql('SELECT current_database();')==m['database'];assert sql('SELECT run_id FROM studio_validation.identity;')==run;assert sql("SELECT rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication FROM pg_roles WHERE rolname='studio_app';")=='f'
  if len(sys.argv)>2:
   schema=Path(sys.argv[2]);text=schema.read_text();assert hashlib.sha256(schema.read_bytes()).hexdigest()=='c891f5de78ba75e0f1609636862e06fc46d6271ca685f88fd103edb15d3d8fae', 'Unreviewed Studio SQL refused'
-  sql('SET ROLE studio_owner; '+text+' RESET ROLE; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO studio_app;');m['studioSchemaApplied']=True;m['studioSchemaSha256']=hashlib.sha256(text.encode()).hexdigest();manifest.write_text(json.dumps(m,indent=2)+'\n')
- print('Disposable identity, labels, loopback, marker and non-superuser role verified; '+('Studio additive schema applied.' if len(sys.argv)>2 else 'no schema mutation.'))
+  digest=hashlib.sha256(text.encode()).hexdigest()
+  if m.get('studioSchemaApplied'):
+   assert m.get('studioSchemaSha256')==digest, 'Applied Studio schema hash mismatch'
+   assert sql("SELECT count(*) FROM pg_tables WHERE schemaname='public' AND tablename IN ('studio_studies','studio_variants','studio_revisions');")=='3'
+  else:
+   sql('SET ROLE studio_owner; '+text+' RESET ROLE; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO studio_app;');m['studioSchemaApplied']=True;m['studioSchemaSha256']=digest;manifest.write_text(json.dumps(m,indent=2)+'\n')
+ print('Disposable identity, labels, loopback, marker and non-superuser role verified; '+('Studio schema pinned hash verified (applied only if absent).' if len(sys.argv)>2 else 'no schema mutation.'))
 if __name__=='__main__':main()
