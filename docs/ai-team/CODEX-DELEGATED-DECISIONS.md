@@ -60,3 +60,12 @@ Questions nouvelles réellement publiées, sans reprendre D01–D07 :
 - [Q-M004-DEC01-ORIENTATION](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249931771) et [Q-M004-DEC03-ORIENTATION](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249932632) : orientations de schéma à instruire, sans clôture complète des décisions, code Studio, POC ou migration autorisés.
 
 En l’absence de réponse, seuls ces choix ou opérations dépendantes attendent. Les comparaisons d’oracles, qualifications individuelles et contrats documentaires prêts continuent ; aucune décision n’est déduite du temps écoulé.
+
+## 6. Questions supplémentaires après le second checkpoint
+
+Checkpoint de suite publié : `7a4d200094505651a434194a128f774f6336de50`, même branche courte sans PR. Référence distante, zéro PR et zéro run au SHA confirmés ; #165 reste à63e804b et #169 draft àa15d650.
+
+- [Q-M004-LOT-CLASSIF-NONDEDUCTION](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250046846) : autorisation éventuelle du nouveau lot pur A3-CLASSIF-1, dossier et périmètre préparés ; aucune extension implicite depuis DB-1/2. Les décisions de classification ne sont pas remises au vote.
+- [Q-M004-CSP-KML](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250047620) : arbitrage des assets distants dans la spécification CSP, sans code/enforcement/chargement réseau autorisés par la question.
+
+Aucune réponse à ces questions n’est présumée. Elles conservent leurs responsables ; la prochaine analyse READY M08-PATH-001..007 est indépendante et décrite dans HANDOFF.

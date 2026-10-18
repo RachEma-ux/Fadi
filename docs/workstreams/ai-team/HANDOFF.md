@@ -63,3 +63,13 @@ M08 : huit entrées,52sous-attendus (7présents/27partiels/18absents) ;183occurr
 **Prochaine opération autorisée exacte :** lire les réponses #166 et comparer les attendus complets de M08-PATH-001 à007 aux assertions des candidats au SHA169, sans exécuter de test ni modifier code/fiches/mapping125 ; rapport A2, revue A5, intégration A0. En parallèle, les orientations G0/DEC et CI attendent leur décision propre, sans arrêter les analyses indépendantes. Si une réponse autorise un lot nouveau, vérifier son périmètre et toutes exclusions avant réalisation.
 
 Constat P2 neuf confirmé statiquement A0/A2 : `classification.affecter` écrit `classeIfc` par correspondance malgré le contrat de déclaration et de contrôle dérivé. Sept sources/96lignes exactes, pas de reproduction runtime. Lot pur de correction préparé séparément, non autorisé ; aucune donnée/décision historique modifiée. Voir rapport M004 et sources A2.
+
+## Dernier checkpoint de suite et reprise de session
+
+`7a4d200094505651a434194a128f774f6336de50` réellement publié. Contrôle GitHub après push : tête distante exacte, aucune PR pour cette branche et zéro run ; aucun résultat CI inventé. Les trois contrôles documentaires requis, comparaison630/141/18/archives et diff sont réussis localement. Tous les rapports des agents mobilisés ont été recueillis ; aucun sous-agent de correction Studio n’est activé.
+
+Questions nouvelles tracées : [lot pur classification](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250046846) et [spécification CSP/icônes](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250047620), avec dossiers et options. Aucune réponse déléguée reçue au contrôle de clôture du checkpoint ; code de ces lots non engagé. Les questions CI/G0/DEC01/DEC03 restent ouvertes.
+
+**Prompt de reprise exact :** « Lire AGENTS, continuité et les deux HANDOFF/STATUS/TASKS/CONTEXT ; vérifier les références GitHub et réponses166 depuis6250047620. Reprendre le checkpoint M004 de la branchecourte sans créer de programme concurrent. Comparer M08-PATH-001..007 du mapping125 aux contrats historiques et assertions complètes des candidats au SHA169 ; lectureseule, aucun test/DB/service/code. A2 rapport détaillé, A5 revue indépendante, A0 intégration. Si décision CI explicite reçue, examiner/appliquer seulement le patch approuvé permettant synchronisation165 sans serviceDB, puis contrôles au SHA exact ; ne pas pousser165 avec son workflowDB actuel. Toute décision de lot nouveau doit couvrir explicitement sa portée avant A3. »
+
+Aucun travail en arrière-plan ou redémarrage autonome de Codex n’est prétendu après interruption de session. Les31missions/630IDs, tâches non terminées, causes, responsables et prochaines actions restent conservés.
