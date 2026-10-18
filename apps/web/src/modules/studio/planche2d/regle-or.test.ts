@@ -90,6 +90,13 @@ describe("Planche 2D de Studio — règle d'or", () => {
     expect(cibleRaccourci("=")).toEqual({ type: "commande", id: "zoom-avant" });
     expect(cibleRaccourci("-")).toEqual({ type: "commande", id: "zoom-arriere" });
     expect(cibleRaccourci("Ctrl+A")).toEqual({ type: "commande", id: "tout-selectionner" });
+    // Volume et vue 3D : Maj+E extrude, Maj+F aplatit, Maj+D bascule la vue 3D (F3, réservé, n'est jamais pris).
+    expect(cibleRaccourci("Shift+E")).toEqual({ type: "outil", toolId: "studio.objet.extruder" });
+    expect(cibleRaccourci("Shift+F")).toEqual({ type: "outil", toolId: "studio.objet.aplatir" });
+    expect(cibleRaccourci("Shift+D")).toEqual({ type: "commande", id: "vue-3d" });
+    expect(cibleRaccourci("F3")).toBeNull();
+    expect(outilsDeBarre("volume").map((t) => t.toolId)).toEqual(["studio.objet.extruder", "studio.objet.aplatir"]);
+    expect(COMMANDES_EDITEUR.find((c) => c.id === "vue-3d")).toMatchObject({ groupe: "vue", bascule: true, ecrit: false, iconeSymbolique: "studio-view-3d" });
     // Dans un champ de saisie, seuls Enregistrer et la palette restent actifs.
     expect(actifDansUnChamp("Ctrl+S")).toBe(true);
     expect(actifDansUnChamp("Ctrl+K")).toBe(true);
