@@ -1,0 +1,21 @@
+{
+  "M08": {
+    "sources": 9,
+    "occurrences_citations": 204,
+    "citations_uniques": 128,
+    "attendus": 49,
+    "classes": {
+      "absent": 24,
+      "partiel": 24,
+      "présent": 1
+    }
+  },
+  "G0": {
+    "IDs_documentaires": 4,
+    "ancres_exactes": 10,
+    "gate": "G0 cadrage documentaire seulement",
+    "decision_comment": 6250109830
+  },
+  "erreurs": [],
+  "limites": "Lecture de sources et preuves ; aucun test applicatif ou équivalence complète attestés."
+}

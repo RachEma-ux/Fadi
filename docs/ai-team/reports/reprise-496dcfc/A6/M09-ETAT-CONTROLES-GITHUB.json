@@ -1,0 +1,93 @@
+{
+  "observed_utc": "2026-10-18 13:19:19 UTC",
+  "repository": "RachEma-ux/Fadi",
+  "main_sha": "a4caaab0e6665480f09febe3914c960b424b6b47",
+  "metadata": {
+    "url": "https://github.com/RachEma-ux/Fadi",
+    "default_branch": "main",
+    "visibility": "public",
+    "security_and_analysis": "field absent"
+  },
+  "github_directory_entries": [
+    {
+      "path": ".github/ISSUE_TEMPLATE",
+      "type": "dir"
+    },
+    {
+      "path": ".github/PULL_REQUEST_TEMPLATE.md",
+      "type": "file"
+    },
+    {
+      "path": ".github/workflows",
+      "type": "dir"
+    }
+  ],
+  "versioned_workflows": [
+    {
+      "path": ".github/workflows/audit-drawall.yml",
+      "blob": "ccfb63fa8dbaa05a048f30a1e1bc58c17fba6475",
+      "matches": []
+    },
+    {
+      "path": ".github/workflows/builder-deploy.yml",
+      "blob": "3dbb71528143744a7a53054a0ff0c406a62f8c7d",
+      "matches": []
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "blob": "f5e3e7521225f7a20f9c02c38c1541914c89f33e",
+      "matches": []
+    },
+    {
+      "path": ".github/workflows/continuity.yml",
+      "blob": "5c6bc7002de47f6b39be0caa88688d34e1b6ca14",
+      "matches": []
+    },
+    {
+      "path": ".github/workflows/fadi-isolation.yml",
+      "blob": "3c70238dbfe4488b1d8d3ff39c3cadcb15f0e4b6",
+      "matches": []
+    }
+  ],
+  "security_configuration": {
+    "security_and_analysis": "UNKNOWN_FIELD_ABSENT",
+    "dependabot_config_in_dotgithub": "not present in listed directory at main",
+    "dedicated_security_workflow_in_list": "none identified among 5 versioned workflows inspected",
+    "default_setup_or_external_security": "not established"
+  },
+  "existing_alerts": {
+    "dependabot_open_count": null,
+    "code_scanning_open_count": null,
+    "reason": "Connector rejects endpoint family: HTTP400 INVALID_ARGUMENT allowed-endpoint guard before GitHub response. No GitHub403 observed; no bypass or repeated request.",
+    "dependabot_attempts": 1,
+    "code_scanning_attempts": 1
+  },
+  "unavailable_endpoints": [
+    {
+      "family": "actions/workflows",
+      "result": "connector HTTP400 INVALID_ARGUMENT",
+      "attempts": 1
+    },
+    {
+      "family": "dependabot/alerts",
+      "result": "connector HTTP400 INVALID_ARGUMENT",
+      "attempts": 1
+    },
+    {
+      "family": "code-scanning/alerts",
+      "result": "connector HTTP400 INVALID_ARGUMENT",
+      "attempts": 1
+    }
+  ],
+  "scan_status": "NOT_SCANNED",
+  "assert_no_vulnerabilities": false,
+  "actions": {
+    "new_scan": false,
+    "advisory_external_lookup": false,
+    "feature_activation": false,
+    "admin": false,
+    "rerun": false,
+    "db_or_services": false
+  },
+  "canonical_preparation": "docs/ai-team/reports/mission-004/A5/M09-LOT-A3-CSP-SCAN-PRET-A-AUTORISER.md"
+}

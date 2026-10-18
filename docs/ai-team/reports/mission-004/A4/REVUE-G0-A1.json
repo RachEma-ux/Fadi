@@ -1,0 +1,21 @@
+{
+  "review": "A4-G0-M004",
+  "date": "2026-10-18",
+  "source": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+  "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+  "scope": "usage/navigation/permissions uniquement, revue documentaire sans UI",
+  "blocking_findings": [],
+  "verdict": "Aucune réserve bloquante dans le périmètre A4 relu",
+  "checks": [
+    "D07 après Projets et principes retenus pour spécifications ; pas de remise en attente des mêmes choix.",
+    "Pilote A2D/B3D/C associé explicite, sauvegarde/réouverture/fin utile ; quatre domaines conservés et deux planches D1.",
+    "Contexte Projet/Étude/Variante/Révision et serveur requis ; création étude sans géométrie et variante propriétaire avant édition.",
+    "Approbation/publication droits distincts ; cumul explicite tracé, aucun privilège admin technique implicite.",
+    "G0 En cours non passé ; pas de code/POC Studio autorisé par délégationDB ; cas positifs/négatifs/preuves futurs non présentés exécutés.",
+    "D02 report options conserve Visualisation, capacités natives et backlog ; pas coches implicites."
+  ],
+  "limits": [
+    "Revue doc seule ; aucune navigation réelle, permission serveur ou durabilité exécutée.",
+    "G1/G2/G3 et passage G0 ne sont pas prononcés par ce rapport."
+  ]
+}

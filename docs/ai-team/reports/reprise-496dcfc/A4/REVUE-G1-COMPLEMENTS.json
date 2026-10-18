@@ -1,0 +1,153 @@
+{
+  "review": "A4-G1-COMPLEMENTS-RESUME496",
+  "date": "2026-10-18",
+  "scope": "Revue indépendante logique et cohérence NAV/usage des3compléments documentaires A1 ; pas validationruntime/G1",
+  "inputs": [
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03.md",
+      "sha256": "1c5729fb7510c5df2375926ec7bdb68913ed51d8e7fb67f912047c3ef8037cd6"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-SCHEMAS-LOGIQUES-DOCUMENTAIRES.json",
+      "sha256": "10eaa0026cd55e48d43b9a78157dc9104e0aeb27142d0c19ddb0b7728e0adc73"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-EXEMPLES-DOCUMENTAIRES-2D-IDENTITES.json",
+      "sha256": "6e7e232844f1990193cd54cd7086b8bd4c1bb93d89bbf49094790f9329290a08"
+    }
+  ],
+  "verdict": "Aucune contradiction bloquante identifiée pour la publication de ces compléments ; G1 et DECphysiques restent ouvertes",
+  "blocking_findings": [],
+  "content_verdicts": [
+    {
+      "topic": "Orientations/autorisations",
+      "verdict": "COHERENT",
+      "evidence": "6250110124/0501 appliquent document2Dcanonique autonome et identitéspropresétude/variante/révisionimmuable ; distinction explicite orientationslogiques/choixphysiques/POC/code etG0acte accepté sansG1–4."
+    },
+    {
+      "topic": "Autorités2D/3D/associée",
+      "verdict": "COHERENT",
+      "evidence": "drawing2d porteprimitives/calques/cotes/annotations ; pasmoteur3Dobligatoire ; 3Dlibre sansesquisse etassocié sémantiqueunique reprisM17/M24. Projection3D/coupe n’estpas indépendant2Dsans extractionexplicite ; copie/référence/association distinctes."
+    },
+    {
+      "topic": "Identités/révisions",
+      "verdict": "COHERENT",
+      "evidence": "Projet transverse→étudepropre→variantepropriétaire→révisionimmuable ; documentId distinctpiècelivrée/version ; POSNEXT conserve document/primitives etanciencontenu/révision, nouveaucontenu/révision/transaction explicités."
+    },
+    {
+      "topic": "Droits/édition/refus",
+      "verdict": "COHERENT",
+      "evidence": "Sessionserveur,parenté complète,writerunique etbaseRevision vérifiés ; modifierhistorique/fork intentionexplicite,pasactorIdclientautoritaire ; approbation/publication distinctes,cumulexplicite selonD07."
+    },
+    {
+      "topic": "Sauvegarde/réouverture",
+      "verdict": "COHERENT",
+      "evidence": "Confirmation après durabilité, pasimage/preview ; pendinglocal≠publicationcentrale ; réouvertureexacte etlecteurcompatible sansfallbacklatest ; absenceautorité3D ne secomblepas artificiellement. ContratNAVM004 garde étatsindéterminés/auth/pending pourinteractions."
+    },
+    {
+      "topic": "Création/navigation/sources",
+      "verdict": "COHERENT",
+      "evidence": "POSSTUDY sansvariante/géométrie ; toutdocument2D nécessite variante ; sourcescadréesavantgéométrie ; aucunecréationparnavigation/dérivation depuisdernierprojet. Sélectionplanche etretourhistorique restent explicites selonNAV etM17."
+    },
+    {
+      "topic": "FR/EN/accessibilité",
+      "verdict": "COHERENT_PAR_RENVOI_NON_EXHAUSTIF",
+      "evidence": "Cescomplémentsmodèle ne redéfinissentpaschaînes/interfaces ; NAV/maquettesM004 demeurent contratFRsource/EN,focustactile/fullscreen etpendingreload. AucuneUIbilingue/accessibilitéexécutée ; futursmessagesrefus devront être traduits sanscontenumétier ni langueParcelle forcés."
+    },
+    {
+      "topic": "PréservationFadi",
+      "verdict": "COHERENT",
+      "evidence": "Réemploiparinterfacespubliques etpasUIAtelierautorité, ni seconbackend. Aucune suppressionAtelier/Plotprototype ou modification21étapes proposée. Absenced’analyseexhaustivePlot/21étapesn’estpaspreuvedenonrégressionexécutée."
+    }
+  ],
+  "example_review": {
+    "valid_documentary_count": 3,
+    "negative_documentary_count": 10,
+    "valid_cases": [
+      "Étudesansvariante etaucunobjet",
+      "Document2DàrévisionA1 sansdocument3D",
+      "NouvelleA2 avecidentitésdocument/primitivestables etA1conservée"
+    ],
+    "negative_cases": [
+      {
+        "id": "G1-DOC-NEG-ORPHAN",
+        "cause_cible": "Géométrie sansvariante propriétaire",
+        "review": "Faute logique explicitement représentée par variation du payload ; refus attendu non exécuté"
+      },
+      {
+        "id": "G1-DOC-NEG-PARENTS",
+        "cause_cible": "Étude d’un autreprojet",
+        "review": "Faute logique explicitement représentée par variation du payload ; refus attendu non exécuté"
+      },
+      {
+        "id": "G1-DOC-NEG-IMMUTABLE",
+        "cause_cible": "Mutationd’une révisionhistorique au lieu nouvellecommande",
+        "review": "Faute logique explicitement représentée par variation du payload ; refus attendu non exécuté"
+      },
+      {
+        "id": "G1-DOC-NEG-UNIT",
+        "cause_cible": "Coordonnées2D sansunité explicite",
+        "review": "Faute logique explicitement représentée par variation du payload ; refus attendu non exécuté"
+      },
+      {
+        "id": "G1-DOC-NEG-ID-REUSE",
+        "cause_cible": "Deuxprimitives réutilisentmêmeID",
+        "review": "Faute logique explicitement représentée par variation du payload ; refus attendu non exécuté"
+      },
+      {
+        "id": "G1-DOC-NEG-STALE-BASE",
+        "cause_cible": "Base commande incompatible têtecourante",
+        "review": "Faute logique explicitement représentée par variation du payload ; refus attendu non exécuté"
+      },
+      {
+        "id": "G1-DOC-NEG-WRITER",
+        "cause_cible": "Writer modèle3D choisi pour document2D",
+        "review": "Faute logique explicitement représentée par variation du payload ; refus attendu non exécuté"
+      },
+      {
+        "id": "G1-DOC-NEG-TARGET",
+        "cause_cible": "Cote référence primitive inconnue",
+        "review": "Faute logique explicitement représentée par variation du payload ; refus attendu non exécuté"
+      },
+      {
+        "id": "G1-DOC-NEG-MIGRATION",
+        "cause_cible": "Ancienprojetfork présenté comme étude/variante sans mapping",
+        "review": "Faute logique explicitement représentée par variation du payload ; refus attendu non exécuté"
+      },
+      {
+        "id": "G1-DOC-NEG-LATEST",
+        "cause_cible": "Réouverturehistorique substitue latest",
+        "review": "Faute logique explicitement représentée par variation du payload ; refus attendu non exécuté"
+      }
+    ],
+    "hash_limits": "Certainsnégatifsmodifientdocumentmaisgardenthashancien ; A1annonceexplicitementordrecontrôlesnonarrêté/hashobsolètepossible. Cela convient àexemplesdocumentaires multi-invalides mais ne prouvepas unoracleunitaire discriminant niquelcontrôleintercepte effectivement.",
+    "no_runtime_supported_schema": true
+  },
+  "non_blocking_gaps": [
+    {
+      "topic": "Oraclesdiscriminants futurs",
+      "action": "A5isolerfaute cibleparfois hashcorrigé ou fixerordrecontrôles, conservercaspréconditionmultiple ; aucune réussiteproduit depuis10refusJSON."
+    },
+    {
+      "topic": "ÉtatsUI",
+      "action": "Au lot autorisé, mappererreurs/pending/indéterminé/résolutionréférence/locale/focus auxNAV plutôtque compterles3JSONvalides commeparcoursréels."
+    },
+    {
+      "topic": "Migration/corpus",
+      "action": "LegacyMapping est casdocumentaire, pasmappinghistoriqueexhaustif ; DECphysiques/isolation/restauration/coûts/rollback restentouverts."
+    }
+  ],
+  "preserved_unknowns": [
+    "CAD-DEC-03 personnes/disponibilités noninventées",
+    "DEC-01/03 choixphysiques/coûts/preuves ouvertes",
+    "DEC-02 associations/topologie,DEC-12historique,DEC-16empreinteproduction restent àinstruire",
+    "G1/G2/G3/G4 nonpassés ; aucuncodeStudio/DB3/autococheHTML"
+  ],
+  "limits": [
+    "LectureJSONetMD seulement,aucunloader/scriptapp/DB/réseau exécuté.",
+    "Pasvalidationproduit ni certificationmathématique/empreintepublicationdeproduction.",
+    "RéférenceA0preuveexactcommentairelueexportlocal, pasnouvelleconsultationGitHub.",
+    "FichiersA1/delta/registreinchangés."
+  ],
+  "next_action": "A0 intègrecompléments+revues ; A2/A5 consolidentcontratsphysiques/oraclesdansG1 selonpréconditions, sans rouvrirlesorientationsdéjàactées nipasserporteparprésencedocument."
+}

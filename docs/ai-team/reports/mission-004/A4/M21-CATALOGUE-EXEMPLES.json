@@ -1,0 +1,385 @@
+{
+  "schema": "fadi-studio-registry-documentary-example/0.1",
+  "mission": "M004/M21/A4",
+  "status": "EXEMPLE DOCUMENTAIRE NON EXECUTABLE",
+  "executable": false,
+  "implementation_verified": false,
+  "source_reference": "301a4fa8f2594fa1c8f0317c18085b5ae22ac7a3",
+  "authority": "D07 retenu pour spécifications ; DEC-04/05/06/07/14/18 et M17 à instruire, G1/G3 non passés par cet exemple",
+  "domains": [
+    "dessin",
+    "bim",
+    "visualisation",
+    "documentation"
+  ],
+  "modes": [
+    "2d-independent",
+    "3d-independent",
+    "associated"
+  ],
+  "permissions_logical_only": [
+    "drawing.edit",
+    "model.edit",
+    "architecture.edit",
+    "check.run",
+    "review.approve",
+    "publication.publish"
+  ],
+  "resources_examples_only": [
+    "metadata-light",
+    "draw2d-candidate",
+    "model3d-candidate",
+    "semantic-candidate",
+    "checks-candidate",
+    "documents-candidate"
+  ],
+  "tools": [
+    {
+      "id": "example.studio.line2d",
+      "domain": "dessin",
+      "capability": "drawing.line.create",
+      "boards": [
+        "2d"
+      ],
+      "modes": [
+        "2d-independent"
+      ],
+      "permission": "drawing.edit",
+      "labels": {
+        "fr": "Ligne 2D",
+        "en": "2D line"
+      },
+      "icon": "example-line2d",
+      "toolbar": "dessin-creer",
+      "shortcut_candidate": "Alt+Shift+L",
+      "shortcut_approved": false,
+      "resource": "draw2d-candidate",
+      "loader": null,
+      "requires_other_board": false,
+      "offline": "only-if-prepared-and-contract-compatible",
+      "commands": "intention documentaire, aucun commandType implémenté présumé",
+      "tests": [
+        "TEST-001",
+        "TEST-022",
+        "NAV-007"
+      ],
+      "requirements": [
+        "EX-004",
+        "EX-032",
+        "EX-036",
+        "IF-002",
+        "IF-005"
+      ],
+      "result_category": "drawing2d",
+      "writer_authority_candidate": "drawing2d"
+    },
+    {
+      "id": "example.studio.pushpull3d",
+      "domain": "dessin",
+      "capability": "model.face.pushpull",
+      "boards": [
+        "3d"
+      ],
+      "modes": [
+        "3d-independent"
+      ],
+      "permission": "model.edit",
+      "labels": {
+        "fr": "Pousser/Tirer 3D",
+        "en": "3D push/pull"
+      },
+      "icon": "example-pushpull3d",
+      "toolbar": "modeliser-modifier",
+      "shortcut_candidate": "Alt+Shift+P",
+      "shortcut_approved": false,
+      "resource": "model3d-candidate",
+      "loader": null,
+      "requires_other_board": false,
+      "offline": "only-if-prepared-and-contract-compatible",
+      "commands": "intention documentaire, référence topologique à valider",
+      "tests": [
+        "TEST-002",
+        "TEST-007",
+        "NAV-007"
+      ],
+      "requirements": [
+        "EX-005",
+        "EX-015",
+        "IF-003",
+        "IF-005",
+        "IF-006"
+      ],
+      "result_category": "free3d",
+      "writer_authority_candidate": "model3d"
+    },
+    {
+      "id": "example.studio.wall-associated",
+      "domain": "dessin",
+      "capability": "architecture.wall.edit",
+      "boards": [
+        "2d",
+        "3d"
+      ],
+      "modes": [
+        "associated"
+      ],
+      "permission": "architecture.edit",
+      "labels": {
+        "fr": "Mur associé",
+        "en": "Associated wall"
+      },
+      "icon": "example-wall-associated",
+      "toolbar": "architecture-objets",
+      "shortcut_candidate": "Alt+Shift+W",
+      "shortcut_approved": false,
+      "resource": "semantic-candidate",
+      "loader": null,
+      "requires_other_board": false,
+      "offline": "prepare-only-then-server-revalidate",
+      "commands": "intention unique vers objet canonique, pas deux writers",
+      "tests": [
+        "TEST-003",
+        "TEST-008",
+        "TEST-012",
+        "NAV-006"
+      ],
+      "requirements": [
+        "EX-006",
+        "INV-002",
+        "IF-004",
+        "IF-006"
+      ],
+      "result_category": "architectural-object",
+      "writer_authority_candidate": "associated"
+    },
+    {
+      "id": "example.studio.ladder",
+      "domain": "dessin",
+      "capability": "architecture.ladder.create",
+      "boards": [
+        "2d",
+        "3d"
+      ],
+      "modes": [
+        "associated"
+      ],
+      "permission": "architecture.edit",
+      "labels": {
+        "fr": "Échelle d’accès",
+        "en": "Access ladder"
+      },
+      "icon": "example-ladder",
+      "toolbar": "architecture-objets",
+      "shortcut_candidate": "Alt+Shift+A",
+      "shortcut_approved": false,
+      "resource": "semantic-candidate",
+      "loader": null,
+      "requires_other_board": false,
+      "offline": "prepare-only-then-server-revalidate",
+      "commands": "capacité native préservée ; pas migration du legacyId ici",
+      "tests": [
+        "NAV-009"
+      ],
+      "requirements": [
+        "EX-026",
+        "EX-033",
+        "EX-036",
+        "IF-005"
+      ],
+      "result_category": "architectural-object",
+      "writer_authority_candidate": "associated"
+    },
+    {
+      "id": "example.studio.scale2d",
+      "domain": "dessin",
+      "capability": "drawing.scale",
+      "boards": [
+        "2d"
+      ],
+      "modes": [
+        "2d-independent"
+      ],
+      "permission": "drawing.edit",
+      "labels": {
+        "fr": "Mise à l’échelle 2D",
+        "en": "2D scale"
+      },
+      "icon": "example-scale2d",
+      "toolbar": "dessin-modifier",
+      "shortcut_candidate": "Alt+Shift+S",
+      "shortcut_approved": false,
+      "resource": "draw2d-candidate",
+      "loader": null,
+      "requires_other_board": false,
+      "offline": "only-if-prepared-and-contract-compatible",
+      "commands": "transformation géométrique distincte de l’objet échelle",
+      "tests": [
+        "TEST-001",
+        "NAV-009"
+      ],
+      "requirements": [
+        "EX-004",
+        "EX-026",
+        "EX-036",
+        "IF-005"
+      ],
+      "result_category": "drawing2d",
+      "writer_authority_candidate": "drawing2d"
+    },
+    {
+      "id": "example.studio.check",
+      "domain": "bim",
+      "capability": "checks.run",
+      "boards": [],
+      "modes": [],
+      "permission": "check.run",
+      "labels": {
+        "fr": "Contrôler l’étude",
+        "en": "Check study"
+      },
+      "icon": "example-check",
+      "toolbar": "bim-controles",
+      "shortcut_candidate": "Alt+Shift+C",
+      "shortcut_approved": false,
+      "resource": "checks-candidate",
+      "loader": null,
+      "requires_other_board": false,
+      "offline": "prepare-only-then-server-revalidate",
+      "commands": "résultat lié aux sources/règles/révisions, pas mutation géométrique",
+      "tests": [
+        "TEST-027",
+        "TEST-029"
+      ],
+      "requirements": [
+        "EX-065",
+        "EX-068",
+        "EX-070",
+        "IF-010"
+      ],
+      "result_category": "derived-check-result",
+      "writer_authority_candidate": null
+    },
+    {
+      "id": "example.studio.approve",
+      "domain": "documentation",
+      "capability": "review.approve",
+      "boards": [],
+      "modes": [],
+      "permission": "review.approve",
+      "labels": {
+        "fr": "Approuver le dossier",
+        "en": "Approve dossier"
+      },
+      "icon": "example-approve",
+      "toolbar": "documentation-revue",
+      "shortcut_candidate": "Alt+Shift+V",
+      "shortcut_approved": false,
+      "resource": "documents-candidate",
+      "loader": null,
+      "requires_other_board": false,
+      "offline": "forbidden-central-action",
+      "commands": "décision sur manifeste exact, aucune permission publier implicite",
+      "tests": [
+        "TEST-018",
+        "TEST-030",
+        "TEST-038"
+      ],
+      "requirements": [
+        "EX-081",
+        "EX-083",
+        "INV-001",
+        "IF-009"
+      ],
+      "result_category": "review-decision",
+      "writer_authority_candidate": null
+    },
+    {
+      "id": "example.studio.publish",
+      "domain": "documentation",
+      "capability": "publication.publish",
+      "boards": [],
+      "modes": [],
+      "permission": "publication.publish",
+      "labels": {
+        "fr": "Publier le dossier",
+        "en": "Publish dossier"
+      },
+      "icon": "example-publish",
+      "toolbar": "documentation-publication",
+      "shortcut_candidate": "Alt+Shift+U",
+      "shortcut_approved": false,
+      "resource": "documents-candidate",
+      "loader": null,
+      "requires_other_board": false,
+      "offline": "forbidden-central-action",
+      "commands": "publication du manifeste approuvé inchangé, contrôle serveur",
+      "tests": [
+        "TEST-018",
+        "TEST-030",
+        "TEST-038"
+      ],
+      "requirements": [
+        "EX-081",
+        "EX-082",
+        "EX-083",
+        "IF-009"
+      ],
+      "result_category": "immutable-publication",
+      "writer_authority_candidate": null
+    }
+  ],
+  "alias_examples": [
+    {
+      "catalogue": "atelier-palette",
+      "version": "historical-to-qualify",
+      "legacy_id": "echelle",
+      "discriminator": "DA-07-13",
+      "candidate_target": "example.studio.ladder"
+    },
+    {
+      "catalogue": "atelier-palette",
+      "version": "historical-to-qualify",
+      "legacy_id": "echelle",
+      "discriminator": "DA-02-05",
+      "candidate_target": "example.studio.scale2d"
+    }
+  ],
+  "unscoped_alias_policy": "echelle sans catalogue/version/fiche : ambigu, refuser activation et demander choix ; aucun changement de profil/historique automatique",
+  "telemetry_allowlist_candidate": [
+    "event_kind",
+    "tool_contract_version",
+    "resource_class",
+    "duration_bucket",
+    "outcome_code",
+    "mode",
+    "build_id",
+    "retry_count"
+  ],
+  "telemetry_forbidden": [
+    "geometry",
+    "coordinates",
+    "project_name",
+    "study_name",
+    "variant_name",
+    "source_content",
+    "typed_text",
+    "full_url",
+    "session_token",
+    "email",
+    "private_document_id"
+  ],
+  "validation_states_independent": [
+    "Code",
+    "Review ChatGPT",
+    "Review Admin"
+  ],
+  "runtime_states_independent": [
+    "visibility",
+    "context_compatibility",
+    "permission",
+    "resource_availability",
+    "execution_state"
+  ],
+  "implementation": null,
+  "result_category_note": "Catégorie de résultat distincte du writerAuthority serveur ; writer_authority_candidate est mapping documentaire des seuls trois propriétaires géométriques, jamais permission ni colonne existante."
+}

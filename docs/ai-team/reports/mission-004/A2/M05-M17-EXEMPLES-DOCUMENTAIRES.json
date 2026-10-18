@@ -1,0 +1,1511 @@
+{
+  "status": "PROPOSITION_DOCUMENTAIRE_NON_EXECUTABLE",
+  "not_runtime_schema": true,
+  "no_test_execution": true,
+  "definitions": "operations documentary.* et outils sont fictifs, pas registre existant ; erreurs et rôles candidats ; IF006 reste illustratif normatif, préconditions section documentaire sans emplacementwire imposé",
+  "cases": [
+    {
+      "id": "DOC-A-2D",
+      "input": {
+        "envelope_IF006_illustrative": {
+          "requestId": "2ecb5a70-6d42-4f27-82f5-35371018d930",
+          "toolId": "studio.documentary.line",
+          "contractVersion": "1.0.0",
+          "actorId": "actor-concepteur",
+          "scope": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "targetIds": [
+            "line-42"
+          ],
+          "operation": "documentary.updateLine",
+          "parameters": {
+            "end": {
+              "x": 4,
+              "y": 2
+            },
+            "unit": "m"
+          },
+          "mode": "commit"
+        },
+        "preconditions_documentaires_non_wire": {
+          "writerAuthority": "drawing2d",
+          "documentSchemaVersion": "candidate-1",
+          "objectVersions": {
+            "line-42": "ov7"
+          }
+        },
+        "server_fixture": {
+          "authenticatedActorId": "actor-concepteur",
+          "authorizedContext": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "effectiveCapabilities": [
+            "read",
+            "edit2d"
+          ],
+          "headRevisionId": "R12",
+          "writerAuthority": "drawing2d",
+          "objectVersions": {
+            "line-42": "ov7"
+          },
+          "supportedDocumentSchemas": [
+            "candidate-1"
+          ],
+          "supportedContractVersions": [
+            "1.0.0"
+          ]
+        }
+      },
+      "expected_proposed": "ACCEPT_NEW_REVISION",
+      "reason": "Dessin indépendant : aucune référence3D exigée ; sauvegarde durable puis réouverture/pub à prouver",
+      "source_ids": [
+        "EX-003",
+        "EX-009",
+        "IF-004",
+        "IF-006"
+      ],
+      "execution": "NON_EXECUTE_EXEMPLE_DOCUMENTAIRE"
+    },
+    {
+      "id": "DOC-B-3D",
+      "input": {
+        "envelope_IF006_illustrative": {
+          "requestId": "2ecb5a70-6d42-4f27-82f5-35371018d930",
+          "toolId": "studio.documentary.directSolid",
+          "contractVersion": "1.0.0",
+          "actorId": "actor-concepteur",
+          "scope": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-B",
+            "baseRevisionId": "R12"
+          },
+          "targetIds": [
+            "solid-42"
+          ],
+          "operation": "documentary.updateSolid",
+          "parameters": {
+            "translation": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "unit": "m"
+          },
+          "mode": "commit"
+        },
+        "preconditions_documentaires_non_wire": {
+          "writerAuthority": "model3d",
+          "documentSchemaVersion": "candidate-1",
+          "objectVersions": {
+            "solid-42": "ov7"
+          }
+        },
+        "server_fixture": {
+          "authenticatedActorId": "actor-concepteur",
+          "authorizedContext": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-B",
+            "baseRevisionId": "R12"
+          },
+          "effectiveCapabilities": [
+            "read",
+            "edit3d"
+          ],
+          "headRevisionId": "R12",
+          "writerAuthority": "model3d",
+          "objectVersions": {
+            "solid-42": "ov7"
+          },
+          "supportedDocumentSchemas": [
+            "candidate-1"
+          ],
+          "supportedContractVersions": [
+            "1.0.0"
+          ]
+        }
+      },
+      "expected_proposed": "ACCEPT_NEW_REVISION",
+      "reason": "3D directe sans document2D ni esquisse obligatoire",
+      "source_ids": [
+        "EX-009",
+        "IF-006"
+      ],
+      "execution": "NON_EXECUTE_EXEMPLE_DOCUMENTAIRE"
+    },
+    {
+      "id": "DOC-C-ASSOCIE",
+      "input": {
+        "envelope_IF006_illustrative": {
+          "requestId": "2ecb5a70-6d42-4f27-82f5-35371018d930",
+          "toolId": "studio.arch.wall",
+          "contractVersion": "1.0.0",
+          "actorId": "actor-concepteur",
+          "scope": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-C",
+            "baseRevisionId": "R12"
+          },
+          "targetIds": [
+            "wall-42"
+          ],
+          "operation": "architecture.updateWall",
+          "parameters": {
+            "height": 3,
+            "unit": "m"
+          },
+          "mode": "commit"
+        },
+        "preconditions_documentaires_non_wire": {
+          "writerAuthority": "associated",
+          "documentSchemaVersion": "candidate-1",
+          "objectVersions": {
+            "wall-42": "ov7"
+          }
+        },
+        "server_fixture": {
+          "authenticatedActorId": "actor-concepteur",
+          "authorizedContext": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-C",
+            "baseRevisionId": "R12"
+          },
+          "effectiveCapabilities": [
+            "read",
+            "editAssociated"
+          ],
+          "headRevisionId": "R12",
+          "writerAuthority": "associated",
+          "objectVersions": {
+            "wall-42": "ov7"
+          },
+          "supportedDocumentSchemas": [
+            "candidate-1"
+          ],
+          "supportedContractVersions": [
+            "1.0.0"
+          ]
+        },
+        "projections_documentaires": [
+          {
+            "id": "view2d",
+            "ownerObjectId": "wall-42",
+            "canonical": false
+          },
+          {
+            "id": "view3d",
+            "ownerObjectId": "wall-42",
+            "canonical": false
+          }
+        ]
+      },
+      "expected_proposed": "ACCEPT_NEW_REVISION",
+      "reason": "Un seul propriétaire wall-42, deux projections invalidées, pas double écriture canonique",
+      "source_ids": [
+        "INV-002",
+        "EX-009",
+        "EX-010",
+        "EX-017"
+      ],
+      "execution": "NON_EXECUTE_EXEMPLE_DOCUMENTAIRE"
+    },
+    {
+      "id": "DOC-N-CONTEXT",
+      "input": {
+        "envelope_IF006_illustrative": {
+          "requestId": "2ecb5a70-6d42-4f27-82f5-35371018d930",
+          "toolId": "studio.documentary.line",
+          "contractVersion": "1.0.0",
+          "actorId": "actor-concepteur",
+          "scope": {
+            "projectId": "p-pavillon",
+            "studyId": "s-autre-projet",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "targetIds": [
+            "line-42"
+          ],
+          "operation": "documentary.updateLine",
+          "parameters": {
+            "end": {
+              "x": 4,
+              "y": 2
+            },
+            "unit": "m"
+          },
+          "mode": "commit"
+        },
+        "preconditions_documentaires_non_wire": {
+          "writerAuthority": "drawing2d",
+          "documentSchemaVersion": "candidate-1",
+          "objectVersions": {
+            "line-42": "ov7"
+          }
+        },
+        "server_fixture": {
+          "authenticatedActorId": "actor-concepteur",
+          "authorizedContext": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "effectiveCapabilities": [
+            "read",
+            "edit2d"
+          ],
+          "headRevisionId": "R12",
+          "writerAuthority": "drawing2d",
+          "objectVersions": {
+            "line-42": "ov7"
+          },
+          "supportedDocumentSchemas": [
+            "candidate-1"
+          ],
+          "supportedContractVersions": [
+            "1.0.0"
+          ]
+        }
+      },
+      "expected_proposed": {
+        "error": "CONTEXT_PARENT_MISMATCH",
+        "canonicalEffects": 0
+      },
+      "reason": "IDs existants mélangés entre parents",
+      "source_ids": [
+        "EX-003",
+        "IF-001"
+      ],
+      "execution": "NON_EXECUTE_EXEMPLE_DOCUMENTAIRE"
+    },
+    {
+      "id": "DOC-N-SCHEMA",
+      "input": {
+        "envelope_IF006_illustrative": {
+          "requestId": "2ecb5a70-6d42-4f27-82f5-35371018d930",
+          "toolId": "studio.documentary.line",
+          "contractVersion": "1.0.0",
+          "actorId": "actor-concepteur",
+          "scope": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "targetIds": [
+            "line-42"
+          ],
+          "operation": "documentary.updateLine",
+          "parameters": {
+            "end": {
+              "x": 4,
+              "y": 2
+            },
+            "unit": "m"
+          },
+          "mode": "commit"
+        },
+        "preconditions_documentaires_non_wire": {
+          "writerAuthority": "drawing2d",
+          "documentSchemaVersion": "candidate-99",
+          "objectVersions": {
+            "line-42": "ov7"
+          }
+        },
+        "server_fixture": {
+          "authenticatedActorId": "actor-concepteur",
+          "authorizedContext": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "effectiveCapabilities": [
+            "read",
+            "edit2d"
+          ],
+          "headRevisionId": "R12",
+          "writerAuthority": "drawing2d",
+          "objectVersions": {
+            "line-42": "ov7"
+          },
+          "supportedDocumentSchemas": [
+            "candidate-1"
+          ],
+          "supportedContractVersions": [
+            "1.0.0"
+          ]
+        }
+      },
+      "expected_proposed": {
+        "error": "SCHEMA_UNSUPPORTED",
+        "canonicalEffects": 0
+      },
+      "reason": "Version inconnue refusée, pas downgrade implicite",
+      "source_ids": [
+        "EX-019"
+      ],
+      "execution": "NON_EXECUTE_EXEMPLE_DOCUMENTAIRE"
+    },
+    {
+      "id": "DOC-N-CONTRACT",
+      "input": {
+        "envelope_IF006_illustrative": {
+          "requestId": "2ecb5a70-6d42-4f27-82f5-35371018d930",
+          "toolId": "studio.documentary.line",
+          "contractVersion": "999.0.0",
+          "actorId": "actor-concepteur",
+          "scope": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "targetIds": [
+            "line-42"
+          ],
+          "operation": "documentary.updateLine",
+          "parameters": {
+            "end": {
+              "x": 4,
+              "y": 2
+            },
+            "unit": "m"
+          },
+          "mode": "commit"
+        },
+        "preconditions_documentaires_non_wire": {
+          "writerAuthority": "drawing2d",
+          "documentSchemaVersion": "candidate-1",
+          "objectVersions": {
+            "line-42": "ov7"
+          }
+        },
+        "server_fixture": {
+          "authenticatedActorId": "actor-concepteur",
+          "authorizedContext": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "effectiveCapabilities": [
+            "read",
+            "edit2d"
+          ],
+          "headRevisionId": "R12",
+          "writerAuthority": "drawing2d",
+          "objectVersions": {
+            "line-42": "ov7"
+          },
+          "supportedDocumentSchemas": [
+            "candidate-1"
+          ],
+          "supportedContractVersions": [
+            "1.0.0"
+          ]
+        }
+      },
+      "expected_proposed": {
+        "error": "CONTRACT_UNSUPPORTED",
+        "canonicalEffects": 0
+      },
+      "reason": "Contrat non reconnu avant mutation",
+      "source_ids": [
+        "IF-006",
+        "EX-019"
+      ],
+      "execution": "NON_EXECUTE_EXEMPLE_DOCUMENTAIRE"
+    },
+    {
+      "id": "DOC-N-BASE",
+      "input": {
+        "envelope_IF006_illustrative": {
+          "requestId": "2ecb5a70-6d42-4f27-82f5-35371018d930",
+          "toolId": "studio.documentary.line",
+          "contractVersion": "1.0.0",
+          "actorId": "actor-concepteur",
+          "scope": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "targetIds": [
+            "line-42"
+          ],
+          "operation": "documentary.updateLine",
+          "parameters": {
+            "end": {
+              "x": 4,
+              "y": 2
+            },
+            "unit": "m"
+          },
+          "mode": "commit"
+        },
+        "preconditions_documentaires_non_wire": {
+          "writerAuthority": "drawing2d",
+          "documentSchemaVersion": "candidate-1",
+          "objectVersions": {
+            "line-42": "ov7"
+          }
+        },
+        "server_fixture": {
+          "authenticatedActorId": "actor-concepteur",
+          "authorizedContext": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "effectiveCapabilities": [
+            "read",
+            "edit2d"
+          ],
+          "headRevisionId": "R13",
+          "writerAuthority": "drawing2d",
+          "objectVersions": {
+            "line-42": "ov7"
+          },
+          "supportedDocumentSchemas": [
+            "candidate-1"
+          ],
+          "supportedContractVersions": [
+            "1.0.0"
+          ]
+        }
+      },
+      "expected_proposed": {
+        "error": "REVISION_CONFLICT",
+        "canonicalEffects": 0
+      },
+      "reason": "base R12 face à têteR13 sans replay antérieur",
+      "source_ids": [
+        "IF-004"
+      ],
+      "execution": "NON_EXECUTE_EXEMPLE_DOCUMENTAIRE"
+    },
+    {
+      "id": "DOC-N-OBJECT",
+      "input": {
+        "envelope_IF006_illustrative": {
+          "requestId": "2ecb5a70-6d42-4f27-82f5-35371018d930",
+          "toolId": "studio.documentary.line",
+          "contractVersion": "1.0.0",
+          "actorId": "actor-concepteur",
+          "scope": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "targetIds": [
+            "line-42"
+          ],
+          "operation": "documentary.updateLine",
+          "parameters": {
+            "end": {
+              "x": 4,
+              "y": 2
+            },
+            "unit": "m"
+          },
+          "mode": "commit"
+        },
+        "preconditions_documentaires_non_wire": {
+          "writerAuthority": "drawing2d",
+          "documentSchemaVersion": "candidate-1",
+          "objectVersions": {
+            "line-42": "ov7"
+          }
+        },
+        "server_fixture": {
+          "authenticatedActorId": "actor-concepteur",
+          "authorizedContext": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "effectiveCapabilities": [
+            "read",
+            "edit2d"
+          ],
+          "headRevisionId": "R12",
+          "writerAuthority": "drawing2d",
+          "objectVersions": {
+            "line-42": "ov8"
+          },
+          "supportedDocumentSchemas": [
+            "candidate-1"
+          ],
+          "supportedContractVersions": [
+            "1.0.0"
+          ]
+        }
+      },
+      "expected_proposed": {
+        "error": "OBJECT_VERSION_CONFLICT",
+        "canonicalEffects": 0
+      },
+      "reason": "Précondition objet incompatible même si base acceptée",
+      "source_ids": [
+        "IF-004"
+      ],
+      "execution": "NON_EXECUTE_EXEMPLE_DOCUMENTAIRE"
+    },
+    {
+      "id": "DOC-N-ACTOR",
+      "input": {
+        "envelope_IF006_illustrative": {
+          "requestId": "2ecb5a70-6d42-4f27-82f5-35371018d930",
+          "toolId": "studio.documentary.line",
+          "contractVersion": "1.0.0",
+          "actorId": "actor-admin",
+          "scope": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "targetIds": [
+            "line-42"
+          ],
+          "operation": "documentary.updateLine",
+          "parameters": {
+            "end": {
+              "x": 4,
+              "y": 2
+            },
+            "unit": "m"
+          },
+          "mode": "commit"
+        },
+        "preconditions_documentaires_non_wire": {
+          "writerAuthority": "drawing2d",
+          "documentSchemaVersion": "candidate-1",
+          "objectVersions": {
+            "line-42": "ov7"
+          }
+        },
+        "server_fixture": {
+          "authenticatedActorId": "actor-concepteur",
+          "authorizedContext": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "effectiveCapabilities": [
+            "read",
+            "edit2d"
+          ],
+          "headRevisionId": "R12",
+          "writerAuthority": "drawing2d",
+          "objectVersions": {
+            "line-42": "ov7"
+          },
+          "supportedDocumentSchemas": [
+            "candidate-1"
+          ],
+          "supportedContractVersions": [
+            "1.0.0"
+          ]
+        }
+      },
+      "expected_proposed": {
+        "error": "UNAUTHENTICATED",
+        "canonicalEffects": 0
+      },
+      "reason": "Concordance identité serveur échoue ; aucun droit actorId client",
+      "source_ids": [
+        "IF-006"
+      ],
+      "execution": "NON_EXECUTE_EXEMPLE_DOCUMENTAIRE"
+    },
+    {
+      "id": "DOC-N-ROLE",
+      "input": {
+        "envelope_IF006_illustrative": {
+          "requestId": "2ecb5a70-6d42-4f27-82f5-35371018d930",
+          "toolId": "studio.documentary.line",
+          "contractVersion": "1.0.0",
+          "actorId": "actor-concepteur",
+          "scope": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "targetIds": [
+            "line-42"
+          ],
+          "operation": "documentary.updateLine",
+          "parameters": {
+            "end": {
+              "x": 4,
+              "y": 2
+            },
+            "unit": "m"
+          },
+          "mode": "commit"
+        },
+        "preconditions_documentaires_non_wire": {
+          "writerAuthority": "drawing2d",
+          "documentSchemaVersion": "candidate-1",
+          "objectVersions": {
+            "line-42": "ov7"
+          }
+        },
+        "server_fixture": {
+          "authenticatedActorId": "actor-concepteur",
+          "authorizedContext": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "effectiveCapabilities": [
+            "read"
+          ],
+          "headRevisionId": "R12",
+          "writerAuthority": "drawing2d",
+          "objectVersions": {
+            "line-42": "ov7"
+          },
+          "supportedDocumentSchemas": [
+            "candidate-1"
+          ],
+          "supportedContractVersions": [
+            "1.0.0"
+          ]
+        }
+      },
+      "expected_proposed": {
+        "error": "FORBIDDEN_SCOPE",
+        "canonicalEffects": 0
+      },
+      "reason": "Lecture seule ne vaut pas permission éditer",
+      "source_ids": [
+        "EX-087",
+        "EX-088"
+      ],
+      "execution": "NON_EXECUTE_EXEMPLE_DOCUMENTAIRE"
+    },
+    {
+      "id": "DOC-N-WRITER",
+      "input": {
+        "envelope_IF006_illustrative": {
+          "requestId": "2ecb5a70-6d42-4f27-82f5-35371018d930",
+          "toolId": "studio.documentary.line",
+          "contractVersion": "1.0.0",
+          "actorId": "actor-concepteur",
+          "scope": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "targetIds": [
+            "line-42"
+          ],
+          "operation": "documentary.updateLine",
+          "parameters": {
+            "end": {
+              "x": 4,
+              "y": 2
+            },
+            "unit": "m"
+          },
+          "mode": "commit"
+        },
+        "preconditions_documentaires_non_wire": {
+          "writerAuthority": "drawing2d",
+          "documentSchemaVersion": "candidate-1",
+          "objectVersions": {
+            "line-42": "ov7"
+          }
+        },
+        "server_fixture": {
+          "authenticatedActorId": "actor-concepteur",
+          "authorizedContext": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "effectiveCapabilities": [
+            "read",
+            "edit2d"
+          ],
+          "headRevisionId": "R12",
+          "writerAuthority": "associated",
+          "objectVersions": {
+            "line-42": "ov7"
+          },
+          "supportedDocumentSchemas": [
+            "candidate-1"
+          ],
+          "supportedContractVersions": [
+            "1.0.0"
+          ]
+        }
+      },
+      "expected_proposed": {
+        "error": "WRITER_MISMATCH",
+        "canonicalEffects": 0
+      },
+      "reason": "Dessin2D tente écrire objet associé sans commande de son autorité",
+      "source_ids": [
+        "EX-009",
+        "INV-002"
+      ],
+      "execution": "NON_EXECUTE_EXEMPLE_DOCUMENTAIRE"
+    },
+    {
+      "id": "DOC-N-HISTORY",
+      "input": {
+        "envelope_IF006_illustrative": {
+          "requestId": "2ecb5a70-6d42-4f27-82f5-35371018d930",
+          "toolId": "studio.documentary.line",
+          "contractVersion": "1.0.0",
+          "actorId": "actor-concepteur",
+          "scope": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "targetIds": [
+            "line-42"
+          ],
+          "operation": "documentary.updateLine",
+          "parameters": {
+            "end": {
+              "x": 4,
+              "y": 2
+            },
+            "unit": "m"
+          },
+          "mode": "commit"
+        },
+        "preconditions_documentaires_non_wire": {
+          "writerAuthority": "drawing2d",
+          "documentSchemaVersion": "candidate-1",
+          "objectVersions": {
+            "line-42": "ov7"
+          }
+        },
+        "server_fixture": {
+          "authenticatedActorId": "actor-concepteur",
+          "authorizedContext": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "effectiveCapabilities": [
+            "read",
+            "edit2d"
+          ],
+          "headRevisionId": "R12",
+          "writerAuthority": "drawing2d",
+          "objectVersions": {
+            "line-42": "ov7"
+          },
+          "supportedDocumentSchemas": [
+            "candidate-1"
+          ],
+          "supportedContractVersions": [
+            "1.0.0"
+          ],
+          "viewedRevisionId": "R9",
+          "editHistoricalRevision": true
+        }
+      },
+      "expected_proposed": {
+        "error": "IMMUTABLE_REVISION",
+        "canonicalEffects": 0
+      },
+      "reason": "Un ancien état ne peut être réécrit",
+      "source_ids": [
+        "EX-012"
+      ],
+      "execution": "NON_EXECUTE_EXEMPLE_DOCUMENTAIRE"
+    },
+    {
+      "id": "DOC-N-ID",
+      "input": {
+        "envelope_IF006_illustrative": {
+          "requestId": "2ecb5a70-6d42-4f27-82f5-35371018d930",
+          "toolId": "studio.documentary.line",
+          "contractVersion": "1.0.0",
+          "actorId": "actor-concepteur",
+          "scope": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "",
+            "baseRevisionId": "R12"
+          },
+          "targetIds": [
+            "line-42"
+          ],
+          "operation": "documentary.updateLine",
+          "parameters": {
+            "end": {
+              "x": 4,
+              "y": 2
+            },
+            "unit": "m"
+          },
+          "mode": "commit"
+        },
+        "preconditions_documentaires_non_wire": {
+          "writerAuthority": "drawing2d",
+          "documentSchemaVersion": "candidate-1",
+          "objectVersions": {
+            "line-42": "ov7"
+          }
+        },
+        "server_fixture": {
+          "authenticatedActorId": "actor-concepteur",
+          "authorizedContext": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "effectiveCapabilities": [
+            "read",
+            "edit2d"
+          ],
+          "headRevisionId": "R12",
+          "writerAuthority": "drawing2d",
+          "objectVersions": {
+            "line-42": "ov7"
+          },
+          "supportedDocumentSchemas": [
+            "candidate-1"
+          ],
+          "supportedContractVersions": [
+            "1.0.0"
+          ]
+        }
+      },
+      "expected_proposed": {
+        "error": "INVALID_IDENTIFIER",
+        "canonicalEffects": 0
+      },
+      "reason": "Aucune géométrie sans variante propriétaire",
+      "source_ids": [
+        "EX-003"
+      ],
+      "execution": "NON_EXECUTE_EXEMPLE_DOCUMENTAIRE"
+    },
+    {
+      "id": "DOC-REPLAY",
+      "input": {
+        "envelope_IF006_illustrative": {
+          "requestId": "2ecb5a70-6d42-4f27-82f5-35371018d930",
+          "toolId": "studio.documentary.line",
+          "contractVersion": "1.0.0",
+          "actorId": "actor-concepteur",
+          "scope": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "targetIds": [
+            "line-42"
+          ],
+          "operation": "documentary.updateLine",
+          "parameters": {
+            "end": {
+              "x": 4,
+              "y": 2
+            },
+            "unit": "m"
+          },
+          "mode": "commit"
+        },
+        "preconditions_documentaires_non_wire": {
+          "writerAuthority": "drawing2d",
+          "documentSchemaVersion": "candidate-1",
+          "objectVersions": {
+            "line-42": "ov7"
+          }
+        },
+        "server_fixture": {
+          "authenticatedActorId": "actor-concepteur",
+          "authorizedContext": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "effectiveCapabilities": [
+            "read",
+            "edit2d"
+          ],
+          "headRevisionId": "R20",
+          "writerAuthority": "drawing2d",
+          "objectVersions": {
+            "line-42": "ov7"
+          },
+          "supportedDocumentSchemas": [
+            "candidate-1"
+          ],
+          "supportedContractVersions": [
+            "1.0.0"
+          ],
+          "priorRequest": {
+            "sameScopeActorRequestId": true,
+            "sameContent": true,
+            "durableResult": {
+              "revisionId": "R13",
+              "transactionId": "tx13"
+            }
+          }
+        }
+      },
+      "expected_proposed": {
+        "replayed": true,
+        "revisionId": "R13",
+        "newCanonicalEffects": 0
+      },
+      "reason": "Retour du résultat enregistré avant conflit de base, pas seconde application",
+      "source_ids": [
+        "EX-018"
+      ],
+      "execution": "NON_EXECUTE_EXEMPLE_DOCUMENTAIRE"
+    },
+    {
+      "id": "DOC-N-REQUEST",
+      "input": {
+        "envelope_IF006_illustrative": {
+          "requestId": "2ecb5a70-6d42-4f27-82f5-35371018d930",
+          "toolId": "studio.documentary.line",
+          "contractVersion": "1.0.0",
+          "actorId": "actor-concepteur",
+          "scope": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "targetIds": [
+            "line-42"
+          ],
+          "operation": "documentary.updateLine",
+          "parameters": {
+            "end": {
+              "x": 4,
+              "y": 2
+            },
+            "unit": "m"
+          },
+          "mode": "commit"
+        },
+        "preconditions_documentaires_non_wire": {
+          "writerAuthority": "drawing2d",
+          "documentSchemaVersion": "candidate-1",
+          "objectVersions": {
+            "line-42": "ov7"
+          }
+        },
+        "server_fixture": {
+          "authenticatedActorId": "actor-concepteur",
+          "authorizedContext": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-A",
+            "baseRevisionId": "R12"
+          },
+          "effectiveCapabilities": [
+            "read",
+            "edit2d"
+          ],
+          "headRevisionId": "R12",
+          "writerAuthority": "drawing2d",
+          "objectVersions": {
+            "line-42": "ov7"
+          },
+          "supportedDocumentSchemas": [
+            "candidate-1"
+          ],
+          "supportedContractVersions": [
+            "1.0.0"
+          ],
+          "priorRequest": {
+            "sameScopeActorRequestId": true,
+            "sameContent": false
+          }
+        }
+      },
+      "expected_proposed": {
+        "error": "REQUEST_ID_REUSED",
+        "canonicalEffects": 0
+      },
+      "reason": "Même requestId et autre contenu ne sont pas une nouvelle commande",
+      "source_ids": [
+        "EX-018"
+      ],
+      "execution": "NON_EXECUTE_EXEMPLE_DOCUMENTAIRE"
+    },
+    {
+      "id": "DOC-N-TOPOLOGY",
+      "input": {
+        "envelope_IF006_illustrative": {
+          "requestId": "2ecb5a70-6d42-4f27-82f5-35371018d930",
+          "toolId": "studio.arch.wall",
+          "contractVersion": "1.0.0",
+          "actorId": "actor-concepteur",
+          "scope": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-C",
+            "baseRevisionId": "R12"
+          },
+          "targetIds": [
+            "wall-42"
+          ],
+          "operation": "architecture.updateWall",
+          "parameters": {
+            "height": 3,
+            "unit": "m"
+          },
+          "mode": "commit"
+        },
+        "preconditions_documentaires_non_wire": {
+          "writerAuthority": "associated",
+          "documentSchemaVersion": "candidate-1",
+          "objectVersions": {
+            "wall-42": "ov7"
+          },
+          "topologyMapping": {
+            "source": "face-old",
+            "candidates": [
+              "face-new-a",
+              "face-new-b"
+            ],
+            "proven": false
+          }
+        },
+        "server_fixture": {
+          "authenticatedActorId": "actor-concepteur",
+          "authorizedContext": {
+            "projectId": "p-pavillon",
+            "studyId": "s-pilote",
+            "variantId": "v-C",
+            "baseRevisionId": "R12"
+          },
+          "effectiveCapabilities": [
+            "read",
+            "editAssociated"
+          ],
+          "headRevisionId": "R12",
+          "writerAuthority": "associated",
+          "objectVersions": {
+            "wall-42": "ov7"
+          },
+          "supportedDocumentSchemas": [
+            "candidate-1"
+          ],
+          "supportedContractVersions": [
+            "1.0.0"
+          ]
+        },
+        "projections_documentaires": [
+          {
+            "id": "view2d",
+            "ownerObjectId": "wall-42",
+            "canonical": false
+          },
+          {
+            "id": "view3d",
+            "ownerObjectId": "wall-42",
+            "canonical": false
+          }
+        ]
+      },
+      "expected_proposed": {
+        "error": "AMBIGUOUS_REFERENCE",
+        "canonicalEffects": 0
+      },
+      "reason": "Deux faces plausibles, aucune relation reconstruite par proximité",
+      "source_ids": [
+        "EX-015"
+      ],
+      "execution": "NON_EXECUTE_EXEMPLE_DOCUMENTAIRE"
+    }
+  ],
+  "publication_examples": [
+    {
+      "id": "DOC-PUB-A",
+      "snapshot": {
+        "schemaVersion": "candidate-1",
+        "id": "snapshot-A-R13",
+        "context": {
+          "projectId": "p-pavillon",
+          "studyId": "s-pilote",
+          "variantId": "v-A"
+        },
+        "revisionId": "R13",
+        "parentRevisionIds": [
+          "R12"
+        ],
+        "transactionId": "tx13",
+        "authorId": "actor-concepteur",
+        "serverTime": "2026-10-18T12:00:00Z",
+        "authorities": [
+          {
+            "writerAuthority": "drawing2d",
+            "documentId": "drawing-A",
+            "documentSchemaVersion": "candidate-1",
+            "documentVersion": "doc-v4",
+            "contentRef": "illustration-only:drawing-A-v4",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "unit": "m",
+            "coordinateFrame": "local-pavillon"
+          }
+        ],
+        "sourceRuleRefs": [
+          {
+            "ruleId": "rule-pilote",
+            "version": "1",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "associationRefs": [],
+        "coherence": {
+          "sourceRevisionSet": [
+            "R13"
+          ],
+          "immutable": true
+        }
+      },
+      "manifest": {
+        "schemaVersion": "candidate-1",
+        "id": "publication-A-1",
+        "intent": "plan pilote2D",
+        "usage": "REVUE_SYNTHETIQUE_NON_DIFFUSABLE",
+        "date": "2026-10-18T12:01:00Z",
+        "authorId": "actor-publication",
+        "approvalState": "approved",
+        "documents": [
+          {
+            "documentId": "pdf-A",
+            "version": "1",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "modelReferences": [
+          {
+            "snapshotId": "snapshot-A-R13",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "ruleReferences": [
+          {
+            "ruleId": "rule-pilote",
+            "version": "1",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "controlReports": [
+          {
+            "id": "report-A",
+            "version": "1",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "blockingObservations": [
+          {
+            "issueId": "obs-A",
+            "state": "resolved",
+            "decisionRef": "decision-obs-A"
+          }
+        ],
+        "approvalDecision": {
+          "id": "approval-A",
+          "actorId": "actor-approbateur",
+          "approvedExactSetRef": "illustration-only:set-A",
+          "sourceRevisionId": "R13"
+        }
+      },
+      "expected": "STRUCTURE_LOGIQUE_CANDIDATE_ACCEPTABLE_APRES_VERIFICATION_REELLE",
+      "limits": "Tous hashes zéro et références illustration-only sont des placeholders documentaires : refus par tout validateur réel, aucune signature/approbation effective"
+    },
+    {
+      "id": "DOC-N-PUB-APPROVAL",
+      "manifest": {
+        "schemaVersion": "candidate-1",
+        "id": "publication-A-1",
+        "intent": "plan pilote2D",
+        "usage": "REVUE_SYNTHETIQUE_NON_DIFFUSABLE",
+        "date": "2026-10-18T12:01:00Z",
+        "authorId": "actor-publication",
+        "approvalState": "approved",
+        "documents": [
+          {
+            "documentId": "pdf-A",
+            "version": "2",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "modelReferences": [
+          {
+            "snapshotId": "snapshot-A-R13",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "ruleReferences": [
+          {
+            "ruleId": "rule-pilote",
+            "version": "1",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "controlReports": [
+          {
+            "id": "report-A",
+            "version": "1",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "blockingObservations": [
+          {
+            "issueId": "obs-A",
+            "state": "resolved",
+            "decisionRef": "decision-obs-A"
+          }
+        ],
+        "approvalDecision": {
+          "id": "approval-A",
+          "actorId": "actor-approbateur",
+          "approvedExactSetRef": "illustration-only:set-A",
+          "sourceRevisionId": "R13"
+        }
+      },
+      "approvedPriorSet": {
+        "schemaVersion": "candidate-1",
+        "id": "publication-A-1",
+        "intent": "plan pilote2D",
+        "usage": "REVUE_SYNTHETIQUE_NON_DIFFUSABLE",
+        "date": "2026-10-18T12:01:00Z",
+        "authorId": "actor-publication",
+        "approvalState": "approved",
+        "documents": [
+          {
+            "documentId": "pdf-A",
+            "version": "1",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "modelReferences": [
+          {
+            "snapshotId": "snapshot-A-R13",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "ruleReferences": [
+          {
+            "ruleId": "rule-pilote",
+            "version": "1",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "controlReports": [
+          {
+            "id": "report-A",
+            "version": "1",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "blockingObservations": [
+          {
+            "issueId": "obs-A",
+            "state": "resolved",
+            "decisionRef": "decision-obs-A"
+          }
+        ],
+        "approvalDecision": {
+          "id": "approval-A",
+          "actorId": "actor-approbateur",
+          "approvedExactSetRef": "illustration-only:set-A",
+          "sourceRevisionId": "R13"
+        }
+      },
+      "expectedError": "APPROVAL_MISMATCH",
+      "canonicalEffects": 0
+    },
+    {
+      "id": "DOC-N-PUB-OBS",
+      "manifest": {
+        "schemaVersion": "candidate-1",
+        "id": "publication-A-1",
+        "intent": "plan pilote2D",
+        "usage": "REVUE_SYNTHETIQUE_NON_DIFFUSABLE",
+        "date": "2026-10-18T12:01:00Z",
+        "authorId": "actor-publication",
+        "approvalState": "approved",
+        "documents": [
+          {
+            "documentId": "pdf-A",
+            "version": "1",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "modelReferences": [
+          {
+            "snapshotId": "snapshot-A-R13",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "ruleReferences": [
+          {
+            "ruleId": "rule-pilote",
+            "version": "1",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "controlReports": [
+          {
+            "id": "report-A",
+            "version": "1",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "blockingObservations": [
+          {
+            "issueId": "obs-A",
+            "state": "open",
+            "decisionRef": "decision-obs-A"
+          }
+        ],
+        "approvalDecision": {
+          "id": "approval-A",
+          "actorId": "actor-approbateur",
+          "approvedExactSetRef": "illustration-only:set-A",
+          "sourceRevisionId": "R13"
+        }
+      },
+      "expectedError": "PUBLICATION_INCOMPLETE",
+      "canonicalEffects": 0
+    },
+    {
+      "id": "DOC-N-SNAPSHOT-WRITER",
+      "snapshot": {
+        "schemaVersion": "candidate-1",
+        "id": "snapshot-A-R13",
+        "context": {
+          "projectId": "p-pavillon",
+          "studyId": "s-pilote",
+          "variantId": "v-A"
+        },
+        "revisionId": "R13",
+        "parentRevisionIds": [
+          "R12"
+        ],
+        "transactionId": "tx13",
+        "authorId": "actor-concepteur",
+        "serverTime": "2026-10-18T12:00:00Z",
+        "authorities": [
+          {
+            "writerAuthority": "drawing2d",
+            "documentId": "drawing-A",
+            "documentSchemaVersion": "candidate-1",
+            "documentVersion": "doc-v4",
+            "contentRef": "illustration-only:drawing-A-v4",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "unit": "m",
+            "coordinateFrame": "local-pavillon"
+          },
+          {
+            "writerAuthority": "associated",
+            "sameCanonicalObjectAs": "drawing-A",
+            "secondIndependentWriter": true
+          }
+        ],
+        "sourceRuleRefs": [
+          {
+            "ruleId": "rule-pilote",
+            "version": "1",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "associationRefs": [],
+        "coherence": {
+          "sourceRevisionSet": [
+            "R13"
+          ],
+          "immutable": true
+        }
+      },
+      "expectedError": "WRITER_MISMATCH",
+      "canonicalEffects": 0
+    },
+    {
+      "id": "DOC-N-SNAPSHOT-TORN",
+      "snapshot": {
+        "schemaVersion": "candidate-1",
+        "id": "snapshot-A-R13",
+        "context": {
+          "projectId": "p-pavillon",
+          "studyId": "s-pilote",
+          "variantId": "v-A"
+        },
+        "revisionId": "R13",
+        "parentRevisionIds": [
+          "R12"
+        ],
+        "transactionId": "tx13",
+        "authorId": "actor-concepteur",
+        "serverTime": "2026-10-18T12:00:00Z",
+        "authorities": [
+          {
+            "writerAuthority": "drawing2d",
+            "documentId": "drawing-A",
+            "documentSchemaVersion": "candidate-1",
+            "documentVersion": "doc-v4",
+            "contentRef": "illustration-only:drawing-A-v4",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "unit": "m",
+            "coordinateFrame": "local-pavillon"
+          }
+        ],
+        "sourceRuleRefs": [
+          {
+            "ruleId": "rule-pilote",
+            "version": "1",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ],
+        "associationRefs": [],
+        "coherence": {
+          "sourceRevisionSet": [
+            "R12",
+            "R13"
+          ],
+          "immutable": false
+        }
+      },
+      "expectedError": "REVISION_CONFLICT",
+      "canonicalEffects": 0
+    }
+  ],
+  "coverage_limits": "A/B/C exemples de contrat, pas études terminables exécutées ; pas de preuve durabilité, chiffrement, hash réel, DB, migration, permission ou publication métier"
+}

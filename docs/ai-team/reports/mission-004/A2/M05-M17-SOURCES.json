@@ -1,0 +1,2261 @@
+{
+  "status": "PROPOSE_NON_EXECUTE",
+  "code_reference": "63e804be7b8e8935913514bd57937053c7402474",
+  "code_sources": [
+    {
+      "path": "packages/atelier-model/manifest.json",
+      "git_blob": "112df07be56b3cf43b5afea40dba87a379f6ccc0",
+      "sha256": "555e5627dc63747f85af533612cbe8eeef2953c92722e550ac8d6b4eadbc543e",
+      "worktree_equal_git": true
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/base.ts",
+      "git_blob": "fee67dcb89d226620e3d8b556dbc4440fc411b4c",
+      "sha256": "c3b7e504f32e2a22ed3415d8cf61ee60d77bf7417b1f3ccf3417e75f2d3f4deb",
+      "worktree_equal_git": true
+    },
+    {
+      "path": "packages/atelier-model/src/modele.ts",
+      "git_blob": "aac2c3600a01e20c4a0aa36d7d5a7c3704102706",
+      "sha256": "d7c689c43c61aea6801e67335d97fef30b143f4a0edf49b443e50a1b0e1757bc",
+      "worktree_equal_git": true
+    },
+    {
+      "path": "packages/atelier-model/src/archive.ts",
+      "git_blob": "1c4c10db20c3d25772b5f01ab20e09f3cc0e00a5",
+      "sha256": "3e9eb7a485cf3ffda71a4239f723762385c851c386ad5463557a9bc12d7835a5",
+      "worktree_equal_git": true
+    },
+    {
+      "path": "packages/atelier-model/src/import/natif.ts",
+      "git_blob": "36f8a17a1029e9c6594dbb897271abe6b7c06fc4",
+      "sha256": "7985dc880a4ea28fb2d216bd4db09ba3b5e73e87955c4d0a14962f1df3fb71d7",
+      "worktree_equal_git": true
+    },
+    {
+      "path": "apps/api/src/routes/atelier-commands.ts",
+      "git_blob": "ec21af8ea3b0501725b15ab8555d612845802c9a",
+      "sha256": "efc43e42757bd328338d240169720c6604cca832882573c0fecd8a5f01c50d32",
+      "worktree_equal_git": true
+    },
+    {
+      "path": "apps/api/src/lib/atelier-validation.ts",
+      "git_blob": "4dc21646c3536f7cb5226d05385542a7d7c3b673",
+      "sha256": "d1c0322f6d8e0860427328271e788bea83fb38ce6619c1302f10d1a90dda99b9",
+      "worktree_equal_git": true
+    },
+    {
+      "path": "apps/api/src/lib/atelier-modele.ts",
+      "git_blob": "98afbb7e772d5341564850748263bbfe2c9720ec",
+      "sha256": "36e38ba149fe3512862d5a94fca4e18f1f0a6da4214e201c1047afe51e2948dc",
+      "worktree_equal_git": true
+    },
+    {
+      "path": "apps/api/src/lib/atelier-versions.ts",
+      "git_blob": "a8eea98fe127c3e9da47cae0ea9d485ff9775473",
+      "sha256": "31e50d310009f0bfc0d1d9e2bbccffbc6c697f7ead21ed6f0f7e2688a8102c93",
+      "worktree_equal_git": true
+    },
+    {
+      "path": "apps/api/src/lib/atelier-refexterne.ts",
+      "git_blob": "09ce7e63bd3125df4480c35930300059d0b6a777",
+      "sha256": "a38152dc17c223689fcedcb9ebcdfdb3f9aaf11c5364c827b5637f4bfca62915",
+      "worktree_equal_git": true
+    }
+  ],
+  "normative_refs_exactes": [
+    {
+      "id": "EX-003",
+      "task_source": "TR-EX-003",
+      "type": "EX",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        83
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "EX-003 — Contexte constant. Toute surface de travail ou action persistante porte les identifiants projectId, studyId, variantId et la version de base. Le projet et l’étude peuvent exister avant la première variante, mais aucune géométrie éditée ne doit être dépourvue de variante propriétaire.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A1 + A2 + A4",
+      "lot": "I/A/E",
+      "contrats_candidats": "IF-001,IF-006",
+      "contrat_a_instruire": "EX-003 — Contexte constant : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "apps/web/src/App.tsx",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "apps/web/src/modules/module-registry.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "apps/api/src/db/schema.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; AppShell et modules existants ; enveloppe/autonomie Studio non démontrée",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Créer étude puis variante V1 et enregistrer géométrie avec projectId/studyId/variantId/baseRevisionId cohérents.",
+      "cas_negatif_propose": "Soumettre objet sans variante ou variante d'une autre étude : rejet sans objet orphelin.",
+      "scenarios_RT_lies_proposes": "035,NAV-003",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-01,DEC-02,DEC-03",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-STUDIO-CONTEXT,C-STUDY",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01",
+          "M002-D07"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "EX-008",
+      "task_source": "TR-EX-008",
+      "type": "EX",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        196
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "EX-008 — Sens de dépendance. Les interfaces invoquent les capacités, les capacités produisent des intentions, les commandes autorisées modifient le modèle canonique, puis les projections dérivées se recalculent. Une modification de scène graphique ne crée pas un changement métier sans commande.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A5",
+      "lot": "A/C/X",
+      "contrats_candidats": "IF-002,IF-006,IF-011",
+      "contrat_a_instruire": "EX-008 — Sens de dépendance : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "packages/atelier-model/src/commandes/base.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; Intentions/effets et projections Atelier candidats",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Geste confirmé produit intention, commande, mutation canonique puis scène invalidée dans cet ordre.",
+      "cas_negatif_propose": "Modifier directement une coordonnée GPU : aucune mutation métier/sauvegarde issue de cette seule scène.",
+      "scenarios_RT_lies_proposes": "003,014",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-02,DEC-10,DEC-18",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-STUDY,C-COMMAND",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "EX-009",
+      "task_source": "TR-EX-009",
+      "type": "EX",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        197
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "EX-009 — Propriété des données. Pour chaque classe d’information, un service logique propriétaire est désigné ; les interfaces des autres domaines consomment des références et appels de commande. Un modèle ne doit pas exister en deux exemplaires autoritaires simplement parce que deux planches l’affichent.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A5",
+      "lot": "A/C/X",
+      "contrats_candidats": "IF-002,IF-006,IF-011",
+      "contrat_a_instruire": "EX-009 — Propriété des données : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "packages/atelier-model/src/commandes/base.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; Intentions/effets et projections Atelier candidats",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Mur commun aux deux planches avec un seul propriétaire d'écriture défini ; changements observés des deux côtés.",
+      "cas_negatif_propose": "Deux copies autoritaires divergentes du même mur : détecter le défaut, interdire l'engagement ambigu.",
+      "scenarios_RT_lies_proposes": "003",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-02,DEC-10,DEC-18",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-STUDY,C-COMMAND",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "EX-012",
+      "task_source": "TR-EX-012",
+      "type": "EX",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        298
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "EX-012 — Immuabilité des révisions. Une révision de référence ne change pas rétroactivement lorsque la variante évolue. Une correction de contenu produit un nouvel état ; une annulation collaborative constitue elle-même une nouvelle opération vérifiée.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A1 + A6",
+      "lot": "A/R",
+      "contrats_candidats": "IF-004,IF-006,IF-011",
+      "contrat_a_instruire": "EX-012 — Immuabilité des révisions : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "apps/api/src/db/schema.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "packages/atelier-model/src/versions.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "packages/atelier-model/src/commandes/base.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; Versions/variantes existantes ; adaptation Étude et immuabilité Studio à qualifier",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Capturer R12, produire R13 puis relire R12 et comparer empreinte/contenu inchangés.",
+      "cas_negatif_propose": "Annulation ou nouvelle approbation tente de réécrire R12 : refuser ou créer nouvelle révision.",
+      "scenarios_RT_lies_proposes": "010,011,030",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-01,DEC-02,DEC-03,DEC-12",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-STUDY,C-COMMAND",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "EX-017",
+      "task_source": "TR-EX-017",
+      "type": "EX",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        331
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "EX-017 — Atomicité. Les modifications canoniques d’une même opération sont engagées ensemble ou pas du tout. Les rafraîchissements de cache peuvent être différés et signalés, mais ne constituent pas des modifications canoniques validées.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A1 + A6",
+      "lot": "A/R",
+      "contrats_candidats": "IF-004,IF-006,IF-011",
+      "contrat_a_instruire": "EX-017 — Atomicité : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "apps/api/src/db/schema.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "packages/atelier-model/src/versions.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "packages/atelier-model/src/commandes/base.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; Versions/variantes existantes ; adaptation Étude et immuabilité Studio à qualifier",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Appliquer lot mur/ouverture valide et constater engagement groupé durable.",
+      "cas_negatif_propose": "Deuxième opération du lot invalide : aucune partie de la première ne persiste.",
+      "scenarios_RT_lies_proposes": "008",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-01,DEC-02,DEC-03,DEC-12",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-STUDY,C-COMMAND",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "EX-018",
+      "task_source": "TR-EX-018",
+      "type": "EX",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        332
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "EX-018 — Idempotence. Une même commande répétée après une interruption, avec son requestId et le même périmètre, n’est pas appliquée deux fois. Une nouvelle commande distincte exige une nouvelle identité.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A1 + A6",
+      "lot": "A/R",
+      "contrats_candidats": "IF-004,IF-006,IF-011",
+      "contrat_a_instruire": "EX-018 — Idempotence : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "apps/api/src/db/schema.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "packages/atelier-model/src/versions.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "packages/atelier-model/src/commandes/base.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; Versions/variantes existantes ; adaptation Étude et immuabilité Studio à qualifier",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Réémettre même requestId/périmètre après coupure : même résultat une seule révision/objet.",
+      "cas_negatif_propose": "Même requestId avec paramètres/périmètre incompatibles : refus explicite, pas deuxième application.",
+      "scenarios_RT_lies_proposes": "013",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-01,DEC-02,DEC-03,DEC-12",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-STUDY,C-COMMAND",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "EX-019",
+      "task_source": "TR-EX-019",
+      "type": "EX",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        335
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "EX-019 — Évolutivité des schémas. Chaque document/commande persistant porte sa version de schéma. Toute migration doit fournir une transformation documentée, des tests aller-retour lorsque réalisables, une conservation des données inconnues ou un rapport des pertes, et un retour arrière ou une récupération explicitement prévue.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A1 + A6",
+      "lot": "A/R",
+      "contrats_candidats": "IF-004,IF-006,IF-011",
+      "contrat_a_instruire": "EX-019 — Évolutivité des schémas : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "apps/api/src/db/schema.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "packages/atelier-model/src/versions.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "packages/atelier-model/src/commandes/base.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; Versions/variantes existantes ; adaptation Étude et immuabilité Studio à qualifier",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Lire document schéma ancien, appliquer transformation documentée et comparer identités/propriétés.",
+      "cas_negatif_propose": "Champ inconnu ou migration impossible : conservation/rapport des pertes et récupération, jamais disparition muette.",
+      "scenarios_RT_lies_proposes": "034,036",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-01,DEC-02,DEC-03,DEC-12",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-STUDY,C-COMMAND",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "EX-087",
+      "task_source": "TR-EX-087",
+      "type": "EX",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        864
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "EX-087 — Intégration contrôlée. Les modules Fadi existants restent responsables des données transverses qu’ils possèdent. Tout nouvel endpoint nécessite un contrôle de droit tenant/projet, de schéma, de révision, d’idempotence, de taille d’entrée et de journal.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A6 + A5",
+      "lot": "A/R/X",
+      "contrats_candidats": "IF-001,IF-004,IF-006,IF-011",
+      "contrat_a_instruire": "EX-087 — Intégration contrôlée : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "apps/api/src",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "docker-compose.yml",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "docs/deploiement.md",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; API/PostgreSQL/versions/sauvegardes candidats ; aucune restauration Studio exécutée",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Nouvel endpoint valide session/projet/schéma/révision/requestId/taille et journalise engagement.",
+      "cas_negatif_propose": "ID d'autre projet, payload trop grand ou mauvaise version : refus atomique sans fuite.",
+      "scenarios_RT_lies_proposes": "035",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-03,DEC-18",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-MIGRATION,C-COMMAND",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "EX-088",
+      "task_source": "TR-EX-088",
+      "type": "EX",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        865
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "EX-088 — Isolation multi-utilisateurs. Le système interdit l’accès aux documents, profils et variantes d’un autre périmètre sans autorisation. Les URL de blob, résultats de jobs et exports temporairement accessibles sont soumis à l’autorisation de l’objet source.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A6 + A5",
+      "lot": "A/R/X",
+      "contrats_candidats": "IF-001,IF-004,IF-006,IF-011",
+      "contrat_a_instruire": "EX-088 — Isolation multi-utilisateurs : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "apps/api/src",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "docker-compose.yml",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "docs/deploiement.md",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; API/PostgreSQL/versions/sauvegardes candidats ; aucune restauration Studio exécutée",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Lire document/profil/job/blob/export avec autorisation ressource cohérente.",
+      "cas_negatif_propose": "Copier URL temporaire d'un autre projet/utilisateur : accès refusé sans contenu/métadonnées sensibles.",
+      "scenarios_RT_lies_proposes": "035",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-03,DEC-18",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-MIGRATION,C-COMMAND",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "EX-089",
+      "task_source": "TR-EX-089",
+      "type": "EX",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        866
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "EX-089 — Persistance et reprise. Une confirmation envoyée au navigateur doit correspondre à un engagement durable conforme au contrat de sauvegarde. Les sauvegardes, restaurations et récupérations d’incident sont testées sur un corpus contenant données de conception, associations et publications.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A6 + A5",
+      "lot": "A/R/X",
+      "contrats_candidats": "IF-001,IF-004,IF-006,IF-011",
+      "contrat_a_instruire": "EX-089 — Persistance et reprise : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "apps/api/src",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "docker-compose.yml",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "docs/deploiement.md",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; API/PostgreSQL/versions/sauvegardes candidats ; aucune restauration Studio exécutée",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Sauvegarder avec confirmation durable, relancer service sur copie jetable et retrouver modèle/associations/publications.",
+      "cas_negatif_propose": "Échec DB avant commit : pas d'accusé de sauvegarde confirmé ; reprise n'invente pas opération.",
+      "scenarios_RT_lies_proposes": "034",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-03,DEC-18",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-MIGRATION,C-COMMAND",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "EX-090",
+      "task_source": "TR-EX-090",
+      "type": "EX",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        869
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "EX-090 — Reconstruction. Une restauration doit permettre de retrouver le modèle canonique confirmé, les manifestes et leurs pièces, les références, les droits applicables et les identités des documents. Les caches GPU et index spatiaux sont reconstruits, non sauvegardés comme preuve faisant autorité.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A6 + A5",
+      "lot": "A/R/X",
+      "contrats_candidats": "IF-001,IF-004,IF-006,IF-011",
+      "contrat_a_instruire": "EX-090 — Reconstruction : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "apps/api/src",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "docker-compose.yml",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "docs/deploiement.md",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; API/PostgreSQL/versions/sauvegardes candidats ; aucune restauration Studio exécutée",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Restaurer canonique+pièces+manifestes+droits puis reconstruire index/GPU et comparer identités.",
+      "cas_negatif_propose": "Backup n'inclut que caches ou manque pièce publiée : restauration déclarée incomplète, pas réussite globale.",
+      "scenarios_RT_lies_proposes": "034",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-03,DEC-18",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-MIGRATION,C-COMMAND",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "EX-091",
+      "task_source": "TR-EX-091",
+      "type": "EX",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        872
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "EX-091 — Migration non destructrice. Une étude existante ne doit pas perdre une propriété, une cote, une association, un identifiant documentaire, une révision ou un accès sans rapport explicite, procédure d’accord et solution de restauration. Toute bascule définit des jeux d’essai d’avant/après et un point de retour arrière.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A6 + A5",
+      "lot": "A/R/X",
+      "contrats_candidats": "IF-001,IF-004,IF-006,IF-011",
+      "contrat_a_instruire": "EX-091 — Migration non destructrice : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "apps/api/src",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "docker-compose.yml",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "docs/deploiement.md",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; API/PostgreSQL/versions/sauvegardes candidats ; aucune restauration Studio exécutée",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Simulation migration compare propriétés/cotes/associations/historique et correspondances d'IDs.",
+      "cas_negatif_propose": "Objet non convertible : conserver+rapport+accord/récupération ; ne pas le supprimer pour améliorer taux.",
+      "scenarios_RT_lies_proposes": "034,036",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-03,DEC-18",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-MIGRATION,C-COMMAND",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "INV-002",
+      "task_source": "TR-INV-002",
+      "type": "INV",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        209,
+        210
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "Une définition architecturale associée possède une autorité unique.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A4 + A5",
+      "lot": "A/C",
+      "contrats_candidats": "IF-002,IF-004,IF-006",
+      "contrat_a_instruire": "Une définition architecturale associée possède une autorité unique. : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "apps/web/src/modules/atelier/nouveau/plan2d/Plan2D.tsx",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "packages/planche-model/src",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; Éditeurs/géométrie candidats ; autonomie/association Studio non prouvées",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Modifier mur en 2D puis en 3D et comparer objectId/relations/révision identiques.",
+      "cas_negatif_propose": "Deux identités concurrentes créées selon planche : défaut éliminatoire signalé.",
+      "scenarios_RT_lies_proposes": "003",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-01,DEC-02,DEC-09",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-DRAWING2D,C-MODEL3D,C-ASSOCIATION",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "INV-003",
+      "task_source": "TR-INV-003",
+      "type": "INV",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        211,
+        212
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "Une copie indépendante ne propage pas vers son origine.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A1 + A6",
+      "lot": "A/R",
+      "contrats_candidats": "IF-004,IF-006,IF-011",
+      "contrat_a_instruire": "Une copie indépendante ne propage pas vers son origine. : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "apps/api/src/db/schema.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "packages/atelier-model/src/versions.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "packages/atelier-model/src/commandes/base.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; Versions/variantes existantes ; adaptation Étude et immuabilité Studio à qualifier",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Cloner variante avec nouvelles identités et provenance, modifier clone puis relire source inchangée.",
+      "cas_negatif_propose": "Ancien identifiant réutilisé dans nouveau propriétaire ou propagation implicite : rejeter/détecter.",
+      "scenarios_RT_lies_proposes": "004",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-01,DEC-02,DEC-03,DEC-12",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-STUDY,C-COMMAND",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "INV-005",
+      "task_source": "TR-INV-005",
+      "type": "INV",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        215,
+        216
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "Une opération rejetée ne modifie pas partiellement les données canoniques.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A1 + A6",
+      "lot": "A/R",
+      "contrats_candidats": "IF-004,IF-006,IF-011",
+      "contrat_a_instruire": "Une opération rejetée ne modifie pas partiellement les données canoniques. : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "apps/api/src/db/schema.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "packages/atelier-model/src/versions.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "packages/atelier-model/src/commandes/base.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; Versions/variantes existantes ; adaptation Étude et immuabilité Studio à qualifier",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Appliquer lot mur/ouverture valide et constater engagement groupé durable.",
+      "cas_negatif_propose": "Deuxième opération du lot invalide : aucune partie de la première ne persiste.",
+      "scenarios_RT_lies_proposes": "008",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-01,DEC-02,DEC-03,DEC-12",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-STUDY,C-COMMAND",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "INV-006",
+      "task_source": "TR-INV-006",
+      "type": "INV",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        217,
+        218
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "Un résultat dérivé ancien est identifiable et n’écrase pas le résultat courant.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A5",
+      "lot": "C",
+      "contrats_candidats": "IF-002,IF-003,IF-011",
+      "contrat_a_instruire": "Un résultat dérivé ancien est identifiable et n’écrase pas le résultat courant. : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; Projection/index candidats ; équivalence/non-régression non exécutée",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Après commande R13, scène affiche sourceRevisionId et données périmées puis se recalcule.",
+      "cas_negatif_propose": "Résultat worker R12 arrive : ne remplace pas projection courante comme si source R13.",
+      "scenarios_RT_lies_proposes": "014",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-09,DEC-10,DEC-13",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-PROJECTION",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "INV-012",
+      "task_source": "TR-INV-012",
+      "type": "INV",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        229,
+        230
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "Une publication antérieure n’est pas réécrite par la création d’une nouvelle publication.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A1 + A2 + A5",
+      "lot": "E",
+      "contrats_candidats": "IF-008,IF-009",
+      "contrat_a_instruire": "Une publication antérieure n’est pas réécrite par la création d’une nouvelle publication. : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "packages/atelier-model/src/documents",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "apps/api/src/db/schema.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "apps/web/src/modules/documents",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; Documents/publications Atelier candidats ; manifeste coordonné Studio à définir",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Retirer/remplacer publication par événement journalisé en gardant ancienne identité/contenu selon politique.",
+      "cas_negatif_propose": "Nouvelle diffusion écrase manifestes/fichiers historiques : refus et défaut éliminatoire.",
+      "scenarios_RT_lies_proposes": "031",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-16",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-QUANTITY,C-PUBLICATION",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01",
+          "M002-D07"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "IF-001",
+      "task_source": "TR-IF-001",
+      "type": "IF",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        141
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "IF-001 — Interface de rattachement projet. Entrée : projet autorisé, site/sources/version, acteur ; sortie : contexte d’étude validé et identifiant stable. Échec : projet inaccessible, source non disponible, conflit de version, droits insuffisants. Le contrat physique demeure à choisir.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A1 + A2 + A4",
+      "lot": "I/A/E",
+      "contrats_candidats": "IF-001,IF-001,IF-006",
+      "contrat_a_instruire": "IF-001 — Interface de rattachement projet : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "apps/web/src/App.tsx",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "apps/web/src/modules/module-registry.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "apps/api/src/db/schema.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; AppShell et modules existants ; enveloppe/autonomie Studio non démontrée",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Rattacher étude à projet autorisé avec sources/version et obtenir identifiant stable.",
+      "cas_negatif_propose": "Projet inaccessible/source indisponible/conflit : erreur explicite sans création partielle.",
+      "scenarios_RT_lies_proposes": "035,NAV-003",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-01,DEC-02,DEC-03",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-STUDIO-CONTEXT,C-STUDY",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01",
+          "M002-D07"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "IF-003",
+      "task_source": "TR-IF-003",
+      "type": "IF",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        200
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "IF-003 — Calcul lourd (exemple booléen). ① collecte des paramètres ; ② capture immuable de l’identifiant de révision ; ③ soumission au gestionnaire de tâches ; ④ worker/WASM ou service serveur ; ⑤ retour résultat + révision source + métriques ; ⑥ vérification du contexte et des droits ; ⑦ engagement transactionnel explicite ; ⑧ mise à jour des projections. Un résultat ancien peut être conservé à titre historique, pas appliqué à une révision plus récente.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A5",
+      "lot": "A/D/R",
+      "contrats_candidats": "IF-003,IF-004,IF-006,IF-011,IF-007",
+      "contrat_a_instruire": "IF-003 — Calcul lourd (exemple booléen) : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "packages/atelier-model/src/commandes/base.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "apps/web/src/modules/atelier/nouveau/planche/historique.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "packages/planche-model/src/delta.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; Commandes/historique hybrides existants ; composition Studio à spécifier",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Capturer R12, calcul booléen en worker, vérifier droits/contexte puis confirmer transaction et invalider scène.",
+      "cas_negatif_propose": "Réponse calcul R12 après modification R13 ou droits révoqués : aucun engagement courant.",
+      "scenarios_RT_lies_proposes": "014,015",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-12,DEC-11",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-COMMAND",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01",
+          "M002-D07"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "IF-004",
+      "task_source": "TR-IF-004",
+      "type": "IF",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        330
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "IF-004 — Précondition de version. Toute intention qui modifie un objet en environnement collaboratif référence baseRevisionId et, lorsque nécessaire, les versions individuelles des objets et relations touchés. En cas de divergence incompatible : refus et proposition de résolution ou nouveau calcul sur la base courante.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A5",
+      "lot": "A/D/R",
+      "contrats_candidats": "IF-004,IF-004,IF-006,IF-011",
+      "contrat_a_instruire": "IF-004 — Précondition de version : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "packages/atelier-model/src/commandes/base.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "apps/web/src/modules/atelier/nouveau/planche/historique.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "packages/planche-model/src/delta.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; Commandes/historique hybrides existants ; composition Studio à spécifier",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Commande base R12 avec objets/relations à jour est acceptée sur même contexte.",
+      "cas_negatif_propose": "Deux sessions divergent : commande seconde rejetée avec courant/conflit, pas last-write-wins.",
+      "scenarios_RT_lies_proposes": "012",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-12,DEC-11",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-COMMAND",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01",
+          "M002-D07"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "IF-006",
+      "task_source": "TR-IF-006",
+      "type": "IF",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        529
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "IF-006 — Commande métier. Le contrat de transport doit exprimer les attributs logiques suivants ; l’objet est une proposition de schéma et non une API actuellement exposée.",
+      "source_complements_exacts": [
+        {
+          "paragraph": 530,
+          "texte_exact": "{  \"requestId\": \"idempotency-uuid\",  \"toolId\": \"studio.arch.wall\",  \"contractVersion\": \"1.0.0\",  \"actorId\": \"actor-ref\",  \"scope\": {    \"projectId\": \"p\", \"studyId\": \"s\", \"variantId\": \"v\",    \"baseRevisionId\": \"R12\"  },  \"targetIds\": [\"wall-42\"],  \"operation\": \"architecture.updateWall\",  \"parameters\": {\"height\": 3.0, \"unit\": \"m\"},  \"mode\": \"commit\"}"
+        },
+        {
+          "paragraph": 531,
+          "texte_exact": "Le serveur établit lui-même l’identité authentifiée et vérifie sa concordance avec l’enveloppe ; un actorId fourni par le navigateur ne crée aucun droit. Les identifiants de contexte doivent être autorisés et la version de base vérifiée. Les coordonnées, tolérances et unités appartiennent au contrat de chaque opération."
+        }
+      ],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A6 + A5",
+      "lot": "A/R/X",
+      "contrats_candidats": "IF-006,IF-001,IF-004,IF-006,IF-011",
+      "contrat_a_instruire": "IF-006 — Commande métier : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "apps/api/src",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "docker-compose.yml",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "docs/deploiement.md",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; API/PostgreSQL/versions/sauvegardes candidats ; aucune restauration Studio exécutée",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Enveloppe requestId/toolId/contractVersion/scope/baseRevision/targets/opération/paramètres/mode est validée avec identité de session serveur.",
+      "cas_negatif_propose": "actorId forgé, scope interprojet ou répétition incompatible : refus atomique, aucune permission créée.",
+      "scenarios_RT_lies_proposes": "012,013,035",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-03,DEC-18",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-MIGRATION,C-COMMAND",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01",
+          "M002-D07"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "IF-009",
+      "task_source": "TR-IF-009",
+      "type": "IF",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        765
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "IF-009 — Publication. Le manifeste contient : identifiant, intention/usage, date, auteur, état d’approbation, liste ordonnée de documentId + version + empreinte, références de modèles et de règles, rapports de contrôle et observations bloquantes résolues ou dérogées, ainsi que la décision d’approbation sur cet ensemble exact.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A1 + A2 + A5",
+      "lot": "E",
+      "contrats_candidats": "IF-009,IF-008,IF-009",
+      "contrat_a_instruire": "IF-009 — Publication : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "packages/atelier-model/src/documents",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "apps/api/src/db/schema.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "apps/web/src/modules/documents",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; Documents/publications Atelier candidats ; manifeste coordonné Studio à définir",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Manifeste ordonné contient documentId/version/empreinte, modèles/règles/contrôles et décision de l’ensemble exact.",
+      "cas_negatif_propose": "Pièce changée/manquante ou observation bloquante sans résolution/dérogation : publication refusée.",
+      "scenarios_RT_lies_proposes": "030,038",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-16",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-QUANTITY,C-PUBLICATION",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01",
+          "M002-D07"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    },
+    {
+      "id": "IF-011",
+      "task_source": "TR-IF-011",
+      "type": "IF",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_version": "STUDIO-RT-001 V1.0, 17 octobre 2026",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml": "word/document.xml",
+      "source_paragraphs": [
+        868
+      ],
+      "source_anchor_definition": "w:p descendants en ordre XML, index 1-based, y compris cellules de tableaux et paragraphes vides",
+      "texte_exact": "IF-011 — Journal de changement. Événement avec eventId, transaction, auteur, étude/variante, révision base/issue, effets, horodatage serveur et relation éventuelle à un job. La diffusion de notifications ne constitue pas une confirmation métier sans engagement préalable.",
+      "source_complements_exacts": [],
+      "extraction_provenance": "Nouvelle extraction Mission 003 depuis DOCX officiel ; jamais présentée comme original Mission 002",
+      "source_code_reference": "Copie référence A0 PR165 a09c11d397c8527987c3d1c4410ebb2eb240a819 ; comportement non rejoué",
+      "responsable_propose": "A2 + A5",
+      "lot": "A/D/R",
+      "contrats_candidats": "IF-011,IF-004,IF-006,IF-011",
+      "contrat_a_instruire": "IF-011 — Journal de changement : formaliser entrées, sorties, préconditions, erreurs, droits, révisions et effets selon RT001 ; ne pas traiter exemple comme API existante.",
+      "composants_candidats": [
+        {
+          "chemin": "packages/atelier-model/src/commandes/base.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "apps/web/src/modules/atelier/nouveau/planche/historique.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        },
+        {
+          "chemin": "packages/planche-model/src/delta.ts",
+          "present_dans_copie": true,
+          "preuve_portee": "Présence statique du chemin uniquement ; comportement non exécuté"
+        }
+      ],
+      "etat_capacite": "Non vérifié Studio ; Commandes/historique hybrides existants ; composition Studio à spécifier",
+      "etat_travail_fiche": "En cours",
+      "note_preparation": "Fiche M004 raffinée sur décisions de cadrage retenues, revue individuelle/contrats/preuves encore requise ; pas clôture M12",
+      "verdict_conformite": "Non testé pour Studio",
+      "etat_execution_tests": "Prescrit, non exécuté",
+      "cas_positif_propose": "Après engagement durable, événement garde eventId/transaction/auteur/étude/variante/base/issue/effets/date/job éventuel.",
+      "cas_negatif_propose": "Notification reçue avant commit ou transaction échouée : aucune confirmation métier fausse.",
+      "scenarios_RT_lies_proposes": "013",
+      "preuve_existante": {
+        "documentaire": "Texte exact ci-dessus extrait du blob officiel ; ancres vérifiables.",
+        "rapprochement_initial": "A1-produit.md Mission 002, qualification initiale par groupe seulement ; aucun résultat actuel déduit.",
+        "execution_metier": "Aucune preuve Studio exécutée jointe à cette fiche."
+      },
+      "limite": "Composants et rapprochements candidats ; les scénarios proposés complètent RT001 sans remplacer ses critères. Aucune preuve d’implémentation ou conformité par existence d’un test/chemin.",
+      "decisions_applicables_a_qualifier": "DEC-12,DEC-11",
+      "decisions_humaines_canoniques": "M002-D01/D02/D07 retenues dans leur portée de cadrage/spécification ; ne pas les reposer. DEC techniques applicables à instruire ; code Studio requiert décision bornée distincte.",
+      "prochaine_action": "Appliquer cadrage D01/D02/D07 déjà retenu ; A2/A4 finalisent contrat du sous-ensemble et A5 relie oracle/corpus/protocole. Revue de cette fiche avant tout verdict ; exécution seulement dans lot explicitement autorisé.",
+      "contrats_physiques_candidats_A2": "C-COMMAND",
+      "limite_contrats": "C-* propositions A2, ne remplacent ni ne renumérotent IF normatifs ; aucune validation d’implémentation.",
+      "alignement_mission004": {
+        "autorite": {
+          "document": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+          "commit_documentaire_A0": "301a4fa",
+          "commentaire_officiel": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+          "provenance": "Document officiel et export réel GitHub166 lu ; commentaire6249520098 décision postérieure aux sept recommandations, export récupéré par A0, sans appel réseau autonome A1",
+          "export_reponses_sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+          "date": "2026-10-18",
+          "portee": "Cadrage/spécifications D01/D02/D07 retenus ; aucun code Studio autorisé"
+        },
+        "decisions_deja_retenues": [
+          "M002-D01",
+          "M002-D07"
+        ],
+        "application_pilote": "Socle du pilote A/B/C : obligation à qualifier, aucune conformité déduite",
+        "invariants": "Studio après Projets ; quatre domaines ; deux planches D1 ; A2D publiable, B3D directe, Cassocié revue/publication ; permissions approbation/publication distinctes",
+        "etat_gate": "G0/G1 restent soumis aux critères/preuves ; aucune autorisation codeStudio hors préparation"
+      },
+      "criteres_preuve_mission004": {
+        "fiche_documentaire_verifiee": [
+          "Texte/blob/paragraphes exacts vérifiés contre DOCX source",
+          "Responsable/contrat/candidat identifiés, hypothèses explicitement distinguées de faits",
+          "Cas positif/négatif spécifique et oracle/corpus/version liés",
+          "Applicabilité MVP/report et décisions correctement rattachés",
+          "Revue croisée A1/A2/A5 des liens et limites, résultat daté ; présence des champs seule insuffisante"
+        ],
+        "capacite_verifiee": [
+          "Build et SHA exacts avec contrat/version et corpus empreinté autorisé",
+          "Cas positifs ET négatifs exécutés dans environnement sûr ; traces et verdict comparés aux attendus sans affaiblissement",
+          "Droits/identités/atomicité/historique/persistance/non-régression pertinents démontrés",
+          "Aucune preuve historique/transfert CI ou fichier présent utilisée comme résultat actuel"
+        ],
+        "accepte": [
+          "Critères métier applicables tous satisfaits ou dérogations explicites autorisées sans supprimer invariant",
+          "Décision datée de l’approbateur habilité couvrant le périmètre et les preuves exacts",
+          "Acceptation d’un dossier/porte distincte d’autorisation code, fusion ou déploiement"
+        ],
+        "etat_actuel": "Texte exact déjà contrôlé ; contrats/composants et scénarios candidats sous revue ; capacité non testée Studio ; aucune acceptation"
+      }
+    }
+  ],
+  "limits": "Textes exacts issus fiches A1 ; pas deuxième norme. Les sources code égales Git ne prouvent aucune exécution."
+}

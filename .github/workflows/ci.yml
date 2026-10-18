@@ -11,6 +11,65 @@ concurrency:
 permissions:
   contents: read
 jobs:
+  mission-docs-pure:
+    name: Mission 004 — documentation sans base (intégration non exécutée)
+    if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Refuser un diff hors du périmètre documentaire avant les contrôles
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          python3 - <<'PY_SCOPE'
+          import os, re, subprocess
+          base = os.environ.get("BASE_SHA", "")
+          if not re.fullmatch(r"[0-9a-f]{40}", base):
+              raise SystemExit("Refus : SHA de base PR invalide ou absent.")
+          result = subprocess.run(
+              ["git", "diff", "--name-only", "--no-renames", "-z", f"{base}...HEAD"],
+              check=True, capture_output=True,
+          )
+          paths = [p.decode("utf-8") for p in result.stdout.split(b"\0") if p]
+          exact = {"AGENTS.md", "CLAUDE.md", "apps/web/src/modules/README.md",
+                   ".github/workflows/ci.yml", ".github/workflows/codex-missions.yml"}
+          unexpected = [p for p in paths if not (p.startswith(("docs/", "Studio/")) or p in exact)]
+          if unexpected:
+              print("Refus : le diff contient des fichiers hors du périmètre documentaire :")
+              for path in unexpected:
+                  print(ascii(path))
+              raise SystemExit(1)
+          print(f"Périmètre documentaire vérifié : {len(paths)} chemins ; aucune source applicative hors allowlist.")
+          PY_SCOPE
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests unitaires du validateur documentaire sans base ni réseau
+        run: python3 -m unittest discover -s docs/ai-team -p 'test_check_missions.py' -v
+      - name: Couverture des 31 missions et 630 affectations
+        run: python3 docs/ai-team/check_missions.py --check
+      - name: Continuité — tests et structure
+        run: |
+          node --test scripts/check-continuity.test.mjs
+          node scripts/check-continuity.mjs
+      - name: Isolation nominale Fadi
+        run: node scripts/check-fadi-isolation.mjs
+      - name: Déclarer les vérifications d'intégration non effectuées
+        if: always()
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
+          ## Mission 004 — branche documentaire, aucune base réelle
+          Tests documentaires, couverture des affectations, continuité et isolation nominale seulement.
+          Aucun service PostgreSQL/API, installation npm, migration, test API/E2E ou image applicative exécuté dans ce job.
+          Les jobs validate/e2e/image sont intentionnellement skipped sur cette branche exacte ; ils ne sont pas réussis.
+          Ce résultat ne valide ni les 630 fonctionnalités, ni l'intégration applicative, ni DB-3, ni une fusion.
+          Les autres branches et push sur main conservent les jobs applicatifs ; cette exception est bornée à la préparation documentaire.
+          SUMMARY
+
   classification-pure:
     name: Classification — modèle pur sans base (intégration non exécutée)
     if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main' }}
@@ -49,8 +108,8 @@ jobs:
           SUMMARY
 
   validate:
-    # A3-CLASSIF-1 : aucune base réelle autorisée ; condition avant création des services.
-    if: ${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main') }}
+    # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.
+    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -102,8 +161,8 @@ jobs:
   # partage — contre l'API construite, qui sert elle-même le build de l'application (mode de production).
   # Les captures (docs/migration/captures/webapp/) sont publiées en artefact.
   e2e:
-    # A3-CLASSIF-1 : aucune base réelle autorisée ; condition avant création des services.
-    if: ${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main') }}
+    # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.
+    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     services:
@@ -359,8 +418,8 @@ jobs:
           retention-days: 14
 
   image:
-    # A3-CLASSIF-1 : aucune base réelle autorisée ; condition avant création des services.
-    if: ${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main') }}
+    # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.
+    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:

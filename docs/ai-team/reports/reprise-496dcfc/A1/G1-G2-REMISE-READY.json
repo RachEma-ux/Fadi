@@ -1,0 +1,52 @@
+{
+  "programme": 156,
+  "agent": "A1",
+  "date": "2026-10-18",
+  "type": "SuiteREADY G1 documentaire et proposition G2bornée",
+  "fichiers_actifs": [
+    {
+      "file": "G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+      "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+      "bytes": 12305
+    },
+    {
+      "file": "G1-SCHEMAS-LOGIQUES-DOCUMENTAIRES-v2.json",
+      "sha256": "ca552c040a1da0064e63c2a2cf643619fbeee13c53ad9c98d65114376a4a7b0c",
+      "bytes": 4342
+    },
+    {
+      "file": "G1-EXEMPLES-DOCUMENTAIRES-2D-IDENTITES-v2.json",
+      "sha256": "3d29419c227258b60645893340eee9dfbd009c16ec0e0428eb54c6dae729ea11",
+      "bytes": 51392
+    },
+    {
+      "file": "G1-VERIFICATION-DOCUMENTAIRE-v2.json",
+      "sha256": "c260c9d2819e3b09cc73c8464f43286444d313f4d836579d6bcd08580bd359b1",
+      "bytes": 552
+    },
+    {
+      "file": "G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+      "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+      "bytes": 11514
+    },
+    {
+      "file": "G2-DOSSIER-POC-PUR-2D-IDENTITES-PROPOSE.md",
+      "sha256": "0f0d531a65fb9138bef39f644aabb0095428bfe44027561d0b72b4899fb98e81",
+      "bytes": 10320
+    }
+  ],
+  "revue_A2_v2": {
+    "path": "/workspace/work/resume496/agents/A2/REVUE-G1-DEC01-DEC03-V2-A2.json",
+    "sha256": "206584d26ce3665e5937e6565e0affeaa170226b014393979fa99a23cab905f6",
+    "conclusion": "Clarification de versions résolue, 13liensdontanciencontenu vérifiés indépendamment ; aucunblocagearchitecturaldocumentaire, pasacceptationG1/choixphysiques"
+  },
+  "revue_A4_delta_v2": "Demandée ; aucun résultat encore déduit",
+  "validation_documentaire_exemples": "Parsing/empreintes des fichiersJSON uniquement ; aucun moteurFadi/validateurStudio exécuté",
+  "G1_statut": "En instruction, non accepté",
+  "G2_POC": "Proposé strictement, aucun codePOC ou exécution autorisé/produit",
+  "DEC01_DEC03_physical_closed": false,
+  "CAD_DEC03": "Personnes/disponibilités ouvertes",
+  "modification_registre_case_HTML_repo": false,
+  "DEV_SCOPE_invente": false,
+  "prochaine_action": "A0 rapproche revues, arbitreseulementcontrats ouverts puis soumetPOCborné siutile ; aucuneautoacceptation ni lancementPOC."
+}

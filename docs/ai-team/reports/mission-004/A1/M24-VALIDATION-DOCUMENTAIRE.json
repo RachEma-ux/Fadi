@@ -1,0 +1,30 @@
+{
+  "mission": "004/M24",
+  "positive_examples": 3,
+  "negative_examples": 15,
+  "all_JSON_parseable": true,
+  "positive_internal_hashes_recomputed": true,
+  "checks_scope": "Parsing JSON et arithmétique/hash des exemples synthétiques seulement ; aucun contrat applicatif/serveur/moteur exécuté",
+  "product_tests_executed": 0,
+  "production_hash_canonicalisation_decided": false,
+  "gates_passed": false,
+  "repo_changed": false,
+  "reserve_A2_corrigee": "Sept négatifs sémantiques : reopenIntent.expectedManifestHash maintenant aligné au manifeste recalculé",
+  "verification_distincte_apres_generation": {
+    "sept_negatifs_hashes_coherents": [
+      "M24-NEG-PARENT",
+      "M24-NEG-OLD-RESULT",
+      "M24-NEG-UNIT",
+      "M24-NEG-UNKNOWN-SCHEMA",
+      "M24-NEG-FALSE-CONTROL",
+      "M24-NEG-OPEN-OBSERVATION",
+      "M24-NEG-WRITER"
+    ],
+    "comparaison": "Manifest calculé == manifestHash == approval.manifestHash == publication.manifestHash == reopenIntent.expectedManifestHash ; contenu canonique et pièces également recalculés",
+    "divergences_intentionnelles_preservees": [
+      "M24-NEG-CHANGED-DOCUMENT",
+      "M24-NEG-ORDER"
+    ],
+    "portee": "Contrôle documentaire indépendant du générateur ; aucun validateur applicatif ni DB exécuté"
+  }
+}

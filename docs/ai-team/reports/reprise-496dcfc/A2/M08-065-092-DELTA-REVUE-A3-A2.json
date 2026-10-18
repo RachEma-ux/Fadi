@@ -1,0 +1,62 @@
+{
+  "review": "M08-065-092-DELTA-REVUE-A3-A2",
+  "original_sha256": "4a8a727b60e6e0c370ee2b17a3ca5389abc734feb1a6d6ba011aedd9cd0ee6ef",
+  "original_preserved": true,
+  "source_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "changes": [
+    {
+      "entry_id": "M08-PATH-078",
+      "expected": "Recherchenature",
+      "previous_classification": "partiel",
+      "corrected_classification": "absent",
+      "support_type": "socle_generique_indirect_oracle_cible_absent",
+      "reason": "Métadonnées retournées ne testent pas recherche/filtre ; refus statutcertifiee ne teste pas interdiction propriété dérivée. Citation reste exacte mais oracle ciblé absent.",
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+          "line": 39,
+          "exact_line": "    expect(bibliotheques(r)).toEqual([{ nom: \"Mobilier\", definitions: [{ id: \"b\", nom: \"Table\", nature: \"bloc\", version: 1, occurrences: 2 }] }]);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-078",
+      "expected": "Rechercheversion",
+      "previous_classification": "partiel",
+      "corrected_classification": "absent",
+      "support_type": "socle_generique_indirect_oracle_cible_absent",
+      "reason": "Métadonnées retournées ne testent pas recherche/filtre ; refus statutcertifiee ne teste pas interdiction propriété dérivée. Citation reste exacte mais oracle ciblé absent.",
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+          "line": 39,
+          "exact_line": "    expect(bibliotheques(r)).toEqual([{ nom: \"Mobilier\", definitions: [{ id: \"b\", nom: \"Table\", nature: \"bloc\", version: 1, occurrences: 2 }] }]);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-088",
+      "expected": "Propriétédérivée refusée",
+      "previous_classification": "partiel",
+      "corrected_classification": "absent",
+      "support_type": "socle_generique_indirect_oracle_cible_absent",
+      "reason": "Métadonnées retournées ne testent pas recherche/filtre ; refus statutcertifiee ne teste pas interdiction propriété dérivée. Citation reste exacte mais oracle ciblé absent.",
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 275,
+          "exact_line": "    expect(() => appliquer(e, [{ type: \"propriete.definir\", params: { id: \"w\", nom: \"x\", valeur: 1, statut: \"certifiee\" } }])).toThrow(ErreurCommande);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    }
+  ],
+  "adjusted_counts": {
+    "present": 17,
+    "partiel": 22,
+    "absent": 93
+  },
+  "limits": "Précision du support seulement, aucun changement source ou run ; revue A3 à conserver."
+}

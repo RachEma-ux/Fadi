@@ -1,0 +1,228 @@
+{
+  "scope": "Originaux Mission002 uniquement ; signatures statiques, aucune valeur ni extrait exporté",
+  "files": 19,
+  "totals": {
+    "private_key": 0,
+    "github_token": 0,
+    "aws_access_id": 0,
+    "credential_uri": 0,
+    "generic_secret_assignment": 0,
+    "jwt_signature": 0
+  },
+  "results": [
+    {
+      "path": "A1-630-taches.csv",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "A1-build.py",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "A1-exigences.csv",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "A1-produit.md",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "A2-architecture.md",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "A4-ux.md",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "A5-qualite.md",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "A6-devops.md",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "A6-preuves.json",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "DOSSIER-MISSION-002.md",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "Fadi_Studio_Definition_Officielle_Reference_V2_1.txt",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "Fadi_Studio_Referentiel_Technique_Detaille_V1_0.txt",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "L1-L6-consolidation-A0.md",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "L5-missions-et-issues-proposees.md",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "checklist.md",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "propositions-workstream-studio/CONTEXT.md",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "propositions-workstream-studio/HANDOFF.md",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "propositions-workstream-studio/STATUS.md",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    },
+    {
+      "path": "propositions-workstream-studio/TASKS.md",
+      "counts": {
+        "private_key": 0,
+        "github_token": 0,
+        "aws_access_id": 0,
+        "credential_uri": 0,
+        "generic_secret_assignment": 0,
+        "jwt_signature": 0
+      }
+    }
+  ],
+  "limits": [
+    "Ne couvre pas secrets encodés/inconnus, données client sans signature, provenance des URLs ni contenu distant.",
+    "Zéro signature ne vaut pas absence absolue de secret ; revue humaine avant publication.",
+    "Aucun fichier .env ni binding credential système lu."
+  ]
+}

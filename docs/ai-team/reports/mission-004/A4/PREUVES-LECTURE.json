@@ -1,0 +1,118 @@
+{
+  "date": "2026-10-18",
+  "reference_local": "301a4fa8f2594fa1c8f0317c18085b5ae22ac7a3",
+  "prs": [
+    {
+      "number": 142,
+      "state": "open",
+      "merged": false,
+      "head_sha": "0d9606059f383e993b4bc69d57700ff411856919",
+      "base_sha": "3bcda9296eaa0a0376ca5d2279dd71f52a75184b",
+      "branch": "fix/project-layout-full-width",
+      "mergeable": true,
+      "runs": [
+        {
+          "id": 38766145763,
+          "name": "CI",
+          "status": "completed",
+          "conclusion": "failure",
+          "run_number": 1285,
+          "jobs_url": "https://api.github.com/repos/RachEma-ux/Fadi/actions/runs/38766145763/jobs",
+          "logs_url": "https://api.github.com/repos/RachEma-ux/Fadi/actions/runs/38766145763/logs",
+          "workflow_id": 372089289
+        },
+        {
+          "id": 38766145731,
+          "name": "Project layout",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 28,
+          "jobs_url": "https://api.github.com/repos/RachEma-ux/Fadi/actions/runs/38766145731/jobs",
+          "logs_url": "https://api.github.com/repos/RachEma-ux/Fadi/actions/runs/38766145731/logs",
+          "workflow_id": 384106311
+        }
+      ]
+    },
+    {
+      "number": 168,
+      "state": "open",
+      "merged": false,
+      "head_sha": "5eaa11c81575a1d347834500af33eb67d7350883",
+      "base_sha": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "branch": "feat/167-studio-daily-checklist",
+      "mergeable": true,
+      "runs": [
+        {
+          "id": 39124724088,
+          "name": "Continuité de développement",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 78,
+          "jobs_url": "https://api.github.com/repos/RachEma-ux/Fadi/actions/runs/39124724088/jobs",
+          "logs_url": "https://api.github.com/repos/RachEma-ux/Fadi/actions/runs/39124724088/logs",
+          "workflow_id": 387750043
+        },
+        {
+          "id": 39124724076,
+          "name": "Fadi — isolation des autres applications",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 55,
+          "jobs_url": "https://api.github.com/repos/RachEma-ux/Fadi/actions/runs/39124724076/jobs",
+          "logs_url": "https://api.github.com/repos/RachEma-ux/Fadi/actions/runs/39124724076/logs",
+          "workflow_id": 387827340
+        },
+        {
+          "id": 39124724104,
+          "name": "CI",
+          "status": "in_progress",
+          "conclusion": null,
+          "run_number": 1388,
+          "jobs_url": "https://api.github.com/repos/RachEma-ux/Fadi/actions/runs/39124724104/jobs",
+          "logs_url": "https://api.github.com/repos/RachEma-ux/Fadi/actions/runs/39124724104/logs",
+          "workflow_id": 372089289
+        },
+        {
+          "id": 39124724192,
+          "name": "Studio — snapshot quotidien de la checklist",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 9,
+          "jobs_url": "https://api.github.com/repos/RachEma-ux/Fadi/actions/runs/39124724192/jobs",
+          "logs_url": "https://api.github.com/repos/RachEma-ux/Fadi/actions/runs/39124724192/logs",
+          "workflow_id": 388362509
+        }
+      ]
+    }
+  ],
+  "daily_files": [
+    {
+      "path": "Studio/STUDIO-DAILY-UPDATES.md",
+      "blob": "5046ce164809ec2797702bff843f3707536dd552"
+    },
+    {
+      "path": "scripts/update-studio-daily.py",
+      "blob": "ffb9489193a108ecee62e04c104ff8d904d10415"
+    },
+    {
+      "path": "scripts/test-update-studio-daily.py",
+      "blob": "47fe7d7a0d19933b93d1be240d52f058c43df82b"
+    },
+    {
+      "path": ".github/workflows/studio-checklist-daily.yml",
+      "blob": "af0754e5becb52a57ec1021cfd5bab4c95856942"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Checklist_Interactive_V1_1.html",
+      "blob": "8558922bfd5d0592b71d042b2c55bf090a6cc8e4"
+    }
+  ],
+  "static_ids": {
+    "source_count": 630,
+    "html_count": 630,
+    "html_unique": 630,
+    "missing": [],
+    "extra": []
+  },
+  "limits": "Lecture API première page runs PR ; aucune exécution workflow/script branch ni édition HTML ; comparaison statique seeds/MD seulement."
+}

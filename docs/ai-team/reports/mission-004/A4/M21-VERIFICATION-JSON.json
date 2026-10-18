@@ -1,0 +1,14 @@
+{
+  "scope": "cohérence documentaire pure JSON",
+  "catalogue_tools": 8,
+  "unique_ids": true,
+  "unique_icons": true,
+  "shortcuts": "pas collision dans exemples même contexte ; pas validation OS/navigateur",
+  "independent_boards": true,
+  "distinct_approval_publication_permissions": true,
+  "scoped_aliases": 2,
+  "all_executable": false,
+  "runtime_tests_executed": false,
+  "source_requirement_semantics": "non certifiée par ce validateur",
+  "verdict": "PASS documentaire uniquement"
+}

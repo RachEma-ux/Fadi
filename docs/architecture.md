@@ -127,8 +127,10 @@ PostGIS is not asked to express those.
 The prototype's extracted engine (Canvas 2D) stays in place, untouched, only until the new Atelier passes the
 acceptance scenario on P.118; it is then deleted from the product (one Atelier, no « classic » mode). The
 canonical geometry of building objects is parametric; solids, symbols and display meshes are derived by an
-identified, versioned engine (`core-geometry` today). No B-Rep kernel (OCCT) enters the repository before the
-owner's licence decision; it would serve free-form shape operations only, behind the same engine interface.
+identified, versioned engine. The owner’s OCCT licence decision was recorded in D-177, followed by the
+separate exact kernel in `packages/geometry-exact` (D-182/D-183): a replaceable WASM component, with its
+licence and loading constraints preserved. This updates the earlier pending-decision wording; it does not
+change the canonical parametric model or make Planche mesh operations exact.
 See `packages/core-geometry/README.md` for exactly which Canvas/SVG functions are kept and why.
 
 ### Interface languages (D-163)
