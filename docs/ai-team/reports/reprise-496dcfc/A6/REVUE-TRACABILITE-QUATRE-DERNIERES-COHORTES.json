@@ -1,0 +1,654 @@
+{
+  "review": "A6 four cohorts static Git provenance/citations only",
+  "reference_expected": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "cohorts": [
+    {
+      "cohort": "A2/M08-UNITE-065-092.json",
+      "sha256": "4a8a727b60e6e0c370ee2b17a3ca5389abc734feb1a6d6ba011aedd9cd0ee6ef",
+      "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "entry_count": 13,
+      "counts": {
+        "source_hashes": 18,
+        "git_blobs": 18,
+        "single_line_citations": 521,
+        "range_citations": 0,
+        "local_mapping_hashes": 0,
+        "terminal_newline_representation_differences": 0
+      }
+    },
+    {
+      "cohort": "A2/M08-UNITE-094-124.json",
+      "sha256": "d3041cc2dd3ae7c48a82ce1d46608204b9f2505dcdae26eeac9755fa8c083c5f",
+      "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "entry_count": 13,
+      "counts": {
+        "source_hashes": 18,
+        "git_blobs": 18,
+        "single_line_citations": 585,
+        "range_citations": 0,
+        "local_mapping_hashes": 0,
+        "terminal_newline_representation_differences": 0
+      }
+    },
+    {
+      "cohort": "A4/M08-E2E-074-103.json",
+      "sha256": "ac81ecb19c2859bf0fb76041afa3a783385df8dfd32dfb0b75252cfdba565b09",
+      "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "entry_count": 13,
+      "counts": {
+        "source_hashes": 67,
+        "git_blobs": 0,
+        "single_line_citations": 13,
+        "range_citations": 54,
+        "local_mapping_hashes": 1,
+        "terminal_newline_representation_differences": 3
+      }
+    },
+    {
+      "cohort": "A4/M08-E2E-105-125.json",
+      "sha256": "ce4ffe0e5838a250c2183b23ef72449942f84f55bb7631dd7c31b70ab5e0d6e2",
+      "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "entry_count": 12,
+      "counts": {
+        "source_hashes": 63,
+        "git_blobs": 0,
+        "single_line_citations": 12,
+        "range_citations": 51,
+        "local_mapping_hashes": 1,
+        "terminal_newline_representation_differences": 4
+      }
+    }
+  ],
+  "unique_git_sources": 73,
+  "source_proofs": [
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "apps/web/e2e/atelier-complements.mjs",
+      "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+      "git_blob": "a38c75ae79336e1afa058142ce3650ac974e5d58"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "apps/web/e2e/atelier-documents.mjs",
+      "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+      "git_blob": "d8ef25c93b51f7971d858cab87414d7b7e1d9553"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "apps/web/e2e/atelier-nouveau.mjs",
+      "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+      "git_blob": "348352e00745372bbfd3cba1c1ca9d9bb66c2e51"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "apps/web/e2e/atelier-versions.mjs",
+      "sha256": "6de84dca578e591200232c6d7d53ae31fb2e2bc207fd85aa5821dadf1b34ab04",
+      "git_blob": "fbc3970b110b5391ac9c594b033beba1d328eb49"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "apps/web/e2e/parcours-scenario.mjs",
+      "sha256": "9684822bfc974548b400bed06e9a9ecd5cb34fd95de648e7b3e3d6ef48ef6863",
+      "git_blob": "5798ad80a41f3c9eae5d1e44225a5a383ee3917c"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+      "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+      "git_blob": "3ace5e26daac369268a402dff7492b8f64d0de31"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/decisions.md",
+      "sha256": "91bd4cd64d0a67d1fdb3e6acd6582703e88024fabd5b3b1f333f79a8094cad26",
+      "git_blob": "46d9f06852af152522bf1431dda245f811e1b153"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-04-07.md",
+      "sha256": "b9c5d54af77016dc08d5c2a672a055ecea818327ff058f61b4d71fd26d25b096",
+      "git_blob": "7bcc364ae8b896b0c53b303958a6cbf18d27fa61"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-05-01.md",
+      "sha256": "13fe24807d016ce858118704468c97e6e718c894db658c6ce00b02d05d0211eb",
+      "git_blob": "824ddada685f3ff4efa7e7a056af838cc53d367d"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-05-02.md",
+      "sha256": "3af6ee3624fe2a3e49fcf418fc6fe97b6ce75d43cadea18859b2663db73c8dcd",
+      "git_blob": "63cac509900ad27d92c2238682c4e1dfb9e32b3e"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-05-03.md",
+      "sha256": "0313463bf38a83e5736f9c0851f4b55fe52ba5d04ed1e6f5e0695d1a396a5077",
+      "git_blob": "210f384d44e987c1459498c16001c16cf6f40e17"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-05-04.md",
+      "sha256": "34828dd2108f0a54e2c13d57ba23a12cb6292b025afed5b2080ce197c74d74f2",
+      "git_blob": "c9ea8011b65f897bbeca9415f4b32090395b3bd5"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-05-05.md",
+      "sha256": "e341252f6e59cbc46f0aad3f86169537011c958a91863820abdd2046a636223c",
+      "git_blob": "557334b5e3c0559634405f35bd5750a60c961d5d"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-05-06.md",
+      "sha256": "691255c6b91ef3a7d9927afe713d83a763df8f9293c711ae806f51e94ebb361a",
+      "git_blob": "4dabe9f7b615bc5fcbee2d8c83b0549446618518"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-05-07.md",
+      "sha256": "be1077b23d18d15cdce8668b10667c9fbd80197a7ffd4d89b9c3265c547a3922",
+      "git_blob": "a783dc154684c74eed880f0db286663d05e69388"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-05-11.md",
+      "sha256": "408d9c7163fb42390224cb3eb14b32866ad40716bff3c23459ad55c3ddbbc9a2",
+      "git_blob": "784cd8b385db3ede816b43770f6764f79b3b92d4"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-05-12.md",
+      "sha256": "2387adc4b6ecb004e327dc7d7cd75e4d515cfd364e22a4c2fbce3d819f34c9c9",
+      "git_blob": "f61976a4b656008187b69228f9c88664ec978cae"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-05-14.md",
+      "sha256": "7cf75ebe199f44d5f78c11b0079a745b22f6ee9c2bbc63b2da1c9a366483f6c3",
+      "git_blob": "2ecdbd7da39b1ca614aedda78c2986f92d1b6f40"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-05-15.md",
+      "sha256": "32bca130d0ccd93d23bed006dbb1979b38495cc02906c6b9ba59aba20a7d7979",
+      "git_blob": "2b8757e65fa106e6b23e7174525527c92dcd0364"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-06-07.md",
+      "sha256": "37b67b351273e64615e5e72633ce2f8b481b9857d2940890a1818c185ed02120",
+      "git_blob": "b7dc636f4760c9b28611a8c32e2cc0af293d24fe"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-06-08.md",
+      "sha256": "f3bd2e6ee66292b6d558036c2c9604984a51624e0a0e0789433141f92d0e8ac6",
+      "git_blob": "638dfb5f01c53c9b957b9e01282ed4a10c82b53c"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-07-01.md",
+      "sha256": "059106c28c8c4bca9343a09b3d70d5e0df4cbfed52f3d4721dba43be03162400",
+      "git_blob": "309f4e17ecec0f7f2f2eb2ccee03baedfcbf0e91"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-07-02.md",
+      "sha256": "6e63d08f66d225d1492c5d185b5a69b5ff4f9bd8eb3a51fbf660cd317b387416",
+      "git_blob": "ebb6bac5ceecb88520d39fdb0f2093de386ad330"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-07-03.md",
+      "sha256": "2d8371422677c24e12d24d23341c329ae191510f9fa74ecdd7a1e0ef4f9c9065",
+      "git_blob": "1a90fa49697c99d77eadf7ad71c6ada0949853ae"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-07-04.md",
+      "sha256": "51ac54638553277baebf79fdeb4d72a0f9afbb88062acb51725782582b773e38",
+      "git_blob": "d02a092a1ec40933dc437dd013348ce844c6fafc"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-07-05.md",
+      "sha256": "c53730714d36f5363ccb240e6e94b4eb15da3a9c13756e4e60923d39f3f42474",
+      "git_blob": "af7d701ea0582e5d97deeaab8256bc423443d116"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-07-06.md",
+      "sha256": "de44c1f35222493c5bf8de6cb66cf65b8010347ead78557711ea1de0aa06d6bf",
+      "git_blob": "822967f9974f5fdd96d78c052c7fb37c3c8546de"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-07-10.md",
+      "sha256": "4943273ef4441cd2b45f27e33691e36a68d13fe54f2ba6b136f75a600e1caa76",
+      "git_blob": "f4682bbba513b553830c72413eee9b5c6c3a491d"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-07-15.md",
+      "sha256": "bb3a3087b95750456b7ac003962daab12dbcde9a6b808187d5fafd816f567bd6",
+      "git_blob": "ec4dc5167089cd3a88c4c44c30bdf683b1ba718a"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-07-16.md",
+      "sha256": "ff6a06d16645b06179f07298a1ac53666b35127c4596e1a5b0285adadea923f4",
+      "git_blob": "c97eb1090ad9b70715f6e93d737b2b04ea9edf81"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-07-17.md",
+      "sha256": "d68e0b0657525d327d86e7fc0c50d3936a507f294fa03bc8365607b8d10cb30a",
+      "git_blob": "14f200160e4e311b213a921ecc7e8f47e8bdbccb"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-17-16.md",
+      "sha256": "61e23bd37e1fd08865082c18f6274c556927498aff082dc1281c6bd2c937054e",
+      "git_blob": "b84ed05ddf3dae18060ca82476da75dae2a22545"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-18-03.md",
+      "sha256": "3ce7c26be56aced54d59af5668f1648fc271f5874a86eb30da2dba6fe944313e",
+      "git_blob": "0bd755655ba9ce9485fa463560f013737cd2ec25"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-18-04.md",
+      "sha256": "8e59f24ae60271b25e89e6c739b1b2816a4aa1921936ce7ded7355e9ac7291aa",
+      "git_blob": "dacaa9057d67e89a6d95dceace622249afc00d93"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-21-01.md",
+      "sha256": "554ef13236e3d633e73179508ba8e4365d364f24af0a09709eae604e9928f1ae",
+      "git_blob": "6e4e6a5ca0ad313b966fb3fc4bb9b08c6b82dc9f"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-21-02.md",
+      "sha256": "820a101ef59a90067fc15799e9aa93a69511301c48338aef72b179b98de6e009",
+      "git_blob": "476dab2d1af31803a2cc9bf477e706432d5e3148"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-21-04.md",
+      "sha256": "428af7741aabbb0204b9a95758d115590c809f3626d8947af70314e73ca0610d",
+      "git_blob": "272eb3c79acdf2a8fc128b399bc5d4f4a8262cab"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-21-05.md",
+      "sha256": "d5b1e0f58d15a2552212159be1bfc4bff7571b21e4f4f69f28e8e322e232c5ce",
+      "git_blob": "6812cb42b1042dfb09c143fba20592b3fbf479fa"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "docs/atelier/fiches/DA-21-09.md",
+      "sha256": "85243980a85319f886901fcf2d5006c81fa0d3491f3f0e9bb0747b8fa845cc0a",
+      "git_blob": "b49aa2daff49ef834cd977a2b65c8b771b800181"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+      "sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+      "git_blob": "b1cf02c1a04663aeb329e7fd9b724a6f400a73cb"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+      "git_blob": "458b232273b5e5529ff6489804371cba011901db"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "packages/atelier-model/src/projection/maillage.test.ts",
+      "sha256": "6e7dd4f59a6691c499ad8191df498490b3163110146581756bb7ce5eb5825dd2",
+      "git_blob": "4bffbe7b626c1ad2661e5cb2b88379b387515d58"
+    },
+    {
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "packages/atelier-model/src/reprise.test.ts",
+      "sha256": "07ad4cef2d368abf0706b47b38ef7071ecb463c10ff7423875027bc2de00e5d4",
+      "git_blob": "7449908dfb8d4f7ae95bc493b5df3a80b3602ce3"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "apps/web/e2e/atelier-complements.mjs",
+      "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+      "git_blob": "a38c75ae79336e1afa058142ce3650ac974e5d58"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "apps/web/e2e/atelier-documents.mjs",
+      "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+      "git_blob": "d8ef25c93b51f7971d858cab87414d7b7e1d9553"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "apps/web/e2e/atelier-nouveau.mjs",
+      "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+      "git_blob": "348352e00745372bbfd3cba1c1ca9d9bb66c2e51"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "apps/web/e2e/atelier-versions.mjs",
+      "sha256": "6de84dca578e591200232c6d7d53ae31fb2e2bc207fd85aa5821dadf1b34ab04",
+      "git_blob": "fbc3970b110b5391ac9c594b033beba1d328eb49"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "apps/web/e2e/parcours-scenario.mjs",
+      "sha256": "9684822bfc974548b400bed06e9a9ecd5cb34fd95de648e7b3e3d6ef48ef6863",
+      "git_blob": "5798ad80a41f3c9eae5d1e44225a5a383ee3917c"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-05-04.md",
+      "sha256": "34828dd2108f0a54e2c13d57ba23a12cb6292b025afed5b2080ce197c74d74f2",
+      "git_blob": "c9ea8011b65f897bbeca9415f4b32090395b3bd5"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-05-05.md",
+      "sha256": "e341252f6e59cbc46f0aad3f86169537011c958a91863820abdd2046a636223c",
+      "git_blob": "557334b5e3c0559634405f35bd5750a60c961d5d"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-05-06.md",
+      "sha256": "691255c6b91ef3a7d9927afe713d83a763df8f9293c711ae806f51e94ebb361a",
+      "git_blob": "4dabe9f7b615bc5fcbee2d8c83b0549446618518"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-05-11.md",
+      "sha256": "408d9c7163fb42390224cb3eb14b32866ad40716bff3c23459ad55c3ddbbc9a2",
+      "git_blob": "784cd8b385db3ede816b43770f6764f79b3b92d4"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-05-12.md",
+      "sha256": "2387adc4b6ecb004e327dc7d7cd75e4d515cfd364e22a4c2fbce3d819f34c9c9",
+      "git_blob": "f61976a4b656008187b69228f9c88664ec978cae"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-05-14.md",
+      "sha256": "7cf75ebe199f44d5f78c11b0079a745b22f6ee9c2bbc63b2da1c9a366483f6c3",
+      "git_blob": "2ecdbd7da39b1ca614aedda78c2986f92d1b6f40"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-05-15.md",
+      "sha256": "32bca130d0ccd93d23bed006dbb1979b38495cc02906c6b9ba59aba20a7d7979",
+      "git_blob": "2b8757e65fa106e6b23e7174525527c92dcd0364"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-07-01.md",
+      "sha256": "059106c28c8c4bca9343a09b3d70d5e0df4cbfed52f3d4721dba43be03162400",
+      "git_blob": "309f4e17ecec0f7f2f2eb2ccee03baedfcbf0e91"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-07-02.md",
+      "sha256": "6e63d08f66d225d1492c5d185b5a69b5ff4f9bd8eb3a51fbf660cd317b387416",
+      "git_blob": "ebb6bac5ceecb88520d39fdb0f2093de386ad330"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-07-03.md",
+      "sha256": "2d8371422677c24e12d24d23341c329ae191510f9fa74ecdd7a1e0ef4f9c9065",
+      "git_blob": "1a90fa49697c99d77eadf7ad71c6ada0949853ae"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-07-04.md",
+      "sha256": "51ac54638553277baebf79fdeb4d72a0f9afbb88062acb51725782582b773e38",
+      "git_blob": "d02a092a1ec40933dc437dd013348ce844c6fafc"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-07-05.md",
+      "sha256": "c53730714d36f5363ccb240e6e94b4eb15da3a9c13756e4e60923d39f3f42474",
+      "git_blob": "af7d701ea0582e5d97deeaab8256bc423443d116"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-07-06.md",
+      "sha256": "de44c1f35222493c5bf8de6cb66cf65b8010347ead78557711ea1de0aa06d6bf",
+      "git_blob": "822967f9974f5fdd96d78c052c7fb37c3c8546de"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-07-10.md",
+      "sha256": "4943273ef4441cd2b45f27e33691e36a68d13fe54f2ba6b136f75a600e1caa76",
+      "git_blob": "f4682bbba513b553830c72413eee9b5c6c3a491d"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-07-15.md",
+      "sha256": "bb3a3087b95750456b7ac003962daab12dbcde9a6b808187d5fafd816f567bd6",
+      "git_blob": "ec4dc5167089cd3a88c4c44c30bdf683b1ba718a"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-07-16.md",
+      "sha256": "ff6a06d16645b06179f07298a1ac53666b35127c4596e1a5b0285adadea923f4",
+      "git_blob": "c97eb1090ad9b70715f6e93d737b2b04ea9edf81"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-07-17.md",
+      "sha256": "d68e0b0657525d327d86e7fc0c50d3936a507f294fa03bc8365607b8d10cb30a",
+      "git_blob": "14f200160e4e311b213a921ecc7e8f47e8bdbccb"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-17-16.md",
+      "sha256": "61e23bd37e1fd08865082c18f6274c556927498aff082dc1281c6bd2c937054e",
+      "git_blob": "b84ed05ddf3dae18060ca82476da75dae2a22545"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-18-03.md",
+      "sha256": "3ce7c26be56aced54d59af5668f1648fc271f5874a86eb30da2dba6fe944313e",
+      "git_blob": "0bd755655ba9ce9485fa463560f013737cd2ec25"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-18-04.md",
+      "sha256": "8e59f24ae60271b25e89e6c739b1b2816a4aa1921936ce7ded7355e9ac7291aa",
+      "git_blob": "dacaa9057d67e89a6d95dceace622249afc00d93"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-21-01.md",
+      "sha256": "554ef13236e3d633e73179508ba8e4365d364f24af0a09709eae604e9928f1ae",
+      "git_blob": "6e4e6a5ca0ad313b966fb3fc4bb9b08c6b82dc9f"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-21-02.md",
+      "sha256": "820a101ef59a90067fc15799e9aa93a69511301c48338aef72b179b98de6e009",
+      "git_blob": "476dab2d1af31803a2cc9bf477e706432d5e3148"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-21-04.md",
+      "sha256": "428af7741aabbb0204b9a95758d115590c809f3626d8947af70314e73ca0610d",
+      "git_blob": "272eb3c79acdf2a8fc128b399bc5d4f4a8262cab"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-21-05.md",
+      "sha256": "d5b1e0f58d15a2552212159be1bfc4bff7571b21e4f4f69f28e8e322e232c5ce",
+      "git_blob": "6812cb42b1042dfb09c143fba20592b3fbf479fa"
+    },
+    {
+      "commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "path": "docs/atelier/fiches/DA-21-09.md",
+      "sha256": "85243980a85319f886901fcf2d5006c81fa0d3491f3f0e9bb0747b8fa845cc0a",
+      "git_blob": "b49aa2daff49ef834cd977a2b65c8b771b800181"
+    }
+  ],
+  "representation_differences": [
+    {
+      "cohort": "A4/M08-E2E-074-103.json",
+      "path": "apps/web/e2e/atelier-complements.mjs",
+      "lines": [
+        1,
+        2594
+      ],
+      "difference": "whole-file excerpt omits one terminal newline; source hash verified against exact raw bytes",
+      "source_sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    },
+    {
+      "cohort": "A4/M08-E2E-074-103.json",
+      "path": "apps/web/e2e/atelier-documents.mjs",
+      "lines": [
+        1,
+        382
+      ],
+      "difference": "whole-file excerpt omits one terminal newline; source hash verified against exact raw bytes",
+      "source_sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    },
+    {
+      "cohort": "A4/M08-E2E-074-103.json",
+      "path": "apps/web/e2e/atelier-nouveau.mjs",
+      "lines": [
+        1,
+        414
+      ],
+      "difference": "whole-file excerpt omits one terminal newline; source hash verified against exact raw bytes",
+      "source_sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    },
+    {
+      "cohort": "A4/M08-E2E-105-125.json",
+      "path": "apps/web/e2e/atelier-complements.mjs",
+      "lines": [
+        1,
+        2594
+      ],
+      "difference": "whole-file excerpt omits one terminal newline; source hash verified against exact raw bytes",
+      "source_sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    },
+    {
+      "cohort": "A4/M08-E2E-105-125.json",
+      "path": "apps/web/e2e/atelier-nouveau.mjs",
+      "lines": [
+        1,
+        414
+      ],
+      "difference": "whole-file excerpt omits one terminal newline; source hash verified against exact raw bytes",
+      "source_sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    },
+    {
+      "cohort": "A4/M08-E2E-105-125.json",
+      "path": "apps/web/e2e/atelier-versions.mjs",
+      "lines": [
+        1,
+        260
+      ],
+      "difference": "whole-file excerpt omits one terminal newline; source hash verified against exact raw bytes",
+      "source_sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    },
+    {
+      "cohort": "A4/M08-E2E-105-125.json",
+      "path": "apps/web/e2e/parcours-scenario.mjs",
+      "lines": [
+        1,
+        1755
+      ],
+      "difference": "whole-file excerpt omits one terminal newline; source hash verified against exact raw bytes",
+      "source_sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    }
+  ],
+  "errors": [],
+  "passed": true,
+  "delta_review": {
+    "file": "/workspace/work/resume496/agents/A2/M08-094-124-DELTA-REVUE-A1-A2.json",
+    "sha256": "8602a3fc1817fd39f8ff3f3925541c23dbbeba13fc69a5cdee73f01021cbb132",
+    "original_preserved_hash_matches": true,
+    "extra_citations_checked": [
+      {
+        "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+        "line": 205,
+        "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+      },
+      {
+        "path": "packages/atelier-model/src/reprise.test.ts",
+        "line": 37,
+        "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+      },
+      {
+        "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+        "line": 199,
+        "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+      },
+      {
+        "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+        "line": 200,
+        "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+      },
+      {
+        "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+        "line": 201,
+        "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+      },
+      {
+        "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+        "line": 202,
+        "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+      },
+      {
+        "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+        "line": 203,
+        "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+      },
+      {
+        "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+        "line": 204,
+        "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+      },
+      {
+        "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+        "line": 205,
+        "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+      },
+      {
+        "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+        "line": 206,
+        "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+      },
+      {
+        "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+        "line": 207,
+        "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+      },
+      {
+        "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+        "line": 208,
+        "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+      },
+      {
+        "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+        "line": 209,
+        "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+      }
+    ]
+  },
+  "canonical_mapping_sha256": "d8879b4ce71b82ea38352a61d7d2ae025350d8e65ef1b345241f85aa5e159348",
+  "no_oracle_or_business_verdict": true,
+  "no_runtime_module_import_or_test_DB": true,
+  "no_cohort_or_source_modified": true,
+  "mapping_hash_matches_original_M004_and_cohort_declarations": true
+}

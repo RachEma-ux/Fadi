@@ -1,0 +1,175 @@
+{
+  "reference_main": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "head_local": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+  "branch": "docs/156-codex-missions-completes",
+  "workflow_identical_to_new_main": true,
+  "workflow_sha256": "9542a7ca056edcb50f3ecb1892b47e242dc45aa9589c3d7463a4f93a31e9f7ec",
+  "no_PR_number_in_condition": true,
+  "exact_PR_context_pure": true,
+  "integration_jobs_skip_before_services": true,
+  "base_sha_guard_executed_read_only": true,
+  "git_diff_paths": [
+    "docs/ai-team/missions.json",
+    "docs/ai-team/reports/reprise-496dcfc/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1-v2-DELTA.json",
+    "docs/ai-team/reports/reprise-496dcfc/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1-v2-DELTA.md",
+    "docs/ai-team/reports/reprise-496dcfc/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1-v2.json",
+    "docs/ai-team/reports/reprise-496dcfc/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1-v2.md",
+    "docs/ai-team/reports/reprise-496dcfc/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1.json",
+    "docs/ai-team/reports/reprise-496dcfc/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1.md",
+    "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json",
+    "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.md",
+    "docs/ai-team/reports/reprise-496dcfc/A1/M08-UNITE-094-124-REVUE-A1-v2.json",
+    "docs/ai-team/reports/reprise-496dcfc/A1/M08-UNITE-094-124-REVUE-A1-v2.md",
+    "docs/ai-team/reports/reprise-496dcfc/A2/G1-ONZE-FONCTIONS-REVUE-A2-v2.json",
+    "docs/ai-team/reports/reprise-496dcfc/A2/G1-ONZE-FONCTIONS-REVUE-A2-v2.md",
+    "docs/ai-team/reports/reprise-496dcfc/A2/G1-ONZE-FONCTIONS-REVUE-A2.json",
+    "docs/ai-team/reports/reprise-496dcfc/A2/G1-ONZE-FONCTIONS-REVUE-A2.md",
+    "docs/ai-team/reports/reprise-496dcfc/A2/G2-GRAPHE-IMPORT-PUBLIC-A2.json",
+    "docs/ai-team/reports/reprise-496dcfc/A2/G2-GRAPHE-IMPORT-PUBLIC-A2.md",
+    "docs/ai-team/reports/reprise-496dcfc/A2/M05-M17-CHOIX-RESIDUELS-A2.json",
+    "docs/ai-team/reports/reprise-496dcfc/A2/M05-M17-CHOIX-RESIDUELS-A2.md",
+    "docs/ai-team/reports/reprise-496dcfc/A3/G2-FAISABILITE-HARNESS-A3.json",
+    "docs/ai-team/reports/reprise-496dcfc/A3/G2-FAISABILITE-HARNESS-A3.md",
+    "docs/ai-team/reports/reprise-496dcfc/A3/M08-UNITE-065-092-REVUE-A3.json",
+    "docs/ai-team/reports/reprise-496dcfc/A3/M08-UNITE-065-092-REVUE-A3.md",
+    "docs/ai-team/reports/reprise-496dcfc/A4/G1-INDEX-REVUE-CIBLEE-A4.json",
+    "docs/ai-team/reports/reprise-496dcfc/A4/G1-INDEX-REVUE-CIBLEE-A4.md",
+    "docs/ai-team/reports/reprise-496dcfc/A5/M08-E2E-074-103-CONFRONTATION-A5.json",
+    "docs/ai-team/reports/reprise-496dcfc/A5/M08-E2E-074-103-CONFRONTATION-A5.md",
+    "docs/ai-team/reports/reprise-496dcfc/A5/M08-E2E-105-125-CONFRONTATION-A5.json",
+    "docs/ai-team/reports/reprise-496dcfc/A5/M08-E2E-105-125-CONFRONTATION-A5.md",
+    "docs/ai-team/reports/reprise-496dcfc/A5/M08-E2E-105-125-LECTURE-INDEPENDANTE-A5.json",
+    "docs/ai-team/reports/reprise-496dcfc/A5/M08-REVUE-ANNOTATIONS-A5.json",
+    "docs/ai-team/reports/reprise-496dcfc/A5/M08-REVUE-ANNOTATIONS-A5.md",
+    "docs/ai-team/reports/reprise-496dcfc/A5/M08-TROIS-CONTRADICTIONS-OUVERTES-A5.json",
+    "docs/ai-team/reports/reprise-496dcfc/A5/M08-TROIS-CONTRADICTIONS-OUVERTES-A5.md",
+    "docs/ai-team/reports/reprise-496dcfc/A5/M08-UNITE-041-064-QA-RESERVES-A5.json",
+    "docs/ai-team/reports/reprise-496dcfc/A5/M08-UNITE-041-064-QA-RESERVES-A5.md",
+    "docs/ai-team/reports/reprise-496dcfc/A5/M08-UNITE-065-092-QA-RESERVES-A5.json",
+    "docs/ai-team/reports/reprise-496dcfc/A5/M08-UNITE-065-092-QA-RESERVES-A5.md",
+    "docs/ai-team/reports/reprise-496dcfc/A5/M08-UNITE-094-124-QA-RESERVES-A5.json",
+    "docs/ai-team/reports/reprise-496dcfc/A5/M08-UNITE-094-124-QA-RESERVES-A5.md",
+    "docs/ai-team/reports/reprise-496dcfc/A5/R4-M09-RAPPROCHEMENT-A5.json",
+    "docs/ai-team/reports/reprise-496dcfc/A5/R4-M09-RAPPROCHEMENT-A5.md",
+    "docs/ai-team/reports/reprise-496dcfc/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+    "docs/ai-team/reports/reprise-496dcfc/A5/R5-M15-M26-LACUNES-CORPUS-A5.md",
+    "docs/ai-team/reports/reprise-496dcfc/A5/REMISE-A5-v2.json",
+    "docs/ai-team/reports/reprise-496dcfc/A6/M03-DELTA-CHECKS-PURS-AVANT-FUSION.json",
+    "docs/ai-team/reports/reprise-496dcfc/A6/M03-DELTA-CHECKS-PURS-AVANT-FUSION.md",
+    "docs/ai-team/reports/reprise-496dcfc/A6/REVUE-G2-FINALE-A6.json",
+    "docs/ai-team/reports/reprise-496dcfc/A6/REVUE-G2-FINALE-A6.md",
+    "docs/ai-team/reports/reprise-496dcfc/A6/REVUE-TRACABILITE-QUATRE-DERNIERES-COHORTES.json",
+    "docs/ai-team/reports/reprise-496dcfc/A6/REVUE-TRACABILITE-QUATRE-DERNIERES-COHORTES.md",
+    "docs/ai-team/reports/reprise-496dcfc/CHECKPOINT-A0-LOCAL.json",
+    "docs/ai-team/reports/reprise-496dcfc/CHECKPOINT-READY-A0.json",
+    "docs/ai-team/reports/reprise-496dcfc/CI-165-fa9-observation.json",
+    "docs/ai-team/reports/reprise-496dcfc/G1-DOSSIER-ARBITRAGE-A0.md",
+    "docs/ai-team/reports/reprise-496dcfc/G2-PERIMETRE-A0-PROPOSE.md",
+    "docs/ai-team/reports/reprise-496dcfc/M08-CONSOLIDATION-A0.json",
+    "docs/ai-team/reports/reprise-496dcfc/M08-INDEX-A0.json",
+    "docs/ai-team/reports/reprise-496dcfc/M08-SYNTHESE-A0.md",
+    "docs/ai-team/reports/reprise-496dcfc/README.md",
+    "docs/ai-team/reports/reprise-496dcfc/RECTIFICATION-ARCHIVES-M002-A0.json",
+    "docs/ai-team/reports/reprise-496dcfc/manifest.json",
+    "docs/atelier/fiches/DA-03-13.md",
+    "docs/atelier/fiches/DA-04-07.md",
+    "docs/atelier/fiches/DA-05-02.md",
+    "docs/workstreams/ai-team/HANDOFF.md",
+    "docs/workstreams/ai-team/STATUS.md",
+    "docs/workstreams/ai-team/TASKS.md",
+    "docs/workstreams/studio/HANDOFF.md",
+    "docs/workstreams/studio/STATUS.md",
+    "docs/workstreams/studio/TASKS.md",
+    "docs/workstreams/studio/task-register.json"
+  ],
+  "path_count": 72,
+  "other_triggers": [
+    {
+      "file": "audit-drawall.yml",
+      "on": {
+        "pull_request": {
+          "paths": [
+            "scripts/audit-drawall-in-fadi.mjs",
+            "docs/workstreams/purge-drawall/**",
+            ".github/workflows/audit-drawall.yml"
+          ]
+        },
+        "workflow_dispatch": ""
+      }
+    },
+    {
+      "file": "builder-deploy.yml",
+      "on": {
+        "workflow_dispatch": {
+          "inputs": {
+            "duration": {
+              "description": "Combien de temps garder l'application accessible (minutes)",
+              "required": "true",
+              "default": "15",
+              "type": "choice",
+              "options": [
+                "5",
+                "10",
+                "15",
+                "30"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "file": "ci.yml",
+      "on": {
+        "push": {
+          "branches": [
+            "main"
+          ]
+        },
+        "pull_request": ""
+      }
+    },
+    {
+      "file": "codex-missions.yml",
+      "on": {
+        "pull_request": "",
+        "push": {
+          "branches": [
+            "main"
+          ]
+        },
+        "workflow_dispatch": ""
+      }
+    },
+    {
+      "file": "continuity.yml",
+      "on": {
+        "pull_request": "",
+        "push": {
+          "branches": [
+            "main"
+          ]
+        },
+        "workflow_dispatch": ""
+      }
+    },
+    {
+      "file": "fadi-isolation.yml",
+      "on": {
+        "pull_request": "",
+        "push": {
+          "branches": [
+            "main"
+          ]
+        },
+        "workflow_dispatch": ""
+      }
+    }
+  ],
+  "no_push_PR_rerun_merge_admin_db_services": true,
+  "limits": [
+    "allowlist needs rechecking on final committed diff",
+    "new PR must use exact canonical head name and same repository; any other branch resumes full integration",
+    "main push existing run external must not be transferred from fa9 or attributed to A6"
+  ]
+}

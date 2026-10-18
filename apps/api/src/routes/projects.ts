@@ -26,6 +26,7 @@ import { lockRouter } from "./lock.js";
 import { archiveHash, recordProducedDocument } from "../lib/documents.js";
 import { loadStepContext } from "../lib/step-context.js";
 import { historyRouter } from "./history.js";
+import { studioRouter } from "./studio.js";
 
 export const projectsRouter = Router();
 projectsRouter.use(requireAuth);
@@ -199,6 +200,7 @@ projectsRouter.post("/:projectId/copies", async (req, res) => {
 projectsRouter.use("/:projectId/steps", parcoursStepsRouter);
 projectsRouter.use("/:projectId/planning", projectPlanningRouter);
 projectsRouter.use("/:projectId/programme", programmeRouter);
+projectsRouter.use("/:projectId/studio", studioRouter);
 projectsRouter.use("/:projectId/atelier", atelierCommandsRouter);
 projectsRouter.use("/:projectId/atelier", atelierVersionsRouter);
 projectsRouter.use("/:projectId/atelier", atelierAutomatisationRouter);

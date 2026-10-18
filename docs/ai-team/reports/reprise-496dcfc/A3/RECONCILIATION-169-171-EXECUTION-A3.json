@@ -1,0 +1,484 @@
+{
+  "report": "RECONCILIATION-169-171-EXECUTION-A3",
+  "agent": "A3",
+  "completed_at_utc": "2026-10-18T14:52:30.884460+00:00",
+  "scope": "Exécution locale réversible expressément autorisée par A0 dans les deux lots déjà autorisés ; pas de fusion de PR vers main, aucun push A3",
+  "authorization_provenance": {
+    "user": "Mission004 DB1/2 et décision6250110849 CLASSIF1 ; opérations de branche courte bornées aux lots existants",
+    "A0": "Instruction après étude statique : deux worktrees détachés, merge --no-commit de817, résolution templates169/171 + restriction github.repository169 ; puis autorisation de deux commits locaux après avis A5/A6 favorables",
+    "not_authorized": [
+      "push par A3",
+      "fusion PR vers main",
+      "nouveau changement applicatif",
+      "DB3/connexionDB/API/E2E/service/migration/installation/déploiement/administration"
+    ]
+  },
+  "reference_main": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "common_base": "a4caaab0e6665480f09febe3914c960b424b6b47",
+  "claude_piece": "b6794c64c7ff98fadf62868331f4297631201069",
+  "local_results": [
+    {
+      "pr": "169",
+      "worktree": "/workspace/work/resume496/reconciliation-169",
+      "head": "9b34dca9de8c3d1432d6f19315e4f0049d8bfd01",
+      "tree": "d2ed2b52a2740ac6462f0c7254b98accacf9c462",
+      "parents": [
+        "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+        "817bd36e7d4b1ab60ab9c00309509c7cdfed0798"
+      ],
+      "identity": "Codex <codex@openai.com> | Codex <codex@openai.com>",
+      "status_porcelain": "",
+      "unmerged": [],
+      "merge_in_progress": false,
+      "diff_check_main_exit": 0,
+      "diff_check_worktree_exit": 0,
+      "workflow_sha256": "c5933b1aebf6def658037cf27989f2af7cb60e41adb88120e19107dacba87c44",
+      "workflow_git_blob": "9e9b3d35e8f148c9f7dcbeb46f4ce982c88d28ff",
+      "workflow_patch_vs_original_lot": {
+        "path": "/workspace/work/resume496/agents/A3/RECONCILIATION-169-WORKFLOW.patch",
+        "sha256": "9e08a1eecc7df81b227df0bc93278ba46be34d789252be6e3fcccc100191b940",
+        "bytes": 7490
+      },
+      "reachable_commits_imported_since_original_lot_including_main_history": 30,
+      "new_merge_commits_created_by_A3": 1,
+      "reviewed_tree_preserved": true,
+      "branches_updated_by_A3": [],
+      "push_by_A3": false
+    },
+    {
+      "pr": "171",
+      "worktree": "/workspace/work/resume496/reconciliation-171",
+      "head": "25bca793c483bcb99c5254a86efabbd1f8b29015",
+      "tree": "25ed42d10145ba49835c0a4a3708460271cf5b59",
+      "parents": [
+        "5e0285d37f23c7c539502664036f0a2ff0986409",
+        "817bd36e7d4b1ab60ab9c00309509c7cdfed0798"
+      ],
+      "identity": "Codex <codex@openai.com> | Codex <codex@openai.com>",
+      "status_porcelain": "",
+      "unmerged": [],
+      "merge_in_progress": false,
+      "diff_check_main_exit": 0,
+      "diff_check_worktree_exit": 0,
+      "workflow_sha256": "beca2dea96a0cef5dd027b16fe6bbcf5099b3b73c196210ca2f02ca47ad618b9",
+      "workflow_git_blob": "6ae27db91c2e01f57fccf6cf7fc6cedbfbf437fd",
+      "workflow_patch_vs_original_lot": {
+        "path": "/workspace/work/resume496/agents/A3/RECONCILIATION-171-WORKFLOW.patch",
+        "sha256": "2dc90c762e832efb427cac19682f2144b309a29064e9394fcb89967b8fb8ceb7",
+        "bytes": 7436
+      },
+      "reachable_commits_imported_since_original_lot_including_main_history": 30,
+      "new_merge_commits_created_by_A3": 1,
+      "reviewed_tree_preserved": true,
+      "branches_updated_by_A3": [],
+      "push_by_A3": false
+    }
+  ],
+  "resolution": {
+    "initial_conflict_paths_each": [
+      ".github/workflows/ci.yml"
+    ],
+    "other_conflicts": [],
+    "169": "ci-resolu-169.yml de b679, sha256ecb2902742ea20d7187bf440cd94917039035019f861de23b4bf57edd3701590 ; ajout github.repository exact quatre fois seulement. Final c5933b1aebf6def658037cf27989f2af7cb60e41adb88120e19107dacba87c44",
+    "171": "ci-resolu-171.yml byte-identique de b679, SHA256beca2dea96a0cef5dd027b16fe6bbcf5099b3b73c196210ca2f02ca47ad618b9",
+    "application_code_delta_beyond_original_lots": false,
+    "entire_tree_union_verified": true,
+    "nonworkflow_lot_blobs_preserved": {
+      "169": 29,
+      "171": 3
+    },
+    "index_total_paths": {
+      "169": 1771,
+      "171": 1762
+    }
+  },
+  "checks": {
+    "git_metadata_and_text_only": true,
+    "full_index_verification": {
+      "main": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "base": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "worktrees": [
+        {
+          "pr": "169",
+          "head": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "merge_head": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "index_tree": "d2ed2b52a2740ac6462f0c7254b98accacf9c462",
+          "index_paths": 1771,
+          "lot_changed_paths": [
+            ".github/workflows/ci.yml",
+            "README.md",
+            "apps/api/.env.test.example",
+            "apps/api/README.md",
+            "apps/api/package.json",
+            "apps/api/src/app.test.ts",
+            "apps/api/src/db/client.ts",
+            "apps/api/src/routes/atelier-automatisation-p2.test.ts",
+            "apps/api/src/routes/atelier-bois-tolerie.test.ts",
+            "apps/api/src/routes/atelier-commands.test.ts",
+            "apps/api/src/routes/atelier-coordination.test.ts",
+            "apps/api/src/routes/atelier-documentation.test.ts",
+            "apps/api/src/routes/atelier-exact.test.ts",
+            "apps/api/src/routes/atelier-mecanique.test.ts",
+            "apps/api/src/routes/atelier-planches.test.ts",
+            "apps/api/src/routes/atelier-reseaux.test.ts",
+            "apps/api/src/routes/atelier-structure.test.ts",
+            "apps/api/src/routes/history.test.ts",
+            "apps/api/src/testing/README.md",
+            "apps/api/src/testing/approved-test-authorities.ts",
+            "apps/api/src/testing/client-integration.test.ts",
+            "apps/api/src/testing/guarded-test-pool.test.ts",
+            "apps/api/src/testing/guarded-test-pool.ts",
+            "apps/api/src/testing/test-database.ts",
+            "apps/api/src/testing/test-target.review.test.ts",
+            "apps/api/src/testing/test-target.ts",
+            "apps/api/vitest.guard.config.ts",
+            "apps/api/vitest.guard.setup.ts",
+            "apps/api/vitest.setup.ts",
+            "package.json"
+          ],
+          "entire_tree_expected_union_matches": true,
+          "mismatches": [],
+          "checks": {
+            "workingtree_diff_check_exit": 0,
+            "cached_vs_main_diff_check_exit": 0,
+            "workflow_cached_vs_main_diff_check_exit": 0,
+            "cached_vs_old_lot_diff_check_exit": 2,
+            "old_lot_whitespace_diagnostics": 1198,
+            "same_diagnostics_in_lot_vs_main_baseline": true
+          },
+          "app_and_test_blobs_preserved": [
+            {
+              "path": "README.md",
+              "mode": "100644",
+              "git_blob": "38b6c6dd31323c695b1ea8bdd99922e95013b374",
+              "sha256": "5d36c0ff40be322e48b698cea1f49f28365740263ced12f697d074450b31577e"
+            },
+            {
+              "path": "apps/api/.env.test.example",
+              "mode": "100644",
+              "git_blob": "b314dcafb4e68c5828497eda6356897fa9c145ea",
+              "sha256": "a586d1a5e89d10f15736c1b16b7021dda760848939df8d3f1af482635e428864"
+            },
+            {
+              "path": "apps/api/README.md",
+              "mode": "100644",
+              "git_blob": "ad0670d94418b3332be85ee59a317d647c53ab4c",
+              "sha256": "88ad8360d7030b92d7c8194026f9efea27144d1aaf88d86a2b81c7d7257853ab"
+            },
+            {
+              "path": "apps/api/package.json",
+              "mode": "100644",
+              "git_blob": "b6a370dfd8ace1e33b4ba8e73e499f73859d4741",
+              "sha256": "6e6dcae8fac90cdffe5fb14829a7687ea83dfaf8d6d4f7563772a29f36ba81a2"
+            },
+            {
+              "path": "apps/api/src/app.test.ts",
+              "mode": "100644",
+              "git_blob": "a436a644cbcd9dad9b01cdcd721b27c9c871ec30",
+              "sha256": "4094f885002164291e78af0e9104c14810501ae4abb6173312f1a3cd09db8e45"
+            },
+            {
+              "path": "apps/api/src/db/client.ts",
+              "mode": "100644",
+              "git_blob": "13c53e48c9ea7711f7780314965aff7ac19d2bdc",
+              "sha256": "84bf4a610374edcc91fc4c835effc972eac22323464f8404cce371c0ab8e9608"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-automatisation-p2.test.ts",
+              "mode": "100644",
+              "git_blob": "b496ee7a233ea7d0fb080f13e38e9ddfe367badf",
+              "sha256": "a90a2d4332348dd97273af5f72e842968415bf7c2b12e9fae751520391c1f427"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-bois-tolerie.test.ts",
+              "mode": "100644",
+              "git_blob": "8d2f4cd4444341912a7933864436af9c88ec410a",
+              "sha256": "b4abbf3063f3ddc90e95838b65d81baa688fbe46b61a2a0e836e191f48ab9d53"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "mode": "100644",
+              "git_blob": "4cf62fb62154cd7435fff87cc801d1e89ccaad76",
+              "sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-coordination.test.ts",
+              "mode": "100644",
+              "git_blob": "eb707baf8c72638fc8e97f745496cd8b0c51d7e1",
+              "sha256": "311b9b8000b278f60c16c1b1094fcbea10ac175437be53d7facc67ad4a05f97c"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-documentation.test.ts",
+              "mode": "100644",
+              "git_blob": "e5cb2ffa8f67c68b3d59075155cedc25b092bd14",
+              "sha256": "45fef66a1f0503b0555cdaa9ada84dc697497d1f14d8e66e0ab4ea37adbac966"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-exact.test.ts",
+              "mode": "100644",
+              "git_blob": "a8aaccfd4d76a8bd15701c827642114341400264",
+              "sha256": "c29fad006785303817d497b2f0d0422eb1a3db5ea50110461ca00add16250675"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-mecanique.test.ts",
+              "mode": "100644",
+              "git_blob": "7be87eae48589f9daf0e5fe7b500fb6eebd1e7f5",
+              "sha256": "50117a99d85cab5f8477c00c49a6e6b0fb995f469938ff41392a52740014a359"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-planches.test.ts",
+              "mode": "100644",
+              "git_blob": "dc9e2ed5412ee9d8d39774b77bd189a49da27070",
+              "sha256": "808aec11289a68d57a46f87428ed9d230c2c1de603ab54728d695fb88b025af4"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-reseaux.test.ts",
+              "mode": "100644",
+              "git_blob": "2f13a98d365a8e8fdc61f384aaee858254542d02",
+              "sha256": "46989e5f649896d7b34c2a5692bdb3e73db625371512fd36bbdac3287b33479a"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-structure.test.ts",
+              "mode": "100644",
+              "git_blob": "ac6aecf1fe507545311e11d4b49df19dd57a2e4b",
+              "sha256": "defa5be0962d6b16b40926412847e8d30a14919c8ef96e688e1a0191b94222a6"
+            },
+            {
+              "path": "apps/api/src/routes/history.test.ts",
+              "mode": "100644",
+              "git_blob": "957e730856a0730b1b46e574bc24784faa3c737f",
+              "sha256": "625ed7b0c2dd66693dbc4dc16b4b892a012052b7d94bc6c6ea0b57fd942db366"
+            },
+            {
+              "path": "apps/api/src/testing/README.md",
+              "mode": "100644",
+              "git_blob": "c3d509c390340e6c7857cb44b35a5b4bdd46b2ca",
+              "sha256": "893a182de51d0d86e951ece29222936deb6ee771ebeb5993fa997275e810f3a5"
+            },
+            {
+              "path": "apps/api/src/testing/approved-test-authorities.ts",
+              "mode": "100644",
+              "git_blob": "f1a5bc4dab2e12c674f46d929d56bc3ac2097d82",
+              "sha256": "8e277b41e222d4bd0fbaa8431a6b99923367dc44f946dfbd571a00822fe92cf9"
+            },
+            {
+              "path": "apps/api/src/testing/client-integration.test.ts",
+              "mode": "100644",
+              "git_blob": "bcb9adcffb079bf16bd4dbe4c77fdf4eb54d8443",
+              "sha256": "ec952d98dca71dbd12ffc2bc802e938577d348737e6fdb71089be624033c1e2c"
+            },
+            {
+              "path": "apps/api/src/testing/guarded-test-pool.test.ts",
+              "mode": "100644",
+              "git_blob": "74defdc2bfe0bc2e883cf08bed2ef803cd9209b8",
+              "sha256": "4161e4bef2eec2584fc276e76c574de574b00837d94a16ad0010d6d5df31fc55"
+            },
+            {
+              "path": "apps/api/src/testing/guarded-test-pool.ts",
+              "mode": "100644",
+              "git_blob": "0bfea108baba2dcd1694e08ba572e5843018ce87",
+              "sha256": "d0ac9e095a83ff16cde7c3132fa900ca634c27d49309e97b518de305ab390f5b"
+            },
+            {
+              "path": "apps/api/src/testing/test-database.ts",
+              "mode": "100644",
+              "git_blob": "9fc569251738f0fe7a8255a330bdda5b8097e858",
+              "sha256": "696e998d8985d64549bff184d30b8ef40c2f6dd6238d20d64c3af64ca3ebee36"
+            },
+            {
+              "path": "apps/api/src/testing/test-target.review.test.ts",
+              "mode": "100644",
+              "git_blob": "414339d459ef471cf8ee5bdae2ec684c1a71a528",
+              "sha256": "ece5c61626a665ea1fef0812b21a46e4b37d62a5ccc0f2ca2e3c9f47324b8c8c"
+            },
+            {
+              "path": "apps/api/src/testing/test-target.ts",
+              "mode": "100644",
+              "git_blob": "2bddc876c6fa6bea1878821977a0df927985a1dc",
+              "sha256": "b8ca60d71e48e80f75c66f4d0bf22edeb60ebc5adf6a4a9e960b7af1ced309ec"
+            },
+            {
+              "path": "apps/api/vitest.guard.config.ts",
+              "mode": "100644",
+              "git_blob": "004cd7e5a18cb2c1fdbd4ae395a79f0acc0f6372",
+              "sha256": "9dc56ffd7ebed043c0a3014bbd9c6f84c815e623b9b86c880df7382626d184fd"
+            },
+            {
+              "path": "apps/api/vitest.guard.setup.ts",
+              "mode": "100644",
+              "git_blob": "a8234323ec316a174b92025a06b04bf4cd2b93e2",
+              "sha256": "d672443a75efc66639b904415e05f20d49213c7fdb360c1cca44d331f93df9b7"
+            },
+            {
+              "path": "apps/api/vitest.setup.ts",
+              "mode": "100644",
+              "git_blob": "321a57fc53f475f177ee73f42889776978a7b68e",
+              "sha256": "d965f65c0362978ac2220e9dd2df6948516cb45f6c99c70c34d0c3758e7a32dc"
+            },
+            {
+              "path": "package.json",
+              "mode": "100644",
+              "git_blob": "72806b87dcdb618c266501a63fd3b11f4c4e4223",
+              "sha256": "7aa1e779b88c510cc480b5885fb5f75d7fe1f61dd3c7301653b1fc83787f22b6"
+            }
+          ]
+        },
+        {
+          "pr": "171",
+          "head": "5e0285d37f23c7c539502664036f0a2ff0986409",
+          "merge_head": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "index_tree": "25ed42d10145ba49835c0a4a3708460271cf5b59",
+          "index_paths": 1762,
+          "lot_changed_paths": [
+            ".github/workflows/ci.yml",
+            "packages/atelier-model/src/commandes/classification-conservation.test.ts",
+            "packages/atelier-model/src/commandes/commandes.test.ts",
+            "packages/atelier-model/src/commandes/organisation.ts"
+          ],
+          "entire_tree_expected_union_matches": true,
+          "mismatches": [],
+          "checks": {
+            "workingtree_diff_check_exit": 0,
+            "cached_vs_main_diff_check_exit": 0,
+            "workflow_cached_vs_main_diff_check_exit": 0,
+            "cached_vs_old_lot_diff_check_exit": 2,
+            "old_lot_whitespace_diagnostics": 1198,
+            "same_diagnostics_in_lot_vs_main_baseline": true
+          },
+          "app_and_test_blobs_preserved": [
+            {
+              "path": "packages/atelier-model/src/commandes/classification-conservation.test.ts",
+              "mode": "100644",
+              "git_blob": "637a9a15b671ebb33d443225d360206a8bb742a6",
+              "sha256": "a0e30f9ca0480538dcdb6959cb318ecc365726c0139025678ebed658e3f4db15"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "mode": "100644",
+              "git_blob": "fc966986a29cf165a1fcf37405c694591a02a552",
+              "sha256": "6f1fd64ec0ff7244e13706cba3deb5d2ce55a8a7ac7ffd42bb11aea7b3bb7057"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/organisation.ts",
+              "mode": "100644",
+              "git_blob": "e7752ef63823e86311f1d6b43a026d657fe3a352",
+              "sha256": "cc6fc5d7174e69079ce2b6180a117518c15e03e3c2bbdae58fc930ebf86970ad"
+            }
+          ]
+        }
+      ]
+    },
+    "reviewed_trees_rechecked_before_commit": true,
+    "committed_trees_equal_reviewed_index_trees": true,
+    "clean_worktrees_after_commit": true,
+    "conflict_markers_or_unmerged_index": false,
+    "diff_check_vs_main_and_worktree_exit": 0,
+    "global_cached_diff_check_oldlot_exit": 2,
+    "global_whitespace_explanation": "1198 diagnostics hérités par PR, exactement les diagnostics ancienlot→main817 ; aucune correction historique hors périmètre. Vérification contre la vraie base actuelle817 et workflow seuls : exit0.",
+    "A5": "Deux fichiers figés, dix contextes chacun, prédicats explicites et exclusion avant services ; avis statique favorable, pas de runner réel.",
+    "A6": "Deux fichiers figés, grammaire bornée sans eval, dix contextes et quatorze cas négatifs chacun ; corps/events/permissions conservés. Statique seulement.",
+    "npm_install_typecheck_build_tests": "Non exécutés : A0 a interdit toute installation et tout test applicatif/moteur/API/DB/service dans cette réconciliation.",
+    "upstream_helpers": "ci_merge.py/ci_eval.py jamais importés ni exécutés.",
+    "network": "Aucun accès réseau GitHub/DB par A3 pour cette réconciliation ; environment_status lu comme contexte plateforme, pas une preuve applicative."
+  },
+  "commands_executed": [
+    {
+      "command": "git -c core.hooksPath=/dev/null worktree add --detach <worktree> <a15|5e>",
+      "result": "Deux worktrees créés, branches originales non déplacées."
+    },
+    {
+      "command": "git -c core.hooksPath=/dev/null -c commit.gpgsign=false merge --no-commit --no-ff 817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "result": "Exit1 attendu : conflit de contenu ci.yml seul dans chaque worktree."
+    },
+    {
+      "command": "git show b6794c6:docs/ai-team/reports/claude-verif-169-171/ci-resolu-<PR>.yml ; lecture Pythonstdlib + copie contrôlée ; restriction169 quatre occurrences ; git add -- .github/workflows/ci.yml",
+      "result": "Conflit résolu et fichier gelé ; aucune exécution des scripts source."
+    },
+    {
+      "command": "git ls-tree -rz <base|main|lot> ; git ls-files --stage -z ; git write-tree ; comparaison modes/blobs de tout index",
+      "result": "Zéro écart de l’union attendue, arbres précis conservés."
+    },
+    {
+      "command": "git diff --check ; git diff --cached --check 817bd36 ; git diff --name-only --diff-filter=U",
+      "result": "Exit0 sur diff pertinent, aucun conflit ; diff global ancienlot avec whitespace préexistant documenté."
+    },
+    {
+      "command": "git -c core.hooksPath=/dev/null -c commit.gpgsign=false -c user.name=Codex -c user.email=codex@openai.com commit -m <message borné>",
+      "result": "Deux commits locaux après avis A5/A6 et instruction A0, identité publique ; aucun hook, signature ou push."
+    },
+    {
+      "command": "git status --porcelain ; git show -s --format=%P HEAD ; git rev-parse HEAD^{tree} ; git diff --check 817bd36 HEAD",
+      "result": "Deux worktrees propres, parents et arbres conformes, exit0."
+    }
+  ],
+  "proofs": [
+    {
+      "path": "/workspace/work/resume496/agents/A3/RECONCILIATION-169-171-PREPARATION-A3.json",
+      "sha256": "2d6cf65de3d79031de16da19d35770d0dc1b02eac159c2c1538b1184ee4129c0"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A3/RECONCILIATION-169-171-PREPARATION-A3.md",
+      "sha256": "c9bfadc3957c54afe6c51a34845d8df3147d5ef9d6d2e51443ef811e8075c6e5"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A3/RECONCILIATION-169-171-INDEX-VERIFICATION.json",
+      "sha256": "71a7f1ab2c6ef01118d420b51eef1613cf1af710f35b1f717296a9acf129162e"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A3/RECONCILIATION-169-171-COMMITS-LOCAUX.json",
+      "sha256": "99050c3880ffd50a0d2b2d90ea1d061012c10ddb64083a31376a95c7ef406ca2"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A3/RECONCILIATION-169-WORKFLOW.patch",
+      "sha256": "9e08a1eecc7df81b227df0bc93278ba46be34d789252be6e3fcccc100191b940"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A3/RECONCILIATION-171-WORKFLOW.patch",
+      "sha256": "2dc90c762e832efb427cac19682f2144b309a29064e9394fcb89967b8fb8ceb7"
+    }
+  ],
+  "independent_reviews": [
+    {
+      "agent": "A5",
+      "path": "/workspace/work/resume496/agents/A5/REVUE-RECONCILIATION-CI-A5.json",
+      "sha256": "73f33fbe7c10bca5cfd381deeaf6307a6b36d7b9499e1693b1b486f0845f0e88",
+      "git_commit": null,
+      "provenance": "Rapport indépendant de session, scratch local ; pas de SHA Git inventé"
+    },
+    {
+      "agent": "A5",
+      "path": "/workspace/work/resume496/agents/A5/REVUE-RECONCILIATION-CI-A5.md",
+      "sha256": "a0f226ecba994e559070b531d8dc2980e3ebe584a5cfa1da26297073b93c08a8",
+      "git_commit": null,
+      "provenance": "Rapport indépendant de session, scratch local ; pas de SHA Git inventé"
+    },
+    {
+      "agent": "A6",
+      "path": "/workspace/work/resume496/agents/A6/REVUE-RECONCILIATION-ACTUELLE-A6.json",
+      "sha256": "fc06444c9b46009a52d940ef31f8ca01be967a47e0d7c3a16c82b78b5805d88d",
+      "git_commit": null,
+      "provenance": "Rapport indépendant de session, scratch local ; pas de SHA Git inventé"
+    },
+    {
+      "agent": "A6",
+      "path": "/workspace/work/resume496/agents/A6/REVUE-RECONCILIATION-ACTUELLE-A6.md",
+      "sha256": "12ee0c4ba9966dc6b3f63edbd12f243801034f97d959225f39fc76e8043f8a6c",
+      "git_commit": null,
+      "provenance": "Rapport indépendant de session, scratch local ; pas de SHA Git inventé"
+    }
+  ],
+  "limitations": [
+    "La lecture des expressions et la matrice finie ne sont pas le moteur GitHub Actions ; == Actions ne distingue pas la casse, contrairement à Python. Les tests de contextes canoniques ne prouvent pas rejet de toute variante de casse.",
+    "Vrai Drizzle présent dans trois tests d’adaptateur à a15 sur transport pg simulé ; autre fichier simule Drizzle. Aucun résultat de base réelle ni nouveau test ORM par cette exécution.",
+    "Anciennes attestations129/492 et contre-épreuves Claude ne se transfèrent pas aux nouveaux commits ; nouvelle CI exacte non observée ici.",
+    "Les autres contextes/pushmain gardent jobs applicatifs potentiellement éligibles. Ne pas publier sur nouveau nom de branche sans route revue.",
+    "Aucun état de gate, mission, tâche630, acceptation métier ou réparation de données modifié.",
+    "Les commits sont détachés et retenus par les worktrees ; ne pas supprimer ces worktrees avant intégration A0."
+  ],
+  "next_authorized_action_for_A0": [
+    "Recontrôler les refs GitHub actuelles main et têtes169/171, les dernières instructions166 et les arbres/workflows de ces deux commits locaux.",
+    "Si les têtes sont toujours a15/5e et main817, revue finale puis avance rapide éventuelle des branches existantes exactes par A0, sans force ; sinon requalifier le delta avant publication.",
+    "Observer les contrôles au nouveau SHA, confirmer job pur réussi et trois jobs applicatifs skipped avant services. Aucune fusion PR versmain.",
+    "Actualiser ensemble STATUS/HANDOFF et preuves dans la branche documentaire canonique ; A3 ne les a pas modifiés."
+  ]
+}

@@ -1,0 +1,586 @@
+{
+  "review": "Quatre résiduels documentaires spatial/rendu A5",
+  "exact_ids": [
+    "C.1-01",
+    "C.1-07",
+    "C.2-02",
+    "C.2-05"
+  ],
+  "count": 4,
+  "inputs": [
+    {
+      "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+      "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+    },
+    {
+      "path": "/workspace/work/mission004/agents/A1/studio-141-fiches-v2.json",
+      "sha256": "48c8aa1093bec1fda771961d4d0fb7827ba7e4775f72ed9afe6cf29feada2df3"
+    },
+    {
+      "path": "/workspace/work/mission004/agents/A5/studio-38-oracles-M004.csv",
+      "sha256": "65f599e6645d6a927cc6f114a2d61ce371e814b4e097091120faba49aca89fe4"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/NEXT-READY-POST203-A5.json",
+      "sha256": "8823d852b14ef6b04dd2896419cdebf305757b1913a9adf3017b5d240c3228e6"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A4/REVUE-PERF-X1-09-A4.json",
+      "sha256": "40d82a943a9ac72f639a2a61b74d98ff37d3ae018901d8299d9658e830ed24bb"
+    },
+    {
+      "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-003/A2/LOT-C.md",
+      "sha256": "415c97de50efc82801d397532dc98b405bf9a11424db7fafb401b2f04d5619d7"
+    },
+    {
+      "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+      "sha256": "893d4917fe810867b589727e82d1789db56453f86c78fbfab56b294acedac84b"
+    }
+  ],
+  "normative_sources_reused": [
+    {
+      "id": "EX-010",
+      "texte_exact": "EX-010 — Événements d’effets. Chaque commande acceptée doit identifier autant que possible : objets créés, modifiés ou supprimés ; références/contraintes modifiées ; domaines dérivés invalidés ; révision de sortie et origine de la modification.",
+      "word_paragraphs": [
+        202
+      ],
+      "blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    {
+      "id": "EX-011",
+      "texte_exact": "EX-011 — Actualisation. Les projections consomment ces effets pour régénérer la portée minimale correcte, avec possibilité de repli vers une reconstruction plus large si l’invalidation exacte n’est pas sûre. Une actualisation partielle erronée n’est jamais acceptée au nom des performances.",
+      "word_paragraphs": [
+        203
+      ],
+      "blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    {
+      "id": "EX-050",
+      "texte_exact": "EX-050 — Projection reconstructible. La scène de chaque planche contient uniquement des données dérivées : traces visibles, maillages, positions GPU, styles de sélection, poignées, boîtes englobantes et index. Les identités des objets canoniques sont conservées dans une table de correspondance stable, y compris lorsque plusieurs objets partagent un lot de rendu.",
+      "word_paragraphs": [
+        563
+      ],
+      "blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    {
+      "id": "EX-051",
+      "texte_exact": "EX-051 — Projection en état identifié. La projection affiche son sourceRevisionId et les domaines de données périmées. Une modification de géométrie acceptée invalide les dépendances graphiques correspondantes ; un résultat de worker calculé sur une autre révision ne peut la modifier comme s’il était courant.",
+      "word_paragraphs": [
+        564
+      ],
+      "blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    {
+      "id": "EX-052",
+      "texte_exact": "EX-052 — Broad phase. Les requêtes de sélection, accrochage et intersection filtrent les candidats par emprise spatiale à l’échelle de la vue avant de lancer les tests précis. Pour une petite scène, le balayage simple reste admissible lorsqu’il est plus efficace et correct.",
+      "word_paragraphs": [
+        593
+      ],
+      "blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    {
+      "id": "EX-053",
+      "texte_exact": "EX-053 — Narrow phase. Les primitives retenues sont testées avec les règles géométriques de référence : extrémité, milieu, intersection, centre, tangente, perpendiculaire, point proche, ortho, parallèle, priorités et tolérances. Une accélération ne change pas les règles de classement et de départage.",
+      "word_paragraphs": [
+        594
+      ],
+      "blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    {
+      "id": "EX-054",
+      "texte_exact": "EX-054 — Maintien. L’index est cohérent avec la révision source et les états de calques, références et sélections autorisées. Insert/remove/update ciblés sont privilégiés si prouvés efficaces ; reconstruction en worker possible pour grands changements. La requête temps réel peut rester sur le fil principal si elle respecte les mesures de latence.",
+      "word_paragraphs": [
+        595
+      ],
+      "blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    {
+      "id": "EX-097",
+      "texte_exact": "EX-097 — Mesure reproductible. Fixer matériel, navigateur/version, mémoire, GPU/driver, taille d’écran, statut des caches, réseau, build, commit, répétitions, opérations, outliers et méthode statistique ; conserver traces et scripts. Les mesures JavaScript renderer.render() ne sont pas assimilées automatiquement au coût GPU, et SwiftShader ne remplace pas un GPU physique.",
+      "word_paragraphs": [
+        965
+      ],
+      "blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    {
+      "id": "EX-098",
+      "texte_exact": "EX-098 — Double vérification. Tout gain de performance est accompagné d’une comparaison géométrique et fonctionnelle : mêmes cibles de snapping, même sélection, mêmes dimensions/quantités, mêmes objets exportés dans les tolérances, même comportement d’annulation et de conflits.",
+      "word_paragraphs": [
+        966
+      ],
+      "blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    {
+      "id": "AC-004",
+      "texte_exact": "AC-004. Sur un corpus comportant objets superposés, densités variables, intersections et références liées, l’index accéléré doit fournir les mêmes cibles et points d’accrochage (dans la tolérance déclarée) que l’algorithme de référence, avec traces des cas ambigus.",
+      "word_paragraphs": [
+        613
+      ],
+      "blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    }
+  ],
+  "items": [
+    {
+      "id": "C.1-01",
+      "owner": "A2 architecture ; A5 protocole/oracle ; A3 aprèsautorisation",
+      "source_exacte": "Mesurer les recherches spatiales actuelles sur le corpus avant optimisation.",
+      "definition_A2": {
+        "id": "C.1-01",
+        "mission": "M22",
+        "agent": "A2",
+        "statut_source": "À définir",
+        "statut_definition": "DEFINITION_PROPOSEE_A_REVOIR",
+        "categorie": "C.1",
+        "classe": "MESURE",
+        "ordonnancement": "PREPARATION_CONTRAT",
+        "priorite": "P1 Studio",
+        "obligation_source": "Mesurer les recherches spatiales actuelles sur le corpus avant optimisation.",
+        "source": {
+          "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "line": 504,
+          "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L504"
+        },
+        "livrable_propose": "Profil de mesure spatial et oracle de sélection",
+        "domaine": "Index et recherche spatiale",
+        "methode_immediate": "Préciser interfaces et tests hors effet de bord ; ne coder qu'après G3 et sous-lot autorisé",
+        "condition_bloquante": "DEC/G1/G2/G3 applicables, test sur cible autorisée",
+        "dependances_existantes": [
+          "M17/M20:contrats géométrie et effets",
+          "M15:oracle et mesures",
+          "M14:DEC-08/09/10/13/17 applicables"
+        ],
+        "conditions_acceptation_proposees": [
+          "L'obligation source « Mesurer les recherches spatiales actuelles sur le corpus avant optimisation. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Exactitude avant/après optimisation ; recours balayage simple si plus adéquat",
+          "Décrire corpus synthétique, appareil et version, métriques, répétitions, seuil déclaré ou « non décidé ».",
+          "Conserver les résultats bruts et la comparaison oracle de précision/géométrie ; une moyenne n'efface pas un échec.",
+          "Fiche datée avec ID C.1-01, agent A2, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ],
+        "preuves_a_produire": [
+          "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L504",
+          "Revue indépendante A5 ou responsable compétent",
+          "SHA/rapport du résultat et test si applicable"
+        ],
+        "statut_execution": "NON_DEMONTRE",
+        "acceptation_metier": false,
+        "case_checklist_a_cocher": false,
+        "action_codex": "A2 : reprendre C.1-01, confirmer les sources et préparer « Profil de mesure spatial et oracle de sélection ». Préciser interfaces et tests hors effet de bord ; ne coder qu'après G3 et sous-lot autorisé. Conserver C.1-01 ouvert tant que le critère n'est pas vérifié.",
+        "point_ouvert": "Si une donnée concrète (budget, seuil, disponibilité, contrat physique ou autorisation) manque, enregistrer son ID et poursuivre une autre tâche READY."
+      },
+      "contract_candidate": {
+        "context_version": "project/study/variant/sourceRevisionId + projectionGeneration/indexVersion + contratVersion + corpusHash ; candidatslogiques non API adoptée",
+        "authority": "Index/GPU/batch sont dérivés reconstruisibles, aucune modification donnée canonique pour accélérer.",
+        "oracle_contract": "Même entrée/contexte/révision/visibilité/droits et même référence géométrique ; comparer cibles objectId et points dans tolérance déclarée, ambiguïtés explicites, jamais index de tableau comme identité.",
+        "timing": "Horodater résultat disponible séparément du coût de comparaison oracle ; conserver données brutes et distributions prescrites.",
+        "numeric_threshold": null,
+        "decision_owner": "A0 DEC13 avec A2/A5/A6",
+        "state": "Préparation documentaire En cours ; aucun test ou instrument implémenté/exécuté."
+      },
+      "cases": [
+        {
+          "case_local": "baseline",
+          "setup_candidate": "ScèneS3partielle et cas densités/superpositions/intersections/références liées ajoutés dans futur corpus autorisé.",
+          "positive_oracle_candidate": "Référence simple produit listecibles/points/classement avant toute optimisation ; conserver traces ambiguës et choix tolérance déclaré.",
+          "negative_or_eliminatory_oracle_candidate": "Point différent malgré meilleurp95 élimine comparaison ; cas sans référence stable reste nonconclu.",
+          "execution": "Non exécuté"
+        },
+        {
+          "case_local": "environnement",
+          "setup_candidate": "Build/SHA/matériel/GPUdriver/navigateur/mémoire/écran/cache/réseau/opérations/répétitions/outliers/méthode consignés.",
+          "positive_oracle_candidate": "EX097 reproduction possible sur données/version identiques ; CPUrenderer≠GPU etSwiftShader≠GPUphysique.",
+          "negative_or_eliminatory_oracle_candidate": "Champmatériel manquant ou budgetnonadopté : pas conclusion performance, validité géométrique reste examinable.",
+          "execution": "Non exécuté"
+        },
+        {
+          "case_local": "tailles",
+          "setup_candidate": "100/10000/100000primitives illustratives, pas capacité annoncée.",
+          "positive_oracle_candidate": "Identifier densité/corpus et mesurer seulement au banc autorisé ; AC004/EX098 priment vitesse.",
+          "negative_or_eliminatory_oracle_candidate": "Aucun seuil scènepetite ouengagementcapacité inventé.",
+          "execution": "Non exécuté"
+        }
+      ],
+      "existing_TEST_links_candidates": [
+        "TEST-022"
+      ],
+      "existing_oracles_reused": [
+        {
+          "id": "TEST-022",
+          "positive": "Mêmes cible/point/priorité dans tolérances approuvées.",
+          "negative": "Résultat oracle conservé ou optimisation rejetée ; aucun écart masqué.",
+          "eliminatory": "Cible/priorité différente hors tolérance."
+        }
+      ],
+      "PERF_reuse": [
+        "PERF-04",
+        "PERF-03"
+      ],
+      "corpus_reuse": "S3pourspatial, S2/S4/S5pourrendu pertinents ; toutesfixtures actuelles partielles, pascorpuscomplet constitué ici.",
+      "limits": "Appareils/corpus complet, tolérances et budgets non décidés ; aucune mesure exécutée.",
+      "trigger": "Contrat projection/effets/mapping et tolérances applicables décidés, souslotautorisé aprèsportesapplicables ; budgetDEC13 seulementavant verdict vitesse dépendant. Aucun G2/G3 adopté ici.",
+      "next": "A2 confronte protocole auxinterfaces publiques ; A5 reçoit corpusversionné/oracle ; A0 réserve fichier et autorise souslot A3 avanttout essai.",
+      "status_proposed": "En cours documentaire seulement",
+      "condition_verified": false,
+      "accepted": false,
+      "checklist_changed": false
+    },
+    {
+      "id": "C.1-07",
+      "owner": "A2 architecture ; A5 protocole/oracle ; A3 aprèsautorisation",
+      "source_exacte": "Conserver la possibilité d’un balayage simple sur petite scène lorsqu’il est plus approprié.",
+      "definition_A2": {
+        "id": "C.1-07",
+        "mission": "M22",
+        "agent": "A2",
+        "statut_source": "À définir",
+        "statut_definition": "DEFINITION_PROPOSEE_A_REVOIR",
+        "categorie": "C.1",
+        "classe": "SPECIFICATION",
+        "ordonnancement": "PREPARATION_CONTRAT",
+        "priorite": "P1 Studio",
+        "obligation_source": "Conserver la possibilité d’un balayage simple sur petite scène lorsqu’il est plus approprié.",
+        "source": {
+          "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "line": 510,
+          "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L510"
+        },
+        "livrable_propose": "Profil de mesure spatial et oracle de sélection",
+        "domaine": "Index et recherche spatiale",
+        "methode_immediate": "Préciser interfaces et tests hors effet de bord ; ne coder qu'après G3 et sous-lot autorisé",
+        "condition_bloquante": "DEC/G1/G2/G3 applicables, test sur cible autorisée",
+        "dependances_existantes": [
+          "M17/M20:contrats géométrie et effets",
+          "M15:oracle et mesures",
+          "M14:DEC-08/09/10/13/17 applicables"
+        ],
+        "conditions_acceptation_proposees": [
+          "L'obligation source « Conserver la possibilité d’un balayage simple sur petite scène lorsqu’il est plus approprié. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Exactitude avant/après optimisation ; recours balayage simple si plus adéquat",
+          "Décrire corpus synthétique, appareil et version, métriques, répétitions, seuil déclaré ou « non décidé ».",
+          "Conserver les résultats bruts et la comparaison oracle de précision/géométrie ; une moyenne n'efface pas un échec.",
+          "Fiche datée avec ID C.1-07, agent A2, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ],
+        "preuves_a_produire": [
+          "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L510",
+          "Revue indépendante A5 ou responsable compétent",
+          "SHA/rapport du résultat et test si applicable"
+        ],
+        "statut_execution": "NON_DEMONTRE",
+        "acceptation_metier": false,
+        "case_checklist_a_cocher": false,
+        "action_codex": "A2 : reprendre C.1-07, confirmer les sources et préparer « Profil de mesure spatial et oracle de sélection ». Préciser interfaces et tests hors effet de bord ; ne coder qu'après G3 et sous-lot autorisé. Conserver C.1-07 ouvert tant que le critère n'est pas vérifié.",
+        "point_ouvert": "Si une donnée concrète (budget, seuil, disponibilité, contrat physique ou autorisation) manque, enregistrer son ID et poursuivre une autre tâche READY."
+      },
+      "contract_candidate": {
+        "context_version": "project/study/variant/sourceRevisionId + projectionGeneration/indexVersion + contratVersion + corpusHash ; candidatslogiques non API adoptée",
+        "authority": "Index/GPU/batch sont dérivés reconstruisibles, aucune modification donnée canonique pour accélérer.",
+        "oracle_contract": "Même entrée/contexte/révision/visibilité/droits et même référence géométrique ; comparer cibles objectId et points dans tolérance déclarée, ambiguïtés explicites, jamais index de tableau comme identité.",
+        "timing": "Horodater résultat disponible séparément du coût de comparaison oracle ; conserver données brutes et distributions prescrites.",
+        "numeric_threshold": null,
+        "decision_owner": "A0 DEC13 avec A2/A5/A6",
+        "state": "Préparation documentaire En cours ; aucun test ou instrument implémenté/exécuté."
+      },
+      "cases": [
+        {
+          "case_local": "deux-chemins",
+          "setup_candidate": "Même requête est dirigée séparément vers balayage simple et broadphaseindex puis narrowphase référence identique.",
+          "positive_oracle_candidate": "Comparerdeux sorties au même oracle indépendant : mêmes objectId/points/priorités/tolérances/départages.",
+          "negative_or_eliminatory_oracle_candidate": "Deux résultats identiques entre eux mais tousdeux faux faceoracle : échec, pas équivalence acquise.",
+          "execution": "Non exécuté"
+        },
+        {
+          "case_local": "fallback",
+          "setup_candidate": "Indexinvalide,nonconstruit,périmé ou grandschangements ; reconstruire oubasculer vers balayage.",
+          "positive_oracle_candidate": "Chemin référence correct sur mêmes données/droits, résultat porte sourceRevision ; sélection stratégie et raison tracées.",
+          "negative_or_eliminatory_oracle_candidate": "Ne pas retourner résultatancien ni élargir tolérance. Indexpérimé ne constitue pas sourcevérité.",
+          "execution": "Non exécuté"
+        },
+        {
+          "case_local": "maintenance",
+          "setup_candidate": "Insertion/suppression/modification calque/refliée/droit ; mêmes instantanés consultés par deuxchemins.",
+          "positive_oracle_candidate": "AC004 : aucune ciblesupprimée/nonautorisée, nouvelle cible attendue visible à bonne révision ; ambiguïté explicite.",
+          "negative_or_eliminatory_oracle_candidate": "Heuristique petiteseuil scène nonmesurée : choixstratégie reste ouvert, ne bloque pas définitiongéométrique.",
+          "execution": "Non exécuté"
+        }
+      ],
+      "existing_TEST_links_candidates": [
+        "TEST-022",
+        "TEST-023"
+      ],
+      "existing_oracles_reused": [
+        {
+          "id": "TEST-022",
+          "positive": "Mêmes cible/point/priorité dans tolérances approuvées.",
+          "negative": "Résultat oracle conservé ou optimisation rejetée ; aucun écart masqué.",
+          "eliminatory": "Cible/priorité différente hors tolérance."
+        },
+        {
+          "id": "TEST-023",
+          "positive": "Identifiant source correct pour chaque triangle/instance.",
+          "negative": "Aucune sélection du mauvais objet ; invalidation contrôlée.",
+          "eliminatory": "Mauvaise identité sélectionnée ou donnée autre projet exposée."
+        }
+      ],
+      "PERF_reuse": [
+        "PERF-04",
+        "PERF-03"
+      ],
+      "corpus_reuse": "S3pourspatial, S2/S4/S5pourrendu pertinents ; toutesfixtures actuelles partielles, pascorpuscomplet constitué ici.",
+      "limits": "Seuil petite scène et politique heuristique non mesurés ni adoptés.",
+      "trigger": "Contrat projection/effets/mapping et tolérances applicables décidés, souslotautorisé aprèsportesapplicables ; budgetDEC13 seulementavant verdict vitesse dépendant. Aucun G2/G3 adopté ici.",
+      "next": "A2 confronte protocole auxinterfaces publiques ; A5 reçoit corpusversionné/oracle ; A0 réserve fichier et autorise souslot A3 avanttout essai.",
+      "status_proposed": "En cours documentaire seulement",
+      "condition_verified": false,
+      "accepted": false,
+      "checklist_changed": false
+    },
+    {
+      "id": "C.2-02",
+      "owner": "A2 architecture ; A5 protocole/oracle ; A3 aprèsautorisation",
+      "source_exacte": "Conserver les tables de picking après batching et instanciation.",
+      "definition_A2": {
+        "id": "C.2-02",
+        "mission": "M22",
+        "agent": "A2",
+        "statut_source": "À définir",
+        "statut_definition": "DEFINITION_PROPOSEE_A_REVOIR",
+        "categorie": "C.2",
+        "classe": "SPECIFICATION",
+        "ordonnancement": "PREPARATION_CONTRAT",
+        "priorite": "P1 Studio",
+        "obligation_source": "Conserver les tables de picking après batching et instanciation.",
+        "source": {
+          "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "line": 517,
+          "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L517"
+        },
+        "livrable_propose": "Contrat d'invalidation/mapping d'ID et oracle de picking/rendu",
+        "domaine": "Rendu et picking",
+        "methode_immediate": "Préciser interfaces et tests hors effet de bord ; ne coder qu'après G3 et sous-lot autorisé",
+        "condition_bloquante": "DEC/G1/G2/G3 applicables, test sur cible autorisée",
+        "dependances_existantes": [
+          "M17/M20:contrats géométrie et effets",
+          "M15:oracle et mesures",
+          "M14:DEC-08/09/10/13/17 applicables"
+        ],
+        "conditions_acceptation_proposees": [
+          "L'obligation source « Conserver les tables de picking après batching et instanciation. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Sélection ID et topologie intègres après batching, édition ou suppression",
+          "Démontrer la fraîcheur de révision, l'absence de résultat périmé et l'annulation/reprise contrôlée.",
+          "Tester crash, suppression et cas limite sur corpus autorisé avant performance ou activation du lot.",
+          "Fiche datée avec ID C.2-02, agent A2, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ],
+        "preuves_a_produire": [
+          "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L517",
+          "Revue indépendante A5 ou responsable compétent",
+          "SHA/rapport du résultat et test si applicable"
+        ],
+        "statut_execution": "NON_DEMONTRE",
+        "acceptation_metier": false,
+        "case_checklist_a_cocher": false,
+        "action_codex": "A2 : reprendre C.2-02, confirmer les sources et préparer « Contrat d'invalidation/mapping d'ID et oracle de picking/rendu ». Préciser interfaces et tests hors effet de bord ; ne coder qu'après G3 et sous-lot autorisé. Conserver C.2-02 ouvert tant que le critère n'est pas vérifié.",
+        "point_ouvert": "Si une donnée concrète (budget, seuil, disponibilité, contrat physique ou autorisation) manque, enregistrer son ID et poursuivre une autre tâche READY."
+      },
+      "contract_candidate": {
+        "context_version": "project/study/variant/sourceRevisionId + projectionGeneration/indexVersion + contratVersion + corpusHash ; candidatslogiques non API adoptée",
+        "authority": "Index/GPU/batch sont dérivés reconstruisibles, aucune modification donnée canonique pour accélérer.",
+        "oracle_contract": "Même entrée/contexte/révision/visibilité/droits et même référence géométrique ; comparer cibles objectId et points dans tolérance déclarée, ambiguïtés explicites, jamais index de tableau comme identité.",
+        "timing": "Horodater résultat disponible séparément du coût de comparaison oracle ; conserver données brutes et distributions prescrites.",
+        "numeric_threshold": null,
+        "decision_owner": "A0 DEC13 avec A2/A5/A6",
+        "state": "Préparation documentaire En cours ; aucun test ou instrument implémenté/exécuté."
+      },
+      "cases": [
+        {
+          "case_local": "suppression",
+          "setup_candidate": "Supprimer objetB au milieu de batch A/B/C puis effectuer même pick.",
+          "positive_oracle_candidate": "Mapping drawId/triangle/instance→objectId+sourceRevision reconstruit ; B jamaisretourné etA/Cgardentleursidentités.",
+          "negative_or_eliminatory_oracle_candidate": "Ancien indexB pointant C : refusmapping/génération périmée, jamaisfausse sélection.",
+          "execution": "Non exécuté"
+        },
+        {
+          "case_local": "reordonnancement",
+          "setup_candidate": "Réordonner objets/lots sans changer contenu canonique.",
+          "positive_oracle_candidate": "Mêmes objets sélectionnés au même point sous nouvelle génération ; aucun objectId assigné selon positionancienne.",
+          "negative_or_eliminatory_oracle_candidate": "Ordre GPU ne réécrit niID niquantité ; résultatanciennegénération refusé.",
+          "execution": "Non exécuté"
+        },
+        {
+          "case_local": "rebatch",
+          "setup_candidate": "Changer style/calque/règlelot et fusionner/scinder leslots.",
+          "positive_oracle_candidate": "Deux objets partageant lot gardent mapping univoque ; sélection,masquesetdroits parobjet corrects.",
+          "negative_or_eliminatory_oracle_candidate": "Mauvaiseidentité masquée par mêmegéométrie : échec éliminatoire.",
+          "execution": "Non exécuté"
+        },
+        {
+          "case_local": "instance",
+          "setup_candidate": "Deux occurrences partageant géométrie avec transformationsdistinctes.",
+          "positive_oracle_candidate": "instanceId résout chaque objectId propriétaireet contexte ; même géométrie n’estpas même objet.",
+          "negative_or_eliminatory_oracle_candidate": "Supprimeruneinstance ne remetpas indexancienneinstance surautre ; aucun transfert sélectionsilencieux.",
+          "execution": "Non exécuté"
+        }
+      ],
+      "existing_TEST_links_candidates": [
+        "TEST-023",
+        "TEST-024"
+      ],
+      "existing_oracles_reused": [
+        {
+          "id": "TEST-023",
+          "positive": "Identifiant source correct pour chaque triangle/instance.",
+          "negative": "Aucune sélection du mauvais objet ; invalidation contrôlée.",
+          "eliminatory": "Mauvaise identité sélectionnée ou donnée autre projet exposée."
+        },
+        {
+          "id": "TEST-024",
+          "positive": "Seuls dérivés dépendants recalculés ; résultat identique au calcul complet.",
+          "negative": "Écart détecté par oracle ; résultat non conforme non engagé.",
+          "eliminatory": "Optimisation altère géométrie/quantités ; gain non mesuré revendiqué."
+        }
+      ],
+      "PERF_reuse": [
+        "PERF-05",
+        "PERF-06"
+      ],
+      "corpus_reuse": "S3pourspatial, S2/S4/S5pourrendu pertinents ; toutesfixtures actuelles partielles, pascorpuscomplet constitué ici.",
+      "limits": "Format renderer/batching et politique de reconstruction non choisis.",
+      "trigger": "Contrat projection/effets/mapping et tolérances applicables décidés, souslotautorisé aprèsportesapplicables ; budgetDEC13 seulementavant verdict vitesse dépendant. Aucun G2/G3 adopté ici.",
+      "next": "A2 confronte protocole auxinterfaces publiques ; A5 reçoit corpusversionné/oracle ; A0 réserve fichier et autorise souslot A3 avanttout essai.",
+      "status_proposed": "En cours documentaire seulement",
+      "condition_verified": false,
+      "accepted": false,
+      "checklist_changed": false
+    },
+    {
+      "id": "C.2-05",
+      "owner": "A2 architecture ; A5 protocole/oracle ; A3 aprèsautorisation",
+      "source_exacte": "Prévoir un recalcul plus large lorsque l’exactitude l’exige.",
+      "definition_A2": {
+        "id": "C.2-05",
+        "mission": "M22",
+        "agent": "A2",
+        "statut_source": "À définir",
+        "statut_definition": "DEFINITION_PROPOSEE_A_REVOIR",
+        "categorie": "C.2",
+        "classe": "SPECIFICATION",
+        "ordonnancement": "PREPARATION_CONTRAT",
+        "priorite": "P1 Studio",
+        "obligation_source": "Prévoir un recalcul plus large lorsque l’exactitude l’exige.",
+        "source": {
+          "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "line": 520,
+          "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L520"
+        },
+        "livrable_propose": "Contrat d'invalidation/mapping d'ID et oracle de picking/rendu",
+        "domaine": "Rendu et picking",
+        "methode_immediate": "Préciser interfaces et tests hors effet de bord ; ne coder qu'après G3 et sous-lot autorisé",
+        "condition_bloquante": "DEC/G1/G2/G3 applicables, test sur cible autorisée",
+        "dependances_existantes": [
+          "M17/M20:contrats géométrie et effets",
+          "M15:oracle et mesures",
+          "M14:DEC-08/09/10/13/17 applicables"
+        ],
+        "conditions_acceptation_proposees": [
+          "L'obligation source « Prévoir un recalcul plus large lorsque l’exactitude l’exige. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Sélection ID et topologie intègres après batching, édition ou suppression",
+          "Démontrer la fraîcheur de révision, l'absence de résultat périmé et l'annulation/reprise contrôlée.",
+          "Tester crash, suppression et cas limite sur corpus autorisé avant performance ou activation du lot.",
+          "Fiche datée avec ID C.2-05, agent A2, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ],
+        "preuves_a_produire": [
+          "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L520",
+          "Revue indépendante A5 ou responsable compétent",
+          "SHA/rapport du résultat et test si applicable"
+        ],
+        "statut_execution": "NON_DEMONTRE",
+        "acceptation_metier": false,
+        "case_checklist_a_cocher": false,
+        "action_codex": "A2 : reprendre C.2-05, confirmer les sources et préparer « Contrat d'invalidation/mapping d'ID et oracle de picking/rendu ». Préciser interfaces et tests hors effet de bord ; ne coder qu'après G3 et sous-lot autorisé. Conserver C.2-05 ouvert tant que le critère n'est pas vérifié.",
+        "point_ouvert": "Si une donnée concrète (budget, seuil, disponibilité, contrat physique ou autorisation) manque, enregistrer son ID et poursuivre une autre tâche READY."
+      },
+      "contract_candidate": {
+        "context_version": "project/study/variant/sourceRevisionId + projectionGeneration/indexVersion + contratVersion + corpusHash ; candidatslogiques non API adoptée",
+        "authority": "Index/GPU/batch sont dérivés reconstruisibles, aucune modification donnée canonique pour accélérer.",
+        "oracle_contract": "Même entrée/contexte/révision/visibilité/droits et même référence géométrique ; comparer cibles objectId et points dans tolérance déclarée, ambiguïtés explicites, jamais index de tableau comme identité.",
+        "timing": "Horodater résultat disponible séparément du coût de comparaison oracle ; conserver données brutes et distributions prescrites.",
+        "numeric_threshold": null,
+        "decision_owner": "A0 DEC13 avec A2/A5/A6",
+        "state": "Préparation documentaire En cours ; aucun test ou instrument implémenté/exécuté."
+      },
+      "cases": [
+        {
+          "case_local": "source-inconnue",
+          "setup_candidate": "Effetcommande sans sourceRevisionId fiable ou dirtiness non justifiable.",
+          "positive_oracle_candidate": "Reconstruction pluslarge/complète de sourcecanonique identifiée ; anciennesdonnées restent marquées périmées jusqu’à résultat validé.",
+          "negative_or_eliminatory_oracle_candidate": "Pas actualisationpartielle guessed, pas invalidationcanonique pour gagner FPS.",
+          "execution": "Non exécuté"
+        },
+        {
+          "case_local": "topologie",
+          "setup_candidate": "Commande change géométrie/hôte/référence/topologie.",
+          "positive_oracle_candidate": "EffetsEX010 consommés, mapping/index/projections concernés invalidés ; comparaisonau brasrebuild complet sur même révision et oracle.",
+          "negative_or_eliminatory_oracle_candidate": "Ancienneface/triangle ne devient pas nouvelle référence silencieusement ; ambiguïté signalée/refusée au contratM17.",
+          "execution": "Non exécuté"
+        },
+        {
+          "case_local": "version",
+          "setup_candidate": "Worker/calcul rend résultat rN pendant têteavance rN+1 ; changement versioncontrat/génération.",
+          "positive_oracle_candidate": "Engagement seulement si contexte/base/versions encore compatibles selon contrat ; snapshot épinglé historique peut rester consultable avec étiquette.",
+          "negative_or_eliminatory_oracle_candidate": "Anciencalcul ne remplace jamais courant ; historiquevalide≠courant, rejetne signifie pas destructionhistorique.",
+          "execution": "Non exécuté"
+        },
+        {
+          "case_local": "comparatif",
+          "setup_candidate": "BrasA invalidationincrémentale etbrasB reconstructiontotale à étatcanonique identique.",
+          "positive_oracle_candidate": "Comparer picking/snapping/dimensions/quantités/objets exportés/inverse/conflits parEX098, puis coûtsPERF06 séparés.",
+          "negative_or_eliminatory_oracle_candidate": "Gaintemps sans égalitéfonctionnelle éliminatoire ; résultatnonéquivalent déclenche rollbackrebuild, sans donnéesmodifiées.",
+          "execution": "Non exécuté"
+        }
+      ],
+      "existing_TEST_links_candidates": [
+        "TEST-024",
+        "TEST-025",
+        "TEST-026"
+      ],
+      "existing_oracles_reused": [
+        {
+          "id": "TEST-024",
+          "positive": "Seuls dérivés dépendants recalculés ; résultat identique au calcul complet.",
+          "negative": "Écart détecté par oracle ; résultat non conforme non engagé.",
+          "eliminatory": "Optimisation altère géométrie/quantités ; gain non mesuré revendiqué."
+        },
+        {
+          "id": "TEST-025",
+          "positive": "Rapport fidélité/accessibilité/latence mesuré ; décision moteur sur preuve.",
+          "negative": "Limite explicite ; aucune victoire globale sans test.",
+          "eliminatory": "Renderer retenu altère résultat ou détruit interaction/accessibilité."
+        },
+        {
+          "id": "TEST-026",
+          "positive": "Composition technique et volume net inchangés.",
+          "negative": "Refus/séparation explicite, pas mutation technique implicite.",
+          "eliminatory": "Apparence modifie quantités ou propriétés techniques."
+        }
+      ],
+      "PERF_reuse": [
+        "PERF-05",
+        "PERF-06"
+      ],
+      "corpus_reuse": "S3pourspatial, S2/S4/S5pourrendu pertinents ; toutesfixtures actuelles partielles, pascorpuscomplet constitué ici.",
+      "limits": "Dépendances exactes renderer/topologie et seuil de bascule non définis.",
+      "trigger": "Contrat projection/effets/mapping et tolérances applicables décidés, souslotautorisé aprèsportesapplicables ; budgetDEC13 seulementavant verdict vitesse dépendant. Aucun G2/G3 adopté ici.",
+      "next": "A2 confronte protocole auxinterfaces publiques ; A5 reçoit corpusversionné/oracle ; A0 réserve fichier et autorise souslot A3 avanttout essai.",
+      "status_proposed": "En cours documentaire seulement",
+      "condition_verified": false,
+      "accepted": false,
+      "checklist_changed": false
+    }
+  ],
+  "PERF_review_delta_applied_to_this_protocol_only": [
+    "PERF04/08 résultat disponible distinct tempsoracle.",
+    "PERF06 deuxbras incrémental/reconstruction explicites.",
+    "PERF08 historiqueépinglé distinct résultatancien affichécourant.",
+    "PERF09 ressourcepartagée utile distinct fuite ; pas inspectionmémoire exécutée."
+  ],
+  "no_duplicate_catalogue": "Liens mêmes38TEST et10PERF ; caslocauxne créent aucun TEST/NAV/EX/AC/DEC supplémentaire.",
+  "execution": "Spécifications etlecture/parsingdocumentaires uniquement ; aucun code/mesure/runtime/test/moteur/DB/service/scan/admin/registre/gate."
+}
