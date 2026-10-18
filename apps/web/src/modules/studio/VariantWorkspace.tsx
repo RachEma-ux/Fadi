@@ -1,53 +1,82 @@
 /**
- * Espace de travail d'une variante (Studio V1) : planche 2D construite depuis `STUDIO_TOOLS`, brouillon local,
- * enregistrement explicite par enveloppe de commandes (`studio-commands/1`), garde de navigation, plein écran.
+ * Espace de travail d'une variante (Studio V1) : planche 2D construite depuis `STUDIO_TOOLS`, brouillon local
+ * (commandes appliquées aussitôt par `applyStudioCommands`, annuler / rétablir sur instantanés locaux), enregistrement
+ * explicite par enveloppe de commandes (`studio-commands/1`) sur la révision de tête, garde de navigation, plein écran.
  * Monté par `StudioShell` ; une révision historique (`?revision=`) s'ouvre en lecture seule. Le serveur reste seul
- * juge du droit d'écriture (`canWrite`).
+ * juge du droit d'écriture (`canWrite`). Annuler ne porte que sur les modifications non enregistrées : aucune
+ * annulation côté serveur n'est simulée.
  */
-import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type MouseEvent, type PointerEvent } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { applyStudioCommands, STUDIO_TOOLS, type StudioCommand, type StudioDocument, type StudioEnvelope, type StudioShape } from "@parcours/atelier-model";
+import { STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, type StudioCommand, type StudioDimension, type StudioEnvelope, type StudioLayer, type StudioPoint, type StudioShape } from "@parcours/atelier-model";
+import { Icon } from "../../components/Icon";
 import { api, ApiError, type StudioContext } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
 import { LANGUE, LOCALE } from "../../lib/i18n";
 import { cheminProjetStudio, cheminVarianteStudio } from "./routes-studio";
 import { StudioRefus } from "./studio-ecrans";
+import { BarreOutils } from "./planche2d/BarreOutils";
+import {
+  annulerBrouillon, appliquerBrouillon, commandesEnAttente, creerBrouillon, documentBrouillon, enveloppeBrouillon, messageRefus,
+  peutAnnuler, peutRetablir, retablirBrouillon, type Brouillon,
+} from "./planche2d/brouillon";
+import { commandeReglage, estSelectionnable, estVisible, layerIdPour, listeCalques, prochainNomCalque } from "./planche2d/calques";
+import { Dessin2D, type PointPose } from "./planche2d/Dessin2D";
+import {
+  accrocher, auCentimetre, CADRE_INITIAL, cadrer, emprise, formaterMetres, nouvelleCote, pointsAccroche, sommetExact, valeurCote, type Cadre,
+} from "./planche2d/geometrie-2d";
+import { PanneauCalques } from "./planche2d/PanneauCalques";
+import { cibleRaccourci, combinaison, OUTILS_MODES, OUTILS_TRACE, type CibleRaccourci, type CommandeEditeur, type StudioToolEntry, type StudioToolId } from "./planche2d/raccourcis";
 import "./studio.css";
+import "./planche2d/planche2d.css";
 
 const warning = () => LANGUE === "en" ? "Unsaved or unconfirmed changes. Leave this study?" : "Modifications non enregistrées ou non confirmées. Quitter cette étude ?";
 const refused = (e: unknown) => e instanceof ApiError && [401, 403, 404].includes(e.status);
+/** Tolérance d'accrochage, en pixels d'écran. */
+const ACCROCHE_PX = 12;
+/** Écart arrondi au micromètre : le pointeur et les sommets ne produisent pas de bruit flottant dans les commandes. */
+const ecart = (a: number, b: number) => Math.round((b - a) * 1e6) / 1e6;
+
+type Valeurs = { x: number; y: number; a: number; b: number; dx: number; dy: number; offset: number };
 
 export interface VariantWorkspaceProps { projectId: string; studyId: string; variantId: string; revisionId: string | null }
 
 export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: VariantWorkspaceProps) {
   const client = useQueryClient();
   const [context, setContext] = useState<StudioContext | null>(null);
-  const [drawing, setDrawing] = useState<StudioDocument | null>(null);
-  const [commands, setCommands] = useState<StudioCommand[]>([]);
-  const [tool, setTool] = useState("studio.dessin.selection");
+  const [brouillon, setBrouillon] = useState<Brouillon | null>(null);
+  const [tool, setTool] = useState<StudioToolId>("studio.dessin.selection");
   const [selection, setSelection] = useState<string | null>(null);
-  const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+  const [trace, setTrace] = useState<PointPose | null>(null);
+  const [survol, setSurvol] = useState<PointPose | null>(null);
+  const [cadre, setCadre] = useState<Cadre>(CADRE_INITIAL);
+  const [calqueActif, setCalqueActif] = useState<string>(STUDIO_DEFAULT_LAYER_ID);
+  const [nomCalque, setNomCalque] = useState("");
   const [pending, setPending] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [loadError, setLoadError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
-  const [values, setValues] = useState({ x: 0, y: 0, a: 4, b: 3, dx: 1, dy: 0 });
+  const [values, setValues] = useState<Valeurs>({ x: 0, y: 0, a: 4, b: 3, dx: 1, dy: 0, offset: 0.5 });
   const envelope = useRef<StudioEnvelope | null>(null);
   const alive = useRef(true), dirty = useRef(false), saving = useRef(false);
-  const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
-  const sheet = useRef<SVGSVGElement>(null), shell = useRef<HTMLElement>(null);
+  const clavier = useRef<(e: KeyboardEvent) => void>(() => {});
+  const sheet = useRef<SVGSVGElement>(null), shell = useRef<HTMLElement>(null), nomRef = useRef<HTMLInputElement>(null);
   const historical = revisionId !== null;
-  dirty.current = commands.length > 0 || !!anchor || pending || uncertain;
+  const drawing = brouillon ? documentBrouillon(brouillon) : null;
+  const commands = brouillon ? commandesEnAttente(brouillon) : [];
+  dirty.current = commands.length > 0 || !!trace || pending || uncertain;
   const writable = !historical && !!context?.canWrite && !pending && !uncertain && !blocked;
+
   useEffect(() => {
     alive.current = true;
     let active = true;
     const read = revisionId === null ? api.studioContext(projectId, studyId, variantId) : api.studioRevision(projectId, studyId, variantId, revisionId);
-    void read.then(c => { if (active) { setContext(c); setDrawing(c.revision.document); } }).catch((e: unknown) => { if (active) { setLoadError(e); setError(refused(e) ? "" : "Étude indisponible ou accès refusé."); } }).finally(() => { if (active) setLoading(false); });
+    void read.then(c => { if (active) { setContext(c); setBrouillon(creerBrouillon(c.revision.document)); } }).catch((e: unknown) => { if (active) { setLoadError(e); setError(refused(e) ? "" : "Étude indisponible ou accès refusé."); } }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; alive.current = false; };
   }, [projectId, studyId, variantId, revisionId]);
   useEffect(() => {
@@ -60,55 +89,188 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
       if (dirty.current && !window.confirm(warning())) { e.stopImmediatePropagation(); restoring = true; history.go(currentIndex - target || 1); }
       else currentIndex = target;
     };
-    const keys = (e: KeyboardEvent) => {
-      if ((e.target as Element).closest("input,textarea,select,[contenteditable=true]") || e.ctrlKey || e.metaKey || e.altKey) return;
-      if (e.key === "Escape") { setAnchor(null); setTool("studio.dessin.selection"); }
-      const t = STUDIO_TOOLS.find(t => (t.raccourci === "Space" ? " " : t.raccourci).toLowerCase() === e.key.toLowerCase());
-      if (t) { e.preventDefault(); setTool(t.toolId); setAnchor(null); }
-    };
+    const keys = (e: KeyboardEvent) => clavier.current(e);
     window.addEventListener("popstate", back, true); window.addEventListener("beforeunload", unload); document.addEventListener("click", click, true); window.addEventListener("keydown", keys);
     return () => { window.removeEventListener("popstate", back, true); window.removeEventListener("beforeunload", unload); document.removeEventListener("click", click, true); window.removeEventListener("keydown", keys); };
   }, []);
-  function apply(c: StudioCommand) {
-    if (!drawing || !writable) return;
+
+  // ——— Sélection et calques (lectures dérivées du brouillon) ———
+  const selectedItem = drawing ? drawing.objects.find(o => o.id === selection) ?? drawing.dimensions?.find(d => d.id === selection) ?? null : null;
+  const selected = selectedItem && drawing && estSelectionnable(drawing, selectedItem.layerId) ? selectedItem : null;
+  const calques = drawing ? listeCalques(drawing) : [];
+  const actif = calques.find(c => c.id === calqueActif) ?? calques[0];
+  // Le champ de renommage reprend le nom du calque actif quand celui-ci change (choix, création, annulation).
+  useEffect(() => { if (actif) setNomCalque(actif.name); }, [actif?.id, actif?.name]);
+
+  function properties(o: StudioShape | StudioDimension) {
+    if (o.type === "rectangle") setValues(v => ({ ...v, x: o.origin.x, y: o.origin.y, a: o.width, b: o.height }));
+    else setValues(v => ({ ...v, x: o.start.x, y: o.start.y, a: o.end.x, b: o.end.y, ...(o.type === "dimension" ? { offset: o.offset } : {}) }));
+  }
+  function select(id: string | null) {
+    setSelection(id);
+    const o = id && drawing ? drawing.objects.find(x => x.id === id) ?? drawing.dimensions?.find(x => x.id === id) : null;
+    if (o) properties(o);
+  }
+
+  /** Applique un lot localement (un pas d'historique) ; rien n'est envoyé avant « Enregistrer ». */
+  function apply(cs: StudioCommand[]): boolean {
+    if (!brouillon || !writable) return false;
     try {
-      const next = applyStudioCommands(drawing, [c]);
-      setDrawing(next);
-      const updated = next.objects.find(o => o.id === selection);
+      const next = appliquerBrouillon(brouillon, cs);
+      setBrouillon(next);
+      const doc = documentBrouillon(next);
+      const updated = doc.objects.find(o => o.id === selection) ?? doc.dimensions?.find(d => d.id === selection);
       if (updated) properties(updated);
-      setCommands(cs => [...cs, c]); setSaved(false); setError("");
+      setSaved(false); setError(""); setInfo("");
+      return true;
+    } catch (e) { setError(messageRefus(e)); return false; }
+  }
+  const layerId = () => layerIdPour(actif?.id ?? STUDIO_DEFAULT_LAYER_ID);
+  function addShape(start: StudioPoint, end: StudioPoint) {
+    if (tool === "studio.dessin.rectangle") {
+      const shape: StudioShape = { id: crypto.randomUUID(), type: "rectangle", ...(layerId() ? { layerId: layerId() } : {}), origin: { x: Math.min(start.x, end.x), y: Math.min(start.y, end.y) }, width: Math.abs(ecart(start.x, end.x)), height: Math.abs(ecart(start.y, end.y)) };
+      return apply([{ toolId: "studio.dessin.rectangle", params: shape }]);
     }
-    catch { setError("Géométrie invalide. Vérifiez les valeurs saisies."); }
+    return apply([{ toolId: "studio.dessin.ligne", params: { id: crypto.randomUUID(), type: "line", ...(layerId() ? { layerId: layerId() } : {}), start, end } }]);
   }
-  function add(start: { x: number; y: number }, end: { x: number; y: number }) {
-    const shape: StudioShape = tool === "studio.dessin.rectangle" ? { id: crypto.randomUUID(), type: "rectangle", origin: { x: Math.min(start.x, end.x), y: Math.min(start.y, end.y) }, width: Math.abs(end.x - start.x), height: Math.abs(end.y - start.y) } : { id: crypto.randomUUID(), type: "line", start, end };
-    if (shape.type === "line") apply({ toolId: "studio.dessin.ligne", params: shape }); else apply({ toolId: "studio.dessin.rectangle", params: shape });
+  function addDimension(debut: PointPose, fin: PointPose) {
+    return apply([{ toolId: "studio.dessin.cote", params: nouvelleCote(crypto.randomUUID(), debut, fin, Number.isFinite(values.offset) ? values.offset : 0.5, layerId()) }]);
   }
-  function draw(e: MouseEvent<SVGSVGElement>) {
-    if (!writable || !["studio.dessin.ligne", "studio.dessin.rectangle"].includes(tool)) return;
-    const matrix = sheet.current?.getScreenCTM(); if (!matrix) return;
-    const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix.inverse());
-    const p = { x: Math.round(pt.x * 100) / 100, y: Math.round(pt.y * 100) / 100 };
-    if (!anchor) setAnchor(p); else { add(anchor, p); setAnchor(null); }
+
+  // ——— Planche : pointeur, accrochage ———
+  const moveWithPointer = tool === "studio.dessin.deplacer" && !!selected;
+  const pointsActifs = OUTILS_TRACE.has(tool) || moveWithPointer;
+  function pose(e: { clientX: number; clientY: number }): PointPose | null {
+    const matrix = sheet.current?.getScreenCTM(); if (!matrix || !drawing) return null;
+    const raw = new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix.inverse());
+    const tolerance = ACCROCHE_PX / Math.max(Math.abs(matrix.a), 1e-9);
+    const visible = (l: string | undefined) => estVisible(drawing, l);
+    const accroche = accrocher(pointsAccroche(drawing.objects, visible), raw, tolerance);
+    return { point: accroche ? { ...accroche.point } : auCentimetre(raw), accroche };
   }
-  const selected = drawing?.objects.find(o => o.id === selection);
-  function properties(o: StudioShape) { setValues(v => ({ ...v, x: o.type === "line" ? o.start.x : o.origin.x, y: o.type === "line" ? o.start.y : o.origin.y, a: o.type === "line" ? o.end.x : o.width, b: o.type === "line" ? o.end.y : o.height })); }
-  function select(o: StudioShape) { setSelection(o.id); properties(o); }
+  function board(e: MouseEvent<SVGSVGElement>) {
+    if (!pointsActifs) { if (tool === "studio.dessin.selection") setSelection(null); return; }
+    if (!writable) return;
+    const p = pose(e); if (!p) return;
+    if (!trace) { setTrace(p); return; }
+    const a = trace.point, b = p.point;
+    if (tool === "studio.dessin.deplacer" && selected) {
+      if (apply([{ toolId: "studio.dessin.deplacer", params: { id: selected.id, dx: ecart(a.x, b.x), dy: ecart(a.y, b.y) } }])) setTrace(null);
+      return;
+    }
+    if (a.x === b.x && a.y === b.y) { setError("Les deux points doivent être distincts."); return; }
+    if (tool === "studio.dessin.rectangle" && (a.x === b.x || a.y === b.y)) { setError("La largeur et la hauteur doivent être strictement positives."); return; }
+    const ok = tool === "studio.dessin.cote" ? addDimension(trace, p) : addShape(a, b);
+    if (ok) setTrace(null);
+  }
+  function hover(e: PointerEvent<SVGSVGElement>) {
+    if (!pointsActifs) { if (survol) setSurvol(null); return; }
+    setSurvol(pose(e));
+  }
+
+  // ——— Formulaire numérique ———
   function numeric(e: FormEvent) {
     e.preventDefault();
-    const entered = tool === "studio.dessin.deplacer" ? [values.dx, values.dy] : [values.x, values.y, values.a, values.b];
+    const dim = selected?.type === "dimension" ? selected : null;
+    const entered = tool === "studio.dessin.deplacer" ? [values.dx, values.dy] : tool === "studio.dessin.modifier" && dim ? [values.offset] : tool === "studio.dessin.cote" ? [values.x, values.y, values.a, values.b, values.offset] : [values.x, values.y, values.a, values.b];
     if (!entered.every(Number.isFinite)) { setError("Saisissez des nombres finis dans tous les champs."); return; }
     const rectangle = tool === "studio.dessin.rectangle" || tool === "studio.dessin.modifier" && selected?.type === "rectangle";
     if (rectangle && (values.a <= 0 || values.b <= 0)) { setError("La largeur et la hauteur doivent être strictement positives."); return; }
-    if (tool === "studio.dessin.deplacer" && selected) { apply({ toolId: "studio.dessin.deplacer", params: { id: selected.id, dx: values.dx, dy: values.dy } }); return; }
-    if (tool === "studio.dessin.modifier" && selected) { apply({ toolId: "studio.dessin.modifier", params: selected.type === "line" ? { ...selected, start: { x: values.x, y: values.y }, end: { x: values.a, y: values.b } } : { ...selected, origin: { x: values.x, y: values.y }, width: values.a, height: values.b } }); return; }
-    add({ x: values.x, y: values.y }, tool === "studio.dessin.rectangle" ? { x: values.x + values.a, y: values.y + values.b } : { x: values.a, y: values.b });
+    if (tool === "studio.dessin.deplacer" && selected) { apply([{ toolId: "studio.dessin.deplacer", params: { id: selected.id, dx: values.dx, dy: values.dy } }]); return; }
+    if (tool === "studio.dessin.modifier" && selected) {
+      if (selected.type === "dimension") { apply([{ toolId: "studio.dessin.modifier", params: { ...selected, offset: values.offset } }]); return; }
+      apply([{ toolId: "studio.dessin.modifier", params: selected.type === "line" ? { ...selected, start: { x: values.x, y: values.y }, end: { x: values.a, y: values.b } } : { ...selected, origin: { x: values.x, y: values.y }, width: values.a, height: values.b } }]);
+      return;
+    }
+    if (tool === "studio.dessin.cote" && drawing) {
+      const sommets = pointsAccroche(drawing.objects, l => estVisible(drawing, l));
+      const debut = { x: values.x, y: values.y }, fin = { x: values.a, y: values.b };
+      addDimension({ point: debut, accroche: sommetExact(sommets, debut) }, { point: fin, accroche: sommetExact(sommets, fin) });
+      return;
+    }
+    addShape({ x: values.x, y: values.y }, tool === "studio.dessin.rectangle" ? { x: values.x + values.a, y: values.y + values.b } : { x: values.a, y: values.b });
   }
+
+  // ——— Outils et commandes ———
+  function cancelTrace() { setTrace(null); setSurvol(null); }
+  function runTool(toolId: StudioToolId) {
+    if (OUTILS_MODES.has(toolId)) { setTool(toolId); cancelTrace(); setInfo(""); return; }
+    if (!writable || !drawing) return;
+    if (toolId === "studio.dessin.supprimer") {
+      if (!selected) { setInfo("Sélectionnez d’abord l’objet à supprimer."); return; }
+      if (apply([{ toolId: "studio.dessin.supprimer", params: { ids: [selected.id] } }])) setSelection(null);
+      return;
+    }
+    if (toolId === "studio.calque.creer") {
+      const layer: StudioLayer = { id: crypto.randomUUID(), name: prochainNomCalque(drawing), visible: true, locked: false };
+      if (apply([{ toolId: "studio.calque.creer", params: layer }])) { setCalqueActif(layer.id); setNomCalque(layer.name); }
+      return;
+    }
+    if (toolId === "studio.calque.modifier") { renameLayer(); return; }
+    if (toolId === "studio.objet.calque") {
+      if (!selected || !actif) { setInfo("Sélectionnez d’abord l’objet à placer sur le calque actif."); return; }
+      if ((selected.layerId ?? STUDIO_DEFAULT_LAYER_ID) === actif.id) { setInfo("L’objet est déjà sur le calque actif."); return; }
+      apply([{ toolId: "studio.objet.calque", params: { ids: [selected.id], layerId: actif.id } }]);
+    }
+  }
+  function setLayer(layer: StudioLayer) {
+    if (!drawing) return;
+    apply([commandeReglage(drawing, layer)]);
+  }
+  function renameLayer() {
+    if (!drawing || !actif || !writable) return;
+    const name = nomCalque.trim();
+    if (!name || name === actif.name) { setInfo("Saisissez le nouveau nom du calque actif, puis validez."); nomRef.current?.focus(); return; }
+    setLayer({ ...actif, name });
+  }
+  function undo() { if (brouillon && peutAnnuler(brouillon) && writable) { cancelTrace(); setBrouillon(annulerBrouillon(brouillon)); setError(""); } }
+  function redo() { if (brouillon && peutRetablir(brouillon) && writable) { cancelTrace(); setBrouillon(retablirBrouillon(brouillon)); setError(""); } }
+  function fullscreen() { if (!document.fullscreenElement) void shell.current?.requestFullscreen().catch(() => setError("Plein écran indisponible. La planche reste accessible.")); else void document.exitFullscreen(); }
+  const canSave = !historical && !!context?.canWrite && !pending && (uncertain || (commands.length > 0 && !blocked));
+  function runCommand(id: CommandeEditeur["id"]) {
+    switch (id) {
+      case "annuler": return undo();
+      case "retablir": return redo();
+      case "annuler-trace": if (trace) cancelTrace(); else setTool("studio.dessin.selection"); return;
+      case "enregistrer": if (canSave) void save(); return;
+      case "cadrer": if (drawing) setCadre(cadrer(emprise(drawing, l => estVisible(drawing, l)))); return;
+      case "plein-ecran": return fullscreen();
+    }
+  }
+  const toolAvailable = (t: StudioToolEntry) => {
+    if (t.nature === "lecture" || OUTILS_MODES.has(t.toolId)) return t.nature === "lecture" || writable;
+    if (!writable) return false;
+    if (t.toolId === "studio.dessin.supprimer" || t.toolId === "studio.objet.calque") return !!selected;
+    return true;
+  };
+  const commandAvailable = (c: CommandeEditeur) => {
+    switch (c.id) {
+      case "annuler": return writable && !!brouillon && peutAnnuler(brouillon);
+      case "retablir": return writable && !!brouillon && peutRetablir(brouillon);
+      case "annuler-trace": return !!trace;
+      case "enregistrer": return canSave;
+      default: return true;
+    }
+  };
+  clavier.current = (e: KeyboardEvent) => {
+    const c = combinaison(e);
+    const field = (e.target as Element | null)?.closest?.("input,textarea,select,[contenteditable=true]");
+    if (field && c !== "Ctrl+S") return;
+    const cible: CibleRaccourci | null = cibleRaccourci(c);
+    if (!cible || !context || !drawing) return;
+    e.preventDefault();
+    if (cible.type === "outil") {
+      const t = STUDIO_TOOLS.find(x => x.toolId === cible.toolId);
+      if (t && toolAvailable(t)) runTool(cible.toolId);
+    } else runCommand(cible.id);
+  };
+
   async function save() {
-    if (!context || historical || saving.current) return;
+    if (!context || !brouillon || historical || saving.current) return;
     saving.current = true;
-    envelope.current ??= { contractVersion: "studio-commands/1", requestId: crypto.randomUUID(), baseRevisionId: context.revision.id, commands: [...commands] };
-    setPending(true); setError("");
+    // Un nouvel essai après une erreur réseau rejoue la même enveloppe (même requestId) : jamais de double effet.
+    envelope.current ??= enveloppeBrouillon(brouillon, context.revision.id, crypto.randomUUID());
+    setPending(true); setError(""); setInfo("");
     try {
       await api.studioCommands(projectId, studyId, variantId, envelope.current);
       if (!alive.current) return;
@@ -123,23 +285,64 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
         return;
       }
       if (!alive.current) return;
-      setContext(current); setDrawing(current.revision.document); setCommands([]);
-      const updated = current.revision.document.objects.find(o => o.id === selection);
+      setContext(current); setBrouillon(creerBrouillon(current.revision.document)); cancelTrace();
+      const doc = current.revision.document;
+      const updated = doc.objects.find(o => o.id === selection) ?? doc.dimensions?.find(d => d.id === selection);
       if (updated) properties(updated); else setSelection(null);
       setUncertain(false); envelope.current = null; setSaved(true);
     }
-    catch (e) { if (!alive.current) return; if (e instanceof ApiError && e.status < 500 && e.status !== 408) { setBlocked(e.status === 409 || e.status === 403 || e.status === 401); setUncertain(false); envelope.current = null; setError(e.status === 409 ? "Conflit de révision. Le brouillon est conservé." : "Enregistrement refusé. Le brouillon reste non enregistré."); } else { setUncertain(true); setError("Confirmation serveur indisponible. Réessayez la même sauvegarde avant de continuer."); } }
+    catch (e) {
+      if (!alive.current) return;
+      if (e instanceof ApiError && e.status < 500 && e.status !== 408) {
+        setBlocked(e.status === 409 || e.status === 403 || e.status === 401); setUncertain(false); envelope.current = null;
+        setError(e.status === 409
+          ? (e.code === "stale_revision" ? "Conflit de révision : une autre révision est devenue la version courante. Votre brouillon est conservé et n’a rien écrasé." : "Conflit de révision. Le brouillon est conservé.")
+          : "Enregistrement refusé. Le brouillon reste non enregistré.");
+      } else { setUncertain(true); setError("Confirmation serveur indisponible. Réessayez la même sauvegarde avant de continuer."); }
+    }
     finally { saving.current = false; if (alive.current) setPending(false); }
   }
+
   if (!loading && refused(loadError)) return <StudioRefus quoi={historical ? "revision" : "variante"} />;
+  const toolEntry = STUDIO_TOOLS.find(t => t.toolId === tool);
+  const toResolve = drawing?.dimensions?.filter(d => d.toResolve).length ?? 0;
+  const form = tool !== "studio.dessin.selection";
+  const formNeedsSelection = tool === "studio.dessin.modifier" || tool === "studio.dessin.deplacer";
+  const fields: (keyof Valeurs)[] = tool === "studio.dessin.deplacer" ? ["dx", "dy"] : tool === "studio.dessin.modifier" && selected?.type === "dimension" ? ["offset"] : tool === "studio.dessin.cote" ? ["x", "y", "a", "b", "offset"] : ["x", "y", "a", "b"];
+  const sized = selected?.type === "rectangle" && tool === "studio.dessin.modifier" || tool === "studio.dessin.rectangle";
+  const label = (k: keyof Valeurs) => ({ x: "X", y: "Y", a: sized ? "Largeur" : "X final", b: sized ? "Hauteur" : "Y final", dx: "Déplacement X", dy: "Déplacement Y", offset: "Décalage" })[k];
+  const hint = !writable && !historical && context?.canWrite === false ? "Lecture seule : la planche se consulte sans modification."
+    : trace ? (tool === "studio.dessin.deplacer" ? "Point de base placé. Cliquez la destination. Échap pour annuler." : "Premier point placé. Cliquez le second point. Échap pour annuler.")
+    : tool === "studio.dessin.cote" ? "Cote : cliquez deux points ; près d’un sommet, le point s’y accroche et la cote suit l’objet."
+    : moveWithPointer ? "Cliquez un point de base puis sa destination, ou saisissez le déplacement."
+    : "Deux clics pour dessiner, ou utilisez les valeurs numériques.";
   return <section className="studio-workspace" ref={shell} aria-label="Studio" data-studio-variante={variantId} data-studio-revision-vue={historical ? revisionId : undefined}>
     <header className="studio-heading"><div><p className="studio-eyebrow">FADI / STUDIO</p><h1>{context ? <span translate="no">{context.study.name}</span> : "Votre espace de dessin"}</h1><p>Dessin 2D · Repère local · Mètres</p></div><span className="studio-badge">Planche 2D</span></header>
-    {error && <div className="studio-alert" role="alert">{error}{blocked && <button onClick={() => { if (window.confirm(warning())) window.location.reload(); }}>Recharger la version serveur</button>}</div>}
+    {error && <div className="studio-alert" role="alert" data-studio-erreur-planche>{error}{blocked && <button onClick={() => { if (window.confirm(warning())) window.location.reload(); }}>Recharger la version serveur</button>}</div>}
     {loading && <p role="status">Chargement de la planche…</p>}
-    {context && drawing && <>{historical && <div className="studio-alert studio-history-banner" data-studio-lecture-seule-revision><span>Révision historique en lecture seule. Aucune modification n’est possible ici.</span><Link to={cheminVarianteStudio(projectId, studyId, variantId)}>Revenir à la version courante</Link></div>}<div className="studio-context"><Link to={cheminProjetStudio(projectId)}>Études</Link><span translate="no">{context.variant.name}</span><span>Révision <span translate="no" title={context.revision.id}>{context.revision.id.slice(-8)}</span></span><span role="status">{historical ? "Révision historique" : pending ? "Sauvegarde en cours…" : uncertain ? "Sauvegarde non confirmée" : commands.length ? "Brouillon non enregistré" : saved ? "Enregistré sur le serveur" : "Version serveur chargée"}</span></div>{!context.canWrite && <p role="status" data-studio-lecture-seule>Lecture seule</p>}
-    <div className="studio-tools" role="toolbar" aria-label="Outils de dessin">{STUDIO_TOOLS.map(t => <button type="button" key={t.toolId} aria-pressed={tool === t.toolId} title={`${t.libelleFR} (${t.raccourci})`} onClick={() => { setTool(t.toolId); setAnchor(null); }}><ToolIcon id={t.iconeSymbolique} /><span>{t.libelleFR}</span><kbd>{t.raccourci}</kbd></button>)}<div className="studio-tools-spacer" /><button disabled={historical || !context.canWrite || pending || (!uncertain && (!commands.length || blocked))} onClick={() => void save()}>{uncertain ? "Réessayer la sauvegarde" : "Enregistrer"}</button><button onClick={() => { if (!document.fullscreenElement) void shell.current?.requestFullscreen().catch(() => setError("Plein écran indisponible. La planche reste accessible.")); else void document.exitFullscreen(); }}>Plein écran / Quitter</button></div>
-    <div className="studio-editor"><div className="studio-sheet"><div className="studio-sheet-caption"><span>Dessin et modélisation</span><span>1 unité = 1 m</span></div><svg ref={sheet} viewBox="-2 -2 24 18" role="group" aria-label="Planche de dessin 2D" onPointerMove={e => { if (!anchor) return; const m = sheet.current?.getScreenCTM(); if (m) { const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse()); setHover({ x: p.x, y: p.y }); } }} onClick={draw}><defs><pattern id="studio-grid" width="1" height="1" patternUnits="userSpaceOnUse"><path d="M 1 0 L 0 0 0 1" fill="none" stroke="#dbe5eb" strokeWidth="0.025" /></pattern></defs><rect x="-2" y="-2" width="24" height="18" fill="url(#studio-grid)" />{drawing.objects.map(o => <g key={o.id} role="button" tabIndex={0} aria-label={`${o.type === "line" ? "Ligne" : "Rectangle"} ${o.id}`} aria-pressed={selection === o.id} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(o); } }} onClick={e => { if (!["studio.dessin.ligne", "studio.dessin.rectangle"].includes(tool)) { e.stopPropagation(); select(o); } }} className={selection === o.id ? "studio-shape selected" : "studio-shape"}>{o.type === "line" ? <line x1={o.start.x} y1={o.start.y} x2={o.end.x} y2={o.end.y} /> : <rect x={o.origin.x} y={o.origin.y} width={o.width} height={o.height} />}</g>)}{anchor && hover && (tool === "studio.dessin.rectangle" ? <rect x={Math.min(anchor.x, hover.x)} y={Math.min(anchor.y, hover.y)} width={Math.abs(hover.x-anchor.x)} height={Math.abs(hover.y-anchor.y)} fill="none" stroke="#c3722f" strokeWidth=".06" strokeDasharray=".2 .15" pointerEvents="none" /> : <line x1={anchor.x} y1={anchor.y} x2={hover.x} y2={hover.y} stroke="#c3722f" strokeWidth=".06" strokeDasharray=".2 .15" pointerEvents="none" />)}{anchor && <circle cx={anchor.x} cy={anchor.y} r="0.15" fill="#d58635" />}</svg><p className="studio-hint">{anchor ? "Premier point placé. Cliquez le second point. Échap pour annuler." : "Deux clics pour dessiner, ou utilisez les valeurs numériques."}</p>{anchor && <button onClick={() => setAnchor(null)}>Annuler le tracé</button>}</div>
-    <aside className="studio-properties" aria-label="Propriétés du dessin"><h2>{STUDIO_TOOLS.find(t => t.toolId === tool)?.libelleFR}</h2><p>{drawing.objects.length} objets</p>{selected && <p>Objet sélectionné : <span translate="no">{selected.id.slice(0, 8)}</span></p>}{tool !== "studio.dessin.selection" && <form onSubmit={numeric}><fieldset disabled={!writable || (["studio.dessin.modifier", "studio.dessin.deplacer"].includes(tool) && !selected)}><legend>Valeurs en mètres</legend>{(tool === "studio.dessin.deplacer" ? ["dx", "dy"] as const : ["x", "y", "a", "b"] as const).map(k => <label key={k}>{({ x: "X", y: "Y", a: (selected?.type === "rectangle" || tool === "studio.dessin.rectangle") ? "Largeur" : "X final", b: (selected?.type === "rectangle" || tool === "studio.dessin.rectangle") ? "Hauteur" : "Y final", dx: "Déplacement X", dy: "Déplacement Y" })[k]}<input type="number" step="any" required value={Number.isFinite(values[k]) ? values[k] : ""} onChange={e => setValues(v => ({ ...v, [k]: e.target.valueAsNumber }))} /></label>)}<button type="submit">{tool === "studio.dessin.deplacer" ? "Déplacer la sélection" : tool === "studio.dessin.modifier" ? "Modifier la sélection" : "Ajouter au dessin"}</button></fieldset></form>}<div className="studio-note"><strong>Une planche autonome</strong><p>Les tracés restent en brouillon jusqu’à la confirmation du serveur. Aucun modèle 3D n’est nécessaire.</p></div></aside></div>
+    {context && drawing && <>{historical && <div className="studio-alert studio-history-banner" data-studio-lecture-seule-revision><span>Révision historique en lecture seule. Aucune modification n’est possible ici.</span><Link to={cheminVarianteStudio(projectId, studyId, variantId)}>Revenir à la version courante</Link></div>}<div className="studio-context"><Link to={cheminProjetStudio(projectId)}>Études</Link><span translate="no">{context.variant.name}</span><span>Révision <span translate="no" title={context.revision.id}>{context.revision.id.slice(-8)}</span></span><span role="status" data-studio-etat>{historical ? "Révision historique" : pending ? "Sauvegarde en cours…" : uncertain ? "Sauvegarde non confirmée" : commands.length ? "Brouillon non enregistré" : saved ? "Enregistré sur le serveur" : "Version serveur chargée"}</span></div>{!context.canWrite && <p role="status" data-studio-lecture-seule>Lecture seule</p>}
+    <BarreOutils outil={tool} outilDisponible={toolAvailable} commandeDisponible={commandAvailable} libelleCommande={uncertain ? { enregistrer: "Réessayer la sauvegarde" } : undefined} surOutil={runTool} surCommande={runCommand} />
+    <p className="studio-undo-scope" data-studio-annuler-portee>{`Annuler et Rétablir ne portent que sur les modifications non enregistrées (${commands.length} commande(s) en attente) ; une révision enregistrée ne s’annule pas ici.`}</p>
+    <div className="studio-editor"><div className="studio-sheet"><div className="studio-sheet-caption"><span>Dessin et modélisation</span><span>1 unité = 1 m</span></div>
+      <Dessin2D svgRef={sheet} doc={drawing} cadre={cadre} outil={tool} selection={selected?.id ?? null} trace={trace} survol={survol}
+        clicsVersPlanche={o => OUTILS_TRACE.has(tool) || (tool === "studio.dessin.deplacer" && (!!trace || o.id === selected?.id))}
+        surPlanche={board} surSurvol={hover} surSelection={id => select(id)} />
+      <p className="studio-hint">{hint}</p>
+      {toResolve > 0 && <p className="studio-alert" role="status" data-studio-cotes-a-resoudre={toResolve}>{`${toResolve} cote(s) à résoudre : un objet coté a été supprimé.`}</p>}
+      {info && <p className="studio-info" role="status">{info}</p>}
+      {actif && !actif.visible && OUTILS_TRACE.has(tool) && <p className="studio-info">Le calque actif est masqué : ce que vous dessinez n’apparaîtra pas.</p>}
+    </div>
+    <aside className="studio-properties" aria-label="Propriétés du dessin"><h2>{toolEntry?.libelleFR}</h2><p>{`${drawing.objects.length} objets · ${drawing.dimensions?.length ?? 0} cotes`}</p>
+      {selected && <div className="studio-selection" data-studio-selection={selected.id}>
+        <p>Objet sélectionné : <span translate="no">{selected.id.slice(0, 8)}</span></p>
+        {selected.type === "dimension" && (selected.toResolve
+          ? <p data-studio-cote-statut="a-resoudre">À résoudre : un objet coté a été supprimé.</p>
+          : <p data-studio-cote-statut={selected.links.start || selected.links.end ? "liee" : "libre"}>Valeur mesurée : <span translate="no">{formaterMetres(valeurCote(selected) ?? 0, LOCALE)}</span> · {selected.links.start || selected.links.end ? "Associée : suit l’objet coté." : "Libre."}</p>)}
+        <button type="button" disabled={!writable} onClick={() => runTool("studio.dessin.supprimer")} data-studio-supprimer-selection><Icon name="studio-delete" size={18} /> Supprimer la sélection</button>
+      </div>}
+      {form && <form onSubmit={numeric}><fieldset disabled={!writable || (formNeedsSelection && !selected) || (tool === "studio.dessin.modifier" && selected?.type === "dimension" && selected.toResolve)}><legend>Valeurs en mètres</legend>{fields.map(k => <label key={k}>{label(k)}<input type="number" step="any" required value={Number.isFinite(values[k]) ? values[k] : ""} onChange={e => setValues(v => ({ ...v, [k]: e.target.valueAsNumber }))} /></label>)}<button type="submit">{tool === "studio.dessin.deplacer" ? "Déplacer la sélection" : tool === "studio.dessin.modifier" ? "Modifier la sélection" : "Ajouter au dessin"}</button></fieldset></form>}
+      <PanneauCalques doc={drawing} actif={actif?.id ?? STUDIO_DEFAULT_LAYER_ID} modifiable={writable} nom={nomCalque} nomRef={nomRef} surActif={id => setCalqueActif(id)} surNom={setNomCalque} surReglage={setLayer} surRenommer={renameLayer} />
+      <div className="studio-note"><strong>Une planche autonome</strong><p>Les tracés restent en brouillon jusqu’à la confirmation du serveur. Aucun modèle 3D n’est nécessaire.</p></div></aside></div>
     <RevisionsPanel projectId={projectId} studyId={studyId} variantId={variantId} headRevisionId={context.variant.headRevisionId} shownRevisionId={context.revision.id} /></>}
   </section>;
 }
@@ -169,9 +372,4 @@ function RevisionsPanel({ projectId, studyId, variantId, headRevisionId, shownRe
       </li>;
     })}</ol>}
   </section>;
-}
-
-function ToolIcon({ id }: { id: string }) {
- const paths: Record<string, string> = { "studio-pointer": "M5 3 19 12 12 13 9 20Z", "studio-line": "M4 20 20 4M3 19h2v2H3ZM19 3h2v2h-2Z", "studio-rectangle": "M4 5h16v14H4Z", "studio-move": "M12 2v20M2 12h20M8 6l4-4 4 4M8 18l4 4 4-4M6 8l-4 4 4 4M18 8l4 4-4 4", "studio-edit": "M4 18 16 6l3 3L7 21H4ZM15 7l3 3M3 3h6M3 3v6" };
- return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d={paths[id]} /></svg>;
 }

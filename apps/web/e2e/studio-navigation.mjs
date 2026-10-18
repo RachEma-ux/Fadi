@@ -215,6 +215,104 @@ try {
   await b.page.locator("[data-studio-lecture-seule]").waitFor();
   check("lecteur : la variante s'ouvre en lecture seule", await b.page.getByRole("toolbar", { name: "Outils de dessin" }).getByRole("button", { name: "Enregistrer", exact: true }).isDisabled());
 
+  // Planche 2D : ligne, cote associative accrochée, déplacement (la cote suit), suppression (cote « à résoudre »),
+  // calque créé puis masqué, annuler / rétablir, enregistrement (un seul lot, même requestId au nouvel essai),
+  // actualisation identique, conflit de révision sans écrasement.
+  await page.goto(base);
+  await page.locator('svg [role="button"][aria-label^="Rectangle "]').waitFor({ state: "attached" });
+  const planche = page.getByRole("group", { name: "Planche de dessin 2D", exact: true });
+  const cliquer = async (x, y) => {
+    // Le point visé est ramené dans la fenêtre avant le clic (la planche peut dépasser la hauteur de l'écran).
+    const p = await planche.evaluate((svg, w) => {
+      const ecran = () => new DOMPoint(w.x, w.y).matrixTransform(svg.getScreenCTM());
+      const s = ecran();
+      if (s.y < 40 || s.y > window.innerHeight - 40) window.scrollBy(0, s.y - window.innerHeight / 2);
+      const t = ecran();
+      return { x: t.x, y: t.y };
+    }, { x, y });
+    await page.mouse.click(p.x, p.y);
+  };
+  const lignes = page.locator('svg [role="button"][aria-label^="Ligne "]');
+  const cote = page.locator("svg [data-studio-cote]");
+  await outils.getByRole("button", { name: "Ligne", exact: true }).click();
+  await cliquer(2, 8);
+  await cliquer(6, 8);
+  // Le pointeur est arrondi au pixel puis au centimètre : on compare à la géométrie tracée, pas aux points visés.
+  const geometrie = () => lignes.locator("line").evaluate((l) => ["x1", "y1", "x2", "y2"].map((k) => Number(l.getAttribute(k))));
+  const tracee = await geometrie();
+  check("planche : deux clics tracent une ligne", (await lignes.count()) === 1 && Math.abs(tracee[0] - 2) < 0.05 && Math.abs(tracee[2] - 6) < 0.05, tracee.join(" "));
+  const longueur = Math.hypot(tracee[2] - tracee[0], tracee[3] - tracee[1]);
+  await page.keyboard.press("Shift+C");
+  check("planche : Maj+C choisit l'outil Cote", (await outils.getByRole("button", { name: "Cote", exact: true }).getAttribute("aria-pressed")) === "true");
+  await cliquer(2.08, 8.06);
+  await cliquer(5.93, 7.95);
+  await cote.waitFor({ state: "attached" });
+  const texte = (await cote.locator("text").textContent()) ?? "";
+  check("cote : accrochée aux extrémités, valeur mesurée affichée en mètres", (await cote.getAttribute("data-studio-cote-valeur")) === longueur.toFixed(3) && texte === `${longueur.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 3 })} m` && /^\d+,\d{2,3} m$/.test(texte) && (await cote.getAttribute("data-studio-cote-etat")) === "resolue", texte);
+  await outils.getByRole("button", { name: "Sélection", exact: true }).click();
+  await lignes.press("Enter");
+  await outils.getByRole("button", { name: "Déplacer", exact: true }).click();
+  for (const [nom, v] of [["Déplacement X", 1], ["Déplacement Y", 1]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
+  await proprietes.getByRole("button", { name: "Déplacer la sélection", exact: true }).click();
+  const attache = cote.locator(".studio-cote-attache").first();
+  const deplacee = await geometrie();
+  const suivi = [await attache.getAttribute("x1"), await attache.getAttribute("y1")].map(Number);
+  check("cote associative : elle suit la ligne déplacée",
+    Math.abs(deplacee[0] - tracee[0] - 1) < 1e-9 && Math.abs(deplacee[1] - tracee[1] - 1) < 1e-9 && suivi[0] === deplacee[0] && suivi[1] === deplacee[1] && (await cote.getAttribute("data-studio-cote-valeur")) === longueur.toFixed(3),
+    `${deplacee.join(" ")} / ${suivi.join(" ")}`);
+  await page.keyboard.press("Delete");
+  await page.locator("[data-studio-cotes-a-resoudre]").waitFor();
+  check("suppression (Suppr) : la ligne disparaît, la cote passe « à résoudre »", (await lignes.count()) === 0 && (await cote.getAttribute("data-studio-cote-etat")) === "a-resoudre" && (await cote.locator("text").textContent()) === "à résoudre");
+  await outils.getByRole("button", { name: "Nouveau calque", exact: true }).click();
+  const rangees = page.locator("[data-studio-calque-ligne]");
+  check("calques : « Nouveau calque » ajoute un calque, devenu actif", (await rangees.count()) === 2 && (await rangees.nth(1).getAttribute("aria-current")) === "true");
+  const calqueId = await rangees.nth(1).getAttribute("data-studio-calque-ligne");
+  await outils.getByRole("button", { name: "Rectangle", exact: true }).click();
+  for (const [nom, v] of [["X", 10], ["Y", 10], ["Largeur", 2], ["Hauteur", 1]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
+  await proprietes.getByRole("button", { name: "Ajouter au dessin", exact: true }).click();
+  const surCalque = page.locator(`svg [data-studio-calque="${calqueId}"]`);
+  check("calques : le rectangle est posé sur le calque actif", (await surCalque.count()) === 1);
+  await rangees.nth(1).getByLabel("Visible", { exact: true }).uncheck();
+  check("calques : un calque masqué n'est pas dessiné", (await surCalque.count()) === 0);
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Control+z");
+  check("annuler (Ctrl+Z) : le calque redevient visible", (await surCalque.count()) === 1);
+  await page.keyboard.press("Control+y");
+  check("rétablir (Ctrl+Y) : le calque est de nouveau masqué", (await surCalque.count()) === 0);
+  const envois = [];
+  page.on("request", (r) => { if (r.method() === "POST" && /\/studio\/studies\/[^/]+\/variants\/[^/]+\/commands$/.test(new URL(r.url()).pathname)) envois.push(r.postDataJSON()); });
+  let coupe = false;
+  await page.route("**/commands", (route) => { if (!coupe) { coupe = true; return route.abort("failed"); } return route.continue(); });
+  await page.keyboard.press("Control+s");
+  await page.locator("[data-studio-erreur-planche]").filter({ hasText: "Confirmation serveur indisponible" }).waitFor();
+  await outils.getByRole("button", { name: "Réessayer la sauvegarde", exact: true }).click();
+  await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
+  await page.unroute("**/commands");
+  const enveloppe = envois[0];
+  check("enregistrement (Ctrl+S) : un lot de commandes studio-commands/1 sur la tête", envois.length === 2 && enveloppe.contractVersion === "studio-commands/1" && enveloppe.commands.map((c) => c.toolId).join() === "studio.dessin.ligne,studio.dessin.cote,studio.dessin.deplacer,studio.dessin.supprimer,studio.calque.creer,studio.dessin.rectangle,studio.calque.modifier", enveloppe.commands.map((c) => c.toolId).join());
+  check("nouvel essai : même requestId, même contenu", envois[1].requestId === enveloppe.requestId && JSON.stringify(envois[1]) === JSON.stringify(enveloppe));
+  check("après enregistrement : annuler ne porte que sur les modifications non enregistrées", await outils.getByRole("button", { name: "Annuler", exact: true }).isDisabled());
+  const variantePath = `/projects/${pA.id}/studio/studies/${studyId}/variants/${variantId}`;
+  const enregistre = await a.api("get", variantePath);
+  const empreinte = () => page.locator("svg [role=button]").evaluateAll((els) => els.map((e) => [e.getAttribute("aria-label"), e.getAttribute("data-studio-calque"), e.getAttribute("data-studio-cote-etat"), e.innerHTML]).join("|"));
+  const avant = await empreinte();
+  await page.reload();
+  await page.locator("[data-studio-cotes-a-resoudre]").waitFor();
+  const relu = await a.api("get", variantePath);
+  check("actualisation : document et planche identiques", JSON.stringify(relu.revision) === JSON.stringify(enregistre.revision) && (await empreinte()) === avant && (await surCalque.count()) === 0 && !(await page.locator(`[data-studio-calque-ligne="${calqueId}"]`).getByLabel("Visible", { exact: true }).isChecked()));
+  const doc = relu.revision.document;
+  check("document enregistré : cote à résoudre, calque masqué, rectangle sur ce calque", doc.dimensions?.length === 1 && doc.dimensions[0].toResolve === true && doc.layers?.some((l) => l.id === calqueId && l.visible === false) && doc.objects.some((o) => o.layerId === calqueId));
+  // Conflit : la tête avance ailleurs ; l'enregistrement de l'interface est refusé sans rien écraser.
+  await outils.getByRole("button", { name: "Ligne", exact: true }).click();
+  await cliquer(1, 12);
+  await cliquer(4, 12);
+  const autre = await a.api("post", `${variantePath}/commands`, { contractVersion: "studio-commands/1", requestId: `autre-${Date.now()}`, baseRevisionId: relu.revision.id, commands: [{ toolId: "studio.dessin.ligne", params: { id: `autre-${Date.now()}`, type: "line", start: { x: 0, y: 0 }, end: { x: 1, y: 0 } } }] });
+  await page.keyboard.press("Control+s");
+  await page.locator("[data-studio-erreur-planche]").filter({ hasText: "Conflit de révision" }).waitFor();
+  const apres = await a.api("get", variantePath);
+  check("conflit : message, brouillon conservé, rechargement proposé, tête non écrasée", apres.revision.id === autre.revision.id && (await lignes.count()) === 1 && (await page.getByRole("button", { name: "Recharger la version serveur", exact: true }).isVisible()));
+  await page.screenshot({ path: join(OUT, "studio-planche-2d.png") });
+
   // Accessibilité de l'accueil Studio.
   await page.goto(`${BASE}/studio`);
   await page.locator("[data-studio-projets]").waitFor();
