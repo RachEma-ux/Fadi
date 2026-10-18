@@ -69,6 +69,7 @@ describe("Studio : document 2D natif", () => {
     ["objects non tableau", { ...document(), objects: {} }],
     ["tableau troué", { ...document(), objects: new Array(1) }],
     ["tableau avec champ inconnu", { ...document(), objects: Object.assign([line()], { future: true }) }],
+    ["tableau à prototype modifié", { ...document(), objects: Object.setPrototypeOf([line()], null) }],
     ["objet à prototype métier", Object.assign(Object.create({ inherited: true }), document())],
     ["objet accessor", { ...document(), objects: [{ ...line(), get start() { throw new Error("getter exécuté"); } }] }],
   ])("refuse %s sans perdre silencieusement des données", (_label, value) => {

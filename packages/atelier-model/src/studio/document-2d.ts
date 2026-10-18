@@ -76,6 +76,7 @@ function finite(value: unknown, path: string): number {
 
 function array(value: unknown, path: string): unknown[] {
   if (!Array.isArray(value)) fail(path, "tableau attendu");
+  if (Object.getPrototypeOf(value) !== Array.prototype) fail(path, "tableau JSON attendu");
   const keys = Reflect.ownKeys(value);
   if (keys.length !== value.length + 1) fail(path, "tableau dense sans propriétés supplémentaires attendu");
   for (let i = 0; i < value.length; i++) {
