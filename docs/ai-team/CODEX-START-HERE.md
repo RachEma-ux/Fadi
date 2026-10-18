@@ -83,3 +83,9 @@ L'utilisateur demande une vérification et un rapport **chaque heure**, ainsi qu
 - Les réponses techniques et les décisions en attente seront contrôlées à cadence horaire par ChatGPT, **si l'accès GitHub est disponible**. Ne pas supposer une réponse ou un accord tant qu'ils ne sont pas visibles et attribués.
 - Chaque rapport distingue **PDEV (développement fonctionnel, calculable uniquement après baseline vérifiée)** et **P630 (IDs de checklist réellement terminés sur 630)** ; jamais 630/630 d'affectation présentés comme 100 % d'exécution.
 - Une tâche active Codex ou un mécanisme d'exécution réellement configuré est nécessaire : GitHub et l'automatisation de contrôle n'exécutent pas le code par eux-mêmes. Si aucun `CODEX-ACK` n'apparaît, la mise en route doit être considérée **non confirmée** et non réussie.
+
+## 12. Questions traitées sans mise en attente globale — ordre immédiat
+
+**Obligation de reprise :** lire [CODEX-NONBLOCKING-EXECUTION.md](CODEX-NONBLOCKING-EXECUTION.md) et les sept réponses [Q-M003-D01..D07](https://github.com/RachEma-ux/Fadi/issues/166). Les questions D01/D02/D05/D07 ont des **directions candidates pour les spécifications**, D06 un **ordre de revue documentaire**, et D03/D04 des **cahiers de sécurisation** ; aucune n'autorise une correction sensible, une fusion, l'administration ou un déploiement.
+
+A0 doit ordonnancer **des sous-tâches READY** et poursuivre sans attendre les accords qui ne conditionnent pas ces sous-tâches. Une question bloque uniquement le plus petit sous-lot nécessaire ; elle ne bloque pas tout Fadi/Studio. Les opérations sensibles attendent toujours une approbation utilisateur explicite. Consigner chaque question/réponse dans #166 et les checkpoints avec la prochaine action exacte. Le contrôle horaire ne démarre pas Codex automatiquement.
