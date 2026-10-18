@@ -1,0 +1,176 @@
+{
+  "schema": "delta-registre-v1",
+  "origine": "Claude Code — ADR-01/02 et PROV-03..05, hors équipe Codex",
+  "rapport": "docs/ai-team/reports/claude-m11-prov/README.md",
+  "base_register_sha256": "7c5da578b34f775329e40827d8b99b6b7796d2055f9a1151725140c0013e686b",
+  "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "annonce": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6251022689",
+  "statut_de_ce_delta": "Proposé — IDs disjoints des deltas claude-m13-rep et claude-m13-coex ; à revoir puis intégrer par A0.",
+  "changements": [
+    {
+      "id": "ADR-01",
+      "statut_avant": "À définir",
+      "statut": "Vérifié",
+      "cloture": {
+        "condition_verifiee": true,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Lecture statique",
+        "portee": "Au commit 817bd36, pas recette"
+      },
+      "blocage": {
+        "cause": null,
+        "responsable": "A2",
+        "essais_effectues": "ADR-STUDIO-NAV-01 ouverte au statut Proposé dans docs/continuity/decisions selon le modèle ADR, sans remplacer DEC-01..18 ni les décisions Atelier/déléguées.",
+        "deblocage": null
+      },
+      "suite": "ADR-03 : faire arbitrer l’ADR ; ADR-01 ne vaut pas acceptation.",
+      "preuves_ajoutees": [
+        {
+          "type": "adr_proposee",
+          "fichier": "docs/continuity/decisions/ADR-STUDIO-NAV-01.md",
+          "section": "ADR-01",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6251022689",
+          "constat": "ADR-STUDIO-NAV-01 ouverte au statut Proposé dans docs/continuity/decisions selon le modèle ADR, sans remplacer DEC-01..18 ni les décisions Atelier/déléguées.",
+          "limite": "Condition documentaire seulement ; aucune conformité Studio, aucune case source cochée, aucune décision prise ; revue A1/A2/A5 et intégration A0 requises."
+        }
+      ]
+    },
+    {
+      "id": "ADR-02",
+      "statut_avant": "À définir",
+      "statut": "Vérifié",
+      "cloture": {
+        "condition_verifiee": true,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Lecture statique",
+        "portee": "Au commit 817bd36, pas recette"
+      },
+      "blocage": {
+        "cause": null,
+        "responsable": "A2",
+        "essais_effectues": "Routes (§1), contexte (§2), droits (§3), mobile/plein écran (§4), coexistence Atelier avec règles COEX-05/06 accueillies sous réserve (§5), tests NAV-001..009 (§6) et risques (§7) documentés avec sources au 817bd36.",
+        "deblocage": null
+      },
+      "suite": "Relire après décisions Q-CLAUDE-COEX-* et ROUTE-09 ; NAV non exécutés.",
+      "preuves_ajoutees": [
+        {
+          "type": "adr_proposee",
+          "fichier": "docs/continuity/decisions/ADR-STUDIO-NAV-01.md",
+          "section": "ADR-02",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6251022689",
+          "constat": "Routes (§1), contexte (§2), droits (§3), mobile/plein écran (§4), coexistence Atelier avec règles COEX-05/06 accueillies sous réserve (§5), tests NAV-001..009 (§6) et risques (§7) documentés avec sources au 817bd36.",
+          "limite": "Condition documentaire seulement ; aucune conformité Studio, aucune case source cochée, aucune décision prise ; revue A1/A2/A5 et intégration A0 requises."
+        }
+      ]
+    },
+    {
+      "id": "PROV-03",
+      "statut_avant": "À définir",
+      "statut": "Vérifié",
+      "cloture": {
+        "condition_verifiee": true,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Contrôles documentaires exécutés",
+        "portee": "Au commit 817bd36, pas recette"
+      },
+      "blocage": {
+        "cause": null,
+        "responsable": "A1",
+        "essais_effectues": "Toutes les occurrences de 5cf61d1 dans docs/ et Studio/ relues : aucune ne le présente comme HEAD actuel ; distinction 5cf61d1/817bd36 mesurée par blobs.",
+        "deblocage": null
+      },
+      "suite": "Obligation permanente : relire toute nouvelle occurrence.",
+      "preuves_ajoutees": [
+        {
+          "type": "controle_documentaire",
+          "fichier": "docs/ai-team/reports/claude-m11-prov/PROV-03-05.md",
+          "section": "PROV-03",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6251022689",
+          "constat": "Toutes les occurrences de 5cf61d1 dans docs/ et Studio/ relues : aucune ne le présente comme HEAD actuel ; distinction 5cf61d1/817bd36 mesurée par blobs.",
+          "limite": "Condition documentaire seulement ; aucune conformité Studio, aucune case source cochée, aucune décision prise ; revue A1/A2/A5 et intégration A0 requises."
+        }
+      ]
+    },
+    {
+      "id": "PROV-04",
+      "statut_avant": "À définir",
+      "statut": "Vérifié",
+      "cloture": {
+        "condition_verifiee": true,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Contrôles documentaires exécutés",
+        "portee": "Au commit 817bd36, pas recette"
+      },
+      "blocage": {
+        "cause": null,
+        "responsable": "A1",
+        "essais_effectues": "Les 10 chemins sources de l’annexe D du Plan existent au 817bd36, REF-01/REF-02 aux empreintes déclarées ; occurrences de 3bcda929 toutes historiques ; requalification REP-09 séparée.",
+        "deblocage": null
+      },
+      "suite": "Revérifier à chaque nouveau SHA de référence.",
+      "preuves_ajoutees": [
+        {
+          "type": "controle_documentaire",
+          "fichier": "docs/ai-team/reports/claude-m11-prov/PROV-03-05.md",
+          "section": "PROV-04",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6251022689",
+          "constat": "Les 10 chemins sources de l’annexe D du Plan existent au 817bd36, REF-01/REF-02 aux empreintes déclarées ; occurrences de 3bcda929 toutes historiques ; requalification REP-09 séparée.",
+          "limite": "Condition documentaire seulement ; aucune conformité Studio, aucune case source cochée, aucune décision prise ; revue A1/A2/A5 et intégration A0 requises."
+        }
+      ]
+    },
+    {
+      "id": "PROV-05",
+      "statut_avant": "À définir",
+      "statut": "Vérifié",
+      "cloture": {
+        "condition_verifiee": true,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Contrôles documentaires exécutés",
+        "portee": "Au commit 817bd36, pas recette"
+      },
+      "blocage": {
+        "cause": null,
+        "responsable": "A1",
+        "essais_effectues": "Checklist V1.0 (24a5e04) et suivi V1.1 (2311cb4) comparés par script : 630 IDs identiques, même ordre, libellés identiques, aucune renumérotation ; garde check_missions.py vérifiée.",
+        "deblocage": null
+      },
+      "suite": "À refaire à chaque révision future de la checklist.",
+      "preuves_ajoutees": [
+        {
+          "type": "controle_documentaire",
+          "fichier": "docs/ai-team/reports/claude-m11-prov/PROV-03-05.md",
+          "section": "PROV-05",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6251022689",
+          "constat": "Checklist V1.0 (24a5e04) et suivi V1.1 (2311cb4) comparés par script : 630 IDs identiques, même ordre, libellés identiques, aucune renumérotation ; garde check_missions.py vérifiée.",
+          "limite": "Condition documentaire seulement ; aucune conformité Studio, aucune case source cochée, aucune décision prise ; revue A1/A2/A5 et intégration A0 requises."
+        }
+      ]
+    }
+  ]
+}
