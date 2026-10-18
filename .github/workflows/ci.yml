@@ -43,7 +43,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: studio-v1-validation-${{ github.sha }}
+          name: studio-v1-validation-${{ github.event.pull_request.head.sha }}
           path: |
             work/studio-v1-proof/report-*.json
             work/studio-v1-proof/studio-*.png
