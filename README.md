@@ -6,6 +6,12 @@ application is bilingual French / English (French is the source language; Englis
 bar, the sign-in pages or Settings, see "Languages" below); this file and `docs/architecture.md` are the developer entry
 points.
 
+## Reprise du développement entre sessions IA
+
+Le cadre de continuité de Fadi (ChatGPT, Claude Code, Codex et contributeurs) est décrit dans [`docs/continuity/README.md`](docs/continuity/README.md). Voir [l'index des chantiers](docs/workstreams/README.md) et commencer par `HANDOFF.md` puis `STATUS.md` pour reprendre sans confondre hypothèses et résultats vérifiés. La nouvelle session doit revalider GitHub HEAD, Issues, PR et CI. Le système ne conserve pas automatiquement le raisonnement caché de l'agent.
+
+Outils locaux sans dépendance : `node scripts/continuity.mjs status architecture-webapp`, `node scripts/continuity.mjs init <slug> <issue-number>`, `node scripts/check-continuity.mjs`. Les tâches passent par Issue → branche → PR → checkpoint ; la mise en production demeure explicitement séparée.
+
 ## Status
 
 The migration is a working modular monolith with the seven modules of the brief, each with real screens and
@@ -72,12 +78,17 @@ npm ci
 cp apps/api/.env.example apps/api/.env   # adjust DATABASE_URL to your local Postgres role / password
 npm run db:migrate                        # idempotent (apps/api/src/db/init.sql)
 npm run typecheck
-npm test
+npm run test:db-guard                    # Mission 004: entirely simulated, no database connection
 npm run build
 
 npm run dev:api      # terminal 1 — API on :3001
 npm run dev          # terminal 2 — web app on :5173, proxies /auth, /projects, /examples, /library, /notifications to the API
 ```
+
+The DB-1/2 lot permits only the simulated guard tests above. Full `npm test`, database migrations,
+API/E2E recipes and restore trials require the separately authorized DB-3 scope and an attested disposable
+target. Runtime test authorities are deliberately empty until that provisioning review; `DATABASE_URL`
+is never a fallback for tests. See `apps/api/src/testing/README.md` for the implemented boundary.
 
 End-to-end scenario (Playwright, Chromium), against the built API serving the built web app itself (production mode —
 `WEB_DIST`; `vite preview` is no longer needed):
@@ -105,9 +116,8 @@ Permanent hosting (stable URL, persistent PostGIS database, daily backups, verif
 `scripts/verify-restore.sh` (also run by CI on the scenario's database). What the repository cannot contain is a
 machine or hosting account and a domain name.
 
-Atelier rebuild (DrawAll V4.1): `docs/atelier-drawall.md` is the accepted proposal (clean rebuild, one Atelier, P.118
-imported one way), `docs/atelier-cahier-des-charges.md` the execution specification for Claude Code (rules, contracts,
-lots, acceptance, team organisation), `docs/drawall/` the DrawAll V4.1 reference documents and `docs/atelier/` the
+Atelier Fadi (architecture et historique) : `docs/atelier-cahier-des-charges.md` est le cahier d'exécution du chantier, avec décisions dans `docs/atelier/decisions.md` (règles et contrats,
+lots, acceptance, team organisation), `docs/atelier/` the
 follow-up folder (capability sheets, decisions, measurements, lot reports). `CLAUDE.md` is the entry point for Claude Code. P1 lots (Atelier 0–9, Planche 1–7) were accepted on 8 October 2026 (D-174); `docs/atelier-cahier-p2.md` is the
 P2 specification (structure, mechanical, timber, sheet metal, MEP, surfaces, coordination), validated on 8 October 2026 (D-176);
 lot P2-0 (framing, sheets, OCCT / solver / mixed-scene benches, reduced P1 gate) is delivered and accepted, lot P2-1 (exact kernel: `packages/geometry-exact` on occt-wasm, `solide-exact` class, server-side recomputation, STEP export / import) and lot P2-2 (mechanical ontology activated per project: parts, assemblies, joints solved by the assembly solver, numbering, bill of materials, exploded views, families and rules; P1 → P2 gate played on P.118-M, D-184) and lot P2-3 (structure ontology activated per project: members, grids with controlled generation, plates, parametric connections, welds and weldments, reinforcement, pours, structural schedules, IFC structure; D-185) and lot P2-4 (timber ontology: members, frames generated from walls and roofs after a preview, CLT panels, wood connections with declared hardware, cutting list; sheet-metal ontology: folded sheets, sourced bend tables, derived flat patterns; D-186) and lot P2-5 (networks ontology: routed pipes, ducts, cable trays and conduits, fittings, valves, equipment, supports, port-based connectivity checked without any table of values, project specifications on sourced catalogues, derived P&ID, IFC MEP; D-187) and lot P2-6 (P2 building classes: ceilings, shells, ramps, ladders, curtain walls, terrain from surveyed points, provisions, site installations; freeform surfaces with Loop subdivision and direct vertex editing, explicit conversion only; exact surface / patch / fillet; cross-ontology collisions exempted only by granted provisions, specification checks; mechanism kinematics with motion analysis and signed pivots, inertia only from sourced densities; renovation and site tables; D-188) and lot P2-7 (manufacturing annotations drawn as primitives: geometric tolerance frames, welding symbols, surface finish, specialist symbols; mechanical dimensions with tolerances, smart labels; piping isometrics, sheet templates for shop / steel / concrete drawings, hole charts, rebar schedules and cut lists; point clouds read from LAS / XYZ / PTS with a declared origin and displayed behind the plan; DGN / DWG declared abandoned; D-189) and lot P2-8 (visual generation graphs compiled into lot-8 scripts and run through the same controlled loop — dry run, hypotheses, explicit approval, named refusals; per-ontology design rules checked on every object after each command, reported never corrected; P2 acceptance dossier `docs/atelier/recette-p2.md` with T01–T20 replayed; D-190) are delivered; lots P2-2 to P2-8 were accepted by the owner on 9 October 2026 (D-193): P2 is complete and closed, its 125 sheets are « disponible », and no further lot is committed.
@@ -146,9 +156,11 @@ regenerates every extracted dataset from it.
 - `packages/core-geometry` — the supplied geometry extraction (preserved, tested) plus the site zoning geometry.
 - `docs` — `architecture.md` (the plan and where the repository stands), `migration/` (matrix, step sheets,
   reference inventory, captures).
-- `.github/workflows/ci.yml` — typecheck, migrations, ~200 tests across the workspaces, production build, the full
+- `.github/workflows/ci.yml` — typecheck, migrations, tests across the workspaces, production build, the full
   Playwright scenario against a PostGIS service in production serving mode (captures published as an artifact), the
   backup → restore verification on the scenario's database, and the Docker image built and probed.
+  The dedicated `fix/157-test-database-guard` pull request runs a separate, entirely simulated DB-1/2 job;
+  PostgreSQL/API/E2E/image jobs are explicitly not executed there and DB-3 is not validated by its result.
 
 Checks that cannot run here are stated rather than assumed: the MapTiler service is simulated in the scenario
 (no real call from CI), notifications exist in the application only (no mail service), and regulatory checks beyond the

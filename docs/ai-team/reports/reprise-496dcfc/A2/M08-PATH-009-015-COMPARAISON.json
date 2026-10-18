@@ -1,0 +1,3285 @@
+{
+  "review": "M08-PATH-009-015-COMPARAISON",
+  "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "mapping_sha256_unchanged": "d8879b4ce71b82ea38352a61d7d2ae025350d8e65ef1b345241f85aa5e159348",
+  "scope": "Sept références manquantes du mapping125 ; fiches complètes conservées, comparaison des attendus de leurs seules lignes de validation aux candidats. Complément core-geometry explicitement cité par013, distinct des deux candidats.",
+  "method": [
+    "Lecture complète des quatre fiches, lecture contextuelle des assertions candidates et recherche sur leurs contenus complets au SHA fixé. Les absences sont bornées aux fichiers comparés, jamais au dépôt complet.",
+    "Citation brute via gitshow ; empreintes/blobs de chaque source et lignes de fiches complètes attachés. Aucun chargement/exécution de code applicatif, test, DB, service.",
+    "présent = assertion correspondant à attendu borné (y compris précondition explicitement marquée), partiel = assertion voisine sans même objet/niveau/condition ; absent = pas assertion correspondante dans candidats ; nonconclu réservé hors comparaison. Un test présent n’est pas un test réussi."
+  ],
+  "sources": [
+    {
+      "path": "apps/api/src/routes/atelier-commands.test.ts",
+      "git_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "4cf62fb62154cd7435fff87cc801d1e89ccaad76",
+      "sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+      "line_count": 1022
+    },
+    {
+      "path": "apps/web/e2e/atelier-nouveau.mjs",
+      "git_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "348352e00745372bbfd3cba1c1ca9d9bb66c2e51",
+      "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+      "line_count": 414
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+      "git_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "3ace5e26daac369268a402dff7492b8f64d0de31",
+      "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+      "line_count": 934
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-09.md",
+      "git_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "71151415343074726c5d66116a6065b42b1da552",
+      "sha256": "8f50ad2523eea2aec679623ce43cd885efc92b482ff54ca16bd73178234f3946",
+      "line_count": 31
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-10.md",
+      "git_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "1ecad73134b7a4f0a0fda7f17b6fcaa1c2ec54d5",
+      "sha256": "6765e47c7bfa73be0115f7ad307a6f4d1be8451c625d24c06795573e41e1ee6f",
+      "line_count": 35
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-11.md",
+      "git_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "e8f241b3cd6b4dfa64ac69f7a15049ae122b9ffa",
+      "sha256": "72c4c6adec689762a238d09456074ffb8d6671e68b86ece7a2fb6585af791c97",
+      "line_count": 36
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-12.md",
+      "git_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "8511bdcc6ed1d894c67b4b22abf2517494b34d65",
+      "sha256": "4b8f1ca12a0ec4793a3d0f012d2910a6b576dd0c317eb169f2fc1d05ee91cc44",
+      "line_count": 33
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "git_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "458b232273b5e5529ff6489804371cba011901db",
+      "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+      "line_count": 294
+    },
+    {
+      "path": "packages/core-geometry/src/geometry.test.ts",
+      "git_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "70e9b41e98b33c589bc31620cec7c2275c916add",
+      "sha256": "ab2612a89e298e954f080587ed426dd5f47eaeda1454e9ea465e8da8eda9a4b1",
+      "line_count": 230
+    }
+  ],
+  "counts": {
+    "present": 4,
+    "partiel": 18,
+    "absent": 25
+  },
+  "assertion_count": 47,
+  "entries": [
+    {
+      "entry_id": "M08-PATH-009",
+      "historical_acceptance_preserved": true,
+      "source_fiche": "docs/atelier/fiches/DA-01-09.md",
+      "historical_validation": [
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 23,
+          "exact_line": "| Validation | **Unité** : pas de réducteur propre (mode d'interface) ; la logique de profil fermé est couverte par `packages/atelier-model/src/commandes/esquisse.test.ts` (rectangle, cercle, polygone simple admis ; polygone auto-sécant refusé). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ],
+      "requested_level": "unit",
+      "candidate_paths": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "assertions": [
+        {
+          "expected": "Rectangle fermé admis comme profil",
+          "classification": "present",
+          "reason": "Deux solides après extrusion rectangle+cercle ; hauteur vérifiée.",
+          "evidence": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 368,
+              "exact_line": "  it(\"un rectangle et un cercle d'esquisse deviennent des solides de la hauteur de l'outil ; une ligne est refusée\", () => {",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 371,
+              "exact_line": "      { type: \"esquisse.rectangle\", params: { niveauId: \"rdc\", points: [pt(0, 0), pt(2, 1)] } },",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 376,
+              "exact_line": "    const r = actionImmediate(\"extruder\", etat, ui({ selection: ids, parametresOutil: { hauteurSolide: 1.1 } }));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 377,
+              "exact_line": "    expect(\"commandes\" in r && r.commandes).toHaveLength(2);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 379,
+              "exact_line": "    const apres = appliquer(etat, r.commandes);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 380,
+              "exact_line": "    const solides = Object.values(apres.objets).filter((o) => o.classe === \"solide\") as Occurrence<\"solide\">[];",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 381,
+              "exact_line": "    expect(solides).toHaveLength(2);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 382,
+              "exact_line": "    expect(solides.every((s) => s.params.hauteur?.value === 1.1)).toBe(true);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Cercle fermé admis comme profil",
+          "classification": "present",
+          "reason": "Même lot : cercle et rectangle sélectionnés, deux commandes et deux solides vérifiés.",
+          "evidence": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 372,
+              "exact_line": "      { type: \"esquisse.cercle\", params: { niveauId: \"rdc\", centre: pt(5, 5), rayon: m(1) } },",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 375,
+              "exact_line": "    const ids = Object.keys(etat.objets);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 376,
+              "exact_line": "    const r = actionImmediate(\"extruder\", etat, ui({ selection: ids, parametresOutil: { hauteurSolide: 1.1 } }));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 377,
+              "exact_line": "    expect(\"commandes\" in r && r.commandes).toHaveLength(2);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 379,
+              "exact_line": "    const apres = appliquer(etat, r.commandes);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 380,
+              "exact_line": "    const solides = Object.values(apres.objets).filter((o) => o.classe === \"solide\") as Occurrence<\"solide\">[];",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 381,
+              "exact_line": "    expect(solides).toHaveLength(2);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Polygone simple admis comme profil",
+          "classification": "partiel",
+          "reason": "Polygone simple créé et transformé sans erreur ; pas assertion de son admission comme profil extrudable/hachurable.",
+          "evidence": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 495,
+              "exact_line": "    const etat = appliquer(socle(), [{ type: \"esquisse.polygone\", params: { id: \"pg\", niveauId: \"rdc\", points: [pt(0, 0), pt(4, 0), pt(4, 3), pt(0, 3)] } }]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 498,
+              "exact_line": "    expect(r.commandes[0]).toMatchObject({ type: \"transformer.decaler\", params: { cote: \"exterieur\", angles: \"arrondis\" } });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 499,
+              "exact_line": "    const apres = appliquer(etat, r.commandes);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 500,
+              "exact_line": "    expect(Object.values(apres.objets).some((o) => o.classe === \"esquisse\" && o.params.forme === \"polyligne\" && !!o.params.renflements)).toBe(true);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Polygone auto-sécant refusé",
+          "classification": "absent",
+          "reason": "Aucune assertion de refus de polygone auto-sécant dans les deux candidats ; autres refus ne remplacent pas cet oracle.",
+          "evidence": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 373,
+              "exact_line": "      { type: \"esquisse.ligne\", params: { niveauId: \"rdc\", points: [pt(0, 3), pt(3, 3)] } },",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 383,
+              "exact_line": "    expect(\"message\" in actionImmediate(\"extruder\", etat, ui({ selection: [ids[2]!] }))).toBe(true);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        }
+      ],
+      "full_fiche_context": [
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 1,
+          "exact_line": "# DA-01-09 — Sketcher / Éditeur d'esquisse (mode esquisse du plan) — module M01 → Atelier — lot 3a",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 2,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 3,
+          "exact_line": "**État : disponible (lot 3a) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : recette `apps/web/e2e/atelier-nouveau.mjs`, tests `apps/web/src/modules/atelier/nouveau/nouveau.test.ts` et `packages/atelier-model/src/commandes/commandes.test.ts` ; compte rendu `lots/lot-3a.md`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 4,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 5,
+          "exact_line": "| Champ | Contenu |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 6,
+          "exact_line": "| --- | --- |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 7,
+          "exact_line": "| Identité | DA-01-09 (M01, étape cible P1). Interprétation de l'inventaire : « éditeur d'esquisses paramétriques ; équivalent fonctionnel, pas atelier CATIA intégré » = le **mode esquisse de l'éditeur de plan** (mêmes objets, mêmes commandes, même éditeur ; aucun atelier séparé). Au lot 3a le mode est sans contraintes ; panneau de contraintes et diagnostic au lot 5 (DA-01-07 / 08). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 8,
+          "exact_line": "| Situation utilisateur | Passer en mode esquisse pour construire un contour ou un profil sans risquer de modifier le bâtiment, puis en sortir avec des objets d'esquisse prêts à être extrudés ou hachurés. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 9,
+          "exact_line": "| Entrées et unités | Niveau actif (plan d'esquisse = plan horizontal du niveau, repère `local`, m) ; calque actif ; outils d'esquisse (DA-01-02 à 06, 10, 11) et transformations (DA-02). Entrer et sortir du mode = réglage d'affichage (R10) : aucune commande, aucune révision. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 10,
+          "exact_line": "| Comportement | **Cycle.** Entrer (bouton « Esquisse », palette « esquisser ») → barre d'outils d'esquisse, grille et accrochages (DA-02-15) actifs → chaque geste suit sélection → paramètres → aperçu → contrôle → validation → sortir (« Terminer l'esquisse » ou Échap hors geste). **Aucun brouillon d'esquisse** : chaque objet validé existe aussitôt dans le modèle, journalisé et annulable (R9) ; sortir du mode ne valide ni n'annule rien. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 11,
+          "exact_line": "| | **Niveaux d'affichage (UX1).** Essentiel : les outils du prototype (ligne, polygone, rectangle, cercle) ; Contextuel et Complet : arc, spline, main levée, axe, hachure et transformations selon la sélection ; outils épinglables, accès permanent à la palette complète ; ces réglages ne changent ni le sens des commandes ni le modèle. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 12,
+          "exact_line": "| | **Filtre d'affichage.** En mode esquisse, les classes d'architecture (murs, dalles, escaliers, poteaux, pièces) sont atténuées et non sélectionnables par défaut (filtre de sélection, R10) ; les objets d'autres niveaux affichés en fond restent en lecture seule ; un clic sur un objet d'architecture propose de quitter le mode. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 13,
+          "exact_line": "| | **Profils.** Un profil exploitable est une esquisse fermée simple : `esquisse.rectangle`, `esquisse.cercle` ou `esquisse.polygone` ; il est proposé à `solide.extruder` (DA-04-01, lot 3b) et à `esquisse.hachure` (DA-01-11). Les chaînes de lignes et d'arcs jointifs ne sont pas des profils au lot 3a. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 14,
+          "exact_line": "| | **Conversion explicite.** Une esquisse n'est jamais interprétée comme un mur ou une dalle (Concept §3) : la conversion est une commande (`solide.extruder`, `mur.tracer`), jamais implicite. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 15,
+          "exact_line": "| | **Clavier et toucher (T16).** Entrée par la palette (Ctrl / ⌘ K), tracé par saisie de précision (DA-02-16), sortie par Échap : tâche réalisable au clavier seul. Au toucher, la puce d'outil actif (conservée) nomme l'outil d'esquisse courant ; mode immersif des étapes 10 / 11 conservé. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 16,
+          "exact_line": "| | **Palette (UX2) et aide (UX4).** « esquisse » ; synonymes « croquis », « sketch », « esquisser » ; actif si un niveau modifiable est choisi ; exemple court : entrer en mode esquisse, tracer un rectangle et un cercle, terminer. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 17,
+          "exact_line": "| Données et dépendances | Aucune donnée propre : le mode n'écrit rien. Objets `esquisse.*` du niveau et du calque actifs ; état du mode, filtre de sélection et calque actif conservés par utilisateur dans le navigateur (préférence d'affichage), jamais dans le modèle. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 18,
+          "exact_line": "| | Références : aucune caractéristique nommée d'esquisse avant le lot 5 ; au lot 5 le mode affiche marqueurs de contraintes, degrés de liberté et références « à réparer » (DA-01-07, R12). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 19,
+          "exact_line": "| Résultats | Objets d'esquisse prêts à servir de profils ; aucune quantité n'est produite à partir d'une esquisse seule. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 20,
+          "exact_line": "| Cas limites | **Interface.** Changement de niveau pendant un geste : geste annulé sans commande ; calque actif verrouillé ou masqué : outils désactivés avec le motif affiché ; rôle lecture : mode consultable, outils inactifs (403 motivé si une commande est forcée) ; 423 pendant une réservation d'autrui : outils inactifs avec le motif. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 21,
+          "exact_line": "| | **Concurrence et réseau.** Chaque geste suit les cas limites de son outil (409 détaillé, `requestId` unique par lot) ; hors ligne : mode complet (réducteur local, file Dexie rejouée dans l'ordre) ; aucune requête n'est émise par le mode lui-même. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 22,
+          "exact_line": "| Compatibilité | P.118 : sans objet (aucun `esquisse.*` importé ; les tracés sont des `solide`, non éditables comme esquisses). DXF, IFC : voir les fiches des objets d'esquisse. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 23,
+          "exact_line": "| Validation | **Unité** : pas de réducteur propre (mode d'interface) ; la logique de profil fermé est couverte par `packages/atelier-model/src/commandes/esquisse.test.ts` (rectangle, cercle, polygone simple admis ; polygone auto-sécant refusé). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 24,
+          "exact_line": "| | **API** (`apps/api/src/routes/atelier-commands.test.ts`) : aucune route propre ; entrer et sortir du mode n'émettent aucun `POST /commands` (`model_revision` inchangée, `GET /journal?apres=n` vide). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 25,
+          "exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · mode esquisse ») : entrer, tracer un rectangle et un cercle (révision +1 chacun), sortir ; entrer et sortir seuls n'avancent pas la révision (R10) ; murs atténués et non sélectionnés ; clavier seul (palette, saisie, sortie) ; axe-core sans violation critique ni sérieuse à 1536 px et 390 px. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 26,
+          "exact_line": "| Règles métier | Aucune règle réglementaire. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 27,
+          "exact_line": "| Extensions à spécifier | Plans d'esquisse verticaux ou posés sur une face (3D) ; chaînes jointives comme profils (détection proposée, jamais imposée) ; esquisses nommées et groupes (DA-05-05) ; contraintes et diagnostic (lot 5). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 28,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 29,
+          "exact_line": "## Suivi",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 30,
+          "exact_line": "- Fait (D-126) : chaînes jointives fermées détectées et proposées comme profil (« Joindre en profil »), jamais imposées ; tests `esquisse/chaines.test.ts`, e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 31,
+          "exact_line": "- Fait (D-154) : profils verticaux (ligne ou face de mur) extrudés horizontalement ; tests `profils-verticaux.test.ts`, e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ],
+      "additional_limits": "Cas limites, autres niveaux API/unité/E2E et extensions de la fiche entièrement lus ; ne sont pas démontrés globalement par cette comparaison du seul ancien chemin. Aucun verdict d’acceptation technique entière."
+    },
+    {
+      "entry_id": "M08-PATH-010",
+      "historical_acceptance_preserved": true,
+      "source_fiche": "docs/atelier/fiches/DA-01-09.md",
+      "historical_validation": [
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 25,
+          "exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · mode esquisse ») : entrer, tracer un rectangle et un cercle (révision +1 chacun), sortir ; entrer et sortir seuls n'avancent pas la révision (R10) ; murs atténués et non sélectionnés ; clavier seul (palette, saisie, sortie) ; axe-core sans violation critique ni sérieuse à 1536 px et 390 px. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ],
+      "requested_level": "e2e",
+      "candidate_paths": [
+        "apps/web/e2e/atelier-nouveau.mjs"
+      ],
+      "assertions": [
+        {
+          "expected": "Entrer en mode esquisse",
+          "classification": "absent",
+          "reason": "Scénario ouvre Atelier et trace des murs, aucun geste entrée mode esquisse.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 63,
+              "exact_line": "  await page.goto(`${url}?module=atelier`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 102,
+              "exact_line": "await page.keyboard.press(\"m\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 103,
+              "exact_line": "check(\"raccourci M → outil Mur\", (await page.locator('.atelier-n-outils .outil.est-actif').textContent()).includes(\"Mur\"));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Tracer rectangle et révision +1",
+          "classification": "absent",
+          "reason": "Quatre murs ne constituent pas un rectangle esquisse et aucune différence de révision correspondante.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 104,
+              "exact_line": "await mesurer(\"tracer un mur (clic + saisie 4 + Entrée) → mur affiché\", async () => {",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 119,
+              "exact_line": "for (const saisie of [\"0;4\", \"-4;0\", \"0;-4\"]) {",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 120,
+              "exact_line": "  await page.keyboard.type(saisie);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 121,
+              "exact_line": "  await page.keyboard.press(\"Enter\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 130,
+              "exact_line": "const murs = await page.locator(\".plan2d [data-objet^='mur-']\").count();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 131,
+              "exact_line": "check(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Tracer cercle et révision +1",
+          "classification": "absent",
+          "reason": "Aucun cercle esquisse ni assertion +1.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 130,
+              "exact_line": "const murs = await page.locator(\".plan2d [data-objet^='mur-']\").count();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 131,
+              "exact_line": "check(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Sortir du mode esquisse",
+          "classification": "absent",
+          "reason": "Échap termine les gestes murs ; aucune sortie de mode vérifiée.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 128,
+              "exact_line": "await page.keyboard.press(\"Escape\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 130,
+              "exact_line": "const murs = await page.locator(\".plan2d [data-objet^='mur-']\").count();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 131,
+              "exact_line": "check(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Entrer et sortir seuls : révision inchangée R10",
+          "classification": "absent",
+          "reason": "Aucune observation avant/après du mode ; révision 1 concerne référence protégée, pas mode.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 91,
+              "exact_line": "check(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Murs atténués en mode esquisse",
+          "classification": "absent",
+          "reason": "Pas assertion visuelle/DOM de cette atténuation.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 130,
+              "exact_line": "const murs = await page.locator(\".plan2d [data-objet^='mur-']\").count();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 131,
+              "exact_line": "check(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Murs non sélectionnables dans ce mode",
+          "classification": "absent",
+          "reason": "Scénario sélectionne un mur hors mode puis le supprime.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 191,
+              "exact_line": "check(\"cadre : le mur du bas sélectionné\", (await page.locator(\".etat-selection\").textContent()).length > 0);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 192,
+              "exact_line": "await page.keyboard.press(\"Delete\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 194,
+              "exact_line": "check(\"Suppr : mur et porte hébergée supprimés ensemble\", (await page.locator(\".plan2d [data-objet^='porte-']\").count()) === 0 && (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Clavier seul palette/saisie/sortie",
+          "classification": "partiel",
+          "reason": "Palette et saisie couvertes pour Mur/Porte mais clic souris requis ; aucune tâche mode esquisse clavier seul.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 104,
+              "exact_line": "await mesurer(\"tracer un mur (clic + saisie 4 + Entrée) → mur affiché\", async () => {",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 105,
+              "exact_line": "  await page.mouse.move(cx - 100, cy);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 106,
+              "exact_line": "  await page.mouse.click(cx - 100, cy);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 107,
+              "exact_line": "  await page.mouse.move(cx + 50, cy);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 108,
+              "exact_line": "  await page.keyboard.type(\"4;0\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 158,
+              "exact_line": "await page.keyboard.press(\"Control+k\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 159,
+              "exact_line": "await page.locator(\".palette-champ\").fill(\"wall\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 160,
+              "exact_line": "check(\"palette : « wall » → Mur en premier\", (await page.locator(\".palette-resultats li\").first().textContent()).includes(\"Mur\"));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 161,
+              "exact_line": "await page.locator(\".palette-champ\").fill(\"door\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 162,
+              "exact_line": "await page.keyboard.press(\"Enter\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 163,
+              "exact_line": "check(\"palette : Entrée choisit l'outil (Porte)\", (await page.locator('.atelier-n-outils .outil.est-actif').textContent()).includes(\"Porte\"));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Axe sans violation critique/sérieuse à1536px",
+          "classification": "partiel",
+          "reason": "Filtre axe réel mais viewport desktop1440, hors mode esquisse.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 32,
+              "exact_line": "const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 45,
+              "exact_line": "    const res = await axe.run(document.querySelector(\".atelier-n\") ?? document, { resultTypes: [\"violations\"] });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 46,
+              "exact_line": "    return res.violations.filter((v) => v.impact === \"critical\" || v.impact === \"serious\").map((v) => `${v.id} (${v.nodes.length}) ${v.nodes[0]?.target}`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 72,
+              "exact_line": "await axe(\"bureau\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Axe sans violation critique/sérieuse à390px",
+          "classification": "partiel",
+          "reason": "Viewport390 et appel axe téléphone présents, hors mode esquisse.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 357,
+              "exact_line": "await page.setViewportSize({ width: 390, height: 844 });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 367,
+              "exact_line": "await axe(\"téléphone\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        }
+      ],
+      "full_fiche_context": [
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 1,
+          "exact_line": "# DA-01-09 — Sketcher / Éditeur d'esquisse (mode esquisse du plan) — module M01 → Atelier — lot 3a",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 2,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 3,
+          "exact_line": "**État : disponible (lot 3a) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : recette `apps/web/e2e/atelier-nouveau.mjs`, tests `apps/web/src/modules/atelier/nouveau/nouveau.test.ts` et `packages/atelier-model/src/commandes/commandes.test.ts` ; compte rendu `lots/lot-3a.md`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 4,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 5,
+          "exact_line": "| Champ | Contenu |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 6,
+          "exact_line": "| --- | --- |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 7,
+          "exact_line": "| Identité | DA-01-09 (M01, étape cible P1). Interprétation de l'inventaire : « éditeur d'esquisses paramétriques ; équivalent fonctionnel, pas atelier CATIA intégré » = le **mode esquisse de l'éditeur de plan** (mêmes objets, mêmes commandes, même éditeur ; aucun atelier séparé). Au lot 3a le mode est sans contraintes ; panneau de contraintes et diagnostic au lot 5 (DA-01-07 / 08). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 8,
+          "exact_line": "| Situation utilisateur | Passer en mode esquisse pour construire un contour ou un profil sans risquer de modifier le bâtiment, puis en sortir avec des objets d'esquisse prêts à être extrudés ou hachurés. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 9,
+          "exact_line": "| Entrées et unités | Niveau actif (plan d'esquisse = plan horizontal du niveau, repère `local`, m) ; calque actif ; outils d'esquisse (DA-01-02 à 06, 10, 11) et transformations (DA-02). Entrer et sortir du mode = réglage d'affichage (R10) : aucune commande, aucune révision. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 10,
+          "exact_line": "| Comportement | **Cycle.** Entrer (bouton « Esquisse », palette « esquisser ») → barre d'outils d'esquisse, grille et accrochages (DA-02-15) actifs → chaque geste suit sélection → paramètres → aperçu → contrôle → validation → sortir (« Terminer l'esquisse » ou Échap hors geste). **Aucun brouillon d'esquisse** : chaque objet validé existe aussitôt dans le modèle, journalisé et annulable (R9) ; sortir du mode ne valide ni n'annule rien. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 11,
+          "exact_line": "| | **Niveaux d'affichage (UX1).** Essentiel : les outils du prototype (ligne, polygone, rectangle, cercle) ; Contextuel et Complet : arc, spline, main levée, axe, hachure et transformations selon la sélection ; outils épinglables, accès permanent à la palette complète ; ces réglages ne changent ni le sens des commandes ni le modèle. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 12,
+          "exact_line": "| | **Filtre d'affichage.** En mode esquisse, les classes d'architecture (murs, dalles, escaliers, poteaux, pièces) sont atténuées et non sélectionnables par défaut (filtre de sélection, R10) ; les objets d'autres niveaux affichés en fond restent en lecture seule ; un clic sur un objet d'architecture propose de quitter le mode. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 13,
+          "exact_line": "| | **Profils.** Un profil exploitable est une esquisse fermée simple : `esquisse.rectangle`, `esquisse.cercle` ou `esquisse.polygone` ; il est proposé à `solide.extruder` (DA-04-01, lot 3b) et à `esquisse.hachure` (DA-01-11). Les chaînes de lignes et d'arcs jointifs ne sont pas des profils au lot 3a. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 14,
+          "exact_line": "| | **Conversion explicite.** Une esquisse n'est jamais interprétée comme un mur ou une dalle (Concept §3) : la conversion est une commande (`solide.extruder`, `mur.tracer`), jamais implicite. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 15,
+          "exact_line": "| | **Clavier et toucher (T16).** Entrée par la palette (Ctrl / ⌘ K), tracé par saisie de précision (DA-02-16), sortie par Échap : tâche réalisable au clavier seul. Au toucher, la puce d'outil actif (conservée) nomme l'outil d'esquisse courant ; mode immersif des étapes 10 / 11 conservé. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 16,
+          "exact_line": "| | **Palette (UX2) et aide (UX4).** « esquisse » ; synonymes « croquis », « sketch », « esquisser » ; actif si un niveau modifiable est choisi ; exemple court : entrer en mode esquisse, tracer un rectangle et un cercle, terminer. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 17,
+          "exact_line": "| Données et dépendances | Aucune donnée propre : le mode n'écrit rien. Objets `esquisse.*` du niveau et du calque actifs ; état du mode, filtre de sélection et calque actif conservés par utilisateur dans le navigateur (préférence d'affichage), jamais dans le modèle. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 18,
+          "exact_line": "| | Références : aucune caractéristique nommée d'esquisse avant le lot 5 ; au lot 5 le mode affiche marqueurs de contraintes, degrés de liberté et références « à réparer » (DA-01-07, R12). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 19,
+          "exact_line": "| Résultats | Objets d'esquisse prêts à servir de profils ; aucune quantité n'est produite à partir d'une esquisse seule. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 20,
+          "exact_line": "| Cas limites | **Interface.** Changement de niveau pendant un geste : geste annulé sans commande ; calque actif verrouillé ou masqué : outils désactivés avec le motif affiché ; rôle lecture : mode consultable, outils inactifs (403 motivé si une commande est forcée) ; 423 pendant une réservation d'autrui : outils inactifs avec le motif. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 21,
+          "exact_line": "| | **Concurrence et réseau.** Chaque geste suit les cas limites de son outil (409 détaillé, `requestId` unique par lot) ; hors ligne : mode complet (réducteur local, file Dexie rejouée dans l'ordre) ; aucune requête n'est émise par le mode lui-même. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 22,
+          "exact_line": "| Compatibilité | P.118 : sans objet (aucun `esquisse.*` importé ; les tracés sont des `solide`, non éditables comme esquisses). DXF, IFC : voir les fiches des objets d'esquisse. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 23,
+          "exact_line": "| Validation | **Unité** : pas de réducteur propre (mode d'interface) ; la logique de profil fermé est couverte par `packages/atelier-model/src/commandes/esquisse.test.ts` (rectangle, cercle, polygone simple admis ; polygone auto-sécant refusé). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 24,
+          "exact_line": "| | **API** (`apps/api/src/routes/atelier-commands.test.ts`) : aucune route propre ; entrer et sortir du mode n'émettent aucun `POST /commands` (`model_revision` inchangée, `GET /journal?apres=n` vide). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 25,
+          "exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · mode esquisse ») : entrer, tracer un rectangle et un cercle (révision +1 chacun), sortir ; entrer et sortir seuls n'avancent pas la révision (R10) ; murs atténués et non sélectionnés ; clavier seul (palette, saisie, sortie) ; axe-core sans violation critique ni sérieuse à 1536 px et 390 px. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 26,
+          "exact_line": "| Règles métier | Aucune règle réglementaire. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 27,
+          "exact_line": "| Extensions à spécifier | Plans d'esquisse verticaux ou posés sur une face (3D) ; chaînes jointives comme profils (détection proposée, jamais imposée) ; esquisses nommées et groupes (DA-05-05) ; contraintes et diagnostic (lot 5). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 28,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 29,
+          "exact_line": "## Suivi",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 30,
+          "exact_line": "- Fait (D-126) : chaînes jointives fermées détectées et proposées comme profil (« Joindre en profil »), jamais imposées ; tests `esquisse/chaines.test.ts`, e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-09.md",
+          "current_line": 31,
+          "exact_line": "- Fait (D-154) : profils verticaux (ligne ou face de mur) extrudés horizontalement ; tests `profils-verticaux.test.ts`, e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ],
+      "additional_limits": "Cas limites, autres niveaux API/unité/E2E et extensions de la fiche entièrement lus ; ne sont pas démontrés globalement par cette comparaison du seul ancien chemin. Aucun verdict d’acceptation technique entière."
+    },
+    {
+      "entry_id": "M08-PATH-011",
+      "historical_acceptance_preserved": true,
+      "source_fiche": "docs/atelier/fiches/DA-01-10.md",
+      "historical_validation": [
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 25,
+          "exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/esquisse.test.ts`) : points confondus refusés ; droite par point et angle 30° : direction vérifiable à la main ; axes d'un cercle : deux droites perpendiculaires passant par le centre ; une construction n'entre dans aucun profil ni aucune quantité (filtre). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ],
+      "requested_level": "unit",
+      "candidate_paths": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "assertions": [
+        {
+          "expected": "Points confondus refusés pour construction",
+          "classification": "partiel",
+          "reason": "Rapporteur répète son premier point et conserve pointsEnCours ; pas refus réducteur esquisse.construction avec points confondus.",
+          "evidence": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 815,
+              "exact_line": "    const r1 = clic(\"rapporteur\", pt(0, 0), etat, u, opts);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 816,
+              "exact_line": "    expect(r1.pointsEnCours).toEqual([pt(0, 0)]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 817,
+              "exact_line": "    expect(clic(\"rapporteur\", pt(0, 0), etat, ui({ outil: \"rapporteur\", pointsEnCours: [pt(0, 0)] }), opts).pointsEnCours).toEqual([pt(0, 0)]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Droite par point et angle30 : direction calculable",
+          "classification": "partiel",
+          "reason": "Rapporteur saisi30 vérifie extrémité(sqrt3,1) et mesure ; pas assertion etendue=droite et conservation du point d’origine.",
+          "evidence": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 822,
+              "exact_line": "    expect(r3.commandes[0]!.type).toBe(\"esquisse.construction\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 829,
+              "exact_line": "    const s = saisie(\"rapporteur\", \"30\", [pt(0, 0), pt(2, 0)], null, etat, u2, opts)!;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 830,
+              "exact_line": "    expect(s.mesure).toBe(\"30,00°\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 831,
+              "exact_line": "    const q = (s.commandes[0]!.params as { points: { x: number; y: number }[] }).points[1]!;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 832,
+              "exact_line": "    expect(q.x).toBeCloseTo(Math.sqrt(3));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 833,
+              "exact_line": "    expect(q.y).toBeCloseTo(1);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Axes cercle : deux droites",
+          "classification": "absent",
+          "reason": "Aucune assertion axes d’un cercle dans candidats.",
+          "evidence": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 822,
+              "exact_line": "    expect(r3.commandes[0]!.type).toBe(\"esquisse.construction\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 823,
+              "exact_line": "    const fin = (r3.commandes[0]!.params as { points: { x: number; y: number }[] }).points[1]!;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Axes cercle perpendiculaires",
+          "classification": "absent",
+          "reason": "Une seule construction au rapporteur, aucun couple de directions.",
+          "evidence": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 821,
+              "exact_line": "    expect(r3.commandes).toHaveLength(1);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 822,
+              "exact_line": "    expect(r3.commandes[0]!.type).toBe(\"esquisse.construction\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Axes cercle passent par centre",
+          "classification": "absent",
+          "reason": "Aucun oracle centre commun cercle/axes.",
+          "evidence": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 822,
+              "exact_line": "    expect(r3.commandes[0]!.type).toBe(\"esquisse.construction\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 823,
+              "exact_line": "    const fin = (r3.commandes[0]!.params as { points: { x: number; y: number }[] }).points[1]!;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Construction exclue de tout profil",
+          "classification": "absent",
+          "reason": "Ligne refusée à extrusion n’est pas construction ; pas test exclusion.",
+          "evidence": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 373,
+              "exact_line": "      { type: \"esquisse.ligne\", params: { niveauId: \"rdc\", points: [pt(0, 3), pt(3, 3)] } },",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 383,
+              "exact_line": "    expect(\"message\" in actionImmediate(\"extruder\", etat, ui({ selection: [ids[2]!] }))).toBe(true);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Construction exclue des quantités",
+          "classification": "absent",
+          "reason": "Aucune comparaison de quantités après construction.",
+          "evidence": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 822,
+              "exact_line": "    expect(r3.commandes[0]!.type).toBe(\"esquisse.construction\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        }
+      ],
+      "full_fiche_context": [
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 1,
+          "exact_line": "# DA-01-10 — Centerlines / Lignes d'axe et de construction — module M01 → Atelier — lot 3a",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 2,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 3,
+          "exact_line": "**État : disponible (lot 3a) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : recette `apps/web/e2e/atelier-nouveau.mjs`, tests `apps/web/src/modules/atelier/nouveau/nouveau.test.ts` et `packages/atelier-model/src/commandes/commandes.test.ts` ; compte rendu `lots/lot-3a.md`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 4,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 5,
+          "exact_line": "| Champ | Contenu |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 6,
+          "exact_line": "| --- | --- |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 7,
+          "exact_line": "| Identité | DA-01-10 (M01, étape cible P1). Interprétation : lignes d'axe et de construction = `esquisse.construction` (cahier §2.1, « ligne de construction »). Sous-exigences : -a droite ou segment de construction ; -b axes d'un cercle ou d'un arc. Ce sont des repères d'accrochage persistants ; les repères temporaires de saisie relèvent de DA-02-16. Pas de référence dans le prototype. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 8,
+          "exact_line": "| Situation utilisateur | Poser des axes (symétrie, implantation, centre) qui guident le dessin et l'accrochage sans appartenir à la géométrie du bâtiment ni compter dans les quantités. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 9,
+          "exact_line": "| Entrées et unités | `esquisse.construction` : `a`, `b` (points locaux, m), `etendue` (`segment` ou `droite` illimitée), `niveauId`, `calqueId`. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 10,
+          "exact_line": "| | Modes : deux points ; un point et un angle (°, 0 = axe x local) ; axes d'un cercle ou d'un arc (deux constructions perpendiculaires au centre, `depassement` en m, supérieur ou égal à 0, au-delà du rayon). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 11,
+          "exact_line": "| Comportement | **Cycle.** Outil Axe → points, ou point puis angle saisi (DA-02-16) → aperçu (la droite illimitée est tracée sur toute la vue) → contrôle → validation ; sur un cercle ou un arc, « Axes » = un lot de deux commandes. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 12,
+          "exact_line": "| | **Commandes.** `esquisse.construction` (une par axe) ; `esquisse.modifier`, `esquisse.supprimer` ; transformable comme toute esquisse (`transformer.decaler` donne une parallèle à distance saisie, DA-02-09 ; `transformer.deplacer`, `transformer.tourner`). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 13,
+          "exact_line": "| | **Statut.** Une construction n'est ni extrudée, ni hachurée, ni quantifiée, ni exportée comme géométrie du bâtiment ; elle est source d'accrochage (extrémité, milieu, intersection, perpendiculaire ; « sur la droite » pour une droite illimitée) et visible ou masquable par calque et par réglage d'affichage. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 14,
+          "exact_line": "| | **Style.** Style d'affichage « construction » distinct (tirets) ; le type de trait d'axe normalisé n'est pas introduit sans source fournie (R3) et remplacera le style provisoire quand elle l'est. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 15,
+          "exact_line": "| | **Contrôles.** Points confondus (tolérance de longueur, DA-01-01) refusés ; `depassement` négatif refusé ; angle non fini refusé ; droite illimitée admise sans longueur. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 16,
+          "exact_line": "| | **Palette (UX2) et aide (UX4).** « axe » ; synonymes « ligne de construction », « guide », « centerline » ; exemple court : axe vertical passant par un point accroché. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 17,
+          "exact_line": "| Données et dépendances | Occurrences `esquisse.construction` (`drawing`) ; sources d'accrochage pour DA-02-15 ; aucune relation ; exclues des profils (DA-01-09), des quantités et, par défaut, des documents dérivés (visibilité par calque, lot 5). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 18,
+          "exact_line": "| | Références : aucune caractéristique nommée d'esquisse avant le lot 5 ; pas de cotation rattachée, donc pas de référence à réparer (R12) au lot 3a. Événement de commande validée : vues du niveau « à recalculer ». |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 19,
+          "exact_line": "| Résultats | Axes et constructions visibles dans le plan, accrochables, sans effet sur les quantités ; entrée de journal avec inverse. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 20,
+          "exact_line": "| Cas limites | **Géométrie.** Deux points confondus ; direction nulle ; cercle ou arc supprimé après la création de ses axes (les axes restent des objets libres : aucun lien associatif) ; niveau inconnu ; calque verrouillé : lot refusé en entier. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 21,
+          "exact_line": "| | **Concurrence.** `baseRevision` dépassée → 409 détaillé, résolution explicite côté client ; même `requestId` → une seule révision (T06). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 22,
+          "exact_line": "| | **Réseau et droits.** Hors ligne : réducteur local puis file Dexie rejouée dans l'ordre ; 403 motivé en lecture, 404 sans accès, 423 pendant une réservation d'autrui (R13). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 23,
+          "exact_line": "| Compatibilité | Import P.118 : le prototype n'a pas d'objet de construction ; rien à importer. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 24,
+          "exact_line": "| | DXF : constructions exportées sur leur calque (`XLINE` pour la droite illimitée, `LINE` pour le segment : à fixer au lot 5), tout aplatissement signalé au rapport. IFC : non exportées, listées « omises ». |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 25,
+          "exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/esquisse.test.ts`) : points confondus refusés ; droite par point et angle 30° : direction vérifiable à la main ; axes d'un cercle : deux droites perpendiculaires passant par le centre ; une construction n'entre dans aucun profil ni aucune quantité (filtre). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 26,
+          "exact_line": "| | **API** (`apps/api/src/routes/atelier-commands.test.ts`) : `esquisse.construction` → 200 ; `etendue` inconnue → 400 avec `chemin` ; même `requestId` → une seule révision ; `baseRevision` périmée → 409. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 27,
+          "exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · axes ») : axe par point et angle saisis sur la mezzanine de la copie de travail P.118 ; curseur près de l'axe : accrochage annoncé « Sur la droite » ; tableau des surfaces régénéré identique (l'axe ne compte pas) ; annuler, second navigateur. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 28,
+          "exact_line": "| Règles métier | Aucune règle réglementaire ; types de trait et symboles d'axe normalisés non fournis sans source (R3). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 29,
+          "exact_line": "| Extensions à spécifier | Axes de murs générés depuis `mur:axe` ; grille d'axes numérotée (trame) ; marques de centre normalisées ; lien associatif d'un axe à son cercle. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 30,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 31,
+          "exact_line": "## Suivi",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 32,
+          "exact_line": "- Fait (D-046) : extension réalisée (voir la décision) ; tests `esquisse/formes.test.ts`, `esquisse/trame.test.ts`, `echanges.test.ts` (ELLIPSE), e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 33,
+          "exact_line": "- Fait (D-050) : extension réalisée (voir la décision) ; tests `pieces-plus.test.ts`, `architecture-plus.test.ts`, e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 34,
+          "exact_line": "- Fait (D-062) : marques de centre normalisées des cercles, arcs et ellipses dans les vues en plan (croix de 3 mm papier) ; tests `documents/calques-vue.test.ts`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 35,
+          "exact_line": "- Fait (D-132) : lien associatif d'un axe à son cercle, son arc ou son ellipse (`esquisse.axesCentre`, `axeDe`) ; tests `axes-associes.test.ts`, e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ],
+      "additional_limits": "Cas limites, autres niveaux API/unité/E2E et extensions de la fiche entièrement lus ; ne sont pas démontrés globalement par cette comparaison du seul ancien chemin. Aucun verdict d’acceptation technique entière."
+    },
+    {
+      "entry_id": "M08-PATH-012",
+      "historical_acceptance_preserved": true,
+      "source_fiche": "docs/atelier/fiches/DA-01-10.md",
+      "historical_validation": [
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 27,
+          "exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · axes ») : axe par point et angle saisis sur la mezzanine de la copie de travail P.118 ; curseur près de l'axe : accrochage annoncé « Sur la droite » ; tableau des surfaces régénéré identique (l'axe ne compte pas) ; annuler, second navigateur. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ],
+      "requested_level": "e2e",
+      "candidate_paths": [
+        "apps/web/e2e/atelier-nouveau.mjs"
+      ],
+      "assertions": [
+        {
+          "expected": "Copie de travailP118",
+          "classification": "present",
+          "reason": "Import référence puis copie vérifiée explicitement ; précondition seule.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 56,
+              "exact_line": "await page.goto(`${BASE}/projets`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 57,
+              "exact_line": "await page.locator('.example-card button:has-text(\"Importer\")').first().click();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 86,
+              "exact_line": "await page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 91,
+              "exact_line": "check(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Axe point/angle sur mezzanine",
+          "classification": "absent",
+          "reason": "Travaille sur Essai lot3a altitude20 ; pas construction ni mezzanine.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 81,
+              "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").first().fill(\"Essai lot 3a\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 82,
+              "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").nth(1).fill(\"20\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 93,
+              "exact_line": "await page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Accrochage annoncé Sur la droite",
+          "classification": "absent",
+          "reason": "Pas assertion de ce libellé ; accrochage mur générique seulement.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 131,
+              "exact_line": "check(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Tableau surfaces identique après axe",
+          "classification": "absent",
+          "reason": "CSV exporté/enregistré mais contenu surfaces avant/après axe non comparé.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 330,
+              "exact_line": "for (const kind of [\"dxf\", \"svg\", \"csv\"]) {",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 331,
+              "exact_line": "  await ouvrirExports(page);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 343,
+              "exact_line": "const docsCatalogue = (await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}/documents`)).json()).documents.filter((d) => d.group === \"dessins\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 344,
+              "exact_line": "check(\"exports DXF, SVG, CSV et PNG : téléchargés et enregistrés au catalogue, « à jour » à la révision courante\", exportsFaits.every((e) => /:catalogue$/.test(e)) && docsCatalogue.length === 4 && docsCatalogue.every((d) => d.freshness === \"a-jour\") && docsCatalogue.some((d) => /Dessin technique DXF · Essai lot 3a · dessin plan/.test(d.label)), `${exportsFaits.join(\" \")} | ${docsCatalogue.map((d) => d.label).join(\" ; \")}`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Annuler axe",
+          "classification": "partiel",
+          "reason": "Undo concerne renommage pièce Bureau.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 150,
+              "exact_line": "await page.keyboard.press(\"Control+z\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 151,
+              "exact_line": "await page.waitForFunction(() => !document.querySelector(\".nav-objets\").textContent.includes(\"Bureau\"), null, { timeout: 10000 }).catch(() => {});",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 152,
+              "exact_line": "check(\"Ctrl Z annule le renommage\", !(await navTexte()).includes(\"Bureau\"));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Second navigateur reflète axe",
+          "classification": "partiel",
+          "reason": "Compare trois murs, nom pièce et barre de synchro ; aucun axe.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 353,
+              "exact_line": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        }
+      ],
+      "full_fiche_context": [
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 1,
+          "exact_line": "# DA-01-10 — Centerlines / Lignes d'axe et de construction — module M01 → Atelier — lot 3a",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 2,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 3,
+          "exact_line": "**État : disponible (lot 3a) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : recette `apps/web/e2e/atelier-nouveau.mjs`, tests `apps/web/src/modules/atelier/nouveau/nouveau.test.ts` et `packages/atelier-model/src/commandes/commandes.test.ts` ; compte rendu `lots/lot-3a.md`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 4,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 5,
+          "exact_line": "| Champ | Contenu |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 6,
+          "exact_line": "| --- | --- |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 7,
+          "exact_line": "| Identité | DA-01-10 (M01, étape cible P1). Interprétation : lignes d'axe et de construction = `esquisse.construction` (cahier §2.1, « ligne de construction »). Sous-exigences : -a droite ou segment de construction ; -b axes d'un cercle ou d'un arc. Ce sont des repères d'accrochage persistants ; les repères temporaires de saisie relèvent de DA-02-16. Pas de référence dans le prototype. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 8,
+          "exact_line": "| Situation utilisateur | Poser des axes (symétrie, implantation, centre) qui guident le dessin et l'accrochage sans appartenir à la géométrie du bâtiment ni compter dans les quantités. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 9,
+          "exact_line": "| Entrées et unités | `esquisse.construction` : `a`, `b` (points locaux, m), `etendue` (`segment` ou `droite` illimitée), `niveauId`, `calqueId`. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 10,
+          "exact_line": "| | Modes : deux points ; un point et un angle (°, 0 = axe x local) ; axes d'un cercle ou d'un arc (deux constructions perpendiculaires au centre, `depassement` en m, supérieur ou égal à 0, au-delà du rayon). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 11,
+          "exact_line": "| Comportement | **Cycle.** Outil Axe → points, ou point puis angle saisi (DA-02-16) → aperçu (la droite illimitée est tracée sur toute la vue) → contrôle → validation ; sur un cercle ou un arc, « Axes » = un lot de deux commandes. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 12,
+          "exact_line": "| | **Commandes.** `esquisse.construction` (une par axe) ; `esquisse.modifier`, `esquisse.supprimer` ; transformable comme toute esquisse (`transformer.decaler` donne une parallèle à distance saisie, DA-02-09 ; `transformer.deplacer`, `transformer.tourner`). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 13,
+          "exact_line": "| | **Statut.** Une construction n'est ni extrudée, ni hachurée, ni quantifiée, ni exportée comme géométrie du bâtiment ; elle est source d'accrochage (extrémité, milieu, intersection, perpendiculaire ; « sur la droite » pour une droite illimitée) et visible ou masquable par calque et par réglage d'affichage. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 14,
+          "exact_line": "| | **Style.** Style d'affichage « construction » distinct (tirets) ; le type de trait d'axe normalisé n'est pas introduit sans source fournie (R3) et remplacera le style provisoire quand elle l'est. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 15,
+          "exact_line": "| | **Contrôles.** Points confondus (tolérance de longueur, DA-01-01) refusés ; `depassement` négatif refusé ; angle non fini refusé ; droite illimitée admise sans longueur. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 16,
+          "exact_line": "| | **Palette (UX2) et aide (UX4).** « axe » ; synonymes « ligne de construction », « guide », « centerline » ; exemple court : axe vertical passant par un point accroché. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 17,
+          "exact_line": "| Données et dépendances | Occurrences `esquisse.construction` (`drawing`) ; sources d'accrochage pour DA-02-15 ; aucune relation ; exclues des profils (DA-01-09), des quantités et, par défaut, des documents dérivés (visibilité par calque, lot 5). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 18,
+          "exact_line": "| | Références : aucune caractéristique nommée d'esquisse avant le lot 5 ; pas de cotation rattachée, donc pas de référence à réparer (R12) au lot 3a. Événement de commande validée : vues du niveau « à recalculer ». |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 19,
+          "exact_line": "| Résultats | Axes et constructions visibles dans le plan, accrochables, sans effet sur les quantités ; entrée de journal avec inverse. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 20,
+          "exact_line": "| Cas limites | **Géométrie.** Deux points confondus ; direction nulle ; cercle ou arc supprimé après la création de ses axes (les axes restent des objets libres : aucun lien associatif) ; niveau inconnu ; calque verrouillé : lot refusé en entier. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 21,
+          "exact_line": "| | **Concurrence.** `baseRevision` dépassée → 409 détaillé, résolution explicite côté client ; même `requestId` → une seule révision (T06). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 22,
+          "exact_line": "| | **Réseau et droits.** Hors ligne : réducteur local puis file Dexie rejouée dans l'ordre ; 403 motivé en lecture, 404 sans accès, 423 pendant une réservation d'autrui (R13). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 23,
+          "exact_line": "| Compatibilité | Import P.118 : le prototype n'a pas d'objet de construction ; rien à importer. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 24,
+          "exact_line": "| | DXF : constructions exportées sur leur calque (`XLINE` pour la droite illimitée, `LINE` pour le segment : à fixer au lot 5), tout aplatissement signalé au rapport. IFC : non exportées, listées « omises ». |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 25,
+          "exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/esquisse.test.ts`) : points confondus refusés ; droite par point et angle 30° : direction vérifiable à la main ; axes d'un cercle : deux droites perpendiculaires passant par le centre ; une construction n'entre dans aucun profil ni aucune quantité (filtre). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 26,
+          "exact_line": "| | **API** (`apps/api/src/routes/atelier-commands.test.ts`) : `esquisse.construction` → 200 ; `etendue` inconnue → 400 avec `chemin` ; même `requestId` → une seule révision ; `baseRevision` périmée → 409. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 27,
+          "exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · axes ») : axe par point et angle saisis sur la mezzanine de la copie de travail P.118 ; curseur près de l'axe : accrochage annoncé « Sur la droite » ; tableau des surfaces régénéré identique (l'axe ne compte pas) ; annuler, second navigateur. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 28,
+          "exact_line": "| Règles métier | Aucune règle réglementaire ; types de trait et symboles d'axe normalisés non fournis sans source (R3). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 29,
+          "exact_line": "| Extensions à spécifier | Axes de murs générés depuis `mur:axe` ; grille d'axes numérotée (trame) ; marques de centre normalisées ; lien associatif d'un axe à son cercle. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 30,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 31,
+          "exact_line": "## Suivi",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 32,
+          "exact_line": "- Fait (D-046) : extension réalisée (voir la décision) ; tests `esquisse/formes.test.ts`, `esquisse/trame.test.ts`, `echanges.test.ts` (ELLIPSE), e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 33,
+          "exact_line": "- Fait (D-050) : extension réalisée (voir la décision) ; tests `pieces-plus.test.ts`, `architecture-plus.test.ts`, e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 34,
+          "exact_line": "- Fait (D-062) : marques de centre normalisées des cercles, arcs et ellipses dans les vues en plan (croix de 3 mm papier) ; tests `documents/calques-vue.test.ts`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-10.md",
+          "current_line": 35,
+          "exact_line": "- Fait (D-132) : lien associatif d'un axe à son cercle, son arc ou son ellipse (`esquisse.axesCentre`, `axeDe`) ; tests `axes-associes.test.ts`, e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ],
+      "additional_limits": "Cas limites, autres niveaux API/unité/E2E et extensions de la fiche entièrement lus ; ne sont pas démontrés globalement par cette comparaison du seul ancien chemin. Aucun verdict d’acceptation technique entière."
+    },
+    {
+      "entry_id": "M08-PATH-013",
+      "historical_acceptance_preserved": true,
+      "source_fiche": "docs/atelier/fiches/DA-01-11.md",
+      "historical_validation": [
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 23,
+          "exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/esquisse.test.ts` et `packages/core-geometry`) : carré de côté connu, angle 0°, espacement donné : nombre et longueurs des traits vérifiables à la main ; angle 45° : traits à 45° ; îlot retiré du remplissage ; contour auto-sécant refusé ; `aplat` sans traits ; mêmes entrées, mêmes traits. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ],
+      "requested_level": "unit",
+      "candidate_paths": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "assertions": [
+        {
+          "expected": "Carré connu angle0 espacement : nombre de traits",
+          "classification": "absent",
+          "reason": "Aucune hachure dans candidats ; géométrie donne un intervalle d’une verticale de carré, pas nombre de traits de motif.",
+          "evidence": [
+            {
+              "path": "packages/core-geometry/src/geometry.test.ts",
+              "current_line": 103,
+              "exact_line": "  it(\"trouve l'intervalle plein d'un carré coupé par une verticale\", () => {",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/core-geometry/src/geometry.test.ts",
+              "current_line": 104,
+              "exact_line": "    const square = [",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/core-geometry/src/geometry.test.ts",
+              "current_line": 110,
+              "exact_line": "    const intervals = polygonIntervalsAtAxis(square, 0, 2); // coupe à x=2",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/core-geometry/src/geometry.test.ts",
+              "current_line": 111,
+              "exact_line": "    expect(intervals).toEqual([[0, 4]]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Même carré : longueurs des traits",
+          "classification": "partiel",
+          "reason": "Intervalle plein [0,4] calculé pour carré côté4 ; pas hachure à espacement donné ni toutes longueurs.",
+          "evidence": [
+            {
+              "path": "packages/core-geometry/src/geometry.test.ts",
+              "current_line": 104,
+              "exact_line": "    const square = [",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/core-geometry/src/geometry.test.ts",
+              "current_line": 105,
+              "exact_line": "      [0, 0],",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/core-geometry/src/geometry.test.ts",
+              "current_line": 106,
+              "exact_line": "      [4, 0],",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/core-geometry/src/geometry.test.ts",
+              "current_line": 107,
+              "exact_line": "      [4, 4],",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/core-geometry/src/geometry.test.ts",
+              "current_line": 108,
+              "exact_line": "      [0, 4],",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/core-geometry/src/geometry.test.ts",
+              "current_line": 110,
+              "exact_line": "    const intervals = polygonIntervalsAtAxis(square, 0, 2); // coupe à x=2",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/core-geometry/src/geometry.test.ts",
+              "current_line": 111,
+              "exact_line": "    expect(intervals).toEqual([[0, 4]]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Angle45 : traits45",
+          "classification": "absent",
+          "reason": "Autres angles/cercle du candidat ne testent pas traits de hachure.",
+          "evidence": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "current_line": 498,
+              "exact_line": "    expect(r.commandes[0]).toMatchObject({ type: \"transformer.decaler\", params: { cote: \"exterieur\", angles: \"arrondis\" } });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Îlot retiré du remplissage",
+          "classification": "partiel",
+          "reason": "Soustraction abstraite [3,5] à [0,10] vérifie deux intervalles ; pas hachure réelle avec îlot.",
+          "evidence": [
+            {
+              "path": "packages/core-geometry/src/geometry.test.ts",
+              "current_line": 114,
+              "exact_line": "  it(\"soustrait un trou d'un intervalle plein\", () => {",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/core-geometry/src/geometry.test.ts",
+              "current_line": 115,
+              "exact_line": "    const result = subtractIntervals([[0, 10]], [[3, 5]]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/core-geometry/src/geometry.test.ts",
+              "current_line": 116,
+              "exact_line": "    expect(result).toEqual([",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/core-geometry/src/geometry.test.ts",
+              "current_line": 117,
+              "exact_line": "      [0, 3],",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/core-geometry/src/geometry.test.ts",
+              "current_line": 118,
+              "exact_line": "      [5, 10],",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/core-geometry/src/geometry.test.ts",
+              "current_line": 119,
+              "exact_line": "    ]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Contour auto-sécant refusé",
+          "classification": "absent",
+          "reason": "Aucun refus de contour auto-sécant dans candidats.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "current_line": 192,
+              "exact_line": "  it(\"laisse l'état intact si une commande du lot échoue, et l'inverse restaure l'état exact\", () => {",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Aplat sans traits",
+          "classification": "absent",
+          "reason": "Aucune assertion motif aplat dans candidats.",
+          "evidence": []
+        },
+        {
+          "expected": "Mêmes entrées mêmes traits",
+          "classification": "absent",
+          "reason": "Déterminisme de mur ne démontre pas déterminisme des traits hachure.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "current_line": 26,
+              "exact_line": "    const a = appliquerLot(etat, lot([{ type: \"mur.tracer\", params: murParams(0, 0, 4, 0) }], \"abc\"));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "current_line": 27,
+              "exact_line": "    const b = appliquerLot(etat, lot([{ type: \"mur.tracer\", params: murParams(0, 0, 4, 0) }], \"abc\"));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "current_line": 28,
+              "exact_line": "    expect(a.effets.crees).toEqual([\"mur-abc-1\"]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "current_line": 29,
+              "exact_line": "    expect(JSON.stringify(a.etat)).toBe(JSON.stringify(b.etat));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        }
+      ],
+      "full_fiche_context": [
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 1,
+          "exact_line": "# DA-01-11 — Hatching / Hachures — module M01 → Atelier — lot 3a",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 2,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 3,
+          "exact_line": "**État : disponible (lot 3a) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : recette `apps/web/e2e/atelier-nouveau.mjs`, tests `apps/web/src/modules/atelier/nouveau/nouveau.test.ts` et `packages/atelier-model/src/commandes/commandes.test.ts` ; compte rendu `lots/lot-3a.md`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 4,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 5,
+          "exact_line": "| Champ | Contenu |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 6,
+          "exact_line": "| --- | --- |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 7,
+          "exact_line": "| Identité | DA-01-11 (M01, étape cible P1). Objet : `esquisse.hachure`, remplissage d'un contour fermé par un motif générique. Distinct du poché de coupe d'une vue (DA-14, lot 5) et du remplissage de calque (propriété `remplissage` de la classe `calque`). Pas de référence dans le prototype (qui n'a que la couleur et le remplissage des calques). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 8,
+          "exact_line": "| Situation utilisateur | Hachurer une zone fermée d'une esquisse (surface, matériau schématique, zone à distinguer) avec un motif lisible, sans toucher à la géométrie du contour. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 9,
+          "exact_line": "| Entrées et unités | `esquisse.hachure` : `contour` (polygone, repère local, m), `trous` (polygones intérieurs, facultatif), `motif` (`parallele`, `croise` ou `aplat`), `angle` (°), `espacement` (m, au-dessus de la tolérance de longueur ; ignoré pour `aplat`), `couleur` facultative, `niveauId`, `calqueId`. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 10,
+          "exact_line": "| | Sources : objets fermés `esquisse.rectangle`, `.polygone` (contour exact) ou `.cercle` (contour approché à la tolérance de flèche déclarée, indiquée à l'aperçu) ; le contour est copié à la création. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 11,
+          "exact_line": "| Comportement | **Cycle.** Outil Hachure → clic dans un contour fermé (le plus petit objet fermé qui contient le point) ou sélection d'objets fermés → motif, angle, espacement dans l'inspecteur ou saisis au clavier (DA-02-16 ; aucun point à poser, donc aucun accrochage, DA-02-15) → aperçu des traits → contrôle → validation. Les objets fermés entièrement contenus et sans contact sont proposés comme îlots (`trous`), activables un à un. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 12,
+          "exact_line": "| | **Commandes.** `esquisse.hachure` ; `esquisse.modifier` (motif, angle, espacement, couleur) ; `esquisse.supprimer`. Les traits ne sont pas stockés : représentation `plan-2d` dérivée du contour et du motif (R15). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 13,
+          "exact_line": "| | **Contrôles.** Contour ouvert, auto-sécant ou d'aire nulle refusé ; îlots qui se chevauchent, se touchent ou sortent du contour refusés (liste) ; espacement supérieur à la plus grande dimension du contour refusé (aucun trait produit) ; motif inconnu refusé ; clic hors de tout contour fermé : « Aucun contour fermé à cet endroit », aucun lot. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 14,
+          "exact_line": "| | **Association.** Non associative au lot 3a : modifier ou déplacer le contour d'origine ne modifie pas la hachure (contour copié). La hachure se transforme comme une esquisse (DA-02) : le contour est transformé, motif et espacement conservés, l'angle suit une rotation. Hachure associative par référence : extension. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 15,
+          "exact_line": "| | **Affichage.** Un espacement trop fin pour l'échelle d'affichage est dessiné en aplat à l'écran (affichage seul, R10 ; valeur stockée inchangée). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 16,
+          "exact_line": "| | **Palette (UX2) et aide (UX4).** « hachure » ; synonymes « hachurer », « remplissage », « hatch » ; exemple court : hachurer un rectangle à 45°. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 17,
+          "exact_line": "| Données et dépendances | Occurrence `esquisse.hachure` (`drawing`) ; aucune relation ni référence (contour copié) ; consomme des contours d'esquisse (DA-01-02 à 04) ; `core-geometry` : intersection polygone / droites ; événement de commande validée : vues du niveau « à recalculer ». |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 18,
+          "exact_line": "| Résultats | Une hachure par lot, motif lisible dans le plan, paramètres modifiables dans l'inspecteur ; entrée de journal avec inverse. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 19,
+          "exact_line": "| Cas limites | **Géométrie.** Contour dégénéré ; îlot tangent au contour ou touchant un autre îlot (refusé, liste) ; contour sans îlot valide ; niveau inconnu ; calque verrouillé : lot refusé en entier. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 20,
+          "exact_line": "| | **Concurrence et réseau.** `baseRevision` dépassée → 409 détaillé, résolution explicite côté client ; même `requestId` → une seule révision (T06) ; hors ligne : réducteur local puis file Dexie rejouée dans l'ordre ; 403 / 404 / 423 selon R13. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 21,
+          "exact_line": "| Compatibilité | Import P.118 : aucune hachure dans le prototype ; le remplissage des 20 calques (couleur, remplissage) est importé en `calque`, jamais converti en hachure (R7). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 22,
+          "exact_line": "| | DXF : entité `HATCH` visée à l'export des vues (lot 5 ; l'export actuel n'écrit que `LINE`) ; sinon la hachure est aplatie en traits et le rapport le dit. IFC : `IfcAnnotation` avec `IfcFillAreaStyleHatching` envisageable au lot 6, sinon « omise ». |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 23,
+          "exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/esquisse.test.ts` et `packages/core-geometry`) : carré de côté connu, angle 0°, espacement donné : nombre et longueurs des traits vérifiables à la main ; angle 45° : traits à 45° ; îlot retiré du remplissage ; contour auto-sécant refusé ; `aplat` sans traits ; mêmes entrées, mêmes traits. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 24,
+          "exact_line": "| | **API** (`apps/api/src/routes/atelier-commands.test.ts`) : `esquisse.hachure` → 200 ; `espacement` en « ° » ou nul → 400 avec `chemin` ; même `requestId` → une seule révision ; `baseRevision` périmée → 409. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 25,
+          "exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · hachure ») : sur la mezzanine de la copie de travail P.118, rectangle hachuré avec un cercle en îlot, angle modifié dans l'inspecteur ; annuler, rétablir, second navigateur. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 26,
+          "exact_line": "| Règles métier | Aucune règle réglementaire. Motifs conventionnels par matériau (SIA 400, ISO 128) : non fournis ; seuls des motifs génériques existent, tout motif conventionnel est introduit avec sa source (R3). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 27,
+          "exact_line": "| Extensions à spécifier | Motifs de bibliothèque ; hachure associative ; hachure par détection de contour entre lignes jointives ; espacement en unités papier (vues à l'échelle, lot 5) ; dégradés. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 28,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 29,
+          "exact_line": "## Suivi",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 30,
+          "exact_line": "- Fait (D-050) : extension réalisée (voir la décision) ; tests `pieces-plus.test.ts`, `architecture-plus.test.ts`, e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 31,
+          "exact_line": "- Fait (D-072) : motifs de hachure (catalogue intégré, pas en unités papier converti à l'échelle de la vue, traits découpés dans les vues, PDF, SVG et DXF des vues) ; choix dans l'inspecteur ; tests `hachures.test.ts`, e2e `atelier-complements.mjs`. Restent : motifs non linéaires (points, matériaux), hachure associative à des murs, import de motifs DXF nommés.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 32,
+          "exact_line": "- Fait (D-092) : hachures associatives et motif de points ; tests `hachures.test.ts`, e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 33,
+          "exact_line": "- Constat (D-114) : la hachure par détection de contour entre lignes jointives existe (outil Contour, forme « hachure ») ; restent : motifs de bibliothèque importés (DXF nommés), dégradés.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 34,
+          "exact_line": "- Fait (D-120) : dégradés (paramètre `degrade` des hachures ; plan, vues SVG/PDF/DXF ; import des HATCH en dégradé) ; tests `degrade.test.ts`, e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 35,
+          "exact_line": "- Fait (D-121) : import des motifs DXF nommés avec leurs lignes de définition (`motifLignes`, pas en mètres modèle ; tirets en traits continus, signalés) ; tests `motifs-importes.test.ts`, e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 36,
+          "exact_line": "- État au 2026-10-06 : hachures associatives, motif de points, motifs DXF nommés et dégradés réalisés (D-092, D-120, D-121) ; reste : motifs de matériaux (catalogue à fournir).",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ],
+      "additional_limits": "Cas limites, autres niveaux API/unité/E2E et extensions de la fiche entièrement lus ; ne sont pas démontrés globalement par cette comparaison du seul ancien chemin. Aucun verdict d’acceptation technique entière."
+    },
+    {
+      "entry_id": "M08-PATH-014",
+      "historical_acceptance_preserved": true,
+      "source_fiche": "docs/atelier/fiches/DA-01-11.md",
+      "historical_validation": [
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 25,
+          "exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · hachure ») : sur la mezzanine de la copie de travail P.118, rectangle hachuré avec un cercle en îlot, angle modifié dans l'inspecteur ; annuler, rétablir, second navigateur. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ],
+      "requested_level": "e2e",
+      "candidate_paths": [
+        "apps/web/e2e/atelier-nouveau.mjs"
+      ],
+      "assertions": [
+        {
+          "expected": "Copie de travailP118",
+          "classification": "present",
+          "reason": "Précondition vérifiée seulement.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 56,
+              "exact_line": "await page.goto(`${BASE}/projets`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 57,
+              "exact_line": "await page.locator('.example-card button:has-text(\"Importer\")').first().click();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 91,
+              "exact_line": "check(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Hachure rectangle sur mezzanine",
+          "classification": "absent",
+          "reason": "Murs sur niveau Essai lot3a ; ni hachure rectangle ni mezzanine.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 81,
+              "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").first().fill(\"Essai lot 3a\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 82,
+              "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").nth(1).fill(\"20\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 93,
+              "exact_line": "await page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 131,
+              "exact_line": "check(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Cercle en îlot",
+          "classification": "absent",
+          "reason": "Aucun cercle ou îlot de hachure.",
+          "evidence": []
+        },
+        {
+          "expected": "Angle hachure modifié inspecteur",
+          "classification": "absent",
+          "reason": "Inspecteur renomme pièce ; aucune valeur angle hachure.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 141,
+              "exact_line": "await page.locator('.inspecteur input[id$=\"-nom\"]').fill(\"Bureau\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 142,
+              "exact_line": "await page.keyboard.press(\"Enter\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 144,
+              "exact_line": "check(\"inspecteur : renommer → commande appliquée\", (await page.locator(\".inspecteur h3\").textContent()).includes(\"Bureau\"));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Annuler hachure/angle",
+          "classification": "partiel",
+          "reason": "Annule renommage pièce seulement.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 150,
+              "exact_line": "await page.keyboard.press(\"Control+z\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 151,
+              "exact_line": "await page.waitForFunction(() => !document.querySelector(\".nav-objets\").textContent.includes(\"Bureau\"), null, { timeout: 10000 }).catch(() => {});",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 152,
+              "exact_line": "check(\"Ctrl Z annule le renommage\", !(await navTexte()).includes(\"Bureau\"));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Rétablir hachure/angle",
+          "classification": "partiel",
+          "reason": "Rétablit renommage pièce seulement.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 153,
+              "exact_line": "await page.keyboard.press(\"Control+Shift+z\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 154,
+              "exact_line": "await page.waitForFunction(() => document.querySelector(\".nav-objets\").textContent.includes(\"Bureau\"), null, { timeout: 10000 }).catch(() => {});",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 155,
+              "exact_line": "check(\"Ctrl Maj Z le rétablit\", (await navTexte()).includes(\"Bureau\"));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Second navigateur hachure/angle/îlot",
+          "classification": "partiel",
+          "reason": "Synchronisation murs et pièce uniquement.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "current_line": 353,
+              "exact_line": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        }
+      ],
+      "full_fiche_context": [
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 1,
+          "exact_line": "# DA-01-11 — Hatching / Hachures — module M01 → Atelier — lot 3a",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 2,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 3,
+          "exact_line": "**État : disponible (lot 3a) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : recette `apps/web/e2e/atelier-nouveau.mjs`, tests `apps/web/src/modules/atelier/nouveau/nouveau.test.ts` et `packages/atelier-model/src/commandes/commandes.test.ts` ; compte rendu `lots/lot-3a.md`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 4,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 5,
+          "exact_line": "| Champ | Contenu |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 6,
+          "exact_line": "| --- | --- |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 7,
+          "exact_line": "| Identité | DA-01-11 (M01, étape cible P1). Objet : `esquisse.hachure`, remplissage d'un contour fermé par un motif générique. Distinct du poché de coupe d'une vue (DA-14, lot 5) et du remplissage de calque (propriété `remplissage` de la classe `calque`). Pas de référence dans le prototype (qui n'a que la couleur et le remplissage des calques). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 8,
+          "exact_line": "| Situation utilisateur | Hachurer une zone fermée d'une esquisse (surface, matériau schématique, zone à distinguer) avec un motif lisible, sans toucher à la géométrie du contour. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 9,
+          "exact_line": "| Entrées et unités | `esquisse.hachure` : `contour` (polygone, repère local, m), `trous` (polygones intérieurs, facultatif), `motif` (`parallele`, `croise` ou `aplat`), `angle` (°), `espacement` (m, au-dessus de la tolérance de longueur ; ignoré pour `aplat`), `couleur` facultative, `niveauId`, `calqueId`. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 10,
+          "exact_line": "| | Sources : objets fermés `esquisse.rectangle`, `.polygone` (contour exact) ou `.cercle` (contour approché à la tolérance de flèche déclarée, indiquée à l'aperçu) ; le contour est copié à la création. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 11,
+          "exact_line": "| Comportement | **Cycle.** Outil Hachure → clic dans un contour fermé (le plus petit objet fermé qui contient le point) ou sélection d'objets fermés → motif, angle, espacement dans l'inspecteur ou saisis au clavier (DA-02-16 ; aucun point à poser, donc aucun accrochage, DA-02-15) → aperçu des traits → contrôle → validation. Les objets fermés entièrement contenus et sans contact sont proposés comme îlots (`trous`), activables un à un. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 12,
+          "exact_line": "| | **Commandes.** `esquisse.hachure` ; `esquisse.modifier` (motif, angle, espacement, couleur) ; `esquisse.supprimer`. Les traits ne sont pas stockés : représentation `plan-2d` dérivée du contour et du motif (R15). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 13,
+          "exact_line": "| | **Contrôles.** Contour ouvert, auto-sécant ou d'aire nulle refusé ; îlots qui se chevauchent, se touchent ou sortent du contour refusés (liste) ; espacement supérieur à la plus grande dimension du contour refusé (aucun trait produit) ; motif inconnu refusé ; clic hors de tout contour fermé : « Aucun contour fermé à cet endroit », aucun lot. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 14,
+          "exact_line": "| | **Association.** Non associative au lot 3a : modifier ou déplacer le contour d'origine ne modifie pas la hachure (contour copié). La hachure se transforme comme une esquisse (DA-02) : le contour est transformé, motif et espacement conservés, l'angle suit une rotation. Hachure associative par référence : extension. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 15,
+          "exact_line": "| | **Affichage.** Un espacement trop fin pour l'échelle d'affichage est dessiné en aplat à l'écran (affichage seul, R10 ; valeur stockée inchangée). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 16,
+          "exact_line": "| | **Palette (UX2) et aide (UX4).** « hachure » ; synonymes « hachurer », « remplissage », « hatch » ; exemple court : hachurer un rectangle à 45°. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 17,
+          "exact_line": "| Données et dépendances | Occurrence `esquisse.hachure` (`drawing`) ; aucune relation ni référence (contour copié) ; consomme des contours d'esquisse (DA-01-02 à 04) ; `core-geometry` : intersection polygone / droites ; événement de commande validée : vues du niveau « à recalculer ». |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 18,
+          "exact_line": "| Résultats | Une hachure par lot, motif lisible dans le plan, paramètres modifiables dans l'inspecteur ; entrée de journal avec inverse. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 19,
+          "exact_line": "| Cas limites | **Géométrie.** Contour dégénéré ; îlot tangent au contour ou touchant un autre îlot (refusé, liste) ; contour sans îlot valide ; niveau inconnu ; calque verrouillé : lot refusé en entier. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 20,
+          "exact_line": "| | **Concurrence et réseau.** `baseRevision` dépassée → 409 détaillé, résolution explicite côté client ; même `requestId` → une seule révision (T06) ; hors ligne : réducteur local puis file Dexie rejouée dans l'ordre ; 403 / 404 / 423 selon R13. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 21,
+          "exact_line": "| Compatibilité | Import P.118 : aucune hachure dans le prototype ; le remplissage des 20 calques (couleur, remplissage) est importé en `calque`, jamais converti en hachure (R7). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 22,
+          "exact_line": "| | DXF : entité `HATCH` visée à l'export des vues (lot 5 ; l'export actuel n'écrit que `LINE`) ; sinon la hachure est aplatie en traits et le rapport le dit. IFC : `IfcAnnotation` avec `IfcFillAreaStyleHatching` envisageable au lot 6, sinon « omise ». |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 23,
+          "exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/esquisse.test.ts` et `packages/core-geometry`) : carré de côté connu, angle 0°, espacement donné : nombre et longueurs des traits vérifiables à la main ; angle 45° : traits à 45° ; îlot retiré du remplissage ; contour auto-sécant refusé ; `aplat` sans traits ; mêmes entrées, mêmes traits. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 24,
+          "exact_line": "| | **API** (`apps/api/src/routes/atelier-commands.test.ts`) : `esquisse.hachure` → 200 ; `espacement` en « ° » ou nul → 400 avec `chemin` ; même `requestId` → une seule révision ; `baseRevision` périmée → 409. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 25,
+          "exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · hachure ») : sur la mezzanine de la copie de travail P.118, rectangle hachuré avec un cercle en îlot, angle modifié dans l'inspecteur ; annuler, rétablir, second navigateur. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 26,
+          "exact_line": "| Règles métier | Aucune règle réglementaire. Motifs conventionnels par matériau (SIA 400, ISO 128) : non fournis ; seuls des motifs génériques existent, tout motif conventionnel est introduit avec sa source (R3). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 27,
+          "exact_line": "| Extensions à spécifier | Motifs de bibliothèque ; hachure associative ; hachure par détection de contour entre lignes jointives ; espacement en unités papier (vues à l'échelle, lot 5) ; dégradés. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 28,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 29,
+          "exact_line": "## Suivi",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 30,
+          "exact_line": "- Fait (D-050) : extension réalisée (voir la décision) ; tests `pieces-plus.test.ts`, `architecture-plus.test.ts`, e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 31,
+          "exact_line": "- Fait (D-072) : motifs de hachure (catalogue intégré, pas en unités papier converti à l'échelle de la vue, traits découpés dans les vues, PDF, SVG et DXF des vues) ; choix dans l'inspecteur ; tests `hachures.test.ts`, e2e `atelier-complements.mjs`. Restent : motifs non linéaires (points, matériaux), hachure associative à des murs, import de motifs DXF nommés.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 32,
+          "exact_line": "- Fait (D-092) : hachures associatives et motif de points ; tests `hachures.test.ts`, e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 33,
+          "exact_line": "- Constat (D-114) : la hachure par détection de contour entre lignes jointives existe (outil Contour, forme « hachure ») ; restent : motifs de bibliothèque importés (DXF nommés), dégradés.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 34,
+          "exact_line": "- Fait (D-120) : dégradés (paramètre `degrade` des hachures ; plan, vues SVG/PDF/DXF ; import des HATCH en dégradé) ; tests `degrade.test.ts`, e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 35,
+          "exact_line": "- Fait (D-121) : import des motifs DXF nommés avec leurs lignes de définition (`motifLignes`, pas en mètres modèle ; tirets en traits continus, signalés) ; tests `motifs-importes.test.ts`, e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-11.md",
+          "current_line": 36,
+          "exact_line": "- État au 2026-10-06 : hachures associatives, motif de points, motifs DXF nommés et dégradés réalisés (D-092, D-120, D-121) ; reste : motifs de matériaux (catalogue à fournir).",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ],
+      "additional_limits": "Cas limites, autres niveaux API/unité/E2E et extensions de la fiche entièrement lus ; ne sont pas démontrés globalement par cette comparaison du seul ancien chemin. Aucun verdict d’acceptation technique entière."
+    },
+    {
+      "entry_id": "M08-PATH-015",
+      "historical_acceptance_preserved": true,
+      "source_fiche": "docs/atelier/fiches/DA-01-12.md",
+      "historical_validation": [
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 26,
+          "exact_line": "| | **API** (`apps/api/src/routes/atelier-views.test.ts`, lot 5) : production d'une façade → document au catalogue avec révision et empreinte ; commande ensuite → fraîcheur « à recalculer » (T07) ; production refusée sans droit `write` (403). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ],
+      "requested_level": "api",
+      "candidate_paths": [
+        "apps/api/src/routes/atelier-commands.test.ts"
+      ],
+      "assertions": [
+        {
+          "expected": "Production façade",
+          "classification": "partiel",
+          "reason": "Production plan RDC dans bloc lot5 ; façade non produite.",
+          "evidence": [
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 301,
+              "exact_line": "        { type: \"vue.creer\", params: { id: \"v1\", type: \"plan\", titre: \"Plan du RDC\", echelle: 50, niveauId: \"rdc\" } },",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 315,
+              "exact_line": "    const dxf = await client.get(`/projects/${pid}/documents/atelier/vues/v1.dxf`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 318,
+              "exact_line": "    const svg = await client.get(`/projects/${pid}/documents/atelier/vues/v1.svg`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 319,
+              "exact_line": "    expect(svg.status).toBe(200);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Document au catalogue",
+          "classification": "partiel",
+          "reason": "Feuille PDF et vue plan DXF au catalogue vérifiés ; pas façade.",
+          "evidence": [
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 324,
+              "exact_line": "    let cat = (await client.get(`/projects/${pid}/documents`)).body.documents as { kind: string; group: string; freshness: string | null }[];",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 325,
+              "exact_line": "    expect(cat.find((d) => d.kind === \"atelier-feuille-f1-pdf\")).toMatchObject({ group: \"atelier\", freshness: \"a-jour\" });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 326,
+              "exact_line": "    expect(cat.find((d) => d.kind === \"atelier-vue-v1-dxf\")!.freshness).toBe(\"a-jour\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Révision du document",
+          "classification": "partiel",
+          "reason": "En-tête PDF révision1 vérifié ; pas façade/catalogue modelRevision dans bloc lot5.",
+          "evidence": [
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 314,
+              "exact_line": "    expect(pdf.headers[\"x-model-revision\"]).toBe(\"1\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Empreinte du document",
+          "classification": "partiel",
+          "reason": "Autre bloc livraison tardive utilise inputHash lu du catalogue ; aucune assertion empreinte façade produite.",
+          "evidence": [
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 691,
+              "exact_line": "    const docs1 = (await client.get(`/projects/${pid}/documents`)).body.documents as { kind: string; label: string; fileName: string; stepNumber: number | null; current: { modelRevision: number; inputHash: string }; freshness: string | null; produced: { modelRevision: number } | null }[];",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 696,
+              "exact_line": "    // Livraison tardive : la production porte la révision et l'empreinte de son départ.",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 697,
+              "exact_line": "    await recordProducedDocument((await import(\"../db/client.js\")).db, pid, { kind: murs1.kind, label: murs1.label, fileName: murs1.fileName, modelRevision: 1, inputHash: murs1.current.inputHash, stepNumber: murs1.stepNumber }, new Date());",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 699,
+              "exact_line": "    expect(murs).toMatchObject({ produced: { modelRevision: 1 }, freshness: \"perime\", current: { modelRevision: 2 } });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 702,
+              "exact_line": "    await recordProducedDocument((await import(\"../db/client.js\")).db, pid, { kind: murs1.kind, label: murs1.label, fileName: murs1.fileName, modelRevision: 1, inputHash: murs1.current.inputHash, stepNumber: murs1.stepNumber }, new Date());",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 704,
+              "exact_line": "    expect(murs).toMatchObject({ produced: { modelRevision: 2 }, freshness: \"a-jour\" });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Commande puis fraîcheur à recalculer",
+          "classification": "partiel",
+          "reason": "Feuille PDF passe perime après commande ; pas façade testée.",
+          "evidence": [
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 328,
+              "exact_line": "    await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"d2\", 1, [{ type: \"objet.modifier\", params: { id: \"m1\", params: { epaisseur: m(0.3) } } }]));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 329,
+              "exact_line": "    cat = (await client.get(`/projects/${pid}/documents`)).body.documents;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 330,
+              "exact_line": "    expect(cat.find((d) => d.kind === \"atelier-feuille-f1-pdf\")!.freshness).toBe(\"perime\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        },
+        {
+          "expected": "Production sans droit write refusée403",
+          "classification": "absent",
+          "reason": "Seul403 de lecteur concerne POSTcommands ; aucune production de document par lecteur.",
+          "evidence": [
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 125,
+              "exact_line": "    expect((await reader.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"d2\", 1, [mur(\"m1\")]))).status).toBe(403);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 306,
+              "exact_line": "    const pdf = await client.get(`/projects/${pid}/documents/atelier/feuilles/f1.pdf`).buffer(true).parse((res, cb) => {",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 315,
+              "exact_line": "    const dxf = await client.get(`/projects/${pid}/documents/atelier/vues/v1.dxf`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "current_line": 318,
+              "exact_line": "    const svg = await client.get(`/projects/${pid}/documents/atelier/vues/v1.svg`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ]
+        }
+      ],
+      "full_fiche_context": [
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 1,
+          "exact_line": "# DA-01-12 — Hidden-line management / Gestion des lignes cachées — module M11 → Documents (vues dans l'Atelier) — lot 5",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 2,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 3,
+          "exact_line": "**État : disponible (lot 5) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : tests `packages/atelier-model/src/documents/documents.test.ts` (prisme A devant prisme B : arête cachée sur [1 ; 2], visible sur [2 ; 3] ; faces coplanaires ; ouverture dans un mur ; même SVG octet pour octet) ; recette `apps/web/e2e/atelier-documents.mjs` ; compte rendu `lots/lot-5.md`. Écart : fonction de visibilité dans `packages/atelier-model/src/documents/visibilite.ts` ; calcul analytique par intervalles, donc pas de cas cyclique à signaler.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 4,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 5,
+          "exact_line": "| Champ | Contenu |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 6,
+          "exact_line": "| --- | --- |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 7,
+          "exact_line": "| Identité | DA-01-12 (M11, étape cible P1), ciblée lot 5. Équivalent borné de DA-14-19 (Make2D) : projection 2D avec gestion de visibilité par tri des faces, **pas** un moteur de lignes cachées général (proposition §4.8, cahier §5.9). S'applique aux façades et aux coupes (éléments en arrière-plan) ; les plans par niveau : DA-14-02. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 8,
+          "exact_line": "| Situation utilisateur | Obtenir une façade ou une coupe lisible où ce qui est derrière une face n'est pas tracé comme visible, avec le choix de l'omettre ou de le montrer en pointillé, et savoir quand le résultat est ambigu. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 9,
+          "exact_line": "| Entrées et unités | Vue dérivée : plan de projection (façade : plan vertical d'orientation donnée ; coupe : plan vertical quelconque et profondeur, m), révision `n` du modèle, objets référencés (murs, ouvertures, dalles, poteaux, escaliers, solides). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 10,
+          "exact_line": "| | Paramètre de la vue `lignesCachees` parmi `omises`, `pointilles`, `toutes` : propriété de la définition de vue (`atelier_views`), pas du modèle. Unités : m dans le repère local ; tolérances de visibilité et de coplanarité déclarées par l'opération, consignées dans `decisions.md`. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 11,
+          "exact_line": "| Comportement | **Cycle.** Vue ouverte dans l'Atelier (vues techniques de travail, lot 3b) ou produite par le serveur (lot 5) → réglage « lignes cachées » dans l'inspecteur de la vue → aperçu → la vue est régénérée pour la révision courante ; révision et fraîcheur (à jour / à recalculer) restent visibles (R11, recette B.15). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 12,
+          "exact_line": "| | **Commandes.** Aucune commande du modèle : le réglage est un paramètre de la définition de la vue et ne modifie pas la révision du modèle (R10, R11). L'annexe B ne contient pas de commande `vue.*` : à ajouter au catalogue si la définition de vue est modifiable par commande (point à trancher au lot 5). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 13,
+          "exact_line": "| | **Algorithme.** Fonction pure de `core-geometry` : projection orthogonale, tri des faces par profondeur, découpe des arêtes par les faces plus proches, classement visible / caché. Faces issues du modèle paramétrique (R15) ; faces coplanaires fusionnées à tolérance déclarée. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 14,
+          "exact_line": "| | **Limite assumée.** Le tri par faces est exact quand l'ordre de profondeur est total ; faces qui se coupent ou se recouvrent cycliquement : signalées dans le rapport de la vue (liste des faces ambiguës), jamais résolues en silence ni présentées comme exactes. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 15,
+          "exact_line": "| | **Contrôles.** Vue sans objet dans le plan : message « vue vide », jamais une page blanche muette ; plan de coupe dégénéré refusé. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 16,
+          "exact_line": "| | **Palette (UX2) et aide (UX4).** « lignes cachées » ; synonymes « arêtes cachées », « visibilité », « hidden line » ; exemple court : façade nord, arêtes cachées en pointillé. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 17,
+          "exact_line": "| Données et dépendances | Document dérivé rattaché à la révision `n` avec empreinte (révision, objets référencés, paramètres de vue, version du moteur). Périmé par `atelier.commande.validee`, il reste consultable mais ne peut pas être présenté comme actuel (R11) ; un calcul tardif pour `n` livré après `n + 1` reste rattaché à `n` (essai Architecture §12). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 18,
+          "exact_line": "| | Modules : Documents (`produced_documents`, catalogue) et Atelier (vues techniques de travail du lot 3b) ; `core-geometry` pour la visibilité. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 19,
+          "exact_line": "| Résultats | Vue vectorielle (SVG) avec arêtes classées visibles / cachées et rapport de la vue (objets référencés, faces ambiguës), enregistrée au catalogue avec révision et empreinte. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 20,
+          "exact_line": "| Cas limites | **Calcul.** Face ambiguë ; modèle modifié pendant le calcul : vue rattachée à l'ancienne révision, marquée périmée ; calcul interrompu : aucun document partiel présenté comme complet ; objets référencés supprimés depuis : vue périmée, objets listés. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 21,
+          "exact_line": "| | **Concurrence.** Une production n'est pas une commande du modèle : pas de 409 ; si le modèle avance pendant le calcul, le document reste rattaché à `n` et périmé. Une production répétée (même couple révision et paramètres) renvoie le document enregistré, jamais un doublon (idempotence, T06). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 22,
+          "exact_line": "| | **Réseau et droits.** Hors ligne : vue de travail locale (lot 3b) disponible, production serveur et enregistrement au catalogue indisponibles avec le motif (périmètre local annoncé) ; `read` pour consulter, `write` pour produire ; 403 motivé, 404 sans accès, 423 pendant une réservation d'autrui (R13). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 23,
+          "exact_line": "| Compatibilité | P.118 : vues dérivées du modèle importé (murs, ouvertures, dalles, poteaux, solides) ; le prototype affichait ses faces par tri de profondeur (`drawFaces`, déjà dans `core-geometry`) : comportement de référence. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 24,
+          "exact_line": "| | Exports SVG ; DXF (arêtes cachées sur un calque dédié ou un type de trait, à fixer au lot 5) ; PDF (rendu du SVG). IFC : documents dérivés non échangés, « omis » au rapport d'échange. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 25,
+          "exact_line": "| Validation | **Unité** (`packages/core-geometry`, nouvelle fonction de visibilité) : prisme A devant prisme B → arêtes de B partiellement cachées (valeurs vérifiables à la main) ; face coplanaire ; ouverture dans un mur ; cas cyclique signalé ; même révision, même SVG octet pour octet (reproductibilité). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 26,
+          "exact_line": "| | **API** (`apps/api/src/routes/atelier-views.test.ts`, lot 5) : production d'une façade → document au catalogue avec révision et empreinte ; commande ensuite → fraîcheur « à recalculer » (T07) ; production refusée sans droit `write` (403). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 27,
+          "exact_line": "| | **e2e** (`apps/web/e2e/scenarios/07-documents.mjs`) : façade nord de P.118 générée, mode « lignes cachées » changé, révision et fraîcheur affichées ; après un mur dessiné (`05-atelier.mjs`), la façade passe « à recalculer » et ne s'affiche plus comme actuelle. |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 28,
+          "exact_line": "| Règles métier | Aucune règle réglementaire ; types de trait des arêtes cachées (pointillé normalisé) : convention non introduite sans source (R3). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 29,
+          "exact_line": "| Extensions à spécifier | Lignes cachées pour corps quelconques (maillages, B-Rep, lot optionnel OCCT) ; vues isométriques ; arêtes cachées en 3D (mode filaire) ; faces ambiguës résolues par découpe exacte ; hauteur de coupe des plans (DA-14-02). |",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 30,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 31,
+          "exact_line": "## Suivi",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 32,
+          "exact_line": "- Fait (D-048) : extension réalisée (voir la décision) ; tests `documents/axonometrie.test.ts`, e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "docs/atelier/fiches/DA-01-12.md",
+          "current_line": 33,
+          "exact_line": "- Fait (D-133) : arêtes cachées en 3D (mode filaire : vues pleines, cachées en tirets) ; e2e `atelier-complements.mjs`.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ],
+      "additional_limits": "Cas limites, autres niveaux API/unité/E2E et extensions de la fiche entièrement lus ; ne sont pas démontrés globalement par cette comparaison du seul ancien chemin. Aucun verdict d’acceptation technique entière."
+    }
+  ],
+  "cross_cutting": [
+    {
+      "topic": "Atomicité/inverse",
+      "classification": "nonconclu",
+      "reason": "Oracle modèle générique mur/porte/niveau, pas constructions/hachures/mode ; pas deepassertion état après throw dans ce bloc.",
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 192,
+          "exact_line": "  it(\"laisse l'état intact si une commande du lot échoue, et l'inverse restaure l'état exact\", () => {",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 193,
+          "exact_line": "    const etat = socle();",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 194,
+          "exact_line": "    expect(() => appliquerLot(etat, lot([",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 195,
+          "exact_line": "      { type: \"mur.tracer\", params: murParams(0, 0, 4, 0) },",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 196,
+          "exact_line": "      { type: \"mur.tracer\", params: murParams(0, 0, 0, 0) },",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 197,
+          "exact_line": "    ]))).toThrow(/commands\\[1\\]/);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 198,
+          "exact_line": "    const r = appliquerLot(etat, lot([",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 199,
+          "exact_line": "      { type: \"mur.tracer\", params: murParams(0, 0, 4, 0) },",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 200,
+          "exact_line": "      { type: \"ouverture.poser\", params: { classe: \"porte\", murHoteId: \"mur-k-1\", position: 0.5, largeur: m(0.9), hauteur: m(2.1) } },",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 201,
+          "exact_line": "      { type: \"niveau.modifier\", params: { id: \"rdc\", nom: \"Rez\" } },",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 202,
+          "exact_line": "    ], \"k\"));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 203,
+          "exact_line": "    expect(Object.keys(r.etat.objets)).toHaveLength(2);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 204,
+          "exact_line": "    const retour = appliquerCommande(r.etat, r.inverse, { ids: generateurIds(\"undo\") });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 205,
+          "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 206,
+          "exact_line": "    expect(retour.effets.supprimes.sort()).toEqual([\"mur-k-1\", \"porte-k-2\"]);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 207,
+          "exact_line": "    // rétablir = réappliquer l'inverse de l'inverse",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 208,
+          "exact_line": "    const redo = appliquerLot(retour.etat, lot(r.inverse.type === \"interne.restaurer\" ? [{ type: \"mur.tracer\", params: murParams(0, 0, 4, 0) }] : [], \"k2\"));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 209,
+          "exact_line": "    expect(Object.keys(redo.etat.objets)).toHaveLength(1);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 210,
+          "exact_line": "  });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 211,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 212,
+          "exact_line": "  it(\"refuse une commande inconnue et un contrat non pris en charge\", () => {",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 213,
+          "exact_line": "    expect(() => appliquerLot(socle(), lot([{ type: \"mur.voler\", params: {} }]))).toThrow(/inconnue/);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "topic": "Conflit/idempotence/droits/horsligne",
+      "classification": "nonconclu",
+      "reason": "API générique contient idempotence/409/403 murs ; pas preuve propre aux outils ; aucun offline/rejeu Dexie démontré ici.",
+      "evidence": [
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 51,
+          "exact_line": "    expect(premier.body).toMatchObject({ revision: 1, applique: [{ type: \"niveau.creer\", objetIds: [\"rdc\"] }, { type: \"mur.tracer\", objetIds: [\"m1\"] }] });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 52,
+          "exact_line": "    expect(premier.body.effets.crees.sort()).toEqual([\"m1\", \"rdc\"]);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 53,
+          "exact_line": "    const rejoue = await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"r1\", 0, [niveau, mur(\"m1\")], \"Niveau et mur\"));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 54,
+          "exact_line": "    expect(rejoue.status).toBe(200);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 55,
+          "exact_line": "    expect(rejoue.body).toMatchObject({ revision: 1, rejouee: true });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 101,
+          "exact_line": "    expect(stale.body.conflits).toHaveLength(1);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 102,
+          "exact_line": "    expect(stale.body.conflits[0]).toMatchObject({ objetId: \"m1\", revision: 2 });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 125,
+          "exact_line": "    expect((await reader.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"d2\", 1, [mur(\"m1\")]))).status).toBe(403);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 133,
+          "exact_line": "    expect(locked.status).toBe(423);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "topic": "Production tardive",
+      "classification": "partiel",
+      "reason": "API vérifie tableau de murs tardif, révision et inputHash ; pas façade calculée réellement en concurrence.",
+      "evidence": [
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 682,
+          "exact_line": "  }, 60_000);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 683,
+          "exact_line": "});",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 684,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 685,
+          "exact_line": "describe(\"essais de l'Architecture V4 §12 (lot 9)\", () => {",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 686,
+          "exact_line": "  it(\"calcul ancien terminé tardivement : une production de la révision n livrée après n + 1 reste rattachée à n, périmée, sans écraser une production plus récente\", async () => {",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 687,
+          "exact_line": "    const { recordProducedDocument } = await import(\"../lib/documents.js\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 688,
+          "exact_line": "    const client = await registerAndLogin(\"tardif@example.com\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 689,
+          "exact_line": "    const pid = await projetVide(client);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 690,
+          "exact_line": "    expect((await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"t1\", 0, [niveau, mur(\"m1\")]))).status).toBe(200);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 691,
+          "exact_line": "    const docs1 = (await client.get(`/projects/${pid}/documents`)).body.documents as { kind: string; label: string; fileName: string; stepNumber: number | null; current: { modelRevision: number; inputHash: string }; freshness: string | null; produced: { modelRevision: number } | null }[];",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 692,
+          "exact_line": "    const murs1 = docs1.find((d) => d.kind === \"atelier-tableau-murs\")!;",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 693,
+          "exact_line": "    expect(murs1.current.modelRevision).toBe(1);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 694,
+          "exact_line": "    // Le calcul commence à la révision 1 ; pendant ce temps, une commande produit la révision 2.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 695,
+          "exact_line": "    expect((await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"t2\", 1, [mur(\"m2\", 6)]))).status).toBe(200);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 696,
+          "exact_line": "    // Livraison tardive : la production porte la révision et l'empreinte de son départ.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 697,
+          "exact_line": "    await recordProducedDocument((await import(\"../db/client.js\")).db, pid, { kind: murs1.kind, label: murs1.label, fileName: murs1.fileName, modelRevision: 1, inputHash: murs1.current.inputHash, stepNumber: murs1.stepNumber }, new Date());",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 698,
+          "exact_line": "    let murs = ((await client.get(`/projects/${pid}/documents`)).body.documents as typeof docs1).find((d) => d.kind === \"atelier-tableau-murs\")!;",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 699,
+          "exact_line": "    expect(murs).toMatchObject({ produced: { modelRevision: 1 }, freshness: \"perime\", current: { modelRevision: 2 } });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 700,
+          "exact_line": "    // Production à jour (révision 2), puis une autre livraison tardive de la révision 1 : la plus récente reste.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 701,
+          "exact_line": "    expect((await client.get(`/projects/${pid}/documents/atelier/tableaux/murs.csv`)).status).toBe(200);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 702,
+          "exact_line": "    await recordProducedDocument((await import(\"../db/client.js\")).db, pid, { kind: murs1.kind, label: murs1.label, fileName: murs1.fileName, modelRevision: 1, inputHash: murs1.current.inputHash, stepNumber: murs1.stepNumber }, new Date());",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 703,
+          "exact_line": "    murs = ((await client.get(`/projects/${pid}/documents`)).body.documents as typeof docs1).find((d) => d.kind === \"atelier-tableau-murs\")!;",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 704,
+          "exact_line": "    expect(murs).toMatchObject({ produced: { modelRevision: 2 }, freshness: \"a-jour\" });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 705,
+          "exact_line": "  });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 706,
+          "exact_line": "});",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 707,
+          "exact_line": "",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    }
+  ],
+  "not_demonstrated": [
+    "Équivalence de l’un quelconque des sept anciens chemins ou validation complète des quatre fiches.",
+    "Acceptation actuelle, succès des tests au SHA, sécurité de la cible DB/runtime.",
+    "Mode esquisse clavier seul/R10/filtre architectural aux deux tailles prescrites.",
+    "Axes cercle et exclusion exacte profils/quantités ; hachure numérique/îlot/aplat/reproductibilité sur ces candidats.",
+    "Façade au catalogue avec empreinte/révision et refus lecteur403 ; code de route éventuellement correct ne remplace pas assertion."
+  ],
+  "next_action": "A5 revue indépendante ; A0 seul consolide. Aucun remplacement automatique des125 chemins ni réécriture historique.",
+  "citation_counts": {
+    "occurrences": 454,
+    "unique": 299
+  }
+}

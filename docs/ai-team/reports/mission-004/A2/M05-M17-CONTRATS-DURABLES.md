@@ -1,0 +1,86 @@
+# M05 / M07 / M17 — Contrats durables candidats
+
+Statut : proposition documentaire non exécutable, aucune API ou structure applicative déclarée implémentée. Reprise du dossier M003 LOT-A.1 et C-STUDY/C-COMMAND/C-DRAWING2D/C-MODEL3D/C-ASSOCIATION ; pas de nouvelle interface normative concurrente. Aucun code, POC, DB, migration ou test lancé par A2. Les fichiers JSON accompagnants sont des exemples à examiner, sans validateur ni module à charger. Le fichier distinct `M05-M17-EXEMPLES-DOCUMENTAIRES.json` évite le corpus S6 A5.
+
+Sources : STUDIO-RT-001 V1.0 blob `ce7cf463e34c92c0178fa0c0b495569a13c7fe32`, fiches exactes A1 M004, LOT-A.1 M003 ; cadrage D01/D07 retenu par décision #166 commentaire 6249520098, D02 conservé. Code observé en lecture seule dans copie documentaire PR165 HEAD `63e804be7b8e8935913514bd57937053c7402474` ; empreintes de chaque source et renvois normatifs exacts dans `M05-M17-SOURCES.json`. Les données métier observées ne sont pas des capacités Studio validées. DB1/2 PR169 ne vaut pas autorisation DB3 ni réalisation Studio.
+
+## 1. Règles logiques proposées, sans choix de stockage
+
+Projet → Étude → Variante → Révision. Le projet transverse garde son propriétaire Fadi ; l'étude rattache sources, programme de référence et hypothèses, sans réécrire ces données sources. Créer une étude sans variante est permis ; aucune géométrie persistée n'est éditée sans variante propriétaire. Une variante appartient à exactement une étude, une étude à exactement un projet. Une révision appartient à exactement une variante. Les références croisées sont autorisées et vérifiées serveur ; une combinaison d'identifiants existants mais provenant de parents différents est refusée. IDs opaques stables non réutilisés, sensibilité à la casse conservée ; longueur/encodage transport à ratifier, pas normalisation des anciens IDs Atelier (qui acceptent notamment des noms de calques).
+
+`schemaVersion` qualifie chaque document persistant ; `contractVersion` l'opération, `revisionId` un état immuable, `baseRevisionId` la précondition d'écriture, `documentVersion` une version de pièce. Ces cinq notions ne sont pas interchangeables. Une révision inclut contexte, parent(s), transaction et références de contenus versionnés avec empreintes. Un fork produit nouveaux IDs propriétaires et provenance vers la source ; aucune propagation implicite. Un historique consulté est immuable ; modifier signifie nouvelle commande sur tête autorisée ou fork explicite, jamais mutation d'une révision existante.
+
+Le paquet documentaire candidat contient les relations logiques et trois autorités, pas des tables SQL. Les choix stockage relationnel/blob, allocation d'IDs et migration restent DEC-01/03. Les exemples emploient des noms synthétiques, pas des IDs ou endpoints existants.
+
+## 2. Trois autorités, écrivain unique et coexistence Atelier
+
+| Autorité logique candidate | Données canoniques possédées | Écriture / autres consommateurs |
+|---|---|---|
+| Dessin 2D indépendant | Entités 2D, calques, cotes et annotations propres au document 2D | Commandes 2D autorisées ; aucune dépendance 3D obligatoire |
+| Modèle 3D indépendant | Géométrie spatiale directe et références de modèle 3D | Commandes 3D autorisées ; aucune esquisse préalable obligatoire |
+| Conception associée | Définition architecturale sémantique, contraintes et associations qui lui appartiennent | Commandes associées ; vues 2D/3D sont projections de cet objet, pas deux copies écrivables |
+
+Un objet/révision a un seul couple propriétaire logique + writerAuthority autorisé, établi serveur. Deux surfaces peuvent afficher le même objet, elles n'obtiennent pas deux droits d'écriture directs. Une copie indépendante reçoit nouvel ID et provenance ; une référence liée reste distincte d'une copie. L'autorité associée ne duplique pas les quantités transverses autoritaires ni le programme approuvé. Une vue graphique n'est jamais une autorité métier.
+
+Atelier et Studio peuvent partager un moteur via adaptateur public, mais une même donnée partagée garde un écrivain unique. Tout mode de coexistence « Studio écrit l'ancien Atelier et sa nouvelle copie » est refusé. La forme physique de l'adaptateur et le choix de réutiliser un document existant demeurent DEC-18/01 ; le champ candidat writerAuthority n'est pas une colonne existante. Une transition d'autorité serait une opération explicite, atomique, auditée, avec refus si commandes hors ligne en attente et restauration prouvée ; aucune migration proposée ici n'est autorisée.
+
+D07 navigation conservée : Studio autonome après Projets, quatre domaines, deux planches indépendantes dans Dessin. La route ne crée rien, n'accorde aucun droit et ne sélectionne pas implicitement une planche. Réemploi du contrat NAV A4, pas de ProjectShell comme contexte autoritaire, pas d'iframe ou raccourci Atelier. Référencer plutôt que redéfinir cette interface.
+
+## 3. Commande et résultat — application d'IF, pas remplacement
+
+L'enveloppe illustrative IF-006 est réutilisée telle quelle : requestId/toolId/contractVersion/actorId/scope(projectId,studyId,variantId,baseRevisionId)/targetIds/operation/parameters/mode. Les variantes de représentation physique restent à ratifier ; aucune route nouvelle annoncée. Les métadonnées writerAuthority, expectedObjectVersions et relationVersions des exemples se trouvent dans une section documentaire `preconditions`, pas ajoutées en prétendant modifier IF-006. Leur emplacement physique est ouvert.
+
+Avant effet : authentification serveur et concordance actorId, autorisation tenant/projet/étude/variante/objet et action ; versions de contrat/document supportées ; parenté complète ; base courante et versions d'objets/relations si nécessaire ; writer unique ; unités/repère/tolérances valides, références non ambiguës, limites de taille et coût. Role est une capacité serveur d'édition, de revue, d'approbation ou de publication, jamais un champ client créant un droit. Délégation/cumul explicites et journalisés selon politique approuvée ; administrateur technique n'est pas approbateur métier implicite.
+
+Proposition de déduplication : clé serveur de portée tenant/projet/étude/variante + identité authentifiée + requestId, conservant empreinte sémantique du message et résultat durable. Même clé et contenu identique retourne le même résultat sans nouvel effet, même si la tête a avancé ; même clé et autre contenu refuse REQUEST_ID_REUSED. La durée de rétention et le traitement après expiration restent à décider avant production, sans changer silencieusement la rétention des sauvegardes. Une nouvelle commande reçoit nouvel ID. Preview ne confirme pas de sauvegarde ; passage preview→commit n'est pas un replay de contenu différent sous même clé.
+
+Commit : engagement atomique de toutes données canoniques touchées, révision de sortie, journal IF-011 et événement/outbox durable. La notification seule ne confirme rien. Succès expose résultat/revision/event/transaction/effets/portées invalidées ; caches restent reconstruisibles. Job IF-003 renvoie sa révision source ; résultat périmé, annulé ou sans droit renouvelé ne s'engage pas automatiquement. Undo/redo est une nouvelle opération contrôlée sur tête courante, pas déplacement destructif d'un pointeur historique. Un rebase incompatible refuse et présente résolution/recalcul, pas écrasement.
+
+Codes d'erreurs **candidats**, pas codes API actuels : UNAUTHENTICATED, INVALID_IDENTIFIER, FORBIDDEN_SCOPE, CONTEXT_PARENT_MISMATCH, SCHEMA_UNSUPPORTED, CONTRACT_UNSUPPORTED, REVISION_CONFLICT, OBJECT_VERSION_CONFLICT, WRITER_MISMATCH, REQUEST_ID_REUSED, AMBIGUOUS_REFERENCE, IMMUTABLE_REVISION, INPUT_LIMIT, DURABILITY_FAILED, PUBLICATION_INCOMPLETE, APPROVAL_MISMATCH. Chaque refus produit zéro effet canonique et trace de refus sans secret. Ne pas révéler l'existence d'une ressource interdite ; mapping HTTP/masquage 403/404 à décider. Timeout réseau après commit peut donner résultat indéterminé côté navigateur : réinterroger par requestId, jamais annoncer l'annulation du commit sans preuve.
+
+## 4. Snapshot et publication
+
+Candidat snapshot : identifiant/version de schéma/contexte complet/révision/parents/transaction/auteur et heure serveur ; liste des trois autorités présentes et références immuables de leurs documents, versions, empreintes, unités/repères ; sources et règles versionnées ; associations et leur état ; journal et observations référencés. Une branche A peut contenir seulement le dessin2D ; B seulement le modèle3D ; C l'autorité associée et ses projections. Aucun snapshot n'exige un sous-modèle absent pour simuler la conformité. Manifeste et contenus doivent constituer une même coupe logique, protégée contre lectures entrelacées : le défaut potentiel GET Atelier décrit dans CI154-SNAPSHOT-CONTRAT n'est pas une recette de snapshot cohérent. Choix transaction/isolement/version-set à ratifier et éprouver.
+
+IF-009 gouverne le manifeste de publication : identifiant, intention/usage, date/auteur, approbation, documents ordonnés documentId/version/empreinte, modèles/règles, contrôles, observations bloquantes résolues ou dérogées et décision sur cet ensemble exact. Les exemples utilisent des empreintes illustratives explicitement non calculées ; pas de document publiable réel. Changer un document, règle ou observation après approbation exige nouveau manifeste et nouvelle validation adaptée ; publication antérieure immuable. Les blobs héritent des droits de la source et de leur politique de publication ; un hash ne donne pas un droit public. Format de sérialisation canonique pour hash, signature éventuelle, URI des blobs, manifeste de restauration et vérification à ratifier. Aucune seconde base métier ou stockage GPU comme source autoritaire.
+
+## 5. Matrice de compatibilité Atelier observée, sans renommer constante
+
+| Couche / lecteur actuel | Version observée et comportement | Règle de préparation / manque de preuve |
+|---|---|---|
+| manifest.json | contracts.atelier-commands = 2 ; modele-atelier = 1 | Écart documentaire manifeste / émetteur à traiter séparément ; ne pas descendre la constante |
+| commandes/base.ts | CONTRAT_COMMANDES atelier-commands/3 ; CONTRATS_ACCEPTES /1 /2 /3 | Garder noms/champs existants ; acceptation de chaîne ne prouve pas chaque opération ancienne/nouvelle compatible |
+| routes/atelier-commands.ts | enveloppe requestId, baseRevision numérique >=0, contract enum accepté, label, commands ; 1 MiB, max500 commandes, cibles max5000 | Ne pas envoyer scope/baseRevisionId Studio à cette route comme si compatible ; adaptateur explicite requis |
+| lib/atelier-validation.ts | verrou projet, replay par requestId, contrôle révision, réducteurs puis différentiel/journal/outbox transactionnels | Patrons réutilisables à adapter à étude/variante ; déduplication actuelle ne vaut pas contrat candidat payload-hash tant que non prouvé |
+| ModeleAtelier / modeleVide | version = 1, distinct de contrat de commandes /3 | Ne pas appeler ce format modèle v3 ; propriétaire actuel projectId, absence entité étude native observée |
+| archive.ts verifierModele | accepte uniquement version numérique1, reconstruit via validateurs ; refuse version2 | Pas de lecteurs modèle v2/v3 ni conservation universelle des champs inconnus démontrés ; migration future avec rapport des pertes |
+| lib/atelier-modele.ts | reconstruit tables typées sur modeleVide ; lectures multiples | Pas sérialiseur transparent ni snapshot transactionnel garanti par fonction seule |
+| lib/atelier-versions.ts | snapshots nommés et publications, cataloguesActuels enregistre CONTRAT_COMMANDES et version modèle ; variantes = projets bifurqués | Réutiliser algorithmes d'inverses/diff et pièces immuables ; pas assimilables à étude/variante Studio sans mapping |
+| lib/atelier-refexterne.ts lisible | contrat publication absent ou exactement CONTRAT_COMMANDES ; version modèle non supérieure à actuelle | Plus restrictif que CONTRATS_ACCEPTES : publication sous /2 peut être refusée bien que commande /2 acceptée. Ne pas élargir sans oracle |
+| import/natif.ts | import design.v13 à sens unique vers modèle1, rapport transformations/restes | design.v13 n'est ni commandes/3 ni archive Studio ; ne prouve pas round-trip ni IFC paramétrique complet |
+
+Acceptation future M05 : matrice distincte **commandes /1,/2,/3**, modèle1/archive valide-invalide, publications contrat absent,/1,/2,/3 et modèle supérieur ; vieux journals/profils/queue offline ; undo/redo ; mêmes requestId ; données inconnues/conservation ou rapport de pertes ; comparaison modèle/journal/outbox avant-après refus. Corpus synthétique et versionné, tests purs puis DB3 distincte pour intégration. Aucun auto-bump, renommage de constante, migration ou conversion d'archives par ce document.
+
+## 6. M07 : frontières et dépendances sans duplication #152
+
+Réutiliser `module-edges.json` M003 : 25 arêtes de syntaxe locale (1 dynamique, 2 CSS ; aucune explicitement type-only), photographie a09c11d. Ce n'est ni 25 interfaces publiques ni un graphe runtime prouvé. Cycles agrégés atelier↔parcours, parcours↔projets-sources, accueil↔pilotage ; pas preuve de SCC fichiers. PR152 couvre déjà AST/résolution alias/type/require/dynamique et cycles packages/apps, pas tous cycles internes ni politique complète des sept modules. Ne pas créer un second garde ni présenter la PR ouverte comme fusionnée. Son état courant doit être relu par A0 avant exécution ; aucune CI actuelle affirmée ici.
+
+Proposition : routes/shell composent façades publiques ; Studio appelle services transverses et moteurs purs via adaptateurs ; packages purs n'importent pas apps/UI/renderer ; aucune dépendance Studio↔Atelier profonde. Façades de contexte/commandes/documents/quantités/projections sont des responsabilités candidates, pas fichiers déjà présents. Classes sémantiques, normes et capacités industrielles restent conservées. Pas DrawAll opérationnel. Nouvelles arêtes soumises à politique approuvée, exceptions héritées nommées et temporisées, aucun déplacement en masse pour résoudre artificiellement le graphe.
+
+## 7. Décisions à préparer, propriétaires et portes
+
+| DEC / question exacte | Priorité de préparation / dépendance | Choix borné et preuve à recevoir |
+|---|---|---|
+| DEC-03 Définition Étude / Variante / Révision et migration des projets. | Première avec DEC01, contrat A.1 et contexte I ; A2/A1 | Entités propres ou correspondance explicite anciens forks ; exemples isolation/filiation/restauration et rapport aucun ancien ID perdu. Migration exécution séparée |
+| DEC-01 Modèle physique du dessin 2D autonome et son stockage. | Première pour A.2, pas bloquage artificiel des études papier ; A2/A1 | Adapter document existant ou document pur indépendant, création sans3D, persistance/réouverture/publication A, coût et compatibilité |
+| DEC-18 Réutilisation effective des moteurs et services Fadi. | Première pour interfaces et dépendances ; A2/A6/A5 | Inventaire par moteur/API/licence/coût/limites puis preuve sur SHA livré ; façade indépendante de l'UI Atelier, pas « tout réutiliser » sans preuve |
+| DEC-02 Sémantique des associations et références topologiques 2D/3D. | Avant A.4/A.5 et parcours C ; A2/A1 | Objet sémantique unique + mapping prouvé, référence ou copie explicites, refus ambiguïté, propagation et conflits ; A et B indépendants restent étudiables |
+| DEC-12 Historique et undo/redo entre sous-modèles. | Avant engagement multi-autorité et recette C ; A2/A5 | Commandes/inverses/deltas/snapshots existants adaptés ou orchestration nouvelle bornée ; atomicité/refus/concurrence/reprise, rollback non destructif |
+
+D01 (pilote), D07 (navigation) acquis pour cadrage ne ferment pas ces DEC techniques. D02 reporte les options F, conserve quatre domaines et capacités natives. G0 dossier/revues ≠ gate passée ; G1 choix contrats ratifiés ; G2 seules faisabilités explicitement autorisées ; G3 périmètre/risques/tests/rollback approuvés ; réalisation autorisée ; G4 recette et décision de mise en service séparée. A0 soumet une question précise par décision bornée, pas une nouvelle demande de tout cadrer.
+
+## 8. Livrables et critères futurs, sans réaliser le lot
+
+A2 propriétaire de ce contrat ; A1 contrôle EX/INV/IF et DEC, A4 cohérence NAV, A5 prépare oracles indépendants (S6 distinct), A6 durabilité/restauration, A3 uniquement après accord du sous-lot. Les fixtures documentaires couvrent A/B/C et refus sans prétendre les exécuter. Chaque case future exige corpus/empreinte/SHA/build/environnement/commande/résultat/revue et preuve persistante : sauvegarde confirmée, fermeture/réouverture, refus zéro effet, idempotence, concurrence, permissions, indépendance A/B, topologie ambiguë C, publication exacte et restauration. Démonstration géométrique seule insuffisante.
+
+Fichiers partagés futurs à réserver A0 : schéma DB, routeur/context façade, modèle pur, archive/publication, registry et AppShell. Un écrivain par fichier. Risques : double autorité, confusion versions, fausse cohérence de snapshot, migration destructive, anciens clients offline et perte d'associations. Rollback futur : préserver source et mapping, version des formats explicite, restaurer build/schéma compatibles et traiter nouvelles écritures sans les effacer ; aucune restauration ou migration exécutée par cette proposition.

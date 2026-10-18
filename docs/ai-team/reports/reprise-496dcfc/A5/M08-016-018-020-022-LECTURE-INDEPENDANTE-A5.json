@@ -1,0 +1,1275 @@
+{
+  "reviewer": "A5 indépendant avant lecture rapportsA2/A4",
+  "code_reference": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "execution": "Aucune application/test/DB/service/navigateur/réseau ; extraction documentaire Python/Git seulement.",
+  "cohort": "016-018-020-022",
+  "counts": {
+    "partiel": 12,
+    "absent": 12,
+    "présent": 3
+  },
+  "total_atoms": 27,
+  "entries": [
+    {
+      "entry_id": "M08-PATH-016",
+      "fiche_complete": "docs/atelier/fiches/DA-01-12.md",
+      "whole_fiche_source": "# DA-01-12 — Hidden-line management / Gestion des lignes cachées — module M11 → Documents (vues dans l'Atelier) — lot 5\n\n**État : disponible (lot 5) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : tests `packages/atelier-model/src/documents/documents.test.ts` (prisme A devant prisme B : arête cachée sur [1 ; 2], visible sur [2 ; 3] ; faces coplanaires ; ouverture dans un mur ; même SVG octet pour octet) ; recette `apps/web/e2e/atelier-documents.mjs` ; compte rendu `lots/lot-5.md`. Écart : fonction de visibilité dans `packages/atelier-model/src/documents/visibilite.ts` ; calcul analytique par intervalles, donc pas de cas cyclique à signaler.\n\n| Champ | Contenu |\n| --- | --- |\n| Identité | DA-01-12 (M11, étape cible P1), ciblée lot 5. Équivalent borné de DA-14-19 (Make2D) : projection 2D avec gestion de visibilité par tri des faces, **pas** un moteur de lignes cachées général (proposition §4.8, cahier §5.9). S'applique aux façades et aux coupes (éléments en arrière-plan) ; les plans par niveau : DA-14-02. |\n| Situation utilisateur | Obtenir une façade ou une coupe lisible où ce qui est derrière une face n'est pas tracé comme visible, avec le choix de l'omettre ou de le montrer en pointillé, et savoir quand le résultat est ambigu. |\n| Entrées et unités | Vue dérivée : plan de projection (façade : plan vertical d'orientation donnée ; coupe : plan vertical quelconque et profondeur, m), révision `n` du modèle, objets référencés (murs, ouvertures, dalles, poteaux, escaliers, solides). |\n| | Paramètre de la vue `lignesCachees` parmi `omises`, `pointilles`, `toutes` : propriété de la définition de vue (`atelier_views`), pas du modèle. Unités : m dans le repère local ; tolérances de visibilité et de coplanarité déclarées par l'opération, consignées dans `decisions.md`. |\n| Comportement | **Cycle.** Vue ouverte dans l'Atelier (vues techniques de travail, lot 3b) ou produite par le serveur (lot 5) → réglage « lignes cachées » dans l'inspecteur de la vue → aperçu → la vue est régénérée pour la révision courante ; révision et fraîcheur (à jour / à recalculer) restent visibles (R11, recette B.15). |\n| | **Commandes.** Aucune commande du modèle : le réglage est un paramètre de la définition de la vue et ne modifie pas la révision du modèle (R10, R11). L'annexe B ne contient pas de commande `vue.*` : à ajouter au catalogue si la définition de vue est modifiable par commande (point à trancher au lot 5). |\n| | **Algorithme.** Fonction pure de `core-geometry` : projection orthogonale, tri des faces par profondeur, découpe des arêtes par les faces plus proches, classement visible / caché. Faces issues du modèle paramétrique (R15) ; faces coplanaires fusionnées à tolérance déclarée. |\n| | **Limite assumée.** Le tri par faces est exact quand l'ordre de profondeur est total ; faces qui se coupent ou se recouvrent cycliquement : signalées dans le rapport de la vue (liste des faces ambiguës), jamais résolues en silence ni présentées comme exactes. |\n| | **Contrôles.** Vue sans objet dans le plan : message « vue vide », jamais une page blanche muette ; plan de coupe dégénéré refusé. |\n| | **Palette (UX2) et aide (UX4).** « lignes cachées » ; synonymes « arêtes cachées », « visibilité », « hidden line » ; exemple court : façade nord, arêtes cachées en pointillé. |\n| Données et dépendances | Document dérivé rattaché à la révision `n` avec empreinte (révision, objets référencés, paramètres de vue, version du moteur). Périmé par `atelier.commande.validee`, il reste consultable mais ne peut pas être présenté comme actuel (R11) ; un calcul tardif pour `n` livré après `n + 1` reste rattaché à `n` (essai Architecture §12). |\n| | Modules : Documents (`produced_documents`, catalogue) et Atelier (vues techniques de travail du lot 3b) ; `core-geometry` pour la visibilité. |\n| Résultats | Vue vectorielle (SVG) avec arêtes classées visibles / cachées et rapport de la vue (objets référencés, faces ambiguës), enregistrée au catalogue avec révision et empreinte. |\n| Cas limites | **Calcul.** Face ambiguë ; modèle modifié pendant le calcul : vue rattachée à l'ancienne révision, marquée périmée ; calcul interrompu : aucun document partiel présenté comme complet ; objets référencés supprimés depuis : vue périmée, objets listés. |\n| | **Concurrence.** Une production n'est pas une commande du modèle : pas de 409 ; si le modèle avance pendant le calcul, le document reste rattaché à `n` et périmé. Une production répétée (même couple révision et paramètres) renvoie le document enregistré, jamais un doublon (idempotence, T06). |\n| | **Réseau et droits.** Hors ligne : vue de travail locale (lot 3b) disponible, production serveur et enregistrement au catalogue indisponibles avec le motif (périmètre local annoncé) ; `read` pour consulter, `write` pour produire ; 403 motivé, 404 sans accès, 423 pendant une réservation d'autrui (R13). |\n| Compatibilité | P.118 : vues dérivées du modèle importé (murs, ouvertures, dalles, poteaux, solides) ; le prototype affichait ses faces par tri de profondeur (`drawFaces`, déjà dans `core-geometry`) : comportement de référence. |\n| | Exports SVG ; DXF (arêtes cachées sur un calque dédié ou un type de trait, à fixer au lot 5) ; PDF (rendu du SVG). IFC : documents dérivés non échangés, « omis » au rapport d'échange. |\n| Validation | **Unité** (`packages/core-geometry`, nouvelle fonction de visibilité) : prisme A devant prisme B → arêtes de B partiellement cachées (valeurs vérifiables à la main) ; face coplanaire ; ouverture dans un mur ; cas cyclique signalé ; même révision, même SVG octet pour octet (reproductibilité). |\n| | **API** (`apps/api/src/routes/atelier-views.test.ts`, lot 5) : production d'une façade → document au catalogue avec révision et empreinte ; commande ensuite → fraîcheur « à recalculer » (T07) ; production refusée sans droit `write` (403). |\n| | **e2e** (`apps/web/e2e/scenarios/07-documents.mjs`) : façade nord de P.118 générée, mode « lignes cachées » changé, révision et fraîcheur affichées ; après un mur dessiné (`05-atelier.mjs`), la façade passe « à recalculer » et ne s'affiche plus comme actuelle. |\n| Règles métier | Aucune règle réglementaire ; types de trait des arêtes cachées (pointillé normalisé) : convention non introduite sans source (R3). |\n| Extensions à spécifier | Lignes cachées pour corps quelconques (maillages, B-Rep, lot optionnel OCCT) ; vues isométriques ; arêtes cachées en 3D (mode filaire) ; faces ambiguës résolues par découpe exacte ; hauteur de coupe des plans (DA-14-02). |\n\n## Suivi\n- Fait (D-048) : extension réalisée (voir la décision) ; tests `documents/axonometrie.test.ts`, e2e `atelier-complements.mjs`.\n- Fait (D-133) : arêtes cachées en 3D (mode filaire : vues pleines, cachées en tirets) ; e2e `atelier-complements.mjs`.\n",
+      "historical_source": {
+        "path": "docs/atelier/fiches/DA-01-12.md",
+        "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+        "sha256": "4b8f1ca12a0ec4793a3d0f012d2910a6b576dd0c317eb169f2fc1d05ee91cc44",
+        "lines": [
+          {
+            "line": 27,
+            "text": "| | **e2e** (`apps/web/e2e/scenarios/07-documents.mjs`) : façade nord de P.118 générée, mode « lignes cachées » changé, révision et fraîcheur affichées ; après un mur dessiné (`05-atelier.mjs`), la façade passe « à recalculer » et ne s'affiche plus comme actuelle. |"
+          }
+        ]
+      },
+      "candidate_paths": [
+        "apps/web/e2e/atelier-documents.mjs"
+      ],
+      "verdict": "partiel",
+      "complete_equivalence": false,
+      "atoms": [
+        {
+          "id": "M08-PATH-016-A01",
+          "expected": "façade nordP118 générée",
+          "status": "partiel",
+          "reason": "Façade sud générée, pas nord.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "lines": [
+                {
+                  "line": 232,
+                  "text": "await mesurer(\"nouvelle façade sud → aperçu (visibilité par faces, modèle complet)\", async () => {"
+                },
+                {
+                  "line": 233,
+                  "text": "  await page.locator(\".docs-nouvelle > summary\").click();"
+                },
+                {
+                  "line": 234,
+                  "text": "  await page.locator('[data-nouvelle=\"facade-sud\"]').click();"
+                },
+                {
+                  "line": 235,
+                  "text": "  await page.waitForFunction(() => document.querySelectorAll(\"[data-vue]\").length === 2, null, { timeout: 30000 });"
+                },
+                {
+                  "line": 236,
+                  "text": "  await page.waitForSelector('[data-detail=\"vue\"] .docs-svg svg', { timeout: 60000 });"
+                },
+                {
+                  "line": 237,
+                  "text": "});"
+                },
+                {
+                  "line": 238,
+                  "text": "await page.locator('[data-detail=\"vue\"] .docs-reglages select').first().selectOption(\"200\");"
+                },
+                {
+                  "line": 239,
+                  "text": "await page.locator('[data-detail=\"vue\"] .docs-reglages button[type=\"submit\"]').click();"
+                },
+                {
+                  "line": 240,
+                  "text": "await enregistre();"
+                },
+                {
+                  "line": 241,
+                  "text": "// Annotation propre à la façade : une cote de hauteur dans le repère du dessin (altitude en ordonnée)."
+                },
+                {
+                  "line": 242,
+                  "text": "await page.locator('[data-annoter=\"type\"]').selectOption(\"cote\");"
+                },
+                {
+                  "line": 243,
+                  "text": "await page.locator('[data-annoter=\"a\"]').fill(\"0 ; 0\");"
+                },
+                {
+                  "line": 244,
+                  "text": "await page.locator('[data-annoter=\"b\"]').fill(\"0 ; 3\");"
+                },
+                {
+                  "line": 245,
+                  "text": "await page.locator('[data-annoter=\"ok\"]').click();"
+                },
+                {
+                  "line": 246,
+                  "text": "await page.waitForSelector('[data-annotation=\"cote\"]', { timeout: 30000 }).catch(() => {});"
+                },
+                {
+                  "line": 247,
+                  "text": "await page.waitForFunction(() => /3,00/.test(document.querySelector('[data-detail=\"vue\"] .docs-svg svg')?.textContent ?? \"\"), null, { timeout: 60000 }).catch(() => {});"
+                },
+                {
+                  "line": 248,
+                  "text": "check(\"façade : cote propre à la vue ajoutée et dessinée (3,00)\", (await page.locator('[data-annotation=\"cote\"]').count()) === 1 && /3,00/.test((await page.locator('[data-detail=\"vue\"] .docs-svg svg').textContent()) ?? \"\"));"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-016-A02",
+          "expected": "mode lignes cachées changé",
+          "status": "absent",
+          "reason": "Réglage200 est échelle, pas cachées.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "lines": [
+                {
+                  "line": 238,
+                  "text": "await page.locator('[data-detail=\"vue\"] .docs-reglages select').first().selectOption(\"200\");"
+                },
+                {
+                  "line": 239,
+                  "text": "await page.locator('[data-detail=\"vue\"] .docs-reglages button[type=\"submit\"]').click();"
+                },
+                {
+                  "line": 240,
+                  "text": "await enregistre();"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-016-A03",
+          "expected": "révision affichée façade",
+          "status": "partiel",
+          "reason": "Révision headerPDF feuille, pas façade.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "lines": [
+                {
+                  "line": 344,
+                  "text": "const pdf = await page.request.get(`${BASE}${href}`);"
+                },
+                {
+                  "line": 345,
+                  "text": "const revision = Number(pdf.headers()[\"x-model-revision\"]);"
+                },
+                {
+                  "line": 346,
+                  "text": "const cat = async () => (await (await page.request.get(`${BASE}/projects/${pid()}/documents`)).json()).documents;"
+                },
+                {
+                  "line": 347,
+                  "text": "const docFeuille = (await cat()).find((d) => d.kind === `atelier-feuille-${feuilleId}-pdf`);"
+                },
+                {
+                  "line": 348,
+                  "text": "check(\"PDF de la feuille : application/pdf, %PDF-1.4, inscrit au catalogue « à jour » à la révision courante\", pdf.status() === 200 && pdf.headers()[\"content-type\"] === \"application/pdf\" && telechargement.suggestedFilename().endsWith(\".pdf\") && octets.subarray(0, 8).toString(\"latin1\") === \"%PDF-1.4\" && docFeuille?.freshness === \"a-jour\" && docFeuille.produced.modelRevision === revision, `${octets.length} octets · révision ${revision}`);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-016-A04",
+          "expected": "fraîcheur affichée façade",
+          "status": "partiel",
+          "reason": "Attribut fraîcheur concerne feuille.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "lines": [
+                {
+                  "line": 351,
+                  "text": "await page.waitForFunction(() => document.querySelector('[data-detail=\"feuille\"] [data-fraicheur]')?.getAttribute(\"data-fraicheur\") === \"a-jour\", null, { timeout: 15000 }).catch(() => {});"
+                },
+                {
+                  "line": 352,
+                  "text": "check(\"Atelier : la feuille affiche « À jour » après production\", (await page.locator('[data-detail=\"feuille\"] [data-fraicheur]').getAttribute(\"data-fraicheur\")) === \"a-jour\");"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-016-A05",
+          "expected": "après mur dessiné façade àrecalculer",
+          "status": "partiel",
+          "reason": "Commande phasegarde-corps rend feuille périmée ; autres déclencheur/objet.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "lines": [
+                {
+                  "line": 354,
+                  "text": "// Une commande qui change le dessin : la feuille devient périmée (dessin modifié)."
+                },
+                {
+                  "line": 355,
+                  "text": "await allerEnPlan(page);"
+                },
+                {
+                  "line": 356,
+                  "text": "await page.locator(`.nav-objets button[data-objet=\"${gc.id}\"]`).click();"
+                },
+                {
+                  "line": 357,
+                  "text": "await page.locator(\"#phase-objet\").selectOption(\"\");"
+                },
+                {
+                  "line": 358,
+                  "text": "await enregistre();"
+                },
+                {
+                  "line": 359,
+                  "text": "await page.locator('.barre-mode button:has-text(\"Documents\")').click();"
+                },
+                {
+                  "line": 360,
+                  "text": "await page.locator('[data-feuille]').first().click();"
+                },
+                {
+                  "line": 361,
+                  "text": "await page.waitForFunction(() => document.querySelector('[data-detail=\"feuille\"] [data-fraicheur]')?.getAttribute(\"data-fraicheur\") === \"perime\", null, { timeout: 15000 }).catch(() => {});"
+                },
+                {
+                  "line": 362,
+                  "text": "check(\"après une commande : la feuille est « périmée » (dessin changé), au catalogue comme dans l'Atelier\", (await page.locator('[data-detail=\"feuille\"] [data-fraicheur]').getAttribute(\"data-fraicheur\")) === \"perime\" && (await cat()).find((d) => d.kind === `atelier-feuille-${feuilleId}-pdf`)?.freshness === \"perime\");"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-016-A06",
+          "expected": "façade non présentée actuelle",
+          "status": "partiel",
+          "reason": "Feuille périmée affirmée, pas état façade.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "lines": [
+                {
+                  "line": 360,
+                  "text": "await page.locator('[data-feuille]').first().click();"
+                },
+                {
+                  "line": 361,
+                  "text": "await page.waitForFunction(() => document.querySelector('[data-detail=\"feuille\"] [data-fraicheur]')?.getAttribute(\"data-fraicheur\") === \"perime\", null, { timeout: 15000 }).catch(() => {});"
+                },
+                {
+                  "line": 362,
+                  "text": "check(\"après une commande : la feuille est « périmée » (dessin changé), au catalogue comme dans l'Atelier\", (await page.locator('[data-detail=\"feuille\"] [data-fraicheur]').getAttribute(\"data-fraicheur\")) === \"perime\" && (await cat()).find((d) => d.kind === `atelier-feuille-${feuilleId}-pdf`)?.freshness === \"perime\");"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "context_safety": "Refus atomiques, inverse exact, coordonnées canoniques, droits/concurrence/fileoffline et fidélité documents non démontrés par titre, DOM, Enregistré ou autre objet. Fiche complète/Suivi lus ; D174 et décisions extensions conservées, aucune correction historique."
+    },
+    {
+      "entry_id": "M08-PATH-018",
+      "fiche_complete": "docs/atelier/fiches/DA-02-01.md",
+      "whole_fiche_source": "# DA-02-01 — Move / Déplacer — module M02 → Atelier — lot 3a\n\n**État : disponible (lot 3a) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : recette `apps/web/e2e/atelier-nouveau.mjs`, tests `apps/web/src/modules/atelier/nouveau/nouveau.test.ts` et `packages/atelier-model/src/commandes/commandes.test.ts` ; compte rendu `lots/lot-3a.md`.\n\n| Champ | Contenu |\n| --- | --- |\n| Identité | DA-02-01 (M02, étape cible P1). Sous-exigences : -a déplacement de la sélection (`transformer.deplacer`) ; -b déplacement d'une ouverture le long de son mur hôte (`ouverture.deplacer`). Référence de comportement : prototype, outil « Déplacer » (glisser, déplacement accroché à la grille, ouvertures qui glissent sur leur hôte). |\n| Situation utilisateur | Déplacer des objets d'un niveau d'un vecteur donné sans changer leur nature, en emmenant ce qui leur est attaché et en voyant ce qui ne suit pas. |\n| Entrées et unités | `niveauId` ; `cibles` (objets du niveau) ; `vecteur` `{ x, y, frame: \"local\", unit: \"m\" }` (déplacement horizontal non nul), par point de base et point d'arrivée accrochés (DA-02-15) ou valeurs saisies (dx, dy, ou distance et angle, DA-02-16). |\n| | Classes admises : toutes les `esquisse.*`, `mur`, `dalle`, `escalier`, `poteau`, `solide`, `piece`, `espace`, `zone`, `reference-plan`, `cotation`, `texte`, `etiquette` (et `toiture` au lot 5). Une `ouverture` seule : `ouverture.deplacer`. |\n| Comportement | **Cycle.** Sélection (clic, lasso, filtre par classe : affichage, R10) → point de base, puis arrivée ou saisie → aperçu fantôme avec vecteur (longueur et angle) et liste des objets affectés → contrôle → validation ; Échap annule sans commande. |\n| | **Commandes.** `transformer.deplacer` ; une sélection de plusieurs classes est un seul lot (libellé « Déplacer N objets »). Un geste sur une ouverture seule émet `ouverture.deplacer` (composante du vecteur le long de l'axe de l'hôte, contrôle d'emprise dans le mur). |\n| | **Attachements (R12).** Un mur emmène ses ouvertures (même `murHoteId`, position `t` et `distance` dérivée inchangées). Une `cotation` rattachée suit ses objets (référence conservée, valeur recalculée) ; une cotation libre suit la sélection ; sélectionnée seule, une cotation rattachée ne déplace que son `decalage`. Une `etiquette` suit l'objet référencé. |\n| | **Sans déplacement silencieux.** Aucun objet non sélectionné ne bouge. L'aperçu liste les jonctions de murs rompues (`transformer.etirer`, DA-02-06, les maintient), les pièces dont la délimitation ne correspond plus à leurs murs (problème listé, `piece.detecter` propose) et les autres occurrences d'un escalier de même `groupe` ou sa trémie, avec « ajouter à la sélection » ; sans accord, rien d'autre ne change. |\n| | **Contrôles.** Vecteur sous la tolérance de longueur (DA-01-01) refusé ; unité autre que m refusée (T03) ; cible d'un autre niveau, supprimée ou sur un calque verrouillé : lot refusé en entier ; coordonnée résultante hors borne refusée. |\n| | **Palette (UX2) et aide (UX4).** « déplacer » ; synonymes « move », « translater » ; actif si au moins un objet d'une classe admise est sélectionné ; exemple court : déplacer un local de 2,50 m vers la droite ; clavier complet par la saisie de précision (DA-02-16). |\n| Données et dépendances | Modifie les paramètres de position de chaque cible (`axe`, `contour`, `trous`, `point`, `polygones`, `a`, `b`) sans toucher aux dimensions typées ; relations `heberge` inchangées, `joint-a` et `delimite` recalculées (dérivées) ; références des cotations conservées. |\n| | `core-geometry` (polygones de murs, jonctions) ; événement `atelier.commande.validee` : vues, quantités et bilan Harmonie « à recalculer » (R11, T07) ; microversion +1. |\n| Résultats | Objets déplacés (état « local » puis « synchronisé »), effets listés dans le panneau des modifications (objets modifiés, problèmes créés), inverse = valeurs précédentes enregistrées. |\n| Cas limites | **Géométrie.** Vecteur nul ; sélection vide (aucun lot) ; objets de niveaux différents ; calque verrouillé ou masqué ; mur déplacé sans ses voisins : jonctions rompues listées. Une translation conserve l'emprise des ouvertures : aucune ne passe « à réparer ». |\n| | **Concurrence.** `baseRevision` dépassée et cible modifiée ou supprimée depuis → 409 avec `conflits[].objetId` et état serveur ; résolution explicite côté client ; un objet supprimé par autrui ne réapparaît pas. Même `requestId` → réponse enregistrée, aucune seconde révision (T06). |\n| | **Réseau et droits.** Hors ligne : réducteur local, file Dexie (une entrée par lot), rejeu dans l'ordre à la reconnexion, brouillon si incompatible. Rôle `write` exigé : 403 motivé, 404 sans accès, 423 pendant une réservation d'autrui (R13). |\n| Compatibilité | Import P.118 : cibles admises — 220 `mur` (210 ouvertures hébergées), 120 `poteau`, 32 `escalier` (occurrences), 807 `solide` de rôle `solid`, 6 `dalle`, `zone`, 45 `piece`, 64 `cotation` libres, 95 `texte`. |\n| | IFC : un mur déplacé s'exporte avec ses `IfcRelVoidsElement` conservés ; `cotation` et `texte` en `IfcAnnotation` (export seulement) à leur nouvelle position. DXF : aucune sortie propre. Objets « représentation importée » (lot 6) : classes admises à préciser. |\n| Validation | **Unité** (`packages/atelier-model/src/commandes/transformer.test.ts`) : mur et porte déplacés : `t` et `distance` de la porte inchangés ; inverse restitue les coordonnées bit à bit ; vecteur nul refusé ; cible d'un autre niveau refusée ; calque verrouillé refusé ; sélection mixte = un seul lot ; jonctions rompues et pièce désalignée listées ; cotation rattachée : référence conservée, valeur recalculée. |\n| | **API** (`apps/api/src/routes/atelier-commands.test.ts`) : `transformer.deplacer` → 200, révision +1, `effets` (vues à recalculer) ; même `requestId` → même réponse ; `baseRevision` périmée → 409 avec `conflits[].objetId` ; vecteur nul → 400 ; rôle lecture → 403 ; réservation d'autrui → 423. |\n| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · déplacer ») : sur la copie de travail de P.118, mur « Noyau A » de la mezzanine (`EX118-mezz-W-009`, porte `EX118-mezz-D-001` à t = 0,5) déplacé d'un vecteur saisi : porte toujours à t = 0,5 ; annuler : coordonnées initiales identiques ; second navigateur à la même révision ; ligne `⏱ déplacement d'un élément` imprimée (L3b.3), sans seuil. |\n| Règles métier | Aucune règle réglementaire. R3 : aucune dimension typée (épaisseur, hauteur, section) n'est modifiée par un déplacement ; les valeurs d'exemple de la palette (UX4) ne sont jamais des valeurs par défaut. |\n| Extensions à spécifier | Déplacement vers un autre niveau ; déplacement vertical (3D, lot 3b) ; objets « représentation importée » (lot 6) ; déplacement qui maintient les jonctions de murs : `transformer.etirer` (DA-02-06). |\n\n## Suivi\n\n- Fait (D-039) : vers un autre niveau — `niveauCible` de `transformer.deplacer` / `transformer.copier` (les ouvertures suivent leur mur ; escalier et mur dont le niveau haut ne serait plus au-dessus : refusés) ; inspecteur « Vers un autre niveau » ; tests `niveaux-transfert.test.ts`, e2e `atelier-complements.mjs`.\n",
+      "historical_source": {
+        "path": "docs/atelier/fiches/DA-02-01.md",
+        "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+        "sha256": "743e60ae1d52b6f123631c0abbf475acb4d7fee6ba1ad4273740dc10d9faae02",
+        "lines": [
+          {
+            "line": 27,
+            "text": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · déplacer ») : sur la copie de travail de P.118, mur « Noyau A » de la mezzanine (`EX118-mezz-W-009`, porte `EX118-mezz-D-001` à t = 0,5) déplacé d'un vecteur saisi : porte toujours à t = 0,5 ; annuler : coordonnées initiales identiques ; second navigateur à la même révision ; ligne `⏱ déplacement d'un élément` imprimée (L3b.3), sans seuil. |"
+          }
+        ]
+      },
+      "candidate_paths": [
+        "apps/web/e2e/atelier-nouveau.mjs"
+      ],
+      "verdict": "partiel",
+      "complete_equivalence": false,
+      "atoms": [
+        {
+          "id": "M08-PATH-018-A01",
+          "expected": "copieP118",
+          "status": "présent",
+          "reason": "Copie automatique vérifiée.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 83,
+                  "text": "check(\"référence protégée : la barre d'état l'annonce\", /Exemple protégé : première modification dans une copie automatique\\./.test(await page.locator(\".atelier-n-reference\").textContent()));"
+                },
+                {
+                  "line": 84,
+                  "text": "await page.locator('.navigateur .nav-formulaire button[type=\"submit\"]').click();"
+                },
+                {
+                  "line": 85,
+                  "text": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus."
+                },
+                {
+                  "line": 86,
+                  "text": "await page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });"
+                },
+                {
+                  "line": 87,
+                  "text": "url = page.url().split(\"?\")[0];"
+                },
+                {
+                  "line": 88,
+                  "text": "await page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });"
+                },
+                {
+                  "line": 89,
+                  "text": "const copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();"
+                },
+                {
+                  "line": 90,
+                  "text": "const referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();"
+                },
+                {
+                  "line": 91,
+                  "text": "check(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-018-A02",
+          "expected": "mur NoyauA mezzanine EX118-mezz-W009",
+          "status": "absent",
+          "reason": "Mur synthétique Essai lot3a, pas fixture exacte.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 79,
+                  "text": "// Nouveau niveau vierge pour tracer."
+                },
+                {
+                  "line": 80,
+                  "text": "await page.locator(\".nav-ajout\").click();"
+                },
+                {
+                  "line": 81,
+                  "text": "await page.locator(\".navigateur .nav-formulaire input\").first().fill(\"Essai lot 3a\");"
+                },
+                {
+                  "line": 82,
+                  "text": "await page.locator(\".navigateur .nav-formulaire input\").nth(1).fill(\"20\");"
+                },
+                {
+                  "line": 83,
+                  "text": "check(\"référence protégée : la barre d'état l'annonce\", /Exemple protégé : première modification dans une copie automatique\\./.test(await page.locator(\".atelier-n-reference\").textContent()));"
+                },
+                {
+                  "line": 84,
+                  "text": "await page.locator('.navigateur .nav-formulaire button[type=\"submit\"]').click();"
+                },
+                {
+                  "line": 85,
+                  "text": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus."
+                },
+                {
+                  "line": 86,
+                  "text": "await page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });"
+                },
+                {
+                  "line": 87,
+                  "text": "url = page.url().split(\"?\")[0];"
+                },
+                {
+                  "line": 88,
+                  "text": "await page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });"
+                },
+                {
+                  "line": 89,
+                  "text": "const copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();"
+                },
+                {
+                  "line": 90,
+                  "text": "const referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();"
+                },
+                {
+                  "line": 91,
+                  "text": "check(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));"
+                },
+                {
+                  "line": 92,
+                  "text": "check(\"site : CRS, aire de la parcelle et origine du repère local affichés\", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator(\"#atelier-site-info\").textContent()));"
+                },
+                {
+                  "line": 93,
+                  "text": "await page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();"
+                },
+                {
+                  "line": 94,
+                  "text": "await page.waitForTimeout(200);"
+                }
+              ]
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 263,
+                  "text": "// Pousser / tirer la hauteur d'un mur du niveau d'essai."
+                },
+                {
+                  "line": 264,
+                  "text": "await page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();"
+                },
+                {
+                  "line": 265,
+                  "text": "await page.locator('.vue3d-commandes select[aria-label=\"Présentation\"]').selectOption({ label: \"Niveau actif\" });"
+                },
+                {
+                  "line": 266,
+                  "text": "await page.waitForTimeout(400);"
+                },
+                {
+                  "line": 267,
+                  "text": "const murId = await page.evaluate(() => [...document.querySelectorAll(\".nav-objets button[data-objet]\")].map((b) => b.dataset.objet).find((t) => t.startsWith(\"mur-\")));"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-018-A03",
+          "expected": "déplacé vecteur saisi",
+          "status": "partiel",
+          "reason": "Mur glissé au pointeur, pas vecteur clavier.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 311,
+                  "text": "const avantDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();"
+                },
+                {
+                  "line": 312,
+                  "text": "await mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {"
+                },
+                {
+                  "line": 313,
+                  "text": "  await page.mouse.move(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);"
+                },
+                {
+                  "line": 314,
+                  "text": "  await page.mouse.down();"
+                },
+                {
+                  "line": 315,
+                  "text": "  for (let k = 1; k <= 10; k++) await page.mouse.move(bMur.x + bMur.width / 2 + (k * ech2) / 10, bMur.y + bMur.height / 2 + 0.3);"
+                },
+                {
+                  "line": 316,
+                  "text": "  await page.mouse.up();"
+                },
+                {
+                  "line": 317,
+                  "text": "  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 10000 });"
+                },
+                {
+                  "line": 318,
+                  "text": "});"
+                },
+                {
+                  "line": 319,
+                  "text": "const apresDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();"
+                },
+                {
+                  "line": 320,
+                  "text": "await page.waitForFunction(() => document.querySelector(\".mod-journal\")?.textContent?.includes(\"Déplacer\"), null, { timeout: 5000 }).catch(() => {});"
+                },
+                {
+                  "line": 321,
+                  "text": "check(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-018-A04",
+          "expected": "porteEX118-mezz-D001 t0.5 inchangé",
+          "status": "absent",
+          "reason": "Pas lecture position paramétrique de porte après ce déplacement.",
+          "citations": []
+        },
+        {
+          "id": "M08-PATH-018-A05",
+          "expected": "annuler coordonnées initiales identiques",
+          "status": "partiel",
+          "reason": "Attend révisionaprèsundo, pas égalité coordonnées.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 324,
+                  "text": "const revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);"
+                },
+                {
+                  "line": 325,
+                  "text": "await page.keyboard.press(\"Control+z\");"
+                },
+                {
+                  "line": 326,
+                  "text": "await page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-018-A06",
+          "expected": "second navigateur même révision",
+          "status": "partiel",
+          "reason": "Compare barre entière et objets synthétiques, pas mur/porte prescrits.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 346,
+                  "text": "// Second navigateur (même compte) : il lit les mêmes révisions."
+                },
+                {
+                  "line": 347,
+                  "text": "const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });"
+                },
+                {
+                  "line": 348,
+                  "text": "const page2 = await ctx2.newPage();"
+                },
+                {
+                  "line": 349,
+                  "text": "await page2.goto(`${url}?module=atelier`);"
+                },
+                {
+                  "line": 350,
+                  "text": "await page2.waitForSelector(\".plan2d\");"
+                },
+                {
+                  "line": 351,
+                  "text": "await page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();"
+                },
+                {
+                  "line": 352,
+                  "text": "await page2.waitForTimeout(300);"
+                },
+                {
+                  "line": 353,
+                  "text": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));"
+                },
+                {
+                  "line": 354,
+                  "text": "await ctx2.close();"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-018-A07",
+          "expected": "ligne timing déplacement sans seuil",
+          "status": "partiel",
+          "reason": "mesurer imprime⏱ mais libellé glissermur différent du libellé historique.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 23,
+                  "text": "const mesurer = async (nom, fn) => {"
+                },
+                {
+                  "line": 24,
+                  "text": "  const t = performance.now();"
+                },
+                {
+                  "line": 25,
+                  "text": "  await fn();"
+                },
+                {
+                  "line": 26,
+                  "text": "  const ms = Math.round(performance.now() - t);"
+                },
+                {
+                  "line": 27,
+                  "text": "  mesures.push([nom, ms]);"
+                },
+                {
+                  "line": 28,
+                  "text": "  console.log(`⏱ ${nom} : ${ms} ms`);"
+                }
+              ]
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 312,
+                  "text": "await mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {"
+                },
+                {
+                  "line": 313,
+                  "text": "  await page.mouse.move(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);"
+                },
+                {
+                  "line": 314,
+                  "text": "  await page.mouse.down();"
+                },
+                {
+                  "line": 315,
+                  "text": "  for (let k = 1; k <= 10; k++) await page.mouse.move(bMur.x + bMur.width / 2 + (k * ech2) / 10, bMur.y + bMur.height / 2 + 0.3);"
+                },
+                {
+                  "line": 316,
+                  "text": "  await page.mouse.up();"
+                },
+                {
+                  "line": 317,
+                  "text": "  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 10000 });"
+                },
+                {
+                  "line": 318,
+                  "text": "});"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "context_safety": "Refus atomiques, inverse exact, coordonnées canoniques, droits/concurrence/fileoffline et fidélité documents non démontrés par titre, DOM, Enregistré ou autre objet. Fiche complète/Suivi lus ; D174 et décisions extensions conservées, aucune correction historique."
+    },
+    {
+      "entry_id": "M08-PATH-020",
+      "fiche_complete": "docs/atelier/fiches/DA-02-02.md",
+      "whole_fiche_source": "# DA-02-02 — Copy / Copier — module M02 → Atelier — lot 3a\n\n**État : disponible (lot 3a) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : recette `apps/web/e2e/atelier-nouveau.mjs`, tests `apps/web/src/modules/atelier/nouveau/nouveau.test.ts` et `packages/atelier-model/src/commandes/commandes.test.ts` ; compte rendu `lots/lot-3a.md`.\n\n| Champ | Contenu |\n| --- | --- |\n| Identité | DA-02-02 (M02, étape cible P1). `transformer.copier` : copie d'objets existants en objets nouveaux et indépendants. Sous-exigences : -a copie unique ; -b mode multiple (une copie par validation). Référence de comportement : prototype, outil « Copier » (copie un mur avec ses ouvertures ; une cotation copiée perd ses rattachements). |\n| Situation utilisateur | Dupliquer une partie du plan (un local type, un poteau, un tracé) à un autre endroit du même niveau, avec ce qui lui est attaché et sans dupliquer des données qui n'ont de sens que pour l'original. |\n| Entrées et unités | `niveauId` ; `cibles` ; `vecteur` (m, non nul) ; `nouveauxIds` (un par objet créé, de la forme `${projectId}_…`, fournis ou dérivés du `requestId` : le réducteur ne tire jamais un identifiant au hasard). |\n| | Classes admises : `esquisse.*`, `mur` (avec ses ouvertures), `dalle`, `solide`, `poteau`, `escalier`, `reference-plan`, `cotation`, `texte`, `etiquette`. Refusées : `piece`, `espace`, `zone` (la copie dupliquerait code, nom et liaison au programme : `piece.creer`, `piece.detecter`) et `ouverture` seule (`ouverture.poser`). |\n| Comportement | **Cycle.** Sélection → point de base → point d'arrivée (accrochés, DA-02-15) ou saisie (DA-02-16) → aperçu des copies (fantôme, effectifs créés) → contrôle → validation ; mode multiple : chaque validation est un lot, une action annulable. |\n| | **Commandes.** `transformer.copier` : copies de même classe, mêmes paramètres, même `calqueId`, même `typeId` ; propriétés typées copiées avec provenance et statut. Une copie de mur reçoit des copies de ses ouvertures (nouvelles occurrences, même définition, `t` identique). |\n| | **Valeurs non recopiées (R3).** `exterieur` d'un mur, `repere` d'une ouverture (un repère en double rendrait les tableaux ambigus), `statutConception` d'un poteau : « non évalués » sur la copie, jamais hérités de l'original. |\n| | **Autres classes.** Escalier : la copie forme un nouveau `groupe`, jamais une occurrence de plus du groupe d'origine. Cotation rattachée : la copie est une cotation libre (valeurs résolues, indiqué à l'aperçu), l'original garde ses références ; aucune référence n'est créée vers l'original. |\n| | **Contrôles.** Vecteur nul (copies superposées) refusé ; cible d'un autre niveau, supprimée ou sur un calque verrouillé : lot refusé en entier ; superposition avec un objet existant : signalée à l'aperçu, non bloquante. |\n| | **Palette (UX2) et aide (UX4).** « copier » ; synonymes « copy », « dupliquer » ; actif si au moins un objet d'une classe admise est sélectionné ; exemple court : copier un poteau de 3,00 m vers la droite ; clavier complet par la saisie de précision (DA-02-16). |\n| Données et dépendances | Crée des occurrences (identifiants déterministes) et des relations `heberge-par` pour les ouvertures copiées ; aucune référence existante modifiée (R12 sans objet) ; événement de commande validée : vues, quantités et bilan Harmonie « à recalculer ». |\n| Résultats | N objets nouveaux (plus leurs ouvertures), sélectionnés après validation ; inverse = suppression exacte de ces objets ; effets listés (objets créés). |\n| Cas limites | **Géométrie.** Copie d'une `piece` refusée avec l'action « Créer une pièce » ; sélection vide ; coordonnée résultante hors borne ; objets de niveaux différents. |\n| | **Concurrence.** `baseRevision` dépassée et cible modifiée ou supprimée depuis → 409 détaillé ; même `requestId` → mêmes objets, aucune seconde copie (T06). |\n| | **Réseau et droits.** Hors ligne : le rejeu reproduit les mêmes identifiants grâce à `nouveauxIds` ; file Dexie rejouée dans l'ordre ; 403 / 404 / 423 selon R13. |\n| Compatibilité | Import P.118 : murs copiables avec leurs 210 ouvertures hébergées, 120 poteaux (`statutConception` importé : « Implantation proposée contre façade ; section non dimensionnée », non recopié), solides, dalles, textes ; les 45 pièces ne se copient pas par cette commande. |\n| | IFC : une copie de mur donne un nouvel `IfcWall` et de nouveaux `IfcRelVoidsElement` ; `cotation` et `texte` en `IfcAnnotation` (export seulement). DXF : aucune sortie propre. |\n| Validation | **Unité** (`packages/atelier-model/src/commandes/transformer.test.ts`) : copier un mur portant une porte : 2 murs, 2 portes, `t` égal, `repere` absent sur la copie ; copie de poteau : `statutConception` absent ; copie de cotation rattachée : libre ; même enveloppe, mêmes identifiants ; inverse supprime exactement les copies ; `piece` refusée. |\n| | **API** (`apps/api/src/routes/atelier-commands.test.ts`) : 200 avec `applique[0].objetIds` égaux aux identifiants fournis ; même `requestId` → pas de seconde copie ; `piece` → 400 avec `chemin` et motif ; `baseRevision` périmée → 409. |\n| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · copier ») : copie du mur « Noyau A » de la mezzanine (`EX118-mezz-W-009`) sur la copie de travail de P.118 : murs +1, portes +1, repère de la porte copiée vide ; annuler : effectifs initiaux ; hors ligne : copie en file puis reprise à la reconnexion. |\n| Règles métier | Aucune règle réglementaire. R3 : valeurs déclarées (`exterieur`, `statutConception`, `repere`) jamais recopiées sur un nouvel objet. |\n| Extensions à spécifier | Copie vers un autre niveau ou un autre projet (presse-papiers) ; copie de pièce avec nouveau code ; copies multiples à pas irréguliers dans un seul lot ; réseau régulier : DA-02-12. |\n\n## Suivi\n\n- Fait (D-039) : vers un autre niveau — `niveauCible` de `transformer.deplacer` / `transformer.copier` (les ouvertures suivent leur mur ; escalier et mur dont le niveau haut ne serait plus au-dessus : refusés) ; inspecteur « Vers un autre niveau » ; tests `niveaux-transfert.test.ts`, e2e `atelier-complements.mjs`.\n- Fait (D-043) : extension réalisée (voir la décision) ; tests `transformations-plus.test.ts`.\n- Fait (D-060) : copie de pièce avec nouveau code (`codes` : garder, vider, suivant ; Alt avec l'outil Copier) ; tests `changer-classe.test.ts`, `nouveau.test.ts`.\n- Fait (D-147) : presse-papiers (Ctrl+C / Ctrl+V) : copie vers le même projet, un autre niveau ou un autre projet (définitions, calques par nom, hôtes suivis, liens retirés nommés) ; tests `presse-papiers.test.ts`, e2e `atelier-complements.mjs`.\n",
+      "historical_source": {
+        "path": "docs/atelier/fiches/DA-02-02.md",
+        "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+        "sha256": "fe232596e7c430eb532e5289d11bc4ffd2043fc2289f6723ade37ba20e40e3eb",
+        "lines": [
+          {
+            "line": 26,
+            "text": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · copier ») : copie du mur « Noyau A » de la mezzanine (`EX118-mezz-W-009`) sur la copie de travail de P.118 : murs +1, portes +1, repère de la porte copiée vide ; annuler : effectifs initiaux ; hors ligne : copie en file puis reprise à la reconnexion. |"
+          }
+        ]
+      },
+      "candidate_paths": [
+        "apps/web/e2e/atelier-nouveau.mjs"
+      ],
+      "verdict": "partiel",
+      "complete_equivalence": false,
+      "atoms": [
+        {
+          "id": "M08-PATH-020-A01",
+          "expected": "copieP118",
+          "status": "présent",
+          "reason": "Préparation copie projet automatique, pas commande copier mur.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 83,
+                  "text": "check(\"référence protégée : la barre d'état l'annonce\", /Exemple protégé : première modification dans une copie automatique\\./.test(await page.locator(\".atelier-n-reference\").textContent()));"
+                },
+                {
+                  "line": 84,
+                  "text": "await page.locator('.navigateur .nav-formulaire button[type=\"submit\"]').click();"
+                },
+                {
+                  "line": 85,
+                  "text": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus."
+                },
+                {
+                  "line": 86,
+                  "text": "await page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });"
+                },
+                {
+                  "line": 87,
+                  "text": "url = page.url().split(\"?\")[0];"
+                },
+                {
+                  "line": 88,
+                  "text": "await page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });"
+                },
+                {
+                  "line": 89,
+                  "text": "const copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();"
+                },
+                {
+                  "line": 90,
+                  "text": "const referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();"
+                },
+                {
+                  "line": 91,
+                  "text": "check(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-020-A02",
+          "expected": "copie NoyauA mezzanine",
+          "status": "absent",
+          "reason": "Aucune commande copier du mur exact dans candidat.",
+          "citations": []
+        },
+        {
+          "id": "M08-PATH-020-A03",
+          "expected": "murs+1 portes+1",
+          "status": "absent",
+          "reason": "Comptages concernent création/suppression de murs, pas delta copie.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 130,
+                  "text": "const murs = await page.locator(\".plan2d [data-objet^='mur-']\").count();"
+                },
+                {
+                  "line": 131,
+                  "text": "check(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));"
+                }
+              ]
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 191,
+                  "text": "check(\"cadre : le mur du bas sélectionné\", (await page.locator(\".etat-selection\").textContent()).length > 0);"
+                },
+                {
+                  "line": 192,
+                  "text": "await page.keyboard.press(\"Delete\");"
+                },
+                {
+                  "line": 193,
+                  "text": "await page.waitForTimeout(400);"
+                },
+                {
+                  "line": 194,
+                  "text": "check(\"Suppr : mur et porte hébergée supprimés ensemble\", (await page.locator(\".plan2d [data-objet^='porte-']\").count()) === 0 && (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-020-A04",
+          "expected": "repère porte copiée vide",
+          "status": "absent",
+          "reason": "Pas copie porte ni comparaisonrepère.",
+          "citations": []
+        },
+        {
+          "id": "M08-PATH-020-A05",
+          "expected": "annuler effectifs initiaux",
+          "status": "partiel",
+          "reason": "Undo existe sur renommage/déplacement, pas effectifs copie.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 145,
+                  "text": "// Annuler / rétablir."
+                },
+                {
+                  "line": 146,
+                  "text": "await page.locator(\".plan2d\").click({ position: { x: 5, y: 5 } }).catch(() => {});"
+                },
+                {
+                  "line": 147,
+                  "text": "await page.keyboard.press(\"Escape\");"
+                },
+                {
+                  "line": 148,
+                  "text": "const navTexte = () => page.evaluate(() => document.querySelector(\".nav-objets\").textContent);"
+                },
+                {
+                  "line": 149,
+                  "text": "await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});"
+                },
+                {
+                  "line": 150,
+                  "text": "await page.keyboard.press(\"Control+z\");"
+                },
+                {
+                  "line": 151,
+                  "text": "await page.waitForFunction(() => !document.querySelector(\".nav-objets\").textContent.includes(\"Bureau\"), null, { timeout: 10000 }).catch(() => {});"
+                },
+                {
+                  "line": 152,
+                  "text": "check(\"Ctrl Z annule le renommage\", !(await navTexte()).includes(\"Bureau\"));"
+                },
+                {
+                  "line": 153,
+                  "text": "await page.keyboard.press(\"Control+Shift+z\");"
+                },
+                {
+                  "line": 154,
+                  "text": "await page.waitForFunction(() => document.querySelector(\".nav-objets\").textContent.includes(\"Bureau\"), null, { timeout: 10000 }).catch(() => {});"
+                },
+                {
+                  "line": 155,
+                  "text": "check(\"Ctrl Maj Z le rétablit\", (await navTexte()).includes(\"Bureau\"));"
+                }
+              ]
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 324,
+                  "text": "const revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);"
+                },
+                {
+                  "line": 325,
+                  "text": "await page.keyboard.press(\"Control+z\");"
+                },
+                {
+                  "line": 326,
+                  "text": "await page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-020-A06",
+          "expected": "horsligne copie enfile",
+          "status": "absent",
+          "reason": "Aucun setOffline ni oracle filecopie.",
+          "citations": []
+        },
+        {
+          "id": "M08-PATH-020-A07",
+          "expected": "reprise reconnexion copie",
+          "status": "absent",
+          "reason": "Enregistré ne démontre pas coupure et reprise.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 195,
+                  "text": "await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});"
+                },
+                {
+                  "line": 196,
+                  "text": "check(\"file synchronisée avec le serveur\", (await page.locator(\".barre-sync\").textContent()).startsWith(\"Enregistré\"), `${await page.locator(\".barre-sync\").textContent()} ${await page.locator(\".mod-lots\").textContent().catch(() => \"\")}`);"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "context_safety": "Refus atomiques, inverse exact, coordonnées canoniques, droits/concurrence/fileoffline et fidélité documents non démontrés par titre, DOM, Enregistré ou autre objet. Fiche complète/Suivi lus ; D174 et décisions extensions conservées, aucune correction historique."
+    },
+    {
+      "entry_id": "M08-PATH-022",
+      "fiche_complete": "docs/atelier/fiches/DA-02-03.md",
+      "whole_fiche_source": "# DA-02-03 — Rotate / Tourner — module M02 → Atelier — lot 3a\n\n**État : disponible (lot 3a) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : recette `apps/web/e2e/atelier-nouveau.mjs`, tests `apps/web/src/modules/atelier/nouveau/nouveau.test.ts` et `packages/atelier-model/src/commandes/commandes.test.ts` ; compte rendu `lots/lot-3a.md`.\n\n| Champ | Contenu |\n| --- | --- |\n| Identité | DA-02-03 (M02, étape cible P1). `transformer.tourner`. Référence de comportement : prototype, outil « Tourner objet » (angle demandé en degrés, rotation autour du premier point de l'objet ; poteau : angle propre seulement) ; le centre est ici choisi explicitement. |\n| Situation utilisateur | Faire pivoter des objets d'un niveau autour d'un point choisi, d'un angle exact ou d'un angle de référence, sans casser leurs attachements. |\n| Entrées et unités | `niveauId` ; `cibles` ; `centre` (point local, m) ; `angle` `{ value, unit: \"°\" }` (positif = sens trigonométrique ; non nul modulo 360°). Mode de référence : angle actuel puis angle voulu, seul l'angle résultant est stocké. |\n| | Classes admises : celles de DA-02-01 (hors `ouverture` seule). |\n| Comportement | **Cycle.** Sélection → centre (accroché, DA-02-15) → angle au pointeur (pas angulaire réglable, accrochage de direction) ou saisie (DA-02-16) → aperçu fantôme avec l'angle affiché → contrôle → validation ; Échap annule sans commande. |\n| | **Commandes.** `transformer.tourner`. Mur : axe tourné, `alignement`, `epaisseur` et `hauteur` inchangés, ouvertures hébergées suivent (`t` inchangé). Poteau : `point` tourné et `angle` augmenté de l'angle de rotation. Rectangle : `angle` augmenté. Hachure : contour et motif tournent. Texte et étiquette : position tournée, orientation du texte non modélisée au lot 3a. |\n| | **Références (R12).** Rotation d'un même objet : références et caractéristiques nommées conservées (`mur:face-gauche` reste la face gauche), cotations recalculées ; une cotation libre sélectionnée voit `a`, `b` et `decalage` tournés. |\n| | **Précision.** `sin` et `cos` peuvent différer au dernier bit entre navigateur et serveur : le résultat validé par le serveur fait autorité, l'écart d'aperçu est borné par la tolérance de comparaison déclarée (test) ; l'inverse restitue les valeurs enregistrées, il ne recalcule pas une rotation opposée. |\n| | **Contrôles.** Angle nul modulo 360° refusé (aucun effet) ; angle non fini ou unité autre que ° refusés (T03) ; cible d'un autre niveau, supprimée ou sur un calque verrouillé : lot refusé en entier. |\n| | **Palette (UX2) et aide (UX4).** « tourner » ; synonymes « rotate », « pivoter », « rotation » ; actif si au moins un objet d'une classe admise est sélectionné ; exemple court : tourner un mur de 90° autour de son extrémité ; clavier complet par la saisie de précision (DA-02-16). |\n| Données et dépendances | Paramètres de position et d'orientation des cibles ; relations `heberge`, `joint-a`, `delimite` recalculées ; jonctions avec des voisins non sélectionnés rompues et listées (rien d'autre ne bouge) ; événement de commande validée : vues, quantités et bilan Harmonie « à recalculer ». |\n| Résultats | Objets pivotés, effets listés (objets modifiés, jonctions rompues, problèmes), inverse = valeurs précédentes enregistrées. |\n| Cas limites | **Géométrie.** Angle 0° ou 360° ; centre sur un objet de la sélection (admis) ; rotation d'un escalier d'un `groupe` : autres occurrences listées, jamais tournées en silence ; pièce dont la délimitation ne correspond plus à ses murs : problème listé. |\n| | **Concurrence.** `baseRevision` dépassée et cible modifiée ou supprimée depuis → 409 détaillé, résolution explicite côté client ; même `requestId` → réponse enregistrée, aucune seconde révision (T06). |\n| | **Réseau et droits.** Hors ligne : réducteur local, file Dexie rejouée dans l'ordre, brouillon si incompatible ; 403 motivé, 404 sans accès, 423 pendant une réservation d'autrui (R13). |\n| Compatibilité | Import P.118 : les 120 poteaux portent un `angle` de projet (55,080006596041926°) : une rotation l'incrémente, sans arrondi ; murs avec ouvertures, solides, dalles et textes pivotables. |\n| | IFC : placements exportés après rotation, `IfcRelVoidsElement` conservé. DXF : aucune sortie propre. Objets « représentation importée » (lot 6) : classes admises à préciser. |\n| Validation | **Unité** (`packages/atelier-model/src/commandes/transformer.test.ts`) : rotation de 90° d'un mur autour de son extrémité `a` : `b` tournée à la tolérance près (valeurs vérifiables à la main) ; porte : `t` inchangé ; poteau : `angle` + 90° ; 0° et 360° refusés ; inverse = valeurs précédentes bit à bit ; écart aperçu / validé inférieur à la tolérance déclarée. |\n| | **API** (`apps/api/src/routes/atelier-commands.test.ts`) : `transformer.tourner` → 200, révision +1 ; angle exprimé en « m » → 400 avec `chemin` ; même `requestId` → une seule révision ; `baseRevision` périmée → 409. |\n| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · tourner ») : sur la copie de travail de P.118, mur « Noyau A » de la mezzanine (`EX118-mezz-W-009`) tourné de 90° autour de son point `a` (angle saisi au clavier) : porte `EX118-mezz-D-001` toujours à t = 0,5, jonctions avec les voisins listées dans le panneau ; annuler ; second navigateur. |\n| Règles métier | Aucune règle réglementaire. R3 : l'orientation d'un poteau est une donnée de projet, jamais redressée en silence. |\n| Extensions à spécifier | Rotation 3D hors plan ; option « garder l'original » (rotation d'une copie) ; rotation par rapport à un repère de construction (DA-02-16) ; alignement sur un objet. |\n\n## Suivi\n- Fait (D-043) : extension réalisée (voir la décision) ; tests `transformations-plus.test.ts`.\n- Fait (D-058) : alignement sur un objet (`transformer.aligner`, deux paires de points, copie au choix) ; outil « Aligner » ; tests `reseau-trajet.test.ts`, `nouveau.test.ts`.\n",
+      "historical_source": {
+        "path": "docs/atelier/fiches/DA-02-03.md",
+        "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+        "sha256": "724f2789e0295a0c35937f70e8b0cd12297d3301648b8ea8f05966b5d5545c06",
+        "lines": [
+          {
+            "line": 26,
+            "text": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · tourner ») : sur la copie de travail de P.118, mur « Noyau A » de la mezzanine (`EX118-mezz-W-009`) tourné de 90° autour de son point `a` (angle saisi au clavier) : porte `EX118-mezz-D-001` toujours à t = 0,5, jonctions avec les voisins listées dans le panneau ; annuler ; second navigateur. |"
+          }
+        ]
+      },
+      "candidate_paths": [
+        "apps/web/e2e/atelier-nouveau.mjs"
+      ],
+      "verdict": "partiel",
+      "complete_equivalence": false,
+      "atoms": [
+        {
+          "id": "M08-PATH-022-A01",
+          "expected": "copieP118",
+          "status": "présent",
+          "reason": "Préparation copie seule.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 83,
+                  "text": "check(\"référence protégée : la barre d'état l'annonce\", /Exemple protégé : première modification dans une copie automatique\\./.test(await page.locator(\".atelier-n-reference\").textContent()));"
+                },
+                {
+                  "line": 84,
+                  "text": "await page.locator('.navigateur .nav-formulaire button[type=\"submit\"]').click();"
+                },
+                {
+                  "line": 85,
+                  "text": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus."
+                },
+                {
+                  "line": 86,
+                  "text": "await page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });"
+                },
+                {
+                  "line": 87,
+                  "text": "url = page.url().split(\"?\")[0];"
+                },
+                {
+                  "line": 88,
+                  "text": "await page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });"
+                },
+                {
+                  "line": 89,
+                  "text": "const copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();"
+                },
+                {
+                  "line": 90,
+                  "text": "const referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();"
+                },
+                {
+                  "line": 91,
+                  "text": "check(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-022-A02",
+          "expected": "mur NoyauA mezzanine",
+          "status": "absent",
+          "reason": "Pas cibleexacte tourné.",
+          "citations": []
+        },
+        {
+          "id": "M08-PATH-022-A03",
+          "expected": "tourner90 autour pointa clavier",
+          "status": "absent",
+          "reason": "Orbite3D change caméra, pas commande de rotation objet.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 245,
+                  "text": "// Orbite : 60 trames de glisser, budget de trame mesuré."
+                },
+                {
+                  "line": 246,
+                  "text": "const canvas3d = await page.locator(\".vue3d-canevas\").boundingBox();"
+                },
+                {
+                  "line": 247,
+                  "text": "const debutRendus = await rendus();"
+                },
+                {
+                  "line": 248,
+                  "text": "await page.mouse.move(canvas3d.x + canvas3d.width / 2, canvas3d.y + canvas3d.height / 2);"
+                },
+                {
+                  "line": 249,
+                  "text": "await page.mouse.down();"
+                },
+                {
+                  "line": 250,
+                  "text": "for (let k = 0; k < 60; k++) {"
+                },
+                {
+                  "line": 251,
+                  "text": "  await page.mouse.move(canvas3d.x + canvas3d.width / 2 + k * 4, canvas3d.y + canvas3d.height / 2 + Math.sin(k / 6) * 20);"
+                },
+                {
+                  "line": 252,
+                  "text": "  await page.waitForTimeout(16);"
+                },
+                {
+                  "line": 253,
+                  "text": "}"
+                },
+                {
+                  "line": 254,
+                  "text": "await page.mouse.up();"
+                },
+                {
+                  "line": 255,
+                  "text": "await page.waitForTimeout(200);"
+                },
+                {
+                  "line": 256,
+                  "text": "const orbite = await page.evaluate((n0) => window.fadiMesures3D.rendus.slice(n0), debutRendus);"
+                },
+                {
+                  "line": 257,
+                  "text": "const tri = [...orbite].sort((a, b) => a - b);"
+                },
+                {
+                  "line": 258,
+                  "text": "const p95 = tri[Math.floor(tri.length * 0.95)] ?? 0;"
+                },
+                {
+                  "line": 259,
+                  "text": "mesures.push([\"orbite : temps CPU de rendu par image, p95 (ms)\", Math.round(p95 * 100) / 100]);"
+                },
+                {
+                  "line": 260,
+                  "text": "console.log(`⏱ orbite P.118 : ${orbite.length} images, rendu CPU p95 ${p95.toFixed(2)} ms, médiane ${(tri[Math.floor(tri.length / 2)] ?? 0).toFixed(2)} ms`);"
+                },
+                {
+                  "line": 261,
+                  "text": "check(\"orbite : au moins 30 images rendues, p95 du rendu < 16 ms\", orbite.length >= 30 && p95 < 16, `${orbite.length} images, p95 ${p95.toFixed(2)} ms`);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-022-A04",
+          "expected": "porte exactet0.5 inchangé",
+          "status": "absent",
+          "reason": "Pas lecture t après rotationmur.",
+          "citations": []
+        },
+        {
+          "id": "M08-PATH-022-A05",
+          "expected": "jonctions voisins panneau",
+          "status": "absent",
+          "reason": "Pas assertion jonctions après rotation.",
+          "citations": []
+        },
+        {
+          "id": "M08-PATH-022-A06",
+          "expected": "annuler rotation",
+          "status": "partiel",
+          "reason": "Undo renommage/déplacement, pas rotation.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 145,
+                  "text": "// Annuler / rétablir."
+                },
+                {
+                  "line": 146,
+                  "text": "await page.locator(\".plan2d\").click({ position: { x: 5, y: 5 } }).catch(() => {});"
+                },
+                {
+                  "line": 147,
+                  "text": "await page.keyboard.press(\"Escape\");"
+                },
+                {
+                  "line": 148,
+                  "text": "const navTexte = () => page.evaluate(() => document.querySelector(\".nav-objets\").textContent);"
+                },
+                {
+                  "line": 149,
+                  "text": "await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});"
+                },
+                {
+                  "line": 150,
+                  "text": "await page.keyboard.press(\"Control+z\");"
+                },
+                {
+                  "line": 151,
+                  "text": "await page.waitForFunction(() => !document.querySelector(\".nav-objets\").textContent.includes(\"Bureau\"), null, { timeout: 10000 }).catch(() => {});"
+                },
+                {
+                  "line": 152,
+                  "text": "check(\"Ctrl Z annule le renommage\", !(await navTexte()).includes(\"Bureau\"));"
+                },
+                {
+                  "line": 153,
+                  "text": "await page.keyboard.press(\"Control+Shift+z\");"
+                },
+                {
+                  "line": 154,
+                  "text": "await page.waitForFunction(() => document.querySelector(\".nav-objets\").textContent.includes(\"Bureau\"), null, { timeout: 10000 }).catch(() => {});"
+                },
+                {
+                  "line": 155,
+                  "text": "check(\"Ctrl Maj Z le rétablit\", (await navTexte()).includes(\"Bureau\"));"
+                }
+              ]
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 324,
+                  "text": "const revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);"
+                },
+                {
+                  "line": 325,
+                  "text": "await page.keyboard.press(\"Control+z\");"
+                },
+                {
+                  "line": 326,
+                  "text": "await page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-022-A07",
+          "expected": "second navigateur rotation",
+          "status": "partiel",
+          "reason": "Autre scénario murs/pièce/barresync.",
+          "citations": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 346,
+                  "text": "// Second navigateur (même compte) : il lit les mêmes révisions."
+                },
+                {
+                  "line": 347,
+                  "text": "const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });"
+                },
+                {
+                  "line": 348,
+                  "text": "const page2 = await ctx2.newPage();"
+                },
+                {
+                  "line": 349,
+                  "text": "await page2.goto(`${url}?module=atelier`);"
+                },
+                {
+                  "line": 350,
+                  "text": "await page2.waitForSelector(\".plan2d\");"
+                },
+                {
+                  "line": 351,
+                  "text": "await page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();"
+                },
+                {
+                  "line": 352,
+                  "text": "await page2.waitForTimeout(300);"
+                },
+                {
+                  "line": 353,
+                  "text": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));"
+                },
+                {
+                  "line": 354,
+                  "text": "await ctx2.close();"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "context_safety": "Refus atomiques, inverse exact, coordonnées canoniques, droits/concurrence/fileoffline et fidélité documents non démontrés par titre, DOM, Enregistré ou autre objet. Fiche complète/Suivi lus ; D174 et décisions extensions conservées, aucune correction historique."
+    }
+  ],
+  "complete_equivalences": 0,
+  "limits": "Absent = assertion absente candidats bornés, pas fonction absente du dépôt. Partiel souvent analogie autreobjet, ne vaut pas prédicat historique satisfait. Présent copie = préparation seule. Grain indépendant non contraint auxcompteursA2/A4.",
+  "supplement013": "Unit/API ou autreE2E éventuels compléments distincts, pas preuve de candidat demandé.",
+  "sources": [
+    {
+      "path": "apps/web/e2e/atelier-documents.mjs",
+      "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+      "git_blob": "d8ef25c93b51f7971d858cab87414d7b7e1d9553"
+    },
+    {
+      "path": "apps/web/e2e/atelier-nouveau.mjs",
+      "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+      "git_blob": "348352e00745372bbfd3cba1c1ca9d9bb66c2e51"
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-12.md",
+      "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "sha256": "4b8f1ca12a0ec4793a3d0f012d2910a6b576dd0c317eb169f2fc1d05ee91cc44",
+      "git_blob": "8511bdcc6ed1d894c67b4b22abf2517494b34d65"
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-01.md",
+      "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "sha256": "743e60ae1d52b6f123631c0abbf475acb4d7fee6ba1ad4273740dc10d9faae02",
+      "git_blob": "0121c04b817eb3a434cd1ee6a8b00dd30329beff"
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-02.md",
+      "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "sha256": "fe232596e7c430eb532e5289d11bc4ffd2043fc2289f6723ade37ba20e40e3eb",
+      "git_blob": "6dd03ef4ddf4bc42846462e36415f06d09a76489"
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-03.md",
+      "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "sha256": "724f2789e0295a0c35937f70e8b0cd12297d3301648b8ea8f05966b5d5545c06",
+      "git_blob": "06b3bd20b7d75fbf9a45f7aefb556fb6c220044b"
+    }
+  ]
+}

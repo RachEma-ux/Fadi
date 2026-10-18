@@ -1,0 +1,173 @@
+{
+  "provenance": "Original files retained from Mission002 in this execution workspace; contents not reconstructed from chat",
+  "files": [
+    {
+      "relative_path": "A1-630-taches.csv",
+      "bytes": 548816,
+      "sha256": "eb47f0c8b273718e537160a84eb00a626acf541fce690ef65c0a08cb3f2db894",
+      "git_blob_sha1": "960c0f1d0d34d3917e2aaf208881ee07145f0e1e",
+      "publication_path": "docs/ai-team/reports/mission-002-originals/A1-630-taches.csv",
+      "disposition": "Archive originale, octets inchangés"
+    },
+    {
+      "relative_path": "A1-build.py",
+      "bytes": 7355,
+      "sha256": "deb848fda87af77783c7dcd70a2ba34339da252d80ec0fcbee7fabaaf29e761c",
+      "git_blob_sha1": "d01d2b1b3d1183561a96e9d6e474d40341a5bad8",
+      "publication_path": null,
+      "disposition": "Référencé sans seconde copie : source déjà canonique, helper de génération ou compilation redondante"
+    },
+    {
+      "relative_path": "A1-exigences.csv",
+      "bytes": 44528,
+      "sha256": "25964c8790de2c24e9fdd907ef40d4acec3458150844b664ad8748eca857f48b",
+      "git_blob_sha1": "feeb2cb1c1c0111cf23416a4acb815effc665487",
+      "publication_path": "docs/ai-team/reports/mission-002-originals/A1-exigences.csv",
+      "disposition": "Archive originale, octets inchangés"
+    },
+    {
+      "relative_path": "A1-produit.md",
+      "bytes": 24943,
+      "sha256": "afe371842836b4e774e405816b97d25b472261e4eae3b8a18a1552d97dbb48a9",
+      "git_blob_sha1": "4063273802956e7e443a747b6bfc83cf1c2c3bf0",
+      "publication_path": "docs/ai-team/reports/mission-002-originals/A1-produit.md",
+      "disposition": "Archive originale, octets inchangés"
+    },
+    {
+      "relative_path": "A2-architecture.md",
+      "bytes": 13010,
+      "sha256": "bfea76268a21b61c5dde69711265e4b6054c5ff93d87157c29d1b87343f0d95e",
+      "git_blob_sha1": "361ab09a2c15f6a728df01e4975d78feaf91ea3e",
+      "publication_path": "docs/ai-team/reports/mission-002-originals/A2-architecture.md",
+      "disposition": "Archive originale, octets inchangés"
+    },
+    {
+      "relative_path": "A4-ux.md",
+      "bytes": 18815,
+      "sha256": "ecca101b5ed8b22b8f3d43f9bcd5a5299077a8069ca66bb9682237352abef228",
+      "git_blob_sha1": "3bb2fe916322d308605cde88a6d8983063fd1f57",
+      "publication_path": "docs/ai-team/reports/mission-002-originals/A4-ux.md",
+      "disposition": "Archive originale, octets inchangés"
+    },
+    {
+      "relative_path": "A5-qualite.md",
+      "bytes": 12713,
+      "sha256": "63f38d210e8d4864d533182fa84049effbcd2ac3977a631711c34ec2bc26d995",
+      "git_blob_sha1": "b85b213643f05e3207d69d72709155b1083116f5",
+      "publication_path": "docs/ai-team/reports/mission-002-originals/A5-qualite.md",
+      "disposition": "Archive originale, octets inchangés"
+    },
+    {
+      "relative_path": "A6-devops.md",
+      "bytes": 9072,
+      "sha256": "75648b962dcdfab87fa20d29be683e065e710b91319462b21b820cb41b7f7cbe",
+      "git_blob_sha1": "d3d7a2abb1ada427fddbe260e3bcd882d663d7d9",
+      "publication_path": "docs/ai-team/reports/mission-002-originals/A6-devops.md",
+      "disposition": "Archive originale, octets inchangés"
+    },
+    {
+      "relative_path": "A6-preuves.json",
+      "bytes": 1100,
+      "sha256": "2dc3850683bbb7c7bdeea5f877b7d09f9d776274c1c5c2706f542b02675f1bbb",
+      "git_blob_sha1": "6e7c108e9444aec2275f4f07c35b7381cf47bdc3",
+      "publication_path": "docs/ai-team/reports/mission-002-originals/A6-preuves.json",
+      "disposition": "Archive originale, octets inchangés"
+    },
+    {
+      "relative_path": "DOSSIER-MISSION-002.md",
+      "bytes": 98157,
+      "sha256": "66cd15679e0baff7a5481ab396441337df356c906d91c05b6ff2bb5d36993c8f",
+      "git_blob_sha1": "3c5a5fe0757177cf0e32afadd1cb4fac3c906b88",
+      "publication_path": null,
+      "disposition": "Référencé sans seconde copie : source déjà canonique, helper de génération ou compilation redondante"
+    },
+    {
+      "relative_path": "Fadi_Studio_Definition_Officielle_Reference_V2_1.txt",
+      "bytes": 10482,
+      "sha256": "e12c4eddf730c184443916cbfea0699cbfc4bbe66db89e52d3bb8e69ca0cefe1",
+      "git_blob_sha1": "092fb9c761f0a46d301a748534ad040f678b8b53",
+      "publication_path": null,
+      "disposition": "Référencé sans seconde copie : source déjà canonique, helper de génération ou compilation redondante"
+    },
+    {
+      "relative_path": "Fadi_Studio_Referentiel_Technique_Detaille_V1_0.txt",
+      "bytes": 108969,
+      "sha256": "00c8f4bb0eb1382a39dcc75fd69b4f1fec430d41d80d0faf903e77f9de868a96",
+      "git_blob_sha1": "fc314535a9ed8b3b2afa43423b175b8a7a912878",
+      "publication_path": null,
+      "disposition": "Référencé sans seconde copie : source déjà canonique, helper de génération ou compilation redondante"
+    },
+    {
+      "relative_path": "L1-L6-consolidation-A0.md",
+      "bytes": 9597,
+      "sha256": "9b93a53646d4084e78d42449103a5b3b9e62923aa5c30fd85b63a8d6dbfae167",
+      "git_blob_sha1": "677f842057b2fc4d5c62470f7a95982cf415301e",
+      "publication_path": "docs/ai-team/reports/mission-002-originals/L1-L6-consolidation-A0.md",
+      "disposition": "Archive originale, octets inchangés"
+    },
+    {
+      "relative_path": "L5-missions-et-issues-proposees.md",
+      "bytes": 9965,
+      "sha256": "78eb51e873d984e9c5098db842ef7ee0c8321cb3c21369902d249411ef4e7a11",
+      "git_blob_sha1": "8d4922de0c0f69463844a723a2914b886d38814d",
+      "publication_path": "docs/ai-team/reports/mission-002-originals/L5-missions-et-issues-proposees.md",
+      "disposition": "Archive originale, octets inchangés"
+    },
+    {
+      "relative_path": "checklist.md",
+      "bytes": 100486,
+      "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+      "git_blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+      "publication_path": null,
+      "disposition": "Référencé sans seconde copie : source déjà canonique, helper de génération ou compilation redondante"
+    },
+    {
+      "relative_path": "propositions-workstream-studio/CONTEXT.md",
+      "bytes": 1397,
+      "sha256": "16f265c038a05063c3c01601e04ffda8b4e671ee67b8e480aabddd0d07db92a5",
+      "git_blob_sha1": "782df9669d14b97f9030ad28cd23d4cadef7e70c",
+      "publication_path": "docs/ai-team/reports/mission-002-originals/propositions-workstream-studio/CONTEXT.md",
+      "disposition": "Archive originale, octets inchangés"
+    },
+    {
+      "relative_path": "propositions-workstream-studio/HANDOFF.md",
+      "bytes": 1546,
+      "sha256": "e4f2e7e0491d9ca8701dcabdf69ff4ec736652b8c3a0221c894aefd9c659c0dd",
+      "git_blob_sha1": "e9008cb52620e5acbbfbb1d85fd9e149e8205691",
+      "publication_path": "docs/ai-team/reports/mission-002-originals/propositions-workstream-studio/HANDOFF.md",
+      "disposition": "Archive originale, octets inchangés"
+    },
+    {
+      "relative_path": "propositions-workstream-studio/STATUS.md",
+      "bytes": 1412,
+      "sha256": "6f744999472b110a0f169d5a5f325f740db1a87c84f97f6047d5e49204200580",
+      "git_blob_sha1": "373437c5747dc61d308cc84d804998fdce3b40bb",
+      "publication_path": "docs/ai-team/reports/mission-002-originals/propositions-workstream-studio/STATUS.md",
+      "disposition": "Archive originale, octets inchangés"
+    },
+    {
+      "relative_path": "propositions-workstream-studio/TASKS.md",
+      "bytes": 1775,
+      "sha256": "a1b1de5363f012219f7a84713615ae41a9f1ffb79f88ffe4ca3a68a19718c609",
+      "git_blob_sha1": "85ffcccc9eb24070eb491c6bca950a04e23b71ff",
+      "publication_path": "docs/ai-team/reports/mission-002-originals/propositions-workstream-studio/TASKS.md",
+      "disposition": "Archive originale, octets inchangés"
+    }
+  ],
+  "mission": "M00/M29 — récupération Mission002 pendant Mission003",
+  "reference_programme": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+  "reference_code": "aadd083ca282ed7db8af31f0fb3724c861b5107f",
+  "archive_files": 14,
+  "standalone_originals_not_found": [
+    "15 INV en extraction autonome",
+    "11 IF en extraction autonome",
+    "11 AC en extraction autonome",
+    "18 fiches DEC en fichiers autonomes"
+  ],
+  "embedded_originals": {
+    "DEC": "A1-produit.md et A2-architecture.md",
+    "NAV-001 à NAV-009": "A4-ux.md",
+    "sécurité/tests/non-régression": "A5-qualite.md"
+  },
+  "note": "Les extractions INV/IF/AC nouvellement produites pendant Mission003 seront étiquetées nouvelles ; aucun original distinct inventé."
+}

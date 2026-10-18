@@ -1,0 +1,428 @@
+{
+  "review": "A5 indépendante deux résolutions CI effectives figées",
+  "main_merged_reference": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "files": [
+    {
+      "PR": 169,
+      "path": "/workspace/work/resume496/reconciliation-169/.github/workflows/ci.yml",
+      "worktree_HEAD": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "MERGE_HEAD": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "sha256": "c5933b1aebf6def658037cf27989f2af7cb60e41adb88120e19107dacba87c44",
+      "checks": {
+        "matches_frozen_hash": true,
+        "no_conflict_markers": true,
+        "header_triggers_permissions_concurrency_main_exact": true,
+        "unique_jobs": true,
+        "doc_job_main_exact": true,
+        "pure_condition_exact_five_conjuncts": true,
+        "pure_body_old_exact_except_if": true,
+        "pure_no_services_or_needs": true
+      },
+      "complete_jobs_checks": [
+        {
+          "job": "validate",
+          "condition_exact_negated_OR": true,
+          "body_main_exact_except_if_and_identified_job_comment": true,
+          "if_before_services": true
+        },
+        {
+          "job": "e2e",
+          "condition_exact_negated_OR": true,
+          "body_main_exact_except_if_and_identified_job_comment": true,
+          "if_before_services": true
+        },
+        {
+          "job": "image",
+          "condition_exact_negated_OR": true,
+          "body_main_exact_except_if_and_identified_job_comment": true,
+          "if_before_services": true
+        }
+      ],
+      "conditions": {
+        "mission-docs-pure": "${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main' }}",
+        "db-guard-pure": "${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main' }}",
+        "validate": "${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main')) }}",
+        "e2e": "${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main')) }}",
+        "image": "${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main')) }}"
+      },
+      "negative_matrix_10": [
+        {
+          "context": {
+            "name": "PR propre exacte",
+            "event": "pull_request",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": "RachEma-ux/Fadi",
+            "head": "fix/157-test-database-guard",
+            "base": "main"
+          },
+          "mission-docs-pure_eligible": false,
+          "db-guard-pure_eligible": true,
+          "validate_e2e_image_eligible": false,
+          "db_services_eligible": false,
+          "route_note": "Dérogation stricte documentaire/lotpur, aucunjobservice éligible"
+        },
+        {
+          "context": {
+            "name": "PR documentation165 exacte",
+            "event": "pull_request",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": "RachEma-ux/Fadi",
+            "head": "docs/156-codex-missions-completes",
+            "base": "main"
+          },
+          "mission-docs-pure_eligible": true,
+          "db-guard-pure_eligible": false,
+          "validate_e2e_image_eligible": false,
+          "db_services_eligible": false,
+          "route_note": "Dérogation stricte documentaire/lotpur, aucunjobservice éligible"
+        },
+        {
+          "context": {
+            "name": "Autre branche",
+            "event": "pull_request",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": "RachEma-ux/Fadi",
+            "head": "fix/999-unrelated",
+            "base": "main"
+          },
+          "mission-docs-pure_eligible": false,
+          "db-guard-pure_eligible": false,
+          "validate_e2e_image_eligible": true,
+          "db_services_eligible": true,
+          "route_note": "Route normale conservée ; servicespotentiellementéligibles, ce rapport ne déclencheaucunrun."
+        },
+        {
+          "context": {
+            "name": "Fork même nom branche",
+            "event": "pull_request",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": "Other/Fadi",
+            "head": "fix/157-test-database-guard",
+            "base": "main"
+          },
+          "mission-docs-pure_eligible": false,
+          "db-guard-pure_eligible": false,
+          "validate_e2e_image_eligible": true,
+          "db_services_eligible": true,
+          "route_note": "Route normale conservée ; servicespotentiellementéligibles, ce rapport ne déclencheaucunrun."
+        },
+        {
+          "context": {
+            "name": "Headrepo absent",
+            "event": "pull_request",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": null,
+            "head": "fix/157-test-database-guard",
+            "base": "main"
+          },
+          "mission-docs-pure_eligible": false,
+          "db-guard-pure_eligible": false,
+          "validate_e2e_image_eligible": true,
+          "db_services_eligible": true,
+          "route_note": "Route normale conservée ; servicespotentiellementéligibles, ce rapport ne déclencheaucunrun."
+        },
+        {
+          "context": {
+            "name": "Base différente",
+            "event": "pull_request",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": "RachEma-ux/Fadi",
+            "head": "fix/157-test-database-guard",
+            "base": "develop"
+          },
+          "mission-docs-pure_eligible": false,
+          "db-guard-pure_eligible": false,
+          "validate_e2e_image_eligible": true,
+          "db_services_eligible": true,
+          "route_note": "Route normale conservée ; servicespotentiellementéligibles, ce rapport ne déclencheaucunrun."
+        },
+        {
+          "context": {
+            "name": "Repository différent",
+            "event": "pull_request",
+            "repository": "Other/Fadi",
+            "headrepo": "RachEma-ux/Fadi",
+            "head": "fix/157-test-database-guard",
+            "base": "main"
+          },
+          "mission-docs-pure_eligible": false,
+          "db-guard-pure_eligible": false,
+          "validate_e2e_image_eligible": true,
+          "db_services_eligible": true,
+          "route_note": "Route normale conservée ; servicespotentiellementéligibles, ce rapport ne déclencheaucunrun."
+        },
+        {
+          "context": {
+            "name": "Push main",
+            "event": "push",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": null,
+            "head": null,
+            "base": null
+          },
+          "mission-docs-pure_eligible": false,
+          "db-guard-pure_eligible": false,
+          "validate_e2e_image_eligible": true,
+          "db_services_eligible": true,
+          "route_note": "Route normale conservée ; servicespotentiellementéligibles, ce rapport ne déclencheaucunrun."
+        },
+        {
+          "context": {
+            "name": "Branche suffixée",
+            "event": "pull_request",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": "RachEma-ux/Fadi",
+            "head": "fix/157-test-database-guard-extra",
+            "base": "main"
+          },
+          "mission-docs-pure_eligible": false,
+          "db-guard-pure_eligible": false,
+          "validate_e2e_image_eligible": true,
+          "db_services_eligible": true,
+          "route_note": "Route normale conservée ; servicespotentiellementéligibles, ce rapport ne déclencheaucunrun."
+        },
+        {
+          "context": {
+            "name": "Événement différent",
+            "event": "workflow_dispatch",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": "RachEma-ux/Fadi",
+            "head": "fix/157-test-database-guard",
+            "base": "main"
+          },
+          "mission-docs-pure_eligible": false,
+          "db-guard-pure_eligible": false,
+          "validate_e2e_image_eligible": true,
+          "db_services_eligible": true,
+          "route_note": "Route normale conservée ; servicespotentiellementéligibles, ce rapport ne déclencheaucunrun."
+        }
+      ],
+      "no_DB_for_exact_own_PR": true,
+      "scope": "Revue fichier propre au lotPR169 ; autrebrancheetautrelotne bénéficientpasimplicitementdecetteexception.",
+      "pure_step_commands": [
+        "run: npm ci --ignore-scripts --no-audit --no-fund",
+        "run: npm run typecheck",
+        "run: npm run test:db-guard",
+        "run: npm run build",
+        "run: |"
+      ]
+    },
+    {
+      "PR": 171,
+      "path": "/workspace/work/resume496/reconciliation-171/.github/workflows/ci.yml",
+      "worktree_HEAD": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "MERGE_HEAD": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "sha256": "beca2dea96a0cef5dd027b16fe6bbcf5099b3b73c196210ca2f02ca47ad618b9",
+      "checks": {
+        "matches_frozen_hash": true,
+        "no_conflict_markers": true,
+        "header_triggers_permissions_concurrency_main_exact": true,
+        "unique_jobs": true,
+        "doc_job_main_exact": true,
+        "pure_condition_exact_five_conjuncts": true,
+        "pure_body_old_exact_except_if": true,
+        "pure_no_services_or_needs": true
+      },
+      "complete_jobs_checks": [
+        {
+          "job": "validate",
+          "condition_exact_negated_OR": true,
+          "body_main_exact_except_if_and_identified_job_comment": true,
+          "if_before_services": true
+        },
+        {
+          "job": "e2e",
+          "condition_exact_negated_OR": true,
+          "body_main_exact_except_if_and_identified_job_comment": true,
+          "if_before_services": true
+        },
+        {
+          "job": "image",
+          "condition_exact_negated_OR": true,
+          "body_main_exact_except_if_and_identified_job_comment": true,
+          "if_before_services": true
+        }
+      ],
+      "conditions": {
+        "mission-docs-pure": "${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main' }}",
+        "classification-pure": "${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main' }}",
+        "validate": "${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}",
+        "e2e": "${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}",
+        "image": "${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}"
+      },
+      "negative_matrix_10": [
+        {
+          "context": {
+            "name": "PR propre exacte",
+            "event": "pull_request",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": "RachEma-ux/Fadi",
+            "head": "fix/156-classification-no-ifc-inference",
+            "base": "main"
+          },
+          "mission-docs-pure_eligible": false,
+          "classification-pure_eligible": true,
+          "validate_e2e_image_eligible": false,
+          "db_services_eligible": false,
+          "route_note": "Dérogation stricte documentaire/lotpur, aucunjobservice éligible"
+        },
+        {
+          "context": {
+            "name": "PR documentation165 exacte",
+            "event": "pull_request",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": "RachEma-ux/Fadi",
+            "head": "docs/156-codex-missions-completes",
+            "base": "main"
+          },
+          "mission-docs-pure_eligible": true,
+          "classification-pure_eligible": false,
+          "validate_e2e_image_eligible": false,
+          "db_services_eligible": false,
+          "route_note": "Dérogation stricte documentaire/lotpur, aucunjobservice éligible"
+        },
+        {
+          "context": {
+            "name": "Autre branche",
+            "event": "pull_request",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": "RachEma-ux/Fadi",
+            "head": "fix/999-unrelated",
+            "base": "main"
+          },
+          "mission-docs-pure_eligible": false,
+          "classification-pure_eligible": false,
+          "validate_e2e_image_eligible": true,
+          "db_services_eligible": true,
+          "route_note": "Route normale conservée ; servicespotentiellementéligibles, ce rapport ne déclencheaucunrun."
+        },
+        {
+          "context": {
+            "name": "Fork même nom branche",
+            "event": "pull_request",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": "Other/Fadi",
+            "head": "fix/156-classification-no-ifc-inference",
+            "base": "main"
+          },
+          "mission-docs-pure_eligible": false,
+          "classification-pure_eligible": false,
+          "validate_e2e_image_eligible": true,
+          "db_services_eligible": true,
+          "route_note": "Route normale conservée ; servicespotentiellementéligibles, ce rapport ne déclencheaucunrun."
+        },
+        {
+          "context": {
+            "name": "Headrepo absent",
+            "event": "pull_request",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": null,
+            "head": "fix/156-classification-no-ifc-inference",
+            "base": "main"
+          },
+          "mission-docs-pure_eligible": false,
+          "classification-pure_eligible": false,
+          "validate_e2e_image_eligible": true,
+          "db_services_eligible": true,
+          "route_note": "Route normale conservée ; servicespotentiellementéligibles, ce rapport ne déclencheaucunrun."
+        },
+        {
+          "context": {
+            "name": "Base différente",
+            "event": "pull_request",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": "RachEma-ux/Fadi",
+            "head": "fix/156-classification-no-ifc-inference",
+            "base": "develop"
+          },
+          "mission-docs-pure_eligible": false,
+          "classification-pure_eligible": false,
+          "validate_e2e_image_eligible": true,
+          "db_services_eligible": true,
+          "route_note": "Route normale conservée ; servicespotentiellementéligibles, ce rapport ne déclencheaucunrun."
+        },
+        {
+          "context": {
+            "name": "Repository différent",
+            "event": "pull_request",
+            "repository": "Other/Fadi",
+            "headrepo": "RachEma-ux/Fadi",
+            "head": "fix/156-classification-no-ifc-inference",
+            "base": "main"
+          },
+          "mission-docs-pure_eligible": false,
+          "classification-pure_eligible": false,
+          "validate_e2e_image_eligible": true,
+          "db_services_eligible": true,
+          "route_note": "Route normale conservée ; servicespotentiellementéligibles, ce rapport ne déclencheaucunrun."
+        },
+        {
+          "context": {
+            "name": "Push main",
+            "event": "push",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": null,
+            "head": null,
+            "base": null
+          },
+          "mission-docs-pure_eligible": false,
+          "classification-pure_eligible": false,
+          "validate_e2e_image_eligible": true,
+          "db_services_eligible": true,
+          "route_note": "Route normale conservée ; servicespotentiellementéligibles, ce rapport ne déclencheaucunrun."
+        },
+        {
+          "context": {
+            "name": "Branche suffixée",
+            "event": "pull_request",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": "RachEma-ux/Fadi",
+            "head": "fix/156-classification-no-ifc-inference-extra",
+            "base": "main"
+          },
+          "mission-docs-pure_eligible": false,
+          "classification-pure_eligible": false,
+          "validate_e2e_image_eligible": true,
+          "db_services_eligible": true,
+          "route_note": "Route normale conservée ; servicespotentiellementéligibles, ce rapport ne déclencheaucunrun."
+        },
+        {
+          "context": {
+            "name": "Événement différent",
+            "event": "workflow_dispatch",
+            "repository": "RachEma-ux/Fadi",
+            "headrepo": "RachEma-ux/Fadi",
+            "head": "fix/156-classification-no-ifc-inference",
+            "base": "main"
+          },
+          "mission-docs-pure_eligible": false,
+          "classification-pure_eligible": false,
+          "validate_e2e_image_eligible": true,
+          "db_services_eligible": true,
+          "route_note": "Route normale conservée ; servicespotentiellementéligibles, ce rapport ne déclencheaucunrun."
+        }
+      ],
+      "no_DB_for_exact_own_PR": true,
+      "scope": "Revue fichier propre au lotPR171 ; autrebrancheetautrelotne bénéficientpasimplicitementdecetteexception.",
+      "pure_step_commands": [
+        "run: npm ci --ignore-scripts --no-audit --no-fund",
+        "run: npm run typecheck",
+        "run: npm run test --workspace=@parcours/atelier-model",
+        "run: npm run build",
+        "run: |"
+      ]
+    }
+  ],
+  "errors": [],
+  "method": "Extractiontextuelleindentationjobs, comparaison octetsblocs hors seuleligneif et commentairejob identifié, égalité stricte chaînesattendues cinqprédicats et négationOR ; matrice des10contextes déduite indépendamment par égalitésdevaleurs. Aucun eval/YAML/importhelper/ci_eval/ci_merge exécuté.",
+  "security_conclusion": "Deuxfichiers propresPR169/171 : exactPRmêmedépôt/headrepo/main/event/branche→jobpur seulement, troisjobsservicesfalse avant services. Casnégatifs conservent routesnormales, pas dérogationélargie. Repository169 contrôlé quatrefois :jobpur+3exclusions.",
+  "limits": [
+    "Analyse statique de ci.yml seulement ; pas moteurGitHubActionscomplet, pas preuve CIverte ni jobs exécutés.",
+    "Jobs autresworkflows (.github/workflows/codex-missions.yml etc) ne sont pas audités par cette pièce ; A6/A0 gardent inventaireautorisation global.",
+    "Checkout/npmci/typecheck/build pourront utiliser réseau et scripts ; absence servicesDB dansjobpur ne signifiepas runentièrementsansréseau.",
+    "Pushmain retrouve jobsnormaux/DBpotentielle ; rapport n’autorise ni fusionmain ni déploiement.",
+    "HEAD ancien+MERGE_HEADmain etempreintefichier constituent preuvesworktree ; nouveaucommitréconcilié/CIexactSHA requisaprèspushautoriséA0.",
+    "Pas de modification application, testsAPI/DB/E2E, installation ou services par A5."
+  ],
+  "verdict": "Favorable statique sur lesdeuxfichiers figés ; A0 seul décidecommit/push après avisA6, aucunefusionmain autorisée."
+}

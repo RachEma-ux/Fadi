@@ -1,0 +1,25 @@
+{
+  "baseline": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+  "630_csv": {
+    "rows": 630,
+    "unique_ids": 630,
+    "missing": [],
+    "unexpected": [],
+    "text_mismatch_ids": [],
+    "source_line_mismatch_ids": [],
+    "work_states": {
+      "Bloqué": 207,
+      "Vérifié": 6,
+      "À définir": 417
+    },
+    "limit": "Affectation/qualification initiale ; critères souvent repris du texte source, pas141fiches détaillées ni réalisation."
+  },
+  "104_EX_csv": {
+    "rows": 104,
+    "unique_ids": 104,
+    "docx_extracted": 104,
+    "missing": [],
+    "exact_text_mismatch_ids": [],
+    "limit": "104EX seulement ; ne couvre pas les15INV/11IF/11AC ni les oracles individuels."
+  }
+}

@@ -1,0 +1,2158 @@
+{
+  "review": "M08-UNITE-017-039 — revue indépendante sémantique A3",
+  "agent": "A3",
+  "timestamp_utc": "2026-10-18 13:25:17 UTC",
+  "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "A2_source_sha256": "f950dacb5d26fa79ea60e8fc4623d412e41c259ea7c889c814bd6ef28131078a",
+  "mode": "Lecture Git/fichiers immuables uniquement. Aucun produit importé/évalué, test, DB/API/E2E/service ou modification source.",
+  "independence": "A3 a relu les lignes unité/Suivi/décisions puis les fixtures et assertions effectives, pas seulement titres/hash. Le correctif CLASSIF1 de5e0285/PR171 et ses492tests ne sont pas des preuves sur a15 ni sur ces oracles. A5 réalise une QA distincte des réserves, pas une prétendue deuxième lecture de tous les candidats.",
+  "entries_count": 12,
+  "assertions_reviewed": 109,
+  "A2_qualifications_preserved": {
+    "present": 10,
+    "partiel": 48,
+    "absent": 46,
+    "non_applicable": 4,
+    "nonconclu": 1
+  },
+  "semantic_support_counts": {
+    "oracle ciblé direct ou équivalence numérique explicite": 10,
+    "même fonction/famille ou sous-assertion, scénario incomplet": 22,
+    "autre opération ou primitive voisine, support indirect seulement": 15,
+    "aucun oracle ciblé dans périmètre candidat": 46,
+    "socle générique, oracle spécifique absent": 11,
+    "prescription historique supersédée dans sa portée": 4,
+    "portée non résolue, aucun verdict de conformité": 1
+  },
+  "documentary_integrity": {
+    "sources": 20,
+    "source_hash_errors": [],
+    "citation_occurrences": 569,
+    "unique_citations": 498,
+    "citation_errors": [],
+    "meaning": "Ancrages vérifiés comme aide à la revue ; aucune déduction automatique de conformité depuis les hash."
+  },
+  "entries": [
+    {
+      "entry_id": "M08-PATH-017",
+      "fiche": "docs/atelier/fiches/DA-02-01.md",
+      "historical_acceptance_D174_preserved": true,
+      "A2_candidates": [
+        "packages/atelier-model/src/commandes/commandes.test.ts",
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-017-A01",
+          "expected": "Mur et porte déplacés : t inchangé",
+          "A2_classification": "present",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "oracle ciblé direct ou équivalence numérique explicite",
+          "support_code": "D",
+          "A3_semantic_analysis": "La fixture fixe la porte à0,25 et cette valeur est comparée après le déplacement effectif du mur ; cet oracle précis est bien présent.",
+          "candidate_oracle_complete": true,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 113,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 115,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-017-A02",
+          "expected": "Distance de porte inchangée",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Le centre après déplacement est vérifié, sans comparaison de la distance à une extrémité hôte avant/après. Ne pas déduire cette seconde invariance du seul centre.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 114,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-017-A03",
+          "expected": "Inverse coordonnées bit à bit",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Le transfert de niveau exerce bien déplacer puis son inverse, mais ne teste pas les coordonnées horizontales du cas demandé ; le JSON exact cité concerne un autre lot.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-017-A04",
+          "expected": "Vecteur nul refusé",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Le manipulateur ne produit aucune commande pour un geste nul ; ce comportement UI pur ne vaut pas refus du réducteur. Un transfert de niveau avec dx=dy=0 est un autre cas D039.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 589,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-017-A05",
+          "expected": "Cible autre niveau refusée",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "La boîte de manipulation renvoie null pour un niveau différent ; cela ne prouve pas le refus atomique d’une commande portant une sélection multiniveau.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 578,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-017-A06",
+          "expected": "Calque verrouillé refusé",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "autre opération ou primitive voisine, support indirect seulement",
+          "support_code": "I",
+          "A3_semantic_analysis": "Le verrou est exercé lors de création d’un mur, pas lors du déplacement d’une cible déjà existante ; support de principe uniquement.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 94,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 96,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-017-A07",
+          "expected": "Sélection mixte : un seul lot",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Le lot vertical contient mur et poteau ; l’unicité du lot est visible à l’appel, pas un journal serveur ni le cas horizontal de la fiche.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/niveaux-transfert.test.ts",
+              "line": 21,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/niveaux-transfert.test.ts",
+              "line": 24,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-017-A08",
+          "expected": "Jonctions rompues listées",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Aucun diagnostic de jonction rompue n’est comparé dans les candidats, malgré les cas positifs de déplacement.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-017-A09",
+          "expected": "Pièce désalignée listée",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Détecter une pièce et son aire ailleurs ne teste pas le diagnostic de désalignement après déplacement.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-017-A10",
+          "expected": "Cotation : référence conservée",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Le rattachement de cote est préparé dans la fixture ; aucune assertion ne le retrouve après le déplacement.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 106,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 114,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-017-A11",
+          "expected": "Cotation : valeur recalculée",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "La cote n’a pas de valeur mesurée après déplacement dans le test. Sa simple présence initiale est insuffisante.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        }
+      ],
+      "scope": "Ligne unité de la fiche et compléments cités, pas conformité complète de la fiche ni recette API/E2E. Absent signifie absent des candidats examinés, pas fonction inexistante dans tout Fadi."
+    },
+    {
+      "entry_id": "M08-PATH-019",
+      "fiche": "docs/atelier/fiches/DA-02-02.md",
+      "historical_acceptance_D174_preserved": true,
+      "A2_candidates": [
+        "packages/atelier-model/src/commandes/commandes.test.ts",
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-019-A01",
+          "expected": "Copie mur avec porte : deux murs",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Les deux IDs créés et l’ancien hôte sont contrôlés ; l’ensemble final des murs n’est pas dénombré exactement.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 121,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 125,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-019-A02",
+          "expected": "Copie mur avec porte : deux portes",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Une porte créée et l’ouverture de l’ancien mur sont visibles, sans assertion globale de deux portes au total.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 123,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 125,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-019-A03",
+          "expected": "Position t égale sur copie",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Le nouvel hôte et le centre copié sont contrôlés, sans assertion de position t comparée entre original et copie.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 123,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 126,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-019-A04",
+          "expected": "Repere absent sur copie",
+          "A2_classification": "present",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "oracle ciblé direct ou équivalence numérique explicite",
+          "support_code": "D",
+          "A3_semantic_analysis": "Le repère de la copie est explicitement null. Il s’agit de l’absence métier, pas de l’absence de la clé dans le JSON.",
+          "candidate_oracle_complete": true,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 124,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-019-A05",
+          "expected": "Poteau : statutConception absent",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Le titre «sans statut» ne contient pas d’assertion sur statutConception d’une copie de poteau ; ne pas lui attribuer ce contrôle.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-019-A06",
+          "expected": "Cotation rattachée copiée libre",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Pas de copie d’une cote rattachée ni comparaison des références de sa copie dans les candidats.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-019-A07",
+          "expected": "Même enveloppe mêmes IDs de copie",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "socle générique, oracle spécifique absent",
+          "support_code": "G",
+          "A3_semantic_analysis": "La déterminisation observée sur création de mur ne rejoue pas la même enveloppe de copier ; oracle ciblé absent.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 26,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 27,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 121,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-019-A08",
+          "expected": "Inverse supprime exactement copies",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "socle générique, oracle spécifique absent",
+          "support_code": "G",
+          "A3_semantic_analysis": "L’inverse du lot création ne démontre pas la suppression exacte des seules copies produites par copier.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-019-A09",
+          "expected": "Piece refusée",
+          "A2_classification": "non_applicable",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "prescription historique supersédée dans sa portée",
+          "support_code": "S",
+          "A3_semantic_analysis": "D060 et le Suivi de la fiche autorisent explicitement la copie de pièce avec politiques de code ; l’ancien refus général reste historique, pas rétabli.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "docs/atelier/decisions.md",
+              "line": 64,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        }
+      ],
+      "scope": "Ligne unité de la fiche et compléments cités, pas conformité complète de la fiche ni recette API/E2E. Absent signifie absent des candidats examinés, pas fonction inexistante dans tout Fadi."
+    },
+    {
+      "entry_id": "M08-PATH-021",
+      "fiche": "docs/atelier/fiches/DA-02-03.md",
+      "historical_acceptance_D174_preserved": true,
+      "A2_candidates": [
+        "packages/atelier-model/src/commandes/commandes.test.ts",
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-021-A01",
+          "expected": "Mur90 autoura : b tourné tolérance",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Une ligne est tournée à90° dans le complément et ses coordonnées sont comparées ; ce n’est pas le mur autour de son a demandé.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/transformations-plus.test.ts",
+              "line": 14,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/transformations-plus.test.ts",
+              "line": 17,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/transformations-plus.test.ts",
+              "line": 18,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-021-A02",
+          "expected": "Porte t inchangé après rotation",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Position de porte après déplacement ne démontre pas t après rotation de son hôte.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-021-A03",
+          "expected": "Poteau angle+90",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Le test de rotation ne crée et ne contrôle aucun poteau avec son angle augmenté.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-021-A04",
+          "expected": "Angle0 refusé",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Le geste de déplacement nul du manipulateur ne teste pas la rotation d’angle0.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-021-A05",
+          "expected": "Angle360 refusé",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Pas de commande de rotation360° dans les candidats ; aucun oracle de refus ne peut être attribué.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-021-A06",
+          "expected": "Inverse rotation valeurs bit à bit",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "socle générique, oracle spécifique absent",
+          "support_code": "G",
+          "A3_semantic_analysis": "Un inverse de création ou d’une autre opération ne restitue pas ici l’état avant rotation ; oracle ciblé absent.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-021-A07",
+          "expected": "Écart aperçu/validé sous tolérance",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Le calcul d’angle aperçu et l’application d’une commande sont présents, mais objets définis ne borne aucun écart géométrique aperçu/validé.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 582,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 587,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 588,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        }
+      ],
+      "scope": "Ligne unité de la fiche et compléments cités, pas conformité complète de la fiche ni recette API/E2E. Absent signifie absent des candidats examinés, pas fonction inexistante dans tout Fadi."
+    },
+    {
+      "entry_id": "M08-PATH-023",
+      "fiche": "docs/atelier/fiches/DA-02-04.md",
+      "historical_acceptance_D174_preserved": true,
+      "A2_candidates": [
+        "packages/atelier-model/src/commandes/commandes.test.ts",
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-023-A01",
+          "expected": "Mur(1,0)(3,0) miroir x0→(-1,0)(-3,0)",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Les extrémités d’un mur symétrisé autour de x=2 sont exactes ; la fixture x=0 et les coordonnées négatives du cahier diffèrent.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 132,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 133,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-023-A02",
+          "expected": "Alignement gauche devient droite",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Ni alignement gauche/droite ni son basculement ne sont comparés dans le test de miroir.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-023-A03",
+          "expected": "Corps image miroir",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Les points d’axe contrôlés ne sont pas un oracle sur le corps épais réfléchi.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-023-A04",
+          "expected": "Porte t inchangé miroir",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Le miroir ne comporte aucune assertion sur la position t de l’ouverture hébergée.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-023-A05",
+          "expected": "Cote face-gauche à réparer",
+          "A2_classification": "present",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "oracle ciblé direct ou équivalence numérique explicite",
+          "support_code": "D",
+          "A3_semantic_analysis": "La référence face-gauche initiale est retrouvée à-réparer avec proposition face-droite explicite ; cas ciblé couvert statiquement.",
+          "candidate_oracle_complete": true,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 106,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 134,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 135,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-023-A06",
+          "expected": "Original gardé image neuve",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Le test fait un miroir en place ; il ne conserve pas un original tout en créant son image neuve.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-023-A07",
+          "expected": "Original gardé références intactes",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Pas de miroir-copie ni comparaison de conservation des références de l’original.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-023-A08",
+          "expected": "Poteau L refusé",
+          "A2_classification": "non_applicable",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "prescription historique supersédée dans sa portée",
+          "support_code": "S",
+          "A3_semantic_analysis": "D146 décrit la cornièreL et son indicateur miroir, confirmé par le SuiviD146. L’ancien refus de toute cornièreL est supersédé, sans conclure que tous ses cas sont testés ici.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "docs/atelier/decisions.md",
+              "line": 150,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-023-A09",
+          "expected": "Axe dégénéré refusé",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Aucune commande avec axe dégénéré et refus attendu dans les candidats.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-023-A10",
+          "expected": "Inverse miroir bit à bit",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "socle générique, oracle spécifique absent",
+          "support_code": "G",
+          "A3_semantic_analysis": "Le miroir n’est pas inversé dans le scénario ; le socle inverse d’un autre lot est indirect.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        }
+      ],
+      "scope": "Ligne unité de la fiche et compléments cités, pas conformité complète de la fiche ni recette API/E2E. Absent signifie absent des candidats examinés, pas fonction inexistante dans tout Fadi."
+    },
+    {
+      "entry_id": "M08-PATH-025",
+      "fiche": "docs/atelier/fiches/DA-02-05.md",
+      "historical_acceptance_D174_preserved": true,
+      "A2_candidates": [
+        "packages/atelier-model/src/commandes/commandes.test.ts",
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-025-A01",
+          "expected": "Carré facteur2 côtés doublés",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Le complément double une ligne et contrôle un point ; les quatre côtés d’un carré ne sont pas comparés.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/transformations-plus.test.ts",
+              "line": 19,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/transformations-plus.test.ts",
+              "line": 20,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/transformations-plus.test.ts",
+              "line": 43,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/transformations-plus.test.ts",
+              "line": 44,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-025-A02",
+          "expected": "Coin centre reste fixe",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Le centre choisi n’est pas retrouvé comme coin de l’objet résultat dans une assertion dédiée.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-025-A03",
+          "expected": "Mur épaisseur inchangée",
+          "A2_classification": "present",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "oracle ciblé direct ou équivalence numérique explicite",
+          "support_code": "D",
+          "A3_semantic_analysis": "L’épaisseur0,2 est comparée après échelle facteur2 du mur ; l’invariance précise est assertée.",
+          "candidate_oracle_complete": true,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 149,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-025-A04",
+          "expected": "Mur hauteur inchangée",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Le titre parle des dimensions mais seule l’épaisseur du mur est comparée, pas sa hauteur.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-025-A05",
+          "expected": "Porte t inchangé échelle",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Le scénario échelle ne crée aucune porte dont t serait comparé après opération.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-025-A06",
+          "expected": "Poteau point échelonné",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Aucun point de poteau n’est comparé après l’échelle dans les candidats.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-025-A07",
+          "expected": "Poteau section inchangée",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Aucune section de poteau ne fait l’objet de cette invariance après échelle.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-025-A08",
+          "expected": "Facteur0 refusé",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Une saisie de facteur0 est rejetée par le manipulateur ; pas une commande échelle0 soumise au réducteur.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 624,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-025-A09",
+          "expected": "Facteur-1 refusé",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Pas de facteur négatif exercé avec refus dans les candidats.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-025-A10",
+          "expected": "Facteur1 refusé",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Pas de facteur1 exercé avec refus dans les candidats.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-025-A11",
+          "expected": "Escalier refusé",
+          "A2_classification": "non_applicable",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "prescription historique supersédée dans sa portée",
+          "support_code": "S",
+          "A3_semantic_analysis": "D088 autorise l’axe de l’escalier à être mis à l’échelle ; le test positif actuel le fait. Ne pas restaurer le refus historique de toute échelle escalier.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "docs/atelier/decisions.md",
+              "line": 92,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-025-A12",
+          "expected": "Facteur longueur voulu/actuel",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Facteur2 calculé par geste ne démontre pas le quotient explicite longueur voulue/actuelle du mode référence.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-025-A13",
+          "expected": "Inverse échelle bit à bit",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "socle générique, oracle spécifique absent",
+          "support_code": "G",
+          "A3_semantic_analysis": "L’inverse générique ailleurs ne restitue pas le résultat de l’échelle de ce scénario.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        }
+      ],
+      "scope": "Ligne unité de la fiche et compléments cités, pas conformité complète de la fiche ni recette API/E2E. Absent signifie absent des candidats examinés, pas fonction inexistante dans tout Fadi."
+    },
+    {
+      "entry_id": "M08-PATH-027",
+      "fiche": "docs/atelier/fiches/DA-02-06.md",
+      "historical_acceptance_D174_preserved": true,
+      "A2_candidates": [
+        "packages/atelier-model/src/commandes/commandes.test.ts",
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-027-A01",
+          "expected": "Mur4 porte1 : b à3, distance1 t1/3",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Le test étire b à8 et conserve le centre de porte à1 ; ni le raccourcissement à3 ni t=1/3 ne sont comparés.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 72,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 154,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 155,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-027-A02",
+          "expected": "a étiré : distance àb conservée",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "L’extrémité a n’est pas étirée dans le candidat, donc aucune conservation de distance à b n’y est testée.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-027-A03",
+          "expected": "Fenêtre contient mur : translation",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "autre opération ou primitive voisine, support indirect seulement",
+          "support_code": "I",
+          "A3_semantic_analysis": "D116 traduit un cercle entièrement pris et étire partiellement un mur ; cela ne teste pas un mur entièrement contenu par la fenêtre.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/etirer-fenetre.test.ts",
+              "line": 27,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/etirer-fenetre.test.ts",
+              "line": 34,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-027-A04",
+          "expected": "Mur entièrement fenêtré t inchangé",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Le maintien de distance sur un mur étiré ne remplace pas t invariant pour un mur entièrement translaté.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-027-A05",
+          "expected": "Porte1.4 dans mur1 : à réparer",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Le signal à-réparer est contrôlé pour porte0,8 et mur1,2 ; le cas métrique porte1,4/mur1 n’est pas exercé.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 157,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 158,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-027-A06",
+          "expected": "Porte hors emprise non supprimée",
+          "A2_classification": "present",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "oracle ciblé direct ou équivalence numérique explicite",
+          "support_code": "D",
+          "A3_semantic_analysis": "Après étirement trop court, l’occurrence porte reste explicitement définie ; non-suppression réellement assertée.",
+          "candidate_oracle_complete": true,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 159,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-027-A07",
+          "expected": "Rectangle toujours rectangle",
+          "A2_classification": "nonconclu",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "portée non résolue, aucun verdict de conformité",
+          "support_code": "C",
+          "A3_semantic_analysis": "Le SuiviD116 introduit etirerFenetre et le test attend forme=polygone. La fiche antérieure exige rectangle pour une autre portée ; ne pas conclure la conformité ni supprimer globalement cet ancien attendu.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "docs/atelier/decisions.md",
+              "line": 120,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-027-A08",
+          "expected": "Polygone auto-sécant refusé",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "autre opération ou primitive voisine, support indirect seulement",
+          "support_code": "I",
+          "A3_semantic_analysis": "Le refus de contour croisé concerne etirerFenetre sur une dalle, pas le polygone de l’ancien chemin. Le refus ciblé reste non démontré.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/etirer-fenetre.test.ts",
+              "line": 47,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-027-A09",
+          "expected": "Inverse étirement bit à bit",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "autre opération ou primitive voisine, support indirect seulement",
+          "support_code": "I",
+          "A3_semantic_analysis": "L’inverse de etirerFenetre est profond et exact pour son scénario ; ne pas l’attribuer à l’ancien etirer ou à des bits IEEE non mesurés.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/etirer-fenetre.test.ts",
+              "line": 36,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        }
+      ],
+      "scope": "Ligne unité de la fiche et compléments cités, pas conformité complète de la fiche ni recette API/E2E. Absent signifie absent des candidats examinés, pas fonction inexistante dans tout Fadi."
+    },
+    {
+      "entry_id": "M08-PATH-029",
+      "fiche": "docs/atelier/fiches/DA-02-07.md",
+      "historical_acceptance_D174_preserved": true,
+      "A2_candidates": [
+        "packages/atelier-model/src/commandes/commandes.test.ts",
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-029-A01",
+          "expected": "Ligne coupée deux arêtes clic milieu : deux lignes",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "autre opération ou primitive voisine, support indirect seulement",
+          "support_code": "I",
+          "A3_semantic_analysis": "La gommeAlt produit deux morceaux ; l’appel n’est pas transformer.ajuster. Ce rapprochement ne teste pas l’oracle Ajuster.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 97,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 105,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 108,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 111,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 638,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-029-A02",
+          "expected": "Longueurs deux tronçons vérifiables",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "autre opération ou primitive voisine, support indirect seulement",
+          "support_code": "I",
+          "A3_semantic_analysis": "Les coordonnées des deux morceaux de gomme sont utiles, sans démontrer les longueurs du résultat ajuster demandé.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 108,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 111,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-029-A03",
+          "expected": "Une arête : tronçon jusqu’à extrémité",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Pas de cas ajustement avec une seule arête comparant le tronçon gardé.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-029-A04",
+          "expected": "Aucune intersection refusée",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Le message de raccord multiple sans jointure ne prouve pas le refus ajuster sans intersection.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-029-A05",
+          "expected": "Cercle devient arc angles attendus",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Pas de transformation cercle→arc avec comparaison des angles pour ajuster.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-029-A06",
+          "expected": "Porte tronçon retiré à réparer",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "autre opération ou primitive voisine, support indirect seulement",
+          "support_code": "I",
+          "A3_semantic_analysis": "La porte à-réparer appartient au test d’étirement ; elle n’est pas dans un tronçon retiré par ajuster.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 158,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-029-A07",
+          "expected": "Porte non supprimée ajustement",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "autre opération ou primitive voisine, support indirect seulement",
+          "support_code": "I",
+          "A3_semantic_analysis": "La non-suppression après étirement n’exerce pas la non-suppression après retrait de tronçon.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 159,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-029-A08",
+          "expected": "Scission cote à réparer",
+          "A2_classification": "present",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "oracle ciblé direct ou équivalence numérique explicite",
+          "support_code": "D",
+          "A3_semantic_analysis": "Le scénario de scission met explicitement la cotation à-réparer ; cette sous-clause de la ligne unité est présente, sans couvrir ajuster complet.",
+          "candidate_oracle_complete": true,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 74,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-029-A09",
+          "expected": "Scission deux propositions",
+          "A2_classification": "present",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "oracle ciblé direct ou équivalence numérique explicite",
+          "support_code": "D",
+          "A3_semantic_analysis": "Les propositions de référence sont comparées aux deux nouveaux murs ; cas scission ciblé de la clause présent.",
+          "candidate_oracle_complete": true,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 75,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-029-A10",
+          "expected": "Inverse restaure IDs et valeurs ajustement",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "autre opération ou primitive voisine, support indirect seulement",
+          "support_code": "I",
+          "A3_semantic_analysis": "Le complément inverse une scission multi-positions ; il n’inverse pas la suppression de tronçon par ajuster.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/transformations-plus.test.ts",
+              "line": 56,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/transformations-plus.test.ts",
+              "line": 66,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        }
+      ],
+      "scope": "Ligne unité de la fiche et compléments cités, pas conformité complète de la fiche ni recette API/E2E. Absent signifie absent des candidats examinés, pas fonction inexistante dans tout Fadi."
+    },
+    {
+      "entry_id": "M08-PATH-031",
+      "fiche": "docs/atelier/fiches/DA-02-08.md",
+      "historical_acceptance_D174_preserved": true,
+      "A2_candidates": [
+        "packages/atelier-model/src/commandes/commandes.test.ts",
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-031-A01",
+          "expected": "Ligne frontière extrémité intersection",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Le complément prolonge par longueur, sans frontière ; le test de jointure mur utilise une autre commande. Aucun oracle frontière de prolonger complet.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/transformations-plus.test.ts",
+              "line": 33,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/transformations-plus.test.ts",
+              "line": 34,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-031-A02",
+          "expected": "Arc angleFin recalculé prolongement",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Pas d’arc prolongé ni d’angleFin comparé dans les candidats.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-031-A03",
+          "expected": "Mur porte distance extrémité fixe",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "autre opération ou primitive voisine, support indirect seulement",
+          "support_code": "I",
+          "A3_semantic_analysis": "La conservation de porte lors d’étirement est un autre réducteur ; pas preuve de prolonger mur.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 72,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 155,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-031-A04",
+          "expected": "Frontière absente refusée",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "D043 autorise longueur sans frontière mais ne dispense pas d’une longueur ET d’une limite absentes. Aucun refus de cette entrée incomplète n’est asserté.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/transformations-plus.test.ts",
+              "line": 31,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-031-A05",
+          "expected": "Extrémité déjà posée refusée",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Pas de prolongement sans effet avec extrémité déjà sur limite et refus comparé.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-031-A06",
+          "expected": "Inverse prolonger bit à bit",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "socle générique, oracle spécifique absent",
+          "support_code": "G",
+          "A3_semantic_analysis": "Aucun inverse du prolongement réalisé ici ; le test inverse générique reste un mécanisme voisin.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        }
+      ],
+      "scope": "Ligne unité de la fiche et compléments cités, pas conformité complète de la fiche ni recette API/E2E. Absent signifie absent des candidats examinés, pas fonction inexistante dans tout Fadi."
+    },
+    {
+      "entry_id": "M08-PATH-033",
+      "fiche": "docs/atelier/fiches/DA-02-09.md",
+      "historical_acceptance_D174_preserved": true,
+      "A2_candidates": [
+        "packages/atelier-model/src/commandes/commandes.test.ts",
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-033-A01",
+          "expected": "Ligne décaléed parallèle distance d",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Un premier point de ligne décalée est exact ; ni second point ni distance parallèle de toute la ligne n’est comparée.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 170,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 172,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-033-A02",
+          "expected": "Rectangle côtés±d",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "autre opération ou primitive voisine, support indirect seulement",
+          "support_code": "I",
+          "A3_semantic_analysis": "L’aire d’un carré par inwardOffset est un test d’algorithme distinct, sans commande décaler-rectangle ni comparaison de ses côtés.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/core-geometry/src/parcel-geometry.test.ts",
+              "line": 71,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/core-geometry/src/parcel-geometry.test.ts",
+              "line": 73,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-033-A03",
+          "expected": "Cercle rayonr+d",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Le clic hors du cercle choisit extérieur, mais la commande n’est pas appliquée pour comparer le rayon r+d.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 613,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-033-A04",
+          "expected": "Cercle rayonr-d",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Le clic dedans choisit intérieur, sans appliquer le résultat ni comparer le rayon r-d.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 612,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-033-A05",
+          "expected": "r-d≤0 refusé",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Pas d’entrée décalage de cercle avec rayon résultant nul/négatif et refus asserté.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-033-A06",
+          "expected": "Convexe résultat égal inwardOffset",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "autre opération ou primitive voisine, support indirect seulement",
+          "support_code": "I",
+          "A3_semantic_analysis": "inwardOffset a son propre résultat attendu ; le résultat de la commande n’est pas comparé à ce référent.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/core-geometry/src/parcel-geometry.test.ts",
+              "line": 71,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/core-geometry/src/parcel-geometry.test.ts",
+              "line": 73,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-033-A07",
+          "expected": "PolygoneL distance intérieure excessive refusée",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "autre opération ou primitive voisine, support indirect seulement",
+          "support_code": "I",
+          "A3_semantic_analysis": "Refus de non-convexitéL dans le noyau ≠ refus de distance excessive du décalage général. Oracle ciblé absent.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/core-geometry/src/parcel-geometry.test.ts",
+              "line": 90,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-033-A08",
+          "expected": "Mur décalé porte copiée",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Le copier-mur testé ailleurs ne crée pas une porte lors du décalage de son mur.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-033-A09",
+          "expected": "Repere porte décalée vide",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Le repère null est une assertion de copier, pas de porte nouvellement décalée.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-033-A10",
+          "expected": "Même enveloppe mêmesIDs décalage",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "socle générique, oracle spécifique absent",
+          "support_code": "G",
+          "A3_semantic_analysis": "Le déterminisme de création de mur ne rejoue pas l’enveloppe décaler.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 26,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 27,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        }
+      ],
+      "scope": "Ligne unité de la fiche et compléments cités, pas conformité complète de la fiche ni recette API/E2E. Absent signifie absent des candidats examinés, pas fonction inexistante dans tout Fadi."
+    },
+    {
+      "entry_id": "M08-PATH-035",
+      "fiche": "docs/atelier/fiches/DA-02-10.md",
+      "historical_acceptance_D174_preserved": true,
+      "A2_candidates": [
+        "packages/atelier-model/src/commandes/commandes.test.ts",
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-035-A01",
+          "expected": "Deux lignes perpendiculaires rayonr : arc quart",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Le résultat est un arc et son centre est vérifié ; ni balayage de90° ni rayon effectif de cet arc ne sont comparés.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 183,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 185,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-035-A02",
+          "expected": "Tangence aux deux lignes",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Aucune comparaison de tangente ou des points de contact avec les deux lignes.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-035-A03",
+          "expected": "Centre distancer chaque ligne",
+          "A2_classification": "present",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "oracle ciblé direct ou équivalence numérique explicite",
+          "support_code": "D",
+          "A3_semantic_analysis": "Avec les axes y=0 et x=4, centre(3,1) et rayon demandé1, les deux distances se déduisent des coordonnées comparées à1e-9 ; portée de la fixture seulement.",
+          "candidate_oracle_complete": true,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 177,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 178,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 186,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 187,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-035-A04",
+          "expected": "Parallèles refusées raccord",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "autre opération ou primitive voisine, support indirect seulement",
+          "support_code": "I",
+          "A3_semantic_analysis": "L’intersection de parallèles renvoie null dans core ; aucun refus de transformer.raccorder ne s’y substitue.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/core-geometry/src/parcel-geometry.test.ts",
+              "line": 65,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-035-A05",
+          "expected": "Rayon maximal calculé",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Aucun rayon maximal calculé ni refus à une valeur excessive n’est comparé.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-035-A06",
+          "expected": "Rayon nul refusé",
+          "A2_classification": "non_applicable",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "prescription historique supersédée dans sa portée",
+          "support_code": "S",
+          "A3_semantic_analysis": "D043 et son test créent une jonction de lignes de rayon0 sans arc ; D073 conserve le refus avec arc. Seul l’ancien refus général est supersédé.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "docs/atelier/decisions.md",
+              "line": 47,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "docs/atelier/decisions.md",
+              "line": 77,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-035-A07",
+          "expected": "Inverse raccord restitue extrémités",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "socle générique, oracle spécifique absent",
+          "support_code": "G",
+          "A3_semantic_analysis": "L’inverse d’un autre lot ne rétablit pas ici les extrémités avant raccord.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-035-A08",
+          "expected": "Inverse supprime arc",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Pas d’inverse du raccord avec vérification de disparition de son arc.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        }
+      ],
+      "scope": "Ligne unité de la fiche et compléments cités, pas conformité complète de la fiche ni recette API/E2E. Absent signifie absent des candidats examinés, pas fonction inexistante dans tout Fadi."
+    },
+    {
+      "entry_id": "M08-PATH-037",
+      "fiche": "docs/atelier/fiches/DA-02-11.md",
+      "historical_acceptance_D174_preserved": true,
+      "A2_candidates": [
+        "packages/atelier-model/src/commandes/commandes.test.ts",
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-037-A01",
+          "expected": "Perpendiculairesd=d : longueur d√2",
+          "A2_classification": "present",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "oracle ciblé direct ou équivalence numérique explicite",
+          "support_code": "D",
+          "A3_semantic_analysis": "Les extrémités exactes(3,0)/(4,1) pour d=1 impliquent une longueur√2 ; preuve géométrique du cas, pas benchmark d’une fonction longueur.",
+          "candidate_oracle_complete": true,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 180,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 182,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-037-A02",
+          "expected": "Chanfrein45°",
+          "A2_classification": "present",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "oracle ciblé direct ou équivalence numérique explicite",
+          "support_code": "D",
+          "A3_semantic_analysis": "Le même vecteur(1,1) impose45° pour ce cas perpendiculaire. Ne pas exiger un champ angle différent pour reconnaître cette équivalence numérique.",
+          "candidate_oracle_complete": true,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 182,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-037-A03",
+          "expected": "Mode distance-angle équivalent",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Le mode distance-angle n’est pas comparé au mode deux distances.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-037-A04",
+          "expected": "Lignes parallèles refusées chanfrein",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "autre opération ou primitive voisine, support indirect seulement",
+          "support_code": "I",
+          "A3_semantic_analysis": "Le test de primitives parallèles ne soumet pas une commande chanfrein et ne prouve pas son refus.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/core-geometry/src/parcel-geometry.test.ts",
+              "line": 65,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-037-A05",
+          "expected": "Distance maximale calculée",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Aucune distance maximale admissible n’est comparée ni motivée par un refus.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-037-A06",
+          "expected": "Inverse restaure extrémités",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "socle générique, oracle spécifique absent",
+          "support_code": "G",
+          "A3_semantic_analysis": "L’inverse d’une création dans un autre lot ne rétablit pas les extrémités modifiées par chanfrein.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-037-A07",
+          "expected": "Inverse supprime segment",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Aucun inverse chanfrein suivi d’une assertion que le segment créé a disparu.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        }
+      ],
+      "scope": "Ligne unité de la fiche et compléments cités, pas conformité complète de la fiche ni recette API/E2E. Absent signifie absent des candidats examinés, pas fonction inexistante dans tout Fadi."
+    },
+    {
+      "entry_id": "M08-PATH-039",
+      "fiche": "docs/atelier/fiches/DA-02-12.md",
+      "historical_acceptance_D174_preserved": true,
+      "A2_candidates": [
+        "packages/atelier-model/src/commandes/commandes.test.ts",
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-039-A01",
+          "expected": "Réseau3×2 : cinq copies",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Trois copies d’un poteau en rangée sont dénombrées ; ce n’est pas cinq copies d’une grille3×2.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 167,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 168,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-039-A02",
+          "expected": "Positions cinq copies grille attendues",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "même fonction/famille ou sous-assertion, scénario incomplet",
+          "support_code": "P",
+          "A3_semantic_analysis": "Le dernier point à15,0 est comparé ; les cinq positions complètes de la grille demandée ne le sont pas.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 169,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-039-A03",
+          "expected": "Polaire4 à360 :90/180/270",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Pas de réseau polaire4/360° comparant les trois angles dans les candidats.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-039-A04",
+          "expected": "Polaire3 à180 :90/180",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Pas de réseau polaire3/180° comparant90° et180°.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-039-A05",
+          "expected": "Pas nul refusé",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Aucune répétition à pas nul avec refus asserté.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-039-A06",
+          "expected": "Plafond dépassé refusé",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Pas de dépassement de plafond de répétition avec refus comparé.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-039-A07",
+          "expected": "Répétition mur porte2×(mur+porte)",
+          "A2_classification": "absent",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "aucun oracle ciblé dans périmètre candidat",
+          "support_code": "N",
+          "A3_semantic_analysis": "Le réseau exercé ne contient que poteau ; copier un mur avec sa porte ailleurs ne prouve pas leur réseau.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-039-A08",
+          "expected": "Même enveloppe mêmesIDs réseau",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "socle générique, oracle spécifique absent",
+          "support_code": "G",
+          "A3_semantic_analysis": "Le déterminisme du générateur lors d’une création ne rejoue pas le même réseau.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 26,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 27,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        },
+        {
+          "review_id": "M08-PATH-039-A09",
+          "expected": "Inverse supprime exactement copiesréseau",
+          "A2_classification": "partiel",
+          "A3_review": "Confirmé comme rapprochement borné, avec portée de preuve explicitée ci-dessous",
+          "support_kind": "socle générique, oracle spécifique absent",
+          "support_code": "G",
+          "A3_semantic_analysis": "Pas d’inverse du réseau à supprimer exactement ; inverse générique d’une autre opération seulement.",
+          "candidate_oracle_complete": false,
+          "observed_sources": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "not_executed": true
+        }
+      ],
+      "scope": "Ligne unité de la fiche et compléments cités, pas conformité complète de la fiche ni recette API/E2E. Absent signifie absent des candidats examinés, pas fonction inexistante dans tout Fadi."
+    }
+  ],
+  "supersessions_and_D116_review": [
+    {
+      "entry": "M08-PATH-019",
+      "decision": "D-060",
+      "verdict": "Confirme supersession de l’ancien refus général de copier pièce",
+      "proof_lines": [
+        64
+      ],
+      "fiche_followup_line": 34,
+      "scope": "Copie avec codes garder/vider/suivant explicites ; ne pas supprimer la prescription historique ou prétendre que toutes les copies de pièce sont vérifiées ici."
+    },
+    {
+      "entry": "M08-PATH-023",
+      "decision": "D-146",
+      "verdict": "Confirme supersession de l’ancien refus général du miroir de cornièreL",
+      "proof_lines": [
+        150
+      ],
+      "fiche_followup_line": 33,
+      "scope": "L prend un indicateur miroir, T/U ont une orientation propre ; ne pas transformer cette décision en réussite des tests absents de ces candidats."
+    },
+    {
+      "entry": "M08-PATH-025",
+      "decision": "D-088",
+      "verdict": "Confirme supersession du refus général d’échelle escalier",
+      "proof_lines": [
+        92
+      ],
+      "fiche_followup_line": 31,
+      "scope": "Axe échelonné, dimensions typées conservées ; seul le cas positif effectivement asserté est attribuable, pas une validation de confort/réglementation."
+    },
+    {
+      "entry": "M08-PATH-035",
+      "decision": "D-043 et D-073",
+      "verdict": "Confirme supersession du refus général rayon0, restreinte à ligne–ligne",
+      "proof_lines": [
+        47,
+        77
+      ],
+      "fiche_followup_line": 30,
+      "scope": "Jonction d’angle sans arc à rayon0. D073 garde le refus avec un arc ; aucun refus ne doit être supprimé en bloc."
+    },
+    {
+      "entry": "M08-PATH-027",
+      "decision": "D-116",
+      "verdict": "Confirme non conclu pour l’attendu générique rectangle toujours rectangle",
+      "proof_lines": [
+        120
+      ],
+      "fiche_followup_line": 34,
+      "scope": "etirerFenetre et son test attendent un polygone ; la fiche initiale exigeait rectangle. D116 ne prouve pas le comportement de l’ancien etirer sur rectangle : ne pas généraliser la supersession, conserver le manque ciblé."
+    }
+  ],
+  "clarification_A2": "A2 confirme par échange de coordination que partiel signifie rapprochement de preuve voisine, jamais couverture fonctionnelle de l’oracle précis. Socle inverse générique, IDs de création ou autre commande = support indirect uniquement. Empreintes A2 figées conservées ; cette précision ne réécrit pas le document source.",
+  "cross_cutting_reservations": [
+    "Les48partiels ne doivent être additionnés ni à des obligations exécutées ni à une couverture fonctionnelle. Le sous-classement A3 distingue scénario incomplet d’autre opération/socle générique.",
+    "toThrow seul sans comparaison profonde après refus ne démontre pas atomicité. Inverse profond/JSON d’un autre lot ne démontre pas inverse de chaque transformation, ni une comparaison binaire IEEE des flottants.",
+    "Une assertion de point peut avoir une conséquence numérique exacte (√2/45° pour le chanfrein). Ne pas exiger un nom de test ou champ superflu, mais limiter la conséquence à la fixture effectivement comparée.",
+    "Prescriptions historiques/D174 conservées ; la présente analyse n’annule pas l’acceptation antérieure et n’accepte aucun lot nouveau.",
+    "Absence bornée aux deux candidats du mapping et compléments identifiés ; les autres tests nommés par Suivi ne deviennent pas absents du dépôt, simplement non attribués par cette comparaison.",
+    "Aucun test relancé, aucune CI transférée, aucun code de test corrigé pour cet exercice."
+  ],
+  "verdict": "Revue des109qualifications recevable sous ces réserves ; quatre prescriptions supersédées dans leur portée et un D116 non conclu conservés. Preuves d’exécution des scénarios incomplets demeurent à produire, pas clôture fonctionnelle.",
+  "next_action": "A5 QA des réserves/supersessions/indépendance ; A0 consolide au suivi canonique sans sommer les partiels comme réalisés et conserve prochaine action des manques."
+}

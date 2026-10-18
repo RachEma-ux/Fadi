@@ -1,0 +1,602 @@
+{
+  "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "freeze_utc": "2026-10-18T13:27:49.970157+00:00",
+  "methodologie": "13 fiches complètes lues, reprise.test nouveau lu intégralement ; trois autres candidats identiques par empreinte à lecture intégrale cohorte041 réutilisée. Aucun verdict détaillé A2 094 lu avant cette fixation. Métadonnées et comptes reçus A2 seulement. Mapping original consulté pour identifier sources/candidats. Aucun moteur/test/API/DB exécuté.",
+  "entries": [
+    {
+      "entry_id": "M08-PATH-094",
+      "source_fiche": "docs/atelier/fiches/DA-07-02.md",
+      "source_line": 21,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/ouverture.test.ts`, groupe « porte ») : pose (`t` conservé, `distance` dérivée) ; porte suivant un mur déplacé (`t` identique) ; mur scindé : réaffectation, `t` recalculé, position inchangée à la tolérance ; mur raccourci : « à réparer » avec propositions ; repère en double signalé ; inverse restitue valeurs et références. |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/ouverture.test.ts",
+      "candidate_paths": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "atomes_exacts": [
+        {
+          "rang": 1,
+          "texte": "pose (`t` conservé, `distance` dérivée)"
+        },
+        {
+          "rang": 2,
+          "texte": "porte suivant un mur déplacé (`t` identique)"
+        },
+        {
+          "rang": 3,
+          "texte": "mur scindé : réaffectation, `t` recalculé, position inchangée à la tolérance"
+        },
+        {
+          "rang": 4,
+          "texte": "mur raccourci : « à réparer » avec propositions"
+        },
+        {
+          "rang": 5,
+          "texte": "repère en double signalé"
+        },
+        {
+          "rang": 6,
+          "texte": "inverse restitue valeurs et références."
+        }
+      ],
+      "note_independante": "Porte après déplacement centre/t assertés ; scission hôte nouveau/t=0.5/centre=1 assertés. Pose centre mais pas distance dérivée ni t après pose explicitement ; raccourcissement référencesAReparer id porte sans propositions de réparation porte. Repère double absent. Inverse lot création inclut porte mais pas référence attachée à porte."
+    },
+    {
+      "entry_id": "M08-PATH-096",
+      "source_fiche": "docs/atelier/fiches/DA-07-03.md",
+      "source_line": 21,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/ouverture.test.ts`, groupe « fenêtre ») : pose (`t` conservé, `distance` dérivée) ; allège + hauteur au-delà d'un mur de hauteur évaluée refusé, mur de hauteur « non évaluée » : contrôle « non évalué » ; allège absente : « non évaluée », rien déduit ; mur scindé : réaffectation, `t` recalculé ; mur raccourci : « à réparer » ; inverse restitue valeurs et références. |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/ouverture.test.ts",
+      "candidate_paths": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "atomes_exacts": [
+        {
+          "rang": 1,
+          "texte": "pose (`t` conservé, `distance` dérivée)"
+        },
+        {
+          "rang": 2,
+          "texte": "allège + hauteur au-delà d'un mur de hauteur évaluée refusé, mur de hauteur « non évaluée » : contrôle « non évalué »"
+        },
+        {
+          "rang": 3,
+          "texte": "allège absente : « non évaluée », rien déduit"
+        },
+        {
+          "rang": 4,
+          "texte": "mur scindé : réaffectation, `t` recalculé"
+        },
+        {
+          "rang": 5,
+          "texte": "mur raccourci : « à réparer »"
+        },
+        {
+          "rang": 6,
+          "texte": "inverse restitue valeurs et références."
+        }
+      ],
+      "note_independante": "Scission fenêtre hôte et t=0.5 directement assertés. Pas pose t/distance, contrôles verticaux allège+hauteur/absente ni raccourci fenêtre. Inverse générique porte non transférable fenêtre."
+    },
+    {
+      "entry_id": "M08-PATH-098",
+      "source_fiche": "docs/atelier/fiches/DA-07-04.md",
+      "source_line": 21,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/ouverture.test.ts`) : pose valide (`t` conservé, `distance` dérivée) ; emprise hors du mur refusée avec la plage admise ; largeur ≤ 0, unité ≠ m, hôte inexistant refusés ; recouvrement refusé ; déplacement le long de l'hôte : dimensions inchangées ; hôte raccourci : « à réparer » avec propositions ; changement de classe : un lot, références à réparer ; inverse restitue valeurs et références bit à bit. |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/ouverture.test.ts",
+      "candidate_paths": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "atomes_exacts": [
+        {
+          "rang": 1,
+          "texte": "pose valide (`t` conservé, `distance` dérivée)"
+        },
+        {
+          "rang": 2,
+          "texte": "emprise hors du mur refusée avec la plage admise"
+        },
+        {
+          "rang": 3,
+          "texte": "largeur ≤ 0, unité ≠ m, hôte inexistant refusés"
+        },
+        {
+          "rang": 4,
+          "texte": "recouvrement refusé"
+        },
+        {
+          "rang": 5,
+          "texte": "déplacement le long de l'hôte : dimensions inchangées"
+        },
+        {
+          "rang": 6,
+          "texte": "hôte raccourci : « à réparer » avec propositions"
+        },
+        {
+          "rang": 7,
+          "texte": "changement de classe : un lot, références à réparer"
+        },
+        {
+          "rang": 8,
+          "texte": "inverse restitue valeurs et références bit à bit."
+        }
+      ],
+      "note_independante": "Pose/hôte inexistant/hors mur pour porte : contexte mécanique commun mais pas classe ouverture générique ; pas plage admise assertée ni largeur<=0/unité ouverture/recouvrement. Déplacement mur ≠ déplacement ouverture le long hôte. Pas changement classe ou inverse références baie."
+    },
+    {
+      "entry_id": "M08-PATH-100",
+      "source_fiche": "docs/atelier/fiches/DA-07-05.md",
+      "source_line": 20,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/dalle.test.ts`, groupe « plancher ») : quatre murs fermés : un contour proposé (faces extérieures ou axe selon le choix) à la tolérance, modèle inchangé (empreinte identique avant et après la proposition) ; boucle ouverte : aucune proposition, interstice listé ; escalier reliant le niveau au niveau inférieur : trou proposé, un seul par `groupe` ; `dalle.creer` du contour accepté en un lot ; mur déplacé : dalle inchangée et écart listé. |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/dalle.test.ts",
+      "candidate_paths": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "atomes_exacts": [
+        {
+          "rang": 1,
+          "texte": "quatre murs fermés : un contour proposé (faces extérieures ou axe selon le choix) à la tolérance, modèle inchangé (empreinte identique avant et après la proposition)"
+        },
+        {
+          "rang": 2,
+          "texte": "boucle ouverte : aucune proposition, interstice listé"
+        },
+        {
+          "rang": 3,
+          "texte": "escalier reliant le niveau au niveau inférieur : trou proposé, un seul par `groupe`"
+        },
+        {
+          "rang": 4,
+          "texte": "`dalle.creer` du contour accepté en un lot"
+        },
+        {
+          "rang": 5,
+          "texte": "mur déplacé : dalle inchangée et écart listé."
+        }
+      ],
+      "note_independante": "Plancher rive extérieure xmin=-0.1 et usage plancher ; trémie escalier proposée puis une retenue/écartée. Pas empreinte inchangée ni axes complets ni boucle ouverte/interstice ni déduplication groupe ni écart après mur déplacé. Commande émise et contour partiel asserté, pas application complète scénario plancher."
+    },
+    {
+      "entry_id": "M08-PATH-102",
+      "source_fiche": "docs/atelier/fiches/DA-07-06.md",
+      "source_line": 21,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/dalle.test.ts`) : création ; contour auto-intersecté, trou hors contour, épaisseur ≤ 0, unité ≠ m refusés ; aire d'un rectangle de test (4 m sur 5 m) moins un trou de 1 m sur 1 m = 19 m² à la tolérance (entrées de test sans valeur normative) ; ajout d'un sommet : cotation sur un index suivant « à réparer » avec proposition, déplacement d'un sommet : référence conservée ; inverse restitue l'état. |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/dalle.test.ts",
+      "candidate_paths": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "atomes_exacts": [
+        {
+          "rang": 1,
+          "texte": "création"
+        },
+        {
+          "rang": 2,
+          "texte": "contour auto-intersecté, trou hors contour, épaisseur ≤ 0, unité ≠ m refusés"
+        },
+        {
+          "rang": 3,
+          "texte": "aire d'un rectangle de test (4 m sur 5 m) moins un trou de 1 m sur 1 m = 19 m² à la tolérance (entrées de test sans valeur normative)"
+        },
+        {
+          "rang": 4,
+          "texte": "ajout d'un sommet : cotation sur un index suivant « à réparer » avec proposition, déplacement d'un sommet : référence conservée"
+        },
+        {
+          "rang": 5,
+          "texte": "inverse restitue l'état."
+        }
+      ],
+      "note_independante": "Dalle créée par clic/terminer, résultat truthy, contour modifié par ajuster/étirer ; pas aire19/trou ni refus ciblés ni références index ni inverse dalle."
+    },
+    {
+      "entry_id": "M08-PATH-104",
+      "source_fiche": "docs/atelier/fiches/DA-07-10.md",
+      "source_line": 23,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/escalier.test.ts`) : création avec niveaux de départ et d'arrivée ; niveau absent, inconnu ou identique refusé ; unité ≠ m refusée ; H = 3,00 m et n = 17 (entrées de test sans valeur normative) : hauteur de contremarche = H / n non arrondie, somme des contremarches = H à la tolérance de longueur ; hauteur cible : deux entiers proposés, aucun appliqué ; élévation d'un niveau modifiée : contradiction listée, aucun paramètre de l'escalier modifié ; modification d'une occurrence : autres occurrences du `groupe` listées, non modifiées ; `referencePlanSeulement` conservé après aller-retour ; inverse restitue l'état. |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/escalier.test.ts",
+      "candidate_paths": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "atomes_exacts": [
+        {
+          "rang": 1,
+          "texte": "création avec niveaux de départ et d'arrivée"
+        },
+        {
+          "rang": 2,
+          "texte": "niveau absent, inconnu ou identique refusé"
+        },
+        {
+          "rang": 3,
+          "texte": "unité ≠ m refusée"
+        },
+        {
+          "rang": 4,
+          "texte": "H = 3,00 m et n = 17 (entrées de test sans valeur normative) : hauteur de contremarche = H / n non arrondie, somme des contremarches = H à la tolérance de longueur"
+        },
+        {
+          "rang": 5,
+          "texte": "hauteur cible : deux entiers proposés, aucun appliqué"
+        },
+        {
+          "rang": 6,
+          "texte": "élévation d'un niveau modifiée : contradiction listée, aucun paramètre de l'escalier modifié"
+        },
+        {
+          "rang": 7,
+          "texte": "modification d'une occurrence : autres occurrences du `groupe` listées, non modifiées"
+        },
+        {
+          "rang": 8,
+          "texte": "`referencePlanSeulement` conservé après aller-retour"
+        },
+        {
+          "rang": 9,
+          "texte": "inverse restitue l'état."
+        }
+      ],
+      "note_independante": "Niveau arrivée r1 et hauteur3 après clic escalier assertés ; création par commandes utilisée dans scale. Pas niveaux absents/inconnus/identiques refusés ni unité spécifique ni H/17 non arrondi ni propositions entiers ni contradictions/occurrences/autres inchangés/roundtrip referencePlanSeulement ni inverse escalier."
+    },
+    {
+      "entry_id": "M08-PATH-106",
+      "source_fiche": "docs/atelier/fiches/DA-07-15.md",
+      "source_line": 22,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/piece.test.ts`) : détection sur quatre murs fermés : une région, aire calculée à la tolérance, modèle inchangé (empreinte identique avant et après) ; boucle ouverte : aucune région, interstice listé ; deux boucles : deux régions ; `piece.creer` d'une région acceptée ; aire déclarée ≠ calculée : écart listé, aucune valeur remplacée ; candidat recouvrant une pièce existante : « polygone différent », pas de doublon ; mur déplacé : pièce inchangée, désalignement listé ; inverse restitue l'état. |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/piece.test.ts",
+      "candidate_paths": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "atomes_exacts": [
+        {
+          "rang": 1,
+          "texte": "détection sur quatre murs fermés : une région, aire calculée à la tolérance, modèle inchangé (empreinte identique avant et après)"
+        },
+        {
+          "rang": 2,
+          "texte": "boucle ouverte : aucune région, interstice listé"
+        },
+        {
+          "rang": 3,
+          "texte": "deux boucles : deux régions"
+        },
+        {
+          "rang": 4,
+          "texte": "`piece.creer` d'une région acceptée"
+        },
+        {
+          "rang": 5,
+          "texte": "aire déclarée ≠ calculée : écart listé, aucune valeur remplacée"
+        },
+        {
+          "rang": 6,
+          "texte": "candidat recouvrant une pièce existante : « polygone différent », pas de doublon"
+        },
+        {
+          "rang": 7,
+          "texte": "mur déplacé : pièce inchangée, désalignement listé"
+        },
+        {
+          "rang": 8,
+          "texte": "inverse restitue l'état."
+        }
+      ],
+      "note_independante": "Quatre murs carré clic pièce label16 ; boucles avec refend deux régions aires12 chacune ; création explicite puis existante détectée. Ligne isolée aucune boucle mais pas vraie boucle presque fermée/interstice. Aucune empreinte non-mutation ni écart aire/sans remplacement/désalignement après déplacement ni inverse pièce."
+    },
+    {
+      "entry_id": "M08-PATH-108",
+      "source_fiche": "docs/atelier/fiches/DA-07-16.md",
+      "source_line": 20,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/espace.test.ts`) : création ; aire calculée d'un rectangle de test (4 m sur 5 m : 20 m², entrées de test sans valeur normative) à la tolérance ; polygone auto-intersecté refusé ; recouvrement avec une pièce signalé, rien fusionné ; conversion en pièce en un lot, inverse restitue l'espace ; suppression d'un espace membre d'une zone : appartenance retirée, puis restituée par l'inverse. |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/espace.test.ts",
+      "candidate_paths": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "atomes_exacts": [
+        {
+          "rang": 1,
+          "texte": "création"
+        },
+        {
+          "rang": 2,
+          "texte": "aire calculée d'un rectangle de test (4 m sur 5 m : 20 m², entrées de test sans valeur normative) à la tolérance"
+        },
+        {
+          "rang": 3,
+          "texte": "polygone auto-intersecté refusé"
+        },
+        {
+          "rang": 4,
+          "texte": "recouvrement avec une pièce signalé, rien fusionné"
+        },
+        {
+          "rang": 5,
+          "texte": "conversion en pièce en un lot, inverse restitue l'espace"
+        },
+        {
+          "rang": 6,
+          "texte": "suppression d'un espace membre d'une zone : appartenance retirée, puis restituée par l'inverse."
+        }
+      ],
+      "note_independante": "Aucune création espace dans candidats ; pas aire20/refus croisement/recouvrement/conversion avec inverse/appartenance zone. Pièce ou groupes proches ≠ espace."
+    },
+    {
+      "entry_id": "M08-PATH-110",
+      "source_fiche": "docs/atelier/fiches/DA-07-17.md",
+      "source_line": 20,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/zone.test.ts`) : création avec membres ; membre d'un autre niveau refusé ; inclusion géométrique proposée, rien coché ; suppression d'une pièce membre : appartenance retirée puis restituée par l'inverse ; suppression de la zone : membres intacts ; pièce dans deux zones : recouvrement signalé ; inverse restitue l'état. |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/zone.test.ts",
+      "candidate_paths": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "atomes_exacts": [
+        {
+          "rang": 1,
+          "texte": "création avec membres"
+        },
+        {
+          "rang": 2,
+          "texte": "membre d'un autre niveau refusé"
+        },
+        {
+          "rang": 3,
+          "texte": "inclusion géométrique proposée, rien coché"
+        },
+        {
+          "rang": 4,
+          "texte": "suppression d'une pièce membre : appartenance retirée puis restituée par l'inverse"
+        },
+        {
+          "rang": 5,
+          "texte": "suppression de la zone : membres intacts"
+        },
+        {
+          "rang": 6,
+          "texte": "pièce dans deux zones : recouvrement signalé"
+        },
+        {
+          "rang": 7,
+          "texte": "inverse restitue l'état."
+        }
+      ],
+      "note_independante": "Aucune zone dans candidats ; groupe dissous ≠ zone et ne prouve membres intacts de zone. Tous attendus zonage sans assertion ciblée."
+    },
+    {
+      "entry_id": "M08-PATH-112",
+      "source_fiche": "docs/atelier/fiches/DA-17-16.md",
+      "source_line": 20,
+      "source_exact_line": "| Validation | **Unité** (fonctions pures de sélection, de filtre et de cadrage, `packages/core-geometry/src/revue.test.ts`, nom provisoire) : rayon résolu en `objetId` (objet le plus proche, égalité départagée de façon déterministe) ; filtre de classe ; objet sans représentation ignoré ; empreinte du modèle identique avant et après navigation et sélection. |",
+      "missing_literal_path": "packages/core-geometry/src/revue.test.ts",
+      "candidate_paths": [
+        "packages/atelier-model/src/projection/maillage.test.ts"
+      ],
+      "atomes_exacts": [
+        {
+          "rang": 1,
+          "texte": "rayon résolu en `objetId` (objet le plus proche, égalité départagée de façon déterministe)"
+        },
+        {
+          "rang": 2,
+          "texte": "filtre de classe"
+        },
+        {
+          "rang": 3,
+          "texte": "objet sans représentation ignoré"
+        },
+        {
+          "rang": 4,
+          "texte": "empreinte du modèle identique avant et après navigation et sélection."
+        }
+      ],
+      "note_independante": "Maillage sans hauteur renvoie null directement ; pas sélection rayon/objetId ni filtre classe ni invariant empreinte navigation. Maillages filtrés en tests ne sont pas fonction de filtre vue."
+    },
+    {
+      "entry_id": "M08-PATH-114",
+      "source_fiche": "docs/atelier/fiches/DA-18-03.md",
+      "source_line": 20,
+      "source_exact_line": "| Validation | **Unité** (`packages/core-geometry/src/eclate.test.ts`, nom provisoire) : écart 0 → décalages nuls ; 6 niveaux et un écart de test : décalage = rang × écart ; `ordre` incohérent : ordre suivi et signalé ; un niveau : aucun décalage ; empreinte du modèle identique avant et après. |",
+      "missing_literal_path": "packages/core-geometry/src/eclate.test.ts",
+      "candidate_paths": [
+        "packages/atelier-model/src/projection/maillage.test.ts"
+      ],
+      "atomes_exacts": [
+        {
+          "rang": 1,
+          "texte": "écart 0 → décalages nuls"
+        },
+        {
+          "rang": 2,
+          "texte": "6 niveaux et un écart de test : décalage = rang × écart"
+        },
+        {
+          "rang": 3,
+          "texte": "`ordre` incohérent : ordre suivi et signalé"
+        },
+        {
+          "rang": 4,
+          "texte": "un niveau : aucun décalage"
+        },
+        {
+          "rang": 5,
+          "texte": "empreinte du modèle identique avant et après."
+        }
+      ],
+      "note_independante": "Pas fonction éclaté ni écart/rang/ordre/empreinte dans candidat maillage. Altitudes de murs/niveaux et P118 contexte distinct."
+    },
+    {
+      "entry_id": "M08-PATH-116",
+      "source_fiche": "docs/atelier/fiches/DA-18-04.md",
+      "source_line": 21,
+      "source_exact_line": "| Validation | **Unité** (fonctions pures de filtrage, d'isolation et de localisation des problèmes, `packages/core-geometry/src/vue.test.ts`, nom provisoire) : filtre par niveau, classe et calque ; isolation puis retrait restitue la vue ; problème localisé en `objetId` ; empreinte du modèle identique avant et après. |",
+      "missing_literal_path": "packages/core-geometry/src/vue.test.ts",
+      "candidate_paths": [
+        "packages/atelier-model/src/projection/maillage.test.ts"
+      ],
+      "atomes_exacts": [
+        {
+          "rang": 1,
+          "texte": "filtre par niveau, classe et calque"
+        },
+        {
+          "rang": 2,
+          "texte": "isolation puis retrait restitue la vue"
+        },
+        {
+          "rang": 3,
+          "texte": "problème localisé en `objetId`"
+        },
+        {
+          "rang": 4,
+          "texte": "empreinte du modèle identique avant et après."
+        }
+      ],
+      "note_independante": "Pas filtre affichage niveau/classe/calque/isolation/localisation problème ni invariant empreinte dans candidat maillage."
+    },
+    {
+      "entry_id": "M08-PATH-124",
+      "source_fiche": "docs/atelier/fiches/DA-21-09.md",
+      "source_line": 19,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/reutilisation.test.ts`, nom provisoire) : reprise d'un modèle minimal : identifiants nouveaux, références remappées, hôtes d'ouvertures corrects ; cible de référence non reprise : « à réparer » ; site, hypothèses, sources et structure non repris sans choix ; origine enregistrée ; inverse supprime exactement ce qui a été ajouté. |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/reutilisation.test.ts",
+      "candidate_paths": [
+        "packages/atelier-model/src/reprise.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "atomes_exacts": [
+        {
+          "rang": 1,
+          "texte": "reprise d'un modèle minimal : identifiants nouveaux, références remappées, hôtes d'ouvertures corrects"
+        },
+        {
+          "rang": 2,
+          "texte": "cible de référence non reprise : « à réparer »"
+        },
+        {
+          "rang": 3,
+          "texte": "site, hypothèses, sources et structure non repris sans choix"
+        },
+        {
+          "rang": 4,
+          "texte": "origine enregistrée"
+        },
+        {
+          "rang": 5,
+          "texte": "inverse supprime exactement ce qui a été ajouté."
+        }
+      ],
+      "note_independante": "P118 reprise architecture : IDs reprise- et origine P118 pour murs assertés ; portes hôtes classe mur/idprefix assertés mais pas bijection source->cible complète. Références non reprises aReparer comptage (peut être zéro, pas fixture minimale assurée). Sans choix parcelle null/hypothèses[] assertés, pas source[]/structure absence ni emprise. Inverse égal cible non vide exact directement asserté. Écart ID documenté D022 pas renommer vers projectId sans décision."
+    }
+  ],
+  "sources": [
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+      "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+      "blob": "3ace5e26daac369268a402dff7492b8f64d0de31",
+      "lines": 934
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-02.md",
+      "sha256": "6e63d08f66d225d1492c5d185b5a69b5ff4f9bd8eb3a51fbf660cd317b387416",
+      "blob": "ebb6bac5ceecb88520d39fdb0f2093de386ad330",
+      "lines": 31
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-03.md",
+      "sha256": "2d8371422677c24e12d24d23341c329ae191510f9fa74ecdd7a1e0ef4f9c9065",
+      "blob": "1a90fa49697c99d77eadf7ad71c6ada0949853ae",
+      "lines": 33
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-04.md",
+      "sha256": "51ac54638553277baebf79fdeb4d72a0f9afbb88062acb51725782582b773e38",
+      "blob": "d02a092a1ec40933dc437dd013348ce844c6fafc",
+      "lines": 32
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-05.md",
+      "sha256": "c53730714d36f5363ccb240e6e94b4eb15da3a9c13756e4e60923d39f3f42474",
+      "blob": "af7d701ea0582e5d97deeaab8256bc423443d116",
+      "lines": 31
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-06.md",
+      "sha256": "de44c1f35222493c5bf8de6cb66cf65b8010347ead78557711ea1de0aa06d6bf",
+      "blob": "822967f9974f5fdd96d78c052c7fb37c3c8546de",
+      "lines": 31
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-10.md",
+      "sha256": "4943273ef4441cd2b45f27e33691e36a68d13fe54f2ba6b136f75a600e1caa76",
+      "blob": "f4682bbba513b553830c72413eee9b5c6c3a491d",
+      "lines": 35
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-15.md",
+      "sha256": "bb3a3087b95750456b7ac003962daab12dbcde9a6b808187d5fafd816f567bd6",
+      "blob": "ec4dc5167089cd3a88c4c44c30bdf683b1ba718a",
+      "lines": 32
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-16.md",
+      "sha256": "ff6a06d16645b06179f07298a1ac53666b35127c4596e1a5b0285adadea923f4",
+      "blob": "c97eb1090ad9b70715f6e93d737b2b04ea9edf81",
+      "lines": 29
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-17.md",
+      "sha256": "d68e0b0657525d327d86e7fc0c50d3936a507f294fa03bc8365607b8d10cb30a",
+      "blob": "14f200160e4e311b213a921ecc7e8f47e8bdbccb",
+      "lines": 28
+    },
+    {
+      "path": "docs/atelier/fiches/DA-17-16.md",
+      "sha256": "61e23bd37e1fd08865082c18f6274c556927498aff082dc1281c6bd2c937054e",
+      "blob": "b84ed05ddf3dae18060ca82476da75dae2a22545",
+      "lines": 40
+    },
+    {
+      "path": "docs/atelier/fiches/DA-18-03.md",
+      "sha256": "3ce7c26be56aced54d59af5668f1648fc271f5874a86eb30da2dba6fe944313e",
+      "blob": "0bd755655ba9ce9485fa463560f013737cd2ec25",
+      "lines": 32
+    },
+    {
+      "path": "docs/atelier/fiches/DA-18-04.md",
+      "sha256": "8e59f24ae60271b25e89e6c739b1b2816a4aa1921936ce7ded7355e9ac7291aa",
+      "blob": "dacaa9057d67e89a6d95dceace622249afc00d93",
+      "lines": 31
+    },
+    {
+      "path": "docs/atelier/fiches/DA-21-09.md",
+      "sha256": "85243980a85319f886901fcf2d5006c81fa0d3491f3f0e9bb0747b8fa845cc0a",
+      "blob": "b49aa2daff49ef834cd977a2b65c8b771b800181",
+      "lines": 39
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+      "blob": "458b232273b5e5529ff6489804371cba011901db",
+      "lines": 294
+    },
+    {
+      "path": "packages/atelier-model/src/projection/maillage.test.ts",
+      "sha256": "6e7dd4f59a6691c499ad8191df498490b3163110146581756bb7ce5eb5825dd2",
+      "blob": "4bffbe7b626c1ad2661e5cb2b88379b387515d58",
+      "lines": 111
+    },
+    {
+      "path": "packages/atelier-model/src/reprise.test.ts",
+      "sha256": "07ad4cef2d368abf0706b47b38ef7071ecb463c10ff7423875027bc2de00e5d4",
+      "blob": "7449908dfb8d4f7ae95bc493b5df3a80b3602ce3",
+      "lines": 114
+    }
+  ]
+}

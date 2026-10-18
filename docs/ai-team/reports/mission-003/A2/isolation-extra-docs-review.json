@@ -1,0 +1,1250 @@
+{
+  "agent": "A2",
+  "mission": "003 M08",
+  "scope": "Cohorte exacte de 20 fichiers initialement CONSERVER_TRACE_A_REVOIR du triage de 488, hors les 23 fichiers nominaux déjà revus ; aucun autre dépôt lu ou modifié.",
+  "baseline": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+  "cohort_count": 20,
+  "occurrence_count": 43,
+  "verdict": "19 documents à conserver, 1 point d’entrée recette à adapter (déjà couvert par le diff M06 A0). Aucune dépendance opérationnelle DrawAll démontrée dans les occurrences relues ; aucune qualification exhaustive du produit.",
+  "remaining": "269 fiches + 176 fichiers de code = 445 fichiers à qualifier sémantiquement ; archives, binaires, dépendances transitives et contenus sans marqueur restent hors preuve exhaustive.",
+  "not_done": [
+    "Aucun nettoyage appliqué",
+    "Aucune nouvelle preuve métier ou certification",
+    "Aucune réécriture des décisions ou historiques",
+    "Aucun accès au dépôt DrawAll"
+  ],
+  "rows": [
+    {
+      "path": "docs/atelier/lots/complements.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "70b88d8d8850cbfbb1b9f4d1b62b9d53fdc3bcb2",
+      "source_sha256": "0aeeaabfc55b876aa816496a09fb3433f12003aa2e49cbeb29eda68061115f3a",
+      "occurrences": [
+        {
+          "line": 12,
+          "exact_line": "| Historique d'un objet (DA-21-06 -d) | `GET /atelier/objets/:id/historique` : créé, modifié, supprimé (avec successeurs d'une scission), auteur, révision, date ; repli « Historique de l'objet » dans l'inspecteur. | test API « historique d'un objet », e2e `atelier-complements.mjs` |",
+          "kind": "COMPTE_RENDU_HISTORIQUE",
+          "provenance": "D-022, 4 octobre2026 ; DA21-06/21-09/05-11 ancrent historique, reprise et publications Fadi. Les références externes décrites sont interprojets Fadi, pas relation à DrawAll.",
+          "action_proposed": "CONSERVER",
+          "reason": "Aucun couplage produit démontré ; ne pas lire «référence externe» comme autre application. Droits/empreintes/cycles mentionnés restent obligations à tester, pas preuves rejouées.",
+          "evidence": "docs/atelier/lots/complements.md:12@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-21-06",
+              "candidate_path": "docs/atelier/fiches/DA-21-06.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 14,
+          "exact_line": "| Réutilisation de modèle (DA-21-09) | Panneau « Reprendre d'un autre projet » : source (projet ou version nommée), familles, données de projet à cocher, homonymes ; aperçu sans écriture puis reprise en une révision ; rapport (par classe, niveaux, homonymes, à réparer, non repris). | `reprise.test.ts` (3), `commandes.test.ts` (3), test API « reprise », e2e (590 objets du P.118 repris) |",
+          "kind": "COMPTE_RENDU_HISTORIQUE",
+          "provenance": "D-022, 4 octobre2026 ; DA21-06/21-09/05-11 ancrent historique, reprise et publications Fadi. Les références externes décrites sont interprojets Fadi, pas relation à DrawAll.",
+          "action_proposed": "CONSERVER",
+          "reason": "Aucun couplage produit démontré ; ne pas lire «référence externe» comme autre application. Droits/empreintes/cycles mentionnés restent obligations à tester, pas preuves rejouées.",
+          "evidence": "docs/atelier/lots/complements.md:14@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-21-09",
+              "candidate_path": "docs/atelier/fiches/DA-21-09.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 15,
+          "exact_line": "| Références externes (DA-05-11) | Panneau « Références externes » : rattacher la publication d'un autre projet (niveau source, niveau du projet, origine, rotation) ; superposition grise non sélectionnable ; état ; différences puis épinglage de la dernière publication ; détacher. Refus : sans lecture de la source (404), publication ou empreinte fausse, niveau inconnu, référence circulaire directe ou par chaîne (409). | `refexterne.test.ts` (2), test API « références externes », e2e |",
+          "kind": "COMPTE_RENDU_HISTORIQUE",
+          "provenance": "D-022, 4 octobre2026 ; DA21-06/21-09/05-11 ancrent historique, reprise et publications Fadi. Les références externes décrites sont interprojets Fadi, pas relation à DrawAll.",
+          "action_proposed": "CONSERVER",
+          "reason": "Aucun couplage produit démontré ; ne pas lire «référence externe» comme autre application. Droits/empreintes/cycles mentionnés restent obligations à tester, pas preuves rejouées.",
+          "evidence": "docs/atelier/lots/complements.md:15@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-05-11",
+              "candidate_path": "docs/atelier/fiches/DA-05-11.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "Aucun couplage produit démontré ; ne pas lire «référence externe» comme autre application. Droits/empreintes/cycles mentionnés restent obligations à tester, pas preuves rejouées.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/atelier/lots/lot-0.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "4d7bb245d5e65abb72e1e13de45bf8675b3a56ee",
+      "source_sha256": "47ae3651ebb67982a075029e41b5f4532278e8d66c631e1aa21bac7c8520e402",
+      "occurrences": [
+        {
+          "line": 11,
+          "exact_line": "| L0.1 | `CLAUDE.md`, `docs/atelier/README.md`, `decisions.md` (D-001 à D-013), gabarit de fiche ; amendements du plan reportés dans `docs/architecture.md` (modèle typé et fiches, cycle transactionnel, rendu WebGL2, états « à recalculer / publié », versions / variantes / publications, matrice d'échanges, lot 6 du programme). Cahier des charges complété d'après les fiches (caractéristiques nommées d'esquisse, `calqueId` sur toute occurrence, entités `groupe` / `bloc` / `composant` / `reference-externe`, tolérances, commandes `transformer.raccorder` / `.chanfreiner`, `contrainte.*`, `calque.affecter`, `refexterne.*`, DA-02-16 au lot 3a, choix IFC). |",
+          "kind": "CADRAGE_HISTORIQUE",
+          "provenance": "3oct2026 D010–013 ; création initiale fiches et bancs, marqueurs DA référençant capacités et choix Fadi.",
+          "action_proposed": "CONSERVER",
+          "reason": "OCCT encore à arbitrer dans ce relevé daté est historique ; ne pas contredire D177 ultérieure ni effacer provenance. Mesures software GPU ne valent pas matériel réel.",
+          "evidence": "docs/atelier/lots/lot-0.md:11@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-02-16",
+              "candidate_path": "docs/atelier/fiches/DA-02-16.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 12,
+          "exact_line": "| L0.2 | **72 fiches** à l'état « spécifiée (lot 0) » dans `docs/atelier/fiches/` : DA-01 (12), DA-02 (17), DA-03 (6), DA-04 (2), DA-05 (12), DA-06 (2), DA-07 (10), DA-17-16, DA-18-03 / 04, DA-21 (7). Interprétations consignées en D-012. |",
+          "kind": "CADRAGE_HISTORIQUE",
+          "provenance": "3oct2026 D010–013 ; création initiale fiches et bancs, marqueurs DA référençant capacités et choix Fadi.",
+          "action_proposed": "CONSERVER",
+          "reason": "OCCT encore à arbitrer dans ce relevé daté est historique ; ne pas contredire D177 ultérieure ni effacer provenance. Mesures software GPU ne valent pas matériel réel.",
+          "evidence": "docs/atelier/lots/lot-0.md:12@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-17-16",
+              "candidate_path": "docs/atelier/fiches/DA-17-16.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-18-03",
+              "candidate_path": "docs/atelier/fiches/DA-18-03.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 37,
+          "exact_line": "- `docs/atelier/fiches/` : ouvrir par exemple `DA-07-01.md` (murs), `DA-07-10.md` (escalier), `DA-02-16.md` (saisie de précision).",
+          "kind": "CADRAGE_HISTORIQUE",
+          "provenance": "3oct2026 D010–013 ; création initiale fiches et bancs, marqueurs DA référençant capacités et choix Fadi.",
+          "action_proposed": "CONSERVER",
+          "reason": "OCCT encore à arbitrer dans ce relevé daté est historique ; ne pas contredire D177 ultérieure ni effacer provenance. Mesures software GPU ne valent pas matériel réel.",
+          "evidence": "docs/atelier/lots/lot-0.md:37@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-02-16",
+              "candidate_path": "docs/atelier/fiches/DA-02-16.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-07-01",
+              "candidate_path": "docs/atelier/fiches/DA-07-01.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-07-10",
+              "candidate_path": "docs/atelier/fiches/DA-07-10.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "OCCT encore à arbitrer dans ce relevé daté est historique ; ne pas contredire D177 ultérieure ni effacer provenance. Mesures software GPU ne valent pas matériel réel.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/atelier/lots/lot-3b.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "79ea6e3b72924cd2a20802f586a927de7edf9098",
+      "source_sha256": "0b28486808f133eaea85d9ec70726cddc462e0ea0ca5e0b73bd6c68f823d00e1",
+      "occurrences": [
+        {
+          "line": 12,
+          "exact_line": "| L3b.2 | Outil « Pousser / tirer » (U) : clic sur un mur, poteau, solide, dalle ou toiture, glisser vertical ; aperçu orange recalculé par le même maillage pur, valeur affichée, une seule commande `objet.modifier` au relâchement (arrondi au centimètre, D-012 ; un mur poussé quitte son niveau haut pour prendre la hauteur saisie). Outil « Extruder l'esquisse » : rectangle, cercle, polygone ou polyligne fermée → `solide.extruder` de la hauteur de l'outil. Manipulation directe en plan (DA-02-17) : glisser un objet déjà sélectionné le déplace, saisi par un point remarquable et posé avec les accrochages, aperçu transparent et distance, une commande `transformer.deplacer`. |",
+          "kind": "IMPLEMENTATION_HISTORIQUE",
+          "provenance": "3oct2026 D010/D012 ; DA02-17 étiquette manipulation en plan et commande transformer.deplacer natives.",
+          "action_proposed": "CONSERVER",
+          "reason": "Ancien ?version=nouveau et chiffres de recette sont historiques ; pas recette actuelle ni nouveau mode classique à restaurer.",
+          "evidence": "docs/atelier/lots/lot-3b.md:12@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-02-17",
+              "candidate_path": "docs/atelier/fiches/DA-02-17.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "Ancien ?version=nouveau et chiffres de recette sont historiques ; pas recette actuelle ni nouveau mode classique à restaurer.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/atelier/lots/lot-5.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "6bb4774c23031d02cf5d123d7985727d3bd05bf1",
+      "source_sha256": "1303ad61b239c6e7160b8e415ab88c779f6df1db3d038472cfa8d0d698b5e8a6",
+      "occurrences": [
+        {
+          "line": 29,
+          "exact_line": "  DA-01-07 / 08, blocs et composants DA-05-06 / 07 / 09, toitures, garde-corps, phases — **API 67**, web 20) ·",
+          "kind": "PREUVE_HISTORIQUE_ET_TRAÇABILITE_CAPACITES",
+          "provenance": "4oct2026 ; DA01/05 relient tests de contraintes/blocs aux capacités Fadi dans rapport de lot.",
+          "action_proposed": "CONSERVER",
+          "reason": "Comptes de tests et performance sont ceux du lot ; fonctions/formats/propriétés doivent être requalifiés avant conformité Studio.",
+          "evidence": "docs/atelier/lots/lot-5.md:29@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-01-07",
+              "candidate_path": "docs/atelier/fiches/DA-01-07.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-05-06",
+              "candidate_path": "docs/atelier/fiches/DA-05-06.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "Comptes de tests et performance sont ceux du lot ; fonctions/formats/propriétés doivent être requalifiés avant conformité Studio.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/atelier/lots/lot-7.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "35bc8a113396d318746a67b09454efd0e70c0c19",
+      "source_sha256": "d5bbf09c46288bb12d6ded459c41d72b362d7c96b7a14f0db180173f70195a02",
+      "occurrences": [
+        {
+          "line": 48,
+          "exact_line": "- Réutilisation sélective d'un modèle (DA-21-09 : familles cochées, identifiants remappés) : non faite — la variante",
+          "kind": "LIMITE_HISTORIQUE",
+          "provenance": "4oct2026 D020 ; DA21-09 alors non faite, compléments D022 ensuite rapportent livraison.",
+          "action_proposed": "CONSERVER",
+          "reason": "Ne pas transformer réserve ancienne en absence actuelle ni la supprimer. Point d’entrée actuel doit renvoyer compléments/décisions.",
+          "evidence": "docs/atelier/lots/lot-7.md:48@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-21-09",
+              "candidate_path": "docs/atelier/fiches/DA-21-09.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "Ne pas transformer réserve ancienne en absence actuelle ni la supprimer. Point d’entrée actuel doit renvoyer compléments/décisions.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/atelier/lots/lot-9.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "4e48934e8b7319c72ddeaf3981372f5fbd36148e",
+      "source_sha256": "98d6f5c4ab070cf3fa0fa404538dcaa874d2e7977dcda384741bbf9af002bd90",
+      "occurrences": [
+        {
+          "line": 14,
+          "exact_line": "| Fiches de capacité | 11 fiches dont le code existait depuis les lots 2 à 7 passées « prototype » avec leur preuve (DA-03-01 / 09 / 10 / 12, DA-06-07 / 08, DA-21-01 / 02 / 05 / 06 / 07) ; tests ajoutés pour les propriétés BIM, la classification et les groupes. Restent « spécifiées » : DA-05-11, DA-21-09 (non réalisées, dites). |",
+          "kind": "ETAT_HISTORIQUE_AVANT_ACCEPTATION",
+          "provenance": "4oct2026 ; fiches prototype/spécifiées puis compléments et D174 disponibles.",
+          "action_proposed": "CONSERVER",
+          "reason": "État daté noncontradictoire dès chronologie respectée ; pas baisser capacités actuelles ni déclarer tout disponible Studio.",
+          "evidence": "docs/atelier/lots/lot-9.md:14@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-03-01",
+              "candidate_path": "docs/atelier/fiches/DA-03-01.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-05-11",
+              "candidate_path": "docs/atelier/fiches/DA-05-11.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-06-07",
+              "candidate_path": "docs/atelier/fiches/DA-06-07.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-21-01",
+              "candidate_path": "docs/atelier/fiches/DA-21-01.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-21-09",
+              "candidate_path": "docs/atelier/fiches/DA-21-09.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "État daté noncontradictoire dès chronologie respectée ; pas baisser capacités actuelles ni déclarer tout disponible Studio.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-0.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "05dc0ecae377f88f33597023639f802ae65e3178",
+      "source_sha256": "ecf8f7a6ae28b818d810de305a502dfddd697bc709eded450e9fc498fd46e8d8",
+      "occurrences": [
+        {
+          "line": 11,
+          "exact_line": "| Fiches manquantes des entrées P1 livrées | **67 fiches** établies à l'état « disponible (…) — fiche établie en P2-0 » avec preuve liée (tests, recettes, comptes rendus) : DA-06-01 / 02, DA-07-07 / 12 / 22, DA-14 (18), DA-15 (8), DA-16 (15), DA-17-13 / 15, DA-18-01 / 02, DA-19-01 / 02 / 06, DA-21-03 / 08, DA-22-01 / 04 / 05 / 06 ; **DA-22-03 (DWG)** à l'état « spécifiée — renoncée (D-179) » ; les 7 entrées DA-04 retenues au lot optionnel OCCT et jamais livrées (02, 03, 04, 08, 09, 10, 11) sont spécifiées pour **P2-1**. Le compte « disponible » est désormais exact entrée par entrée : 137 fiches disponibles (71 + 66), 1 renoncée. |",
+          "kind": "CADRAGE_HISTORIQUE_ET_DECISIONS_LICENCE",
+          "provenance": "8oct2026 D176–181 ; DA22-03 DWG renoncé, fiches P2 spécifiées, catalogues sourcés.",
+          "action_proposed": "CONSERVER",
+          "reason": "Le compte164 et statuts sont instantané ; licence séparée/renoncements et sources gardés, aucune renaissance DWG implicite.",
+          "evidence": "docs/atelier/lots/p2-lot-0.md:11@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-06-01",
+              "candidate_path": "docs/atelier/fiches/DA-06-01.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-07-07",
+              "candidate_path": "docs/atelier/fiches/DA-07-07.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-17-13",
+              "candidate_path": "docs/atelier/fiches/DA-17-13.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-18-01",
+              "candidate_path": "docs/atelier/fiches/DA-18-01.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-19-01",
+              "candidate_path": "docs/atelier/fiches/DA-19-01.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-21-03",
+              "candidate_path": "docs/atelier/fiches/DA-21-03.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-22-01",
+              "candidate_path": "docs/atelier/fiches/DA-22-01.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-22-03",
+              "candidate_path": "docs/atelier/fiches/DA-22-03.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 12,
+          "exact_line": "| Fiches « spécifiée » des lots P2-1 et P2-2 | P2-1 : les 7 DA-04 ci-dessus + suivi P2-1 sur DA-03-01 (-d) et DA-03-12 ; P2-2 : **25 fiches** (DA-10-01 à 09, 13 à 16 ; DA-05-08, 10, 13, 16, 17, 18 ; DA-06-03 à 06, 09, 10) — `docs/atelier/fiches/`. Total : 164 fichiers dans le dossier (163 fiches + gabarit). |",
+          "kind": "CADRAGE_HISTORIQUE_ET_DECISIONS_LICENCE",
+          "provenance": "8oct2026 D176–181 ; DA22-03 DWG renoncé, fiches P2 spécifiées, catalogues sourcés.",
+          "action_proposed": "CONSERVER",
+          "reason": "Le compte164 et statuts sont instantané ; licence séparée/renoncements et sources gardés, aucune renaissance DWG implicite.",
+          "evidence": "docs/atelier/lots/p2-lot-0.md:12@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-03-01",
+              "candidate_path": "docs/atelier/fiches/DA-03-01.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-03-12",
+              "candidate_path": "docs/atelier/fiches/DA-03-12.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-05-08",
+              "candidate_path": "docs/atelier/fiches/DA-05-08.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-06-03",
+              "candidate_path": "docs/atelier/fiches/DA-06-03.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-10-01",
+              "candidate_path": "docs/atelier/fiches/DA-10-01.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "Le compte164 et statuts sont instantané ; licence séparée/renoncements et sources gardés, aucune renaissance DWG implicite.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-1.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "ecbd00453555081378e8f88fcd516ceb3d3519a5",
+      "source_sha256": "496f1355cc8ae276cabf623ec0d4a437bcd031ebb63a9e7dd679016f0d9b34b4",
+      "occurrences": [
+        {
+          "line": 6,
+          "exact_line": "sur le chemin d'ouverture). Fiches : DA-04-02, 03, 04, 08, 09, 10, 11 ; DA-03-01 (-d), DA-03-12 — à l'état",
+          "kind": "LIVRAISON_HISTORIQUE_NOYAU_EXACT",
+          "provenance": "8oct2026 D177/D182 ; DA04/03 marquent les fonctions exactes natives et R15.",
+          "action_proposed": "CONSERVER",
+          "reason": "Prototype jusqu’acceptation D183 ; ne pas réécrire acceptation dans compte rendu initial. Licence/type de géométrie ni certifiés ni réattribués.",
+          "evidence": "docs/atelier/lots/p2-lot-1.md:6@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-03-01",
+              "candidate_path": "docs/atelier/fiches/DA-03-01.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-03-12",
+              "candidate_path": "docs/atelier/fiches/DA-03-12.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-04-02",
+              "candidate_path": "docs/atelier/fiches/DA-04-02.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "Prototype jusqu’acceptation D183 ; ne pas réécrire acceptation dans compte rendu initial. Licence/type de géométrie ni certifiés ni réattribués.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-2.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "d3c5a456a8e2d7fa1eba3b67d705da4c4ab141c3",
+      "source_sha256": "86886866879c896b58698feb583b48c5c523c9dc7b0db294fb9cc2aef0a3578a",
+      "occurrences": [
+        {
+          "line": 5,
+          "exact_line": "D-180 (catalogues sourcés), D-181 (projet mixte P.118-M). Fiches : DA-10-01 à 09, 13 à 16 ; DA-05-17, 18 ; DA-06-03 à",
+          "kind": "LIVRAISON_HISTORIQUE_MECANIQUE_ET_LIMITES",
+          "provenance": "8oct2026 D184 ; pièces copiées, assemblages/liaisons, tableaux/IFC proxy ; DA05 reportées et limites features explicites.",
+          "action_proposed": "CONSERVER",
+          "reason": "Ne pas confondre noms «studios de pièces» avec Studio actuel ; copie de géométrie et proxy ne prouvent pas édition paramétrique intégrale.",
+          "evidence": "docs/atelier/lots/p2-lot-2.md:5@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-05-17",
+              "candidate_path": "docs/atelier/fiches/DA-05-17.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-06-03",
+              "candidate_path": "docs/atelier/fiches/DA-06-03.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-10-01",
+              "candidate_path": "docs/atelier/fiches/DA-10-01.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 6,
+          "exact_line": "06, 09, 10 — à l'état **prototype** ; DA-05-08, 10, 13, 16 **reportées** (déclarées).",
+          "kind": "LIVRAISON_HISTORIQUE_MECANIQUE_ET_LIMITES",
+          "provenance": "8oct2026 D184 ; pièces copiées, assemblages/liaisons, tableaux/IFC proxy ; DA05 reportées et limites features explicites.",
+          "action_proposed": "CONSERVER",
+          "reason": "Ne pas confondre noms «studios de pièces» avec Studio actuel ; copie de géométrie et proxy ne prouvent pas édition paramétrique intégrale.",
+          "evidence": "docs/atelier/lots/p2-lot-2.md:6@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-05-08",
+              "candidate_path": "docs/atelier/fiches/DA-05-08.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 15,
+          "exact_line": "| Documents, IFC, coordination | Tableau **« Nomenclature des assemblages »** (DA-10-14 / 15 : assemblage, n°, référence, pièce, matériau, volume, quantité, niveau, liaisons ; masse « non évaluée » sans densité sourcée) → document CSV du catalogue. Vue axonométrique **éclatée** (`eclate` : assemblage, distance) avec bulles numérotées (DA-10-16), posable sur une feuille. IFC : `IfcElementAssembly` (Tag = numéro, `Fadi_Assemblage` : repère, liaisons, diagnostic) agrégeant ses pièces (`IfcRelAggregates`) ; pièce = proxy tessellé posé (`Fadi_Piece`) ; matrice d'échanges complétée. Interférences : une pièce est un corps (prisme de son emprise convexe, déclaré comme enveloppe) contrôlé contre tout corps du bâtiment ; **collision « piece-batiment »** listée avec les collisions d'architecture (panneau des modifications, `/problemes`), jamais corrigée. |",
+          "kind": "LIVRAISON_HISTORIQUE_MECANIQUE_ET_LIMITES",
+          "provenance": "8oct2026 D184 ; pièces copiées, assemblages/liaisons, tableaux/IFC proxy ; DA05 reportées et limites features explicites.",
+          "action_proposed": "CONSERVER",
+          "reason": "Ne pas confondre noms «studios de pièces» avec Studio actuel ; copie de géométrie et proxy ne prouvent pas édition paramétrique intégrale.",
+          "evidence": "docs/atelier/lots/p2-lot-2.md:15@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-10-14",
+              "candidate_path": "docs/atelier/fiches/DA-10-14.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-10-16",
+              "candidate_path": "docs/atelier/fiches/DA-10-16.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 43,
+          "exact_line": "- **Flexiblocs (DA-05-08), cellules (DA-05-10), studios de pièces (DA-05-13), bibliothèques intelligentes",
+          "kind": "LIVRAISON_HISTORIQUE_MECANIQUE_ET_LIMITES",
+          "provenance": "8oct2026 D184 ; pièces copiées, assemblages/liaisons, tableaux/IFC proxy ; DA05 reportées et limites features explicites.",
+          "action_proposed": "CONSERVER",
+          "reason": "Ne pas confondre noms «studios de pièces» avec Studio actuel ; copie de géométrie et proxy ne prouvent pas édition paramétrique intégrale.",
+          "evidence": "docs/atelier/lots/p2-lot-2.md:43@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-05-08",
+              "candidate_path": "docs/atelier/fiches/DA-05-08.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-05-10",
+              "candidate_path": "docs/atelier/fiches/DA-05-10.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-05-13",
+              "candidate_path": "docs/atelier/fiches/DA-05-13.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 44,
+          "exact_line": "  (DA-05-16)** : reportés (D-184 f) — hors du chemin de la porte ; repris en P2-6 ou P2-8.",
+          "kind": "LIVRAISON_HISTORIQUE_MECANIQUE_ET_LIMITES",
+          "provenance": "8oct2026 D184 ; pièces copiées, assemblages/liaisons, tableaux/IFC proxy ; DA05 reportées et limites features explicites.",
+          "action_proposed": "CONSERVER",
+          "reason": "Ne pas confondre noms «studios de pièces» avec Studio actuel ; copie de géométrie et proxy ne prouvent pas édition paramétrique intégrale.",
+          "evidence": "docs/atelier/lots/p2-lot-2.md:44@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-05-16",
+              "candidate_path": "docs/atelier/fiches/DA-05-16.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 46,
+          "exact_line": "  pas d'arbre rejouable sur la pièce elle-même (DA-10-03 prototype partiel, déclaré dans la fiche).",
+          "kind": "LIVRAISON_HISTORIQUE_MECANIQUE_ET_LIMITES",
+          "provenance": "8oct2026 D184 ; pièces copiées, assemblages/liaisons, tableaux/IFC proxy ; DA05 reportées et limites features explicites.",
+          "action_proposed": "CONSERVER",
+          "reason": "Ne pas confondre noms «studios de pièces» avec Studio actuel ; copie de géométrie et proxy ne prouvent pas édition paramétrique intégrale.",
+          "evidence": "docs/atelier/lots/p2-lot-2.md:46@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-10-03",
+              "candidate_path": "docs/atelier/fiches/DA-10-03.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 48,
+          "exact_line": "  occurrences » (la source est un solide exact, pas une définition) — déclaré dans DA-10-02.",
+          "kind": "LIVRAISON_HISTORIQUE_MECANIQUE_ET_LIMITES",
+          "provenance": "8oct2026 D184 ; pièces copiées, assemblages/liaisons, tableaux/IFC proxy ; DA05 reportées et limites features explicites.",
+          "action_proposed": "CONSERVER",
+          "reason": "Ne pas confondre noms «studios de pièces» avec Studio actuel ; copie de géométrie et proxy ne prouvent pas édition paramétrique intégrale.",
+          "evidence": "docs/atelier/lots/p2-lot-2.md:48@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-10-02",
+              "candidate_path": "docs/atelier/fiches/DA-10-02.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "Ne pas confondre noms «studios de pièces» avec Studio actuel ; copie de géométrie et proxy ne prouvent pas édition paramétrique intégrale.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-3.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "37d1a72dbf7e078b5a1eaf135e7b72bfef034762",
+      "source_sha256": "659fe79ad2df7c166e07127f87043443eb0e5cdd53c69141bc7903b9cabb9f00",
+      "occurrences": [
+        {
+          "line": 5,
+          "exact_line": "D-180 (catalogues sourcés). Fiches : DA-08-01 à 19, DA-03-14, DA-10-10 — à l'état **prototype** (DA-08-19 partiel,",
+          "kind": "LIVRAISON_HISTORIQUE_STRUCTURE",
+          "provenance": "8oct2026 D185 ; DA08/03/10 pour trame/structure, plans reportés P2-7 et règles P2-8.",
+          "action_proposed": "CONSERVER",
+          "reason": "Quantités/sections sourcées, maillages et ferraillage simplifié ; pas contrôle résistance ni norme inventée. Les reports ne sont pas absences actuelles sans rapprochement aval.",
+          "evidence": "docs/atelier/lots/p2-lot-3.md:5@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-03-14",
+              "candidate_path": "docs/atelier/fiches/DA-03-14.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-08-01",
+              "candidate_path": "docs/atelier/fiches/DA-08-01.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-08-19",
+              "candidate_path": "docs/atelier/fiches/DA-08-19.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-10-10",
+              "candidate_path": "docs/atelier/fiches/DA-10-10.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 19,
+          "exact_line": "| Génération contrôlée (DA-08-05) | Fiche de la trame : aperçu « n poteau(x), m poutre(s) », bouton « Générer (accord) » inactif sans hauteur ni sections ; poteaux (classe du socle, propriété `trame`) aux intersections, poutres entre intersections voisines, axe à hauteur − h/2 ; rejouable sans doublon ; `trame.supprimer { avecObjets }`. |",
+          "kind": "LIVRAISON_HISTORIQUE_STRUCTURE",
+          "provenance": "8oct2026 D185 ; DA08/03/10 pour trame/structure, plans reportés P2-7 et règles P2-8.",
+          "action_proposed": "CONSERVER",
+          "reason": "Quantités/sections sourcées, maillages et ferraillage simplifié ; pas contrôle résistance ni norme inventée. Les reports ne sont pas absences actuelles sans rapprochement aval.",
+          "evidence": "docs/atelier/lots/p2-lot-3.md:19@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-08-05",
+              "candidate_path": "docs/atelier/fiches/DA-08-05.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 53,
+          "exact_line": "- **Plans d'atelier, de ferraillage, de pliage** (DA-08-19, DA-11-04 / 05) : P2-7 ; **génération par règles** : P2-8.",
+          "kind": "LIVRAISON_HISTORIQUE_STRUCTURE",
+          "provenance": "8oct2026 D185 ; DA08/03/10 pour trame/structure, plans reportés P2-7 et règles P2-8.",
+          "action_proposed": "CONSERVER",
+          "reason": "Quantités/sections sourcées, maillages et ferraillage simplifié ; pas contrôle résistance ni norme inventée. Les reports ne sont pas absences actuelles sans rapprochement aval.",
+          "evidence": "docs/atelier/lots/p2-lot-3.md:53@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-08-19",
+              "candidate_path": "docs/atelier/fiches/DA-08-19.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-11-04",
+              "candidate_path": "docs/atelier/fiches/DA-11-04.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "Quantités/sections sourcées, maillages et ferraillage simplifié ; pas contrôle résistance ni norme inventée. Les reports ne sont pas absences actuelles sans rapprochement aval.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-4.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "c5a3bd5567864bec969a58921b27388696d3e1bc",
+      "source_sha256": "60a764109023282ce0ec5965af56401573b6d14a85c2dc663f80cf03757967df",
+      "occurrences": [
+        {
+          "line": 5,
+          "exact_line": "(catalogues sourcés). Fiches : DA-09-01 à 08, DA-11-01 à 05 — à l'état **prototype**.",
+          "kind": "LIVRAISON_HISTORIQUE_BOIS_TOLERIE",
+          "provenance": "8oct2026 D186/D180 ; DA09/11 renvoient capacités Fadi sources et paramètres de fabrication.",
+          "action_proposed": "CONSERVER",
+          "reason": "Marqueurs DA non dépendances ; dimensions/propriétés sourcées ne doivent pas être remplacées par valeurs supposées.",
+          "evidence": "docs/atelier/lots/p2-lot-4.md:5@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-09-01",
+              "candidate_path": "docs/atelier/fiches/DA-09-01.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-11-01",
+              "candidate_path": "docs/atelier/fiches/DA-11-01.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "Marqueurs DA non dépendances ; dimensions/propriétés sourcées ne doivent pas être remplacées par valeurs supposées.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-5.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "80642c0a488110722cf25c8f405e92134701654f",
+      "source_sha256": "ced0824193837f50ed2ee27e0aa1d58f0d4ae995d67c9e330ae9e30f06698d59",
+      "occurrences": [
+        {
+          "line": 5,
+          "exact_line": "valeurs), §5 (lot P2-5), §8 ; D-180 (catalogues sourcés). Fiches : DA-12-01 à 14, DA-12-16 à 21, DA-03-16 — à l'état",
+          "kind": "LIVRAISON_HISTORIQUE_MEP",
+          "provenance": "8oct2026 D187/D180 ; DA12/03 renvoient réseau/connectivité sans tables normatives intégrées.",
+          "action_proposed": "CONSERVER",
+          "reason": "Ne pas promettre dimensionnement réglementaire par présence du réseau ; symboles/normes officielles et données sourced à préserver.",
+          "evidence": "docs/atelier/lots/p2-lot-5.md:5@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-03-16",
+              "candidate_path": "docs/atelier/fiches/DA-03-16.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-12-01",
+              "candidate_path": "docs/atelier/fiches/DA-12-01.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-12-16",
+              "candidate_path": "docs/atelier/fiches/DA-12-16.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "Ne pas promettre dimensionnement réglementaire par présence du réseau ; symboles/normes officielles et données sourced à préserver.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-6.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "caae20717a94ebb1f740a516693f0e8e54cad888",
+      "source_sha256": "d99f8a75dde4b82987faf0fd92c54ae3052498ab8008e88beaff3acc2f332c6c",
+      "occurrences": [
+        {
+          "line": 5,
+          "exact_line": "de spécification), §5 (lot P2-6), §8 ; R15 (le paramétrique reste canonique). Fiches : DA-03-02 à 08, 11 ; DA-04-05,",
+          "kind": "LIVRAISON_HISTORIQUE_COORDINATION",
+          "provenance": "8oct2026 D188 R15 ; DA03/04/07/17 ancrent surfaces/bâtiment/coordination.",
+          "action_proposed": "CONSERVER",
+          "reason": "La provenance de géométrie et la règle paramétrique canonique restent à conserver ; coordination n’est pas correction automatique ni preuve certification.",
+          "evidence": "docs/atelier/lots/p2-lot-6.md:5@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-03-02",
+              "candidate_path": "docs/atelier/fiches/DA-03-02.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-04-05",
+              "candidate_path": "docs/atelier/fiches/DA-04-05.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 6,
+          "exact_line": "06 ; DA-07-08, 09, 11, 13, 14, 18, 19, 20, 21, 23 ; DA-17-04, 05, 06, 10, 11, 14 — à l'état **prototype**.",
+          "kind": "LIVRAISON_HISTORIQUE_COORDINATION",
+          "provenance": "8oct2026 D188 R15 ; DA03/04/07/17 ancrent surfaces/bâtiment/coordination.",
+          "action_proposed": "CONSERVER",
+          "reason": "La provenance de géométrie et la règle paramétrique canonique restent à conserver ; coordination n’est pas correction automatique ni preuve certification.",
+          "evidence": "docs/atelier/lots/p2-lot-6.md:6@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-07-08",
+              "candidate_path": "docs/atelier/fiches/DA-07-08.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-17-04",
+              "candidate_path": "docs/atelier/fiches/DA-17-04.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "La provenance de géométrie et la règle paramétrique canonique restent à conserver ; coordination n’est pas correction automatique ni preuve certification.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-7.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "9f52802a49f4942d415410e9b9fff174f193400b",
+      "source_sha256": "fce32524915db38f08cb9b7965eba0fe1dc189176410daea49b51de2e3db79bc",
+      "occurrences": [
+        {
+          "line": 5,
+          "exact_line": "d'inventé), R9 (journal). Fiches : DA-14-11, 13, 14, 15 ; DA-15-03, 08 à 16, 18 ; DA-16-09, 16 ; DA-22-07 à 09 —",
+          "kind": "LIVRAISON_HISTORIQUE_ANNOTATIONS_ET_FORMATS",
+          "provenance": "9oct2026 D189/D179 ; DA14/15/16/22 pour annotations/nomenclatures/nuages ; DWG/DGN renoncés, CloudWorx sans objet.",
+          "action_proposed": "CONSERVER",
+          "reason": "Tolérances/symboles sont règles Fadi/sources normatives, pas licence à supprimer. Aucune dépendance CloudWorx démontrée : mention exclue explicitement. Respecter refus E57/LAZ et origine déclarée.",
+          "evidence": "docs/atelier/lots/p2-lot-7.md:5@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-14-11",
+              "candidate_path": "docs/atelier/fiches/DA-14-11.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-15-03",
+              "candidate_path": "docs/atelier/fiches/DA-15-03.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-16-09",
+              "candidate_path": "docs/atelier/fiches/DA-16-09.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-22-07",
+              "candidate_path": "docs/atelier/fiches/DA-22-07.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 6,
+          "exact_line": "à l'état **prototype** ; DA-22-02 (DGN) renoncée (D-179) ; DA-22-10 (CloudWorx) sans objet.",
+          "kind": "LIVRAISON_HISTORIQUE_ANNOTATIONS_ET_FORMATS",
+          "provenance": "9oct2026 D189/D179 ; DA14/15/16/22 pour annotations/nomenclatures/nuages ; DWG/DGN renoncés, CloudWorx sans objet.",
+          "action_proposed": "CONSERVER",
+          "reason": "Tolérances/symboles sont règles Fadi/sources normatives, pas licence à supprimer. Aucune dépendance CloudWorx démontrée : mention exclue explicitement. Respecter refus E57/LAZ et origine déclarée.",
+          "evidence": "docs/atelier/lots/p2-lot-7.md:6@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-22-02",
+              "candidate_path": "docs/atelier/fiches/DA-22-02.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-22-10",
+              "candidate_path": "docs/atelier/fiches/DA-22-10.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 18,
+          "exact_line": "| Annotations mécaniques et de fabrication | Classe `annotation-fabrication` (`annotation`, IfcAnnotation .SYMBOL.) à quatre types : tolérance géométrique (12 caractéristiques, valeur, références A / B / A-B), soudure (9 cordons, taille, longueur, côté, périphérique, chantier, procédé déclaré), état de surface (Ra / Rz / Rt, procédé, stries), symbole spécialiste. `src/annotations-fabrication.ts` : `texteAnnotation` (texte dérivé), `tracerAnnotation` (cadre case par case, ligne de référence et queue de soudure, cordon côté flèche / opposé, cercle périphérique, drapeau chantier, coche d'état de surface, flèche d'attache — en primitives, aucune police de symboles). Altitude facultative : l'annotation est retenue par les vues axonométriques (DA-15-11). Cote mécanique : `prefixe` (Ø, R, □, M) et `tolerance { plus, moins }` sur la cotation ; texte « Ø1000 +0,1/−0,05 » ou « 500 ±0,2 » (mm) ; écarts négatifs refusés. Étiquette intelligente : `champ` gabarit (`{nom}`, `{repere}`, `{numero}`, `{classe}`, `{niveau}`, `{section}`, `{longueur}`, `{volume}`) résolu à chaque rendu, « non évalué » pour un champ absent, champ inconnu refusé. Vues, plan 2D, DXF, IFC et projection d'analyse portent les textes dérivés. |",
+          "kind": "LIVRAISON_HISTORIQUE_ANNOTATIONS_ET_FORMATS",
+          "provenance": "9oct2026 D189/D179 ; DA14/15/16/22 pour annotations/nomenclatures/nuages ; DWG/DGN renoncés, CloudWorx sans objet.",
+          "action_proposed": "CONSERVER",
+          "reason": "Tolérances/symboles sont règles Fadi/sources normatives, pas licence à supprimer. Aucune dépendance CloudWorx démontrée : mention exclue explicitement. Respecter refus E57/LAZ et origine déclarée.",
+          "evidence": "docs/atelier/lots/p2-lot-7.md:18@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-15-11",
+              "candidate_path": "docs/atelier/fiches/DA-15-11.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 20,
+          "exact_line": "| Nuages de points | `src/echanges/nuage.ts` : lecteur LAS 1.0–1.4 non compressé (formats de point 0 à 10, échelle et décalage de l'en-tête, compte 64 bits LAS 1.4) et XYZ / PTS texte, écrit dans le dépôt (aucune bibliothèque tierce), décimation régulière (20 000 points au plus), `coupeNuage` ; E57 et LAZ refusés nommément. Classe `nuage-de-points` (`drawing`) : échantillon, bornes, source, pas, **origine déclarée obligatoire** (translation du repère du relevé vers le repère local — jamais devinée), tranche (`coupeZ`, `epaisseurCoupe`) ; déplacement en plan (l'origine suit) ; omis de l'IFC (déclaré). Route `POST /atelier/nuages` (en-têtes nom, niveau, origine, tranche, plafond) → `nuageDePoints.creer` journalisé. Plan 2D : points de la tranche derrière le modèle (3 000 au plus), accrochage des outils de tracé sur ces points (relevé de plans, DA-22-07) ; vues : croix fines (5 000 au plus). |",
+          "kind": "LIVRAISON_HISTORIQUE_ANNOTATIONS_ET_FORMATS",
+          "provenance": "9oct2026 D189/D179 ; DA14/15/16/22 pour annotations/nomenclatures/nuages ; DWG/DGN renoncés, CloudWorx sans objet.",
+          "action_proposed": "CONSERVER",
+          "reason": "Tolérances/symboles sont règles Fadi/sources normatives, pas licence à supprimer. Aucune dépendance CloudWorx démontrée : mention exclue explicitement. Respecter refus E57/LAZ et origine déclarée.",
+          "evidence": "docs/atelier/lots/p2-lot-7.md:20@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-22-07",
+              "candidate_path": "docs/atelier/fiches/DA-22-07.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 21,
+          "exact_line": "| Échanges renoncés | DGN (DA-22-02) : renoncé (D-179), fiche à l'état renoncé ; DWG (DA-22-03) inchangé ; CloudWorx (DA-22-10) : sans objet (propriétaire). |",
+          "kind": "LIVRAISON_HISTORIQUE_ANNOTATIONS_ET_FORMATS",
+          "provenance": "9oct2026 D189/D179 ; DA14/15/16/22 pour annotations/nomenclatures/nuages ; DWG/DGN renoncés, CloudWorx sans objet.",
+          "action_proposed": "CONSERVER",
+          "reason": "Tolérances/symboles sont règles Fadi/sources normatives, pas licence à supprimer. Aucune dépendance CloudWorx démontrée : mention exclue explicitement. Respecter refus E57/LAZ et origine déclarée.",
+          "evidence": "docs/atelier/lots/p2-lot-7.md:21@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-22-02",
+              "candidate_path": "docs/atelier/fiches/DA-22-02.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-22-03",
+              "candidate_path": "docs/atelier/fiches/DA-22-03.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-22-10",
+              "candidate_path": "docs/atelier/fiches/DA-22-10.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "Tolérances/symboles sont règles Fadi/sources normatives, pas licence à supprimer. Aucune dépendance CloudWorx démontrée : mention exclue explicitement. Respecter refus E57/LAZ et origine déclarée.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-8.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "fa1d73bd6b6a6d23fe2d7ff63656750975a3ef0a",
+      "source_sha256": "a8994d3d66005dba28ee2e66759f877d58084e510d23701b8b6162d3cf74f984",
+      "occurrences": [
+        {
+          "line": 5,
+          "exact_line": "d'inventé). Fiches : DA-19-03 (Dynamo), DA-19-04 (Grasshopper), DA-19-05 (Knowledgeware) — à l'état **prototype** ;",
+          "kind": "LIVRAISON_HISTORIQUE_AUTOMATISATION",
+          "provenance": "9oct2026 D190 ; noms Dynamo/Grasshopper/Knowledgeware explicitent catégories de fiches, code Fadi graphes/regles-classes indiqué.",
+          "action_proposed": "CONSERVER",
+          "reason": "Noms d’autres logiciels ≠ intégrations installées ; ne pas promettre chargement de leurs fichiers ou licences. Les graphes passent commande/accord ; aucune correction automatique.",
+          "evidence": "docs/atelier/lots/p2-lot-8.md:5@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-19-03",
+              "candidate_path": "docs/atelier/fiches/DA-19-03.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-19-04",
+              "candidate_path": "docs/atelier/fiches/DA-19-04.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-19-05",
+              "candidate_path": "docs/atelier/fiches/DA-19-05.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 6,
+          "exact_line": "DA-19-01 et DA-19-02 : extensions mises à jour. Dossier de recette P2 : `docs/atelier/recette-p2.md`.",
+          "kind": "LIVRAISON_HISTORIQUE_AUTOMATISATION",
+          "provenance": "9oct2026 D190 ; noms Dynamo/Grasshopper/Knowledgeware explicitent catégories de fiches, code Fadi graphes/regles-classes indiqué.",
+          "action_proposed": "CONSERVER",
+          "reason": "Noms d’autres logiciels ≠ intégrations installées ; ne pas promettre chargement de leurs fichiers ou licences. Les graphes passent commande/accord ; aucune correction automatique.",
+          "evidence": "docs/atelier/lots/p2-lot-8.md:6@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-19-01",
+              "candidate_path": "docs/atelier/fiches/DA-19-01.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-19-02",
+              "candidate_path": "docs/atelier/fiches/DA-19-02.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 19,
+          "exact_line": "| Graphes de génération (DA-19-03, 04) | `src/automatisation/graphes.ts` : `GrapheGeneration` (nœuds `parametre`, `calcul`, `serie`, `niveaux`, `regle`, `commande` ; liens = qui lit quoi), `validerGraphe` (identifiants, liens, **aucun cycle**, chaque variable lue reliée à un ancêtre, 3 séries au plus, au moins une commande, `interne.*` refusées), `ordonner` (Kahn), `ancetres`, `compilerGraphe` → `ScriptAtelier` du lot 8 (calculs inlinés, séries et commandes en ordre topologique), `controlerReglesGraphe`, `generateurGraphe` (aucune correction automatique : un refus est nommé), `proposerGraphe` (règles d'abord, puis `boucleControlee`) ; deux graphes intégrés (`trame-poteaux-controlee` avec règles géométriques section < pas et 400 poteaux au plus ; `ossature-de-mur` : `ossature.creer` puis `ossature.generer`, ontologie bois). `src/commandes/graphes.ts` : définitions `graphe` du projet (`graphe.definir`, `graphe.supprimer`, versionnées avec le modèle, archive vérifiée). |",
+          "kind": "LIVRAISON_HISTORIQUE_AUTOMATISATION",
+          "provenance": "9oct2026 D190 ; noms Dynamo/Grasshopper/Knowledgeware explicitent catégories de fiches, code Fadi graphes/regles-classes indiqué.",
+          "action_proposed": "CONSERVER",
+          "reason": "Noms d’autres logiciels ≠ intégrations installées ; ne pas promettre chargement de leurs fichiers ou licences. Les graphes passent commande/accord ; aucune correction automatique.",
+          "evidence": "docs/atelier/lots/p2-lot-8.md:19@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-19-03",
+              "candidate_path": "docs/atelier/fiches/DA-19-03.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 20,
+          "exact_line": "| Règles par ontologie (DA-19-05) | `ParamsRegle.classe` ; `regle.definir { classe }` (classe du socle ou d'une ontologie **active**, famille et classe exclusives) ; `src/automatisation/regles-classes.ts` : `valeursObjet` (nombres, grandeurs, un niveau d'imbrication, niveau porteur), `controlesClasses`, `controlerReglesClasses` branché après chaque commande dans `appliquerCommande` — problème `regle` par objet non tenu (`pb-regle-<regle>-<objet>`), objets « non évalués » dits une fois sans valeur inventée, rien corrigé. |",
+          "kind": "LIVRAISON_HISTORIQUE_AUTOMATISATION",
+          "provenance": "9oct2026 D190 ; noms Dynamo/Grasshopper/Knowledgeware explicitent catégories de fiches, code Fadi graphes/regles-classes indiqué.",
+          "action_proposed": "CONSERVER",
+          "reason": "Noms d’autres logiciels ≠ intégrations installées ; ne pas promettre chargement de leurs fichiers ou licences. Les graphes passent commande/accord ; aucune correction automatique.",
+          "evidence": "docs/atelier/lots/p2-lot-8.md:20@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-19-05",
+              "candidate_path": "docs/atelier/fiches/DA-19-05.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "Noms d’autres logiciels ≠ intégrations installées ; ne pas promettre chargement de leurs fichiers ou licences. Les graphes passent commande/accord ; aucune correction automatique.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/atelier/matrice-echanges.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "304b7373a2c76cf8262ed36d1253714bf99eeef8",
+      "source_sha256": "59a2befa97492d50c00a01cb39724a1de1afa8178007e0b5f18513641a513c63",
+      "occurrences": [
+        {
+          "line": 57,
+          "exact_line": "| assemblage soudé (dérivé, DA-10-10) | C `IfcElementAssembly` .WELDED. agrégeant ses éléments (`IfcRelAggregates`), `Fadi_AssemblageSoude` | — | — | — | — (recalculé) |",
+          "kind": "CONTRAT_OPERATIONNEL_FADI_ET_TRACE_CAPACITE",
+          "provenance": "Matrice Fadi par classe/format, entrée assemblage soudé DA10-10 ; colonnes IFC/import/DXF/natif et limite recalcul.",
+          "action_proposed": "CONSERVER",
+          "reason": "Contrat opérationnel Fadi légitime, pas contrat à DrawAll. Les sens/versions/pertes de formats sont autorité documentaire à rapprocher du code, pas roundtrip universel ni certification.",
+          "evidence": "docs/atelier/matrice-echanges.md:57@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-10-10",
+              "candidate_path": "docs/atelier/fiches/DA-10-10.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "Contrat opérationnel Fadi légitime, pas contrat à DrawAll. Les sens/versions/pertes de formats sont autorité documentaire à rapprocher du code, pas roundtrip universel ni certification.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/atelier/recette-p2.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "e757eadf686d0b38ef7ed4aef69e32e7d5d42bd9",
+      "source_sha256": "1b622828a3bd571c31e71938568c0634916a3c104bcb16ba4b23e582e2820e4c",
+      "occurrences": [
+        {
+          "line": 23,
+          "exact_line": "Fiches : 125 disponibles (P2, acceptées D-193), 137 disponibles (P1), DA-22-02 renoncée, DA-22-10 sans objet ; index dans",
+          "kind": "ACCEPTATION_HISTORIQUE_AVEC_LIMITES",
+          "provenance": "9oct2026 D193 ;125fichesP2/137P1, DA22-02 renoncée et DA22-10 sans objet.",
+          "action_proposed": "CONSERVER",
+          "reason": "Acceptation métier datée conserve limites et preuves initiales ; ne pas convertir comptes d’alors en taux courant ou Studio.",
+          "evidence": "docs/atelier/recette-p2.md:23@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-22-02",
+              "candidate_path": "docs/atelier/fiches/DA-22-02.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-22-10",
+              "candidate_path": "docs/atelier/fiches/DA-22-10.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "Acceptation métier datée conserve limites et preuves initiales ; ne pas convertir comptes d’alors en taux courant ou Studio.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/atelier/recette.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "4b59400d862e5e62291f38819d4b2d11c0f85183",
+      "source_sha256": "7a01f430013beea5787bfe8b1870976973f99a1cc877d1555a3cbf769728f36e",
+      "occurrences": [
+        {
+          "line": 25,
+          "exact_line": "preuve liée) ; DA-05-11 et DA-21-09 réalisées par les compléments, avec leurs écarts déclarés.",
+          "kind": "POINT_ENTREE_OPERATIONNEL_ET_HISTORIQUE",
+          "provenance": "Dossier4oct actualisé D174 ; DA05-11/21-09 livrées compléments ; ligne108 déclare OCCT absent alors D177/182/183 ultérieures.",
+          "action_proposed": "ADAPTER_POINT_ENTREE_SANS_REECRIRE_HISTOIRE",
+          "reason": "Risque réel de reprise erronée sur OCCT au baseline. Diff M06 déjà préparé par A0 corrige cette ligne ; revue A2 favorable séparée. Aucun autre correctif appliqué par cette analyse.",
+          "evidence": "docs/atelier/recette.md:25@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-05-11",
+              "candidate_path": "docs/atelier/fiches/DA-05-11.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            },
+            {
+              "id": "DA-21-09",
+              "candidate_path": "docs/atelier/fiches/DA-21-09.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 108,
+          "exact_line": "| Licence OCCT et lot optionnel | ouverte | Pas de B-rep exact (DA-03-01 -d, DA-04 restantes) ; aucune dépendance OCCT dans le dépôt |",
+          "kind": "POINT_ENTREE_OPERATIONNEL_ET_HISTORIQUE",
+          "provenance": "Dossier4oct actualisé D174 ; DA05-11/21-09 livrées compléments ; ligne108 déclare OCCT absent alors D177/182/183 ultérieures.",
+          "action_proposed": "ADAPTER_POINT_ENTREE_SANS_REECRIRE_HISTOIRE",
+          "reason": "Risque réel de reprise erronée sur OCCT au baseline. Diff M06 déjà préparé par A0 corrige cette ligne ; revue A2 favorable séparée. Aucun autre correctif appliqué par cette analyse.",
+          "evidence": "docs/atelier/recette.md:108@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-03-01",
+              "candidate_path": "docs/atelier/fiches/DA-03-01.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "ADAPTER_POINT_ENTREE_SANS_REECRIRE_HISTOIRE",
+      "operational_risk": "Risque réel de reprise erronée sur OCCT au baseline. Diff M06 déjà préparé par A0 corrige cette ligne ; revue A2 favorable séparée. Aucun autre correctif appliqué par cette analyse.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/planche/fiches/PL-01-02.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "b73707c7b8f2b1367cb4fe5cfac1de8a61033c8b",
+      "source_sha256": "5ded310612a44a1cd2dcb347c9fc1a4297ef3c771bfb85f6b8e41d8da12df5a3",
+      "occurrences": [
+        {
+          "line": 21,
+          "exact_line": "| Extensions à spécifier | Autres unités si demandées ; précision d'affichage réglable (Info modèle, lot 5) ; correspondance avec la saisie de précision de l'Atelier (`longueur` ou `dx;dy`, DA-02-16) pour une éventuelle mise en commun après le lot 2. |",
+          "kind": "CONTRAT_PURE_SAISIE_FADI_ET_TRACE_CAPACITE",
+          "provenance": "Fiche Planche disponible D174 ; DA02-16 citée pour éventuelle mutualisation avec saisie Atelier.",
+          "action_proposed": "CONSERVER",
+          "reason": "Candidat réutilisation, pas obligation de fusionner interpréteurs ; locale/unités et erreurs typées à conserver. Conversion SI exacte ≠ donnée réglementaire inventée.",
+          "evidence": "docs/planche/fiches/PL-01-02.md:21@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-02-16",
+              "candidate_path": "docs/atelier/fiches/DA-02-16.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "Candidat réutilisation, pas obligation de fusionner interpréteurs ; locale/unités et erreurs typées à conserver. Conversion SI exacte ≠ donnée réglementaire inventée.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    },
+    {
+      "path": "docs/planche/fiches/PL-01-03.md",
+      "source_commit": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "source_git_blob": "a878c530e55921eedafbd8a9868435983c8b5855",
+      "source_sha256": "177e1280719830ec37b946e15dab6909ccc24ff03455b77c8b133a24100ccd49",
+      "occurrences": [
+        {
+          "line": 7,
+          "exact_line": "| Identité | PL-01-03, moteur d'inférence 3D de la Planche (`packages/planche-model/src/inference.ts`). Sous-exigences : -a inférences de point ; -b inférences linéaires ; -c inférences de surface ; -d verrous (flèches, Maj, cycle Alt) ; -e priorité déterministe ; -f libellés et jetons de couleur ; -g accrochage de longueur et d'angle. Référence : `cahier-planche.md` §5.1, §5.2 ; relevés [OD §4, §15.3–15.4], [OM §0.6], [CM §7–8], [MCP §0, §7.2], [DOC §7]. Distincte de l'accrochage 2D de l'Atelier (DA-02-15), dont elle reprend les principes (point exact calculé sur la géométrie, libellé textuel, ordre déterministe). |",
+          "kind": "CONTRAT_PURE_INFERENCE_FADI_ET_TRACE_CAPACITE",
+          "provenance": "Fiche Planche disponible D174 ; DA02-15 comparaison inférence2D/3D, choix explicites de priorités/tolérances.",
+          "action_proposed": "CONSERVER",
+          "reason": "Normes/couleurs/provenance de relevés légitimes gardées. Pas preuve de couplage DrawAll ; ne pas remplacer oracle en supposant mêmes règles2D/3D.",
+          "evidence": "docs/planche/fiches/PL-01-03.md:7@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-02-15",
+              "candidate_path": "docs/atelier/fiches/DA-02-15.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        },
+        {
+          "line": 23,
+          "exact_line": "| Extensions à spécifier | Inférences de forme (Carré, Section dorée, Demi-cercle — cahier L-20) au lot 2 avec les outils qui les portent ; Prolongement d'arête, « Par un point », inférence encouragée par pause du curseur (doc) ; points et lignes de guide (lot 4) ; inférences dans un contexte d'édition (magenta selon la doc, L-20) ; plan d'une face verrouillé par Maj + Alt (doc) ; cycle des candidats au clavier ; capture au toucher (loupe, rayon adapté), comme DA-02-15. |",
+          "kind": "CONTRAT_PURE_INFERENCE_FADI_ET_TRACE_CAPACITE",
+          "provenance": "Fiche Planche disponible D174 ; DA02-15 comparaison inférence2D/3D, choix explicites de priorités/tolérances.",
+          "action_proposed": "CONSERVER",
+          "reason": "Normes/couleurs/provenance de relevés légitimes gardées. Pas preuve de couplage DrawAll ; ne pas remplacer oracle en supposant mêmes règles2D/3D.",
+          "evidence": "docs/planche/fiches/PL-01-03.md:23@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "candidate_fiches": [
+            {
+              "id": "DA-02-15",
+              "candidate_path": "docs/atelier/fiches/DA-02-15.md",
+              "file_exists": true,
+              "limit": "Présence fichier uniquement ; texte/consommateurs/tests de la fiche restent dans cohorte269 non revue."
+            }
+          ]
+        }
+      ],
+      "semantic_verdict_proposed": "CONSERVER",
+      "operational_risk": "Normes/couleurs/provenance de relevés légitimes gardées. Pas preuve de couplage DrawAll ; ne pas remplacer oracle en supposant mêmes règles2D/3D.",
+      "scope_limit": "Occurrence et contexte ciblés relus, pas validation exhaustive des affirmations métier du document, ni exécution des tests liés."
+    }
+  ],
+  "link_presence_check": {
+    "scope": "IDs complets DA-NN-NN explicitement cités seulement ; plages abrégées non développées",
+    "missing": [],
+    "limit": "Présence seulement ; aucune conformité ou intégrité des liens transitifs déduite."
+  }
+}

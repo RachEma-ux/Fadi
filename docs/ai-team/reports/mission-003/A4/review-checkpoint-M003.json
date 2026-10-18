@@ -1,0 +1,91 @@
+{
+  "review_id": "A4-M003-CHECKPOINT-01",
+  "date": "2026-10-18",
+  "scope": "Revue de cohérence documentaire ciblée en lecture seule ; aucune revue UI réelle ni exécution applicative",
+  "reviewer": "A4 sous-agent réellement exécuté",
+  "verdict": "Aucune erreur bloquante identifiée dans le périmètre relu",
+  "blocking_findings": [],
+  "reviewed_files": [
+    {
+      "path": "docs/ai-team/reports/mission-003/README.md",
+      "sha256": "fa1b50f91633843f8251bdc320a9733ae731dcc299d7f935689ae29223818ffe"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/DECISIONS-M002-D01-D08.md",
+      "sha256": "f4ea5a1aed476497c10c1681f47a4e0bced99d478f8ba6f886a81f200bc84696"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/M06-DOCUMENTATION.md",
+      "sha256": "bc1dd40494f04769dc41291e8bd050fb82e1cee7345b4c030408f8fcd58cac4f"
+    },
+    {
+      "path": "docs/workstreams/ai-team/STATUS.md",
+      "sha256": "5fde345aa9eddf39f00ca59e20782289ecb93753cca3062c0876f1ea51589131"
+    },
+    {
+      "path": "docs/workstreams/ai-team/HANDOFF.md",
+      "sha256": "81625c36b4acef7d2308794ea0253f9a1106ec6e43fea449c3ec9de64fa32c43"
+    },
+    {
+      "path": "docs/workstreams/studio/STATUS.md",
+      "sha256": "a6885ff3156fef1247101630dc5c1b054eae9d3e10ec1e38406da8df24e14b66"
+    },
+    {
+      "path": "docs/workstreams/studio/HANDOFF.md",
+      "sha256": "b59d5dd2e7a5ecef685556946024ae85278b7bd691cc9e01a8e0eef38d1faf9b"
+    }
+  ],
+  "checks": [
+    {
+      "topic": "Navigation/routes/UX",
+      "result": "Cohérent : routes et placement après Projets restent candidats M002-D07 ; autonomie, quatre domaines, deux planches et conservation Atelier/21 étapes déjà imposées ; aucun M16/M21 déclaré implémenté."
+    },
+    {
+      "topic": "Gates/autorisation",
+      "result": "Cohérent : G0/G1 en instruction, G2/G3 non acquis pour code ; D08 documentaire déjà acquis, autres accords bornés/sensibles distincts ; aucune CI ne passe G4 ou fusion par dérivation."
+    },
+    {
+      "topic": "États et métriques",
+      "result": "Cohérent : fiches/oracles/NAV préparés non exécutés ; 6 Vérifié documentaires sans code/acceptation ; PDEV=N/D. 8 liens NAV candidats ne sont pas présentés comme 8 scénarios sur les 9 fiches."
+    },
+    {
+      "topic": "CI par SHA",
+      "result": "Cohérent : a09c11d CI39114417812, 3f0dc63 CI39116784772 annulée et checks documentaires séparés, PR154 nouvelle tête76e43d1 avec CI en cours au relevé ; aucune extrapolation au commit porteur."
+    },
+    {
+      "topic": "PR142/152/154 et archives A4",
+      "result": "Les faits PR142 failure planche-boutons/layout success correspondent à la lecture A4 tête0d960605. Le snapshot A4 be0ac4c5 de PR154 est antérieur à la correction76e43d1 ; README/M06/checkpoints relatent explicitement la nouvelle observation sans déclarer ancienne preuve transférée."
+    },
+    {
+      "topic": "M06 documentaire versus applicatif",
+      "result": "Corrections documentaires réalisées distinctes de fonctionnalités réalisées ; M06 reste En cours. Aucun changement de métadonnée TypeScript ni activation de rule présenté comme effectué."
+    }
+  ],
+  "non_blocking_clarifications": [
+    {
+      "id": "A4-NB01",
+      "paths": [
+        "docs/ai-team/reports/mission-003/README.md",
+        "docs/ai-team/reports/mission-003/A4/PR-COMPROMIS-ET-CHECKPOINT.md"
+      ],
+      "observation": "README confie les futurs fichiers routes/traductions/styles à A4 tandis que la contribution A4 propose A3 comme écrivain du lot autorisé, A4 responsable UX. Compatible si responsabilité de mission et opérateur unique sont distingués ; préciser le nom du seul écrivain au moment du lancement, sans ouvrir deux droits concurrents.",
+      "action": "Clarification facultative avant exécution, pas blocage de publication documentaire."
+    },
+    {
+      "id": "A4-NB02",
+      "paths": [
+        "docs/ai-team/reports/mission-003/M06-DOCUMENTATION.md"
+      ],
+      "observation": "La synthèse dit checkpoint obligatoire pour un chantier modifié ; lire cela comme tout changement autorisé du chantier, pas uniquement modification de son dossier docs/workstreams. La règle canonique reste STATUS/HANDOFF avant revue.",
+      "action": "Préférer cette formulation explicite si le texte est retouché ; aucune nouvelle correction de la PR154 demandée sur cette seule synthèse."
+    }
+  ],
+  "limits": [
+    "Revue des sept fichiers au contenu/hachage indiqué ; ne certifie pas des modifications ultérieures.",
+    "Faits CI supplémentaires rapportés par A0/A6 examinés pour cohérence de SHA, pas nouvelle collecte de leurs logs dans cette revue.",
+    "Pas de confirmation administrative, de réponse utilisateur, de santé Cloud ou d’acceptation métier.",
+    "Aucun fichier du dépôt modifié ; seul ce JSON écrit dans agents/A4.",
+    "Les originaux Mission002 et propositions antérieures conservent leur date/limite ; aucune réécriture pour masquer leur caractère historique."
+  ],
+  "next_action": "A0 peut intégrer ce rapport comme revue documentaire avec STATUS/HANDOFF ; maintenir décisions/autorisation code ouvertes et vérifier CI du SHA final."
+}

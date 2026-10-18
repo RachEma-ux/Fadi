@@ -1,4 +1,4 @@
-# Dossier de recette — Atelier Architecture (DrawAll V4.1), lots 0 à 9
+# Dossier de recette — Atelier architectural Fadi, lots 0 à 9
 
 Établi le 4 octobre 2026 par le chef de projet (exécution continue décidée en D-010). Ce dossier dit **ce qui est
 livré, où en est la preuve, ce que vous pouvez vérifier vous-même, et ce qu'il vous reste à décider**. Rien n'y était
@@ -105,7 +105,7 @@ Toutes ces étapes tournent dans `.github/workflows/ci.yml` (jobs `validate`, `e
 | Décision | État | Effet tant qu'elle n'est pas prise |
 | --- | --- | --- |
 | Acceptation des lots 0 à 9 | **prise le 8 octobre 2026 (D-174)** | Les 71 fiches sont passées à « disponible » avec leur preuve liée ; les limites de la section 7 restent déclarées |
-| Licence OCCT et lot optionnel | ouverte | Pas de B-rep exact (DA-03-01 -d, DA-04 restantes) ; aucune dépendance OCCT dans le dépôt |
+| Licence OCCT et noyau exact | **arbitrée le 8 octobre 2026 (D-177), livraison et acceptation D-182/D-183** | `packages/geometry-exact` utilise OCCT en composant WASM LGPL séparé et remplaçable ; les limites du noyau et la recette P2 restent déclarées. Cette actualisation du point d’entrée ne modifie pas les décisions historiques. |
 | Fournisseur de modèle de langage et clé | ouverte | L'assistant reste déterministe (règles de Fadi) — conforme à D4 |
 | Stockage objet et hébergement | ouverte | Les volumes (publications) sont en base derrière une interface ; `docs/deploiement.md` décrit l'hébergement |
 | Compte buildingSMART (validation IFC) | ouverte | Conformité IFC **testée** par IfcOpenShell en CI, jamais « certifiée » |

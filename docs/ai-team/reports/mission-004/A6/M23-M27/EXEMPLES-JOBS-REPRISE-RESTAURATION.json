@@ -1,0 +1,378 @@
+{
+  "documentaryOnly": true,
+  "execution": "No worker, DB, service, restore or runtime test executed",
+  "scenarios": [
+    {
+      "id": "DOC-STALE",
+      "requirementIds": [
+        "IF-003",
+        "INV-005",
+        "INV-006",
+        "EX-016"
+      ],
+      "given": {
+        "jobId": "job-stale",
+        "attemptId": "attempt-1",
+        "scope": {
+          "projectId": "illustrative-project",
+          "studyId": "illustrative-study",
+          "variantId": "illustrative-variant",
+          "baseRevisionId": "rev-10"
+        },
+        "sourceRevisionSet": {
+          "associated": "rev-10"
+        },
+        "currentRevisionSet": {
+          "associated": "rev-11"
+        },
+        "inputFingerprint": "illustrative-sha256:2646d949a0664d6b893a9b9cd95f8237fa738696762dba720671d1467cd6fb64",
+        "state": "completed"
+      },
+      "when": "result attempts explicit commit",
+      "expected": {
+        "disposition": "historical-only",
+        "freshness": "superseded",
+        "canonicalEffects": [],
+        "currentRevisionSet": {
+          "associated": "rev-11"
+        },
+        "guardRefusals": [
+          "SOURCE_REVISION_MISMATCH"
+        ],
+        "historyPreserved": true
+      }
+    },
+    {
+      "id": "DOC-CRASH",
+      "requirementIds": [
+        "EX-061",
+        "IF-003",
+        "IF-007",
+        "AC-006"
+      ],
+      "given": {
+        "jobId": "job-retry",
+        "scope": {
+          "projectId": "illustrative-project",
+          "studyId": "illustrative-study",
+          "variantId": "illustrative-variant",
+          "baseRevisionId": "rev-10"
+        },
+        "attempts": [
+          {
+            "attemptId": "attempt-1",
+            "workerGeneration": "generation-1",
+            "state": "failed"
+          },
+          {
+            "attemptId": "attempt-2",
+            "workerGeneration": "generation-2",
+            "state": "queued",
+            "retryOf": "attempt-1"
+          }
+        ],
+        "requestId": "request-retry",
+        "inputFingerprint": "illustrative-sha256:1c458d03df8ee065a66827d29d0cddd8653b1cced31cfcba827b2e7bdc27c901",
+        "canonicalRevision": "rev-10"
+      },
+      "when": "old generation result arrives while retry is queued",
+      "expected": {
+        "acceptedAttempt": "attempt-2",
+        "oldResultDisposition": "rejected-old-attempt",
+        "canonicalEffects": [],
+        "pendingPromises": "each explicitly rejected or resolved once",
+        "sameInputRetryDoesNotCreateDuplicateCommit": true
+      }
+    },
+    {
+      "id": "DOC-CANCEL-CURRENT",
+      "requirementIds": [
+        "IF-007",
+        "IF-003",
+        "INV-005"
+      ],
+      "given": {
+        "jobId": "job-cancel",
+        "scope": {
+          "projectId": "illustrative-project",
+          "studyId": "illustrative-study",
+          "variantId": "illustrative-variant",
+          "baseRevisionId": "rev-10"
+        },
+        "sourceRevisionSet": {
+          "model3d": "rev-10"
+        },
+        "currentRevisionSet": {
+          "model3d": "rev-10"
+        },
+        "state": "cancel_requested",
+        "resultArtifact": "illustrative-result-current"
+      },
+      "when": "computation finishes after cancellation request",
+      "expected": {
+        "computationState": "completed",
+        "commitEligibility": "requires-new-explicit-intent-and-current-rights",
+        "automaticCommit": false,
+        "canonicalEffects": [],
+        "artifactDisposition": "quarantined-or-historical",
+        "ifAlreadyCommitted": "new compensating command on current head; never erase original event"
+      }
+    },
+    {
+      "id": "DOC-LOST-ACK",
+      "requirementIds": [
+        "EX-018",
+        "EX-049",
+        "EX-089",
+        "IF-011"
+      ],
+      "given": {
+        "requestId": "request-ack",
+        "scope": {
+          "projectId": "illustrative-project",
+          "studyId": "illustrative-study",
+          "variantId": "illustrative-variant",
+          "baseRevisionId": "rev-10"
+        },
+        "payloadFingerprint": "illustrative-sha256:343f26a8568d7b18c4b2dd36431db9ff77d08411014cce658764d07fb223a0b3",
+        "durableEvent": {
+          "eventId": "event-ack",
+          "transaction": "transaction-ack",
+          "author": "illustrative-server-actor",
+          "scope": {
+            "projectId": "illustrative-project",
+            "studyId": "illustrative-study",
+            "variantId": "illustrative-variant"
+          },
+          "baseRevisionId": "rev-10",
+          "resultRevisionId": "rev-11",
+          "effects": [
+            "illustrative-effect"
+          ],
+          "serverTimestamp": "illustrative-server-time",
+          "jobId": "job-ack"
+        },
+        "clientKnowledge": "unknown-after-timeout"
+      },
+      "when": "same requestId and identical scope/payload retried",
+      "expected": {
+        "responseEventId": "event-ack",
+        "responseResultRevisionId": "rev-11",
+        "newCanonicalEffects": [],
+        "newEventCount": 0,
+        "sameRequestChangedPayload": "REQUEST_ID_REUSED",
+        "noDurabilityProof": "remain unresolved, never invent success or undo"
+      }
+    },
+    {
+      "id": "DOC-OUTBOX-PUBLICATION",
+      "requirementIds": [
+        "IF-010",
+        "IF-011",
+        "EX-081",
+        "EX-082",
+        "EX-089"
+      ],
+      "given": {
+        "manifestId": "manifest-pub",
+        "manifestFingerprint": "illustrative-sha256:141af668c33fc1166ded1463a9469074f7625028a73f5c41c590b2be6ce4f486",
+        "sourceRevisionSet": {
+          "drawing2d": "rev-10",
+          "associated": "rev-12"
+        },
+        "approvalManifestFingerprint": "illustrative-sha256:141af668c33fc1166ded1463a9469074f7625028a73f5c41c590b2be6ce4f486",
+        "publicationEvent": {
+          "eventId": "event-pub",
+          "transaction": "transaction-pub",
+          "author": "illustrative-server-actor",
+          "scope": {
+            "projectId": "illustrative-project",
+            "studyId": "illustrative-study",
+            "variantId": "illustrative-variant"
+          },
+          "baseRevisionId": "rev-12",
+          "resultRevisionId": "rev-12",
+          "effects": [
+            "illustrative-effect"
+          ],
+          "serverTimestamp": "illustrative-server-time",
+          "jobId": null
+        },
+        "publicationCommit": "durable",
+        "deliveryState": "pending",
+        "outboxEventId": "event-pub",
+        "observation": {
+          "issueId": "illustrative-issue",
+          "examinedRevisionSet": {
+            "associated": "rev-12"
+          },
+          "state": "requires-recheck",
+          "recheckReferences": []
+        }
+      },
+      "when": "notification redelivered twice then a source advances",
+      "expected": {
+        "businessPublication": "preserved-exact-historical-manifest",
+        "deduplicateDeliveryBy": "event-pub",
+        "deliveryDoesNotCreateApproval": true,
+        "newSourceDoesNotRewriteManifest": true,
+        "observationClosure": "requires-authorized-recheck-evidence",
+        "newEventCountFromDuplicateDelivery": 0
+      }
+    },
+    {
+      "id": "DOC-RESTORE-NEW-WRITES",
+      "requirementIds": [
+        "EX-089",
+        "EX-090",
+        "EX-091",
+        "INV-008",
+        "IF-010",
+        "IF-011"
+      ],
+      "given": {
+        "backupManifestId": "restore-manifest-10",
+        "backupRevisionSet": {
+          "drawing2d": "rev-10",
+          "associated": "rev-10"
+        },
+        "liveRevisionSet": {
+          "drawing2d": "rev-12",
+          "associated": "rev-13"
+        },
+        "newConfirmedEvents": [
+          "event-live-11",
+          "event-live-12",
+          "event-live-13"
+        ],
+        "newPendingRequests": [
+          "request-offline-14"
+        ],
+        "restoreDestination": "illustrative-isolated-copy",
+        "authorityEpoch": "epoch-old"
+      },
+      "when": "older backup proposed as rollback",
+      "expected": {
+        "replaceLiveHead": false,
+        "keepNewWritesAndPendingQueue": true,
+        "requiredDecision": "explicit reconciliation or approved loss report before any cutover",
+        "restoreState": "isolated-incomplete-until-all-authority-and-piece-checks",
+        "oldJobAutomaticCommit": false,
+        "authorityEpochAfterApprovedCutover": "new epoch distinct from old",
+        "canonicalEffectsOnLive": []
+      }
+    }
+  ],
+  "restoreManifestCandidate": {
+    "documentaryOnly": true,
+    "notAProductionSchema": true,
+    "manifestId": "restore-manifest-10",
+    "context": {
+      "projectId": "illustrative-project",
+      "studyId": "illustrative-study",
+      "variantId": "illustrative-variant"
+    },
+    "cutId": "illustrative-coherent-cut",
+    "authorityEpoch": "epoch-old",
+    "sources": [
+      {
+        "authority": "drawing2d",
+        "documentId": "drawing-10",
+        "revisionId": "rev-10",
+        "schemaVersion": "illustrative-schema",
+        "contentFingerprint": "illustrative-sha256:62a96bb406b8189e12c555aae2c723d3c09d1886dc3aa4f6488d0a96f883a81a"
+      },
+      {
+        "authority": "associated",
+        "documentId": "associated-10",
+        "revisionId": "rev-10",
+        "schemaVersion": "illustrative-schema",
+        "contentFingerprint": "illustrative-sha256:60cfe244a750489866f4c7c94c295610596ea49d7913fde2c96c5033c5377456"
+      }
+    ],
+    "journalBoundary": {
+      "transaction": "illustrative-cut-transaction",
+      "events": [
+        "illustrative-cut-event"
+      ],
+      "requestResultMappings": [
+        "illustrative-request-mapping"
+      ],
+      "outboxWatermark": "illustrative-watermark"
+    },
+    "publications": [
+      {
+        "publicationId": "illustrative-publication",
+        "manifestId": "illustrative-historical-manifest",
+        "pieceIds": [
+          "illustrative-piece-1"
+        ],
+        "approvalId": "illustrative-approval"
+      }
+    ],
+    "requiredObjects": {
+      "rightsSnapshotOrPolicyReference": "illustrative-versioned-policy",
+      "observations": [
+        "illustrative-issue"
+      ],
+      "associations": [
+        "illustrative-relation"
+      ],
+      "provenance": [
+        "illustrative-source"
+      ],
+      "unknownFieldsReport": "illustrative-retained-unknowns"
+    },
+    "reconstructibleNotAuthorities": [
+      "gpu-cache",
+      "spatial-index",
+      "preview-buffer"
+    ],
+    "retentionPolicy": "unchanged; no duration proposed",
+    "missingRequiredPieceOutcome": "incomplete; no silent substitution",
+    "newWritesPolicy": "preserve and reconcile; never overwrite live blindly"
+  },
+  "fingerprintDemonstrations": [
+    {
+      "payload": {
+        "input": "stale-example"
+      },
+      "fingerprint": "illustrative-sha256:2646d949a0664d6b893a9b9cd95f8237fa738696762dba720671d1467cd6fb64"
+    },
+    {
+      "payload": {
+        "input": "retry-example"
+      },
+      "fingerprint": "illustrative-sha256:1c458d03df8ee065a66827d29d0cddd8653b1cced31cfcba827b2e7bdc27c901"
+    },
+    {
+      "payload": {
+        "intent": "commit-result"
+      },
+      "fingerprint": "illustrative-sha256:343f26a8568d7b18c4b2dd36431db9ff77d08411014cce658764d07fb223a0b3"
+    },
+    {
+      "payload": {
+        "manifest": "pub",
+        "pieces": [
+          "piece-2d-10",
+          "piece-associated-12"
+        ]
+      },
+      "fingerprint": "illustrative-sha256:141af668c33fc1166ded1463a9469074f7625028a73f5c41c590b2be6ce4f486"
+    },
+    {
+      "payload": {
+        "drawing": "version10"
+      },
+      "fingerprint": "illustrative-sha256:62a96bb406b8189e12c555aae2c723d3c09d1886dc3aa4f6488d0a96f883a81a"
+    },
+    {
+      "payload": {
+        "associated": "version10"
+      },
+      "fingerprint": "illustrative-sha256:60cfe244a750489866f4c7c94c295610596ea49d7913fde2c96c5033c5377456"
+    }
+  ],
+  "fingerprintMethod": "Documentary SHA256 over sorted compact UTF8 JSON; not a production canonicalization decision"
+}

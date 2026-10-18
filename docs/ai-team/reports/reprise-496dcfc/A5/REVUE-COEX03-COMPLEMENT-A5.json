@@ -1,0 +1,289 @@
+{
+  "review": "A5 revue indépendante bornée complémentCOEX03A2",
+  "input": {
+    "path": "/workspace/work/resume496/agents/A2/COEX03-COMPLEMENT-A2.json",
+    "sha256": "eac9b7efbf7623db99ea0fbaef0daa416c53a533581e20dc0c17f615711ddd8a",
+    "matches_requested_hash": true
+  },
+  "scope": "Lecture complète JSON/MD et comparaison citations brutes auxGit/sources durables ; pas réaudit22composants ni exécution/choix contratsphysiques.",
+  "source_checks": [
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "blob_matches": true,
+      "sha256_matches": true,
+      "lines_verified": 12,
+      "line_errors": []
+    },
+    {
+      "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob_matches": true,
+      "sha256_matches": true,
+      "lines_verified": 4,
+      "line_errors": []
+    },
+    {
+      "path": "docs/atelier-cahier-des-charges.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob_matches": true,
+      "sha256_matches": true,
+      "lines_verified": 1,
+      "line_errors": []
+    },
+    {
+      "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+      "sha256_matches": true,
+      "lines_verified": 6,
+      "line_errors": []
+    }
+  ],
+  "source_errors": [],
+  "groups": [
+    {
+      "id_local": "J01",
+      "group_kind": "GroupeClaude existant enrichi",
+      "jeu": "Modèle Atelier typé / atelier_niveaux,objets,relations,definitions,calques,groupes,references,problemes,site",
+      "required_fields_nonempty": true,
+      "no_choice_adopted": true,
+      "review_verdict": "Cohérent documentaire sous limites, aucune allocation physique ni client unique imposés",
+      "field_analysis": {
+        "autorite_serveur_fait_ou_prescription": "Fait statique Claude : persistance lib/atelier-modele.ts ; service commandes et imports contrôlés existants.",
+        "clients_faits_ou_choix_ouverts": "Atelier actuel émet commandes ; imports archive/exemples/bascule sont autres chemins serveur contrôlés. ClientsStudio autorisés non décidés.",
+        "version_et_epoque": "API historique baseRevision numérique/model_revision ; pas revisionIdStudio équivalent implicite.",
+        "transfert": "Adapter ou transférer par périmètre seulement après décision ; source reste autoritaire jusque-là.",
+        "refus_ou_invariant_candidat": "Refus serveur hors périmètre/droit/base périmée ; aucune copie métier réécrite par deux autorités."
+      },
+      "quality_limit": "Faits actuels restent statiques attribués Claude ; prescription logique future ne vaut ni table ni API ni test."
+    },
+    {
+      "id_local": "J02",
+      "group_kind": "GroupeClaude existant enrichi",
+      "jeu": "Journal / boîte sortie : atelier_commands,atelier_outbox",
+      "required_fields_nonempty": true,
+      "no_choice_adopted": true,
+      "review_verdict": "Cohérent documentaire sous limites, aucune allocation physique ni client unique imposés",
+      "field_analysis": {
+        "autorite_serveur_fait_ou_prescription": "Fait statique Claude : atelier-validation/archive/exemples/bascule/atelier-events participent selon opération.",
+        "clients_faits_ou_choix_ouverts": "Clients ne modifient pas journal directement ; droitsStudio et chemin exact ouverts.",
+        "version_et_epoque": "requestId scoped et révision de commande actuels ; contratVersion et rétention dedupStudio ouverts.",
+        "transfert": "Historique append-only logique proposé ; conserver identités et source, pas nettoyage rétroactif.",
+        "refus_ou_invariant_candidat": "Payload différent sous même identité ou scope incompatible refusé ; publication événement ancien pas nouveaucommit."
+      },
+      "quality_limit": "Faits actuels restent statiques attribués Claude ; prescription logique future ne vaut ni table ni API ni test."
+    },
+    {
+      "id_local": "J03",
+      "group_kind": "GroupeClaude existant enrichi",
+      "jeu": "Versions / volumes / variantes / publications / verrous",
+      "required_fields_nonempty": true,
+      "no_choice_adopted": true,
+      "review_verdict": "Cohérent documentaire sous limites, aucune allocation physique ni client unique imposés",
+      "field_analysis": {
+        "autorite_serveur_fait_ou_prescription": "Fait statique Claude : lib et routes atelier-versions ; groupe composite, pas un seul propriétaire physique démontré pour tous usages.",
+        "clients_faits_ou_choix_ouverts": "Atelier et services serveur actuels ; Studio lecture/édition par donnée à décider.",
+        "version_et_epoque": "Ancienne variante=projet forké ; distinction Étude/Variante/RévisionStudio ; publications immuables proposées séparément.",
+        "transfert": "Mapping source→cible et droits/refus anciennesversions requis ; aucune assimilation IDs.",
+        "refus_ou_invariant_candidat": "Objet historique/révision/pub non réécrit ; serveur refuse client périmé malgré readOnlyUI."
+      },
+      "quality_limit": "Faits actuels restent statiques attribués Claude ; prescription logique future ne vaut ni table ni API ni test."
+    },
+    {
+      "id_local": "J04",
+      "group_kind": "GroupeClaude existant enrichi",
+      "jeu": "Automatisation : scripts/propositions/graphes",
+      "required_fields_nonempty": true,
+      "no_choice_adopted": true,
+      "review_verdict": "Cohérent documentaire sous limites, aucune allocation physique ni client unique imposés",
+      "field_analysis": {
+        "autorite_serveur_fait_ou_prescription": "Fait statique Claude : routes atelier-automatisation, opérations via boucle contrôlée.",
+        "clients_faits_ou_choix_ouverts": "Atelier/scripts actuels ; extensions ou Studio ne reçoivent pas permission implicite.",
+        "version_et_epoque": "Versions commandes et cible courante à valider serveur ; schéma futur ouvert.",
+        "transfert": "Pas seconde boucle canonique ; interface publique compatible à instruire DEC18.",
+        "refus_ou_invariant_candidat": "Acteur/proposition hors droit/contexte refusé avant effet ; plugin/IA ne contourne pas validation."
+      },
+      "quality_limit": "Faits actuels restent statiques attribués Claude ; prescription logique future ne vaut ni table ni API ni test."
+    },
+    {
+      "id_local": "J05",
+      "group_kind": "GroupeClaude existant enrichi",
+      "jeu": "Documents : produced_documents,drawing_exports",
+      "required_fields_nonempty": true,
+      "no_choice_adopted": true,
+      "review_verdict": "Cohérent documentaire sous limites, aucune allocation physique ni client unique imposés",
+      "field_analysis": {
+        "autorite_serveur_fait_ou_prescription": "Fait statique Claude : lib/documents et routes/documents.",
+        "clients_faits_ou_choix_ouverts": "Clients consultent/demandent selon droits actuels ; rattachementStudy/Variant et approbationStudio ouverts.",
+        "version_et_epoque": "documentVersion livré distinct contentVersion/schemaVersion ; manifeste IF009 coordonné proposé.",
+        "transfert": "Référencer catalogue commun ; pas annuaire concurrent ; publications historiques conservées.",
+        "refus_ou_invariant_candidat": "Refus source retirée/interdite/hash incohérent ; approuver≠publier ; ne jamais remplacer contenu identifié par latest."
+      },
+      "quality_limit": "Faits actuels restent statiques attribués Claude ; prescription logique future ne vaut ni table ni API ni test."
+    },
+    {
+      "id_local": "J06",
+      "group_kind": "GroupeClaude existant enrichi",
+      "jeu": "Projet transverse / projects dont model_revision",
+      "required_fields_nonempty": true,
+      "no_choice_adopted": true,
+      "review_verdict": "Cohérent documentaire sous limites, aucune allocation physique ni client unique imposés",
+      "field_analysis": {
+        "autorite_serveur_fait_ou_prescription": "Fait statique Claude : plusieurs écrivains de champsprojet ; ne pas étendre R9 à toute tableprojects.",
+        "clients_faits_ou_choix_ouverts": "Services transverses restent propriétaires ; Studio reçoit contexte validé, pas autorité projetglobale.",
+        "version_et_epoque": "model_revision historique ≠ revisionIdStudio ; forme physique non décidée.",
+        "transfert": "Réutiliser identité/projet autorisé IF001 ; transfert contenu ne transfère pas tous droits projet.",
+        "refus_ou_invariant_candidat": "Serveur valide tenant/projet/parenté acteur ; URL ou profil ne crée aucun droit."
+      },
+      "quality_limit": "Faits actuels restent statiques attribués Claude ; prescription logique future ne vaut ni table ni API ni test."
+    },
+    {
+      "id_local": "J07",
+      "group_kind": "GroupeClaude existant enrichi",
+      "jeu": "Cache/file locale Dexie lots,modelCache,keyValue",
+      "required_fields_nonempty": true,
+      "no_choice_adopted": true,
+      "review_verdict": "Cohérent documentaire sous limites, aucune allocation physique ni client unique imposés",
+      "field_analysis": {
+        "autorite_serveur_fait_ou_prescription": "Fait statique Claude : busAtelier/local-store ; cache et intentions, jamais autorité canonique serveur.",
+        "clients_faits_ou_choix_ouverts": "Client actuelAtelier ; partage ou partitionStudio et compatibilitéSW à décider, pas réemploi aveugle.",
+        "version_et_epoque": "buildId/toolContractVersion/schemaVersion/context/base/requestId ; durée rétention/format inconnus.",
+        "transfert": "Transfert suspend si filepending non traitée ; nouvellesécritures et changementcompte pris en compte.",
+        "refus_ou_invariant_candidat": "QueueA jamais envoyée sousB ; commande incompatible/quota/coupure reste état explicite, pas confirmation fictive."
+      },
+      "quality_limit": "Faits actuels restent statiques attribués Claude ; prescription logique future ne vaut ni table ni API ni test."
+    },
+    {
+      "id_local": "J08",
+      "group_kind": "Futur groupe logique documentaire",
+      "jeu": "Futur document2D autonome drawing2d",
+      "required_fields_nonempty": true,
+      "no_choice_adopted": true,
+      "review_verdict": "Cohérent documentaire sous limites, aucune allocation physique ni client unique imposés",
+      "field_analysis": {
+        "autorite_serveur_fait_ou_prescription": "Prescription M17/G1v2 seulement : propriétaire logique2D unique ; aucune table/route/driverStudio implémenté déduit.",
+        "clients_faits_ou_choix_ouverts": "Planches/outils peuvent émettre intentions compatibles ; nombre clients ne fixe pas nombre autorités.",
+        "version_et_epoque": "IDspropres/context et versions distinctes ; époque de transfert concept documentaire, pas champ adopté.",
+        "transfert": "Allocation writer physique COEX03/DEC01 ouverte ; sauvegarde indépendante sans modèle3Dde substitution.",
+        "refus_ou_invariant_candidat": "Unité/repère/parenté/base/writer/refscote invalides refusés atomiquement ; deux autorités pour même contenu interdites."
+      },
+      "quality_limit": "Faits actuels restent statiques attribués Claude ; prescription logique future ne vaut ni table ni API ni test."
+    },
+    {
+      "id_local": "J09",
+      "group_kind": "Futur groupe logique documentaire",
+      "jeu": "Futur modèle3D indépendant model3d",
+      "required_fields_nonempty": true,
+      "no_choice_adopted": true,
+      "review_verdict": "Cohérent documentaire sous limites, aucune allocation physique ni client unique imposés",
+      "field_analysis": {
+        "autorite_serveur_fait_ou_prescription": "Prescription M17 : propriétaire logique3D unique ; moteur/adaptateur public et persistance restent DEC18/02 ouverts.",
+        "clients_faits_ou_choix_ouverts": "Plusieurs surfaces possibles selon politique ; toute mutation passe autorité validée.",
+        "version_et_epoque": "Révision et géométrie versionnées ; topologie/objet et format physique non adoptés.",
+        "transfert": "Aucune obligation esquisse2D ; import copie/association explicités, pas doublecopie autoritaire.",
+        "refus_ou_invariant_candidat": "Refuser cible incompatible/version périmée et mutationpartielle ; résultat dérivé ancien ne remplace pas courant."
+      },
+      "quality_limit": "Faits actuels restent statiques attribués Claude ; prescription logique future ne vaut ni table ni API ni test."
+    },
+    {
+      "id_local": "J10",
+      "group_kind": "Futur groupe logique documentaire",
+      "jeu": "Futurs objets architecturaux associés",
+      "required_fields_nonempty": true,
+      "no_choice_adopted": true,
+      "review_verdict": "Cohérent documentaire sous limites, aucune allocation physique ni client unique imposés",
+      "field_analysis": {
+        "autorite_serveur_fait_ou_prescription": "Prescription C-ASSOCIATION : même définition et objectId, writer logiqueunique associé ; projections2D/3D non autorités parallèles.",
+        "clients_faits_ou_choix_ouverts": "Deuxplanches autorisées peuvent demander même objet via mêmes préconditions ; choixclientsCOEX03 non arrêté.",
+        "version_et_epoque": "Versionsobjet/relation/hôte et base ; protocole topologieDEC02 ouvert.",
+        "transfert": "Transfert explicite conserve identité ou mapping documenté ; référence liée/copienouvelle distinguées.",
+        "refus_ou_invariant_candidat": "Doubleécrivain, hôte invalide, conflit ou résultatpérimé refusés/identifiés ; pas fusion silencieuse dernierécrivain."
+      },
+      "quality_limit": "Faits actuels restent statiques attribués Claude ; prescription logique future ne vaut ni table ni API ni test."
+    },
+    {
+      "id_local": "J11",
+      "group_kind": "Futur groupe logique documentaire",
+      "jeu": "Futures identités Étude / Variante / Révision",
+      "required_fields_nonempty": true,
+      "no_choice_adopted": true,
+      "review_verdict": "Cohérent documentaire sous limites, aucune allocation physique ni client unique imposés",
+      "field_analysis": {
+        "autorite_serveur_fait_ou_prescription": "Prescription DEC03orientation/G1v2 : identités propres dans Projet ; aucune structureSQL adoptée.",
+        "clients_faits_ou_choix_ouverts": "Services transverses projet restent propriétaires ; façadeStudio à contractualiser sans ProjectShell préalable.",
+        "version_et_epoque": "Immutabilitérévision ; parenté project-study-variant ; contentVersion/documentVersion distincts.",
+        "transfert": "Mapping ancienprojetfork→Étude/Variante à décider ; récupération nouvellesécritures requise.",
+        "refus_ou_invariant_candidat": "Orphelin, mauvaisparent, réutilisationID, mutationhistorique ou réouverture latest interdit selon contrat logique proposé."
+      },
+      "quality_limit": "Faits actuels restent statiques attribués Claude ; prescription logique future ne vaut ni table ni API ni test."
+    }
+  ],
+  "existing_groups": 7,
+  "future_logical_groups": 4,
+  "count11": true,
+  "three_reserves": [
+    {
+      "id": "R-AUTORITE",
+      "A5_verdict": "Réserve fondée dans portée source citée",
+      "reason": "LePlan interdit chaînes incompatibles et exige propriétaireunique par jeu ; il n’impose pas exactement un clientUI. R9 impose commandes validées, pas import privé du busclientAtelier.",
+      "criterion": "Chaque ligne distingue autorité canonique, adaptateurservice et clients autorisés ; optionB pluriclient ne peut être rejetée comme doubleautorité sans analyser compatibilité.",
+      "question_existing": 6250996328,
+      "precision": "Autorité unique ne déduit pas un seul client ; compatibilité doit être démontrée par commande/contexte/base/droits."
+    },
+    {
+      "id": "R-REFUS-SERVEUR",
+      "A5_verdict": "Réserve fondée dans portée source citée",
+      "reason": "readOnly/protectedReference sont capacitésUI observées, insuffisantes comme preuve refusserveur après transfert.",
+      "criterion": "Décisionde transfert couvre accès ancien API, permissions, époque/révision, queuepending, requêtes périmées et nouvellesécritures ; aucun test exécuté ici.",
+      "question_existing": 6250997313,
+      "precision": "ModeUI ne démontre aucun refus serveur. Transfert doit traiter anciennes versions, nouvelles écritures et file pending."
+    },
+    {
+      "id": "R-TRANSFERT",
+      "A5_verdict": "Réserve fondée dans portée source citée",
+      "reason": "La proposition interdit toute donnée copiée dans deuxsens et limite transfert à deuxmécanismes ; source interdit synchronisation artisanale entre deuxbasesconcurrentes.",
+      "criterion": "Distinguer copie indépendante, référence, projection/cache et doubleautorité ; restriction supplémentaire reste candidate à arbitrer ; invariant pasdebaseconcurrente déjà conservé.",
+      "question_existing": 6250998834,
+      "precision": "TexteClaude plus large que Plan : l’interdiction source vise synchronisation artisanale bases concurrentes ; pas toute projection/cache/référence/copie explicitée."
+    }
+  ],
+  "questions": [
+    {
+      "commentaire": 6250995231,
+      "url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250995231",
+      "scope": "COEX01 qualification22groupes",
+      "etat": "Déjà publiée selon instructionA0 ; aucune réponse inventée ni nouvelle question."
+    },
+    {
+      "commentaire": 6250996328,
+      "url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250996328",
+      "scope": "COEX03 propriétaire/clients",
+      "etat": "Déjà publiée selon instructionA0 ; aucune réponse inventée ni nouvelle question."
+    },
+    {
+      "commentaire": 6250997313,
+      "url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250997313",
+      "scope": "COEX04 lectureseule/redirection",
+      "etat": "Déjà publiée selon instructionA0 ; aucune réponse inventée ni nouvelle question."
+    },
+    {
+      "commentaire": 6250998834,
+      "url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250998834",
+      "scope": "COEX05/06 transfert/retrait",
+      "etat": "Déjà publiée selon instructionA0 ; aucune réponse inventée ni nouvelle question."
+    }
+  ],
+  "questions_verification": "QuatreID/URLs cohérents avec références remises A0 :6250995231,6250996328,6250997313,6250998834 ; aucun accèsGitHub nouveau donc existence/état externe attribués àA0, pas fausse preuve indépendante réseau. Aucune nouvelle question.",
+  "verdict": "Favorable documentaire : septgroupes conservés, quatrefuturs distincts, champsautorité/clients/version-époque/transfert/refus renseignés, aucun choix adopté ; COEX03 reste En cours, jamais Vérifié/Accepté par cette revue.",
+  "PERF_reserves_received": {
+    "A4_report": "/workspace/work/resume496/agents/A4/REVUE-PERF-X1-09-A4.json",
+    "preserve_original": true,
+    "four_clarifications": [
+      "PERF04/08 séparer disponibilité résultat et temps comparaison oracle.",
+      "PERF06 deuxbras invalidation/reconstruction totale explicites.",
+      "PERF08 historique épinglé valide distinct obsolète présenté courant.",
+      "PERF09 ressourcepartagée encoreutile distinct fuite."
+    ],
+    "integration_owner": "A0, sousdelta distinct ; aucune source/perf originale modifiée A5."
+  },
+  "execution": "Aucun DB/runtime/test/runner/importservice/scan/admin/registre/gate/code modifié ou exécuté ; Gitshow/parsing/hash seulement."
+}

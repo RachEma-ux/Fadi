@@ -1,0 +1,100 @@
+{
+  "lot": "A3-CLASSIF-1",
+  "agent": "A3",
+  "authorization": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250110849",
+  "baseline": "a4caaab0e6665480f09febe3914c960b424b6b47",
+  "branch": "fix/156-classification-no-ifc-inference",
+  "commit": "A0 doit créer et renseigner le SHA après revues",
+  "status": "Implémenté, vérifié en tests purs; non fusionné, acceptation/CI du futur SHA ouvertes",
+  "precondition": {
+    "A2_inventory_sha256": "fac54baa0b0268dc998fe4ebcf62c9a47335096591da8ee278b1b6afb52f7d39",
+    "A5_concurrence_sha256": "ef65fe28720344ed351b0a7bffa6d00903842cc6344b3a56855c0215ba43bf97",
+    "baseline_sources_checked": 42,
+    "identical_complete_sources": 41,
+    "known_difference": {
+      "path": "apps/api/src/routes/atelier-commands.test.ts",
+      "reason": "DB1/2 PR169 ajoute import reset helper et recâble resetDb uniquement. Git diff relu; corps des suites depuis beforeAll(resetDb) strictement identique. Aucun code API modifié/exécuté par CLASSIF1."
+    },
+    "unexplained_differences": []
+  },
+  "checks": [
+    {
+      "command": "npm ci --ignore-scripts --no-audit --no-fund --cache /workspace/work/resume496/npm-cache",
+      "exit_code": 0,
+      "packages": 255,
+      "log": "npm-ci.log",
+      "initial_failure": "Cache par défaut /home/agent/.npm/_cacache ENOENT; résolu par cache explicite autorisé, aucun script lifecycle."
+    },
+    {
+      "command": "npm run test --workspace=@parcours/atelier-model",
+      "exit_code": 0,
+      "tests_passed": 492,
+      "files_passed": 107,
+      "A5_new_tests": 24,
+      "start_utc": "2026-10-18 13:06:45",
+      "duration_seconds": 19.42,
+      "log": "atelier-final.log"
+    },
+    {
+      "command": "npm run typecheck",
+      "exit_code": 0,
+      "scope": "Garde dépendances et tous workspaces, aucun serveur/SQL.",
+      "timing": "Commande exécutée, session outil36409 exit0 ; durée exacte non instrumentée, ne pas inventer."
+    },
+    {
+      "command": "npm run build",
+      "exit_code": 0,
+      "scope": "Web Vite+tsc et API esbuild sans démarrage",
+      "warnings": [
+        "Directives use client de dépendances ignorées",
+        "node:module externalisé côté navigateur pour manifold/OCCT",
+        "Chunks Vite supérieurs à500kB"
+      ],
+      "timing": "Vite11,64s/API esbuild275ms selon sortie réelle, durée totale non instrumentée; session outil4360 exit0."
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0
+    }
+  ],
+  "files": [
+    {
+      "path": "packages/atelier-model/src/commandes/organisation.ts",
+      "sha256": "cc6fc5d7174e69079ce2b6180a117518c15e03e3c2bbdae58fc930ebf86970ad",
+      "bytes": 40235
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "sha256": "6f1fd64ec0ff7244e13706cba3deb5d2ce55a8a7ac7ffd42bb11aea7b3bb7057",
+      "bytes": 21443
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/classification-conservation.test.ts",
+      "sha256": "a0e30f9ca0480538dcdb6959cb318ecc365726c0139025678ebed658e3f4db15",
+      "bytes": 12063
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "cb3cc0beba7eb213a961056c7c3d58c6b4f64f409f385814568fc5680ab75819",
+      "bytes": 24347,
+      "owner": "A6; lecture/empreinte A3 uniquement"
+    }
+  ],
+  "not_executed": [
+    "npm test racine/API",
+    "DB/SQL réels",
+    "API/E2E mutateurs",
+    "Service/restart/migration/production",
+    "Réparation de données historiques"
+  ],
+  "not_modified": [
+    "PR169 et lotDB",
+    "DrawAll",
+    "Modèle/version/contrat/dispatcher ids",
+    "Contrôle AnnexeC et moteur export IFC",
+    "UI/API/schéma/décisions"
+  ],
+  "next": "A0 recueille A2/A5/A6, commit/push branche dédiée, PR distincte non fusionnée et CI au SHA exact.",
+  "issue": "https://github.com/RachEma-ux/Fadi/issues/170",
+  "verified_at_utc": "2026-10-18 13:09:50 UTC"
+}

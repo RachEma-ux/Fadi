@@ -1,0 +1,147 @@
+{
+  "review": "A2-REVUE-CROISEE-M21-M24-M004",
+  "scope": "Cohérence documentaire indépendante, sources normatives exactes et contrat durable candidat ; pas revue de code ni gate",
+  "method": [
+    "Deux Markdown lus intégralement",
+    "M21 huit outils, aliases, états et métadonnées JSON lus intégralement ; correction catégories/écrivains relue",
+    "M24 trois positifs JSON lus intégralement ; quinze payloads parcourus intégralement par comparaison récursive exhaustive à leurs positifs, tous deltas et toutes métadonnées lus ; aucune différence ignorée",
+    "Hashes internes positifs recalculés selon méthode illustrative A1 uniquement, sans moteur applicatif ; ancien expectedManifestHash parasite détecté dans sept négatifs sémantiques",
+    "Textes EX/INV/IF/AC ciblés relus dans fiches A1, y compris complément serveur IF006 et liste exacte IF009",
+    "Relecture correction A1 : sept expectedManifestHash désormais alignés ; vérification pure indépendante, aucun validateur produit exécuté."
+  ],
+  "sources": [
+    {
+      "path": "A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+      "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917"
+    },
+    {
+      "path": "A1/M24-EXEMPLES-MANIFESTES.json",
+      "sha256": "bdecc5b2387a619ae3e0a09e78df44ea1dd3188fb1451be96980d32018551bf0"
+    },
+    {
+      "path": "A4/M21-CONTRAT-MINIMAL.md",
+      "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625"
+    },
+    {
+      "path": "A4/M21-CATALOGUE-EXEMPLES.json",
+      "sha256": "579b15c4bd3079ce8376881fbce62eae432a8a90a290eccbdcfe4b0bea79e13d"
+    },
+    {
+      "path": "A2/M05-M17-CONTRATS-DURABLES.md",
+      "sha256": "893d4917fe810867b589727e82d1789db56453f86c78fbfab56b294acedac84b"
+    },
+    {
+      "path": "A1/studio-141-fiches-v2.json",
+      "sha256": "48c8aa1093bec1fda771961d4d0fb7827ba7e4775f72ed9afe6cf29feada2df3"
+    }
+  ],
+  "normative_ids_reviewed": [
+    "EX-003",
+    "EX-004",
+    "EX-005",
+    "EX-006",
+    "EX-009",
+    "EX-012",
+    "EX-017",
+    "EX-018",
+    "EX-019",
+    "EX-026",
+    "EX-027",
+    "EX-028",
+    "EX-029",
+    "EX-030",
+    "EX-031",
+    "EX-032",
+    "EX-033",
+    "EX-034",
+    "EX-035",
+    "EX-036",
+    "EX-037",
+    "EX-038",
+    "EX-039",
+    "EX-040",
+    "EX-041",
+    "EX-042",
+    "EX-043",
+    "EX-044",
+    "EX-081",
+    "EX-082",
+    "EX-083",
+    "IF-001",
+    "IF-004",
+    "IF-005",
+    "IF-006",
+    "IF-009",
+    "IF-011",
+    "INV-001",
+    "INV-002",
+    "INV-005",
+    "INV-006",
+    "INV-012",
+    "INV-014",
+    "AC-009"
+  ],
+  "verdicts": {
+    "M21": {
+      "verdict": "COHERENT_DOCUMENTAIRE_APRES_CLARIFICATION_A4",
+      "blocking_findings": [],
+      "resolved": [
+        {
+          "id": "A2-M21-01",
+          "initial": "authority free3d/architectural-object pouvait être confondu avec writerAuthority candidat model3d/associated",
+          "correction": "A4 distingue result_category et writer_authority_candidate, mappe trois écrivains géométriques et null pour résultats de contrôle/revue/publication ; texte exclut tout nouveau propriétaire géométrique ou colonne existante",
+          "verified": true
+        }
+      ],
+      "checks": [
+        "Planche2D/3D exclusivement domaine dessin ; check/approve/publish boards=[] sans moteur parasite",
+        "Deux planches autonomes, associé même objet et écrivain unique ; rendu non autoritaire",
+        "IF005 cycle et refus préservent pending ; ressources distinctes profil/contexte/permissions/exécution",
+        "Aliases échelle scopés, ambigu refusé, aucune migration ni dépendance opérationnelle DrawAll",
+        "Approve/publish distincts ; hors ligne aucune confirmation centrale ; aucune permission issue profil/URL",
+        "Versions/chunks/quotas/accessibilité/loader restent à instruire ; loader null et implementation null"
+      ]
+    },
+    "M24": {
+      "verdict": "COHERENT_DOCUMENTAIRE_APRES_CORRECTION_EXEMPLES_A1",
+      "blocking_findings": [],
+      "checks": [
+        "IF009 pièces ordonnées avec ID/version/empreinte, sources/règles/contrôles/observations et décision sur ensemble exact ; décision externe au manifeste évite circularité de hash, liens exacts maintenus",
+        "Contexte et parentés complets, références historiques immuables, pas substitution latest",
+        "A seul2D, B3D sans esquisse, C associé avec vues projections ; aucune autorité doublée",
+        "Décisions métier approve/publish distinctes ; cumul explicite, serveur autoritaire, aucun privilège admin implicite",
+        "Snapshots coupe logique unique et sources coordonnées multi-révisions explicitement identifiées, aucune recette concurrente prouvée",
+        "Schema/contract/documentVersion/revision/baseRevision distincts ; conservation source et migration séparée",
+        "Trois positifs hashes internes cohérents, aucune signature ou permission réelle prouvée",
+        "Contrôle/approbation/diffusion/durabilité séparés ; IFC proxys non natif/certifié et quantités sourcées honnêtement bornées"
+      ],
+      "resolved": [
+        {
+          "id": "A2-M24-01",
+          "severity": "P2_documentaire",
+          "state": "CORRIGE_A1_RECONTROLE_A2",
+          "paths": [
+            "negative_examples/M24-NEG-PARENT/payload/reopenIntent/expectedManifestHash",
+            "negative_examples/M24-NEG-OLD-RESULT/payload/reopenIntent/expectedManifestHash",
+            "negative_examples/M24-NEG-UNIT/payload/reopenIntent/expectedManifestHash",
+            "negative_examples/M24-NEG-UNKNOWN-SCHEMA/payload/reopenIntent/expectedManifestHash",
+            "negative_examples/M24-NEG-FALSE-CONTROL/payload/reopenIntent/expectedManifestHash",
+            "negative_examples/M24-NEG-OPEN-OBSERVATION/payload/reopenIntent/expectedManifestHash",
+            "negative_examples/M24-NEG-WRITER/payload/reopenIntent/expectedManifestHash"
+          ],
+          "evidence": "manifestHash, approval et publication recalculés, expectedManifestHash de réouverture reste celui du positif. Refus supplémentaire non intentionnel par hash obsolète, contrairement à note de corpus.",
+          "requested_action": "A1 aligner expectedManifestHash dans ces sept cas sémantiques ; préserver CHANGED-DOCUMENT/ORDER et autres divergences intentionnelles ; aucune édition par A2",
+          "verified": true,
+          "final_verification": "Sept jeux de liens et hashes internes recalculés : manifest=approval=publication=reopen, modèle/pièces cohérents ; divergences intentionnelles CHANGED-DOCUMENT et ORDER conservées"
+        }
+      ]
+    }
+  },
+  "limits": [
+    "Le terme cohérent signifie seulement absence de contradiction documentaire identifiée sur les points relus ; ni conformité intégrale des141 obligations ni complétude MVP",
+    "Aucune application, API, rôle effectif, autorité de données ou loader implémenté par ces propositions",
+    "Aucun code, DB, réseau, migration, test métier, gate, commit ou modification GitHub par A2",
+    "Hashes JSON illustratifs non canonicalisation production décidée ; négatifs restent scénarios prescrits, non tests Fadi exécutés",
+    "G0/G1/G2/G3/G4 non prononcés ; autorisations des sous-lots, DB3 et production restent distinctes"
+  ]
+}

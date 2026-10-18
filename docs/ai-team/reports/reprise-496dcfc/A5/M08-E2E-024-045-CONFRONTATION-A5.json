@@ -1,0 +1,1625 @@
+{
+  "reviewer": "A5",
+  "review": "Confrontation indépendante12E2E024–045",
+  "input_sha256": "9842c8cfa2ae75f17f36542cbccfbbbd6fee56272ad21640e245d5a8ca9fea7b",
+  "input": "/workspace/work/resume496/agents/A4/M08-E2E-024-045.json",
+  "code_reference": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "source_errors": [],
+  "source_hashes_verified": {
+    "apps/web/e2e/atelier-nouveau.mjs": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+    "apps/api/src/routes/atelier-commands.test.ts": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+    "packages/atelier-model/src/commandes/commandes.test.ts": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+    "docs/atelier/fiches/DA-02-04.md": "3e03353961cc215549b6fce5706f9a4ff90d17114a71188276ff7ced153fccdb",
+    "docs/atelier/fiches/DA-02-05.md": "31a8dd8389f2209d3e17b1bca8f6f973809fa7651d53b16b9223c302b980e7cb",
+    "docs/atelier/fiches/DA-02-06.md": "296bb2a58105ae771fa094d63429439f0441aa407d531b1cb969ead98f5c1717",
+    "docs/atelier/fiches/DA-02-07.md": "f5ebe81e23d736dc0fa59e4121cc1efe6f05561154aa16cd7ced6e8ae6d6a2f4",
+    "docs/atelier/fiches/DA-02-08.md": "2a1c06f7c0e7fefdc2028e6782cf42ab998e255831d8fe67567ea96581487ba5",
+    "docs/atelier/fiches/DA-02-09.md": "2e05c95f411ec04c159f5ab8b586669db84aec0461bef1623f71b9702dbc0127",
+    "docs/atelier/fiches/DA-02-10.md": "7be59c54b70d9b94c7d83226ad542d8a5ac0c42455d18d18c97521e77e1fcbd6",
+    "docs/atelier/fiches/DA-02-11.md": "7efa5e514127b617d27702ffc869ddbd558d7efe6dfb379038481f498f6db8d8",
+    "docs/atelier/fiches/DA-02-12.md": "f2c29cac6e97d251941e049113d1dbe2266ce529f516441b89e4fe6e311e7833",
+    "docs/atelier/fiches/DA-02-13.md": "a1d7ed42a13c85763ebb491d83db51a0fd9cd8caa4d494a57044da97cb14bce7",
+    "docs/atelier/fiches/DA-02-14.md": "f0f2278a524ae15fdef1f614729d9d43330b6b920276dcad20c32e870ee7398c",
+    "docs/atelier/fiches/DA-02-15.md": "1847d3c76cd5b740a1428ae722ba10772deb399e413ee627cb1f8857b1f9009b"
+  },
+  "excerpt_occurrences_verified": 71,
+  "unique_excerpts": 22,
+  "full_fiches_verified": 12,
+  "candidate_complete_lines": 414,
+  "clauses_reviewed": 86,
+  "A4_counts": {
+    "absent": 48,
+    "partiel": 25,
+    "non conclu": 13
+  },
+  "A5_original_review": "M08-E2E-024-045-LECTURE-INDEPENDANTE-A5.json",
+  "A5_original_counts": {
+    "présent": 12,
+    "absent": 53,
+    "partiel": 25
+  },
+  "A5_original_atoms": 90,
+  "granularity_note": "90atomesA5 vs86clausesA4 : A5 isole12préparationscopie seules présentes et les cibles absentes ; A4 groupe copie/corpus, ajoute13clauses contextuelles nonconclues et approfondissements geometry/clavier. Undo analogue A5 ne prouve pas inverse spécifique (absent A4). Compteurs nonadditifs/noncomparables, pas résultats tests.",
+  "reviews": [
+    {
+      "entry_id": "M08-PATH-024",
+      "ordinal": 1,
+      "expected": "Axe de miroir saisi, original gardé, Noyau A EX118-mezz-W-009",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun miroir objet ni axe saisi dans le candidat. Une copie de travail du projet ne vaut pas miroir de mur.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-024",
+      "ordinal": 2,
+      "expected": "Murs +1 et portes +1, image géométrique symétrique",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun décompte après miroir, ni coordonnées symétriques, ni suivi de porte ou alignement vérifié.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-024",
+      "ordinal": 3,
+      "expected": "Annuler restitue les effectifs initiaux",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Le Ctrl Z lu concerne un déplacement synthétique, pas la suppression exacte des images miroir. A5 première lecture classait undo générique comme analogie partielle. A4 plus stricte sur inverse de cette opération : absence du prédicat exact retenue, aucun désaccord sur code observé.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-024",
+      "ordinal": 4,
+      "expected": "Copie de travail P.118 / niveau et objets prescrits",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : La copie automatique P.118 est explicitement assertée ; les opérations ultérieures concernent Essai lot3a, pas le cas demandé sur mezzanine. A5 séparait12préparations copies présentes et cibles différentes absentes ; A4 groupe la condition, donc partiel cohérent, pas12opérations réussies.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            85,
+            94
+          ],
+          "exact_excerpt": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus.\nawait page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });\nurl = page.url().split(\"?\")[0];\nawait page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });\nconst copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();\nconst referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();\ncheck(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));\ncheck(\"site : CRS, aire de la parcelle et origine du repère local affichés\", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator(\"#atelier-site-info\").textContent()));\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(200);",
+          "level": "E2E : contexte différent",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-024",
+      "ordinal": 5,
+      "expected": "Second navigateur après l’opération prescrite",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Égalité barre-sync, trois murs et Bureau sont assertés ; aucune chaîne avec l’opération prescrite. Pour snapping, ce contrôle est complémentaire, pas exigence du bloc historique.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E : second navigateur générique",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-024",
+      "ordinal": 6,
+      "expected": "Sauvegarde, microversion+1, inverse exact, concurrence, horsligne et droits de la fiche complète",
+      "A4_status": "non conclu",
+      "A5_final_qualification": "non conclu",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "garanties contextuelles non conclues",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Le candidat attend Enregistré et révision supérieure après undo d’un glisser ; aucune preuve de microversion exactement+1, inverse géométrique exact ou coupure réseau pour cette opération. Les API génériques révision/rejeu et403/404/423 ne sont pas l’E2E prescrit ; aucune revue exhaustive des unités/API spécifiques dans ce lot. A5 confirme : ne pas changer ce contexte en absence de fonction ni acceptation globale.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            183,
+            204
+          ],
+          "exact_excerpt": "// Sélection par cadre et suppression.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"Escape\");\nawait page.mouse.move(sx(0) - 30, sy(0) + 30);\nawait page.mouse.down();\nawait page.mouse.move(sx(1) + 30, sy(0.1), { steps: 5 });\nawait page.mouse.up();\nawait page.waitForTimeout(200);\ncheck(\"cadre : le mur du bas sélectionné\", (await page.locator(\".etat-selection\").textContent()).length > 0);\nawait page.keyboard.press(\"Delete\");\nawait page.waitForTimeout(400);\ncheck(\"Suppr : mur et porte hébergée supprimés ensemble\", (await page.locator(\".plan2d [data-objet^='porte-']\").count()) === 0 && (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});\ncheck(\"file synchronisée avec le serveur\", (await page.locator(\".barre-sync\").textContent()).startsWith(\"Enregistré\"), `${await page.locator(\".barre-sync\").textContent()} ${await page.locator(\".mod-lots\").textContent().catch(() => \"\")}`);\nawait page.screenshot({ path: `${OUT}/3a-trace-desktop.png` });\n\n// Rechargement : le modèle vient du serveur.\nawait page.reload();\nawait page.waitForSelector(\".plan2d\");\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(300);\ncheck(\"après rechargement : 3 murs et la pièce conservés\", (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page.locator(\".plan2d [data-objet^='piece-']\").count()) === 1);",
+          "level": "E2E : sélection/suppression/persistance génériques",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            288,
+            326
+          ],
+          "exact_excerpt": "// Manipulation directe en plan (DA-02-17) : sélectionner un mur, le glisser d'un mètre.\nawait page.keyboard.press(\"Escape\");\nconst murPlan = page.locator(`.plan2d [data-objet=\"${murId}\"]`);\nconst bMur = await murPlan.boundingBox();\nconst ech2 = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nawait mesurer(\"sélection d'un mur au clic → inspecteur affiché\", async () => {\n  const selectionne = () => page.waitForFunction((id) => document.querySelector(\".inspecteur-meta\")?.textContent?.includes(id), murId, { timeout: 5000 });\n  await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  // Un rendu du plan peut être en cours au moment du clic (retour de la 3D) : un second clic, une seule fois.\n  if (!(await selectionne().then(() => true, () => false))) {\n    // Le plan peut s'être recadré après le retour de la 3D : la boîte du mur est relue avant le second clic.\n    await page.keyboard.press(\"Escape\");\n    await page.waitForTimeout(800);\n    const b2 = (await murPlan.boundingBox()) ?? bMur;\n    Object.assign(bMur, b2);\n    await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n    if (!(await selectionne().then(() => true, () => false))) {\n      const sous = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute(\"class\") ?? \"\"} objet=${e?.closest(\"[data-objet]\")?.getAttribute(\"data-objet\") ?? \"-\"}`; }, [bMur.x + bMur.width / 2, bMur.y + bMur.height / 2]);\n      check(\"sélection d'un mur au clic\", false, `sous le pointeur : ${sous} ; boîte ${JSON.stringify(bMur)} ; inspecteur : ${(await page.locator(\".inspecteur\").textContent())?.slice(0, 160)}`);\n      await page.screenshot({ path: `${OUT}/3b-selection-echec.png` });\n    }\n  }\n});\nconst avantDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {\n  await page.mouse.move(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  await page.mouse.down();\n  for (let k = 1; k <= 10; k++) await page.mouse.move(bMur.x + bMur.width / 2 + (k * ech2) / 10, bMur.y + bMur.height / 2 + 0.3);\n  await page.mouse.up();\n  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 10000 });\n});\nconst apresDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait page.waitForFunction(() => document.querySelector(\".mod-journal\")?.textContent?.includes(\"Déplacer\"), null, { timeout: 5000 }).catch(() => {});\ncheck(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);\n// Annulation du déplacement : attendre qu'elle soit enregistrée (révision suivante) avant les exports, sinon un\n// export peut être produit à la révision d'avant l'annulation.\nconst revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "level": "E2E : glisser et annuler autre opération",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-026",
+      "ordinal": 1,
+      "expected": "Rectangle d’esquisse mis à l’échelle par facteur saisi",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun cycle de mise à l’échelle d’objet. La variable echelle et le zoom caméra règlent une vue, sans transformer le rectangle.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-026",
+      "ordinal": 2,
+      "expected": "EX118-r3-V818-A-P1-REF calé par longueur de référence",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucune sélection de cet identifiant ni vérification facteur=longueur voulue/actuelle.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-026",
+      "ordinal": 3,
+      "expected": "Épaisseur du mur Noyau A inchangée",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun avant/après d’épaisseur après échelle ; création/affectation de type ne prouve pas cet invariant.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-026",
+      "ordinal": 4,
+      "expected": "Annulation de l’échelle restaure la géométrie",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Pas de cycle échelle/annulation dans le candidat. A5 première lecture classait undo générique comme analogie partielle. A4 plus stricte sur inverse de cette opération : absence du prédicat exact retenue, aucun désaccord sur code observé.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-026",
+      "ordinal": 5,
+      "expected": "Copie de travail P.118 / niveau et objets prescrits",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : La copie automatique P.118 est explicitement assertée ; les opérations ultérieures concernent Essai lot3a, pas le cas demandé sur mezzanine. A5 séparait12préparations copies présentes et cibles différentes absentes ; A4 groupe la condition, donc partiel cohérent, pas12opérations réussies.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            85,
+            94
+          ],
+          "exact_excerpt": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus.\nawait page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });\nurl = page.url().split(\"?\")[0];\nawait page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });\nconst copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();\nconst referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();\ncheck(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));\ncheck(\"site : CRS, aire de la parcelle et origine du repère local affichés\", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator(\"#atelier-site-info\").textContent()));\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(200);",
+          "level": "E2E : contexte différent",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-026",
+      "ordinal": 6,
+      "expected": "Second navigateur après l’opération prescrite",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Égalité barre-sync, trois murs et Bureau sont assertés ; aucune chaîne avec l’opération prescrite. Pour snapping, ce contrôle est complémentaire, pas exigence du bloc historique.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E : second navigateur générique",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-026",
+      "ordinal": 7,
+      "expected": "Sauvegarde, microversion+1, inverse exact, concurrence, horsligne et droits de la fiche complète",
+      "A4_status": "non conclu",
+      "A5_final_qualification": "non conclu",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "garanties contextuelles non conclues",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Le candidat attend Enregistré et révision supérieure après undo d’un glisser ; aucune preuve de microversion exactement+1, inverse géométrique exact ou coupure réseau pour cette opération. Les API génériques révision/rejeu et403/404/423 ne sont pas l’E2E prescrit ; aucune revue exhaustive des unités/API spécifiques dans ce lot. A5 confirme : ne pas changer ce contexte en absence de fonction ni acceptation globale.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            183,
+            204
+          ],
+          "exact_excerpt": "// Sélection par cadre et suppression.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"Escape\");\nawait page.mouse.move(sx(0) - 30, sy(0) + 30);\nawait page.mouse.down();\nawait page.mouse.move(sx(1) + 30, sy(0.1), { steps: 5 });\nawait page.mouse.up();\nawait page.waitForTimeout(200);\ncheck(\"cadre : le mur du bas sélectionné\", (await page.locator(\".etat-selection\").textContent()).length > 0);\nawait page.keyboard.press(\"Delete\");\nawait page.waitForTimeout(400);\ncheck(\"Suppr : mur et porte hébergée supprimés ensemble\", (await page.locator(\".plan2d [data-objet^='porte-']\").count()) === 0 && (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});\ncheck(\"file synchronisée avec le serveur\", (await page.locator(\".barre-sync\").textContent()).startsWith(\"Enregistré\"), `${await page.locator(\".barre-sync\").textContent()} ${await page.locator(\".mod-lots\").textContent().catch(() => \"\")}`);\nawait page.screenshot({ path: `${OUT}/3a-trace-desktop.png` });\n\n// Rechargement : le modèle vient du serveur.\nawait page.reload();\nawait page.waitForSelector(\".plan2d\");\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(300);\ncheck(\"après rechargement : 3 murs et la pièce conservés\", (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page.locator(\".plan2d [data-objet^='piece-']\").count()) === 1);",
+          "level": "E2E : sélection/suppression/persistance génériques",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            288,
+            326
+          ],
+          "exact_excerpt": "// Manipulation directe en plan (DA-02-17) : sélectionner un mur, le glisser d'un mètre.\nawait page.keyboard.press(\"Escape\");\nconst murPlan = page.locator(`.plan2d [data-objet=\"${murId}\"]`);\nconst bMur = await murPlan.boundingBox();\nconst ech2 = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nawait mesurer(\"sélection d'un mur au clic → inspecteur affiché\", async () => {\n  const selectionne = () => page.waitForFunction((id) => document.querySelector(\".inspecteur-meta\")?.textContent?.includes(id), murId, { timeout: 5000 });\n  await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  // Un rendu du plan peut être en cours au moment du clic (retour de la 3D) : un second clic, une seule fois.\n  if (!(await selectionne().then(() => true, () => false))) {\n    // Le plan peut s'être recadré après le retour de la 3D : la boîte du mur est relue avant le second clic.\n    await page.keyboard.press(\"Escape\");\n    await page.waitForTimeout(800);\n    const b2 = (await murPlan.boundingBox()) ?? bMur;\n    Object.assign(bMur, b2);\n    await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n    if (!(await selectionne().then(() => true, () => false))) {\n      const sous = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute(\"class\") ?? \"\"} objet=${e?.closest(\"[data-objet]\")?.getAttribute(\"data-objet\") ?? \"-\"}`; }, [bMur.x + bMur.width / 2, bMur.y + bMur.height / 2]);\n      check(\"sélection d'un mur au clic\", false, `sous le pointeur : ${sous} ; boîte ${JSON.stringify(bMur)} ; inspecteur : ${(await page.locator(\".inspecteur\").textContent())?.slice(0, 160)}`);\n      await page.screenshot({ path: `${OUT}/3b-selection-echec.png` });\n    }\n  }\n});\nconst avantDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {\n  await page.mouse.move(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  await page.mouse.down();\n  for (let k = 1; k <= 10; k++) await page.mouse.move(bMur.x + bMur.width / 2 + (k * ech2) / 10, bMur.y + bMur.height / 2 + 0.3);\n  await page.mouse.up();\n  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 10000 });\n});\nconst apresDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait page.waitForFunction(() => document.querySelector(\".mod-journal\")?.textContent?.includes(\"Déplacer\"), null, { timeout: 5000 }).catch(() => {});\ncheck(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);\n// Annulation du déplacement : attendre qu'elle soit enregistrée (révision suivante) avant les exports, sinon un\n// export peut être produit à la révision d'avant l'annulation.\nconst revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "level": "E2E : glisser et annuler autre opération",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-028",
+      "ordinal": 1,
+      "expected": "Fenêtre étire seulement b du mur EX118-mezz-W-009",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : La sélection par cadre existe mais sert à supprimer un mur synthétique, pas à étirer les sommets dans une fenêtre.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-028",
+      "ordinal": 2,
+      "expected": "Porte EX118-mezz-D-001 garde la distance à a relue dans l’inspecteur",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucune mesure avant/après de distance hébergée. Position proportionnelle t constante ne serait pas suffisante pour cet oracle.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-028",
+      "ordinal": 3,
+      "expected": "Voisin EX118-mezz-W-010 hors fenêtre inchangé",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucune comparaison du voisin ni coordonnées des sommets exclus.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-028",
+      "ordinal": 4,
+      "expected": "Annulation restitue les valeurs initiales de l’étirement",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : L’annulation lue attend seulement une révision supérieure pour un déplacement différent. A5 première lecture classait undo générique comme analogie partielle. A4 plus stricte sur inverse de cette opération : absence du prédicat exact retenue, aucun désaccord sur code observé.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-028",
+      "ordinal": 5,
+      "expected": "Copie de travail P.118 / niveau et objets prescrits",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : La copie automatique P.118 est explicitement assertée ; les opérations ultérieures concernent Essai lot3a, pas le cas demandé sur mezzanine. A5 séparait12préparations copies présentes et cibles différentes absentes ; A4 groupe la condition, donc partiel cohérent, pas12opérations réussies.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            85,
+            94
+          ],
+          "exact_excerpt": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus.\nawait page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });\nurl = page.url().split(\"?\")[0];\nawait page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });\nconst copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();\nconst referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();\ncheck(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));\ncheck(\"site : CRS, aire de la parcelle et origine du repère local affichés\", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator(\"#atelier-site-info\").textContent()));\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(200);",
+          "level": "E2E : contexte différent",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-028",
+      "ordinal": 6,
+      "expected": "Second navigateur après l’opération prescrite",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Égalité barre-sync, trois murs et Bureau sont assertés ; aucune chaîne avec l’opération prescrite. Pour snapping, ce contrôle est complémentaire, pas exigence du bloc historique.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E : second navigateur générique",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-028",
+      "ordinal": 7,
+      "expected": "Sauvegarde, microversion+1, inverse exact, concurrence, horsligne et droits de la fiche complète",
+      "A4_status": "non conclu",
+      "A5_final_qualification": "non conclu",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "garanties contextuelles non conclues",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Le candidat attend Enregistré et révision supérieure après undo d’un glisser ; aucune preuve de microversion exactement+1, inverse géométrique exact ou coupure réseau pour cette opération. Les API génériques révision/rejeu et403/404/423 ne sont pas l’E2E prescrit ; aucune revue exhaustive des unités/API spécifiques dans ce lot. A5 confirme : ne pas changer ce contexte en absence de fonction ni acceptation globale.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            183,
+            204
+          ],
+          "exact_excerpt": "// Sélection par cadre et suppression.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"Escape\");\nawait page.mouse.move(sx(0) - 30, sy(0) + 30);\nawait page.mouse.down();\nawait page.mouse.move(sx(1) + 30, sy(0.1), { steps: 5 });\nawait page.mouse.up();\nawait page.waitForTimeout(200);\ncheck(\"cadre : le mur du bas sélectionné\", (await page.locator(\".etat-selection\").textContent()).length > 0);\nawait page.keyboard.press(\"Delete\");\nawait page.waitForTimeout(400);\ncheck(\"Suppr : mur et porte hébergée supprimés ensemble\", (await page.locator(\".plan2d [data-objet^='porte-']\").count()) === 0 && (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});\ncheck(\"file synchronisée avec le serveur\", (await page.locator(\".barre-sync\").textContent()).startsWith(\"Enregistré\"), `${await page.locator(\".barre-sync\").textContent()} ${await page.locator(\".mod-lots\").textContent().catch(() => \"\")}`);\nawait page.screenshot({ path: `${OUT}/3a-trace-desktop.png` });\n\n// Rechargement : le modèle vient du serveur.\nawait page.reload();\nawait page.waitForSelector(\".plan2d\");\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(300);\ncheck(\"après rechargement : 3 murs et la pièce conservés\", (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page.locator(\".plan2d [data-objet^='piece-']\").count()) === 1);",
+          "level": "E2E : sélection/suppression/persistance génériques",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            288,
+            326
+          ],
+          "exact_excerpt": "// Manipulation directe en plan (DA-02-17) : sélectionner un mur, le glisser d'un mètre.\nawait page.keyboard.press(\"Escape\");\nconst murPlan = page.locator(`.plan2d [data-objet=\"${murId}\"]`);\nconst bMur = await murPlan.boundingBox();\nconst ech2 = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nawait mesurer(\"sélection d'un mur au clic → inspecteur affiché\", async () => {\n  const selectionne = () => page.waitForFunction((id) => document.querySelector(\".inspecteur-meta\")?.textContent?.includes(id), murId, { timeout: 5000 });\n  await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  // Un rendu du plan peut être en cours au moment du clic (retour de la 3D) : un second clic, une seule fois.\n  if (!(await selectionne().then(() => true, () => false))) {\n    // Le plan peut s'être recadré après le retour de la 3D : la boîte du mur est relue avant le second clic.\n    await page.keyboard.press(\"Escape\");\n    await page.waitForTimeout(800);\n    const b2 = (await murPlan.boundingBox()) ?? bMur;\n    Object.assign(bMur, b2);\n    await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n    if (!(await selectionne().then(() => true, () => false))) {\n      const sous = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute(\"class\") ?? \"\"} objet=${e?.closest(\"[data-objet]\")?.getAttribute(\"data-objet\") ?? \"-\"}`; }, [bMur.x + bMur.width / 2, bMur.y + bMur.height / 2]);\n      check(\"sélection d'un mur au clic\", false, `sous le pointeur : ${sous} ; boîte ${JSON.stringify(bMur)} ; inspecteur : ${(await page.locator(\".inspecteur\").textContent())?.slice(0, 160)}`);\n      await page.screenshot({ path: `${OUT}/3b-selection-echec.png` });\n    }\n  }\n});\nconst avantDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {\n  await page.mouse.move(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  await page.mouse.down();\n  for (let k = 1; k <= 10; k++) await page.mouse.move(bMur.x + bMur.width / 2 + (k * ech2) / 10, bMur.y + bMur.height / 2 + 0.3);\n  await page.mouse.up();\n  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 10000 });\n});\nconst apresDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait page.waitForFunction(() => document.querySelector(\".mod-journal\")?.textContent?.includes(\"Déplacer\"), null, { timeout: 5000 }).catch(() => {});\ncheck(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);\n// Annulation du déplacement : attendre qu'elle soit enregistrée (révision suivante) avant les exports, sinon un\n// export peut être produit à la révision d'avant l'annulation.\nconst revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "level": "E2E : glisser et annuler autre opération",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-030",
+      "ordinal": 1,
+      "expected": "Mur dessiné sur mezzanine ajusté sur axe EX118-mezz-W-009",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun ajustement ni sélection d’arête coupante du mur importé.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-030",
+      "ordinal": 2,
+      "expected": "Extrémité du mur à l’intersection exacte des axes",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Pas de coordonnées ni géométrie de l’intersection vérifiées.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-030",
+      "ordinal": 3,
+      "expected": "Deux lignes d’esquisse ajustées puis annulation",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucune création/ajustement de ces deux lignes, ni restauration après trim. A5 première lecture classait undo générique comme analogie partielle. A4 plus stricte sur inverse de cette opération : absence du prédicat exact retenue, aucun désaccord sur code observé.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-030",
+      "ordinal": 4,
+      "expected": "Après scission, cote à réparer lorsque lot 5 applicable",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Pas d’assertion de rattachement ou d’accord explicite. Condition historique lot 5 préservée ; non assimilée à échec runtime.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-030",
+      "ordinal": 5,
+      "expected": "Copie de travail P.118 / niveau et objets prescrits",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : La copie automatique P.118 est explicitement assertée ; les opérations ultérieures concernent Essai lot3a, pas le cas demandé sur mezzanine. A5 séparait12préparations copies présentes et cibles différentes absentes ; A4 groupe la condition, donc partiel cohérent, pas12opérations réussies.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            85,
+            94
+          ],
+          "exact_excerpt": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus.\nawait page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });\nurl = page.url().split(\"?\")[0];\nawait page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });\nconst copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();\nconst referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();\ncheck(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));\ncheck(\"site : CRS, aire de la parcelle et origine du repère local affichés\", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator(\"#atelier-site-info\").textContent()));\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(200);",
+          "level": "E2E : contexte différent",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-030",
+      "ordinal": 6,
+      "expected": "Second navigateur après l’opération prescrite",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Égalité barre-sync, trois murs et Bureau sont assertés ; aucune chaîne avec l’opération prescrite. Pour snapping, ce contrôle est complémentaire, pas exigence du bloc historique.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E : second navigateur générique",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-030",
+      "ordinal": 7,
+      "expected": "Sauvegarde, microversion+1, inverse exact, concurrence, horsligne et droits de la fiche complète",
+      "A4_status": "non conclu",
+      "A5_final_qualification": "non conclu",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "garanties contextuelles non conclues",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Le candidat attend Enregistré et révision supérieure après undo d’un glisser ; aucune preuve de microversion exactement+1, inverse géométrique exact ou coupure réseau pour cette opération. Les API génériques révision/rejeu et403/404/423 ne sont pas l’E2E prescrit ; aucune revue exhaustive des unités/API spécifiques dans ce lot. A5 confirme : ne pas changer ce contexte en absence de fonction ni acceptation globale.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            183,
+            204
+          ],
+          "exact_excerpt": "// Sélection par cadre et suppression.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"Escape\");\nawait page.mouse.move(sx(0) - 30, sy(0) + 30);\nawait page.mouse.down();\nawait page.mouse.move(sx(1) + 30, sy(0.1), { steps: 5 });\nawait page.mouse.up();\nawait page.waitForTimeout(200);\ncheck(\"cadre : le mur du bas sélectionné\", (await page.locator(\".etat-selection\").textContent()).length > 0);\nawait page.keyboard.press(\"Delete\");\nawait page.waitForTimeout(400);\ncheck(\"Suppr : mur et porte hébergée supprimés ensemble\", (await page.locator(\".plan2d [data-objet^='porte-']\").count()) === 0 && (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});\ncheck(\"file synchronisée avec le serveur\", (await page.locator(\".barre-sync\").textContent()).startsWith(\"Enregistré\"), `${await page.locator(\".barre-sync\").textContent()} ${await page.locator(\".mod-lots\").textContent().catch(() => \"\")}`);\nawait page.screenshot({ path: `${OUT}/3a-trace-desktop.png` });\n\n// Rechargement : le modèle vient du serveur.\nawait page.reload();\nawait page.waitForSelector(\".plan2d\");\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(300);\ncheck(\"après rechargement : 3 murs et la pièce conservés\", (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page.locator(\".plan2d [data-objet^='piece-']\").count()) === 1);",
+          "level": "E2E : sélection/suppression/persistance génériques",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            288,
+            326
+          ],
+          "exact_excerpt": "// Manipulation directe en plan (DA-02-17) : sélectionner un mur, le glisser d'un mètre.\nawait page.keyboard.press(\"Escape\");\nconst murPlan = page.locator(`.plan2d [data-objet=\"${murId}\"]`);\nconst bMur = await murPlan.boundingBox();\nconst ech2 = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nawait mesurer(\"sélection d'un mur au clic → inspecteur affiché\", async () => {\n  const selectionne = () => page.waitForFunction((id) => document.querySelector(\".inspecteur-meta\")?.textContent?.includes(id), murId, { timeout: 5000 });\n  await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  // Un rendu du plan peut être en cours au moment du clic (retour de la 3D) : un second clic, une seule fois.\n  if (!(await selectionne().then(() => true, () => false))) {\n    // Le plan peut s'être recadré après le retour de la 3D : la boîte du mur est relue avant le second clic.\n    await page.keyboard.press(\"Escape\");\n    await page.waitForTimeout(800);\n    const b2 = (await murPlan.boundingBox()) ?? bMur;\n    Object.assign(bMur, b2);\n    await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n    if (!(await selectionne().then(() => true, () => false))) {\n      const sous = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute(\"class\") ?? \"\"} objet=${e?.closest(\"[data-objet]\")?.getAttribute(\"data-objet\") ?? \"-\"}`; }, [bMur.x + bMur.width / 2, bMur.y + bMur.height / 2]);\n      check(\"sélection d'un mur au clic\", false, `sous le pointeur : ${sous} ; boîte ${JSON.stringify(bMur)} ; inspecteur : ${(await page.locator(\".inspecteur\").textContent())?.slice(0, 160)}`);\n      await page.screenshot({ path: `${OUT}/3b-selection-echec.png` });\n    }\n  }\n});\nconst avantDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {\n  await page.mouse.move(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  await page.mouse.down();\n  for (let k = 1; k <= 10; k++) await page.mouse.move(bMur.x + bMur.width / 2 + (k * ech2) / 10, bMur.y + bMur.height / 2 + 0.3);\n  await page.mouse.up();\n  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 10000 });\n});\nconst apresDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait page.waitForFunction(() => document.querySelector(\".mod-journal\")?.textContent?.includes(\"Déplacer\"), null, { timeout: 5000 }).catch(() => {});\ncheck(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);\n// Annulation du déplacement : attendre qu'elle soit enregistrée (révision suivante) avant les exports, sinon un\n// export peut être produit à la révision d'avant l'annulation.\nconst revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "level": "E2E : glisser et annuler autre opération",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-032",
+      "ordinal": 1,
+      "expected": "Mur court mezzanine prolongé jusqu’à EX118-mezz-W-009",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Dessiner quatre murs ne réalise pas prolonger jusqu’à une frontière.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-032",
+      "ordinal": 2,
+      "expected": "Extrémité atteint la première intersection avant dans l’axe",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun calcul/assertion d’arrivée exacte sur frontière ni refus frontière derrière.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-032",
+      "ordinal": 3,
+      "expected": "Porte garde la distance au point fixe",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Pas de mesure de distance après prolongement ; suppression mur+porte est une autre opération.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-032",
+      "ordinal": 4,
+      "expected": "Annuler le prolongement",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun cycle prolonger/annuler. A5 première lecture classait undo générique comme analogie partielle. A4 plus stricte sur inverse de cette opération : absence du prédicat exact retenue, aucun désaccord sur code observé.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-032",
+      "ordinal": 5,
+      "expected": "Copie de travail P.118 / niveau et objets prescrits",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : La copie automatique P.118 est explicitement assertée ; les opérations ultérieures concernent Essai lot3a, pas le cas demandé sur mezzanine. A5 séparait12préparations copies présentes et cibles différentes absentes ; A4 groupe la condition, donc partiel cohérent, pas12opérations réussies.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            85,
+            94
+          ],
+          "exact_excerpt": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus.\nawait page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });\nurl = page.url().split(\"?\")[0];\nawait page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });\nconst copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();\nconst referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();\ncheck(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));\ncheck(\"site : CRS, aire de la parcelle et origine du repère local affichés\", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator(\"#atelier-site-info\").textContent()));\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(200);",
+          "level": "E2E : contexte différent",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-032",
+      "ordinal": 6,
+      "expected": "Second navigateur après l’opération prescrite",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Égalité barre-sync, trois murs et Bureau sont assertés ; aucune chaîne avec l’opération prescrite. Pour snapping, ce contrôle est complémentaire, pas exigence du bloc historique.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E : second navigateur générique",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-032",
+      "ordinal": 7,
+      "expected": "Sauvegarde, microversion+1, inverse exact, concurrence, horsligne et droits de la fiche complète",
+      "A4_status": "non conclu",
+      "A5_final_qualification": "non conclu",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "garanties contextuelles non conclues",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Le candidat attend Enregistré et révision supérieure après undo d’un glisser ; aucune preuve de microversion exactement+1, inverse géométrique exact ou coupure réseau pour cette opération. Les API génériques révision/rejeu et403/404/423 ne sont pas l’E2E prescrit ; aucune revue exhaustive des unités/API spécifiques dans ce lot. A5 confirme : ne pas changer ce contexte en absence de fonction ni acceptation globale.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            183,
+            204
+          ],
+          "exact_excerpt": "// Sélection par cadre et suppression.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"Escape\");\nawait page.mouse.move(sx(0) - 30, sy(0) + 30);\nawait page.mouse.down();\nawait page.mouse.move(sx(1) + 30, sy(0.1), { steps: 5 });\nawait page.mouse.up();\nawait page.waitForTimeout(200);\ncheck(\"cadre : le mur du bas sélectionné\", (await page.locator(\".etat-selection\").textContent()).length > 0);\nawait page.keyboard.press(\"Delete\");\nawait page.waitForTimeout(400);\ncheck(\"Suppr : mur et porte hébergée supprimés ensemble\", (await page.locator(\".plan2d [data-objet^='porte-']\").count()) === 0 && (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});\ncheck(\"file synchronisée avec le serveur\", (await page.locator(\".barre-sync\").textContent()).startsWith(\"Enregistré\"), `${await page.locator(\".barre-sync\").textContent()} ${await page.locator(\".mod-lots\").textContent().catch(() => \"\")}`);\nawait page.screenshot({ path: `${OUT}/3a-trace-desktop.png` });\n\n// Rechargement : le modèle vient du serveur.\nawait page.reload();\nawait page.waitForSelector(\".plan2d\");\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(300);\ncheck(\"après rechargement : 3 murs et la pièce conservés\", (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page.locator(\".plan2d [data-objet^='piece-']\").count()) === 1);",
+          "level": "E2E : sélection/suppression/persistance génériques",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            288,
+            326
+          ],
+          "exact_excerpt": "// Manipulation directe en plan (DA-02-17) : sélectionner un mur, le glisser d'un mètre.\nawait page.keyboard.press(\"Escape\");\nconst murPlan = page.locator(`.plan2d [data-objet=\"${murId}\"]`);\nconst bMur = await murPlan.boundingBox();\nconst ech2 = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nawait mesurer(\"sélection d'un mur au clic → inspecteur affiché\", async () => {\n  const selectionne = () => page.waitForFunction((id) => document.querySelector(\".inspecteur-meta\")?.textContent?.includes(id), murId, { timeout: 5000 });\n  await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  // Un rendu du plan peut être en cours au moment du clic (retour de la 3D) : un second clic, une seule fois.\n  if (!(await selectionne().then(() => true, () => false))) {\n    // Le plan peut s'être recadré après le retour de la 3D : la boîte du mur est relue avant le second clic.\n    await page.keyboard.press(\"Escape\");\n    await page.waitForTimeout(800);\n    const b2 = (await murPlan.boundingBox()) ?? bMur;\n    Object.assign(bMur, b2);\n    await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n    if (!(await selectionne().then(() => true, () => false))) {\n      const sous = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute(\"class\") ?? \"\"} objet=${e?.closest(\"[data-objet]\")?.getAttribute(\"data-objet\") ?? \"-\"}`; }, [bMur.x + bMur.width / 2, bMur.y + bMur.height / 2]);\n      check(\"sélection d'un mur au clic\", false, `sous le pointeur : ${sous} ; boîte ${JSON.stringify(bMur)} ; inspecteur : ${(await page.locator(\".inspecteur\").textContent())?.slice(0, 160)}`);\n      await page.screenshot({ path: `${OUT}/3b-selection-echec.png` });\n    }\n  }\n});\nconst avantDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {\n  await page.mouse.move(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  await page.mouse.down();\n  for (let k = 1; k <= 10; k++) await page.mouse.move(bMur.x + bMur.width / 2 + (k * ech2) / 10, bMur.y + bMur.height / 2 + 0.3);\n  await page.mouse.up();\n  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 10000 });\n});\nconst apresDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait page.waitForFunction(() => document.querySelector(\".mod-journal\")?.textContent?.includes(\"Déplacer\"), null, { timeout: 5000 }).catch(() => {});\ncheck(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);\n// Annulation du déplacement : attendre qu'elle soit enregistrée (révision suivante) avant les exports, sinon un\n// export peut être produit à la révision d'avant l'annulation.\nconst revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "level": "E2E : glisser et annuler autre opération",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-034",
+      "ordinal": 1,
+      "expected": "Noyau A décalé d’une distance saisie : murs +1, porte copiée",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Un glissement souris ne crée pas un mur parallèle ; aucun décompte/copie de porte après décalage.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-034",
+      "ordinal": 2,
+      "expected": "Parallèle à distance prescrite, original conservé",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Pas de géométrie parallèle ni invariant d’original. Recul Parcelle est une primitive distincte.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-034",
+      "ordinal": 3,
+      "expected": "Rectangle décalé vers l’intérieur",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Pas de rectangle réduit ni mesure des côtés décalés.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-034",
+      "ordinal": 4,
+      "expected": "Distance excessive refusée avec message",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun essai de contour auto-sécant/refus ni assertion du message.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-034",
+      "ordinal": 5,
+      "expected": "Annuler supprime exactement les copies",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun décalage/annulation enchaîné. A5 première lecture classait undo générique comme analogie partielle. A4 plus stricte sur inverse de cette opération : absence du prédicat exact retenue, aucun désaccord sur code observé.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-034",
+      "ordinal": 6,
+      "expected": "Copie de travail P.118 / niveau et objets prescrits",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : La copie automatique P.118 est explicitement assertée ; les opérations ultérieures concernent Essai lot3a, pas le cas demandé sur mezzanine. A5 séparait12préparations copies présentes et cibles différentes absentes ; A4 groupe la condition, donc partiel cohérent, pas12opérations réussies.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            85,
+            94
+          ],
+          "exact_excerpt": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus.\nawait page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });\nurl = page.url().split(\"?\")[0];\nawait page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });\nconst copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();\nconst referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();\ncheck(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));\ncheck(\"site : CRS, aire de la parcelle et origine du repère local affichés\", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator(\"#atelier-site-info\").textContent()));\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(200);",
+          "level": "E2E : contexte différent",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-034",
+      "ordinal": 7,
+      "expected": "Second navigateur après l’opération prescrite",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Égalité barre-sync, trois murs et Bureau sont assertés ; aucune chaîne avec l’opération prescrite. Pour snapping, ce contrôle est complémentaire, pas exigence du bloc historique.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E : second navigateur générique",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-034",
+      "ordinal": 8,
+      "expected": "Sauvegarde, microversion+1, inverse exact, concurrence, horsligne et droits de la fiche complète",
+      "A4_status": "non conclu",
+      "A5_final_qualification": "non conclu",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "garanties contextuelles non conclues",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Le candidat attend Enregistré et révision supérieure après undo d’un glisser ; aucune preuve de microversion exactement+1, inverse géométrique exact ou coupure réseau pour cette opération. Les API génériques révision/rejeu et403/404/423 ne sont pas l’E2E prescrit ; aucune revue exhaustive des unités/API spécifiques dans ce lot. A5 confirme : ne pas changer ce contexte en absence de fonction ni acceptation globale.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            183,
+            204
+          ],
+          "exact_excerpt": "// Sélection par cadre et suppression.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"Escape\");\nawait page.mouse.move(sx(0) - 30, sy(0) + 30);\nawait page.mouse.down();\nawait page.mouse.move(sx(1) + 30, sy(0.1), { steps: 5 });\nawait page.mouse.up();\nawait page.waitForTimeout(200);\ncheck(\"cadre : le mur du bas sélectionné\", (await page.locator(\".etat-selection\").textContent()).length > 0);\nawait page.keyboard.press(\"Delete\");\nawait page.waitForTimeout(400);\ncheck(\"Suppr : mur et porte hébergée supprimés ensemble\", (await page.locator(\".plan2d [data-objet^='porte-']\").count()) === 0 && (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});\ncheck(\"file synchronisée avec le serveur\", (await page.locator(\".barre-sync\").textContent()).startsWith(\"Enregistré\"), `${await page.locator(\".barre-sync\").textContent()} ${await page.locator(\".mod-lots\").textContent().catch(() => \"\")}`);\nawait page.screenshot({ path: `${OUT}/3a-trace-desktop.png` });\n\n// Rechargement : le modèle vient du serveur.\nawait page.reload();\nawait page.waitForSelector(\".plan2d\");\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(300);\ncheck(\"après rechargement : 3 murs et la pièce conservés\", (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page.locator(\".plan2d [data-objet^='piece-']\").count()) === 1);",
+          "level": "E2E : sélection/suppression/persistance génériques",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            288,
+            326
+          ],
+          "exact_excerpt": "// Manipulation directe en plan (DA-02-17) : sélectionner un mur, le glisser d'un mètre.\nawait page.keyboard.press(\"Escape\");\nconst murPlan = page.locator(`.plan2d [data-objet=\"${murId}\"]`);\nconst bMur = await murPlan.boundingBox();\nconst ech2 = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nawait mesurer(\"sélection d'un mur au clic → inspecteur affiché\", async () => {\n  const selectionne = () => page.waitForFunction((id) => document.querySelector(\".inspecteur-meta\")?.textContent?.includes(id), murId, { timeout: 5000 });\n  await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  // Un rendu du plan peut être en cours au moment du clic (retour de la 3D) : un second clic, une seule fois.\n  if (!(await selectionne().then(() => true, () => false))) {\n    // Le plan peut s'être recadré après le retour de la 3D : la boîte du mur est relue avant le second clic.\n    await page.keyboard.press(\"Escape\");\n    await page.waitForTimeout(800);\n    const b2 = (await murPlan.boundingBox()) ?? bMur;\n    Object.assign(bMur, b2);\n    await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n    if (!(await selectionne().then(() => true, () => false))) {\n      const sous = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute(\"class\") ?? \"\"} objet=${e?.closest(\"[data-objet]\")?.getAttribute(\"data-objet\") ?? \"-\"}`; }, [bMur.x + bMur.width / 2, bMur.y + bMur.height / 2]);\n      check(\"sélection d'un mur au clic\", false, `sous le pointeur : ${sous} ; boîte ${JSON.stringify(bMur)} ; inspecteur : ${(await page.locator(\".inspecteur\").textContent())?.slice(0, 160)}`);\n      await page.screenshot({ path: `${OUT}/3b-selection-echec.png` });\n    }\n  }\n});\nconst avantDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {\n  await page.mouse.move(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  await page.mouse.down();\n  for (let k = 1; k <= 10; k++) await page.mouse.move(bMur.x + bMur.width / 2 + (k * ech2) / 10, bMur.y + bMur.height / 2 + 0.3);\n  await page.mouse.up();\n  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 10000 });\n});\nconst apresDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait page.waitForFunction(() => document.querySelector(\".mod-journal\")?.textContent?.includes(\"Déplacer\"), null, { timeout: 5000 }).catch(() => {});\ncheck(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);\n// Annulation du déplacement : attendre qu'elle soit enregistrée (révision suivante) avant les exports, sinon un\n// export peut être produit à la révision d'avant l'annulation.\nconst revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "level": "E2E : glisser et annuler autre opération",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-036",
+      "ordinal": 1,
+      "expected": "Deux lignes perpendiculaires mezzanine, rayon saisi",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun outil raccorder ni saisie de rayon. Les murs du carré ne sont pas deux lignes d’esquisse.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-036",
+      "ordinal": 2,
+      "expected": "Arc tangent apparaît et rayon relu dans inspecteur",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Pas d’arc inspecté ni rayon, centre à distance r des deux lignes ou tangence vérifiés.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-036",
+      "ordinal": 3,
+      "expected": "Annuler laisse deux lignes seules aux extrémités initiales",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun cycle raccord/annulation avec décompte et géométrie restaurée. A5 première lecture classait undo générique comme analogie partielle. A4 plus stricte sur inverse de cette opération : absence du prédicat exact retenue, aucun désaccord sur code observé.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-036",
+      "ordinal": 4,
+      "expected": "Clavier Tab/Entrée pour désigner les lignes ; deux doigts déplacent/zooment sans désigner",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Les gestes tactiles lus concernent la caméra 3D, pas la sélection des lignes du raccord.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-036",
+      "ordinal": 5,
+      "expected": "Copie de travail P.118 / niveau et objets prescrits",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : La copie automatique P.118 est explicitement assertée ; les opérations ultérieures concernent Essai lot3a, pas le cas demandé sur mezzanine. A5 séparait12préparations copies présentes et cibles différentes absentes ; A4 groupe la condition, donc partiel cohérent, pas12opérations réussies.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            85,
+            94
+          ],
+          "exact_excerpt": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus.\nawait page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });\nurl = page.url().split(\"?\")[0];\nawait page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });\nconst copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();\nconst referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();\ncheck(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));\ncheck(\"site : CRS, aire de la parcelle et origine du repère local affichés\", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator(\"#atelier-site-info\").textContent()));\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(200);",
+          "level": "E2E : contexte différent",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-036",
+      "ordinal": 6,
+      "expected": "Second navigateur après l’opération prescrite",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Égalité barre-sync, trois murs et Bureau sont assertés ; aucune chaîne avec l’opération prescrite. Pour snapping, ce contrôle est complémentaire, pas exigence du bloc historique.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E : second navigateur générique",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-036",
+      "ordinal": 7,
+      "expected": "Sauvegarde, microversion+1, inverse exact, concurrence, horsligne et droits de la fiche complète",
+      "A4_status": "non conclu",
+      "A5_final_qualification": "non conclu",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "garanties contextuelles non conclues",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Le candidat attend Enregistré et révision supérieure après undo d’un glisser ; aucune preuve de microversion exactement+1, inverse géométrique exact ou coupure réseau pour cette opération. Les API génériques révision/rejeu et403/404/423 ne sont pas l’E2E prescrit ; aucune revue exhaustive des unités/API spécifiques dans ce lot. A5 confirme : ne pas changer ce contexte en absence de fonction ni acceptation globale.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            183,
+            204
+          ],
+          "exact_excerpt": "// Sélection par cadre et suppression.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"Escape\");\nawait page.mouse.move(sx(0) - 30, sy(0) + 30);\nawait page.mouse.down();\nawait page.mouse.move(sx(1) + 30, sy(0.1), { steps: 5 });\nawait page.mouse.up();\nawait page.waitForTimeout(200);\ncheck(\"cadre : le mur du bas sélectionné\", (await page.locator(\".etat-selection\").textContent()).length > 0);\nawait page.keyboard.press(\"Delete\");\nawait page.waitForTimeout(400);\ncheck(\"Suppr : mur et porte hébergée supprimés ensemble\", (await page.locator(\".plan2d [data-objet^='porte-']\").count()) === 0 && (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});\ncheck(\"file synchronisée avec le serveur\", (await page.locator(\".barre-sync\").textContent()).startsWith(\"Enregistré\"), `${await page.locator(\".barre-sync\").textContent()} ${await page.locator(\".mod-lots\").textContent().catch(() => \"\")}`);\nawait page.screenshot({ path: `${OUT}/3a-trace-desktop.png` });\n\n// Rechargement : le modèle vient du serveur.\nawait page.reload();\nawait page.waitForSelector(\".plan2d\");\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(300);\ncheck(\"après rechargement : 3 murs et la pièce conservés\", (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page.locator(\".plan2d [data-objet^='piece-']\").count()) === 1);",
+          "level": "E2E : sélection/suppression/persistance génériques",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            288,
+            326
+          ],
+          "exact_excerpt": "// Manipulation directe en plan (DA-02-17) : sélectionner un mur, le glisser d'un mètre.\nawait page.keyboard.press(\"Escape\");\nconst murPlan = page.locator(`.plan2d [data-objet=\"${murId}\"]`);\nconst bMur = await murPlan.boundingBox();\nconst ech2 = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nawait mesurer(\"sélection d'un mur au clic → inspecteur affiché\", async () => {\n  const selectionne = () => page.waitForFunction((id) => document.querySelector(\".inspecteur-meta\")?.textContent?.includes(id), murId, { timeout: 5000 });\n  await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  // Un rendu du plan peut être en cours au moment du clic (retour de la 3D) : un second clic, une seule fois.\n  if (!(await selectionne().then(() => true, () => false))) {\n    // Le plan peut s'être recadré après le retour de la 3D : la boîte du mur est relue avant le second clic.\n    await page.keyboard.press(\"Escape\");\n    await page.waitForTimeout(800);\n    const b2 = (await murPlan.boundingBox()) ?? bMur;\n    Object.assign(bMur, b2);\n    await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n    if (!(await selectionne().then(() => true, () => false))) {\n      const sous = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute(\"class\") ?? \"\"} objet=${e?.closest(\"[data-objet]\")?.getAttribute(\"data-objet\") ?? \"-\"}`; }, [bMur.x + bMur.width / 2, bMur.y + bMur.height / 2]);\n      check(\"sélection d'un mur au clic\", false, `sous le pointeur : ${sous} ; boîte ${JSON.stringify(bMur)} ; inspecteur : ${(await page.locator(\".inspecteur\").textContent())?.slice(0, 160)}`);\n      await page.screenshot({ path: `${OUT}/3b-selection-echec.png` });\n    }\n  }\n});\nconst avantDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {\n  await page.mouse.move(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  await page.mouse.down();\n  for (let k = 1; k <= 10; k++) await page.mouse.move(bMur.x + bMur.width / 2 + (k * ech2) / 10, bMur.y + bMur.height / 2 + 0.3);\n  await page.mouse.up();\n  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 10000 });\n});\nconst apresDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait page.waitForFunction(() => document.querySelector(\".mod-journal\")?.textContent?.includes(\"Déplacer\"), null, { timeout: 5000 }).catch(() => {});\ncheck(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);\n// Annulation du déplacement : attendre qu'elle soit enregistrée (révision suivante) avant les exports, sinon un\n// export peut être produit à la révision d'avant l'annulation.\nconst revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "level": "E2E : glisser et annuler autre opération",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-038",
+      "ordinal": 1,
+      "expected": "Deux lignes perpendiculaires chanfreinées par distances saisies",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun outil chanfreiner, distance1/distance2 ou sélection des portions conservées.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-038",
+      "ordinal": 2,
+      "expected": "Segment apparaît aux distances attendues",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Pas de segment de chanfrein ni extrémités calculées ; cas égal d implique longueur d×√2 et angle45°, non assertés.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-038",
+      "ordinal": 3,
+      "expected": "Annuler restitue les deux lignes",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun cycle chanfrein/annulation. A5 première lecture classait undo générique comme analogie partielle. A4 plus stricte sur inverse de cette opération : absence du prédicat exact retenue, aucun désaccord sur code observé.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-038",
+      "ordinal": 4,
+      "expected": "Clavier Tab/Entrée pour lignes et saisie distances",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Saisie de vecteurs de murs différente de la sélection clavier des lignes de chanfrein.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-038",
+      "ordinal": 5,
+      "expected": "Copie de travail P.118 / niveau et objets prescrits",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : La copie automatique P.118 est explicitement assertée ; les opérations ultérieures concernent Essai lot3a, pas le cas demandé sur mezzanine. A5 séparait12préparations copies présentes et cibles différentes absentes ; A4 groupe la condition, donc partiel cohérent, pas12opérations réussies.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            85,
+            94
+          ],
+          "exact_excerpt": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus.\nawait page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });\nurl = page.url().split(\"?\")[0];\nawait page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });\nconst copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();\nconst referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();\ncheck(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));\ncheck(\"site : CRS, aire de la parcelle et origine du repère local affichés\", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator(\"#atelier-site-info\").textContent()));\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(200);",
+          "level": "E2E : contexte différent",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-038",
+      "ordinal": 6,
+      "expected": "Second navigateur après l’opération prescrite",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Égalité barre-sync, trois murs et Bureau sont assertés ; aucune chaîne avec l’opération prescrite. Pour snapping, ce contrôle est complémentaire, pas exigence du bloc historique.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E : second navigateur générique",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-038",
+      "ordinal": 7,
+      "expected": "Sauvegarde, microversion+1, inverse exact, concurrence, horsligne et droits de la fiche complète",
+      "A4_status": "non conclu",
+      "A5_final_qualification": "non conclu",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "garanties contextuelles non conclues",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Le candidat attend Enregistré et révision supérieure après undo d’un glisser ; aucune preuve de microversion exactement+1, inverse géométrique exact ou coupure réseau pour cette opération. Les API génériques révision/rejeu et403/404/423 ne sont pas l’E2E prescrit ; aucune revue exhaustive des unités/API spécifiques dans ce lot. A5 confirme : ne pas changer ce contexte en absence de fonction ni acceptation globale.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            183,
+            204
+          ],
+          "exact_excerpt": "// Sélection par cadre et suppression.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"Escape\");\nawait page.mouse.move(sx(0) - 30, sy(0) + 30);\nawait page.mouse.down();\nawait page.mouse.move(sx(1) + 30, sy(0.1), { steps: 5 });\nawait page.mouse.up();\nawait page.waitForTimeout(200);\ncheck(\"cadre : le mur du bas sélectionné\", (await page.locator(\".etat-selection\").textContent()).length > 0);\nawait page.keyboard.press(\"Delete\");\nawait page.waitForTimeout(400);\ncheck(\"Suppr : mur et porte hébergée supprimés ensemble\", (await page.locator(\".plan2d [data-objet^='porte-']\").count()) === 0 && (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});\ncheck(\"file synchronisée avec le serveur\", (await page.locator(\".barre-sync\").textContent()).startsWith(\"Enregistré\"), `${await page.locator(\".barre-sync\").textContent()} ${await page.locator(\".mod-lots\").textContent().catch(() => \"\")}`);\nawait page.screenshot({ path: `${OUT}/3a-trace-desktop.png` });\n\n// Rechargement : le modèle vient du serveur.\nawait page.reload();\nawait page.waitForSelector(\".plan2d\");\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(300);\ncheck(\"après rechargement : 3 murs et la pièce conservés\", (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page.locator(\".plan2d [data-objet^='piece-']\").count()) === 1);",
+          "level": "E2E : sélection/suppression/persistance génériques",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            288,
+            326
+          ],
+          "exact_excerpt": "// Manipulation directe en plan (DA-02-17) : sélectionner un mur, le glisser d'un mètre.\nawait page.keyboard.press(\"Escape\");\nconst murPlan = page.locator(`.plan2d [data-objet=\"${murId}\"]`);\nconst bMur = await murPlan.boundingBox();\nconst ech2 = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nawait mesurer(\"sélection d'un mur au clic → inspecteur affiché\", async () => {\n  const selectionne = () => page.waitForFunction((id) => document.querySelector(\".inspecteur-meta\")?.textContent?.includes(id), murId, { timeout: 5000 });\n  await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  // Un rendu du plan peut être en cours au moment du clic (retour de la 3D) : un second clic, une seule fois.\n  if (!(await selectionne().then(() => true, () => false))) {\n    // Le plan peut s'être recadré après le retour de la 3D : la boîte du mur est relue avant le second clic.\n    await page.keyboard.press(\"Escape\");\n    await page.waitForTimeout(800);\n    const b2 = (await murPlan.boundingBox()) ?? bMur;\n    Object.assign(bMur, b2);\n    await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n    if (!(await selectionne().then(() => true, () => false))) {\n      const sous = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute(\"class\") ?? \"\"} objet=${e?.closest(\"[data-objet]\")?.getAttribute(\"data-objet\") ?? \"-\"}`; }, [bMur.x + bMur.width / 2, bMur.y + bMur.height / 2]);\n      check(\"sélection d'un mur au clic\", false, `sous le pointeur : ${sous} ; boîte ${JSON.stringify(bMur)} ; inspecteur : ${(await page.locator(\".inspecteur\").textContent())?.slice(0, 160)}`);\n      await page.screenshot({ path: `${OUT}/3b-selection-echec.png` });\n    }\n  }\n});\nconst avantDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {\n  await page.mouse.move(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  await page.mouse.down();\n  for (let k = 1; k <= 10; k++) await page.mouse.move(bMur.x + bMur.width / 2 + (k * ech2) / 10, bMur.y + bMur.height / 2 + 0.3);\n  await page.mouse.up();\n  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 10000 });\n});\nconst apresDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait page.waitForFunction(() => document.querySelector(\".mod-journal\")?.textContent?.includes(\"Déplacer\"), null, { timeout: 5000 }).catch(() => {});\ncheck(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);\n// Annulation du déplacement : attendre qu'elle soit enregistrée (révision suivante) avant les exports, sinon un\n// export peut être produit à la révision d'avant l'annulation.\nconst revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "level": "E2E : glisser et annuler autre opération",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-040",
+      "ordinal": 1,
+      "expected": "Réseau rectangulaire3×2 d’un poteau mezzanine",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun réseau rectangulaire de poteau ni paramètres lignes/colonnes/pas saisis.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-040",
+      "ordinal": 2,
+      "expected": "Poteaux +5 aux positions attendues en un lot",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun décompte+5, positions de trame ni journal d’un unique lot de répétition.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-040",
+      "ordinal": 3,
+      "expected": "Une seule annulation supprime les cinq copies",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Pas de réseau/annulation ; attendre révision> ne prouve pas cet inverse exact. A5 première lecture classait undo générique comme analogie partielle. A4 plus stricte sur inverse de cette opération : absence du prédicat exact retenue, aucun désaccord sur code observé.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-040",
+      "ordinal": 4,
+      "expected": "Réseau polaire d’une esquisse",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucune sélection esquisse ni centre/nombre/angle ; orbite caméra ne vaut pas distribution polaire.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-040",
+      "ordinal": 5,
+      "expected": "Copie de travail P.118 / niveau et objets prescrits",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : La copie automatique P.118 est explicitement assertée ; les opérations ultérieures concernent Essai lot3a, pas le cas demandé sur mezzanine. A5 séparait12préparations copies présentes et cibles différentes absentes ; A4 groupe la condition, donc partiel cohérent, pas12opérations réussies.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            85,
+            94
+          ],
+          "exact_excerpt": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus.\nawait page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });\nurl = page.url().split(\"?\")[0];\nawait page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });\nconst copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();\nconst referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();\ncheck(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));\ncheck(\"site : CRS, aire de la parcelle et origine du repère local affichés\", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator(\"#atelier-site-info\").textContent()));\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(200);",
+          "level": "E2E : contexte différent",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-040",
+      "ordinal": 6,
+      "expected": "Second navigateur après l’opération prescrite",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Égalité barre-sync, trois murs et Bureau sont assertés ; aucune chaîne avec l’opération prescrite. Pour snapping, ce contrôle est complémentaire, pas exigence du bloc historique.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E : second navigateur générique",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-040",
+      "ordinal": 7,
+      "expected": "Sauvegarde, microversion+1, inverse exact, concurrence, horsligne et droits de la fiche complète",
+      "A4_status": "non conclu",
+      "A5_final_qualification": "non conclu",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "garanties contextuelles non conclues",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Le candidat attend Enregistré et révision supérieure après undo d’un glisser ; aucune preuve de microversion exactement+1, inverse géométrique exact ou coupure réseau pour cette opération. Les API génériques révision/rejeu et403/404/423 ne sont pas l’E2E prescrit ; aucune revue exhaustive des unités/API spécifiques dans ce lot. A5 confirme : ne pas changer ce contexte en absence de fonction ni acceptation globale.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            183,
+            204
+          ],
+          "exact_excerpt": "// Sélection par cadre et suppression.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"Escape\");\nawait page.mouse.move(sx(0) - 30, sy(0) + 30);\nawait page.mouse.down();\nawait page.mouse.move(sx(1) + 30, sy(0.1), { steps: 5 });\nawait page.mouse.up();\nawait page.waitForTimeout(200);\ncheck(\"cadre : le mur du bas sélectionné\", (await page.locator(\".etat-selection\").textContent()).length > 0);\nawait page.keyboard.press(\"Delete\");\nawait page.waitForTimeout(400);\ncheck(\"Suppr : mur et porte hébergée supprimés ensemble\", (await page.locator(\".plan2d [data-objet^='porte-']\").count()) === 0 && (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});\ncheck(\"file synchronisée avec le serveur\", (await page.locator(\".barre-sync\").textContent()).startsWith(\"Enregistré\"), `${await page.locator(\".barre-sync\").textContent()} ${await page.locator(\".mod-lots\").textContent().catch(() => \"\")}`);\nawait page.screenshot({ path: `${OUT}/3a-trace-desktop.png` });\n\n// Rechargement : le modèle vient du serveur.\nawait page.reload();\nawait page.waitForSelector(\".plan2d\");\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(300);\ncheck(\"après rechargement : 3 murs et la pièce conservés\", (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page.locator(\".plan2d [data-objet^='piece-']\").count()) === 1);",
+          "level": "E2E : sélection/suppression/persistance génériques",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            288,
+            326
+          ],
+          "exact_excerpt": "// Manipulation directe en plan (DA-02-17) : sélectionner un mur, le glisser d'un mètre.\nawait page.keyboard.press(\"Escape\");\nconst murPlan = page.locator(`.plan2d [data-objet=\"${murId}\"]`);\nconst bMur = await murPlan.boundingBox();\nconst ech2 = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nawait mesurer(\"sélection d'un mur au clic → inspecteur affiché\", async () => {\n  const selectionne = () => page.waitForFunction((id) => document.querySelector(\".inspecteur-meta\")?.textContent?.includes(id), murId, { timeout: 5000 });\n  await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  // Un rendu du plan peut être en cours au moment du clic (retour de la 3D) : un second clic, une seule fois.\n  if (!(await selectionne().then(() => true, () => false))) {\n    // Le plan peut s'être recadré après le retour de la 3D : la boîte du mur est relue avant le second clic.\n    await page.keyboard.press(\"Escape\");\n    await page.waitForTimeout(800);\n    const b2 = (await murPlan.boundingBox()) ?? bMur;\n    Object.assign(bMur, b2);\n    await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n    if (!(await selectionne().then(() => true, () => false))) {\n      const sous = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute(\"class\") ?? \"\"} objet=${e?.closest(\"[data-objet]\")?.getAttribute(\"data-objet\") ?? \"-\"}`; }, [bMur.x + bMur.width / 2, bMur.y + bMur.height / 2]);\n      check(\"sélection d'un mur au clic\", false, `sous le pointeur : ${sous} ; boîte ${JSON.stringify(bMur)} ; inspecteur : ${(await page.locator(\".inspecteur\").textContent())?.slice(0, 160)}`);\n      await page.screenshot({ path: `${OUT}/3b-selection-echec.png` });\n    }\n  }\n});\nconst avantDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {\n  await page.mouse.move(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  await page.mouse.down();\n  for (let k = 1; k <= 10; k++) await page.mouse.move(bMur.x + bMur.width / 2 + (k * ech2) / 10, bMur.y + bMur.height / 2 + 0.3);\n  await page.mouse.up();\n  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 10000 });\n});\nconst apresDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait page.waitForFunction(() => document.querySelector(\".mod-journal\")?.textContent?.includes(\"Déplacer\"), null, { timeout: 5000 }).catch(() => {});\ncheck(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);\n// Annulation du déplacement : attendre qu'elle soit enregistrée (révision suivante) avant les exports, sinon un\n// export peut être produit à la révision d'avant l'annulation.\nconst revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "level": "E2E : glisser et annuler autre opération",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-042",
+      "ordinal": 1,
+      "expected": "Rectangle d’esquisse mezzanine décomposé en4lignes",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun rectangle décomposé ; quatre murs ne sont pas quatre lignes issues d’un rectangle.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-042",
+      "ordinal": 2,
+      "expected": "Quatre lignes indépendantes mêmes extrémités/calque/niveau, original remplacé",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun effet1supprimé/4créés ni géométrie/rattachement des lignes vérifié.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-042",
+      "ordinal": 3,
+      "expected": "Mur sélectionné : décomposition refusée avec message",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Pas d’action décomposer sur mur ni message de refus.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-042",
+      "ordinal": 4,
+      "expected": "Annuler : rectangle revient avec identité initiale",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun cycle décomposer/annuler ni restauration des identifiants. A5 première lecture classait undo générique comme analogie partielle. A4 plus stricte sur inverse de cette opération : absence du prédicat exact retenue, aucun désaccord sur code observé.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-042",
+      "ordinal": 5,
+      "expected": "Copie de travail P.118 / niveau et objets prescrits",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : La copie automatique P.118 est explicitement assertée ; les opérations ultérieures concernent Essai lot3a, pas le cas demandé sur mezzanine. A5 séparait12préparations copies présentes et cibles différentes absentes ; A4 groupe la condition, donc partiel cohérent, pas12opérations réussies.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            85,
+            94
+          ],
+          "exact_excerpt": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus.\nawait page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });\nurl = page.url().split(\"?\")[0];\nawait page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });\nconst copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();\nconst referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();\ncheck(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));\ncheck(\"site : CRS, aire de la parcelle et origine du repère local affichés\", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator(\"#atelier-site-info\").textContent()));\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(200);",
+          "level": "E2E : contexte différent",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-042",
+      "ordinal": 6,
+      "expected": "Second navigateur après l’opération prescrite",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Égalité barre-sync, trois murs et Bureau sont assertés ; aucune chaîne avec l’opération prescrite. Pour snapping, ce contrôle est complémentaire, pas exigence du bloc historique.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E : second navigateur générique",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-042",
+      "ordinal": 7,
+      "expected": "Sauvegarde, microversion+1, inverse exact, concurrence, horsligne et droits de la fiche complète",
+      "A4_status": "non conclu",
+      "A5_final_qualification": "non conclu",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "garanties contextuelles non conclues",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Le candidat attend Enregistré et révision supérieure après undo d’un glisser ; aucune preuve de microversion exactement+1, inverse géométrique exact ou coupure réseau pour cette opération. Les API génériques révision/rejeu et403/404/423 ne sont pas l’E2E prescrit ; aucune revue exhaustive des unités/API spécifiques dans ce lot. A5 confirme : ne pas changer ce contexte en absence de fonction ni acceptation globale.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            183,
+            204
+          ],
+          "exact_excerpt": "// Sélection par cadre et suppression.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"Escape\");\nawait page.mouse.move(sx(0) - 30, sy(0) + 30);\nawait page.mouse.down();\nawait page.mouse.move(sx(1) + 30, sy(0.1), { steps: 5 });\nawait page.mouse.up();\nawait page.waitForTimeout(200);\ncheck(\"cadre : le mur du bas sélectionné\", (await page.locator(\".etat-selection\").textContent()).length > 0);\nawait page.keyboard.press(\"Delete\");\nawait page.waitForTimeout(400);\ncheck(\"Suppr : mur et porte hébergée supprimés ensemble\", (await page.locator(\".plan2d [data-objet^='porte-']\").count()) === 0 && (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});\ncheck(\"file synchronisée avec le serveur\", (await page.locator(\".barre-sync\").textContent()).startsWith(\"Enregistré\"), `${await page.locator(\".barre-sync\").textContent()} ${await page.locator(\".mod-lots\").textContent().catch(() => \"\")}`);\nawait page.screenshot({ path: `${OUT}/3a-trace-desktop.png` });\n\n// Rechargement : le modèle vient du serveur.\nawait page.reload();\nawait page.waitForSelector(\".plan2d\");\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(300);\ncheck(\"après rechargement : 3 murs et la pièce conservés\", (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page.locator(\".plan2d [data-objet^='piece-']\").count()) === 1);",
+          "level": "E2E : sélection/suppression/persistance génériques",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            288,
+            326
+          ],
+          "exact_excerpt": "// Manipulation directe en plan (DA-02-17) : sélectionner un mur, le glisser d'un mètre.\nawait page.keyboard.press(\"Escape\");\nconst murPlan = page.locator(`.plan2d [data-objet=\"${murId}\"]`);\nconst bMur = await murPlan.boundingBox();\nconst ech2 = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nawait mesurer(\"sélection d'un mur au clic → inspecteur affiché\", async () => {\n  const selectionne = () => page.waitForFunction((id) => document.querySelector(\".inspecteur-meta\")?.textContent?.includes(id), murId, { timeout: 5000 });\n  await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  // Un rendu du plan peut être en cours au moment du clic (retour de la 3D) : un second clic, une seule fois.\n  if (!(await selectionne().then(() => true, () => false))) {\n    // Le plan peut s'être recadré après le retour de la 3D : la boîte du mur est relue avant le second clic.\n    await page.keyboard.press(\"Escape\");\n    await page.waitForTimeout(800);\n    const b2 = (await murPlan.boundingBox()) ?? bMur;\n    Object.assign(bMur, b2);\n    await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n    if (!(await selectionne().then(() => true, () => false))) {\n      const sous = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute(\"class\") ?? \"\"} objet=${e?.closest(\"[data-objet]\")?.getAttribute(\"data-objet\") ?? \"-\"}`; }, [bMur.x + bMur.width / 2, bMur.y + bMur.height / 2]);\n      check(\"sélection d'un mur au clic\", false, `sous le pointeur : ${sous} ; boîte ${JSON.stringify(bMur)} ; inspecteur : ${(await page.locator(\".inspecteur\").textContent())?.slice(0, 160)}`);\n      await page.screenshot({ path: `${OUT}/3b-selection-echec.png` });\n    }\n  }\n});\nconst avantDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {\n  await page.mouse.move(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  await page.mouse.down();\n  for (let k = 1; k <= 10; k++) await page.mouse.move(bMur.x + bMur.width / 2 + (k * ech2) / 10, bMur.y + bMur.height / 2 + 0.3);\n  await page.mouse.up();\n  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 10000 });\n});\nconst apresDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait page.waitForFunction(() => document.querySelector(\".mod-journal\")?.textContent?.includes(\"Déplacer\"), null, { timeout: 5000 }).catch(() => {});\ncheck(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);\n// Annulation du déplacement : attendre qu'elle soit enregistrée (révision suivante) avant les exports, sinon un\n// export peut être produit à la révision d'avant l'annulation.\nconst revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "level": "E2E : glisser et annuler autre opération",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-044",
+      "ordinal": 1,
+      "expected": "EX118-mezz-SLAB-0 sommet déplacé par poignée puis saisie de position",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucune dalle importée ciblée ni poignée2D de sommet. Le pousser/tirer d’un mur3D ne couvre pas la dalle.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-044",
+      "ordinal": 2,
+      "expected": "Point inséré puis supprimé : effectifs/ordre/contour attendus",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun ajout/suppression de point ni contrôle géométrique du contour ou des trous.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-044",
+      "ordinal": 3,
+      "expected": "Clavier seul Tab et saisie de position",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucune navigation Tab vers poignée ni édition de dalle sans pointeur ; raccourci M seul ne satisfait pas cet oracle.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-044",
+      "ordinal": 4,
+      "expected": "Annuler restitue exactement les paramètres de dalle",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Pas de cycle poignées/annulation ni restitution contour/indices ; références à réparer non vérifiées. A5 première lecture classait undo générique comme analogie partielle. A4 plus stricte sur inverse de cette opération : absence du prédicat exact retenue, aucun désaccord sur code observé.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-044",
+      "ordinal": 5,
+      "expected": "Copie de travail P.118 / niveau et objets prescrits",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : La copie automatique P.118 est explicitement assertée ; les opérations ultérieures concernent Essai lot3a, pas le cas demandé sur mezzanine. A5 séparait12préparations copies présentes et cibles différentes absentes ; A4 groupe la condition, donc partiel cohérent, pas12opérations réussies.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            85,
+            94
+          ],
+          "exact_excerpt": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus.\nawait page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });\nurl = page.url().split(\"?\")[0];\nawait page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });\nconst copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();\nconst referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();\ncheck(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));\ncheck(\"site : CRS, aire de la parcelle et origine du repère local affichés\", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator(\"#atelier-site-info\").textContent()));\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(200);",
+          "level": "E2E : contexte différent",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-044",
+      "ordinal": 6,
+      "expected": "Second navigateur après l’opération prescrite",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Égalité barre-sync, trois murs et Bureau sont assertés ; aucune chaîne avec l’opération prescrite. Pour snapping, ce contrôle est complémentaire, pas exigence du bloc historique.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E : second navigateur générique",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-044",
+      "ordinal": 7,
+      "expected": "Sauvegarde, microversion+1, inverse exact, concurrence, horsligne et droits de la fiche complète",
+      "A4_status": "non conclu",
+      "A5_final_qualification": "non conclu",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "garanties contextuelles non conclues",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Le candidat attend Enregistré et révision supérieure après undo d’un glisser ; aucune preuve de microversion exactement+1, inverse géométrique exact ou coupure réseau pour cette opération. Les API génériques révision/rejeu et403/404/423 ne sont pas l’E2E prescrit ; aucune revue exhaustive des unités/API spécifiques dans ce lot. A5 confirme : ne pas changer ce contexte en absence de fonction ni acceptation globale.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            183,
+            204
+          ],
+          "exact_excerpt": "// Sélection par cadre et suppression.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"Escape\");\nawait page.mouse.move(sx(0) - 30, sy(0) + 30);\nawait page.mouse.down();\nawait page.mouse.move(sx(1) + 30, sy(0.1), { steps: 5 });\nawait page.mouse.up();\nawait page.waitForTimeout(200);\ncheck(\"cadre : le mur du bas sélectionné\", (await page.locator(\".etat-selection\").textContent()).length > 0);\nawait page.keyboard.press(\"Delete\");\nawait page.waitForTimeout(400);\ncheck(\"Suppr : mur et porte hébergée supprimés ensemble\", (await page.locator(\".plan2d [data-objet^='porte-']\").count()) === 0 && (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});\ncheck(\"file synchronisée avec le serveur\", (await page.locator(\".barre-sync\").textContent()).startsWith(\"Enregistré\"), `${await page.locator(\".barre-sync\").textContent()} ${await page.locator(\".mod-lots\").textContent().catch(() => \"\")}`);\nawait page.screenshot({ path: `${OUT}/3a-trace-desktop.png` });\n\n// Rechargement : le modèle vient du serveur.\nawait page.reload();\nawait page.waitForSelector(\".plan2d\");\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(300);\ncheck(\"après rechargement : 3 murs et la pièce conservés\", (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page.locator(\".plan2d [data-objet^='piece-']\").count()) === 1);",
+          "level": "E2E : sélection/suppression/persistance génériques",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            288,
+            326
+          ],
+          "exact_excerpt": "// Manipulation directe en plan (DA-02-17) : sélectionner un mur, le glisser d'un mètre.\nawait page.keyboard.press(\"Escape\");\nconst murPlan = page.locator(`.plan2d [data-objet=\"${murId}\"]`);\nconst bMur = await murPlan.boundingBox();\nconst ech2 = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nawait mesurer(\"sélection d'un mur au clic → inspecteur affiché\", async () => {\n  const selectionne = () => page.waitForFunction((id) => document.querySelector(\".inspecteur-meta\")?.textContent?.includes(id), murId, { timeout: 5000 });\n  await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  // Un rendu du plan peut être en cours au moment du clic (retour de la 3D) : un second clic, une seule fois.\n  if (!(await selectionne().then(() => true, () => false))) {\n    // Le plan peut s'être recadré après le retour de la 3D : la boîte du mur est relue avant le second clic.\n    await page.keyboard.press(\"Escape\");\n    await page.waitForTimeout(800);\n    const b2 = (await murPlan.boundingBox()) ?? bMur;\n    Object.assign(bMur, b2);\n    await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n    if (!(await selectionne().then(() => true, () => false))) {\n      const sous = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute(\"class\") ?? \"\"} objet=${e?.closest(\"[data-objet]\")?.getAttribute(\"data-objet\") ?? \"-\"}`; }, [bMur.x + bMur.width / 2, bMur.y + bMur.height / 2]);\n      check(\"sélection d'un mur au clic\", false, `sous le pointeur : ${sous} ; boîte ${JSON.stringify(bMur)} ; inspecteur : ${(await page.locator(\".inspecteur\").textContent())?.slice(0, 160)}`);\n      await page.screenshot({ path: `${OUT}/3b-selection-echec.png` });\n    }\n  }\n});\nconst avantDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {\n  await page.mouse.move(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  await page.mouse.down();\n  for (let k = 1; k <= 10; k++) await page.mouse.move(bMur.x + bMur.width / 2 + (k * ech2) / 10, bMur.y + bMur.height / 2 + 0.3);\n  await page.mouse.up();\n  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 10000 });\n});\nconst apresDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait page.waitForFunction(() => document.querySelector(\".mod-journal\")?.textContent?.includes(\"Déplacer\"), null, { timeout: 5000 }).catch(() => {});\ncheck(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);\n// Annulation du déplacement : attendre qu'elle soit enregistrée (révision suivante) avant les exports, sinon un\n// export peut être produit à la révision d'avant l'annulation.\nconst revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "level": "E2E : glisser et annuler autre opération",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-045",
+      "ordinal": 1,
+      "expected": "Près d’une extrémité importée mezzanine : libellé Extrémité annoncé",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucune lecture du libellé Extrémité ou région aria-live. Une assertion nommée accrochage ne vérifie que le nombre de murs.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-045",
+      "ordinal": 2,
+      "expected": "Point posé égale exactement les coordonnées importées",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Pas de comparaison numérique au sommet importé ni caractéristique nommée ; décompte quatre murs insuffisant.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-045",
+      "ordinal": 3,
+      "expected": "Sans objet : point sur grille0,50m",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Pas de choix/lecture pas0,50m ni coordonnées multiple du pas.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-045",
+      "ordinal": 4,
+      "expected": "Aucun POST /commands pendant le survol",
+      "A4_status": "absent",
+      "A5_final_qualification": "absent",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Le listener response affiche des diagnostics optionnels ; il ne compte pas les requêtes ni n’assert zéro pendant hover.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-045",
+      "ordinal": 5,
+      "expected": "Clavier : saisie de précision",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Saisie4;0,0;4,-4;0,0;-4 et compte4 existent mais avec clic initial, sans preuve du cas précis indépendant de pointeur.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            101,
+            131
+          ],
+          "exact_excerpt": "// Mur au clavier : M, clic, saisie 4, Entrée → un mur de 4 m.\nawait page.keyboard.press(\"m\");\ncheck(\"raccourci M → outil Mur\", (await page.locator('.atelier-n-outils .outil.est-actif').textContent()).includes(\"Mur\"));\nawait mesurer(\"tracer un mur (clic + saisie 4 + Entrée) → mur affiché\", async () => {\n  await page.mouse.move(cx - 100, cy);\n  await page.mouse.click(cx - 100, cy);\n  await page.mouse.move(cx + 50, cy);\n  await page.keyboard.type(\"4;0\");\n  await page.keyboard.press(\"Enter\");\n  await page.waitForSelector(\".plan2d .obj-mur, .plan2d [data-objet^='mur-']\", { timeout: 5000 }).catch(async (err) => {\n    await page.screenshot({ path: `${OUT}/echec-mur.png` });\n    console.log(\"diagnostic :\", await page.evaluate(() => ({ etat: document.querySelector(\".atelier-n-etat\")?.textContent, niveau: document.querySelector(\".nav-niveaux [aria-pressed=true]\")?.textContent, outil: document.querySelector(\".atelier-n-outils .est-actif\")?.textContent, saisie: document.querySelector(\"#saisie-precision\")?.value, actif: document.activeElement?.outerHTML.slice(0, 80) })));\n    throw err;\n  });\n});\n// Trois murs de plus en saisie de précision « dx;dy » pour fermer le carré.\nconst echelle = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nconst pas = 4 * echelle;\nfor (const saisie of [\"0;4\", \"-4;0\", \"0;-4\"]) {\n  await page.keyboard.type(saisie);\n  await page.keyboard.press(\"Enter\");\n  await page.waitForTimeout(100);\n}\n// Les gestes suivants se placent sur le carré tel qu'il est affiché (boîte des quatre murs, épaisseur comprise).\nconst B = await page.evaluate(() => { const bs = [...document.querySelectorAll(\".plan2d [data-objet^='mur-']\")].map((e) => e.getBoundingClientRect()); return { left: Math.min(...bs.map((b) => b.left)), right: Math.max(...bs.map((b) => b.right)), top: Math.min(...bs.map((b) => b.top)), bottom: Math.max(...bs.map((b) => b.bottom)) }; });\nconst sx = (t) => B.left + t * (B.right - B.left);\nconst sy = (t) => B.bottom - t * (B.bottom - B.top);\nawait page.keyboard.press(\"Escape\");\nawait page.waitForTimeout(300);\nconst murs = await page.locator(\".plan2d [data-objet^='mur-']\").count();\ncheck(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));",
+          "level": "E2E : saisie autres coordonnées",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-045",
+      "ordinal": 6,
+      "expected": "Priorité/Tab candidat/zoom constant pixels/calques/droits/stockage défaillant",
+      "A4_status": "non conclu",
+      "A5_final_qualification": "non conclu",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "garanties contextuelles non conclues",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Aucun oracle E2E de ces garanties de la fiche complète. Zoom tactile3D compte des images, pas candidats de snapping. A5 confirme : ne pas changer ce contexte en absence de fonction ni acceptation globale.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-045",
+      "ordinal": 7,
+      "expected": "Copie de travail P.118 / niveau et objets prescrits",
+      "A4_status": "partiel",
+      "A5_final_qualification": "partiel",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "contrat historique ou approfondissement du contrat explicite de fiche",
+      "A5_reason": "Avis confirmé dans périmètre candidat : La copie automatique P.118 est explicitement assertée ; les opérations ultérieures concernent Essai lot3a, pas le cas demandé sur mezzanine. A5 séparait12préparations copies présentes et cibles différentes absentes ; A4 groupe la condition, donc partiel cohérent, pas12opérations réussies.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            85,
+            94
+          ],
+          "exact_excerpt": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus.\nawait page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });\nurl = page.url().split(\"?\")[0];\nawait page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });\nconst copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();\nconst referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();\ncheck(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));\ncheck(\"site : CRS, aire de la parcelle et origine du repère local affichés\", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator(\"#atelier-site-info\").textContent()));\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(200);",
+          "level": "E2E : contexte différent",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-045",
+      "ordinal": 8,
+      "expected": "Second navigateur après l’opération prescrite",
+      "A4_status": "partiel",
+      "A5_final_qualification": "complément non prescrit dans bloc historique snapping ; analogue partiel seulement",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "complément distinct non ajouté aux obligations source",
+      "A5_reason": "Le bloc source045 ne prescrit pas de second navigateur. A4 le dit explicitement ; ne pas traiter comme obligation manquante de snapping ni utiliser ceci pour recette045. L’égalité barres des autres gestes reste un fait de source seulement.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E : second navigateur générique",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-045",
+      "ordinal": 9,
+      "expected": "Sauvegarde, microversion+1, inverse exact, concurrence, horsligne et droits de la fiche complète",
+      "A4_status": "non conclu",
+      "A5_final_qualification": "non conclu",
+      "A5_verdict": "Accepté avec portée explicite",
+      "kind": "garanties contextuelles non conclues",
+      "A5_reason": "Avis confirmé dans périmètre candidat : Le candidat attend Enregistré et révision supérieure après undo d’un glisser ; aucune preuve de microversion exactement+1, inverse géométrique exact ou coupure réseau pour cette opération. Les API génériques révision/rejeu et403/404/423 ne sont pas l’E2E prescrit ; aucune revue exhaustive des unités/API spécifiques dans ce lot. A5 confirme : ne pas changer ce contexte en absence de fonction ni acceptation globale.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            183,
+            204
+          ],
+          "exact_excerpt": "// Sélection par cadre et suppression.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"Escape\");\nawait page.mouse.move(sx(0) - 30, sy(0) + 30);\nawait page.mouse.down();\nawait page.mouse.move(sx(1) + 30, sy(0.1), { steps: 5 });\nawait page.mouse.up();\nawait page.waitForTimeout(200);\ncheck(\"cadre : le mur du bas sélectionné\", (await page.locator(\".etat-selection\").textContent()).length > 0);\nawait page.keyboard.press(\"Delete\");\nawait page.waitForTimeout(400);\ncheck(\"Suppr : mur et porte hébergée supprimés ensemble\", (await page.locator(\".plan2d [data-objet^='porte-']\").count()) === 0 && (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});\ncheck(\"file synchronisée avec le serveur\", (await page.locator(\".barre-sync\").textContent()).startsWith(\"Enregistré\"), `${await page.locator(\".barre-sync\").textContent()} ${await page.locator(\".mod-lots\").textContent().catch(() => \"\")}`);\nawait page.screenshot({ path: `${OUT}/3a-trace-desktop.png` });\n\n// Rechargement : le modèle vient du serveur.\nawait page.reload();\nawait page.waitForSelector(\".plan2d\");\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(300);\ncheck(\"après rechargement : 3 murs et la pièce conservés\", (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page.locator(\".plan2d [data-objet^='piece-']\").count()) === 1);",
+          "level": "E2E : sélection/suppression/persistance génériques",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            288,
+            326
+          ],
+          "exact_excerpt": "// Manipulation directe en plan (DA-02-17) : sélectionner un mur, le glisser d'un mètre.\nawait page.keyboard.press(\"Escape\");\nconst murPlan = page.locator(`.plan2d [data-objet=\"${murId}\"]`);\nconst bMur = await murPlan.boundingBox();\nconst ech2 = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nawait mesurer(\"sélection d'un mur au clic → inspecteur affiché\", async () => {\n  const selectionne = () => page.waitForFunction((id) => document.querySelector(\".inspecteur-meta\")?.textContent?.includes(id), murId, { timeout: 5000 });\n  await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  // Un rendu du plan peut être en cours au moment du clic (retour de la 3D) : un second clic, une seule fois.\n  if (!(await selectionne().then(() => true, () => false))) {\n    // Le plan peut s'être recadré après le retour de la 3D : la boîte du mur est relue avant le second clic.\n    await page.keyboard.press(\"Escape\");\n    await page.waitForTimeout(800);\n    const b2 = (await murPlan.boundingBox()) ?? bMur;\n    Object.assign(bMur, b2);\n    await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n    if (!(await selectionne().then(() => true, () => false))) {\n      const sous = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute(\"class\") ?? \"\"} objet=${e?.closest(\"[data-objet]\")?.getAttribute(\"data-objet\") ?? \"-\"}`; }, [bMur.x + bMur.width / 2, bMur.y + bMur.height / 2]);\n      check(\"sélection d'un mur au clic\", false, `sous le pointeur : ${sous} ; boîte ${JSON.stringify(bMur)} ; inspecteur : ${(await page.locator(\".inspecteur\").textContent())?.slice(0, 160)}`);\n      await page.screenshot({ path: `${OUT}/3b-selection-echec.png` });\n    }\n  }\n});\nconst avantDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {\n  await page.mouse.move(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  await page.mouse.down();\n  for (let k = 1; k <= 10; k++) await page.mouse.move(bMur.x + bMur.width / 2 + (k * ech2) / 10, bMur.y + bMur.height / 2 + 0.3);\n  await page.mouse.up();\n  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 10000 });\n});\nconst apresDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait page.waitForFunction(() => document.querySelector(\".mod-journal\")?.textContent?.includes(\"Déplacer\"), null, { timeout: 5000 }).catch(() => {});\ncheck(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);\n// Annulation du déplacement : attendre qu'elle soit enregistrée (révision suivante) avant les exports, sinon un\n// export peut être produit à la révision d'avant l'annulation.\nconst revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "level": "E2E : glisser et annuler autre opération",
+          "execution": "Non exécuté"
+        }
+      ]
+    }
+  ],
+  "full_equivalences": 0,
+  "execution": "Aucun test/browser/app/API/DB/service/réseau ; seulement Git/Pythondocumentaire",
+  "safety": "Aucune prescription actuelle supprimée, aucune fiche/mapping125/décisionD174 modifiée ni casecochée. Nouvelle revue unités par A3 à attribuer, supersessions qualitéA5 séparées.",
+  "findings": [
+    "Pasd’opération miroir/échelle/étirer/trim/prolonger/décaler/raccorder/chanfreiner/réseau/décomposer/pointsdecontrole dans candidat garantissant scénarios historiques. Orbitcamera et variableechelle ne prouvent pas transformationobjet.",
+    "Survol sansPOST nonasserté : listener diagnostics optionnel ne compte pas zéro requête. Nombre4murs ne prouve ni Extrémité annoncée ni exactitude import/pointgrille.",
+    "Distance porte depuis extrémitéfixe attendue pour étirement/prolongement : tconstant serait fauxoracle.",
+    "Rayon/tangence/geométrie, refus avec motif, étatprofond/inverse, références/droits/offline exigent bons objets et opérations. Autres suites distinctes non réputées absentes du dépôt."
+  ]
+}

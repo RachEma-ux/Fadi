@@ -1,0 +1,22 @@
+{
+  "reviewer": "A5",
+  "scope": "Revue ciblée corpus/oracles/sûreté dossierG0 et fidélité141textes",
+  "g0_sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+  "141_count": 141,
+  "141_text_changes": [],
+  "blocking_framing_findings": [],
+  "finding": "Aucune réserve bloquante de cadrage dans périmètre inspecté ; ne vaut pas gateG0 passée ni recette exécutée.",
+  "checks": [
+    "D01/D02/D07 retenus dans limites ;codeStudio nonautorisé",
+    "MurTEST009/010 3.180/3.096 cohérent et autresdéductions exclues",
+    "Approver/publisher distincts et cumulexplicitementconfiguré",
+    "Données synthétiques sansprod;manifestesA5constitués",
+    "Critèresdoc/capacitéVérifié etAccepté distincts",
+    "DEC13 budgets/tolérances noninventés"
+  ],
+  "limits": [
+    "Pas revue métier exhaustive des141contrats",
+    "AucunTEST/NAVStudio exécuté",
+    "PassageG0 àconsigner parautoritédéléguée selonpreuves"
+  ]
+}

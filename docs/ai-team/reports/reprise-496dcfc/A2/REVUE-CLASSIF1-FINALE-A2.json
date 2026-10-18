@@ -1,0 +1,49 @@
+{
+  "review": "CLASSIF1-FINALE-A2",
+  "basis": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "authorization": "6250110849",
+  "verdict": "FAVORABLE_STATIQUE_PERIMETRE_BORNE",
+  "sources": [
+    {
+      "path": "packages/atelier-model/src/commandes/organisation.ts",
+      "sha256": "cc6fc5d7174e69079ce2b6180a117518c15e03e3c2bbdae58fc930ebf86970ad"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "sha256": "6f1fd64ec0ff7244e13706cba3deb5d2ce55a8a7ac7ffd42bb11aea7b3bb7057"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/classification-conservation.test.ts",
+      "sha256": "a0e30f9ca0480538dcdb6959cb318ecc365726c0139025678ebed658e3f4db15"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/index.ts",
+      "sha256": "ee0dd04b4976c17d5f77a261730d239c8d125a2442ca8013c464d59dc8ce09b3"
+    },
+    {
+      "path": "packages/atelier-model/src/annexe-c.ts",
+      "sha256": "d1862832a2da82c63be358c29302130f45ae1baef7137bbfafcde4a9ed85ede0"
+    }
+  ],
+  "read_scope": [
+    "Diff production complet : commentaire et suppression de la seule affectation automatique classeIfc.",
+    "Diff oracle commandes complet et fichier indépendant A5 intégralement lus.",
+    "Dispatcher ids, chaîne contrôles/verrous, lot atomique et inverse relus ; Annexe C relue. Inventaire conjoint 42 sources antérieur conservé."
+  ],
+  "findings": [],
+  "checks": [
+    "Copie du dictionnaire propriétés préserve absence ou déclaration classeIfc entière ; aucun nettoyage des anciennes valeurs regle/verifiee.",
+    "Code/libellé externe et retrait demeurent inchangés ; CLASSES reste utilisé ailleurs, aucun import à supprimer requis.",
+    "ids, refus de référentiel, contrôle des verrous et inverse différentiel restent sur chemin commun non modifié.",
+    "Oracle ancien contradictoire remplacé par absence de déclaration fabriquée, conservation code et inverses ajout/retrait.",
+    "A5 couvre 7 états de déclaration x 2 référentiels, 2 ids mixtes, 4 refus atomiques, proposition explicite, 2 contrôles/export, import synthétique : 24 cas déclarés par structure, non exécutés par A2.",
+    "Contrôle/export restent dérivés : déclaration incohérente conservée et signalée ; aucun changement API/UI/IFC moteur/schéma/historique requis identifié."
+  ],
+  "limits": [
+    "Aucun test ou code applicatif exécuté par A2, aucune DB/service. Résultats de tests à sourcer séparément auprès A3/A5/A0 au SHA livré.",
+    "Workflow CI présent dans diff de travail hors périmètre de cette revue ; relève A6/A0.",
+    "Avis sur empreintes ci-dessus ; nouveau changement impose revue delta. Aucun merge/déploiement autorisé par cet avis."
+  ],
+  "stop_condition": "Tout besoin nouveau hors périmètre autorisé impose suspension des nouvelles écritures et arbitrage A0 ; aucun effet supplémentaire identifié statiquement.",
+  "provenance_note": "Inventaire conjoint établi sur a15d650 ; travail CLASSIF1 basé sur main a4caaab. A3 signale 41/42 sources identiques et seul atelier-commands.test.ts différant par raccord DB1/2 reset helper, assertions classification inchangées. A2 ne prétend pas identité des42 fichiers ; empreintes des5 sources relues du travail courant explicites."
+}

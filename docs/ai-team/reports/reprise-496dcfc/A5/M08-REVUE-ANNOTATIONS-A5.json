@@ -1,0 +1,124 @@
+{
+  "review": "A5 revue trois annotations historiques proposées A0",
+  "baseline": "fa9f0db232f49007c5a8bebded4ffce530a5bf8f",
+  "checkout_head": "fa9f0db232f49007c5a8bebded4ffce530a5bf8f",
+  "scope": "Diff de trois fiches uniquement contre fa9, lecture sources décisions et anomalies ; autres modifications du checkout non auditées ici.",
+  "files": [
+    {
+      "path": "docs/atelier/fiches/DA-03-13.md",
+      "baseline": "fa9f0db232f49007c5a8bebded4ffce530a5bf8f",
+      "baseline_sha256": "22c530b7715e138b89a9d37b428e956c6f68e0b797efab7c56603cad08ac2ddd",
+      "reviewed_worktree_sha256": "90fb7ffa31b6605045da965c83564435733c463d0b297d892b244c54c6b3485b",
+      "annotation_line": 3,
+      "exact_added_lines": [
+        "> Lecture croisée du18 octobre2026, programme#156 : la ligne « une classification posée par l'utilisateur prime » ci-dessous est à rapprocher de [D-111](../decisions.md), qui conserve la classe de l'annexeC à l'export et signale les déclarations incompatibles sans les corriger. L'écart documentaire [DOC-M08-01](../../ai-team/reports/reprise-496dcfc/A5/M08-TROIS-CONTRADICTIONS-OUVERTES-A5.json) reste ouvert pour clarification. Cette annotation conserve le corps historique, les décisions et l'acceptation D-174 ; elle ne constitue ni une nouvelle règle ni une preuve de recette sur le code courant.",
+        ""
+      ],
+      "checks": {
+        "exactly_two_lines_added": true,
+        "annotation_plus_blank": true,
+        "D174_preserved": true,
+        "open_not_closed": true,
+        "expected_decision": true,
+        "expected_anomaly": true
+      },
+      "links": [
+        {
+          "label": "D-111",
+          "target": "../decisions.md",
+          "resolved": "/workspace/work/mission003/repo/docs/atelier/decisions.md",
+          "exists": true,
+          "sha256": "91bd4cd64d0a67d1fdb3e6acd6582703e88024fabd5b3b1f333f79a8094cad26"
+        },
+        {
+          "label": "DOC-M08-01",
+          "target": "../../ai-team/reports/reprise-496dcfc/A5/M08-TROIS-CONTRADICTIONS-OUVERTES-A5.json",
+          "resolved": "/workspace/work/mission003/repo/docs/ai-team/reports/reprise-496dcfc/A5/M08-TROIS-CONTRADICTIONS-OUVERTES-A5.json",
+          "exists": true,
+          "sha256": "fba93cc20594c7150f8d40d63795228acbfe55a453b3af42c290be3264db3f6d"
+        }
+      ],
+      "historical_body_unchanged": true,
+      "semantic_verdict": "Fidèle et borné : D111 AnnexeC export sans correction déclarations ; D060 conversion explicite classes précises sous préconditions, sans nouvelle classe ; D125 latéral dalle/toitureplate/solidefermé nonassocié/poteau, non extrapolé mur. Suivi vertical séparé."
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-02.md",
+      "baseline": "fa9f0db232f49007c5a8bebded4ffce530a5bf8f",
+      "baseline_sha256": "3af6ee3624fe2a3e49fcf418fc6fe97b6ce75d43cadea18859b2663db73c8dcd",
+      "reviewed_worktree_sha256": "c4f32620ed6ff8a4e89db980768b31bad4b58489b09141a919a39766629c0f25",
+      "annotation_line": 3,
+      "exact_added_lines": [
+        "> Lecture croisée du18 octobre2026, programme#156 : les mentions « la classe ne change jamais / aucune commande de conversion » ci-dessous sont à rapprocher de [D-060](../decisions.md), qui décrit une conversion explicite entre classes précises, sous préconditions, sans création de classe du registre. L'écart documentaire [DOC-M08-02](../../ai-team/reports/reprise-496dcfc/A5/M08-TROIS-CONTRADICTIONS-OUVERTES-A5.json) reste ouvert pour clarification de portée. Le corps historique et l'acceptation D-174 sont conservés ; aucune conversion supplémentaire, évolution de contrat ou validation runtime n'est décidée par cette annotation.",
+        ""
+      ],
+      "checks": {
+        "exactly_two_lines_added": true,
+        "annotation_plus_blank": true,
+        "D174_preserved": true,
+        "open_not_closed": true,
+        "expected_decision": true,
+        "expected_anomaly": true
+      },
+      "links": [
+        {
+          "label": "D-060",
+          "target": "../decisions.md",
+          "resolved": "/workspace/work/mission003/repo/docs/atelier/decisions.md",
+          "exists": true,
+          "sha256": "91bd4cd64d0a67d1fdb3e6acd6582703e88024fabd5b3b1f333f79a8094cad26"
+        },
+        {
+          "label": "DOC-M08-02",
+          "target": "../../ai-team/reports/reprise-496dcfc/A5/M08-TROIS-CONTRADICTIONS-OUVERTES-A5.json",
+          "resolved": "/workspace/work/mission003/repo/docs/ai-team/reports/reprise-496dcfc/A5/M08-TROIS-CONTRADICTIONS-OUVERTES-A5.json",
+          "exists": true,
+          "sha256": "fba93cc20594c7150f8d40d63795228acbfe55a453b3af42c290be3264db3f6d"
+        }
+      ],
+      "historical_body_unchanged": true,
+      "semantic_verdict": "Fidèle et borné : D111 AnnexeC export sans correction déclarations ; D060 conversion explicite classes précises sous préconditions, sans nouvelle classe ; D125 latéral dalle/toitureplate/solidefermé nonassocié/poteau, non extrapolé mur. Suivi vertical séparé."
+    },
+    {
+      "path": "docs/atelier/fiches/DA-04-07.md",
+      "baseline": "fa9f0db232f49007c5a8bebded4ffce530a5bf8f",
+      "baseline_sha256": "b9c5d54af77016dc08d5c2a672a055ecea818327ff058f61b4d71fd26d25b096",
+      "reviewed_worktree_sha256": "af4d8cf4ae56e0a9706faaf8bf750e82c6fa56b5fb8c5f96abd7eb44d9f525dd",
+      "annotation_line": 3,
+      "exact_added_lines": [
+        "> Lecture croisée du18 octobre2026, programme#156 : l'exclusion de classes dans le corps du lot3b ci-dessous est à rapprocher du Suivi, qui mentionne le pousser/tirer vertical des murs, dalles et poteaux, et de [D-125](../decisions.md), qui décrit des opérations latérales nommées sur dalles, toitures plates, solides fermés non associés et poteaux. D-125 ne doit pas être extrapolée à toute opération latérale sur un mur. L'écart [DOC-M08-03](../../ai-team/reports/reprise-496dcfc/A5/M08-TROIS-CONTRADICTIONS-OUVERTES-A5.json) reste ouvert pour clarification des périmètres historiques. Corps, décisions et acceptation D-174 conservés ; aucune extension fonctionnelle ou nouvelle recette déclarée.",
+        ""
+      ],
+      "checks": {
+        "exactly_two_lines_added": true,
+        "annotation_plus_blank": true,
+        "D174_preserved": true,
+        "open_not_closed": true,
+        "expected_decision": true,
+        "expected_anomaly": true
+      },
+      "links": [
+        {
+          "label": "D-125",
+          "target": "../decisions.md",
+          "resolved": "/workspace/work/mission003/repo/docs/atelier/decisions.md",
+          "exists": true,
+          "sha256": "91bd4cd64d0a67d1fdb3e6acd6582703e88024fabd5b3b1f333f79a8094cad26"
+        },
+        {
+          "label": "DOC-M08-03",
+          "target": "../../ai-team/reports/reprise-496dcfc/A5/M08-TROIS-CONTRADICTIONS-OUVERTES-A5.json",
+          "resolved": "/workspace/work/mission003/repo/docs/ai-team/reports/reprise-496dcfc/A5/M08-TROIS-CONTRADICTIONS-OUVERTES-A5.json",
+          "exists": true,
+          "sha256": "fba93cc20594c7150f8d40d63795228acbfe55a453b3af42c290be3264db3f6d"
+        }
+      ],
+      "historical_body_unchanged": true,
+      "semantic_verdict": "Fidèle et borné : D111 AnnexeC export sans correction déclarations ; D060 conversion explicite classes précises sous préconditions, sans nouvelle classe ; D125 latéral dalle/toitureplate/solidefermé nonassocié/poteau, non extrapolé mur. Suivi vertical séparé."
+    }
+  ],
+  "errors": [],
+  "verdict": "Favorable documentaire borné",
+  "runtime": "Aucun test/code/application/DB/service/réseau exécuté ; aucun registre/décision/gate modifié par A5.",
+  "historical": "D174, corps et Suivi intacts ; trois écarts toujours ouverts. Annotation ne décide ni extension ni recette, aucun nouvel arbitrage de décision acquise.",
+  "link_limit": "Liens Dxxx visent le document décisions entier, sans ancre dédiée : cible existante et ligne de décision vérifiée, navigation manuelle par ID ; pas de faux lien ancré."
+}

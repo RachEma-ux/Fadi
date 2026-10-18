@@ -55,7 +55,7 @@ sans code de l'ancien moteur :
 - migration de bascule et son test (`db/bascule.ts`, `routes/atelier-commands.test.ts`), commentaire de `init.sql` ;
 - extraction des données du prototype (`apps/api/scripts/extract-prototype-data.mjs`), inventaire du prototype
   (`docs/migration/reference.md`) et documents de cadrage (`docs/atelier-cahier-des-charges.md`,
-  `docs/atelier-drawall.md`, `docs/architecture.md` — historique de `V14Bridge`).
+  `docs/architecture.md`, `docs/atelier/decisions.md` — historique de `V14Bridge`).
 
 ## Non fait / reporté
 

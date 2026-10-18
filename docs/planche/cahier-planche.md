@@ -1,5 +1,8 @@
 # Cahier des charges — mode « Planche » de l'Atelier
 
+> **Décision de conservation native Fadi (17 octobre 2026, Issue #147).** Toutes les règles techniques et normatives de dessin de la Planche (cotation, précision, unités, géométrie, symboles, hachures, calques et échanges) sont conservées dans Fadi. Les normes externes restent citées avec leurs versions et sources réelles ; aucune règle n'est dépendante du produit DrawAll. Les éventuels identifiants hérités ne seront migrés qu'avec contrôle de compatibilité.
+
+
 **Version 1 — 6 octobre 2026.** Maître d'ouvrage : le propriétaire du dépôt. Rédigé par le chef de projet à partir
 des décisions du maître d'ouvrage du 6 octobre 2026 et des relevés en direct de SketchUp pour le Web du même jour.
 
@@ -59,6 +62,8 @@ navigation (D-157). La Planche est **additive** : aucune fonction existante n'es
 ---
 
 ## 2. Compatibilité avec les règles de Fadi
+
+**Actualisation du 18 octobre 2026 (Mission003).** La ligne C1 ci-dessous conserve le traitement historique de D-156. Pour l’interface actuelle, **D-163 et AGENTS.md prévalent : français/anglais**, français source et traductions anglaises, avec contrôle `interface-anglais.mjs`. La mention historique « pas de sélecteur de langue actif » ne constitue plus une exigence applicable. Les noms de référence des outils restent des synonymes ; les données et documents produits gardent leur propre langue. D-156 n’est pas réécrite par cette note et aucune recette bilingue nouvelle n’est annoncée ici.
 
 | # | Exigence « comme SketchUp » | Règle Fadi | Verdict | Traitement retenu |
 | --- | --- | --- | --- | --- |

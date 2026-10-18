@@ -1,0 +1,142 @@
+{
+  "pass": true,
+  "results": [
+    {
+      "PR": 169,
+      "path": "/workspace/work/resume496/reconciliation-169/.github/workflows/ci.yml",
+      "sha256": "c5933b1aebf6def658037cf27989f2af7cb60e41adb88120e19107dacba87c44",
+      "HEAD": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "MERGE_HEAD": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "checks": {
+        "template_exact_with_approved169restriction": true,
+        "job_set_exact": true,
+        "header_events_permissions_unchanged": true,
+        "app_jobs_identical_except_if_comments": true,
+        "if_before_services": true,
+        "matrix10": true,
+        "negatives14": true,
+        "purejobs_no_services": true,
+        "index_equals_worktree": true
+      },
+      "matrix10": {
+        "docs": [
+          "mission-docs-pure"
+        ],
+        "169": [
+          "db-guard-pure"
+        ],
+        "171": [
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "otherbranch": [
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "fork": [
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "otherbase": [
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "pushmain": [
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "otherrepo": [
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "missingheadrepo": [
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "missingevent": [
+          "validate",
+          "e2e",
+          "image"
+        ]
+      },
+      "negative_cases": 14
+    },
+    {
+      "PR": 171,
+      "path": "/workspace/work/resume496/reconciliation-171/.github/workflows/ci.yml",
+      "sha256": "beca2dea96a0cef5dd027b16fe6bbcf5099b3b73c196210ca2f02ca47ad618b9",
+      "HEAD": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "MERGE_HEAD": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "checks": {
+        "template_exact_with_approved169restriction": true,
+        "job_set_exact": true,
+        "header_events_permissions_unchanged": true,
+        "app_jobs_identical_except_if_comments": true,
+        "if_before_services": true,
+        "matrix10": true,
+        "negatives14": true,
+        "purejobs_no_services": true,
+        "index_equals_worktree": true
+      },
+      "matrix10": {
+        "docs": [
+          "mission-docs-pure"
+        ],
+        "169": [
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "171": [
+          "classification-pure"
+        ],
+        "otherbranch": [
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "fork": [
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "otherbase": [
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "pushmain": [
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "otherrepo": [
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "missingheadrepo": [
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "missingevent": [
+          "validate",
+          "e2e",
+          "image"
+        ]
+      },
+      "negative_cases": 14
+    }
+  ],
+  "method": "Analyse textuelle locale stdlib et grammaire égalité/and/or/not strictement bornée sans eval, sans import des helpers tiers ; aucun runner/test/service/DB/réseau",
+  "limits": "Avis statique pour résolution locale bornée. Pas preuve CI futur SHA ni autorisation push/fusion main/admin/services. Les autres contextes rendent les jobs applicatifs éligibles. Templates source b6794c64c7ff98fadf62868331f4297631201069, main817bd36.",
+  "actions_semantics_limit": "La matrice utilise des valeurs canoniques fixes ; GitHub Actions compare les chaînes == sans distinguer la casse, contrairement à Python ==. Les littéraux sont exacts sans wildcard mais pas une garantie de rejet des variations de casse. Aucun moteur Actions complet ou CI futur SHA attesté."
+}

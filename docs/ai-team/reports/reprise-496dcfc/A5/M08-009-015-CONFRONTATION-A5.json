@@ -1,0 +1,1511 @@
+{
+  "reviewer": "A5",
+  "cohort": "009-015",
+  "reviewed_agent": "A2",
+  "input_path": "/workspace/work/resume496/agents/A2/M08-PATH-009-015-COMPARAISON.json",
+  "input_sha256": "32113d434262bf020492159ce380b4ef00902a023188cca4eabbb17f3d669525",
+  "code_reference": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "mode": "Lecture seule ; zéro test/browser/app/DB/service/réseau",
+  "source_errors": [],
+  "citation_occurrences_verified": 454,
+  "unique_citations": 299,
+  "sources_verified": {
+    "docs/atelier/fiches/DA-01-09.md": "8f50ad2523eea2aec679623ce43cd885efc92b482ff54ca16bd73178234f3946",
+    "apps/web/src/modules/atelier/nouveau/nouveau.test.ts": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+    "apps/web/e2e/atelier-nouveau.mjs": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+    "docs/atelier/fiches/DA-01-10.md": "6765e47c7bfa73be0115f7ad307a6f4d1be8451c625d24c06795573e41e1ee6f",
+    "docs/atelier/fiches/DA-01-11.md": "72c4c6adec689762a238d09456074ffb8d6671e68b86ece7a2fb6585af791c97",
+    "packages/core-geometry/src/geometry.test.ts": "ab2612a89e298e954f080587ed426dd5f47eaeda1454e9ea465e8da8eda9a4b1",
+    "packages/atelier-model/src/commandes/commandes.test.ts": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+    "docs/atelier/fiches/DA-01-12.md": "4b8f1ca12a0ec4793a3d0f012d2910a6b576dd0c317eb169f2fc1d05ee91cc44",
+    "apps/api/src/routes/atelier-commands.test.ts": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841"
+  },
+  "original_independent_review": "M08-009-015-LECTURE-INDEPENDANTE-A5.json",
+  "clauses_reviewed": 47,
+  "clause_reviews": [
+    {
+      "entry_id": "M08-PATH-009",
+      "clause_ordinal": 1,
+      "expected": "Rectangle fermé admis comme profil",
+      "submitted_status": "present",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "present",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Deux solides après extrusion rectangle+cercle ; hauteur vérifiée.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 368,
+          "exact_line": "  it(\"un rectangle et un cercle d'esquisse deviennent des solides de la hauteur de l'outil ; une ligne est refusée\", () => {",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 371,
+          "exact_line": "      { type: \"esquisse.rectangle\", params: { niveauId: \"rdc\", points: [pt(0, 0), pt(2, 1)] } },",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 376,
+          "exact_line": "    const r = actionImmediate(\"extruder\", etat, ui({ selection: ids, parametresOutil: { hauteurSolide: 1.1 } }));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 377,
+          "exact_line": "    expect(\"commandes\" in r && r.commandes).toHaveLength(2);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 379,
+          "exact_line": "    const apres = appliquer(etat, r.commandes);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 380,
+          "exact_line": "    const solides = Object.values(apres.objets).filter((o) => o.classe === \"solide\") as Occurrence<\"solide\">[];",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 381,
+          "exact_line": "    expect(solides).toHaveLength(2);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 382,
+          "exact_line": "    expect(solides.every((s) => s.params.hauteur?.value === 1.1)).toBe(true);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-009",
+      "clause_ordinal": 2,
+      "expected": "Cercle fermé admis comme profil",
+      "submitted_status": "present",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "present",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Même lot : cercle et rectangle sélectionnés, deux commandes et deux solides vérifiés.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 372,
+          "exact_line": "      { type: \"esquisse.cercle\", params: { niveauId: \"rdc\", centre: pt(5, 5), rayon: m(1) } },",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 375,
+          "exact_line": "    const ids = Object.keys(etat.objets);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 376,
+          "exact_line": "    const r = actionImmediate(\"extruder\", etat, ui({ selection: ids, parametresOutil: { hauteurSolide: 1.1 } }));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 377,
+          "exact_line": "    expect(\"commandes\" in r && r.commandes).toHaveLength(2);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 379,
+          "exact_line": "    const apres = appliquer(etat, r.commandes);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 380,
+          "exact_line": "    const solides = Object.values(apres.objets).filter((o) => o.classe === \"solide\") as Occurrence<\"solide\">[];",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 381,
+          "exact_line": "    expect(solides).toHaveLength(2);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-009",
+      "clause_ordinal": 3,
+      "expected": "Polygone simple admis comme profil",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Polygone simple créé et transformé sans erreur ; pas assertion de son admission comme profil extrudable/hachurable.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 495,
+          "exact_line": "    const etat = appliquer(socle(), [{ type: \"esquisse.polygone\", params: { id: \"pg\", niveauId: \"rdc\", points: [pt(0, 0), pt(4, 0), pt(4, 3), pt(0, 3)] } }]);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 498,
+          "exact_line": "    expect(r.commandes[0]).toMatchObject({ type: \"transformer.decaler\", params: { cote: \"exterieur\", angles: \"arrondis\" } });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 499,
+          "exact_line": "    const apres = appliquer(etat, r.commandes);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 500,
+          "exact_line": "    expect(Object.values(apres.objets).some((o) => o.classe === \"esquisse\" && o.params.forme === \"polyligne\" && !!o.params.renflements)).toBe(true);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-009",
+      "clause_ordinal": 4,
+      "expected": "Polygone auto-sécant refusé",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Aucune assertion de refus de polygone auto-sécant dans les deux candidats ; autres refus ne remplacent pas cet oracle.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 373,
+          "exact_line": "      { type: \"esquisse.ligne\", params: { niveauId: \"rdc\", points: [pt(0, 3), pt(3, 3)] } },",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 383,
+          "exact_line": "    expect(\"message\" in actionImmediate(\"extruder\", etat, ui({ selection: [ids[2]!] }))).toBe(true);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-010",
+      "clause_ordinal": 1,
+      "expected": "Entrer en mode esquisse",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Scénario ouvre Atelier et trace des murs, aucun geste entrée mode esquisse.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 63,
+          "exact_line": "  await page.goto(`${url}?module=atelier`);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 102,
+          "exact_line": "await page.keyboard.press(\"m\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 103,
+          "exact_line": "check(\"raccourci M → outil Mur\", (await page.locator('.atelier-n-outils .outil.est-actif').textContent()).includes(\"Mur\"));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-010",
+      "clause_ordinal": 2,
+      "expected": "Tracer rectangle et révision +1",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Quatre murs ne constituent pas un rectangle esquisse et aucune différence de révision correspondante.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 104,
+          "exact_line": "await mesurer(\"tracer un mur (clic + saisie 4 + Entrée) → mur affiché\", async () => {",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 119,
+          "exact_line": "for (const saisie of [\"0;4\", \"-4;0\", \"0;-4\"]) {",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 120,
+          "exact_line": "  await page.keyboard.type(saisie);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 121,
+          "exact_line": "  await page.keyboard.press(\"Enter\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 130,
+          "exact_line": "const murs = await page.locator(\".plan2d [data-objet^='mur-']\").count();",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 131,
+          "exact_line": "check(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-010",
+      "clause_ordinal": 3,
+      "expected": "Tracer cercle et révision +1",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Aucun cercle esquisse ni assertion +1.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 130,
+          "exact_line": "const murs = await page.locator(\".plan2d [data-objet^='mur-']\").count();",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 131,
+          "exact_line": "check(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-010",
+      "clause_ordinal": 4,
+      "expected": "Sortir du mode esquisse",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Échap termine les gestes murs ; aucune sortie de mode vérifiée.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 128,
+          "exact_line": "await page.keyboard.press(\"Escape\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 130,
+          "exact_line": "const murs = await page.locator(\".plan2d [data-objet^='mur-']\").count();",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 131,
+          "exact_line": "check(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-010",
+      "clause_ordinal": 5,
+      "expected": "Entrer et sortir seuls : révision inchangée R10",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Aucune observation avant/après du mode ; révision 1 concerne référence protégée, pas mode.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 91,
+          "exact_line": "check(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-010",
+      "clause_ordinal": 6,
+      "expected": "Murs atténués en mode esquisse",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Pas assertion visuelle/DOM de cette atténuation.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 130,
+          "exact_line": "const murs = await page.locator(\".plan2d [data-objet^='mur-']\").count();",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 131,
+          "exact_line": "check(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-010",
+      "clause_ordinal": 7,
+      "expected": "Murs non sélectionnables dans ce mode",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Scénario sélectionne un mur hors mode puis le supprime.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 191,
+          "exact_line": "check(\"cadre : le mur du bas sélectionné\", (await page.locator(\".etat-selection\").textContent()).length > 0);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 192,
+          "exact_line": "await page.keyboard.press(\"Delete\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 194,
+          "exact_line": "check(\"Suppr : mur et porte hébergée supprimés ensemble\", (await page.locator(\".plan2d [data-objet^='porte-']\").count()) === 0 && (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 3);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-010",
+      "clause_ordinal": 8,
+      "expected": "Clavier seul palette/saisie/sortie",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Palette et saisie couvertes pour Mur/Porte mais clic souris requis ; aucune tâche mode esquisse clavier seul.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 104,
+          "exact_line": "await mesurer(\"tracer un mur (clic + saisie 4 + Entrée) → mur affiché\", async () => {",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 105,
+          "exact_line": "  await page.mouse.move(cx - 100, cy);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 106,
+          "exact_line": "  await page.mouse.click(cx - 100, cy);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 107,
+          "exact_line": "  await page.mouse.move(cx + 50, cy);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 108,
+          "exact_line": "  await page.keyboard.type(\"4;0\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 158,
+          "exact_line": "await page.keyboard.press(\"Control+k\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 159,
+          "exact_line": "await page.locator(\".palette-champ\").fill(\"wall\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 160,
+          "exact_line": "check(\"palette : « wall » → Mur en premier\", (await page.locator(\".palette-resultats li\").first().textContent()).includes(\"Mur\"));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 161,
+          "exact_line": "await page.locator(\".palette-champ\").fill(\"door\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 162,
+          "exact_line": "await page.keyboard.press(\"Enter\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 163,
+          "exact_line": "check(\"palette : Entrée choisit l'outil (Porte)\", (await page.locator('.atelier-n-outils .outil.est-actif').textContent()).includes(\"Porte\"));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-010",
+      "clause_ordinal": 9,
+      "expected": "Axe sans violation critique/sérieuse à1536px",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Filtre axe réel mais viewport desktop1440, hors mode esquisse.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 32,
+          "exact_line": "const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 45,
+          "exact_line": "    const res = await axe.run(document.querySelector(\".atelier-n\") ?? document, { resultTypes: [\"violations\"] });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 46,
+          "exact_line": "    return res.violations.filter((v) => v.impact === \"critical\" || v.impact === \"serious\").map((v) => `${v.id} (${v.nodes.length}) ${v.nodes[0]?.target}`);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 72,
+          "exact_line": "await axe(\"bureau\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-010",
+      "clause_ordinal": 10,
+      "expected": "Axe sans violation critique/sérieuse à390px",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Viewport390 et appel axe téléphone présents, hors mode esquisse.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 357,
+          "exact_line": "await page.setViewportSize({ width: 390, height: 844 });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 367,
+          "exact_line": "await axe(\"téléphone\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-011",
+      "clause_ordinal": 1,
+      "expected": "Points confondus refusés pour construction",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Rapporteur répète son premier point et conserve pointsEnCours ; pas refus réducteur esquisse.construction avec points confondus.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 815,
+          "exact_line": "    const r1 = clic(\"rapporteur\", pt(0, 0), etat, u, opts);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 816,
+          "exact_line": "    expect(r1.pointsEnCours).toEqual([pt(0, 0)]);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 817,
+          "exact_line": "    expect(clic(\"rapporteur\", pt(0, 0), etat, ui({ outil: \"rapporteur\", pointsEnCours: [pt(0, 0)] }), opts).pointsEnCours).toEqual([pt(0, 0)]);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-011",
+      "clause_ordinal": 2,
+      "expected": "Droite par point et angle30 : direction calculable",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Rectification réelle A5 : première lecture absente avait omis rapporteur30 nouveau.test829–833. Source présente au niveau adaptateur UI ; partiel A2 juste, origine et droite illimitée non assertées. OriginalA5 conservé sans masquer correction.",
+      "submitted_reason_checked": "Rapporteur saisi30 vérifie extrémité(sqrt3,1) et mesure ; pas assertion etendue=droite et conservation du point d’origine.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 822,
+          "exact_line": "    expect(r3.commandes[0]!.type).toBe(\"esquisse.construction\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 829,
+          "exact_line": "    const s = saisie(\"rapporteur\", \"30\", [pt(0, 0), pt(2, 0)], null, etat, u2, opts)!;",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 830,
+          "exact_line": "    expect(s.mesure).toBe(\"30,00°\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 831,
+          "exact_line": "    const q = (s.commandes[0]!.params as { points: { x: number; y: number }[] }).points[1]!;",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 832,
+          "exact_line": "    expect(q.x).toBeCloseTo(Math.sqrt(3));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 833,
+          "exact_line": "    expect(q.y).toBeCloseTo(1);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-011",
+      "clause_ordinal": 3,
+      "expected": "Axes cercle : deux droites",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Aucune assertion axes d’un cercle dans candidats.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 822,
+          "exact_line": "    expect(r3.commandes[0]!.type).toBe(\"esquisse.construction\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 823,
+          "exact_line": "    const fin = (r3.commandes[0]!.params as { points: { x: number; y: number }[] }).points[1]!;",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-011",
+      "clause_ordinal": 4,
+      "expected": "Axes cercle perpendiculaires",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Une seule construction au rapporteur, aucun couple de directions.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 821,
+          "exact_line": "    expect(r3.commandes).toHaveLength(1);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 822,
+          "exact_line": "    expect(r3.commandes[0]!.type).toBe(\"esquisse.construction\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-011",
+      "clause_ordinal": 5,
+      "expected": "Axes cercle passent par centre",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Aucun oracle centre commun cercle/axes.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 822,
+          "exact_line": "    expect(r3.commandes[0]!.type).toBe(\"esquisse.construction\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 823,
+          "exact_line": "    const fin = (r3.commandes[0]!.params as { points: { x: number; y: number }[] }).points[1]!;",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-011",
+      "clause_ordinal": 6,
+      "expected": "Construction exclue de tout profil",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Ligne refusée à extrusion n’est pas construction ; pas test exclusion.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 373,
+          "exact_line": "      { type: \"esquisse.ligne\", params: { niveauId: \"rdc\", points: [pt(0, 3), pt(3, 3)] } },",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 383,
+          "exact_line": "    expect(\"message\" in actionImmediate(\"extruder\", etat, ui({ selection: [ids[2]!] }))).toBe(true);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-011",
+      "clause_ordinal": 7,
+      "expected": "Construction exclue des quantités",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Aucune comparaison de quantités après construction.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 822,
+          "exact_line": "    expect(r3.commandes[0]!.type).toBe(\"esquisse.construction\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-012",
+      "clause_ordinal": 1,
+      "expected": "Copie de travailP118",
+      "submitted_status": "present",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "present",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Import référence puis copie vérifiée explicitement ; précondition seule.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 56,
+          "exact_line": "await page.goto(`${BASE}/projets`);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 57,
+          "exact_line": "await page.locator('.example-card button:has-text(\"Importer\")').first().click();",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 86,
+          "exact_line": "await page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 91,
+          "exact_line": "check(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-012",
+      "clause_ordinal": 2,
+      "expected": "Axe point/angle sur mezzanine",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Travaille sur Essai lot3a altitude20 ; pas construction ni mezzanine.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 81,
+          "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").first().fill(\"Essai lot 3a\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 82,
+          "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").nth(1).fill(\"20\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 93,
+          "exact_line": "await page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-012",
+      "clause_ordinal": 3,
+      "expected": "Accrochage annoncé Sur la droite",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Pas assertion de ce libellé ; accrochage mur générique seulement.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 131,
+          "exact_line": "check(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-012",
+      "clause_ordinal": 4,
+      "expected": "Tableau surfaces identique après axe",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "CSV exporté/enregistré mais contenu surfaces avant/après axe non comparé.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 330,
+          "exact_line": "for (const kind of [\"dxf\", \"svg\", \"csv\"]) {",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 331,
+          "exact_line": "  await ouvrirExports(page);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 343,
+          "exact_line": "const docsCatalogue = (await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}/documents`)).json()).documents.filter((d) => d.group === \"dessins\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 344,
+          "exact_line": "check(\"exports DXF, SVG, CSV et PNG : téléchargés et enregistrés au catalogue, « à jour » à la révision courante\", exportsFaits.every((e) => /:catalogue$/.test(e)) && docsCatalogue.length === 4 && docsCatalogue.every((d) => d.freshness === \"a-jour\") && docsCatalogue.some((d) => /Dessin technique DXF · Essai lot 3a · dessin plan/.test(d.label)), `${exportsFaits.join(\" \")} | ${docsCatalogue.map((d) => d.label).join(\" ; \")}`);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-012",
+      "clause_ordinal": 5,
+      "expected": "Annuler axe",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Undo concerne renommage pièce Bureau.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 150,
+          "exact_line": "await page.keyboard.press(\"Control+z\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 151,
+          "exact_line": "await page.waitForFunction(() => !document.querySelector(\".nav-objets\").textContent.includes(\"Bureau\"), null, { timeout: 10000 }).catch(() => {});",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 152,
+          "exact_line": "check(\"Ctrl Z annule le renommage\", !(await navTexte()).includes(\"Bureau\"));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-012",
+      "clause_ordinal": 6,
+      "expected": "Second navigateur reflète axe",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Compare trois murs, nom pièce et barre de synchro ; aucun axe.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 353,
+          "exact_line": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-013",
+      "clause_ordinal": 1,
+      "expected": "Carré connu angle0 espacement : nombre de traits",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Aucune hachure dans candidats ; géométrie donne un intervalle d’une verticale de carré, pas nombre de traits de motif.",
+      "evidence_checked": [
+        {
+          "path": "packages/core-geometry/src/geometry.test.ts",
+          "current_line": 103,
+          "exact_line": "  it(\"trouve l'intervalle plein d'un carré coupé par une verticale\", () => {",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.test.ts",
+          "current_line": 104,
+          "exact_line": "    const square = [",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.test.ts",
+          "current_line": 110,
+          "exact_line": "    const intervals = polygonIntervalsAtAxis(square, 0, 2); // coupe à x=2",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.test.ts",
+          "current_line": 111,
+          "exact_line": "    expect(intervals).toEqual([[0, 4]]);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-013",
+      "clause_ordinal": 2,
+      "expected": "Même carré : longueurs des traits",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Intervalle plein [0,4] calculé pour carré côté4 ; pas hachure à espacement donné ni toutes longueurs.",
+      "evidence_checked": [
+        {
+          "path": "packages/core-geometry/src/geometry.test.ts",
+          "current_line": 104,
+          "exact_line": "    const square = [",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.test.ts",
+          "current_line": 105,
+          "exact_line": "      [0, 0],",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.test.ts",
+          "current_line": 106,
+          "exact_line": "      [4, 0],",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.test.ts",
+          "current_line": 107,
+          "exact_line": "      [4, 4],",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.test.ts",
+          "current_line": 108,
+          "exact_line": "      [0, 4],",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.test.ts",
+          "current_line": 110,
+          "exact_line": "    const intervals = polygonIntervalsAtAxis(square, 0, 2); // coupe à x=2",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.test.ts",
+          "current_line": 111,
+          "exact_line": "    expect(intervals).toEqual([[0, 4]]);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-013",
+      "clause_ordinal": 3,
+      "expected": "Angle45 : traits45",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Autres angles/cercle du candidat ne testent pas traits de hachure.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "current_line": 498,
+          "exact_line": "    expect(r.commandes[0]).toMatchObject({ type: \"transformer.decaler\", params: { cote: \"exterieur\", angles: \"arrondis\" } });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-013",
+      "clause_ordinal": 4,
+      "expected": "Îlot retiré du remplissage",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Soustraction abstraite [3,5] à [0,10] vérifie deux intervalles ; pas hachure réelle avec îlot.",
+      "evidence_checked": [
+        {
+          "path": "packages/core-geometry/src/geometry.test.ts",
+          "current_line": 114,
+          "exact_line": "  it(\"soustrait un trou d'un intervalle plein\", () => {",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.test.ts",
+          "current_line": 115,
+          "exact_line": "    const result = subtractIntervals([[0, 10]], [[3, 5]]);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.test.ts",
+          "current_line": 116,
+          "exact_line": "    expect(result).toEqual([",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.test.ts",
+          "current_line": 117,
+          "exact_line": "      [0, 3],",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.test.ts",
+          "current_line": 118,
+          "exact_line": "      [5, 10],",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.test.ts",
+          "current_line": 119,
+          "exact_line": "    ]);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-013",
+      "clause_ordinal": 5,
+      "expected": "Contour auto-sécant refusé",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Aucun refus de contour auto-sécant dans candidats.",
+      "evidence_checked": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 192,
+          "exact_line": "  it(\"laisse l'état intact si une commande du lot échoue, et l'inverse restaure l'état exact\", () => {",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-013",
+      "clause_ordinal": 6,
+      "expected": "Aplat sans traits",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Aucune assertion motif aplat dans candidats.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-013",
+      "clause_ordinal": 7,
+      "expected": "Mêmes entrées mêmes traits",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Déterminisme de mur ne démontre pas déterminisme des traits hachure.",
+      "evidence_checked": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 26,
+          "exact_line": "    const a = appliquerLot(etat, lot([{ type: \"mur.tracer\", params: murParams(0, 0, 4, 0) }], \"abc\"));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 27,
+          "exact_line": "    const b = appliquerLot(etat, lot([{ type: \"mur.tracer\", params: murParams(0, 0, 4, 0) }], \"abc\"));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 28,
+          "exact_line": "    expect(a.effets.crees).toEqual([\"mur-abc-1\"]);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "current_line": 29,
+          "exact_line": "    expect(JSON.stringify(a.etat)).toBe(JSON.stringify(b.etat));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-014",
+      "clause_ordinal": 1,
+      "expected": "Copie de travailP118",
+      "submitted_status": "present",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "present",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Précondition vérifiée seulement.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 56,
+          "exact_line": "await page.goto(`${BASE}/projets`);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 57,
+          "exact_line": "await page.locator('.example-card button:has-text(\"Importer\")').first().click();",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 91,
+          "exact_line": "check(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-014",
+      "clause_ordinal": 2,
+      "expected": "Hachure rectangle sur mezzanine",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Murs sur niveau Essai lot3a ; ni hachure rectangle ni mezzanine.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 81,
+          "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").first().fill(\"Essai lot 3a\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 82,
+          "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").nth(1).fill(\"20\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 93,
+          "exact_line": "await page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 131,
+          "exact_line": "check(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-014",
+      "clause_ordinal": 3,
+      "expected": "Cercle en îlot",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Aucun cercle ou îlot de hachure.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-014",
+      "clause_ordinal": 4,
+      "expected": "Angle hachure modifié inspecteur",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Inspecteur renomme pièce ; aucune valeur angle hachure.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 141,
+          "exact_line": "await page.locator('.inspecteur input[id$=\"-nom\"]').fill(\"Bureau\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 142,
+          "exact_line": "await page.keyboard.press(\"Enter\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 144,
+          "exact_line": "check(\"inspecteur : renommer → commande appliquée\", (await page.locator(\".inspecteur h3\").textContent()).includes(\"Bureau\"));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-014",
+      "clause_ordinal": 5,
+      "expected": "Annuler hachure/angle",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Annule renommage pièce seulement.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 150,
+          "exact_line": "await page.keyboard.press(\"Control+z\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 151,
+          "exact_line": "await page.waitForFunction(() => !document.querySelector(\".nav-objets\").textContent.includes(\"Bureau\"), null, { timeout: 10000 }).catch(() => {});",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 152,
+          "exact_line": "check(\"Ctrl Z annule le renommage\", !(await navTexte()).includes(\"Bureau\"));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-014",
+      "clause_ordinal": 6,
+      "expected": "Rétablir hachure/angle",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Rétablit renommage pièce seulement.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 153,
+          "exact_line": "await page.keyboard.press(\"Control+Shift+z\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 154,
+          "exact_line": "await page.waitForFunction(() => document.querySelector(\".nav-objets\").textContent.includes(\"Bureau\"), null, { timeout: 10000 }).catch(() => {});",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 155,
+          "exact_line": "check(\"Ctrl Maj Z le rétablit\", (await navTexte()).includes(\"Bureau\"));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-014",
+      "clause_ordinal": 7,
+      "expected": "Second navigateur hachure/angle/îlot",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Synchronisation murs et pièce uniquement.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "current_line": 353,
+          "exact_line": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-015",
+      "clause_ordinal": 1,
+      "expected": "Production façade",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Production plan RDC dans bloc lot5 ; façade non produite.",
+      "evidence_checked": [
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 301,
+          "exact_line": "        { type: \"vue.creer\", params: { id: \"v1\", type: \"plan\", titre: \"Plan du RDC\", echelle: 50, niveauId: \"rdc\" } },",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 315,
+          "exact_line": "    const dxf = await client.get(`/projects/${pid}/documents/atelier/vues/v1.dxf`);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 318,
+          "exact_line": "    const svg = await client.get(`/projects/${pid}/documents/atelier/vues/v1.svg`);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 319,
+          "exact_line": "    expect(svg.status).toBe(200);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-015",
+      "clause_ordinal": 2,
+      "expected": "Document au catalogue",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Feuille PDF et vue plan DXF au catalogue vérifiés ; pas façade.",
+      "evidence_checked": [
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 324,
+          "exact_line": "    let cat = (await client.get(`/projects/${pid}/documents`)).body.documents as { kind: string; group: string; freshness: string | null }[];",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 325,
+          "exact_line": "    expect(cat.find((d) => d.kind === \"atelier-feuille-f1-pdf\")).toMatchObject({ group: \"atelier\", freshness: \"a-jour\" });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 326,
+          "exact_line": "    expect(cat.find((d) => d.kind === \"atelier-vue-v1-dxf\")!.freshness).toBe(\"a-jour\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-015",
+      "clause_ordinal": 3,
+      "expected": "Révision du document",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "En-tête PDF révision1 vérifié ; pas façade/catalogue modelRevision dans bloc lot5.",
+      "evidence_checked": [
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 314,
+          "exact_line": "    expect(pdf.headers[\"x-model-revision\"]).toBe(\"1\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-015",
+      "clause_ordinal": 4,
+      "expected": "Empreinte du document",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Autre bloc livraison tardive utilise inputHash lu du catalogue ; aucune assertion empreinte façade produite.",
+      "evidence_checked": [
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 691,
+          "exact_line": "    const docs1 = (await client.get(`/projects/${pid}/documents`)).body.documents as { kind: string; label: string; fileName: string; stepNumber: number | null; current: { modelRevision: number; inputHash: string }; freshness: string | null; produced: { modelRevision: number } | null }[];",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 696,
+          "exact_line": "    // Livraison tardive : la production porte la révision et l'empreinte de son départ.",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 697,
+          "exact_line": "    await recordProducedDocument((await import(\"../db/client.js\")).db, pid, { kind: murs1.kind, label: murs1.label, fileName: murs1.fileName, modelRevision: 1, inputHash: murs1.current.inputHash, stepNumber: murs1.stepNumber }, new Date());",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 699,
+          "exact_line": "    expect(murs).toMatchObject({ produced: { modelRevision: 1 }, freshness: \"perime\", current: { modelRevision: 2 } });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 702,
+          "exact_line": "    await recordProducedDocument((await import(\"../db/client.js\")).db, pid, { kind: murs1.kind, label: murs1.label, fileName: murs1.fileName, modelRevision: 1, inputHash: murs1.current.inputHash, stepNumber: murs1.stepNumber }, new Date());",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 704,
+          "exact_line": "    expect(murs).toMatchObject({ produced: { modelRevision: 2 }, freshness: \"a-jour\" });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-015",
+      "clause_ordinal": 5,
+      "expected": "Commande puis fraîcheur à recalculer",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Feuille PDF passe perime après commande ; pas façade testée.",
+      "evidence_checked": [
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 328,
+          "exact_line": "    await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"d2\", 1, [{ type: \"objet.modifier\", params: { id: \"m1\", params: { epaisseur: m(0.3) } } }]));",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 329,
+          "exact_line": "    cat = (await client.get(`/projects/${pid}/documents`)).body.documents;",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 330,
+          "exact_line": "    expect(cat.find((d) => d.kind === \"atelier-feuille-f1-pdf\")!.freshness).toBe(\"perime\");",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-015",
+      "clause_ordinal": 6,
+      "expected": "Production sans droit write refusée403",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Refus403 de POSTcommands autre action ne prouve aucun refus production façade ; absent exact A2 retenu plutôt que large analogue partiel A5.",
+      "submitted_reason_checked": "Seul403 de lecteur concerne POSTcommands ; aucune production de document par lecteur.",
+      "evidence_checked": [
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 125,
+          "exact_line": "    expect((await reader.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"d2\", 1, [mur(\"m1\")]))).status).toBe(403);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 306,
+          "exact_line": "    const pdf = await client.get(`/projects/${pid}/documents/atelier/feuilles/f1.pdf`).buffer(true).parse((res, cb) => {",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 315,
+          "exact_line": "    const dxf = await client.get(`/projects/${pid}/documents/atelier/vues/v1.dxf`);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "current_line": 318,
+          "exact_line": "    const svg = await client.get(`/projects/${pid}/documents/atelier/vues/v1.svg`);",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    }
+  ],
+  "full_equivalences_demonstrated": 0,
+  "historical_acceptance": "D174 et Suivi/extensions lus, conservés ; qualification preuves non refonte des décisions. Aucune case ou gate validée.",
+  "scope_note": "Absences bornées au candidat demandé. Compléments autreE2E/unité/API sont séparés, jamais réputés satisfaire le scénario navigateur historique. Source ou assertion présente ne signifie pas exécution passée.",
+  "granularity_reconciliation": "A5 43atomes4présents18partiels21absents ; A2 47atomes4présents18partiels25absents. A2 sépare nombre/longueurs hachure, directions/perpendicularité/centre, façade/catalogue et undo/redo, et regroupe certaines préconditions. Ne pas égaliser/additionner. OmissionA5 rapporteur30 corrigée explicitement dans revue011."
+}

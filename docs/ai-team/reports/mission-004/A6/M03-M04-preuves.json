@@ -1,0 +1,232 @@
+{
+  "observed_utc": "2026-10-18T12:14:43Z",
+  "runtime": {
+    "revision": "40",
+    "observed": "40",
+    "current": true,
+    "state": "running",
+    "network": "enforced"
+  },
+  "main_protected": false,
+  "matrices": [
+    {
+      "reference": "main",
+      "sha": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "checks": [
+        {
+          "name": "e2e",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39119236553/job/117651235060"
+        },
+        {
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39119236553/job/117651235057"
+        },
+        {
+          "name": "Continuité — docs, checkpoints et tests",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39119236605/job/117651235052"
+        },
+        {
+          "name": "image",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39119236553/job/117651234864"
+        },
+        {
+          "name": "no-foreign-app-reference",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39119236516/job/117651234531"
+        }
+      ]
+    },
+    {
+      "reference": "pr152",
+      "sha": "f2777230e3e9c3bd6a2a5f61e2147acd1fba4b38",
+      "checks": [
+        {
+          "name": "image",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39083291384/job/117544590176"
+        },
+        {
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39083291384/job/117544590051"
+        },
+        {
+          "name": "e2e",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39083291384/job/117544589897"
+        },
+        {
+          "name": "Architecture — frontières et isolation",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39083291440/job/117544534882"
+        },
+        {
+          "name": "Continuité — docs, checkpoints et tests",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39083291428/job/117544534817"
+        },
+        {
+          "name": "no-foreign-app-reference",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39083291386/job/117544534325"
+        }
+      ]
+    },
+    {
+      "reference": "pr169",
+      "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "checks": [
+        {
+          "name": "no-foreign-app-reference",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959914/job/117671024069"
+        },
+        {
+          "name": "e2e",
+          "status": "completed",
+          "conclusion": "skipped",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959694/job/117671024060"
+        },
+        {
+          "name": "image",
+          "status": "completed",
+          "conclusion": "skipped",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959694/job/117671023934"
+        },
+        {
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "skipped",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959694/job/117671023828"
+        },
+        {
+          "name": "Continuité — docs, checkpoints et tests",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959712/job/117671023058"
+        },
+        {
+          "name": "DB1/2 — tests simulés sans base (DB3 non validée)",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959694/job/117671022920"
+        }
+      ]
+    },
+    {
+      "reference": "pr165",
+      "sha": "63e804be7b8e8935913514bd57937053c7402474",
+      "checks": [
+        {
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125426559/job/117669492387"
+        },
+        {
+          "name": "image",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125426559/job/117669492232"
+        },
+        {
+          "name": "e2e",
+          "status": "in_progress",
+          "conclusion": null,
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125426559/job/117669492106"
+        },
+        {
+          "name": "no-foreign-app-reference",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125426552/job/117669439042"
+        },
+        {
+          "name": "inventory",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125426550/job/117669439029"
+        },
+        {
+          "name": "Continuité — docs, checkpoints et tests",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125426576/job/117669439019"
+        },
+        {
+          "name": "Codex — 31 missions et 630 tâches",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125426551/job/117669438910"
+        }
+      ]
+    }
+  ],
+  "versions": {
+    "cloud": {
+      "node": "24.19.0",
+      "npm": "11.9.0",
+      "python": "3.12.14",
+      "chromium": "154.0.8037.57",
+      "ifcopenshell": "0.9.0 venv"
+    },
+    "ci169": [
+      "2026-10-18T12:07:07.8521852Z node: v22.23.3",
+      "2026-10-18T12:07:07.8522371Z npm: 10.9.9"
+    ],
+    "ciMain": [
+      "2026-10-18T10:26:37.7897609Z node: v22.23.3",
+      "2026-10-18T10:26:37.7898027Z npm: 10.9.9",
+      "2026-10-18T10:26:54.6916453Z Downloading Chromium 141.0.7390.37 (playwright build v1194) from https://cdn.playwright.dev/dbazure/download/playwright/builds/chromium/1194/chromium-linux.zip",
+      "2026-10-18T10:26:59.2653610Z Chromium 141.0.7390.37 (playwright build v1194) downloaded to /home/runner/.cache/ms-playwright/chromium-1194",
+      "2026-10-18T10:26:59.5877508Z Downloading Chromium Headless Shell 141.0.7390.37 (playwright build v1194) from https://cdn.playwright.dev/dbazure/download/playwright/builds/chromium/1194/chromium-headless-shell-linux.zip",
+      "2026-10-18T10:27:02.5207387Z Chromium Headless Shell 141.0.7390.37 (playwright build v1194) downloaded to /home/runner/.cache/ms-playwright/chromium_headless_shell-1194"
+    ]
+  },
+  "operations": {
+    "admin": false,
+    "db": false,
+    "rerun": false,
+    "service": false
+  }
+}

@@ -1,14 +1,14 @@
-# Cahier des charges P2 — DrawAll universel : ontologies métier au-delà de l'architecture
+# Cahier des charges P2 — extension historique de l'Atelier Fadi (périmètre à réévaluer)
 
 **Version 1.10 — 9 octobre 2026 — validé par le maître d'ouvrage (D-176) ; lots P2-0 et P2-1 livrés et acceptés (D-182, D-183) ; lot P2-2 livré et porte P1 → P2 passée sur le périmètre bâtiment + mécanique (D-184) ; lot P2-3 (structure) livré (D-185) ; lot P2-4 (bois et tôlerie) livré (D-186) ; lot P2-5 (réseaux) livré (D-187) ; lot P2-6 (surfaces, bâtiment P2, coordination) livré (D-188) ; lot P2-7 (documentation et échanges P2) livré (D-189) ; lot P2-8 (automatisation P2 : graphes de génération, règles par ontologie, dossier de recette P2 `docs/atelier/recette-p2.md`) livré (D-190) — **P2 livré en entier ; lots P2-2 à P2-8 acceptés le 9 octobre 2026 (D-193), 125 fiches « disponible », P2 clos** ; la délégation D-183 (décisions 10.1, consignées D-184 à D-190) est éteinte avec P2.**
 **Statut : validé (D-176), décisions de la section 6 prises (D-177 à D-181) ; les neuf lots P2-0 à P2-8 sont livrés et
 acceptés (D-182, D-183, D-193) ; P2 est clos, aucun lot suivant n'est engagé. Le cahier Atelier (`docs/atelier-cahier-des-charges.md`) et le cahier
 Planche (`docs/planche/cahier-planche.md`) restent inchangés : ce document s'y ajoute, il ne les modifie pas.**
 
-Documents de référence : Concept V4 (`docs/drawall/DrawAll_v4.1_Concept.md`, §2 universalité, §6 modules, §12
-étapes), Architecture V4, Exigences et sources V4 (annexe B pour les 324 entrées, annexe D pour les décisions
-D1–D6), proposition acceptée `docs/atelier-drawall.md`, dossier de recette P1 `docs/atelier/recette.md`,
-journal des décisions `docs/atelier/decisions.md` (D-174 : acceptation de P1).
+Documents de référence historiques retirés de Fadi dans le cadre de l'Issue #147 (référentiel de l'autre application). Les contrats encore applicables à Fadi doivent être audités dans `docs/architecture.md` et `docs/atelier/decisions.md` (et non présumés normatifs à partir d'un autre produit).
+Dossier de recette P1 : `docs/atelier/recette.md` ; journal des décisions : `docs/atelier/decisions.md` (D-174 : acceptation de P1).
+
+> **Décision Fadi du 17 octobre 2026, Issue #147.** Les ontologies et outils P2 (mécanique, structure, bois, tôlerie, réseaux/MEP, formes libres, coordination, fabrication et échanges) sont **conservés comme parties natives de Fadi**. Les règles normatives de dessin, symboles, unités, tolérances et exigences d'échange demeurent applicables selon leurs sources officielles, indépendamment du produit DrawAll. La nomenclature ancienne `DA-…` n'est qu'un identifiant historique de traçabilité jusqu'à une migration sûre ; conserver les tests et les objets existants.
 
 ## 0. Mode d'emploi
 
@@ -52,10 +52,10 @@ et acceptée.
 | --- | --- | --- |
 | Entrées DA du référentiel | 324 | Exigences V4, annexe B |
 | Entrées à l'étape cible P1 / P2 / P3 | 146 / 124 / 54 | annexe B (colonne « Étape cible ») |
-| Entrées retenues par le cahier Atelier (P1 Fadi) | 138 | `atelier-drawall.md` §5.1 |
+| Entrées retenues par le cahier Atelier (P1 Fadi) | 138 | Inventaire historique Fadi à rapprocher des fiches `docs/atelier/fiches/` |
 | Fiches DA à l'état « disponible » | 71 | `docs/atelier/fiches/`, D-174 |
 | Fiches Planche à l'état « disponible » | 35 | `docs/planche/fiches/`, D-174 |
-| Modules DrawAll touchés | M01–M05, M11, M12 (partiel), M16, M17 (partiel) | `atelier-drawall.md` §2.1 |
+| Modules Fadi étudiés à l'origine | Atelier, Documents, Analyses métier, Collaboration, Projets et sources | Cartographie historique à revérifier sur le code Fadi |
 | Modules non ouverts | M06, M07, M08, M09, M10, M13, M14, M15 | cahier Atelier §2.2 |
 | Ontologies activables par projet | `building.architecture`, `drawing`, `annotation`, `planche` ; `building.structure` réduite au poteau | cahier Atelier §2.1, D-172 |
 
@@ -128,7 +128,7 @@ des commandes au contrat suivant, les contrats précédents restent acceptés co
 
 ## 5. Lots P2, livrables, estimation
 
-Estimation calibrée comme `atelier-drawall.md` §6.2 : une journée = session continue livrée verte (typecheck,
+Estimation du chantier Atelier Fadi (source historique désormais retirée du dépôt) : une journée = session continue livrée verte (typecheck,
 tests, build, scénario e2e, CI). P1 a coûté 23,5 jours estimés pour 138 entrées à densité « formulaires + géométrie
 paramétrique » ; P2 ajoute des domaines à densité plus forte (noyau exact, solveur, connectivité), d'où une
 productivité comptée aux deux tiers de P1. **Aucune journée n'est engagée avant la validation du cahier.**
@@ -190,7 +190,7 @@ IFC de l'ontologie dans `matrice-echanges.md` avec rapport de fidélité sur cor
 
 ## Annexe B — Contrôle de couverture des 270 entrées P1 et P2
 
-Générée depuis l'annexe B des Exigences V4 (colonne « Étape cible ») et `atelier-drawall.md` §5.1 (entrées retenues).
+Inventaire historique de 270 capacités P1/P2 du chantier Atelier ; les entrées doivent être vérifiées sur les fiches Fadi et le code actuel plutôt que sur le référentiel d'une autre application.
 Chaque entrée P1 ou P2 a une destination ; les 54 entrées P3 ne figurent pas ici (§3.2).
 
 | ID | Libellé | Module | Étape | Destination |
