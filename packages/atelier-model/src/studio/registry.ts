@@ -76,9 +76,9 @@ export const STUDIO_TOOLS = freezeTree([
   { ...mutation, toolId: "studio.dessin.deplacer", libelleFR: "Déplacer", raccourci: "M", iconeSymbolique: "studio-move", groupe: "modification", inputSchema: { type: "object", additionalProperties: false, required: ["id", "dx", "dy"], properties: { id, dx: number, dy: number } } },
   { ...mutation, toolId: "studio.dessin.modifier", libelleFR: "Modifier", raccourci: "E", iconeSymbolique: "studio-edit", groupe: "modification", inputSchema: { oneOf: [line, rectangle, enteredDimension] } },
   { ...mutation, toolId: "studio.dessin.supprimer", libelleFR: "Supprimer", raccourci: "Delete", iconeSymbolique: "studio-delete", groupe: "modification", inputSchema: { type: "object", additionalProperties: false, required: ["ids"], properties: { ids } } },
-  { ...mutation, toolId: "studio.calque.creer", libelleFR: "Nouveau calque", raccourci: "Ctrl+Shift+N", iconeSymbolique: "studio-layer-add", groupe: "calques", inputSchema: layer },
-  { ...mutation, toolId: "studio.calque.modifier", libelleFR: "Régler le calque", raccourci: "Ctrl+Shift+L", iconeSymbolique: "studio-layer-edit", groupe: "calques", inputSchema: layer },
-  { ...mutation, toolId: "studio.objet.calque", libelleFR: "Placer sur un calque", raccourci: "Ctrl+Shift+M", iconeSymbolique: "studio-layer-assign", groupe: "calques", inputSchema: { type: "object", additionalProperties: false, required: ["ids", "layerId"], properties: { ids, layerId: id } } },
+  { ...mutation, toolId: "studio.calque.creer", libelleFR: "Nouveau calque", raccourci: "Shift+N", iconeSymbolique: "studio-layer-add", groupe: "calques", inputSchema: layer },
+  { ...mutation, toolId: "studio.calque.modifier", libelleFR: "Régler le calque", raccourci: "Shift+L", iconeSymbolique: "studio-layer-edit", groupe: "calques", inputSchema: layer },
+  { ...mutation, toolId: "studio.objet.calque", libelleFR: "Placer sur un calque", raccourci: "Shift+M", iconeSymbolique: "studio-layer-assign", groupe: "calques", inputSchema: { type: "object", additionalProperties: false, required: ["ids", "layerId"], properties: { ids, layerId: id } } },
 ] as const) satisfies readonly StudioToolDescriptor[];
 
 type ToolIdsOf<T extends readonly { readonly toolId: string }[]> = { readonly [K in keyof T]: T[K] extends { readonly toolId: infer I } ? I : never };

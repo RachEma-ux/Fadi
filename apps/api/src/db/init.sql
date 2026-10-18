@@ -467,6 +467,7 @@ CREATE INDEX IF NOT EXISTS atelier_propositions_cle_idx ON atelier_propositions 
 -- Studio et son schéma vit ici, dans le schéma idempotent. Additif : aucune table Fadi existante n'est modifiée.
 -- Étude → variantes → révisions immuables ; la tête et la variante initiale sont des clés étrangères différées,
 -- recréées à chaque application (DROP … IF EXISTS puis ADD dans la même instruction) pour rester idempotentes.
+-- NOT VALID : appliquées à toute nouvelle écriture sans rebalayer à chaque démarrage les lignes déjà contrôlées.
 CREATE TABLE IF NOT EXISTS studio_studies (
   id text PRIMARY KEY,
   project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -510,13 +511,13 @@ CREATE TABLE IF NOT EXISTS studio_revisions (
 -- Le nom explicite reprend celui que PostgreSQL donnait à l'ancien CHECK anonyme : recréé à chaque application.
 ALTER TABLE studio_revisions DROP CONSTRAINT IF EXISTS studio_revisions_source_check,
   ADD CONSTRAINT studio_revisions_source_check
-  CHECK (source IN ('authenticated-session', 'study-initialization', 'variant-initialization'));
+  CHECK (source IN ('authenticated-session', 'study-initialization', 'variant-initialization')) NOT VALID;
 ALTER TABLE studio_studies DROP CONSTRAINT IF EXISTS studio_studies_initial_variant,
   ADD CONSTRAINT studio_studies_initial_variant FOREIGN KEY(id, initial_variant_id)
-  REFERENCES studio_variants(study_id, id) DEFERRABLE INITIALLY DEFERRED;
+  REFERENCES studio_variants(study_id, id) DEFERRABLE INITIALLY DEFERRED NOT VALID;
 ALTER TABLE studio_variants DROP CONSTRAINT IF EXISTS studio_variants_head_same_variant,
   ADD CONSTRAINT studio_variants_head_same_variant FOREIGN KEY(id, head_revision_id)
-  REFERENCES studio_revisions(variant_id, id) DEFERRABLE INITIALLY DEFERRED;
+  REFERENCES studio_revisions(variant_id, id) DEFERRABLE INITIALLY DEFERRED NOT VALID;
 -- Toute UPDATE d'une révision Studio, même accidentelle, est refusée (les suppressions suivent la cascade du projet).
 CREATE OR REPLACE FUNCTION studio_v1_immutable_revision() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN

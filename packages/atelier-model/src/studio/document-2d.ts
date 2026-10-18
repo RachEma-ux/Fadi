@@ -128,6 +128,7 @@ function record(value: unknown, keys: readonly string[], path: string, optional:
 
 function identifier(value: unknown, path: string): string {
   if (typeof value !== "string" || !value.trim() || value.includes("\0")) fail(path, "identifiant non vide attendu");
+  if (value.length > 128) fail(path, "identifiant de 128 caractères au plus");
   return value;
 }
 
@@ -432,8 +433,9 @@ const HANDLERS: Record<StudioCommandToolId, Handler> = {
   "studio.dessin.supprimer": (state, params, path) => {
     const p = record(params, ["ids"], `${path}.params`);
     const ids = new Set(idList(p.ids, `${path}.params.ids`));
+    const items = new Map<string, StudioItem>([...state.objects, ...state.dimensions].map((o) => [o.id, o]));
     for (const id of ids) {
-      const target = state.objects.find((o) => o.id === id) ?? state.dimensions.find((o) => o.id === id);
+      const target = items.get(id);
       if (!target) fail(path, `objet introuvable : ${id}`);
       editable(state, target, path);
     }
@@ -468,9 +470,11 @@ const HANDLERS: Record<StudioCommandToolId, Handler> = {
       const { layerId: _previous, ...rest } = o;
       return (target === undefined ? rest : { ...rest, layerId: target }) as T;
     };
+    const objectIndex = new Map(state.objects.map((o, i) => [o.id, i]));
+    const dimensionIndex = new Map(state.dimensions.map((o, i) => [o.id, i]));
     for (const id of ids) {
-      const index = state.objects.findIndex((o) => o.id === id);
-      const dIndex = state.dimensions.findIndex((o) => o.id === id);
+      const index = objectIndex.get(id) ?? -1;
+      const dIndex = dimensionIndex.get(id) ?? -1;
       const o = state.objects[index] ?? state.dimensions[dIndex];
       if (!o) fail(path, `objet introuvable : ${id}`);
       editable(state, o, path);

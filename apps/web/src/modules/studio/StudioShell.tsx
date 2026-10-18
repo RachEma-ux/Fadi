@@ -42,15 +42,15 @@ export function StudioShell() {
   const route = lireRouteStudio(pathname, search);
   return (
     <div className="studio-shell" data-studio={route.vue}>
-      {route.vue !== "accueil" && (
-        <nav className="studio-fil" aria-label="Fil d’Ariane Studio">
-          <Link to={RACINE_STUDIO}>Studio</Link>
-          {route.vue !== "inconnue" && <FilProjet projectId={route.projectId} lien={route.vue !== "projet"} />}
-          {(route.vue === "etude" || route.vue === "variante") && <FilEtude projectId={route.projectId} studyId={route.studyId} lien={route.vue === "variante"} />}
-          {route.vue === "variante" && <FilVariante projectId={route.projectId} studyId={route.studyId} variantId={route.variantId} />}
-        </nav>
-      )}
       <StudioErrorBoundary cle={pathname + search}>
+        {route.vue !== "accueil" && (
+          <nav className="studio-fil" aria-label="Fil d’Ariane Studio">
+            <Link to={RACINE_STUDIO}>Studio</Link>
+            {route.vue !== "inconnue" && <FilProjet projectId={route.projectId} lien={route.vue !== "projet"} />}
+            {(route.vue === "etude" || route.vue === "variante") && <FilEtude projectId={route.projectId} studyId={route.studyId} lien={route.vue === "variante"} />}
+            {route.vue === "variante" && <FilVariante projectId={route.projectId} studyId={route.studyId} variantId={route.variantId} />}
+          </nav>
+        )}
         {route.vue === "accueil" && <StudioAccueil />}
         {route.vue === "projet" && <StudioProjet projectId={route.projectId} />}
         {route.vue === "etude" && <StudioEtude projectId={route.projectId} studyId={route.studyId} />}
