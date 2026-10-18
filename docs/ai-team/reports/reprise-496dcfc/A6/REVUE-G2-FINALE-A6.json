@@ -1,0 +1,59 @@
+{
+  "review": "A6 final static G2 review, no authorization/execution",
+  "reference_code": "5e0285d37f23c7c539502664036f0a2ff0986409",
+  "A3_json_sha256": "bf1064056376c83610ac99e3d4bb0e816ada694414745a0a0e59c21b325ef5be",
+  "A3_markdown_sha256": "36a9b61a2bcf8c0e66fce67c632e0123c43602c569fc53bedf60fb782717bd59",
+  "A0_annex_sha256": "3183b3309413542d50c119eec5ec38e290989f831ad944fc635f0c103d6e5e2c",
+  "sources_checked": 36,
+  "citations_checked": {
+    "exact_lines": 151,
+    "exact_offset_excerpts": 50
+  },
+  "native_binary_hash_verified_not_executed": {
+    "path": "node_modules/@esbuild/linux-x64/bin/esbuild",
+    "regular_file": true,
+    "symlink": false,
+    "mode": "0o700",
+    "size": 10358936,
+    "sha256": "bab29b2ca7a9e89b67cf720b77b2d743f9f31f5cf0d5bd74ee8c8de30ced7014",
+    "executed": false,
+    "meaning": "Présence/empreinte du binaire optionnel Linux x64 installé ; code Go natif non audité ni ABI/CLI exécuté. Requalifier plateforme au futur lancement ; aucun téléchargement de repli."
+  },
+  "document_versions": [
+    {
+      "path": "/workspace/work/mission003/repo/docs/ai-team/reports/reprise-496dcfc/G2-PERIMETRE-A0-PROPOSE.md",
+      "study_sha256": "3de688104e96a64d4126f4dca1320dc6b07eca008aa6ae0df65a881ff9a86d75",
+      "current_sha256": "3183b3309413542d50c119eec5ec38e290989f831ad944fc635f0c103d6e5e2c",
+      "same_version": false
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A2/G2-GRAPHE-IMPORT-PUBLIC-A2.json",
+      "study_sha256": "4f57e852670404cafbbe6942d6d46ab710eb7c9f19a15321739a3b27bd004915",
+      "current_sha256": "4f57e852670404cafbbe6942d6d46ab710eb7c9f19a15321739a3b27bd004915",
+      "same_version": true
+    }
+  ],
+  "version_note": "A3 frozen study cites an earlier A0 annex; current revised annex reviewed separately, no historical hash overwritten",
+  "conclusion": "recevable pour question bornée ; aucune garantie opérationnelle démontrée ni acceptation G1/G2",
+  "preconditions_explicit_in_annex": [
+    "six proposed sources incl supervisor, not created",
+    "native compiler stdout artifact directNode option, no Vitest/TSX default",
+    "single writer/exclusive outputs/no overwrite",
+    "effective OS network and FS confinement, not env-only claim",
+    "stable private root/parents/uid rights/no competing writers",
+    "external global30s deadline/all own descendant termination",
+    "no implicit install/container/service/permission changes",
+    "no CI integration triggered before separate pure route permission"
+  ],
+  "remaining_reservations": [
+    "dir_fd/no-follow do not stop capable external writers relocating ancestors; final stable root and parent ownership/rights require attestation",
+    "environment cleanup and compiler flags do not enforce zero network/IPC; final context isolation must be established without implicit privilege expansion",
+    "supervisor may block itself: bounded IO/draining/parsing and independent fail-safe/own tree termination required, not timer or signal alone",
+    "maximum3 children currently counts compiler/producer/reader, but CMD-TSC is additional future verification: clarify separately bounded preflight or count as phase before authorization; no silent fourth child or omitted typecheck",
+    "native compiler code/IO not exhaustively audited, runtime reopen protocol not implemented: freeze platform/hash/argv, input/read allowlist and artifact/log/technical byte budgets"
+  ],
+  "operational_guarantees_proven": false,
+  "runner_module_binary_build_typecheck_or_test_executed": false,
+  "POC_code_DB_service_admin_install_or_CI_changed": false,
+  "previous_reviews_preserved": true
+}

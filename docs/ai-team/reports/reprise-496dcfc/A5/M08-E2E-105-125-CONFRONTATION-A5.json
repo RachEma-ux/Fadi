@@ -1,0 +1,1265 @@
+{
+  "review": "A5 confrontation indépendanteE2E105-125",
+  "reference": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "A4_input": "/workspace/work/resume496/agents/A4/M08-E2E-105-125.json",
+  "A4_sha256": "ce4ffe0e5838a250c2183b23ef72449942f84f55bb7631dd7c31b70ab5e0d6e2",
+  "A5_original": "M08-E2E-105-125-LECTURE-INDEPENDANTE-A5.json",
+  "A5_original_sha256": "af1f454bc8a93422c9c2654853664ff22248b796a1d2d4333ad80930e1d87f2d",
+  "A5_original_atoms": 58,
+  "A5_original_counts": {
+    "absent": 35,
+    "partiel": 21,
+    "présent": 2
+  },
+  "entries_reviewed": 12,
+  "clauses_reviewed": 73,
+  "A4_counts": {
+    "absent": 34,
+    "partiel": 23,
+    "non conclu": 13,
+    "présent": 3
+  },
+  "excerpt_occurrences_verified": 51,
+  "unique_excerpts": 42,
+  "source_hashes_verified": {
+    "apps/web/e2e/atelier-complements.mjs": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+    "apps/web/e2e/atelier-nouveau.mjs": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+    "apps/web/e2e/atelier-versions.mjs": "6de84dca578e591200232c6d7d53ae31fb2e2bc207fd85aa5821dadf1b34ab04",
+    "apps/web/e2e/parcours-scenario.mjs": "9684822bfc974548b400bed06e9a9ecd5cb34fd95de648e7b3e3d6ef48ef6863",
+    "docs/atelier/fiches/DA-07-10.md": "4943273ef4441cd2b45f27e33691e36a68d13fe54f2ba6b136f75a600e1caa76",
+    "docs/atelier/fiches/DA-07-15.md": "bb3a3087b95750456b7ac003962daab12dbcde9a6b808187d5fafd816f567bd6",
+    "docs/atelier/fiches/DA-07-16.md": "ff6a06d16645b06179f07298a1ac53666b35127c4596e1a5b0285adadea923f4",
+    "docs/atelier/fiches/DA-07-17.md": "d68e0b0657525d327d86e7fc0c50d3936a507f294fa03bc8365607b8d10cb30a",
+    "docs/atelier/fiches/DA-17-16.md": "61e23bd37e1fd08865082c18f6274c556927498aff082dc1281c6bd2c937054e",
+    "docs/atelier/fiches/DA-18-03.md": "3ce7c26be56aced54d59af5668f1648fc271f5874a86eb30da2dba6fe944313e",
+    "docs/atelier/fiches/DA-18-04.md": "8e59f24ae60271b25e89e6c739b1b2816a4aa1921936ce7ded7355e9ac7291aa",
+    "docs/atelier/fiches/DA-21-01.md": "554ef13236e3d633e73179508ba8e4365d364f24af0a09709eae604e9928f1ae",
+    "docs/atelier/fiches/DA-21-02.md": "820a101ef59a90067fc15799e9aa93a69511301c48338aef72b179b98de6e009",
+    "docs/atelier/fiches/DA-21-04.md": "428af7741aabbb0204b9a95758d115590c809f3626d8947af70314e73ca0610d",
+    "docs/atelier/fiches/DA-21-05.md": "d5b1e0f58d15a2552212159be1bfc4bff7571b21e4f4f69f28e8e322e232c5ce",
+    "docs/atelier/fiches/DA-21-09.md": "85243980a85319f886901fcf2d5006c81fa0d3491f3f0e9bb0747b8fa845cc0a"
+  },
+  "source_errors": [],
+  "matrix": [
+    {
+      "entry_id": "M08-PATH-105",
+      "ordinal": 1,
+      "expected": "32occurrences listées pargroupe sansfusion ; referencePlanSeulement repérées",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Aucun décompteescaliers/groupe/repéragereferencePlanSeulement danscandidatnommé.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-105",
+      "ordinal": 2,
+      "expected": "Créer escalier entre2niveaux puisannuler/rétablir",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Niveaux etoutilsmurs existent, aucun escalier créé.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-105",
+      "ordinal": 3,
+      "expected": "Changer élévation supérieure : contradiction ave cvaleursretenues",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "NiveauEssailot3a créé20, pasmodificationniveauhaut ni lecturecontradictionescalier.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-105",
+      "ordinal": 4,
+      "expected": "Aucunescalier niobjetadjacent déplacé",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Pascomparaisongéométriqueavant/après decesobjets.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-105",
+      "ordinal": 5,
+      "expected": "Secondnavigateur même révision aprèscycle",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Syncgénérique3murs/Bureau ne couvre pasescalier.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-105",
+      "ordinal": 6,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-107",
+      "ordinal": 1,
+      "expected": "45pièces airedeclaree/calculée/écartsrapportimport",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Aucun inventaire45 ni comparaison des2aires importées.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-107",
+      "ordinal": 2,
+      "expected": "Détection : propositions sansrévision",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Clicdansboucle crée directement une piècesynthétique ; nomcheck annonce16m² maisconditionlitcompte1+titreinspecteur, pasaire16 ni aperçu sansécriture.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            133,
+            137
+          ],
+          "exact_excerpt": "// Pièce par clic dans la boucle.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"r\");\nawait page.mouse.click(sx(0.5), sy(0.5));\nawait page.waitForTimeout(300);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-107",
+      "ordinal": 3,
+      "expected": "Accepterproposition : exactement+1révision",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Pasavant/aprèsrévision d’acceptationexplicite.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-107",
+      "ordinal": 4,
+      "expected": "Annuler/rétablir créationpièce",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Undo/redo renommageBureau, pascréationpièce etgéométrie.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            138,
+            152
+          ],
+          "exact_excerpt": "const pieces = await page.locator(\".plan2d [data-objet^='piece-']\").count();\ncheck(\"outil Pièce : clic dans la boucle → pièce de 16 m² créée et sélectionnée\", pieces === 1 && (await page.locator(\".inspecteur h3\").textContent()).includes(\"Pièce\"), `${pieces} pièce(s) · inspecteur « ${await page.locator(\".inspecteur h3\").textContent()} » · aide « ${await page.locator(\".atelier-n-etat\").textContent()} »`);\n// Inspecteur : renommer la pièce.\nawait page.locator('.inspecteur input[id$=\"-nom\"]').fill(\"Bureau\");\nawait page.keyboard.press(\"Enter\");\nawait page.waitForTimeout(200);\ncheck(\"inspecteur : renommer → commande appliquée\", (await page.locator(\".inspecteur h3\").textContent()).includes(\"Bureau\"));\n// Annuler / rétablir.\nawait page.locator(\".plan2d\").click({ position: { x: 5, y: 5 } }).catch(() => {});\nawait page.keyboard.press(\"Escape\");\nconst navTexte = () => page.evaluate(() => document.querySelector(\".nav-objets\").textContent);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction(() => !document.querySelector(\".nav-objets\").textContent.includes(\"Bureau\"), null, { timeout: 10000 }).catch(() => {});\ncheck(\"Ctrl Z annule le renommage\", !(await navTexte()).includes(\"Bureau\"));",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-107",
+      "ordinal": 5,
+      "expected": "Secondnavigateur même révision aprèscycle",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "PièceBureau etsyncégauxmaisnicyclepropositions ni45pièces/aires.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-107",
+      "ordinal": 6,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-109",
+      "ordinal": 1,
+      "expected": "Espacesrole room listésrapport, aucunepièceendouble",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Pasinventaireespace niunicitépièce/espace issueimport.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-109",
+      "ordinal": 2,
+      "expected": "Créerespace etconvertirenpièce",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Créerpièceparclic n’estpascréer espace puisconversion.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-109",
+      "ordinal": 3,
+      "expected": "Conversion explicite etundo/redo restitueclasse/identités",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Pascycleconversion ni vérificationavant/après/inverse ; aucune décisionhistorique deconversion réécrite.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-109",
+      "ordinal": 4,
+      "expected": "Secondnavigateur aprèscycle",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Syncgénérique sansespaceconverti.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-109",
+      "ordinal": 5,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-111",
+      "ordinal": 1,
+      "expected": "Zonescore-zone listéesrapport sansmembresdéduits",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Pasinventairezone ni contientvide importé.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-111",
+      "ordinal": 2,
+      "expected": "Créerzone ave cdeuxpièceschoisies",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Unepiècesynthétique existe, aucunezone ni relationcontienttestée.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-111",
+      "ordinal": 3,
+      "expected": "Annuler/rétablir zone préservepièces etappartenances",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Undo/redo renommageautreobjet ne prouvepascyclezone.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-111",
+      "ordinal": 4,
+      "expected": "Secondnavigateur aprèscycle",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Syncgénérique sanszone/membres.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-111",
+      "ordinal": 5,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-113",
+      "ordinal": 1,
+      "expected": "Orbite/panoramique/zoom enrevue",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Orbite desktop etzoom tactile3D rendentimages ; paspanoramiqueprescrit ni revueisoléelectureseule.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            245,
+            261
+          ],
+          "exact_excerpt": "// Orbite : 60 trames de glisser, budget de trame mesuré.\nconst canvas3d = await page.locator(\".vue3d-canevas\").boundingBox();\nconst debutRendus = await rendus();\nawait page.mouse.move(canvas3d.x + canvas3d.width / 2, canvas3d.y + canvas3d.height / 2);\nawait page.mouse.down();\nfor (let k = 0; k < 60; k++) {\n  await page.mouse.move(canvas3d.x + canvas3d.width / 2 + k * 4, canvas3d.y + canvas3d.height / 2 + Math.sin(k / 6) * 20);\n  await page.waitForTimeout(16);\n}\nawait page.mouse.up();\nawait page.waitForTimeout(200);\nconst orbite = await page.evaluate((n0) => window.fadiMesures3D.rendus.slice(n0), debutRendus);\nconst tri = [...orbite].sort((a, b) => a - b);\nconst p95 = tri[Math.floor(tri.length * 0.95)] ?? 0;\nmesures.push([\"orbite : temps CPU de rendu par image, p95 (ms)\", Math.round(p95 * 100) / 100]);\nconsole.log(`⏱ orbite P.118 : ${orbite.length} images, rendu CPU p95 ${p95.toFixed(2)} ms, médiane ${(tri[Math.floor(tri.length / 2)] ?? 0).toFixed(2)} ms`);\ncheck(\"orbite : au moins 30 images rendues, p95 du rendu < 16 ms\", orbite.length >= 30 && p95 < 16, `${orbite.length} images, p95 ${p95.toFixed(2)} ms`);",
+          "level": "E2E assertions lues, non exécutées"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            369,
+            405
+          ],
+          "exact_excerpt": "// 3D au toucher (téléphone) : toucher sélectionne, un doigt fait tourner, deux doigts zooment.\nconst tel = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2, storageState: await ctx.storageState() });\nconst pt3 = await tel.newPage();\npt3.on(\"pageerror\", (e) => erreursPage.push(`téléphone : ${e.message}`));\nawait pt3.goto(`${url}?module=atelier`);\nawait pt3.waitForSelector(\".plan2d\");\nawait pt3.locator('.barre-mode button:has-text(\"3D\")').tap();\nawait pt3.waitForFunction(() => (window.fadiMesures3D?.triangles ?? 0) > 0, null, { timeout: 30000 });\nawait pt3.locator('.vue3d-commandes select[aria-label=\"Présentation\"]').selectOption({ label: \"Niveau actif\" });\nawait pt3.waitForTimeout(400);\nconst murTel = await pt3.evaluate(() => {\n  const groupe = [...document.querySelectorAll(\".nav-objets details\")].find((d) => d.querySelector(\"summary\").textContent.trim().startsWith(\"Mur\"));\n  const ids = groupe ? [...groupe.querySelectorAll(\"button[data-objet]\")].map((b) => b.dataset.objet) : [];\n  for (const id of ids) {\n    const p = window.fadiMesures3D.localiser(id);\n    if (p && window.fadiMesures3D.sonder(p.x, p.y) === id) return { id, ...p };\n  }\n  return null;\n});\nconst cTel = await pt3.locator(\".vue3d-canevas\").boundingBox();\nif (murTel) await pt3.touchscreen.tap(cTel.x + murTel.x, cTel.y + murTel.y);\nawait pt3.waitForTimeout(300);\ncheck(\"téléphone 3D : toucher un mur le sélectionne\", !!murTel && (await pt3.locator(\".inspecteur h3\").first().textContent()).startsWith(\"Mur\"), JSON.stringify(murTel));\nconst cdp = await tel.newCDPSession(pt3);\nconst n0Tel = await pt3.evaluate(() => window.fadiMesures3D.rendus.length);\nconst toucher = (type, points) => cdp.send(\"Input.dispatchTouchEvent\", { type, touchPoints: points.map(([x, y], id) => ({ x: cTel.x + x, y: cTel.y + y, id })) });\nawait toucher(\"touchStart\", [[100, 200]]);\nfor (let k = 1; k <= 12; k++) await toucher(\"touchMove\", [[100 + k * 10, 200]]);\nawait toucher(\"touchEnd\", []);\nawait pt3.waitForTimeout(200);\nconst n1Tel = await pt3.evaluate(() => window.fadiMesures3D.rendus.length);\nawait toucher(\"touchStart\", [[150, 250], [250, 250]]);\nfor (let k = 1; k <= 10; k++) await toucher(\"touchMove\", [[150 - k * 6, 250], [250 + k * 6, 250]]);\nawait toucher(\"touchEnd\", []);\nawait pt3.waitForTimeout(200);\nconst n2Tel = await pt3.evaluate(() => window.fadiMesures3D.rendus.length);\ncheck(\"téléphone 3D : un doigt fait tourner, deux doigts zooment (images rendues)\", n1Tel > n0Tel + 3 && n2Tel > n1Tel + 3, `${n0Tel} → ${n1Tel} → ${n2Tel}`);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-113",
+      "ordinal": 2,
+      "expected": "Sélection EX118-mezz-W-009 3D etliste mêmespropriétés",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Toucher sélectionneunmur avec inspecteurtitreMur ; pasIDimporté ni comparaisontousparamètres avecliste.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            369,
+            389
+          ],
+          "exact_excerpt": "// 3D au toucher (téléphone) : toucher sélectionne, un doigt fait tourner, deux doigts zooment.\nconst tel = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2, storageState: await ctx.storageState() });\nconst pt3 = await tel.newPage();\npt3.on(\"pageerror\", (e) => erreursPage.push(`téléphone : ${e.message}`));\nawait pt3.goto(`${url}?module=atelier`);\nawait pt3.waitForSelector(\".plan2d\");\nawait pt3.locator('.barre-mode button:has-text(\"3D\")').tap();\nawait pt3.waitForFunction(() => (window.fadiMesures3D?.triangles ?? 0) > 0, null, { timeout: 30000 });\nawait pt3.locator('.vue3d-commandes select[aria-label=\"Présentation\"]').selectOption({ label: \"Niveau actif\" });\nawait pt3.waitForTimeout(400);\nconst murTel = await pt3.evaluate(() => {\n  const groupe = [...document.querySelectorAll(\".nav-objets details\")].find((d) => d.querySelector(\"summary\").textContent.trim().startsWith(\"Mur\"));\n  const ids = groupe ? [...groupe.querySelectorAll(\"button[data-objet]\")].map((b) => b.dataset.objet) : [];\n  for (const id of ids) {\n    const p = window.fadiMesures3D.localiser(id);\n    if (p && window.fadiMesures3D.sonder(p.x, p.y) === id) return { id, ...p };\n  }\n  return null;\n});\nconst cTel = await pt3.locator(\".vue3d-canevas\").boundingBox();\nif (murTel) await pt3.touchscreen.tap(cTel.x + murTel.x, cTel.y + murTel.y);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-113",
+      "ordinal": 3,
+      "expected": "Comptecomment publiecommentaireobjet visible secondbrowser même révision",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Pascommentaire ni rôlecomment danscandidatnommé.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-113",
+      "ordinal": 4,
+      "expected": "Modificationautrui : bandeau révisionrestantfigée jusqu’actualisation",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Secondcontexte litunétatfinal, pasmodificationconcurrente ni band eau.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-113",
+      "ordinal": 5,
+      "expected": "Read : paschampcommentaire",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Aucun comptelectureseule ni assertionsuppressionchamp.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-113",
+      "ordinal": 6,
+      "expected": "Tempspremièreimage imprimésansseuil",
+      "A4_status": "présent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "présent",
+      "A5_reason": "Correction explicite omission A5 : nouveau207–210 mesure réellement premièreimage via attendre premier rendu, distinct du CPUorbite. Présent standalone sans seuil ni exécution.",
+      "source_reason_reviewed": "Mesurer passage3D jusqu’àsondepremierrendu ettriangles>0 imprime⏱ sansseuil ; assertionstatique seulement.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            22,
+            28
+          ],
+          "exact_excerpt": "const mesures = [];\nconst mesurer = async (nom, fn) => {\n  const t = performance.now();\n  await fn();\n  const ms = Math.round(performance.now() - t);\n  mesures.push([nom, ms]);\n  console.log(`⏱ ${nom} : ${ms} ms`);",
+          "level": "E2E assertions lues, non exécutées"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            206,
+            210
+          ],
+          "exact_excerpt": "// 3D (lot 3b) : chaque niveau × chaque présentation rendu, sans vue vide ni erreur.\nawait mesurer(\"passage en 3D (chargement de three.js, maillage du P.118) → première image\", async () => {\n  await page.locator('.barre-mode button:has-text(\"3D\")').click();\n  await page.waitForFunction(() => (window.fadiMesures3D?.rendus?.length ?? 0) > 0 && window.fadiMesures3D.triangles > 0, null, { timeout: 30000 });\n});",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-113",
+      "ordinal": 7,
+      "expected": "Traçabilité révision/empreintemodèle/moteur/versionrepr affichés etP118comparé",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Barre-sync afficheuntextecomparé, moteurwebgl2sondé ; pasempreintemodèle/versionmoteur affichéesoucomparéesrapport.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            206,
+            213
+          ],
+          "exact_excerpt": "// 3D (lot 3b) : chaque niveau × chaque présentation rendu, sans vue vide ni erreur.\nawait mesurer(\"passage en 3D (chargement de three.js, maillage du P.118) → première image\", async () => {\n  await page.locator('.barre-mode button:has-text(\"3D\")').click();\n  await page.waitForFunction(() => (window.fadiMesures3D?.rendus?.length ?? 0) > 0 && window.fadiMesures3D.triangles > 0, null, { timeout: 30000 });\n});\ncheck(\"3D : moteur WebGL2 actif, image non vide\", await page.evaluate(() => window.fadiMesures3D.moteur === \"webgl2\" && window.fadiMesures3D.triangles > 1000), JSON.stringify(await page.evaluate(() => ({ t: window.fadiMesures3D.triangles, a: window.fadiMesures3D.appels }))));\nconst appels = await page.evaluate(() => window.fadiMesures3D.appels);\ncheck(\"3D : rendu groupé (peu d'appels de dessin pour tout le P.118)\", appels > 0 && appels < 400, String(appels));",
+          "level": "E2E assertions lues, non exécutées"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-113",
+      "ordinal": 8,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-115",
+      "ordinal": 1,
+      "expected": "6niveauxécartés ; assembléretouridentique",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Boucle présentations Bâtiment/Niveauactif/Éclaté surchaqueniveau attendtriangles>0 ; aucuneégalitégéométrieretourassemblé ni6exact.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            215,
+            231
+          ],
+          "exact_excerpt": "const attendreRendu = async (n0) => page.waitForFunction((n) => window.fadiMesures3D.rendus.length > n, n0, { timeout: 10000 });\nlet videsOuErreurs = [];\nconst niveaux3d = await page.locator(\".nav-niveaux button\").count();\nfor (const presentation of [\"Bâtiment\", \"Niveau actif\", \"Éclaté\"]) {\n  for (let k = 0; k < niveaux3d; k++) {\n    const n0 = await rendus();\n    await page.locator(\".nav-niveaux button\").nth(k).click();\n    await page.locator('.vue3d-commandes select[aria-label=\"Présentation\"]').selectOption({ label: presentation });\n    await attendreRendu(n0).catch(() => {});\n    const t = await page.evaluate(() => window.fadiMesures3D.triangles);\n    const nom = await page.locator(\".nav-niveaux button\").nth(k).textContent();\n    if (!(t > 0)) videsOuErreurs.push(`${presentation} / ${nom} : ${t} triangles`);\n  }\n}\ncheck(`3D : ${niveaux3d} niveaux × 3 présentations rendus (aucune vue vide)`, videsOuErreurs.length === 0 && erreursPage.length === 0, videsOuErreurs.join(\" ; \"));\nawait page.locator('.nav-niveaux button').first().click();\nawait page.locator('.vue3d-commandes select[aria-label=\"Présentation\"]').selectOption({ label: \"Bâtiment\" });",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-115",
+      "ordinal": 2,
+      "expected": "Révisioninchangée pendantéclaté",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "PasGETmodèle/révisionavantaprèsactivation.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-115",
+      "ordinal": 3,
+      "expected": "Sélectionconservée",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Aucuneassertionidentitéselectionavant/aprè s.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-115",
+      "ordinal": 4,
+      "expected": "Secondnavigateur nonaffecté",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Secondcontexte ouvertaprèsretourplan sanstestdel’écartindépendant.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-115",
+      "ordinal": 5,
+      "expected": "Tempsactivationéclaté sansseuil",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Chronopassage3D etorbite ≠activationéclaté ; boucleéclaté nonmesurée.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            206,
+            210
+          ],
+          "exact_excerpt": "// 3D (lot 3b) : chaque niveau × chaque présentation rendu, sans vue vide ni erreur.\nawait mesurer(\"passage en 3D (chargement de three.js, maillage du P.118) → première image\", async () => {\n  await page.locator('.barre-mode button:has-text(\"3D\")').click();\n  await page.waitForFunction(() => (window.fadiMesures3D?.rendus?.length ?? 0) > 0 && window.fadiMesures3D.triangles > 0, null, { timeout: 30000 });\n});",
+          "level": "E2E assertions lues, non exécutées"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            215,
+            228
+          ],
+          "exact_excerpt": "const attendreRendu = async (n0) => page.waitForFunction((n) => window.fadiMesures3D.rendus.length > n, n0, { timeout: 10000 });\nlet videsOuErreurs = [];\nconst niveaux3d = await page.locator(\".nav-niveaux button\").count();\nfor (const presentation of [\"Bâtiment\", \"Niveau actif\", \"Éclaté\"]) {\n  for (let k = 0; k < niveaux3d; k++) {\n    const n0 = await rendus();\n    await page.locator(\".nav-niveaux button\").nth(k).click();\n    await page.locator('.vue3d-commandes select[aria-label=\"Présentation\"]').selectOption({ label: presentation });\n    await attendreRendu(n0).catch(() => {});\n    const t = await page.evaluate(() => window.fadiMesures3D.triangles);\n    const nom = await page.locator(\".nav-niveaux button\").nth(k).textContent();\n    if (!(t > 0)) videsOuErreurs.push(`${presentation} / ${nom} : ${t} triangles`);\n  }\n}",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-115",
+      "ordinal": 6,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-117",
+      "ordinal": 1,
+      "expected": "Filtresniveau/classe/calque",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Niveaux/pr ésentations rendus ; pasfiltresclasse/calque etobjetsadmisexclus.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            215,
+            228
+          ],
+          "exact_excerpt": "const attendreRendu = async (n0) => page.waitForFunction((n) => window.fadiMesures3D.rendus.length > n, n0, { timeout: 10000 });\nlet videsOuErreurs = [];\nconst niveaux3d = await page.locator(\".nav-niveaux button\").count();\nfor (const presentation of [\"Bâtiment\", \"Niveau actif\", \"Éclaté\"]) {\n  for (let k = 0; k < niveaux3d; k++) {\n    const n0 = await rendus();\n    await page.locator(\".nav-niveaux button\").nth(k).click();\n    await page.locator('.vue3d-commandes select[aria-label=\"Présentation\"]').selectOption({ label: presentation });\n    await attendreRendu(n0).catch(() => {});\n    const t = await page.evaluate(() => window.fadiMesures3D.triangles);\n    const nom = await page.locator(\".nav-niveaux button\").nth(k).textContent();\n    if (!(t > 0)) videsOuErreurs.push(`${presentation} / ${nom} : ${t} triangles`);\n  }\n}",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-117",
+      "ordinal": 2,
+      "expected": "Isolationescalier",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Aucun isoler ni escalierciblé.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-117",
+      "ordinal": 3,
+      "expected": "Scissionmurcotation : àréparer localisé3D",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Aucune scissioncote etlocalisation3D danscandidatnommé ; recetteDocumentsdistincte nontransférée.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-117",
+      "ordinal": 4,
+      "expected": "Modificationsecondbrowser : bandeaurévision",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Secondcontexte litstatiqueétat ; aucun autreécrivain/bandeauasserté.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-117",
+      "ordinal": 5,
+      "expected": "Tempspremièreimage",
+      "A4_status": "présent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "présent",
+      "A5_reason": "Correction explicite omission A5 : nouveau207–210 mesure réellement premièreimage via attendre premier rendu, distinct du CPUorbite. Présent standalone sans seuil ni exécution.",
+      "source_reason_reviewed": "Chronopassage3D existe, sansseuil etsansrésultatproduitici.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            22,
+            28
+          ],
+          "exact_excerpt": "const mesures = [];\nconst mesurer = async (nom, fn) => {\n  const t = performance.now();\n  await fn();\n  const ms = Math.round(performance.now() - t);\n  mesures.push([nom, ms]);\n  console.log(`⏱ ${nom} : ${ms} ms`);",
+          "level": "E2E assertions lues, non exécutées"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            206,
+            210
+          ],
+          "exact_excerpt": "// 3D (lot 3b) : chaque niveau × chaque présentation rendu, sans vue vide ni erreur.\nawait mesurer(\"passage en 3D (chargement de three.js, maillage du P.118) → première image\", async () => {\n  await page.locator('.barre-mode button:has-text(\"3D\")').click();\n  await page.waitForFunction(() => (window.fadiMesures3D?.rendus?.length ?? 0) > 0 && window.fadiMesures3D.triangles > 0, null, { timeout: 30000 });\n});",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-117",
+      "ordinal": 6,
+      "expected": "Tempschangementfiltre sansseuil",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Correction explicite omission A5 : nouveau207–210 mesure réellement premièreimage via attendre premier rendu, distinct du CPUorbite. Présent standalone sans seuil ni exécution.",
+      "source_reason_reviewed": "Paschronomètreautourchangementfiltre ; compteimages ne vautpasdurée.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-117",
+      "ordinal": 7,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-118",
+      "ordinal": 1,
+      "expected": "Deuxnavigateurs : premier prendréservationglobale, secondUIlectureseule/outilsdésactivés/bannière",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Partial indique contexte/API autreopération : secondePage absente ; verroufin423/libération200 ne prouve ni réservationglobale ni UIlectureseule ni zéroécriture/journal.",
+      "source_reason_reviewed": "Deuxcontextscomptesexistent mais second seulementrequest, paspage ; verrous finsobjet/zone distincts, aucuneUIdusecond ni réservationglobale.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-versions.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "6de84dca578e591200232c6d7d53ae31fb2e2bc207fd85aa5821dadf1b34ab04",
+          "lines": [
+            119,
+            127
+          ],
+          "exact_excerpt": "// Un second compte, éditeur du tronc, modifie le mur B : conflit explicite.\nconst second = await browser.newContext();\nconst autre = second.request;\nawait autre.post(`${BASE}/auth/register`, { data: { email: `versions-autre-${Date.now()}@example.com`, password: \"versions-pass-456\" } });\nconst moi = (await api(\"get\", \"/auth/me\")).body;\nvoid moi;\nconst emailAutre = (await (await autre.get(`${BASE}/auth/me`)).json()).email;\ncheck(\"second compte invité éditeur du tronc\", (await api(\"post\", `/projects/${pid}/members`, { email: emailAutre, role: \"editeur\" })).status === 201);\nconst revTronc = (await modele(pid)).revision;",
+          "level": "E2E assertions lues, non exécutées"
+        },
+        {
+          "path": "apps/web/e2e/atelier-versions.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "6de84dca578e591200232c6d7d53ae31fb2e2bc207fd85aa5821dadf1b34ab04",
+          "lines": [
+            179,
+            191
+          ],
+          "exact_excerpt": "// Le mur A est sur son niveau : on l'active, puis on le choisit dans la liste des objets du niveau.\nawait page.locator(`.nav-niveaux button:has-text(\"${depart.modele.niveaux[murA.niveauId].nom}\")`).first().click();\nawait page.waitForSelector(`.nav-objets button[data-objet=\"${murA.id}\"]`, { state: \"attached\", timeout: 15000 });\nawait page.evaluate((id) => document.querySelector(`.nav-objets button[data-objet=\"${id}\"]`)?.click(), murA.id);\nawait page.waitForFunction((id) => (document.querySelector(\".etat-selection\")?.textContent ?? \"\").includes(id), murA.id, { timeout: 10000 });\nawait page.locator('.versions button:has-text(\"Verrouiller la sélection\")').click();\ncheck(\"verrou posé sur l'objet sélectionné, listé « vous »\", /1 objet\\(s\\) verrouillé\\(s\\)/.test(await info()) && (await page.locator(`.ver-liste [data-verrou=\"${murA.id}\"]`).textContent()).includes(\"vous\"));\nconst revV = (await modele(pid)).revision;\nconst refus = await lot(pid, `autre-verrou-${Date.now()}`, revV, [{ type: \"objet.modifier\", params: { id: murA.id, params: { epaisseur: m(0.33) } } }], autre);\ncheck(\"le second compte est refusé sur l'objet verrouillé (423, auteur et échéance)\", refus.status === 423 && refus.body.erreur === \"verrou\" && refus.body.verrous[0].auteur === email);\nawait page.locator(`.ver-liste [data-verrou=\"${murA.id}\"] button:has-text(\"Lever\")`).click();\nawait page.waitForFunction((id) => !document.querySelector(`.ver-liste [data-verrou=\"${id}\"]`), murA.id, { timeout: 10000 });\ncheck(\"verrou levé : le second compte peut modifier\", (await lot(pid, `autre-apres-${Date.now()}`, revV, [{ type: \"objet.modifier\", params: { id: murA.id, params: { epaisseur: m(0.33) } } }], autre)).status === 200);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-118",
+      "ordinal": 2,
+      "expected": "Commande forcéeautrecompte423",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Partial indique contexte/API autreopération : secondePage absente ; verroufin423/libération200 ne prouve ni réservationglobale ni UIlectureseule ni zéroécriture/journal.",
+      "source_reason_reviewed": "Assertionstatus423/erreurverrou/auteurexacte surmurverrouillé ; extensionobjetdistincte duréservationglobale. Échéance annoncéeparlibellé nonassertée.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-versions.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "6de84dca578e591200232c6d7d53ae31fb2e2bc207fd85aa5821dadf1b34ab04",
+          "lines": [
+            185,
+            188
+          ],
+          "exact_excerpt": "check(\"verrou posé sur l'objet sélectionné, listé « vous »\", /1 objet\\(s\\) verrouillé\\(s\\)/.test(await info()) && (await page.locator(`.ver-liste [data-verrou=\"${murA.id}\"]`).textContent()).includes(\"vous\"));\nconst revV = (await modele(pid)).revision;\nconst refus = await lot(pid, `autre-verrou-${Date.now()}`, revV, [{ type: \"objet.modifier\", params: { id: murA.id, params: { epaisseur: m(0.33) } } }], autre);\ncheck(\"le second compte est refusé sur l'objet verrouillé (423, auteur et échéance)\", refus.status === 423 && refus.body.erreur === \"verrou\" && refus.body.verrous[0].auteur === email);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-118",
+      "ordinal": 3,
+      "expected": "Libération : second peutécrire",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Partial indique contexte/API autreopération : secondePage absente ; verroufin423/libération200 ne prouve ni réservationglobale ni UIlectureseule ni zéroécriture/journal.",
+      "source_reason_reviewed": "Après libération du verrou fin sur objet, un lot du second compte reçoit200. Ce contrôle API exercé depuis la recette ne prouve ni réservation globale ni reprise de l’édition dans un second écran.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-versions.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "6de84dca578e591200232c6d7d53ae31fb2e2bc207fd85aa5821dadf1b34ab04",
+          "lines": [
+            189,
+            191
+          ],
+          "exact_excerpt": "await page.locator(`.ver-liste [data-verrou=\"${murA.id}\"] button:has-text(\"Lever\")`).click();\nawait page.waitForFunction((id) => !document.querySelector(`.ver-liste [data-verrou=\"${id}\"]`), murA.id, { timeout: 10000 });\ncheck(\"verrou levé : le second compte peut modifier\", (await lot(pid, `autre-apres-${Date.now()}`, revV, [{ type: \"objet.modifier\", params: { id: murA.id, params: { epaisseur: m(0.33) } } }], autre)).status === 200);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-118",
+      "ordinal": 4,
+      "expected": "Comptelectureseule :403motivé",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Partial indique contexte/API autreopération : secondePage absente ; verroufin423/libération200 ne prouve ni réservationglobale ni UIlectureseule ni zéroécriture/journal.",
+      "source_reason_reviewed": "Secondinvitééditeur, aucun read/403motifasserté.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-118",
+      "ordinal": 5,
+      "expected": "Refus : révision/journalinchangés etbrouillonconservé",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Partial indique contexte/API autreopération : secondePage absente ; verroufin423/libération200 ne prouve ni réservationglobale ni UIlectureseule ni zéroécriture/journal.",
+      "source_reason_reviewed": "Status423 seul neprouve paszéromutation/journalni conservationbrouillonUI ; pascomparaisoncomplète.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-118",
+      "ordinal": 6,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Partial indique contexte/API autreopération : secondePage absente ; verroufin423/libération200 ne prouve ni réservationglobale ni UIlectureseule ni zéroécriture/journal.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-119",
+      "ordinal": 1,
+      "expected": "Deuxnavigateurs même révision puisA/B modifientEX118-mezz-W-009",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Mêmesync générique au secondaprèsfin, ni éditionA/B simultanée niIDprescrit.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-119",
+      "ordinal": 2,
+      "expected": "Conflitaffiché étatserveur/choixexplicite/aucuneperte",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Aucun panneauconflit ni actionrésolution danscandidatnommé.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-119",
+      "ordinal": 3,
+      "expected": "B reçoitmodificationA sansrecharger",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "page2.goto surétatfinal n’estpassynchronisationpendantsession.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-119",
+      "ordinal": 4,
+      "expected": "Coupureréseau : lotfile puisrejeuordonné",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Aucun setOffline/routeabort ni oracled’ordre danscandidatnommé. Parcours/compléments horsmapping nontransférés.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-119",
+      "ordinal": 5,
+      "expected": "Délaisynchronisation imprimésansseuil",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Chronoglissermur n’estpasdélai propagationA→B/reconnexion.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-119",
+      "ordinal": 6,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-120",
+      "ordinal": 1,
+      "expected": "Troislotsvalidés puisrévisionantérieureconsultéelectureseule",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Plusieurslots/modifications etversionnommée restaurée existent ; pasconsultation GETmodelrevision figée enlectureseule.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-versions.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "6de84dca578e591200232c6d7d53ae31fb2e2bc207fd85aa5821dadf1b34ab04",
+          "lines": [
+            87,
+            110
+          ],
+          "exact_excerpt": "await page.waitForSelector('.ver-liste [data-version] .ver-nom:text-is(\"Esquisse\")', { timeout: 15000 }).catch(() => {});\ncheck(\"version nommée « Esquisse » enregistrée à la révision courante et listée\", /Version « Esquisse » enregistrée \\(révision 1\\)/.test(texteVersion) && (await page.locator('.ver-liste [data-version] .ver-nom:text-is(\"Esquisse\")').count()) === 1, texteVersion);\nawait axe(\"panneau des versions\", \".versions\");\n\n// Une modification, puis comparer et mettre en évidence.\ncheck(\"modification du tronc (épaisseur d'un mur)\", (await lot(pid, `mod-${Date.now()}`, 1, [{ type: \"objet.modifier\", params: { id: murA.id, params: { epaisseur: m(0.42) } } }])).status === 200);\nawait ouvrir(pid);\nawait page.locator('.ver-liste [data-version] button:has-text(\"Comparer\")').first().click();\nawait page.waitForSelector('.ver-diff[data-diff=\"differences\"]', { timeout: 20000 });\ncheck(\"comparer à la version : 1 objet modifié (epaisseur)\", /0 ajouté\\(s\\), 1 modifié\\(s\\), 0 supprimé\\(s\\)/.test(await page.locator(\".ver-diff\").textContent()) && (await page.locator(\".ver-diff\").textContent()).includes(\"epaisseur\"));\nawait page.locator(\".ver-diff .ver-evidence\").click();\nawait page.waitForSelector(\".vue3d canvas\", { timeout: 30000 });\ncheck(\"mise en évidence en 3D : vue 3D ouverte, l'objet modifié sélectionné\", (await page.locator(\".etat-selection\").textContent()).includes(murA.id));\nawait page.waitForTimeout(800);\nawait page.screenshot({ path: `${OUT}/7-version-evidence-3d.png` });\nawait allerEnPlan(page);\n\n// Restaurer la version.\nawait page.locator('.ver-liste [data-version] button:has-text(\"Restaurer\")').first().click();\ncheck(\"restaurer : nouvelle révision, modèle identique à la version\", /restaurée \\(révision 3\\)/.test(await info()) && (await api(\"get\", `/projects/${pid}/atelier/comparer?de=v:${(await api(\"get\", `/projects/${pid}/atelier/versions`)).body.versions[0].id}`)).body.difference.identiques === true);\n\n// Variante : création, modification, fusion.\nawait page.locator(\"#var-nom\").fill(\"Mezzanine ouverte\");\nawait mesurer(\"créer une variante du P.118 (copie intégrale reliée au tronc)\", async () => {",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-120",
+      "ordinal": 2,
+      "expected": "Aucunecommandeémisedepuisrévisionhistorique",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Pasmonitoringrequêtes niséquenceUIhistorique/read-only danscandidatnommé.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-120",
+      "ordinal": 3,
+      "expected": "Annuler/rétablir :+1chacun, étatfinalidentique",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Restaurerversion/pub etfusionvariantesne sontpasPOSTannuler/retablir ; aucuninversecyclede3lots.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-120",
+      "ordinal": 4,
+      "expected": "Secondbrowser mêmerévision/mêmesentréesjournal",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "SecondcompteAPI agit, aucune deuxièmePage ni comparaisonentriesjournal.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-120",
+      "ordinal": 5,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-121",
+      "ordinal": 1,
+      "expected": "Modifiermur surcopieP118",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Tracé/hauteurcopietravail mezzanine etpersistance existent ; paschaîne ave cmarquageHarmonieàrecalculer.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/parcours-scenario.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9684822bfc974548b400bed06e9a9ecd5cb34fd95de648e7b3e3d6ef48ef6863",
+          "lines": [
+            620,
+            654
+          ],
+          "exact_excerpt": "await waitRevisionAbove(atelierPid, mezzBefore.revision);\nconst mezzAfter = await wallsOn(atelierPid, \"mezz\");\ncheck(\"acceptation · mezzanine (plan) : un mur dessiné → enregistré sur le serveur (murs +1, révision avancée)\", mezzAfter.walls === mezzBefore.walls + 1 && mezzAfter.revision > mezzBefore.revision, `${mezzBefore.walls} → ${mezzAfter.walls}, révision ${mezzBefore.revision} → ${mezzAfter.revision} · ${await page.locator(\".atelier-n-etat\").textContent()}`);\nawait page.locator('.barre-mode button:has-text(\"3D\")').click();\nfor (const presentation of [\"Niveau actif\", \"Éclaté\"]) {\n  const n0 = await rendus3D();\n  await page.locator('.vue3d-commandes select[aria-label=\"Présentation\"]').selectOption({ label: presentation });\n  await apresRendu(n0);\n}\ncheck(\"acceptation · mezzanine relue en 3D (niveau actif) puis en vue éclatée : images non vides, aucune erreur JavaScript\", (await page.evaluate(() => window.fadiMesures3D.triangles)) > 0 && consoleErrors.length === errorsBeforeAcceptance);\nawait page.locator('.vue3d-commandes select[aria-label=\"Présentation\"]').selectOption({ label: \"Bâtiment\" });\nawait allerEnPlan(page);\n// Hauteur du mur dessiné (encore sélectionné) : 2,40 m dans l'inspecteur, persistée.\nconst heightField = page.locator('.inspecteur input[id$=\"-hauteur\"]');\nlet heightChanged = false;\nif (await heightField.count()) {\n  await heightField.fill(\"2,4\");\n  await heightField.press(\"Enter\");\n  await waitRevisionAbove(atelierPid, mezzAfter.revision);\n  const afterHeight = await wallsOn(atelierPid, \"mezz\");\n  heightChanged = afterHeight.heights.some((h) => Math.abs(Number(h) - 2.4) < 1e-6) && afterHeight.revision > mezzAfter.revision;\n}\ncheck(\"acceptation · hauteur du mur (2,40 m, inspecteur) : appliquée et persistée (révision avancée)\", heightChanged, `inspecteur « ${await page.locator(\".inspecteur h3\").first().textContent().catch(() => \"-\")} »`);\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"u\");\nawait page.waitForTimeout(300);\ncheck(\"acceptation · Pousser / tirer : outil activé en vue 3D, aide affichée\", (await page.locator('.barre-mode button[aria-pressed=\"true\"]').textContent()) === \"3D\" && /cliquez un mur, un poteau, un solide, une dalle ou une toiture et glissez/.test(await page.locator(\".atelier-n-etat\").textContent()));\nawait allerEnPlan(page);\n// Annuler / rétablir persistés sur la mezzanine (la hauteur), puis relecture sur un autre appareil à la même révision.\nconst beforeUndoMezz = await wallsOn(atelierPid, \"mezz\");\nawait raccourci(\"Control+z\");\nawait waitRevisionAbove(atelierPid, beforeUndoMezz.revision);\nconst afterUndoMezz = await wallsOn(atelierPid, \"mezz\");\nawait raccourci(\"Control+Shift+z\");\nawait waitRevisionAbove(atelierPid, afterUndoMezz.revision);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-121",
+      "ordinal": 2,
+      "expected": "BilanHarmonieàrecalculer aprèscemur",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Scénarioassertbil anperime aprèsréférencesdirectionnelles, pasconséquencecommande mur ; revueactualiséeautrecontexte.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/parcours-scenario.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9684822bfc974548b400bed06e9a9ecd5cb34fd95de648e7b3e3d6ef48ef6863",
+          "lines": [
+            1084,
+            1090
+          ],
+          "exact_excerpt": "check(\"documents (référence) : 55 documents productibles (synthèse, 21 rapports d'étape, bilan, 6 plans, tableau des surfaces, programme, fiches, dossier complet de l'exemple, archive ; et les 19 tableaux et quantités de l'Atelier, le schéma P&ID, la maquette IFC) ; synthèse, archive et dossier complet produits par le scénario, à jour\", referenceCatalogueResponse.ok() && referenceCatalogueRendered && referenceDocumentState.rows === 55 && referenceDocumentState.atelierTables === 18 && referenceDocumentState.ifc === 1 && /55 documents productibles/.test(referenceDocumentState.summary) && referenceDocumentState.dossier === 1 && referenceDocumentState.fiches === 1 && referenceDocumentState.archive === \"a-jour\" && referenceDocumentState.dossierFreshness === \"a-jour\" && referenceDocumentState.synthese === \"a-jour\", JSON.stringify({ ui: referenceDocumentState, server: { status: referenceCatalogueResponse.status(), rendered: referenceCatalogueRendered, readAt: referenceCatalogue.computedAt, rows: referenceCatalogueRows.length, productions: referenceProductionEvidence } }));\n// Les productions du scénario (rapport de l'étape 02, synthèse, archive, bilan puis références directionnelles) ont eu lieu sur la variante : son catalogue (47 documents, sans les fiches de la référence) les reconnaît.\nawait page.goto(`${variantUrl}?module=documents`);\nawait page.waitForSelector(\".documents-table tbody tr\", { timeout: 30000 });\ncheck(\"documents (variante) : 54 documents productibles — pas de fiches de l'exemple résolu hors référence, dossier complet présent\", (await page.locator(\".documents-table tbody tr\").count()) === 54 && (await page.locator('tr[data-document=\"fiches-espaces-csv\"]').count()) === 0 && (await page.locator('tr[data-document=\"dossier-exemple\"]').count()) === 1);\nconst variantFreshness = { etape02: await docFreshness(\"harmonie-etape-02\"), synthese: await docFreshness(\"harmonie-synthese\"), archive: await docFreshness(\"archive-projet\"), bilan: await docFreshness(\"bilan-batiment\"), surfaces: await docFreshness(\"tableau-surfaces\") };\ncheck(\"documents (variante) : productions antérieures reconnues — rapport de l'étape 02 à jour ; bilan périmé (références directionnelles enregistrées après sa production) ; synthèse, archive et tableau jamais produits ici\", variantFreshness.etape02 === \"a-jour\" && variantFreshness.synthese === \"aucune\" && variantFreshness.archive === \"aucune\" && variantFreshness.bilan === \"perime\" && variantFreshness.surfaces === \"aucune\", JSON.stringify(variantFreshness));",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-121",
+      "ordinal": 3,
+      "expected": "GET/problemes listeentréeattendue",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Rechercheexacteproblemes surcandidat1755lignes sansoccurrence ; aucunendpoint/assertionproblèmeattendu.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-121",
+      "ordinal": 4,
+      "expected": "Rechargerhorsligne instantanémodèlelisible",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Serviceworker puissetOffline/reloadétape2 etnavigationAtelierassert6niveaux/plan>10/horsligne ; cibleexampleUrl référence, différente atelierUrlcopietravail modifiée. Paségalitéinstantanécomplet ni modifmurprécise.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/parcours-scenario.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9684822bfc974548b400bed06e9a9ecd5cb34fd95de648e7b3e3d6ef48ef6863",
+          "lines": [
+            1183,
+            1195
+          ],
+          "exact_excerpt": "// Rechargement complet hors-ligne : l'enveloppe (service worker) sert l'application, le cache persistant (IndexedDB) relit\n// les étapes déjà lues, l'Atelier s'ouvre depuis le cache local du modèle.\nawait page.goto(`${exampleUrl}?module=parcours&etape=2`);\nawait page.waitForSelector(\".reference-answers\");\nawait page.waitForTimeout(2500); // le cache des requêtes s'écrit avec un délai de regroupement\ncheck(\"hors-ligne : service worker actif et contrôlant la page\", await page.evaluate(async () => !!navigator.serviceWorker.controller && !!(await navigator.serviceWorker.getRegistration())?.active));\nawait ctx.setOffline(true);\nawait page.reload();\nawait page.waitForSelector(\".reference-answers\", { timeout: 20000 });\ncheck(\"rechargement hors-ligne : l'étape 02 se relit depuis le cache persistant, bandeau « Lecture hors-ligne : données lues le … »\", (await page.locator(\".step-detail-title\").textContent()) === \"Réglementation & constructibilité\" && /^Lecture hors-ligne : données lues le/.test(await page.locator(\".offline-banner\").textContent()) && /^Hors-ligne/.test(await page.locator(\".sync-indicator\").textContent()));\nawait page.locator('.module-nav button:has-text(\"Atelier architectural\")').click();\nawait page.waitForSelector(\".atelier-n .plan2d [data-objet]\", { timeout: 30000 }).catch(() => {});\ncheck(\"rechargement hors-ligne : l'Atelier s'ouvre depuis le cache local du modèle, 6 niveaux, plan dessiné\", (await page.locator(\".nav-niveaux li\").count()) === 6 && (await page.locator(\".atelier-n .plan2d [data-objet]\").count()) > 10 && /^Hors-ligne/.test(await page.locator(\".barre-sync\").textContent()), await page.locator(\".barre-sync\").textContent().catch(() => \"absent\"));",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-121",
+      "ordinal": 5,
+      "expected": "Secondbrowsermêmerévision/objets",
+      "A4_status": "présent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "présent",
+      "A5_reason": "Correction explicite omission lectureinitialeA5 : parcours565–576 deuxièmePage atelierUrl, r4/JSONobjets/6niveaux assertés ; standalone présent, aucune chaîne causale Harmonie/problemes/offline acquise.",
+      "source_reason_reviewed": "Secondappareilcopietravailr4 compareJSONobjets et6niveaux explicites ; présentstandalone, ne prouvepasHarmonie/problemes/offlinechaînés.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/parcours-scenario.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9684822bfc974548b400bed06e9a9ecd5cb34fd95de648e7b3e3d6ef48ef6863",
+          "lines": [
+            565,
+            576
+          ],
+          "exact_excerpt": "const ctxDevice2 = await browser.newContext({ viewport: { width: 1280, height: 900 } });\nconst device2 = await ctxDevice2.newPage();\nawait device2.goto(`${BASE}/connexion`);\nawait device2.fill('input[name=\"email\"]', email);\nawait device2.fill('input[name=\"password\"]', \"scenario-pass-123\");\nawait device2.click('button[type=\"submit\"]');\nawait device2.waitForURL(/\\/(projets|accueil)/);\nawait device2.goto(`${atelierUrl}?module=atelier`);\nawait atelierPret(device2);\nconst device2Model = await (await device2.request.get(`${BASE}/projects/${atelierPid}/atelier/model`)).json();\nconst device1Model = await modelOf(atelierPid);\ncheck(\"second appareil : le modèle est relu à la même révision (objets identiques), 6 niveaux affichés\", device2Model.revision === 4 && JSON.stringify(device2Model.modele.objets) === JSON.stringify(device1Model.modele.objets) && (await device2.locator(\".nav-niveaux li\").count()) === 6 && /Enregistré · r4/.test(await device2.locator(\".barre-sync\").textContent()), JSON.stringify({ rev: device2Model.revision, barre: await device2.locator(\".barre-sync\").textContent() }));",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-121",
+      "ordinal": 6,
+      "expected": "Réseaurejeu etconflits complémentairesdu candidat",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Mur local puis+1serveur/filevide, réponseconflitmur supprimé/actionGarderserveur présents ; autresactes/objetsetaucunordredeplusieurslotsasserté.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/parcours-scenario.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9684822bfc974548b400bed06e9a9ecd5cb34fd95de648e7b3e3d6ef48ef6863",
+          "lines": [
+            1135,
+            1169
+          ],
+          "exact_excerpt": "const wallsBeforeOffline = await rdcWallsOf(atelierPid);\nawait ctx.setOffline(true);\nawait page.waitForFunction(() => /Hors-ligne/.test(document.querySelector(\".sync-indicator\")?.textContent || \"\"), null, { timeout: 5000 }).catch(() => {});\ncheck(\"hors-ligne : l'en-tête du projet passe « Hors-ligne »\", /^Hors-ligne/.test(await page.locator(\".sync-indicator\").textContent()));\nawait drawWall(0.45);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.dataset.etat === \"hors-ligne\" && /1 modification\\(s\\) enregistrée\\(s\\) localement/.test(document.querySelector(\".barre-sync\").textContent), null, { timeout: 10000 }).catch(() => {});\nconst fileHorsLigne = await lotsLocaux();\ncheck(\"hors-ligne : mur enregistré localement dans l’Atelier et IndexedDB, en-tête « Hors-ligne · 1 modification(s) en attente »\", /Hors-ligne · 1 modification\\(s\\) enregistrée\\(s\\) localement/.test(await page.locator(\".barre-sync\").textContent()) && fileHorsLigne.some((l) => /^Mur 2,00 m · local$/.test(l)) && (await page.locator('.sync-indicator[data-pending=\"1\"]').textContent()).trim() === \"Hors-ligne · 1 modification(s) en attente\", JSON.stringify(fileHorsLigne));\nawait ctx.setOffline(false);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.dataset.etat === \"enregistre\", null, { timeout: 20000 }).catch(() => {});\nawait waitRevisionAbove(atelierPid, wallsBeforeOffline.revision);\nconst wallsAfterOnline = await rdcWallsOf(atelierPid);\nawait page.waitForFunction(() => document.querySelector('.sync-indicator[data-pending=\"0\"]')?.textContent?.trim() === \"Aucune écriture en attente sur cet appareil\", null, { timeout: 15000 }).catch(() => {});\ncheck(\"retour du réseau : synchronisation automatique → « Enregistré », +1 mur et +1 révision sur le serveur, file vide\", wallsAfterOnline.walls === wallsBeforeOffline.walls + 1 && wallsAfterOnline.revision === wallsBeforeOffline.revision + 1 && (await page.locator('.sync-indicator[data-pending=\"0\"]').textContent()).trim() === \"Aucune écriture en attente sur cet appareil\" && (await lotsLocaux()).length === 0, JSON.stringify({ wallsBeforeOffline, wallsAfterOnline }));\n// Conflit du modèle : hors ligne, la hauteur d'un mur est modifiée ; pendant la coupure, un autre appareil supprime ce mur. Au retour, le\n// lot ne s'applique plus sur la version du serveur : il reste « conflit » sur l'appareil, listé dans le bandeau, jamais fusionné.\nconst modeleAvantConflit = await modelOf(atelierPid);\nconst murConflit = Object.values(modeleAvantConflit.modele.objets).filter((o) => o.classe === \"mur\" && o.niveauId === \"rdc\" && o.id.startsWith(\"mur-\")).map((o) => o.id).sort().pop();\nawait page.locator(`.nav-objets button[data-objet=\"${murConflit}\"]`).click();\nawait ctx.setOffline(true);\nawait page.locator('.inspecteur input[id$=\"-hauteur\"]').fill(\"2,7\");\nawait page.locator('.inspecteur input[id$=\"-hauteur\"]').press(\"Enter\");\nawait page.waitForTimeout(400);\nconst autreAppareil = await page.request.post(`${BASE}/projects/${atelierPid}/atelier/commands`, { data: { requestId: `autre-appareil-${Date.now()}`, baseRevision: modeleAvantConflit.revision, contract: \"atelier-commands/1\", label: \"Suppression par un autre appareil\", commands: [{ type: \"objet.supprimer\", params: { id: murConflit, avecHeberges: true } }] } });\ncheck(\"autre appareil : suppression du même mur pendant la coupure (200)\", autreAppareil.status() === 200, String(autreAppareil.status()));\nawait ctx.setOffline(false);\nawait page.waitForSelector('.conflict-banner li[data-kind=\"modele\"]', { timeout: 20000 });\nconst modelConflictText = (await page.locator('.conflict-banner li[data-kind=\"modele\"]').textContent()).replace(/\\s+/g, \" \");\ncheck(\"retour du réseau : le lot ne s'applique plus → conflit du modèle listé (« Atelier · Mur : Hauteur … ne s’applique plus »), compté dans l'en-tête et dans l'Atelier\", /Atelier · Mur : Hauteur/.test(modelConflictText) && /ne s’applique plus sur la version du serveur/.test(modelConflictText) && /1 conflit\\(s\\) à examiner/.test(await page.locator(\".sync-indicator\").textContent()) && /1 lot\\(s\\) à traiter/.test(await page.locator(\".barre-sync\").textContent()), modelConflictText.slice(0, 200));\nawait page.locator('.conflict-banner li[data-kind=\"modele\"] button:has-text(\"Garder le serveur\")').click();\nawait page.waitForFunction(() => !document.querySelector(\".conflict-banner\") && document.querySelector('.sync-indicator[data-pending=\"0\"]')?.textContent?.trim() === \"Aucune écriture en attente sur cet appareil\", null, { timeout: 20000 }).catch(() => {});\n// La file IndexedDB se vide de façon asynchrone après l'abandon du lot : attendre qu'elle le soit.\nfor (let k = 0; k < 40 && (await lotsLocaux()).length; k++) await page.waitForTimeout(250);\nconst apresConflit = await modelOf(atelierPid);\ncheck(\"« Garder le serveur » : le lot est abandonné, le mur supprimé par l'autre appareil reste supprimé, en-tête sans écriture en attente sur cet appareil, file vide\", !apresConflit.modele.objets[murConflit] && !(await page.locator(\".conflict-banner\").count()) && (await page.locator('.sync-indicator[data-pending=\"0\"]').textContent()).trim() === \"Aucune écriture en attente sur cet appareil\" && (await lotsLocaux()).length === 0, await page.locator(\".sync-indicator\").textContent());",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-121",
+      "ordinal": 7,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord. Lecture indépendante A5 de58atomes, grain distinct des73clausesA4.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-125",
+      "ordinal": 1,
+      "expected": "ReprendrecopieP118 versprojetvide sanssite/hypothèses",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "A5 isolait égalitécompteprésente ; clauseA4 inclut sélectionexacte/rapportnominatif donc partielle. Provenance seule ne prouve aucunremapping ; undoabsent etniveauRezpréexistant àconserver.",
+      "source_reason_reviewed": "Projetcible crééavecniveauRez déjàprésent etrévision1 avantreprise ; sourceP118copie, parcellenullassertée, hypothèses/sources/structure noncomparées.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+          "lines": [
+            110,
+            112
+          ],
+          "exact_excerpt": "const pid = (await api(\"post\", `/projects/${reference}/copies`, { name: \"P.118 · compléments\" })).body.id;\nconst voisin = (await api(\"post\", `/projects/${reference}/copies`, { name: \"P.118 · voisin\" })).body.id;\n",
+          "level": "E2E assertions lues, non exécutées"
+        },
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+          "lines": [
+            190,
+            205
+          ],
+          "exact_excerpt": "// 3. Réutilisation d'une partie d'un autre modèle (dans un projet vide).\nconst cible = (await api(\"post\", \"/projects\", { code: \"P.200\", name: \"Projet repris\" })).body.id;\ncheck(\"projet cible : un niveau « Rez »\", (await lot(cible, `n-${Date.now()}`, 0, [{ type: \"niveau.creer\", params: { id: \"rez\", nom: \"Rez\", elevation: 0, hauteur: 3 } }])).status === 200);\nawait ouvrir(cible, false);\nawait page.locator(\"details.reprise summary\").click();\nawait page.locator('[data-reprise=\"source\"]').selectOption(pid);\nawait page.locator('details.reprise button:has-text(\"Aperçu\")').click();\nawait page.waitForSelector(\"[data-reprise-apercu]\", { timeout: 30000 }).catch(() => {});\nconst nApercu = Number((await page.locator(\"[data-reprise-apercu]\").getAttribute(\"data-reprise-apercu\").catch(() => \"0\")) ?? 0);\ncheck(\"aperçu de reprise : objets comptés, rien écrit\", nApercu > 0 && (await modele(cible)).revision === 1, `${nApercu} objet(s)`);\nawait axe(\"réutilisation de modèle\", \"details.reprise\");\nawait page.locator('details.reprise button:has-text(\"Reprendre\")').click();\nawait page.waitForFunction(() => /Reprise effectuée/.test(document.querySelector(\"details.reprise\")?.textContent ?? \"\"), null, { timeout: 60000 }).catch(() => {});\nconst repris = await modele(cible);\nconst objetsRepris = Object.values(repris.modele.objets);\ncheck(\"reprise : une révision, objets nouveaux avec leur provenance, aucune donnée de site reprise\", repris.revision === 2 && objetsRepris.length === nApercu && objetsRepris.every((o) => o.proprietes[\"reprise:origine\"]?.provenance === \"import\") && repris.modele.site.parcelle === null, `${objetsRepris.length} objet(s), r${repris.revision}`);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-125",
+      "ordinal": 2,
+      "expected": "Effectifsrapportégauxsélection",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "A5 isolait égalitécompteprésente ; clauseA4 inclut sélectionexacte/rapportnominatif donc partielle. Provenance seule ne prouve aucunremapping ; undoabsent etniveauRezpréexistant àconserver.",
+      "source_reason_reviewed": "nApercu>0 et objetsRepris.length===nApercu ; pasrapportnominatifparclasse ni comparaisonlasélectionexacte.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+          "lines": [
+            195,
+            205
+          ],
+          "exact_excerpt": "await page.locator('[data-reprise=\"source\"]').selectOption(pid);\nawait page.locator('details.reprise button:has-text(\"Aperçu\")').click();\nawait page.waitForSelector(\"[data-reprise-apercu]\", { timeout: 30000 }).catch(() => {});\nconst nApercu = Number((await page.locator(\"[data-reprise-apercu]\").getAttribute(\"data-reprise-apercu\").catch(() => \"0\")) ?? 0);\ncheck(\"aperçu de reprise : objets comptés, rien écrit\", nApercu > 0 && (await modele(cible)).revision === 1, `${nApercu} objet(s)`);\nawait axe(\"réutilisation de modèle\", \"details.reprise\");\nawait page.locator('details.reprise button:has-text(\"Reprendre\")').click();\nawait page.waitForFunction(() => /Reprise effectuée/.test(document.querySelector(\"details.reprise\")?.textContent ?? \"\"), null, { timeout: 60000 }).catch(() => {});\nconst repris = await modele(cible);\nconst objetsRepris = Object.values(repris.modele.objets);\ncheck(\"reprise : une révision, objets nouveaux avec leur provenance, aucune donnée de site reprise\", repris.revision === 2 && objetsRepris.length === nApercu && objetsRepris.every((o) => o.proprietes[\"reprise:origine\"]?.provenance === \"import\") && repris.modele.site.parcelle === null, `${objetsRepris.length} objet(s), r${repris.revision}`);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-125",
+      "ordinal": 3,
+      "expected": "Référencesremappées etidentitésnouvelles",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "A5 isolait égalitécompteprésente ; clauseA4 inclut sélectionexacte/rapportnominatif donc partielle. Provenance seule ne prouve aucunremapping ; undoabsent etniveauRezpréexistant àconserver.",
+      "source_reason_reviewed": "Provenanceimport vérifiéechaqueobjet, libellécheck annonceobjetsnouveauxmais aucuneassertion remappinghôte/niveaux/cotes/zon es niIDs distincts.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+          "lines": [
+            201,
+            205
+          ],
+          "exact_excerpt": "await page.locator('details.reprise button:has-text(\"Reprendre\")').click();\nawait page.waitForFunction(() => /Reprise effectuée/.test(document.querySelector(\"details.reprise\")?.textContent ?? \"\"), null, { timeout: 60000 }).catch(() => {});\nconst repris = await modele(cible);\nconst objetsRepris = Object.values(repris.modele.objets);\ncheck(\"reprise : une révision, objets nouveaux avec leur provenance, aucune donnée de site reprise\", repris.revision === 2 && objetsRepris.length === nApercu && objetsRepris.every((o) => o.proprietes[\"reprise:origine\"]?.provenance === \"import\") && repris.modele.site.parcelle === null, `${objetsRepris.length} objet(s), r${repris.revision}`);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-125",
+      "ordinal": 4,
+      "expected": "AucunevaleurP118 présentéecommedéfaut",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "A5 isolait égalitécompteprésente ; clauseA4 inclut sélectionexacte/rapportnominatif donc partielle. Provenance seule ne prouve aucunremapping ; undoabsent etniveauRezpréexistant àconserver.",
+      "source_reason_reviewed": "Parcelleciblenull etprovenanceimport ; aucuncontrôleUItypedéfaut/normes/hypothèses/pasvaleurspréremplies.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-125",
+      "ordinal": 5,
+      "expected": "Annuler : projetciblevide",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "A5 isolait égalitécompteprésente ; clauseA4 inclut sélectionexacte/rapportnominatif donc partielle. Provenance seule ne prouve aucunremapping ; undoabsent etniveauRezpréexistant àconserver.",
+      "source_reason_reviewed": "Pasundoaprèsreprise ; ciblepossèdedéjàniveauRez, étatvideàdéfinirexactement plutôtquesupposer suppressionniveaupréexistant.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+          "lines": [
+            190,
+            215
+          ],
+          "exact_excerpt": "// 3. Réutilisation d'une partie d'un autre modèle (dans un projet vide).\nconst cible = (await api(\"post\", \"/projects\", { code: \"P.200\", name: \"Projet repris\" })).body.id;\ncheck(\"projet cible : un niveau « Rez »\", (await lot(cible, `n-${Date.now()}`, 0, [{ type: \"niveau.creer\", params: { id: \"rez\", nom: \"Rez\", elevation: 0, hauteur: 3 } }])).status === 200);\nawait ouvrir(cible, false);\nawait page.locator(\"details.reprise summary\").click();\nawait page.locator('[data-reprise=\"source\"]').selectOption(pid);\nawait page.locator('details.reprise button:has-text(\"Aperçu\")').click();\nawait page.waitForSelector(\"[data-reprise-apercu]\", { timeout: 30000 }).catch(() => {});\nconst nApercu = Number((await page.locator(\"[data-reprise-apercu]\").getAttribute(\"data-reprise-apercu\").catch(() => \"0\")) ?? 0);\ncheck(\"aperçu de reprise : objets comptés, rien écrit\", nApercu > 0 && (await modele(cible)).revision === 1, `${nApercu} objet(s)`);\nawait axe(\"réutilisation de modèle\", \"details.reprise\");\nawait page.locator('details.reprise button:has-text(\"Reprendre\")').click();\nawait page.waitForFunction(() => /Reprise effectuée/.test(document.querySelector(\"details.reprise\")?.textContent ?? \"\"), null, { timeout: 60000 }).catch(() => {});\nconst repris = await modele(cible);\nconst objetsRepris = Object.values(repris.modele.objets);\ncheck(\"reprise : une révision, objets nouveaux avec leur provenance, aucune donnée de site reprise\", repris.revision === 2 && objetsRepris.length === nApercu && objetsRepris.every((o) => o.proprietes[\"reprise:origine\"]?.provenance === \"import\") && repris.modele.site.parcelle === null, `${objetsRepris.length} objet(s), r${repris.revision}`);\nawait page.waitForSelector(\".plan2d .plan-objets [data-objet]\", { timeout: 15000 }).catch(() => {});\ncheck(\"reprise : les objets repris sont dessinés\", (await page.locator(\".plan2d .plan-objets [data-objet]\").count()) > 0);\nawait page.screenshot({ path: `${OUT}/10-reprise.png` });\n// Bibliothèque partagée (D-031) : la famille « définitions » propose le filtre par bibliothèque, l'aperçu compte les définitions.\nawait page.locator('[data-famille=\"architecture\"]').uncheck().catch(() => {});\nawait page.locator('[data-famille=\"definitions\"]').check();\nconst champBib = await page.locator('[data-reprise=\"bibliotheque\"]').isVisible().catch(() => false);\nawait page.locator('details.reprise button:has-text(\"Aperçu\")').click();\nawait page.waitForFunction(() => /définition\\(s\\)/.test(document.querySelector(\"[data-reprise-apercu]\")?.textContent ?? \"\"), null, { timeout: 30000 }).catch(() => {});\ncheck(\"bibliothèque de définitions : filtre proposé, aperçu sans écriture\", champBib && /définition\\(s\\)/.test((await page.locator(\"[data-reprise-apercu]\").textContent().catch(() => \"\")) ?? \"\") && (await modele(cible)).revision === 2);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-125",
+      "ordinal": 6,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "A5 isolait égalitécompteprésente ; clauseA4 inclut sélectionexacte/rapportnominatif donc partielle. Provenance seule ne prouve aucunremapping ; undoabsent etniveauRezpréexistant àconserver.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    }
+  ],
+  "grain_note": "Grains différents : originalA5 sépare créationspositives/cibles/gestes, A4 groupecycles etajoute contextesnonconclus. Aucune somme/équivalence/couverture calculée depuis ces compteurs. Touspartiels ne valent pas prédicatciblé.",
+  "full_equivalences": 0,
+  "execution": "LectureGit/source et générationJSONdocumentaire seulement, aucun test/app/browser/API/DB/service/réseau",
+  "historical": "Fiches entières et Suivi lus, D174/limites/décisions conservés. Aucun changement historique/case/gate/registre."
+}

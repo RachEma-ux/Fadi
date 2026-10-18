@@ -1,0 +1,1968 @@
+{
+  "review": "M08-UNITE-094-124-REVUE-A1",
+  "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "portee": "Lecture indépendante documentaire ; aucune exécution moteur/test/API/DB ni changement registre.",
+  "independent_freeze_sha256": "805ab813ce169ecfed269d6c40b45943812dca3a0874d7e2fe35744ffbc5cebc",
+  "cohort_A2_sha256": "d3041cc2dd3ae7c48a82ce1d46608204b9f2505dcdae26eeac9755fa8c083c5f",
+  "methodologie": "13 fiches complètes lues, reprise.test nouveau lu intégralement ; trois autres candidats identiques par empreinte à lecture intégrale cohorte041 réutilisée. Aucun verdict détaillé A2 094 lu avant cette fixation. Métadonnées et comptes reçus A2 seulement. Mapping original consulté pour identifier sources/candidats. Aucun moteur/test/API/DB exécuté.",
+  "verdict": "Recevable documentaire après annexe de résolution ciblée A2 ; original conservé et comptes ajustés13/28/94.",
+  "controle": {
+    "ids": 13,
+    "attendus": 135,
+    "comptes_recalcules": {
+      "partiel": 26,
+      "present": 14,
+      "absent": 95
+    },
+    "comptes_A2_identiques": true,
+    "citations_verifiees": 585,
+    "ecarts_citation": 0
+  },
+  "reserves": [
+    {
+      "id": "A1-094-INVERSE",
+      "expected": "Inverse restituevaleurs",
+      "A2": "absent",
+      "proposition": "partiel",
+      "motif": "Lot inverse générique comporte explicitement ouverture.poser porte-k-2 ; égalité JSON état entier atteste inverse du lot composite incluant la pose. Aucun inverse après scission/raccourcissement ni référence porte. Ne pas dire aucun inverse pose.",
+      "resolution": "Acceptée dans annexe A2 ; aucune réécriture original."
+    },
+    {
+      "id": "A1-124-SITE",
+      "expected": "Sitesanschoix nonrepris",
+      "A2": "present",
+      "proposition": "partiel",
+      "motif": "Seule parcelle null assertée ; fiche site inclut parcelle et emprise. Présent pour parcelle uniquement, pas garantie globale site.",
+      "resolution": "Acceptée dans annexe A2 ; aucune réécriture original."
+    }
+  ],
+  "entries": [
+    {
+      "entry_id": "M08-PATH-094",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-07-02.md",
+        "source_line": 21,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/ouverture.test.ts`, groupe « porte ») : pose (`t` conservé, `distance` dérivée) ; porte suivant un mur déplacé (`t` identique) ; mur scindé : réaffectation, `t` recalculé, position inchangée à la tolérance ; mur raccourci : « à réparer » avec propositions ; repère en double signalé ; inverse restitue valeurs et références. |"
+      },
+      "note_independante_figee": "Porte après déplacement centre/t assertés ; scission hôte nouveau/t=0.5/centre=1 assertés. Pose centre mais pas distance dérivée ni t après pose explicitement ; raccourcissement référencesAReparer id porte sans propositions de réparation porte. Repère double absent. Inverse lot création inclut porte mais pas référence attachée à porte.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Poseporte tconservé",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Poseporte0.5 donnecentre(2,0), pasassertionpositiont au momentpose ; t0.25 testé aprèsdéplacement autreporte.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 48,
+              "exact_line": "    expect(pointCaracteristique(r.etat, porte.id, \"centre\")).toEqual(pt(2, 0));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Distanceporte dérivée",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pointcentre dérivé vérifié, pas distancehôteassertée.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 48,
+              "exact_line": "    expect(pointCaracteristique(r.etat, porte.id, \"centre\")).toEqual(pt(2, 0));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Portesuitmurdéplacé tidentique",
+          "classification_A2": "present",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Position0.25 inchangée aprèstranslationmur.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 115,
+              "exact_line": "    expect((r.etat.objets[\"porte-o-1\"] as Occurrence<\"porte\">).params.position).toBe(0.25);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Mur scindé portehôteréaffecté",
+          "classification_A2": "present",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Portehôte mur-s-1 explicitementasserté.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 68,
+              "exact_line": "    expect(porte.params.murHoteId).toBe(\"mur-s-1\");",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Mur scindé porte t recalculé",
+          "classification_A2": "present",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Porteposition0.5 aprèsscission.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 69,
+              "exact_line": "    expect(porte.params.position).toBeCloseTo(0.5, 12);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Mur scindé positionporte inchangée",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Centreaprès(1,0) comparéattendu, pas comparaisonexpliciteavant/après.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 72,
+              "exact_line": "    expect(pointCaracteristique(r.etat, \"porte-o-1\", \"centre\")).toEqual(pt(1, 0));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 155,
+              "exact_line": "    expect(pointCaracteristique(r.etat, \"porte-o-1\", \"centre\")).toEqual(pt(1, 0));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Mur raccourci porteàréparer",
+          "classification_A2": "present",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Étirementmurcourt referencesAReparer contientporte non supprimée.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 158,
+              "exact_line": "    expect(r2.effets.referencesAReparer).toEqual([\"porte-o-1\"]);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 159,
+              "exact_line": "    expect(r2.etat.objets[\"porte-o-1\"]).toBeDefined();",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Propositions pourporte horsmur",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 9,
+          "attendu_A2": "Repèredouble signalé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 10,
+          "attendu_A2": "Inverse restituevaleurs",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inverseautrelotcréation n’est pas inversesdepose/scission/raccourcissement ciblés.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente.",
+          "classification_active_apres_delta": "partiel",
+          "justification_active": "Lot composite création mur/porte/niveau inclut explicitement pose de porte ; égalité JSON après inverse prouve cette pose composite. Pas inverse de modification/scission ni références de porte ciblées."
+        },
+        {
+          "rang_A2": 11,
+          "attendu_A2": "Inverse restitueréférences",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inverseautrelotcréation n’est pas inversesdepose/scission/raccourcissement ciblés.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-096",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-07-03.md",
+        "source_line": 21,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/ouverture.test.ts`, groupe « fenêtre ») : pose (`t` conservé, `distance` dérivée) ; allège + hauteur au-delà d'un mur de hauteur évaluée refusé, mur de hauteur « non évaluée » : contrôle « non évalué » ; allège absente : « non évaluée », rien déduit ; mur scindé : réaffectation, `t` recalculé ; mur raccourci : « à réparer » ; inverse restitue valeurs et références. |"
+      },
+      "note_independante_figee": "Scission fenêtre hôte et t=0.5 directement assertés. Pas pose t/distance, contrôles verticaux allège+hauteur/absente ni raccourci fenêtre. Inverse générique porte non transférable fenêtre.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Posefenêtre tconservé",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Fenêtreposefixturet0.75 puisscission t0.5 ; pasassertion poseinitiale.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 57,
+              "exact_line": "      { type: \"ouverture.poser\", params: { classe: \"fenetre\", murHoteId: \"mur-w-1\", position: 0.75, largeur: m(1), hauteur: m(1.2), allege: m(0.9) } },",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 71,
+              "exact_line": "    expect(fenetre.params.position).toBeCloseTo(0.5, 12);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Distancefenêtre dérivée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Allège+hauteur horsmurévalué refusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Murhauteurnonévaluée contrôle nonévalué",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Allègeabsente nonévaluée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Aucuneallège déduite",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Scissionfenêtre réaffectée",
+          "classification_A2": "present",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Hôtefenêtre mur-s-2 aprèsdivision.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 70,
+              "exact_line": "    expect(fenetre.params.murHoteId).toBe(\"mur-s-2\");",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Scissionfenêtre t recalculé",
+          "classification_A2": "present",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Positionfenêtre0.5 assertée aprèsdivision.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 71,
+              "exact_line": "    expect(fenetre.params.position).toBeCloseTo(0.5, 12);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 9,
+          "attendu_A2": "Murraccourci fenêtreàréparer",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 10,
+          "attendu_A2": "Inversefenêtre valeurs",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inversegénérique autrelot pas fenêtre/références ciblées.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 11,
+          "attendu_A2": "Inversefenêtre références",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inversegénérique autrelot pas fenêtre/références ciblées.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-098",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-07-04.md",
+        "source_line": 21,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/ouverture.test.ts`) : pose valide (`t` conservé, `distance` dérivée) ; emprise hors du mur refusée avec la plage admise ; largeur ≤ 0, unité ≠ m, hôte inexistant refusés ; recouvrement refusé ; déplacement le long de l'hôte : dimensions inchangées ; hôte raccourci : « à réparer » avec propositions ; changement de classe : un lot, références à réparer ; inverse restitue valeurs et références bit à bit. |"
+      },
+      "note_independante_figee": "Pose/hôte inexistant/hors mur pour porte : contexte mécanique commun mais pas classe ouverture générique ; pas plage admise assertée ni largeur<=0/unité ouverture/recouvrement. Déplacement mur ≠ déplacement ouverture le long hôte. Pas changement classe ou inverse références baie.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Poseouverture t conservé",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Classeporte de mêmefamille testée, pas baie classeouverture ; pointcentre etpasdistance/tconservationexplicites.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 48,
+              "exact_line": "    expect(pointCaracteristique(r.etat, porte.id, \"centre\")).toEqual(pt(2, 0));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Distanceouverture dérivée",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Classeporte de mêmefamille testée, pas baie classeouverture ; pointcentre etpasdistance/tconservationexplicites.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 48,
+              "exact_line": "    expect(pointCaracteristique(r.etat, porte.id, \"centre\")).toEqual(pt(2, 0));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Emprisehorsmur refusée",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Empriseporte horsemur refusée, pas classeouverturegénérique.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 49,
+              "exact_line": "    expect(() => appliquerLot(etat, lot([{ type: \"ouverture.poser\", params: { classe: \"porte\", murHoteId: \"mur-w-1\", position: 0.05, largeur: m(0.9), hauteur: m(2.1) } }]))).toThrow(/sort du mur/);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Plageadmise dansrefus emprise",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Largeur0 refusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Largeurnégative refusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Unité≠m refusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Hôteinexistant refusé",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Hôteinconnu porte refusé, pas baieclasseouverture.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 50,
+              "exact_line": "    expect(() => appliquerLot(etat, lot([{ type: \"ouverture.poser\", params: { classe: \"porte\", murHoteId: \"inconnu\", position: 0.5, largeur: m(0.9), hauteur: m(2.1) } }]))).toThrow(/introuvable/);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 9,
+          "attendu_A2": "Recouvrement refusé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 10,
+          "attendu_A2": "Déplacementhôte dimensionsinchangées",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 11,
+          "attendu_A2": "Murraccourci ouvertureàréparer",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Porteraccourcie àréparer, pas classeouverturegénérique.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 158,
+              "exact_line": "    expect(r2.effets.referencesAReparer).toEqual([\"porte-o-1\"]);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 12,
+          "attendu_A2": "Propositionsréparation",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 13,
+          "attendu_A2": "Changementclasse unlot",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 14,
+          "attendu_A2": "Changementclasse référencesàréparer",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 15,
+          "attendu_A2": "Inversevaleurs bitàbit",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inverseautrelotcréation sans baie générique ni séquenceciblée.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 16,
+          "attendu_A2": "Inverseréférences bitàbit",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inverseautrelotcréation sans baie générique ni séquenceciblée.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-100",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-07-05.md",
+        "source_line": 20,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/dalle.test.ts`, groupe « plancher ») : quatre murs fermés : un contour proposé (faces extérieures ou axe selon le choix) à la tolérance, modèle inchangé (empreinte identique avant et après la proposition) ; boucle ouverte : aucune proposition, interstice listé ; escalier reliant le niveau au niveau inférieur : trou proposé, un seul par `groupe` ; `dalle.creer` du contour accepté en un lot ; mur déplacé : dalle inchangée et écart listé. |"
+      },
+      "note_independante_figee": "Plancher rive extérieure xmin=-0.1 et usage plancher ; trémie escalier proposée puis une retenue/écartée. Pas empreinte inchangée ni axes complets ni boucle ouverte/interstice ni déduplication groupe ni écart après mur déplacé. Commande émise et contour partiel asserté, pas application complète scénario plancher.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Quatre mursfermés contourproposé",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Clicplancherdansquatre murs génèreunecommande/contour, pascomptepropositionsglobal.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 56,
+              "exact_line": "    expect(r.commandes).toHaveLength(1);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 192,
+              "exact_line": "  const etat = carre(socle());",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 206,
+              "exact_line": "    expect(r.commandes).toHaveLength(1);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 322,
+              "exact_line": "    const etat = carre(socle());",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 328,
+              "exact_line": "    const etat = carre(socle());",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 344,
+              "exact_line": "    expect(r.commandes).toHaveLength(1);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 352,
+              "exact_line": "    const etat = carre(socle());",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 359,
+              "exact_line": "    const etat = carre(socle());",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 465,
+              "exact_line": "  const etat = carre(socle());",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 558,
+              "exact_line": "    const etat = carre(socle());",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 563,
+              "exact_line": "    expect(r.commandes).toHaveLength(1);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 565,
+              "exact_line": "    expect(p.usage).toBe(\"plancher\");",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 574,
+              "exact_line": "    const etat = carre(socle());",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Choixfaceextérieure/axe reflété",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Choixextérieurcommandeargument etminx=-0.1 vérifiés ; pas comparaisonaxe/extérieur.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 565,
+              "exact_line": "    expect(p.usage).toBe(\"plancher\");",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 566,
+              "exact_line": "    expect(Math.min(...p.contour.map((q) => q.x))).toBeCloseTo(-0.1, 9);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Contouràtolérance attendue",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Seulecoordonnéeminx-0.1 tol9, pascontourentier.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 566,
+              "exact_line": "    expect(Math.min(...p.contour.map((q) => q.x))).toBeCloseTo(-0.1, 9);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Modèleinchangé empreinteavant/aprèsproposition",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Boucleouverte aucuneproposition",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Intersticelisté",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Escalierarrivant trouproposé",
+          "classification_A2": "present",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Escalierarrivantr1 donne untrou, sélectionretenue1 ouécartée0.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 71,
+              "exact_line": "    expect(cleTremie(t)).toBe(\"s1\");",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 74,
+              "exact_line": "    expect((avec.commandes[0]!.params as { trous: unknown[] }).trous).toHaveLength(1);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Untroupargroupe",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Unescalier sansgroupemultiplesoccurrences donneuntrou ; pas unicité pargroupe.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 71,
+              "exact_line": "    expect(cleTremie(t)).toBe(\"s1\");",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 9,
+          "attendu_A2": "Dalle.creer contouraccepté unlot",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Commandedalle générée, typusageplancher contourinspecté ; pasapplicationcréationetjournalunlot assertés.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 565,
+              "exact_line": "    expect(p.usage).toBe(\"plancher\");",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 10,
+          "attendu_A2": "Murdéplacé dalleinchangée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 11,
+          "attendu_A2": "Écartdalle listé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-102",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-07-06.md",
+        "source_line": 21,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/dalle.test.ts`) : création ; contour auto-intersecté, trou hors contour, épaisseur ≤ 0, unité ≠ m refusés ; aire d'un rectangle de test (4 m sur 5 m) moins un trou de 1 m sur 1 m = 19 m² à la tolérance (entrées de test sans valeur normative) ; ajout d'un sommet : cotation sur un index suivant « à réparer » avec proposition, déplacement d'un sommet : référence conservée ; inverse restitue l'état. |"
+      },
+      "note_independante_figee": "Dalle créée par clic/terminer, résultat truthy, contour modifié par ajuster/étirer ; pas aire19/trou ni refus ciblés ni références index ni inverse dalle.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Créationdalle",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "OutilDalle retournecommande etapplicationTruthy ; pascontenuobjetdallecréé explicitement.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 290,
+              "exact_line": "    expect(f.commandes[0]?.type).toBe(\"dalle.creer\");",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 291,
+              "exact_line": "    expect(appliquer(etat, f.commandes)).toBeTruthy();",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Contourautosécant refusé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Trouhorscontour refusé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Épaisseur0 refusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Épaisseurnégative refusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Unité≠m refusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Rectangle4×5 trou1×1 aire19",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Ajoutsommet coteindexsuivant àréparer",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 9,
+          "attendu_A2": "Correspondanceindex proposée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 10,
+          "attendu_A2": "Déplacementsommet référenceconservée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 11,
+          "attendu_A2": "Inverseétatdalle",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inversegénérique mur/porte/niveau pas dalle.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-104",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-07-10.md",
+        "source_line": 23,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/escalier.test.ts`) : création avec niveaux de départ et d'arrivée ; niveau absent, inconnu ou identique refusé ; unité ≠ m refusée ; H = 3,00 m et n = 17 (entrées de test sans valeur normative) : hauteur de contremarche = H / n non arrondie, somme des contremarches = H à la tolérance de longueur ; hauteur cible : deux entiers proposés, aucun appliqué ; élévation d'un niveau modifiée : contradiction listée, aucun paramètre de l'escalier modifié ; modification d'une occurrence : autres occurrences du `groupe` listées, non modifiées ; `referencePlanSeulement` conservé après aller-retour ; inverse restitue l'état. |"
+      },
+      "note_independante_figee": "Niveau arrivée r1 et hauteur3 après clic escalier assertés ; création par commandes utilisée dans scale. Pas niveaux absents/inconnus/identiques refusés ni unité spécifique ni H/17 non arrondi ni propositions entiers ni contradictions/occurrences/autres inchangés/roundtrip referencePlanSeulement ni inverse escalier.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Créationescalier niveaudépartetarrivée",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Niveauarrivée et hauteur assertés, applicationTruthy ; niveauDépart non comparé explicitement, donc oracleciblé incomplet.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 312,
+              "exact_line": "    expect(p.niveauArriveeId).toBe(\"r1\");",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 313,
+              "exact_line": "    expect(p.hauteurAFranchir.value).toBe(3);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Niveauabsent refusé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Niveauinconnu refusé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Niveauxidentiques refusés",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Unité≠m refusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "H3n17 hauteurcontremarcheH/n nonarrondie",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "SommecontremarchesH tolérance",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Hauteurcible deuxentiersproposés",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 9,
+          "attendu_A2": "Aucunentierappliqué sanschoix",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 10,
+          "attendu_A2": "Élévationniveau contradictionlistée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 11,
+          "attendu_A2": "Paramètresescalierinchangés aprèselevation",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 12,
+          "attendu_A2": "Modificationoccurrence autresdugroupelistées",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 13,
+          "attendu_A2": "Autresoccurrences nonmodifiées",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 14,
+          "attendu_A2": "ReferencePlanSeulement allerretourconservé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 15,
+          "attendu_A2": "Inverseétatescalier",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inversegénérique autrelot pas escalier.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-106",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-07-15.md",
+        "source_line": 22,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/piece.test.ts`) : détection sur quatre murs fermés : une région, aire calculée à la tolérance, modèle inchangé (empreinte identique avant et après) ; boucle ouverte : aucune région, interstice listé ; deux boucles : deux régions ; `piece.creer` d'une région acceptée ; aire déclarée ≠ calculée : écart listé, aucune valeur remplacée ; candidat recouvrant une pièce existante : « polygone différent », pas de doublon ; mur déplacé : pièce inchangée, désalignement listé ; inverse restitue l'état. |"
+      },
+      "note_independante_figee": "Quatre murs carré clic pièce label16 ; boucles avec refend deux régions aires12 chacune ; création explicite puis existante détectée. Ligne isolée aucune boucle mais pas vraie boucle presque fermée/interstice. Aucune empreinte non-mutation ni écart aire/sans remplacement/désalignement après déplacement ni inverse pièce.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Quatremursfermésonerégion",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Un clic danscarré produitunecommande pièce ; pas assertion de nombre de régionsrenvoyées par détection.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 299,
+              "exact_line": "    expect(r.commandes[0]?.type).toBe(\"piece.creer\");",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 300,
+              "exact_line": "    expect(r.label).toBe(\"Pièce 16,00 m²\");",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Airecalculéeàtolérance",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Label16m2 asserté pourcarré4×4 ; pas comparaison explicite quantitégéométrique de région à tolérancede la fiche.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 300,
+              "exact_line": "    expect(r.label).toBe(\"Pièce 16,00 m²\");",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Empreintemodèleidentique avant/aprèsdétection",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Boucleouverte aucuneregion",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Fonctionboucles segmentseul retourne[] ; pasdetecterPiecesboucleouverte complète.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 240,
+              "exact_line": "    expect(boucles([{ id: \"x\", a: pt(0, 0), b: pt(1, 0) }])).toEqual([]);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Intersticelisté",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Deuxboucles deuxrégions",
+          "classification_A2": "present",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Boucle6×4 avecrefend : deuxpropositionsaires12/12.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 234,
+              "exact_line": "    expect(propositions).toHaveLength(2);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 235,
+              "exact_line": "    expect(propositions.map((p) => p.aire).sort()).toEqual([12, 12]);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Piece.creer régionacceptée",
+          "classification_A2": "present",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Créationdepuisproposition contour ; redétectionpièceexistante1.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 238,
+              "exact_line": "    const r = appliquerLot(etat, lot([{ type: \"piece.creer\", params: { niveauId: \"rdc\", contour: propositions[0]!.contour, nom: \"Bureau\", code: \"B1\" } }], \"pc\"));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 239,
+              "exact_line": "    expect(detecterPieces(r.etat, \"rdc\").filter((p) => p.pieceExistante).length).toBe(1);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Airedéclarée≠calculée écartlisté",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 9,
+          "attendu_A2": "Aucuneairedéclarée remplacée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 10,
+          "attendu_A2": "Candidatpièceexistante polygonedifférent",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pièceexistante reconnue surcontouridentique, pas libellépolygonedifférent.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 304,
+              "exact_line": "    expect(deja.selectionner?.[0]).toMatch(/^piece-/);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 11,
+          "attendu_A2": "Pasdoublonpièceexistante",
+          "classification_A2": "present",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Deuxième clicpiècemêmezone : aucunecommande etsélectionexisting.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 303,
+              "exact_line": "    expect(deja.commandes).toHaveLength(0);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 304,
+              "exact_line": "    expect(deja.selectionner?.[0]).toMatch(/^piece-/);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 12,
+          "attendu_A2": "Murdéplacé pièceinchangée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 13,
+          "attendu_A2": "Désalignementlisté",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 14,
+          "attendu_A2": "Inverseétatpièce",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inversegénérique autrelot pas pièce.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-108",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-07-16.md",
+        "source_line": 20,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/espace.test.ts`) : création ; aire calculée d'un rectangle de test (4 m sur 5 m : 20 m², entrées de test sans valeur normative) à la tolérance ; polygone auto-intersecté refusé ; recouvrement avec une pièce signalé, rien fusionné ; conversion en pièce en un lot, inverse restitue l'espace ; suppression d'un espace membre d'une zone : appartenance retirée, puis restituée par l'inverse. |"
+      },
+      "note_independante_figee": "Aucune création espace dans candidats ; pas aire20/refus croisement/recouvrement/conversion avec inverse/appartenance zone. Pièce ou groupes proches ≠ espace.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Créationespace",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Aire4×5 égale20m2",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Polygoneautosécant refusé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Recouvrementpièce signalé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Aucunefusion recouvrement",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Conversionpièce unlot",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Inverseconversion restitueespace",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inversegénérique d’autresobjets ne prouve pas conversion/espace/zoneappartenance ciblée.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Suppressionespacemembre retireappartenancezone",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 9,
+          "attendu_A2": "Inverse restitueappartenancezone",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inversegénérique d’autresobjets ne prouve pas conversion/espace/zoneappartenance ciblée.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-110",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-07-17.md",
+        "source_line": 20,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/zone.test.ts`) : création avec membres ; membre d'un autre niveau refusé ; inclusion géométrique proposée, rien coché ; suppression d'une pièce membre : appartenance retirée puis restituée par l'inverse ; suppression de la zone : membres intacts ; pièce dans deux zones : recouvrement signalé ; inverse restitue l'état. |"
+      },
+      "note_independante_figee": "Aucune zone dans candidats ; groupe dissous ≠ zone et ne prouve membres intacts de zone. Tous attendus zonage sans assertion ciblée.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Créationzone membres",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Membreautreniveau refusé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Inclusiongéométrique proposée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Riencochépardéfaut",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Suppressionpiècemembre retireappartenance",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Inverse restitueappartenance",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inversegénérique d’autresobjets ne prouve pas conversion/espace/zoneappartenance ciblée.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Suppressionzone membresintacts",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Piècedansdeuxzones recouvrementsignalé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 9,
+          "attendu_A2": "Inverseétatzone",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inversegénérique d’autresobjets ne prouve pas conversion/espace/zoneappartenance ciblée.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-112",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-17-16.md",
+        "source_line": 20,
+        "source_exact_line": "| Validation | **Unité** (fonctions pures de sélection, de filtre et de cadrage, `packages/core-geometry/src/revue.test.ts`, nom provisoire) : rayon résolu en `objetId` (objet le plus proche, égalité départagée de façon déterministe) ; filtre de classe ; objet sans représentation ignoré ; empreinte du modèle identique avant et après navigation et sélection. |"
+      },
+      "note_independante_figee": "Maillage sans hauteur renvoie null directement ; pas sélection rayon/objetId ni filtre classe ni invariant empreinte navigation. Maillages filtrés en tests ne sont pas fonction de filtre vue.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Rayon résoluobjetId plusproche",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Égalité départagéedéterministe",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Filtreclasse",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Objetsansreprésentation ignoré",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Murhauteurnulle sansniveauhaut maillage=null explicitement, maispasraycast quiignoreobjet.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/projection/maillage.test.ts",
+              "line": 74,
+              "exact_line": "    expect(maillageObjet(etat, etat.objets[\"plan\"]!)).toBeNull();",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Empreintemodèleidentique navigation",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Empreintemodèleidentique sélection",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-114",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-18-03.md",
+        "source_line": 20,
+        "source_exact_line": "| Validation | **Unité** (`packages/core-geometry/src/eclate.test.ts`, nom provisoire) : écart 0 → décalages nuls ; 6 niveaux et un écart de test : décalage = rang × écart ; `ordre` incohérent : ordre suivi et signalé ; un niveau : aucun décalage ; empreinte du modèle identique avant et après. |"
+      },
+      "note_independante_figee": "Pas fonction éclaté ni écart/rang/ordre/empreinte dans candidat maillage. Altitudes de murs/niveaux et P118 contexte distinct.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Écart0 décalagesnuls",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Sixniveaux décalagerang×écart",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Ordreincohérent ordresuivi",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Ordreincohérent signalé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Unniveau aucundécalage",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Empreintemodèleidentique",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-116",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-18-04.md",
+        "source_line": 21,
+        "source_exact_line": "| Validation | **Unité** (fonctions pures de filtrage, d'isolation et de localisation des problèmes, `packages/core-geometry/src/vue.test.ts`, nom provisoire) : filtre par niveau, classe et calque ; isolation puis retrait restitue la vue ; problème localisé en `objetId` ; empreinte du modèle identique avant et après. |"
+      },
+      "note_independante_figee": "Pas filtre affichage niveau/classe/calque/isolation/localisation problème ni invariant empreinte dans candidat maillage.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Filtreniveau",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "P118maillagesfiltrés niveau ont>10 ; pasfonctionfiltragevue.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/projection/maillage.test.ts",
+              "line": 100,
+              "exact_line": "    for (const n of Object.keys(modele.niveaux)) expect(tous.filter((x) => x.niveauId === n).length).toBeGreaterThan(10);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Filtreclasse",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Filtrecalque",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Isolationpuisretrait restituevue",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "ProblèmelocaliséobjetId",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Empreintemodèleidentique",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-124",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-21-09.md",
+        "source_line": 19,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/reutilisation.test.ts`, nom provisoire) : reprise d'un modèle minimal : identifiants nouveaux, références remappées, hôtes d'ouvertures corrects ; cible de référence non reprise : « à réparer » ; site, hypothèses, sources et structure non repris sans choix ; origine enregistrée ; inverse supprime exactement ce qui a été ajouté. |"
+      },
+      "note_independante_figee": "P118 reprise architecture : IDs reprise- et origine P118 pour murs assertés ; portes hôtes classe mur/idprefix assertés mais pas bijection source->cible complète. Références non reprises aReparer comptage (peut être zéro, pas fixture minimale assurée). Sans choix parcelle null/hypothèses[] assertés, pas source[]/structure absence ni emprise. Inverse égal cible non vide exact directement asserté. Écart ID documenté D022 pas renommer vers projectId sans décision.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Reprisemodèleminimal nouveauxIDs",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "P118RDCplutôtquemodèleminimal ; préfixeIDsreprise etcomptesmurs explicites.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/reprise.test.ts",
+              "line": 27,
+              "exact_line": "    expect(murs).toHaveLength(mursSource);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/reprise.test.ts",
+              "line": 28,
+              "exact_line": "    expect(murs.every((o) => o.id.startsWith(\"reprise-\") && String(o.proprietes[\"reprise:origine\"]?.valeur).includes(\"P.118\"))).toBe(true);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Référencesremappées",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Hôtesremappés etréférencesnonreprisesàréparer ; pas assertionexhaustivetoutesréférencesremappées.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/reprise.test.ts",
+              "line": 31,
+              "exact_line": "    expect(portes.every((p) => r.etat.objets[p.params.murHoteId]?.classe === \"mur\" && p.params.murHoteId.startsWith(\"reprise-\"))).toBe(true);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/reprise.test.ts",
+              "line": 48,
+              "exact_line": "    expect(Object.values(r.references).filter((x) => x.etat === \"a-reparer\").length).toBe(cotes.length);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Hôtesouverturescorrects",
+          "classification_A2": "present",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Toutesportesrepriseshôteclassemur etIDreprise.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/reprise.test.ts",
+              "line": 31,
+              "exact_line": "    expect(portes.every((p) => r.etat.objets[p.params.murHoteId]?.classe === \"mur\" && p.params.murHoteId.startsWith(\"reprise-\"))).toBe(true);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Cibleréférencenonreprise àréparer",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Comptesréférencesàréparer égalnombrecotes, pas assertioncibleréférenceindividuelle ; possibilitézéro non exclueexplicitement.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/reprise.test.ts",
+              "line": 46,
+              "exact_line": "    expect(dessin.rapport.aReparer.length).toBe(cotes.length);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/reprise.test.ts",
+              "line": 48,
+              "exact_line": "    expect(Object.values(r.references).filter((x) => x.etat === \"a-reparer\").length).toBe(cotes.length);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Sitesanschoix nonrepris",
+          "classification_A2": "present",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Sanschoix site parcellenull.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/reprise.test.ts",
+              "line": 37,
+              "exact_line": "    expect(r.etat.site.parcelle).toBeNull();",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente.",
+          "classification_active_apres_delta": "partiel",
+          "justification_active": "Parcelle null seule assertée ; site comprend aussi emprise, non comparée. Aucun site entier démontré."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Hypothèsessanschoix nonreprises",
+          "classification_A2": "present",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Sanschoix hypothèses[].",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/reprise.test.ts",
+              "line": 38,
+              "exact_line": "    expect(r.etat.site.hypotheses).toEqual([]);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Sourcessanschoix nonreprises",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Structuresanschoix nonreprise",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune assertion ciblée correspondante dans les candidats prescrits intégralement lus. Absence bornée à ce périmètre.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 9,
+          "attendu_A2": "Origineenregistrée",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Chaque murprovenancereprise contientnomP118 ; pas vérificationrevision/empreinteoriginecomplète.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/reprise.test.ts",
+              "line": 28,
+              "exact_line": "    expect(murs.every((o) => o.id.startsWith(\"reprise-\") && String(o.proprietes[\"reprise:origine\"]?.valeur).includes(\"P.118\"))).toBe(true);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 10,
+          "attendu_A2": "Inverse supprimexactementajouts",
+          "classification_A2": "present",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Étatentieraprèsinverse égale cibleinitialenonvide, cequisupprimeexactementajoutsobservés.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/reprise.test.ts",
+              "line": 39,
+              "exact_line": "    expect(appliquerLot(r.etat, lot([r.inverse], \"inv\")).etat).toEqual(c);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    }
+  ],
+  "citation_errors": [],
+  "reviews_runtime": false,
+  "annexe_resolution": {
+    "path": "/workspace/work/resume496/agents/A2/M08-094-124-DELTA-REVUE-A1-A2.json",
+    "sha256": "8602a3fc1817fd39f8ff3f3925541c23dbbeba13fc69a5cdee73f01021cbb132",
+    "avis": "Deux réserves acceptées par A2 : siteglobal partiel, inversevaleurs posecomposite partiel.",
+    "comptes_ajustes": {
+      "present": 13,
+      "partiel": 28,
+      "absent": 94
+    },
+    "total": 135
+  },
+  "version": 2,
+  "supersedes": {
+    "published_commit": "fa9f0db232f49007c5a8bebded4ffce530a5bf8f",
+    "path": "docs/ai-team/reports/reprise-496dcfc/A1/M08-UNITE-094-124-REVUE-A1.json",
+    "sha256": "3eebda8e48fcfe25a9859babfceb21ab93f3caf00000c56a1f484c6190e74f73",
+    "preserved": true
+  },
+  "delta_source": {
+    "path": "/workspace/work/resume496/agents/A2/M08-094-124-DELTA-REVUE-A1-A2.json",
+    "sha256": "8602a3fc1817fd39f8ff3f3925541c23dbbeba13fc69a5cdee73f01021cbb132"
+  },
+  "provenance_publication": "77e4644 était local remplacé avant publication par fa9f0db pour identité publique ; même arbre49711d433e47cfc7bc546879d33c97b7dadb23b9. Aucune présence distante de77e4644 déduite."
+}
