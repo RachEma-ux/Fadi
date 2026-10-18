@@ -1,0 +1,465 @@
+{
+  "objet": "Revue architecturale indépendante A2 du seul delta8REP ; aucune réexécution des sept audits ou198tests",
+  "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "remise_Claude": "32267bf, référence fournie A0 ; entrée incoming hashée",
+  "inputs": [
+    {
+      "path": "/workspace/work/resume496/agents/A5/REVUE-CLAUDE-REP-A5.json",
+      "sha256": "4ea23df97163186179e86077eaf494e5612a6dffaf015e3cf813bb5e67dc9058"
+    },
+    {
+      "path": "/workspace/work/resume496/incoming/docs/ai-team/reports/claude-m13-rep/DELTA-REGISTRE-PROPOSE.json",
+      "sha256": "53a5d735e9d1b29e79412fcfd6d67db44e888832e85af61286969a47a3a49c51"
+    },
+    {
+      "path": "/workspace/work/resume496/incoming/docs/ai-team/reports/claude-m13-rep/README.md",
+      "sha256": "b7c02b7b35ce835f55cb3f5ebef13348eba5da0577c1af33d802bcd4928afa12"
+    },
+    {
+      "path": "/workspace/work/resume496/incoming/docs/ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md",
+      "sha256": "45847df90a26b94df5eaaa314e0dcbeadf1622751f729dd3b2049fe54b7225c8"
+    },
+    {
+      "path": "/workspace/work/resume496/incoming/docs/ai-team/reports/claude-m13-rep/REP-07-ESSAIS.json",
+      "sha256": "45dbf15dd7092f22c42655c2853ffa42fcae0c05fcd8c5295a2bd524a54a31a8"
+    },
+    {
+      "path": "/workspace/work/resume496/incoming/docs/ai-team/reports/claude-m13-rep/REP-09-REQUALIFICATION.md",
+      "sha256": "96b172ede321cfea76185526d144d07378a9ec23989690f51072cf00af29a4ed"
+    },
+    {
+      "path": "/workspace/work/resume496/incoming/docs/ai-team/reports/claude-m13-rep/REP-09-REQUALIFICATION.json",
+      "sha256": "a47c5bfcb91332d7c7dc5b79864f0372491de23df16e6ca25720323f6e378184"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+      "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/REVUE-CLAUDE-REP-A5-DELTA.json",
+      "sha256": "0cdfa7854d333d98a00c7cc50364752be271a1629df74136d751ff683ab7b08f"
+    }
+  ],
+  "methode": "Lecture intégrale delta et constatsREP02–09, confrontation à la revue indépendanteA5 ; avis sur nature des clôtures et architecture/invariants seulement. Les30blobs/compteurs relus parA5 sont réemployés explicitement, pas présentés comme nouveau réauditA2.",
+  "items": [
+    {
+      "id": "REP-02",
+      "agent_proprietaire": "A2",
+      "avis": "Recevable pour clôture de la condition d’examen documentaire auSHA817, sous intégration et checkpointA0 ; aucune acceptation métier.",
+      "pertinence_nature_examen": "Routes/auth/lazy du fichier demandé examinés, limites et absenceStudio explicites.",
+      "limites": "RequireAuth est client ; permissions et parenté serveur restent obligations futures. Quatre lazy ne prouvent ni chunks réels ni temps de chargement.",
+      "travaux_non_clos": "ROUTE-09 et ADR, tests NAV futurs ; pas interface finale ni implémentation.",
+      "sources_de_revue_reemployees_A5": [
+        {
+          "path": "apps/web/src/App.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "681616c2ac297aa57c4d8824b777d6c3792105c3787ca315743958706acab8ee",
+          "lines": [
+            17,
+            20
+          ],
+          "exact": "const ProjectShell = lazy(() => import(\"./routes/ProjectShell\").then((m) => ({ default: m.ProjectShell })));\nconst ProjectCockpitPage = lazy(() => import(\"./modules/pilotage/ProjectCockpitPage\").then((m) => ({ default: m.ProjectCockpitPage })));\nconst BuildingLibraryPage = lazy(() => import(\"./modules/bibliotheque/BuildingLibraryPage\").then((m) => ({ default: m.BuildingLibraryPage })));\nconst BuildingCasePage = lazy(() => import(\"./modules/bibliotheque/BuildingLibraryPage\").then((m) => ({ default: m.BuildingCasePage })));"
+        },
+        {
+          "path": "apps/web/src/App.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "681616c2ac297aa57c4d8824b777d6c3792105c3787ca315743958706acab8ee",
+          "lines": [
+            43,
+            87
+          ],
+          "exact": "      <Routes>\n        <Route path=\"/connexion\" element={<LoginPage />} />\n        <Route path=\"/inscription\" element={<RegisterPage />} />\n\n        <Route\n          element={\n            <RequireAuth>\n              <AppShell />\n            </RequireAuth>\n          }\n        >\n          <Route path=\"/accueil\" element={<AccueilPage />} />\n          <Route path=\"/projets\" element={<ProjectsPage />} />\n          <Route path=\"/collaboration\" element={<CollaborationPage />} />\n          <Route\n            path=\"/projets/:projectId\"\n            element={\n              <Suspense fallback={<Loading />}>\n                <ProjectShell />\n              </Suspense>\n            }\n          />\n          <Route path=\"/projets/:projectId/pilotage\" element={<Suspense fallback={<Loading />}><ProjectCockpitPage /></Suspense>} />\n          <Route path=\"/harmonie\" element={<HarmoniePage />} />\n          <Route\n            path=\"/bibliotheque/batiments\"\n            element={\n              <Suspense fallback={<Loading />}>\n                <BuildingLibraryPage />\n              </Suspense>\n            }\n          />\n          <Route\n            path=\"/bibliotheque/batiments/:id\"\n            element={\n              <Suspense fallback={<Loading />}>\n                <BuildingCasePage />\n              </Suspense>\n            }\n          />\n          <Route path=\"/parametres\" element={<ParametresPage />} />\n        </Route>\n\n        <Route path=\"/\" element={<Navigate to=\"/accueil\" replace />} />\n        <Route path=\"*\" element={<Navigate to=\"/accueil\" replace />} />"
+        },
+        {
+          "path": "apps/web/src/routes/RequireAuth.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "7897a519b6e73e85f77c550ac672d40a42a5151a33296796ec692bb984fbe8af",
+          "lines": [
+            5,
+            18
+          ],
+          "exact": "export function RequireAuth({ children }: { children: ReactNode }) {\n  const { user, loading } = useAuth();\n  if (loading) {\n    return (\n      <p role=\"status\" className=\"loading-notice\">\n        Vérification de la session…\n      </p>\n    );\n  }\n  if (!user) {\n    return <Navigate to=\"/connexion\" replace />;\n  }\n  return <>{children}</>;\n}"
+        }
+      ],
+      "scope_preuve": "Lecture/revue documentaire ; les opérations historiques restent attribuées à leur auteur/SHA, aucune nouvelle exécution A2.",
+      "acceptation_metier": false,
+      "case_source_modifiee": false
+    },
+    {
+      "id": "REP-03",
+      "agent_proprietaire": "A2",
+      "avis": "Recevable pour clôture de la condition d’examen documentaire auSHA817, sous intégration et checkpointA0 ; aucune acceptation métier.",
+      "pertinence_nature_examen": "Entrée verticale et deux résolutions de contexte examinées.",
+      "limites": "Une entrée ajoutée à nav n’est pas preuve accessibilité mobile/plein écran ; le contexte /studio n’est pas actuellement résolu.",
+      "travaux_non_clos": "Contexte serveur/façade et étatsA4 à réaliser seulement après contrats/autorisation.",
+      "sources_de_revue_reemployees_A5": [
+        {
+          "path": "apps/web/src/routes/AppShell.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "6bf46cc9e7c15ade383af9b21790b20d2318d6ea30401f662fb7cb3291591c6b",
+          "lines": [
+            19,
+            22
+          ],
+          "exact": "  const projectMatch = useMatch(\"/projets/:projectId\");\n  const cockpitMatch = useMatch(\"/projets/:projectId/pilotage\");\n  const projectId = projectMatch?.params.projectId ?? cockpitMatch?.params.projectId;\n  const last = useLastDossier(user?.id);"
+        },
+        {
+          "path": "apps/web/src/routes/AppShell.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "6bf46cc9e7c15ade383af9b21790b20d2318d6ea30401f662fb7cb3291591c6b",
+          "lines": [
+            79,
+            100
+          ],
+          "exact": "  const collaborationLink = projectId || last?.projectId ? `/projets/${projectId ?? last?.projectId}?module=collaboration` : \"/collaboration\";\n  return <WorkspaceNavigation.Provider value={{ openProjects }}>\n    <div className=\"app-shell fadi-shell\" data-sidebar={expanded ? \"expanded\" : \"collapsed\"}>\n      <a className=\"fadi-skip\" href=\"#workspace-content\">Aller au contenu</a>\n      <aside className=\"app-sidebar\" aria-label=\"Barre latérale\">\n        <Link to=\"/accueil\" className=\"app-brand\" aria-label=\"Fadi · Accueil\" title=\"Fadi · Accueil\"><Icon name=\"home\" size={28} /><span className=\"sidebar-label app-brand-text\" translate=\"no\">Fadi</span></Link>\n        <button type=\"button\" className=\"sidebar-toggle\" aria-expanded={expanded} aria-controls=\"workspace-navigation\" aria-label={expanded ? \"Replier la barre latérale\" : \"Déplier la barre latérale\"} title={expanded ? \"Replier la barre latérale\" : \"Déplier la barre latérale\"} onClick={() => { setExpanded(!expanded); closeProjects(false); }}>\n          <Icon name=\"chevron-right\" size={18} /><span className=\"sidebar-label\">Replier</span>\n        </button>\n        <nav id=\"workspace-navigation\" aria-label=\"Navigation principale\" className=\"app-nav\">\n          <NavLink to=\"/accueil\" className={({ isActive }) => isActive ? \"active\" : undefined} title=\"Accueil\" aria-label=\"Accueil\"><Icon name=\"home\" /><span className=\"sidebar-label\">Accueil</span></NavLink>\n          <button ref={projectButton} type=\"button\" className={`sidebar-projects${location.pathname.startsWith(\"/projets\") && !collaborationActive ? \" active\" : \"\"}`} aria-label=\"Projets\" title=\"Projets\" aria-haspopup=\"menu\" aria-expanded={projectsOpen} aria-controls={projectsOpen ? \"projects-menu\" : undefined} onClick={() => projectsOpen ? closeProjects() : openProjects()} onKeyDown={(e) => { if (e.key === \"ArrowRight\" || e.key === \"ArrowDown\") { e.preventDefault(); openProjects(); } }}>\n            <Icon name=\"folder\" /><span className=\"sidebar-label\">Projets</span><Icon name=\"chevron-right\" size={14} className=\"sidebar-label\" />\n          </button>\n          <Link to={collaborationLink} className={collaborationActive ? \"active\" : undefined} aria-current={collaborationActive ? \"page\" : undefined} title=\"Collaboration\" aria-label=\"Collaboration\"><Icon name=\"people\" /><span className=\"sidebar-label\">Collaboration</span></Link>\n        </nav>\n        <div className=\"app-nav-secondary\">\n          <NavLink to=\"/bibliotheque/batiments\" title=\"Bibliothèque\" aria-label=\"Bibliothèque\" className={({ isActive }) => isActive ? \"active\" : undefined}><Icon name=\"book\" /><span className=\"sidebar-label\">Bibliothèque</span></NavLink>\n          <NavLink to=\"/parametres\" title=\"Paramètres\" aria-label=\"Paramètres\" className={({ isActive }) => isActive ? \"active\" : undefined}><Icon name=\"gear\" /><span className=\"sidebar-label\">Paramètres</span></NavLink>\n        </div>\n        <div className=\"app-user\" ref={account} onKeyDown={(e) => { if (e.key === \"Escape\") { setAccountOpen(false); account.current?.querySelector(\"button\")?.focus(); } }}>\n          <button type=\"button\" title={user ? shownName(user) : \"Compte\"} aria-label=\"Compte\" aria-expanded={accountOpen} onClick={() => { if (window.matchMedia(\"(max-width: 700px)\").matches) setExpanded(false); setAccountOpen(!accountOpen); setProjectsOpen(false); }}><span className=\"avatar\" aria-hidden=\"true\">{user ? initialsFrom(user) : \"\"}</span><span className=\"sidebar-label app-user-name\" translate=\"no\">{user ? shownName(user) : \"\"}</span></button>"
+        }
+      ],
+      "scope_preuve": "Lecture/revue documentaire ; les opérations historiques restent attribuées à leur auteur/SHA, aucune nouvelle exécution A2.",
+      "acceptation_metier": false,
+      "case_source_modifiee": false
+    },
+    {
+      "id": "REP-04",
+      "agent_proprietaire": "A2",
+      "avis": "Recevable pour clôture de la condition d’examen documentaire auSHA817, sous intégration et checkpointA0 ; aucune acceptation métier.",
+      "pertinence_nature_examen": "Services horsProjectShell et requête systématique des étapes identifiés, ce qui répond à l’examen de réutilisation autonome.",
+      "limites": "Composer services communs sans imposer ProjectShell ni étapeParcours ; l’assemblage actuel ne vaut pas façade Studio adoptée.",
+      "travaux_non_clos": "Préserver21étapes/Atelier ; décider contrats sans enveloppe préalable ni iframe.",
+      "sources_de_revue_reemployees_A5": [
+        {
+          "path": "apps/web/src/routes/ProjectShell.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "36194fa9f13c23f9ec2c086b3630637e00766bb42999f38bc6d8a8ad75ac0108",
+          "lines": [
+            37,
+            43
+          ],
+          "exact": "  const projectQuery = useQuery({ queryKey: [\"project\", projectId], queryFn: () => api.getProject(projectId), refetchInterval: 60_000, staleTime: 30_000, retry: (count, error) => !denied(error) && count < 1 });\n  const [lockMessage, setLockMessage] = useState<string | null>(null);\n  const stepsQuery = useQuery({ queryKey: [\"steps\", projectId], queryFn: () => api.listSteps(projectId) });\n  // Empreinte du modèle dessiné (détail technique, montré ici plutôt que sur l'accueil) : même lecture que l'aperçu conceptuel.\n  const previewQuery = useQuery({ queryKey: [\"concept-preview\", projectId], queryFn: () => api.getConceptPreview(projectId), enabled: !!projectQuery.data && !denied(projectQuery.error), staleTime: 5 * 60_000 });\n  const online = useOnline();\n  const access = useProjectAccess(projectId);"
+        },
+        {
+          "path": "apps/web/src/routes/ProjectShell.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "36194fa9f13c23f9ec2c086b3630637e00766bb42999f38bc6d8a8ad75ac0108",
+          "lines": [
+            52,
+            76
+          ],
+          "exact": "  const [searchParams, setSearchParams] = useSearchParams();\n  const requestedModule = searchParams.get(\"module\");\n  const activeModule = requestedModule && MODULES.some((m) => m.id === requestedModule) ? requestedModule : searchParams.has(\"etape\") ? \"parcours\" : \"accueil\";\n  const requestedStep = Number(searchParams.get(\"etape\"));\n  const requestedReview = activeModule === \"parcours\" && requestedStep === 11 && searchParams.get(\"bilan\") === \"1\";\n  const recordedEntry = useRef<string | null>(null);\n  useEffect(() => {\n    if (user && projectQuery.data?.id === projectId && !denied(projectQuery.error) && recordedEntry.current !== `${user.id}:${location.key}`) {\n      recordedEntry.current = `${user.id}:${location.key}`;\n      const currentWork = activeModule === \"accueil\" ? undefined : requestedReview ? \"review\" : activeModule === \"programmation\" ? \"programme\" : activeModule === \"atelier\" ? \"atelier\" : \"parcours\";\n      rememberDossier(user.id, projectId, activeModule === \"parcours\" ? requestedStep : undefined, currentWork);\n    }\n  }, [user?.id, projectId, projectQuery.data?.id, projectQuery.error, activeModule, requestedStep, requestedReview, location.key]);\n  // Module Atelier : page de l'Atelier Architectural (enveloppe effacée), comme aux étapes 10 / 11.\n  useImmersive(activeModule === \"atelier\");\n  const programmeView = searchParams.get(\"vue\");\n  function selectModule(id: string) {\n    const next = new URLSearchParams();\n    next.set(\"module\", id);\n    setSearchParams(next);\n  }\n\n  if (activeModule === \"accueil\") {\n    return <main className=\"fadi-home\" data-home=\"project\"><DossierDashboard key={projectId} projectId={projectId} /></main>;\n  }"
+        },
+        {
+          "path": "apps/web/src/routes/ProjectShell.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "36194fa9f13c23f9ec2c086b3630637e00766bb42999f38bc6d8a8ad75ac0108",
+          "lines": [
+            150,
+            165
+          ],
+          "exact": "        {activeModule === \"atelier\" && (\n          <>\n            {/* Module Atelier : la page de l'Atelier Architectural (bandeau du prototype, enveloppe effacée) ; « ← » ramène au parcours. */}\n            <StageStrip title=\"Atelier Architectural\" stage={null} subtitle={`${project.code} — ${project.name}`} onBack={() => selectModule(\"parcours\")} onHome={() => navigate(\"/projets\")} />\n            <Suspense fallback={<p role=\"status\">Chargement de l’Atelier…</p>}>\n              <AtelierNouveau projectId={projectId} readOnly={!access.canWrite} protectedReference={project.exampleMode === \"reference\"} code={project.code} nomProjet={project.name} />\n            </Suspense>\n          </>\n        )}\n\n        {activeModule === \"projets-sources\" && (\n          <>\n            <h2>Projets et sources</h2>\n            <ParcelleTool projectId={projectId} />\n            <h3 className=\"module-subtitle\">Sources des étapes</h3>\n            <ProjectSources projectId={projectId} stepTitle={(n) => stepsQuery.data?.find((s) => s.number === n)?.title ?? \"\"} />"
+        }
+      ],
+      "scope_preuve": "Lecture/revue documentaire ; les opérations historiques restent attribuées à leur auteur/SHA, aucune nouvelle exécution A2.",
+      "acceptation_metier": false,
+      "case_source_modifiee": false
+    },
+    {
+      "id": "REP-05",
+      "agent_proprietaire": "A2",
+      "avis": "Recevable pour clôture de la condition d’examen documentaire auSHA817, sous intégration et checkpointA0 ; aucune acceptation métier.",
+      "pertinence_nature_examen": "Hook, appelants et CSS de masquage examinés ; conflit potentiel flag global documenté.",
+      "limites": "Défaut concurrent est statique/théorique, non reproduit ; E2E citée non exécutée. PR142 est branche distincte, pas correctifmain acquis.",
+      "travaux_non_clos": "Studio garde barre principale et plein écran explicite ; état futur à vérifier après implémentation.",
+      "sources_de_revue_reemployees_A5": [
+        {
+          "path": "apps/web/src/lib/use-immersive.ts",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "1ccbc353ba3763965dea6b6a1cdf974576104edc0868fd67a99d8bc4a32af785",
+          "lines": [
+            10,
+            18
+          ],
+          "exact": "export const IMMERSIVE_CLASS = \"atelier-immersive\";\n\nexport function useImmersive(active: boolean): void {\n  useEffect(() => {\n    if (!active) return;\n    document.body.classList.add(IMMERSIVE_CLASS);\n    return () => document.body.classList.remove(IMMERSIVE_CLASS);\n  }, [active]);\n}"
+        },
+        {
+          "path": "apps/web/src/routes/ProjectShell.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "36194fa9f13c23f9ec2c086b3630637e00766bb42999f38bc6d8a8ad75ac0108",
+          "lines": [
+            65,
+            66
+          ],
+          "exact": "  // Module Atelier : page de l'Atelier Architectural (enveloppe effacée), comme aux étapes 10 / 11.\n  useImmersive(activeModule === \"atelier\");"
+        },
+        {
+          "path": "apps/web/src/style.css",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "444a5b15e4673ad07c107c1c4918ff4dc0702f823d4e6d84f78f842c3d7b2dcc",
+          "lines": [
+            1716,
+            1725
+          ],
+          "exact": "/* Mode Atelier (étapes 10 / 11, module Atelier) : la page est l'Atelier Architectural du prototype — enveloppe de Fadi effacée, toute la largeur au dessin. */\nbody.atelier-immersive .app-shell {\n  grid-template-columns: minmax(0, 1fr);\n}\nbody.atelier-immersive .app-sidebar,\nbody.atelier-immersive .app-topbar,\nbody.atelier-immersive .project-header,\nbody.atelier-immersive .module-nav {\n  display: none;\n}"
+        }
+      ],
+      "scope_preuve": "Lecture/revue documentaire ; les opérations historiques restent attribuées à leur auteur/SHA, aucune nouvelle exécution A2.",
+      "acceptation_metier": false,
+      "case_source_modifiee": false
+    },
+    {
+      "id": "REP-06",
+      "agent_proprietaire": "A2",
+      "avis": "Recevable pour clôture de la condition d’examen documentaire auSHA817, sous intégration et checkpointA0 ; aucune acceptation métier.",
+      "pertinence_nature_examen": "Descripteurs et trois consommateurs examinés ; effet d’ajout naïf au registre projet analysé.",
+      "limites": "Examen terminé ne choisit pas options a/b/c ; Studio reste module natif autonome, pas moduleétape ni placeholderProjectShell. Texte collaboration périmé reste anomalie.",
+      "travaux_non_clos": "Décision ROUTE-09/ADR demeure distincte ; pas ajout de descripteur par ce rapport.",
+      "sources_de_revue_reemployees_A5": [
+        {
+          "path": "apps/web/src/modules/module-registry.ts",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "efa15fe628ea7bb1ccdb459d49545495fe88635a38ce5b8ef6347c844a2d5a48",
+          "lines": [
+            15,
+            58
+          ],
+          "exact": "export const MODULES: ModuleDescriptor[] = [\n  {\n    id: \"projets-sources\",\n    label: \"Projets et sources\",\n    implemented: true,\n    status: \"La parcelle du projet dans l'outil Parcelle du prototype (import KML/KMZ, bornes, cotes, dossier), transmise au modèle de l'Atelier ; sources des étapes ; archive de projet (sauvegarde, import, copie).\",\n  },\n  {\n    id: \"parcours\",\n    label: \"Parcours\",\n    implemented: true,\n    status: \"Les 21 étapes avec leur formulaire métier, leurs propositions Harmonie arbitrables (péremption, rapports), leurs indicateurs, leur transmission, l'outil Parcelle (01), l'Atelier et la sous-page « Harmonie du bâtiment » (10, 11), les sources de l'étape.\",\n  },\n  {\n    id: \"programmation\",\n    label: \"Programmation\",\n    implemented: true,\n    status: \"Répartition programmatique par type de bâtiment (fourchettes, ratios, adjacences), bibliothèque des bâtiments et cas de programme appliqué (fiches, liaison au modèle dessiné, registre des hypothèses, transfert surfacique à total constant).\",\n  },\n  {\n    id: \"atelier\",\n    label: \"Atelier architectural\",\n    implemented: true,\n    status: \"L'Atelier reconstruit sur le modèle typé du projet : plan 2D et outils de dessin, vue 3D, niveaux, coupes et façades de travail, inspecteur, annuler / rétablir, exports DXF / SVG / CSV / PNG ; documents dérivés (vues, feuilles, tableaux, PDF au catalogue), toitures en pente, garde-corps, blocs et composants, contraintes d'esquisse, phases ; échanges IFC 4.3 (export validé par IfcOpenShell, import en représentations) et import DXF 2D avec rapport de fidélité ; versions nommées, variantes fusionnées par rejeu validé, publications figées, verrous fins et collisions d'architecture ; scripts versionnés et assistant à boucle contrôlée (règles de Fadi, accord explicite) ; chaque modification est une commande enregistrée avec révision contrôlée, utilisable hors ligne.\",\n  },\n  {\n    id: \"analyses\",\n    label: \"Analyses métier\",\n    implemented: true,\n    status: \"Quantités dérivées du modèle, contrôles traçables (règles de flow-v62, transmissions, chiffrage, structure déclarée), résultats des étapes, variantes de programme ; contrôles réglementaires (accessibilité, incendie) non portés.\",\n  },\n  {\n    id: \"documents\",\n    label: \"Documents\",\n    implemented: true,\n    status: \"Catalogue des documents produits depuis la révision courante (rapports Harmonie, bilan du bâtiment, plans de lecture, tableaux, archive) avec leur actualité ; dessins techniques et exports DXF / PNG restent dans l'Atelier.\",\n  },\n  {\n    id: \"collaboration\",\n    label: \"Collaboration\",\n    implemented: true,\n    status: \"Commentaires par projet et par étape, journal des révisions, synchronisation hors-ligne de l'Atelier (file locale des modifications, envoyée dans l'ordre) et lecture hors-ligne ; partage multi-utilisateur et droits non disponibles (Lot 4), annoncés tels quels.\",\n  },\n];"
+        },
+        {
+          "path": "apps/web/src/routes/ProjectModuleNav.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "b507359d70e2cf524903a39c639a4f915df194ce97705eac17f9a17e90d1b1ff",
+          "lines": [
+            25,
+            31
+          ],
+          "exact": "    {MODULES.map((module) => <button\n      key={module.id}\n      type=\"button\"\n      aria-current={module.id === activeModule ? \"page\" : undefined}\n      onClick={() => onModule(module.id)}\n    >{module.label}</button>)}\n  </nav>;"
+        },
+        {
+          "path": "apps/web/src/modules/accueil/SearchDialog.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "34c5ea27ca1badf5003d21a7f5352e0058052fd54e95e4b7888bdf7e979a47de",
+          "lines": [
+            20,
+            23
+          ],
+          "exact": "  const candidates = projectId ? [\n    ...MODULES.map((m) => ({ id: m.id, title: m.label, context: \"Module du projet\", href: `/projets/${projectId}?module=${m.id}` })),\n    ...(denied(steps.error) ? [] : steps.data ?? []).map((s) => ({ id: `step-${s.number}`, title: `${String(s.number).padStart(2, \"0\")} — ${s.title}`, context: \"Parcours\", href: `/projets/${projectId}?module=parcours&etape=${s.number}` })),\n    ...(denied(documents.error) ? [] : documents.data?.documents ?? []).map((d, i) => ({ id: `document-${i}`, title: d.label, context: \"Documents\", href: `/projets/${projectId}?module=documents` })),"
+        },
+        {
+          "path": "apps/web/src/routes/ProjectShell.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "36194fa9f13c23f9ec2c086b3630637e00766bb42999f38bc6d8a8ad75ac0108",
+          "lines": [
+            206,
+            211
+          ],
+          "exact": "        {![\"parcours\", \"atelier\", \"programmation\", \"projets-sources\", \"analyses\", \"documents\", \"collaboration\"].includes(activeModule) && descriptor && (\n          <>\n            <h2>{descriptor.label}</h2>\n            <p>{descriptor.status}</p>\n          </>\n        )}"
+        }
+      ],
+      "scope_preuve": "Lecture/revue documentaire ; les opérations historiques restent attribuées à leur auteur/SHA, aucune nouvelle exécution A2.",
+      "acceptation_metier": false,
+      "case_source_modifiee": false
+    },
+    {
+      "id": "REP-07",
+      "agent_proprietaire": "A2",
+      "avis": "Recevable pour clôture de la condition d’examen documentaire auSHA817, sous intégration et checkpointA0 ; aucune acceptation métier.",
+      "pertinence_nature_examen": "Garde actuel et faux négatifs statiques examinés ; dépendance PR152 et règles web manquantes distinguées.",
+      "limites": "Main817 utilise garde sous-chaîne ; PR152 headf277 non fusionnée contient résolution renforcée, pas frontières métier web. Essais attribuésClaude seulement ; E7 code1EMPTY_SCOPE, aucune violation intermodule rapportée.",
+      "travaux_non_clos": "Clarification E7 possible mais aucun erratum numérique requis ; ne pas dupliquer correctifPR152 ; futures règlesStudio exigent contrat et tests ciblés.",
+      "sources_de_revue_reemployees_A5": [
+        {
+          "path": "scripts/check-module-deps.mjs",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "cc07dcf668b2f62a92a731b0dfded325e252f866de7f9ce7f4bf45862e48e6c4",
+          "lines": [
+            32,
+            37
+          ],
+          "exact": "const IMPORT_RE = /(?:^|\\n)\\s*(?:import|export)\\s[^;'\"]*?from\\s*['\"]([^'\"]+)['\"]|(?:^|\\n)\\s*import\\s*['\"]([^'\"]+)['\"]|import\\(\\s*['\"]([^'\"]+)['\"]\\s*\\)/g;\n\nfunction specifiers(source) {\n  const found = [];\n  for (const m of source.matchAll(IMPORT_RE)) found.push(m[1] ?? m[2] ?? m[3]);\n  return found;"
+        },
+        {
+          "path": "scripts/check-module-deps.mjs",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "cc07dcf668b2f62a92a731b0dfded325e252f866de7f9ce7f4bf45862e48e6c4",
+          "lines": [
+            78,
+            88
+          ],
+          "exact": "// 2. Applications : pas d'import croisé apps/web ↔ apps/api.\nfor (const [app, forbidden] of [[\"apps/web\", \"apps/api\"], [\"apps/api\", \"apps/web\"]]) {\n  const srcDir = join(root, app, \"src\");\n  if (!existsSync(srcDir)) continue;\n  for (const file of walk(srcDir)) {\n    const source = readFileSync(file, \"utf8\");\n    for (const spec of specifiers(source)) {\n      if (spec.includes(forbidden)) violations.push(`${relative(root, file)} : import vers ${forbidden} interdit (${spec})`);\n    }\n  }\n}"
+        }
+      ],
+      "scope_preuve": "Lecture/revue documentaire ; les opérations historiques restent attribuées à leur auteur/SHA, aucune nouvelle exécution A2.",
+      "acceptation_metier": false,
+      "case_source_modifiee": false
+    },
+    {
+      "id": "REP-08",
+      "agent_proprietaire": "A2",
+      "avis": "Recevable pour clôture de la condition d’examen documentaire auSHA817, sous intégration et checkpointA0 ; aucune acceptation métier.",
+      "pertinence_nature_examen": "Protocole existant examiné et travail remis en branche/dossier séparé avecA0 propriétaire du checkpoint.",
+      "limites": "Contrôles structurels attribuésClaude ne valident pas vérité des états ; application complète du protocole exige checkpoint STATUS/HANDOFF A0 lié à intégration.",
+      "travaux_non_clos": "A0 synchronise STATUS/HANDOFF lors intégration ; aucune branche permanente ni dérogation de fusion.",
+      "sources_de_revue_reemployees_A5": [
+        {
+          "path": "docs/continuity/README.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "e506f45775f5580641aec2a970bcdb5e5edeff20861c79927152ee5830a70704",
+          "lines": [
+            1,
+            18
+          ],
+          "exact": "# Continuité de développement — Fadi\n\n## But et limite\n\nPermettre de reprendre un chantier après la perte d'une session ChatGPT, Claude Code ou Codex, un changement d'agent, un changement d'appareil ou une interruption réseau. **Le dépôt GitHub conserve des faits et des décisions explicites, pas l'état interne ou le raisonnement caché de l'IA.** Aucune promesse de mémoire intégrale entre sessions.\n\nCe cadre complète les référentiels déjà présents ; il ne les remplace pas.\n\n## Sources et préséance\n\n1. **Code et tests du commit vérifié** : constat de l'implémentation réelle, jamais automatiquement une preuve de conformité métier.\n2. **`AGENTS.md`** : règles communes non négociables (21 étapes, langues, géométrie, tests, secrets).\n3. **`CLAUDE.md`** : consignes supplémentaires pour Claude Code ; il renvoie à `AGENTS.md`.\n4. **`docs/architecture.md`** : architecture de référence actuellement documentée ; toute modification du cadre doit être décidée, pas présumée.\n5. **Cahiers, décisions et comptes rendus métier existants** : notamment `docs/atelier/decisions.md`, `docs/atelier/`, `docs/planche/` et `docs/migration/matrix.md`. Ne pas dupliquer ni renuméroter leurs décisions.\n6. **GitHub Issues / PR / commits / CI** : tâches et preuves de réalisation. Une PR ouverte n'est pas une modification fusionnée.\n7. **`docs/workstreams/<chantier>/`** : contexte de travail, statut et point de reprise du chantier.\n"
+        }
+      ],
+      "scope_preuve": "Lecture/revue documentaire ; les opérations historiques restent attribuées à leur auteur/SHA, aucune nouvelle exécution A2.",
+      "acceptation_metier": false,
+      "case_source_modifiee": false
+    },
+    {
+      "id": "REP-09",
+      "agent_proprietaire": "A2",
+      "avis": "Recevable pour clôture de la condition d’examen documentaire auSHA817, sous intégration et checkpointA0 ; aucune acceptation métier.",
+      "pertinence_nature_examen": "Quatorze observations historiques requalifiées avec verdicts statiques et limites de leurs tests voisins.",
+      "limites": "Planche52 déclarations=47littérales+5générées ; Atelier111entrées/110IDs, collisionechelle reste ouverte ; ce ne sont pas nombres de fonctions utilisables.198=106+48+22+22 attribuésClaude au817 sans logs bruts/CIindépendante.",
+      "travaux_non_clos": "Ne transfère pas tests purs aux workers/GPU/SW/API/performance ; OBS12 historiqueSwiftShader ; DEC18 et lotsB/C/D demeurent ouverts.",
+      "sources_de_revue_reemployees_A5": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "5d582d6f6ce6287d541a2b821fca25bc38b2ee072abbf08e8c6521dbc99bb7b9",
+          "lines": [
+            270,
+            303
+          ],
+          "exact": "  majStyles(styles: Record<string, { couleur: string | null; opacite: number | null }>): void {\n    if (JSON.stringify(styles) === JSON.stringify(this.styles)) return;\n    this.styles = { ...styles };\n    const etat = this.etat;\n    this.etat = null;\n    if (etat) this.majModele(etat);\n    this.mesures.styles = Object.keys(this.styles).length;\n  }\n\n  /** Reconstruit les tampons groupés à partir du modèle. */\n  majModele(etat: ModeleAtelier): void {\n    if (etat === this.etat) return;\n    this.etat = etat;\n    for (const l of this.lots) {\n      l.maillage.geometry.dispose();\n      l.aretes?.geometry.dispose();\n      l.cachees?.geometry.dispose();\n    }\n    for (const g of this.groupes.values()) this.scene.remove(g);\n    this.groupes.clear();\n    this.lots = [];\n    const cleNiveaux = JSON.stringify(etat.niveaux);\n    const parLot = new Map<string, Maillage[]>();\n    const tous: Maillage[] = [];\n    for (const o of Object.values(etat.objets) as OccurrenceQuelconque[]) {\n      const brut = this.maillage(etat, o, cleNiveaux);\n      if (!brut) continue;\n      // Style graphique par classe (D-135) : couleur et opacité choisies pour soi, affichage seulement.\n      const st = this.styles[o.classe];\n      const m = st && (st.couleur || st.opacite !== null) ? { ...brut, couleur: st.couleur ?? brut.couleur, opacite: st.opacite ?? brut.opacite } : brut;\n      tous.push(m);\n      const cle = `${m.niveauId ?? \"-\"}|${m.couleur}|${m.opacite}|${classeEclate(o.classe)}|${o.groupeId ?? \"\"}`;\n      const l = parLot.get(cle) ?? [];\n      l.push(m);"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "ff535450de7f84ad37bbaab160affe2e67711b161afcf24a038ce20e67402958",
+          "lines": [
+            26,
+            58
+          ],
+          "exact": "function obtenirFil(): Worker | null {\n  if (fil !== undefined) return fil;\n  try {\n    fil = typeof Worker === \"undefined\" ? null : new Worker(new URL(\"./exact.worker.ts\", import.meta.url), { type: \"module\", name: \"fadi-noyau-exact\" });\n    fil?.addEventListener(\"message\", (e: MessageEvent<{ id: number; valeur?: unknown; erreur?: string }>) => {\n      const p = enAttente.get(e.data.id);\n      if (!p) return;\n      enAttente.delete(e.data.id);\n      if (e.data.erreur !== undefined) p.rejeter(new Error(e.data.erreur));\n      else p.resoudre(e.data.valeur);\n    });\n    fil?.addEventListener(\"error\", () => {\n      for (const [, p] of enAttente) p.rejeter(new Error(\"noyau exact indisponible\"));\n      enAttente.clear();\n      fil?.terminate();\n      fil = null;\n      changer(\"echec\");\n    });\n  } catch {\n    fil = null;\n  }\n  if (!fil) changer(\"echec\");\n  return fil;\n}\n\nfunction demander<T>(d: SansId<DemandeExacte>): Promise<T> {\n  const w = obtenirFil();\n  if (!w) return Promise.reject(new Error(\"Noyau exact indisponible dans ce navigateur (Web Worker requis).\"));\n  const id = suivant++;\n  return new Promise<T>((resoudre, rejeter) => {\n    enAttente.set(id, { resoudre: resoudre as (v: unknown) => void, rejeter });\n    w.postMessage({ ...d, id, wasm: wasmRemplace() });\n  });"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/documents/generation-client.ts",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "90d5812c373dd0370183c341f9e6aec617e4ea3689312488d03bc0dfa3596bb3",
+          "lines": [
+            38,
+            55
+          ],
+          "exact": "function demander<T>(d: SansId<DemandeGeneration>, local: () => T): Promise<T> {\n  const w = obtenirFil();\n  if (!w) return Promise.resolve().then(local);\n  const id = suivant++;\n  return new Promise<T>((resoudre, rejeter) => {\n    enAttente.set(id, { resoudre: resoudre as (v: unknown) => void, rejeter });\n    w.postMessage({ ...d, id });\n  }).catch((err: unknown) => {\n    if (err instanceof Error && err.message === \"fil de génération indisponible\") return local();\n    throw err;\n  });\n}\n\nexport const genererVueHorsFil = (etat: ModeleAtelier, params: ParamsVue, definitionId: string, options: OptionsGeneration = {}): Promise<VueGeneree> =>\n  demander({ nature: \"vue\", etat, params, definitionId, options }, () => genererVue(etat, params, definitionId, options));\n\nexport const composerFeuilleHorsFil = (etat: ModeleAtelier, params: ParamsFeuille, revision: number, projet: Projet, definitionId: string, options: OptionsGeneration = {}): Promise<FeuilleComposee> =>\n  demander({ nature: \"feuille\", etat, params, revision, projet, definitionId, options }, () => composerFeuille(etat, params, revision, projet, definitionId, options));"
+        },
+        {
+          "path": "apps/web/vite.config.ts",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "97be880a8370cf083ecc7d5acf25600d6d541586f65e62103f6e15bbd506a991",
+          "lines": [
+            46,
+            49
+          ],
+          "exact": "    writeBundle(_options, bundle) {\n      const file = join(outDir, \"sw.js\");\n      const assets = [...new Set([\"/index.html\", ...Object.keys(bundle).map((name) => `/${name}`), ...publicFiles(\"parcelle\")])].filter((p) => /\\.(js|css|html|svg|woff2?|png|json)$/.test(p) && !p.includes(\"three.webgpu\"));\n      // Le moteur WebGPU (option de la vue 3D, ~0,7 Mo) n'est pas préchargé : il ne sert que si l'option est cochée en ligne."
+        },
+        {
+          "path": "apps/web/public/sw.js",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "b854c126fa9beb391614bcfc06235e01946227e0eecaabeea3bebe4ba3830482",
+          "lines": [
+            19,
+            25
+          ],
+          "exact": "self.addEventListener(\"install\", (event) =>\n  event.waitUntil(\n    (async () => {\n      // Mise en cache anticipée, fichier par fichier (un fichier manquant n'empêche pas l'installation).\n      const cache = await caches.open(CACHE);\n      const list = Array.isArray(PRECACHE) ? PRECACHE : [];\n      await Promise.all(list.map((path) => cache.add(path).catch(() => undefined)));"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/planche/Planche.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "6a2e1ac3fe0e5f79510e2fd36f11cba7aa1b826cf4a4e430ae2bad7a4d221f48",
+          "lines": [
+            446,
+            454
+          ],
+          "exact": "    // Lot 7 : chaque pas (opération, annulation, rétablissement) devient une commande `planche.operation` du projet —\n    // différence structurelle + empreinte d'arrivée, validée par le serveur avec la même fonction pure (R9).\n    const id = plancheIdRef.current;\n    const envoyer = onCommandesRef.current;\n    if (changeModele && options.envoyer !== false && id && envoyer && !readOnlyRef.current) {\n      const delta = differencePlanche(avant, h.present.modele);\n      if (delta) {\n        const libelle = options.libelle ?? h.present.operation ?? libelleOutil(outilRef.current);\n        void Promise.resolve(envoyer([{ type: \"planche.operation\", params: { id, libelle, delta, empreinteApres: empreintePlanche(h.present.modele) } }], libelle)).catch((err: unknown) => setMessage(t(\"planche.persistance.refus\", { motif: err instanceof Error ? err.message : String(err) })));"
+        },
+        {
+          "path": "packages/planche-model/src/catalogue-outils.ts",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "4ffe968d873b4d19b304e9dcc20198ab8334714533866153226ee43ed1a77b8b",
+          "lines": [
+            1273,
+            1297
+          ],
+          "exact": "  ...(\n    [\n      [\"intersection\", \"Intersection\", \"Intersect\", \"Ne garde que le volume commun.\"],\n      [\"union\", \"Union\", \"Union\", \"Fusionne en un solide (peut conserver des vides internes).\"],\n      [\"soustraction\", \"Soustraction\", \"Subtract\", \"Le 1er solide cliqué est l'outil de coupe et disparaît ; le 2e garde le creux.\"],\n      [\"ajuster\", \"Ajuster\", \"Trim\", \"Comme Subtract, mais le 1er solide est conservé.\"],\n      [\"scinder\", \"Scinder\", \"Split\", \"Découpe selon les intersections en plusieurs groupes.\"],\n    ] as const\n  ).map(\n    ([id, libelle, libelleSketchUp, effet]): Outil => ({\n      id,\n      libelle,\n      libelleSketchUp,\n      famille: \"solide\",\n      raccourci: null,\n      emplacement: \"grille\",\n      etapes: [e(null, null, null, null, null)],\n      modificateurs: [],\n      inferences: [],\n      apresFin: `${effet} (documentation officielle ; grisé dans l'offre gratuite).`,\n      offre: \"payante\",\n      sourceReference: `${R_DOC} § 3.8 ; ${R_DESSIN} § 0`,\n      statutReleve: \"non-verifie\",\n    }),\n  ),"
+        }
+      ],
+      "scope_preuve": "Lecture/revue documentaire ; les opérations historiques restent attribuées à leur auteur/SHA, aucune nouvelle exécution A2.",
+      "acceptation_metier": false,
+      "case_source_modifiee": false
+    }
+  ],
+  "controle_delta": {
+    "ids": [
+      "REP-02",
+      "REP-03",
+      "REP-04",
+      "REP-05",
+      "REP-06",
+      "REP-07",
+      "REP-08",
+      "REP-09"
+    ],
+    "count": 8,
+    "ecarts": [],
+    "base32_Verifie_documentaire": 32,
+    "base2_Accepte_cadrage": 2,
+    "accepted_ids_preserved": [
+      "CAD-DEC-01",
+      "G0-03"
+    ],
+    "aucun_nouvel_Accepte": true,
+    "aucune_coches": true,
+    "registre_non_modifie": true
+  },
+  "annotation_E7_a_integrer": {
+    "condition": "Clarification facultative de portée, pas erratum requis ni obstacle à réception ; A5 a rectifié son avis dans un delta distinct conservant original.",
+    "fait_JSON": {
+      "id": "E7",
+      "cible": "copie isolée, script de la PR #152",
+      "fichier": "apps/web/src/modules/studio/a.ts",
+      "contenu": "import { y } from \"../atelier/nouveau/interne\";",
+      "code_sortie": 1,
+      "sortie": "seule violation : EMPTY_SCOPE propre à la copie ; aucun signalement de l'import entre modules web",
+      "lecture": "#152 n'introduit pas de frontière entre modules web ; règles Studio à ajouter"
+    },
+    "fait_MD": {
+      "path": "/workspace/work/resume496/incoming/docs/ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md",
+      "line": 133,
+      "exact_line": "| [#152](https://github.com/RachEma-ux/Fadi/pull/152) « L1 — renforcer les garde-fous de l'architecture native » | brouillon, non fusionnée ; tête `f277723…`, base `5cf61d1` | `scripts/check-module-deps.mjs` (+165 / −80) | **REP-07 :** la réécriture résout les imports avec `ts.resolveModuleName` ou `path.resolve`. **Essai E6** (copie isolée, script de #152) : l'import relatif E2 est détecté (`FORBIDDEN_BOUNDARY : @fadi/web -> @fadi/api`). **Essai E7 :** l'import entre modules web E3 n'est **pas** détecté. Le faux négatif E2 est donc déjà traité par #152 : le correctif proposé plus haut devient inutile si #152 est fusionnée. Les frontières propres à Studio restent à ajouter dans tous les cas. |",
+      "qualification": "Pas de code0 explicite pourE7 dans cette ligne ; formulation non détecté à distinguer de succès du contrôle. Code0 est explicitement E3/main ligne105."
+    },
+    "proposition_texte": "E7 (#152, copie isolée) termine code1 pour EMPTY_SCOPE ; aucune violation intermodule rapportée. Ce n’est ni une réussite du garde ni un rejet de cet import. Le constat de frontière web manquante est statique et sa règle reste à décider.",
+    "precision_sur_revue_A5": "A5 a reconnu la confusion E3/E7 ; delta0cdfa785 retire contradiction alléguée et condition erratum obligatoire. Aucune faute numérique Claude retrouvée."
+  },
+  "autres_annotations": [
+    "OBS13 précise exception commentaire schema.ts : le résumé aucunfichiersourcechangé n’est pas une identité de tousblobs.",
+    "Aucun Accepté dans8REP proposés ; les deux AcceptéG0 du registre restent strictement conservés.",
+    "Les198tests et E0–E7/continuité sont déclarés parClaude, non relancés ni certifiés process/CI parA2/A5.",
+    "REP08 nécessite checkpoint réel STATUS/HANDOFF lors intégrationA0 ; forme des dossiers n’est pas véracité métier."
+  ],
+  "P630_conditionnel": {
+    "avant": 34,
+    "increment_conditions_examen_documentaire": 8,
+    "denominateur": 630,
+    "composition_apres": "40Vérifié documentaires +2Accepté cadrageG0",
+    "PDEV": "N/D",
+    "applique": false,
+    "apres_si_8_recevables_et_checkpoint": 42
+  },
+  "verdict": "Favorable à réception des huit conditions d’examen documentaire sous intégration/checkpointA0 ; aucun erratum numérique Claude requis, aucune conformitéStudio/DEC/gate acceptée.",
+  "limites": [
+    "203-QUALIFICATION-A2 v1 gelée et inchangée ; cette nouvelle revue apporte une preuve candidate distincte pour huitREP.",
+    "Aucune modification registre, STATUS/HANDOFF, workflow ou code ; aucun test/DB/service/import/POC exécuté.",
+    "Helper tableau_registre.py relève de revueA3/A0 distincte, non validé par cet avis.",
+    "Les états de PR142/152 sont ceux des sources datées ; aucun nouveau contrôle réseauA2."
+  ]
+}

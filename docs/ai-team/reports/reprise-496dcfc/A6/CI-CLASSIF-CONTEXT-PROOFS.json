@@ -1,0 +1,157 @@
+{
+  "baseline": "a4caaab0e6665480f09febe3914c960b424b6b47",
+  "branch": "fix/156-classification-no-ifc-inference",
+  "workflow_sha256": "cb3cc0beba7eb213a961056c7c3d58c6b4f64f409f385814568fc5680ab75819",
+  "context_cases": [
+    {
+      "case": "exact",
+      "pure": true,
+      "normal": false,
+      "passed": true
+    },
+    {
+      "case": "github.event_name-other",
+      "pure": false,
+      "normal": true,
+      "passed": true
+    },
+    {
+      "case": "github.repository-other",
+      "pure": false,
+      "normal": true,
+      "passed": true
+    },
+    {
+      "case": "github.event.pull_request.head.repo.full_name-other",
+      "pure": false,
+      "normal": true,
+      "passed": true
+    },
+    {
+      "case": "github.head_ref-other",
+      "pure": false,
+      "normal": true,
+      "passed": true
+    },
+    {
+      "case": "github.base_ref-other",
+      "pure": false,
+      "normal": true,
+      "passed": true
+    },
+    {
+      "case": "github.event_name-missing",
+      "pure": false,
+      "normal": true,
+      "passed": true
+    },
+    {
+      "case": "github.repository-missing",
+      "pure": false,
+      "normal": true,
+      "passed": true
+    },
+    {
+      "case": "github.event.pull_request.head.repo.full_name-missing",
+      "pure": false,
+      "normal": true,
+      "passed": true
+    },
+    {
+      "case": "github.head_ref-missing",
+      "pure": false,
+      "normal": true,
+      "passed": true
+    },
+    {
+      "case": "github.base_ref-missing",
+      "pure": false,
+      "normal": true,
+      "passed": true
+    }
+  ],
+  "normal_jobs_equal_base_except_if": true,
+  "pure_job_has_no_services": true,
+  "install_lifecycle_disabled": true,
+  "full_atelier_model_pure_suite_selected": true,
+  "no_test_was_executed_by_this_context_check": true,
+  "no_database_service_migration_or_admin": true,
+  "workflow_triggers": [
+    {
+      "file": "audit-drawall.yml",
+      "on": {
+        "pull_request": {
+          "paths": [
+            "scripts/audit-drawall-in-fadi.mjs",
+            "docs/workstreams/purge-drawall/**",
+            ".github/workflows/audit-drawall.yml"
+          ]
+        },
+        "workflow_dispatch": ""
+      }
+    },
+    {
+      "file": "builder-deploy.yml",
+      "on": {
+        "workflow_dispatch": {
+          "inputs": {
+            "duration": {
+              "description": "Combien de temps garder l'application accessible (minutes)",
+              "required": "true",
+              "default": "15",
+              "type": "choice",
+              "options": [
+                "5",
+                "10",
+                "15",
+                "30"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "file": "ci.yml",
+      "on": {
+        "push": {
+          "branches": [
+            "main"
+          ]
+        },
+        "pull_request": ""
+      }
+    },
+    {
+      "file": "continuity.yml",
+      "on": {
+        "pull_request": "",
+        "push": {
+          "branches": [
+            "main"
+          ]
+        },
+        "workflow_dispatch": ""
+      }
+    },
+    {
+      "file": "fadi-isolation.yml",
+      "on": {
+        "pull_request": "",
+        "push": {
+          "branches": [
+            "main"
+          ]
+        },
+        "workflow_dispatch": ""
+      }
+    }
+  ],
+  "file_hashes": {
+    "package.json": "abf927865c7607250f4c0db2962a1e99a50afd34eb18b34565aa447eee72e931",
+    "package-lock.json": "7506e0ae6075d622a1d8ee6835bc2411316c8915f279c4aea06c12b1144df6f3",
+    "packages/atelier-model/package.json": "f953685848e93d33a7709aa61001dc7444a588038912b6a324ce5365847b59f5",
+    "apps/api/scripts/build.mjs": "e4ee24be55c6c137eaf7f8cc0aa6b24b48d98cbf340c4257c1bb6e1899ba726e",
+    "apps/web/vite.config.ts": "97be880a8370cf083ecc7d5acf25600d6d541586f65e62103f6e15bbd506a991"
+  }
+}

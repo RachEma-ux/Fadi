@@ -90,6 +90,7 @@ export function AppShell() {
           <button ref={projectButton} type="button" className={`sidebar-projects${location.pathname.startsWith("/projets") && !collaborationActive ? " active" : ""}`} aria-label="Projets" title="Projets" aria-haspopup="menu" aria-expanded={projectsOpen} aria-controls={projectsOpen ? "projects-menu" : undefined} onClick={() => projectsOpen ? closeProjects() : openProjects()} onKeyDown={(e) => { if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); openProjects(); } }}>
             <Icon name="folder" /><span className="sidebar-label">Projets</span><Icon name="chevron-right" size={14} className="sidebar-label" />
           </button>
+          <NavLink to="/studio" className={({ isActive }) => isActive ? "active" : undefined} title="Studio" aria-label="Studio"><Icon name="design" /><span className="sidebar-label">Studio</span></NavLink>
           <Link to={collaborationLink} className={collaborationActive ? "active" : undefined} aria-current={collaborationActive ? "page" : undefined} title="Collaboration" aria-label="Collaboration"><Icon name="people" /><span className="sidebar-label">Collaboration</span></Link>
         </nav>
         <div className="app-nav-secondary">

@@ -1,3 +1,4 @@
+import type { StudioDocument, StudioEnvelope } from "@parcours/atelier-model";
 /**
  * Client HTTP minimal vers `apps/api`. Toujours `credentials: "include"`
  * (cookie de session httpOnly) ; jamais de jeton stocké en `localStorage`
@@ -716,7 +717,17 @@ export interface EnsemblesPersonnels {
   version: string | null;
 }
 
+export interface StudioContext {
+  study: { id: string; name: string; projectId: string };
+  variant: { id: string; name: string; studyId: string; headRevisionId: string };
+  revision: { id: string; parentRevisionId: string | null; document: StudioDocument };
+  canWrite: boolean;
+}
 export const api = {
+  studioStudies: (p: string) => request<{ studies: { id: string; name: string; initialVariantId: string }[] }>(`/projects/${encodeURIComponent(p)}/studio/studies`),
+  createStudioStudy: (p: string, name: string) => request<StudioContext>(`/projects/${encodeURIComponent(p)}/studio/studies`, { method: "POST", body: JSON.stringify({ name }) }),
+  studioContext: (p: string, s: string, v: string) => request<StudioContext>(`/projects/${encodeURIComponent(p)}/studio/studies/${encodeURIComponent(s)}/variants/${encodeURIComponent(v)}`),
+  studioCommands: (p: string, s: string, v: string, envelope: StudioEnvelope) => request<StudioContext & { replayed: boolean }>(`/projects/${encodeURIComponent(p)}/studio/studies/${encodeURIComponent(s)}/variants/${encodeURIComponent(v)}/commands`, { method: "POST", body: JSON.stringify(envelope) }),
   register: (email: string, password: string) =>
     request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
   login: (email: string, password: string) =>
@@ -922,7 +933,7 @@ export const api = {
   importExample: (exampleId: string) =>
     request<Project>(`/examples/${exampleId}/import`, { method: "POST" }),
 
-  // --- Atelier typé (chantier DrawAll, cahier des charges §5.4) ---
+  // --- Atelier Fadi typé (cahier des charges §5.4) ---
   getAtelierModelARevision: (projectId: string, revision: number) => request<AtelierModelResponse & { revisionCourante: number; lectureSeule: true }>(`/projects/${projectId}/atelier/model?revision=${revision}`),
   getAtelierHistoriqueObjet: (projectId: string, objetId: string) => request<{ objetId: string; existe: boolean; classe: string | null; entrees: { journalId: string; revision: number; kind: string; label: string; action: "cree" | "modifie" | "supprime"; auteur: string | null; date: string; successeurs: string[] }[] }>(`/projects/${projectId}/atelier/objets/${encodeURIComponent(objetId)}/historique`),
   getAtelierReferencesExternes: (projectId: string, traits = true) => request<{ revision: number; references: ReferenceExterneEtat[] }>(`/projects/${projectId}/atelier/references-externes${traits ? "" : "?traits=non"}`),

@@ -1,0 +1,195 @@
+{
+  "review": "M004-A4-M17-M24",
+  "date": "2026-10-18",
+  "scope": "Revue croisée documentaire de contenu, pas test produit ni décision de porte",
+  "inputs": [
+    {
+      "path": "A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+      "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917"
+    },
+    {
+      "path": "A1/M24-EXEMPLES-MANIFESTES.json",
+      "sha256": "bdecc5b2387a619ae3e0a09e78df44ea1dd3188fb1451be96980d32018551bf0"
+    },
+    {
+      "path": "A2/M05-M17-CONTRATS-DURABLES.md",
+      "sha256": "893d4917fe810867b589727e82d1789db56453f86c78fbfab56b294acedac84b"
+    },
+    {
+      "path": "A2/M05-M17-EXEMPLES-DOCUMENTAIRES.json",
+      "sha256": "6a6ffdb05613f0d992681d29f1e5b3c6b937c2356c6034cdd33aa28596ee1868"
+    },
+    {
+      "path": "A4/CONTRAT-NAV-M004.md",
+      "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a"
+    },
+    {
+      "path": "A4/MAQUETTES-DOCUMENTAIRES.md",
+      "sha256": "911a0721ed0a72ecf48478c63b635efd5dbe9c112d1de08e18fdd8c56f06baab"
+    },
+    {
+      "path": "A4/NAV-M004.json",
+      "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2"
+    },
+    {
+      "path": "A4/M21-CONTRAT-MINIMAL.md",
+      "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625"
+    },
+    {
+      "path": "A4/M21-CATALOGUE-EXEMPLES.json",
+      "sha256": "579b15c4bd3079ce8376881fbce62eae432a8a90a290eccbdcfe4b0bea79e13d"
+    }
+  ],
+  "blocking_findings": [],
+  "verdict": "Aucune contradiction bloquante restante identifiée dans le périmètre relu après correction documentaire A4",
+  "content_verdicts": [
+    {
+      "content": "États et actions explicites",
+      "verdict": "COHERENT",
+      "evidence": "A1 distingue travail/diffusion/fraîcheur et sépare préparer/contrôler/approuver/publier. NAV/maquettes n’engagent pas une preview par navigation ; modification historique exige nouvelle commande/fork explicite."
+    },
+    {
+      "content": "Droits",
+      "verdict": "COHERENT",
+      "evidence": "Approbation/publication sont deux permissions revalidées ; cumul explicite et tracé seulement. Admin technique, profil et actorId client ne créent pas de permission. Liens publication/blob et deep link restent autorisés par ressource."
+    },
+    {
+      "content": "Indépendance 2D/3D",
+      "verdict": "COHERENT",
+      "evidence": "A2 trois autorités et snapshot des autorités présentes ; M24 restaure A dessin2D seul/B modèle3D seul ; NAV choix de planche explicite sans modèle ou esquisse fictif. C projection associée ne devient pas deuxième définition."
+    },
+    {
+      "content": "Objet lié/projection/copie",
+      "verdict": "COHERENT",
+      "evidence": "Référence liée, objet associé et copie indépendante séparés ; projections/caches reconstruisibles, pas writers ; ambiguïté topologique marquée à résoudre. Snapshot exige coupe logique cohérente, pas juxtaposition de lectures."
+    },
+    {
+      "content": "Sauvegarde indéterminée et auth",
+      "verdict": "COHERENT",
+      "evidence": "Timeout après commit reste indéterminé client, requête/rejeu sous même contexte/requestId ; ni navigation/cancellation UI ni reconnexion ne prouvent annulation/confirmation. Queue utilisateurA jamais réadressée à utilisateurB/variante affichée."
+    },
+    {
+      "content": "Publication immuable et réouverture",
+      "verdict": "COHERENT",
+      "evidence": "A1 manifeste exact/versionné et droits actuels, empreinte divergente bloque ; pas substitution latest. Retrait/remplacement événements nouveaux. A2 exemples empreintes illustratives et A1 hashes calculés exemples sont explicitement distincts de la canonicalisation future DEC16."
+    },
+    {
+      "content": "Sources et sélection",
+      "verdict": "COHERENT",
+      "evidence": "Contrat A4 complété ROUTE03 cadrage/sources/variantes, provenance et droits par pièce ; A2 étude rattache sources sans réécriture ; M24 conserve sources/repères et accès. Étude vide possible ; géométrie exige variante ; aucune sélection planche implicite."
+    },
+    {
+      "content": "Validations distinctes",
+      "verdict": "COHERENT",
+      "evidence": "Quatre preuves métier M24 (durabilité/contrôle/approbation/diffusion) ne sont pas les trois coches de suivi630 Code/ReviewChatGPT/ReviewAdmin ; ni JSON valide ni décision de cadrage ne passe G1/G3 ou recette."
+    },
+    {
+      "content": "Registry writerAuthority",
+      "verdict": "COHERENT_APRES_CORRECTION_A4",
+      "evidence": "A2 a relevé ambiguïté authority free3d/architectural-object versus writerAuthority model3d/associated. A4 a séparé result_category et writer_authority_candidate et aligné mapping drawing2d/model3d/associated. Les catégories dérivés/revue/publication ont writer=null ; pas quatrième autorité géométrique ni renommage persistant."
+    }
+  ],
+  "changes_made_only_A4": [
+    "M21-CATALOGUE-EXEMPLES.json : authority remplacé result_category + writer_authority_candidate logique.",
+    "M21-CONTRAT-MINIMAL.md : correspondance explicite aux trois noms candidats A2/A1.",
+    "verify-m21-documentary.py : vérifie mapping ; exécution pureJSON PASS documentaire."
+  ],
+  "limits": [
+    "Aucune case/gate/permission effective/capacité marquée acceptée par ce rapport.",
+    "Aucun navigateur/DB/API métier/POC ni migration/flux de publication exécuté.",
+    "La revue ne vérifie pas toutes les empreintes des exemples M24 comme un test produit ; A1 conserve sa validation documentaire propre.",
+    "Chaque document et hash a une portée de lecture datée ; modification ultérieure requiert rapprochement.",
+    "Champs/erreurs/IDs des exemples restent candidats non wire/runtime ; DEC physiques ouvertes."
+  ],
+  "next_action": "A0 peut intégrer ce rapport et les nouveaux hashes A4 au checkpoint documentaire ; A2/A5 revoient mapping/oracles selon besoin. Garder G1/G3/codeStudio en attente des preuves/accords applicables.",
+  "followup_review": {
+    "reason": "Sept expectedManifestHash corrigés par A1 après la revue initiale ; chaînage de la preuve relu avant intégration A0",
+    "changed_inputs": [
+      {
+        "path": "A1/M24-EXEMPLES-MANIFESTES.json",
+        "previous_sha256": "0b088b02b3602f0dc25046afcedbf83046c13e7a122cdb687ddc4c6b2540379e",
+        "current_sha256": "bdecc5b2387a619ae3e0a09e78df44ea1dd3188fb1451be96980d32018551bf0"
+      }
+    ],
+    "scope": "Lecture JSON15cas, égalité expectedManifestHash→manifestHash et recalcul SHA256 JSON selon méthode illustrativeA1 ; pas validateur produit",
+    "negative_examples_checks": [
+      {
+        "id": "M24-NEG-PARENT",
+        "expectedManifestHash_matches_payload": true,
+        "manifest_hash_matches_content": true
+      },
+      {
+        "id": "M24-NEG-CHANGED-DOCUMENT",
+        "expectedManifestHash_matches_payload": true,
+        "manifest_hash_matches_content": true
+      },
+      {
+        "id": "M24-NEG-MISSING-PIECE",
+        "expectedManifestHash_matches_payload": true,
+        "manifest_hash_matches_content": true
+      },
+      {
+        "id": "M24-NEG-OLD-RESULT",
+        "expectedManifestHash_matches_payload": true,
+        "manifest_hash_matches_content": true
+      },
+      {
+        "id": "M24-NEG-UNIT",
+        "expectedManifestHash_matches_payload": true,
+        "manifest_hash_matches_content": true
+      },
+      {
+        "id": "M24-NEG-UNKNOWN-SCHEMA",
+        "expectedManifestHash_matches_payload": true,
+        "manifest_hash_matches_content": true
+      },
+      {
+        "id": "M24-NEG-FALSE-CONTROL",
+        "expectedManifestHash_matches_payload": true,
+        "manifest_hash_matches_content": true
+      },
+      {
+        "id": "M24-NEG-OPEN-OBSERVATION",
+        "expectedManifestHash_matches_payload": true,
+        "manifest_hash_matches_content": true
+      },
+      {
+        "id": "M24-NEG-APPROVE-WITHOUT-RIGHT",
+        "expectedManifestHash_matches_payload": true,
+        "manifest_hash_matches_content": true
+      },
+      {
+        "id": "M24-NEG-PUBLISH-WITHOUT-RIGHT",
+        "expectedManifestHash_matches_payload": true,
+        "manifest_hash_matches_content": true
+      },
+      {
+        "id": "M24-NEG-OFFLINE",
+        "expectedManifestHash_matches_payload": true,
+        "manifest_hash_matches_content": true
+      },
+      {
+        "id": "M24-NEG-WRITER",
+        "expectedManifestHash_matches_payload": true,
+        "manifest_hash_matches_content": true
+      },
+      {
+        "id": "M24-NEG-FALLBACK-LATEST",
+        "expectedManifestHash_matches_payload": true,
+        "manifest_hash_matches_content": true
+      },
+      {
+        "id": "M24-NEG-ORDER",
+        "expectedManifestHash_matches_payload": true,
+        "manifest_hash_matches_content": false
+      },
+      {
+        "id": "M24-NEG-IFC-CLAIM",
+        "expectedManifestHash_matches_payload": true,
+        "manifest_hash_matches_content": true
+      }
+    ],
+    "verdict": "Chaînage actuel cohérent ; NEG-ORDER conserve intentionnellement manifeste modifié/ancienhash, conforme à son oracle négatif",
+    "preserved_limits": "La correction ne prouve pas les refus métier, la réouverture réelle ou la canonicalisation production. Aucune case/gate/testproduit acquis ; réserve de portée originale conservée."
+  }
+}

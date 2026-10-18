@@ -1,0 +1,22 @@
+{
+  "count": 141,
+  "unique_ids": 141,
+  "source_A1_sha256": "a424643b7fefc4d4b995905146d6dbade66f98606b00aa395f29b811e07ec312",
+  "exact_anchored_text_errors": [],
+  "unknown_TEST_links": [],
+  "unknown_NAV_links": [],
+  "candidate_link_rows": 223,
+  "candidate_NAV_rows": 8,
+  "non_numbered_test_reference": [
+    {
+      "id": "AC-011",
+      "non_numbered_test_reference": "TEST spécifiques outil §19.3",
+      "action": "Cas outil à préciser ; aucun TEST039 inventé"
+    }
+  ],
+  "limits": [
+    "Textes exacts contre ancrages XML vérifiés ; aucune conformité métier déduite.",
+    "Lien TEST/NAV candidat, non preuve de couverture intégrale ni exécution.",
+    "IF002 TEST005/008 secondaires explicitement ; TEST001/022 principaux candidats."
+  ]
+}

@@ -1,0 +1,2834 @@
+{
+  "mission": "004/M08/A2",
+  "status": "COMPARAISON_STATIQUE_NON_EXECUTEE_NON_EQUIVALENCE_PRESERVEE",
+  "scope": "Exactement8entréesE2E historiques du mapping immuable et chacune de leurs propositions de vérification décomposées ; fiches intégrales contextualisées. Pas réaudit125, pas conformité de toutes obligations métier de chaque fiche.",
+  "baseline_mapping_sha256": "d8879b4ce71b82ea38352a61d7d2ae025350d8e65ef1b345241f85aa5e159348",
+  "baseline_mapping_reference": "a4caaab0e6665480f09febe3914c960b424b6b47",
+  "current_code_reference": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "current_reference_kind": "PR169 branche code, pas main fusionné ni code Studio",
+  "method": [
+    "Fichiers complets obtenus par git show aux deux SHAs et empreintés ; huit fiches intégrales lues",
+    "Recherche sur intégralité des candidats ; assertions pertinentes et leur préparation/rechargement/contexte lues ; absence bornée à ces candidats, pas toutdépôt",
+    "Citation exacte de chaque ligne, correspondance lignebaseline→lignecourante par blocs identiques ; diffAPI uniquement importguard+reset, assertionsinchangées",
+    "Sémantique du prédicat inspectée, pas seule présence titre/ID : exemple intitulé auteur/révision mais prédicat ne compare pas explicitement numéro",
+    "Ni tests, DB, E2E, socket, GitHub write, édition mapping ou fiche effectués"
+  ],
+  "classification_definitions": {
+    "presente": "Assertion ou précondition explicite correspondant à ce sous-attendu au niveau demandé, source statique seulement ; ne vaut pas succès",
+    "partielle": "Contenu proche mais autre niveau, corpus, cible, nombre, geste ou invariants incomplets ; non équivalent",
+    "absente": "Aucune assertion correspondant au sous-attendu identifiée dans les seuls candidats relus ; pas preuve absence fonctionnalité",
+    "nonapplicable": "Assertion supplémentaire vérifie autre objectif, ne peut compter pour le contrat historique ; attendushistoriques restent applicables"
+  },
+  "sources": [
+    {
+      "path": "apps/api/src/routes/atelier-commands.test.ts",
+      "baseline_commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "baseline_sha256": "1bc991b1b81d97ba282f5ff449dc43223f216f349ba6631f2705448ae0188f98",
+      "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+      "unchanged": false,
+      "current_git_blob": "4cf62fb62154cd7435fff87cc801d1e89ccaad76",
+      "line_count_baseline": 1023,
+      "line_count_current": 1022
+    },
+    {
+      "path": "apps/web/e2e/atelier-complements.mjs",
+      "baseline_commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "baseline_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+      "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+      "unchanged": true,
+      "current_git_blob": "a38c75ae79336e1afa058142ce3650ac974e5d58",
+      "line_count_baseline": 2594,
+      "line_count_current": 2594
+    },
+    {
+      "path": "apps/web/e2e/atelier-documents.mjs",
+      "baseline_commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "baseline_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+      "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+      "unchanged": true,
+      "current_git_blob": "d8ef25c93b51f7971d858cab87414d7b7e1d9553",
+      "line_count_baseline": 382,
+      "line_count_current": 382
+    },
+    {
+      "path": "apps/web/e2e/atelier-nouveau.mjs",
+      "baseline_commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "baseline_sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+      "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "current_sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+      "unchanged": true,
+      "current_git_blob": "348352e00745372bbfd3cba1c1ca9d9bb66c2e51",
+      "line_count_baseline": 414,
+      "line_count_current": 414
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-08.md",
+      "baseline_commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "baseline_sha256": "3895d476c13c7b1143c642eab9ca0d7be72cc187b3d4f0ea2ceabe3d27607a06",
+      "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "current_sha256": "3895d476c13c7b1143c642eab9ca0d7be72cc187b3d4f0ea2ceabe3d27607a06",
+      "unchanged": true,
+      "current_git_blob": "d2f04e40a9114dd3ac474b9a53dd6024543b4afa",
+      "line_count_baseline": 32,
+      "line_count_current": 32
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-09.md",
+      "baseline_commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "baseline_sha256": "929e76e9844a20913dde3e3ed6e1fb5d05453e8cdb7267d1a11a461abc92d557",
+      "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "current_sha256": "929e76e9844a20913dde3e3ed6e1fb5d05453e8cdb7267d1a11a461abc92d557",
+      "unchanged": true,
+      "current_git_blob": "1c786eca42ac714ee754391421c07a4a6b3d743d",
+      "line_count_baseline": 24,
+      "line_count_current": 24
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-07.md",
+      "baseline_commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "baseline_sha256": "be1077b23d18d15cdce8668b10667c9fbd80197a7ffd4d89b9c3265c547a3922",
+      "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "current_sha256": "be1077b23d18d15cdce8668b10667c9fbd80197a7ffd4d89b9c3265c547a3922",
+      "unchanged": true,
+      "current_git_blob": "a783dc154684c74eed880f0db286663d05e69388",
+      "line_count_baseline": 25,
+      "line_count_current": 25
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-09.md",
+      "baseline_commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "baseline_sha256": "491a62eda26f69207f57e58b03bc5a7bc29ab880aaca8e7781415095a3aaf017",
+      "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "current_sha256": "491a62eda26f69207f57e58b03bc5a7bc29ab880aaca8e7781415095a3aaf017",
+      "unchanged": true,
+      "current_git_blob": "0f0d56c34f08d9589cd87bf34e47ba0ba0b99167",
+      "line_count_baseline": 26,
+      "line_count_current": 26
+    },
+    {
+      "path": "docs/atelier/fiches/DA-06-07.md",
+      "baseline_commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "baseline_sha256": "37b67b351273e64615e5e72633ce2f8b481b9857d2940890a1818c185ed02120",
+      "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "current_sha256": "37b67b351273e64615e5e72633ce2f8b481b9857d2940890a1818c185ed02120",
+      "unchanged": true,
+      "current_git_blob": "b7dc636f4760c9b28611a8c32e2cc0af293d24fe",
+      "line_count_baseline": 29,
+      "line_count_current": 29
+    },
+    {
+      "path": "docs/atelier/fiches/DA-06-08.md",
+      "baseline_commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "baseline_sha256": "f3bd2e6ee66292b6d558036c2c9604984a51624e0a0e0789433141f92d0e8ac6",
+      "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "current_sha256": "f3bd2e6ee66292b6d558036c2c9604984a51624e0a0e0789433141f92d0e8ac6",
+      "unchanged": true,
+      "current_git_blob": "638dfb5f01c53c9b957b9e01282ed4a10c82b53c",
+      "line_count_baseline": 32,
+      "line_count_current": 32
+    },
+    {
+      "path": "docs/atelier/fiches/DA-21-06.md",
+      "baseline_commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "baseline_sha256": "09ca0ba9fa3abaf274bd37a221e61e83fba26202e7f9eaaab9e3ee638c7af050",
+      "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "current_sha256": "09ca0ba9fa3abaf274bd37a221e61e83fba26202e7f9eaaab9e3ee638c7af050",
+      "unchanged": true,
+      "current_git_blob": "6657692a9766955c364174a7c1dbe59543d2e52c",
+      "line_count_baseline": 28,
+      "line_count_current": 28
+    },
+    {
+      "path": "docs/atelier/fiches/DA-21-07.md",
+      "baseline_commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "baseline_sha256": "77be396a2bd2a0a96e83d9c7b1d7ebdccc7b38d266ba083dbb05651347d90fb7",
+      "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "current_sha256": "77be396a2bd2a0a96e83d9c7b1d7ebdccc7b38d266ba083dbb05651347d90fb7",
+      "unchanged": true,
+      "current_git_blob": "973c756a50d91806afe1b27c53e87e416ec6f3d1",
+      "line_count_baseline": 28,
+      "line_count_current": 28
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+      "baseline_commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "baseline_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+      "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+      "unchanged": true,
+      "current_git_blob": "b1cf02c1a04663aeb329e7fd9b724a6f400a73cb",
+      "line_count_baseline": 257,
+      "line_count_current": 257
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "baseline_commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "baseline_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+      "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+      "unchanged": true,
+      "current_git_blob": "458b232273b5e5529ff6489804371cba011901db",
+      "line_count_baseline": 294,
+      "line_count_current": 294
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+      "baseline_commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "baseline_sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+      "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "current_sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+      "unchanged": true,
+      "current_git_blob": "5fcc75babb77747b5a284f2d6fc8bcb24cf12874",
+      "line_count_baseline": 110,
+      "line_count_current": 110
+    }
+  ],
+  "entries": [
+    {
+      "entry_id": "M08-PATH-008",
+      "source_fiche": "docs/atelier/fiches/DA-01-08.md",
+      "historical_source_line": 25,
+      "historical_exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · esquisse paramétrique ») : longueur d'un rectangle contraint modifiée dans l'inspecteur : géométrie recalculée, révision +1 ; annulation → ancienne valeur ; second navigateur à la même révision. |",
+      "historical_level": "e2e_navigateur",
+      "historical_acceptance_preserved": "**État : disponible (lot 5) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : tests `packages/atelier-model/src/commandes/contrainte.test.ts` (rectangle + 2 cotes pilotantes → 2 degrés de liberté, longueur modifiée recalculée, cotes redondantes refusées, cote de contrôle sans effet, « ° » refusé, inverse) ; compte rendu `lots/lot-5.md`.",
+      "mapping_candidates_unchanged": [
+        "packages/atelier-model/src/commandes/contrainte.test.ts",
+        "apps/web/e2e/atelier-documents.mjs"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "M08-PATH-008-A01",
+          "historical_clause_exact": "longueur d'un rectangle contraint modifiée dans l'inspecteur",
+          "classification": "partielle",
+          "justification": "Le pur modifie la distance pilotante ; E2E teste horizontal/angle sur polyligne, pas modification de longueur rectangulaire dans inspecteur.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+              "baseline_line": 80,
+              "current_line": 80,
+              "exact_line": "  it(\"rectangle contraint + deux distances pilotantes : 2 degrés de liberté (position) ; changer la longueur recalcule les côtés\", () => {",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+              "baseline_line": 90,
+              "current_line": 90,
+              "exact_line": "    e = appliquerLot(e, lot([{ type: \"contrainte.modifier\", params: { id: \"lx\", valeur: m(6) } }], \"mod\")).etat;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+              "baseline_line": 91,
+              "current_line": 91,
+              "exact_line": "    expect(longueur(\"L1\")).toBeCloseTo(6, 6);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+              "baseline_line": 92,
+              "current_line": 92,
+              "exact_line": "    expect(longueur(\"L3\")).toBeCloseTo(6, 6);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 182,
+              "current_line": 182,
+              "exact_line": "await page.locator(\".ajout-contrainte select\").first().selectOption(\"horizontal\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 186,
+              "current_line": 186,
+              "exact_line": "check(\"contrainte « horizontal » : premier segment rendu horizontal, contrainte listée avec les degrés de liberté\", Math.abs(esqApres.params.points[0].y - esqApres.params.points[1].y) < 1e-6 && (await page.locator(\".liste-contraintes li\").count()) === 1 && /degré\\(s\\) de liberté/.test(await page.locator(\".inspecteur-contraintes > summary\").textContent()), JSON.stringify(esqApres.params.points.slice(0, 2).map((p) => [p.x, p.y])));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 195,
+              "current_line": 195,
+              "exact_line": "check(\"contrainte « angle » 90° : second segment perpendiculaire au premier, deux contraintes listées\", Math.abs(prodScal) < 1e-4 && (await page.locator(\".liste-contraintes li\").count()) === 2, JSON.stringify(esqAngle.map((p) => [p.x, p.y])));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-008-A02",
+          "historical_clause_exact": "géométrie recalculée",
+          "classification": "partielle",
+          "justification": "Longueurs5→6 des côtés testées en unité ; horizontal/angle E2E diffèrent du cas distance.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+              "baseline_line": 87,
+              "current_line": 87,
+              "exact_line": "    expect(longueur(\"L1\")).toBeCloseTo(5, 6);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+              "baseline_line": 88,
+              "current_line": 88,
+              "exact_line": "    expect(longueur(\"L3\")).toBeCloseTo(5, 6);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+              "baseline_line": 89,
+              "current_line": 89,
+              "exact_line": "    expect(longueur(\"L2\")).toBeCloseTo(2.5, 6);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+              "baseline_line": 91,
+              "current_line": 91,
+              "exact_line": "    expect(longueur(\"L1\")).toBeCloseTo(6, 6);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+              "baseline_line": 92,
+              "current_line": 92,
+              "exact_line": "    expect(longueur(\"L3\")).toBeCloseTo(6, 6);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 186,
+              "current_line": 186,
+              "exact_line": "check(\"contrainte « horizontal » : premier segment rendu horizontal, contrainte listée avec les degrés de liberté\", Math.abs(esqApres.params.points[0].y - esqApres.params.points[1].y) < 1e-6 && (await page.locator(\".liste-contraintes li\").count()) === 1 && /degré\\(s\\) de liberté/.test(await page.locator(\".inspecteur-contraintes > summary\").textContent()), JSON.stringify(esqApres.params.points.slice(0, 2).map((p) => [p.x, p.y])));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-008-A03",
+          "historical_clause_exact": "révision +1",
+          "classification": "partielle",
+          "justification": "enregistre attend strictement > précédente, pas +1 exact ; unité pure sans révision serveur.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 52,
+              "current_line": 52,
+              "exact_line": "const enregistre = async () => {",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 55,
+              "current_line": 55,
+              "exact_line": "    return !!m && Number(m[1]) > r0;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 61,
+              "current_line": 61,
+              "exact_line": "  derniere = await revisionAffichee();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 184,
+              "current_line": 184,
+              "exact_line": "await enregistre();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-008-A04",
+          "historical_clause_exact": "annulation → ancienne valeur",
+          "classification": "partielle",
+          "justification": "Inverse de lot de contraintes initiales restaure objets/relations ; pas undo navigateur de la modification de distance.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+              "baseline_line": 103,
+              "current_line": 103,
+              "exact_line": "  it(\"l'inverse d'un lot de contraintes restitue la géométrie de départ\", () => {",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+              "baseline_line": 105,
+              "current_line": 105,
+              "exact_line": "    const r = appliquerLot(depart, lot(rectangleContraint(), \"rect\"));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+              "baseline_line": 106,
+              "current_line": 106,
+              "exact_line": "    const retour = appliquerLot(r.etat, lot([r.inverse], \"inv\")).etat;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+              "baseline_line": 107,
+              "current_line": 107,
+              "exact_line": "    expect(retour.objets).toEqual(depart.objets);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+              "baseline_line": 108,
+              "current_line": 108,
+              "exact_line": "    expect(retour.relations).toEqual(depart.relations);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+              "level": "unite_pure",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-008-A05",
+          "historical_clause_exact": "second navigateur à la même révision",
+          "classification": "absente",
+          "justification": "Aucun second contexte/page comparant révisions dans les deux candidats.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 30,
+              "current_line": 30,
+              "exact_line": "const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? undefined });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "contexte_non_equivalent"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 31,
+              "current_line": 31,
+              "exact_line": "const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "contexte_non_equivalent"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 32,
+              "current_line": 32,
+              "exact_line": "const page = await ctx.newPage();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "contexte_non_equivalent"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 380,
+              "current_line": 380,
+              "exact_line": "await browser.close();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "contexte_non_equivalent"
+            }
+          ],
+          "absence_scope": [
+            "packages/atelier-model/src/commandes/contrainte.test.ts",
+            "apps/web/e2e/atelier-documents.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        }
+      ],
+      "supplement_non_equivalent": []
+    },
+    {
+      "entry_id": "M08-PATH-053",
+      "source_fiche": "docs/atelier/fiches/DA-03-09.md",
+      "historical_source_line": 22,
+      "historical_exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Objets · paramétrique ») : copie de travail de P.118 : mur `EX118-mezz-W-009` : changer l'épaisseur, porte `EX118-mezz-D-001` toujours à t = 0,5 ; annuler : valeurs initiales identiques ; second navigateur à la même révision. |",
+      "historical_level": "e2e_navigateur",
+      "historical_acceptance_preserved": "**État : disponible (lots 1–5) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : `packages/atelier-model/src/commandes/commandes.test.ts`, `documents/documents.test.ts` (représentations recalculées de façon reproductible) ; comptes rendus `lots/lot-3a.md`, `lot-5.md`.",
+      "mapping_candidates_unchanged": [
+        "packages/atelier-model/src/commandes/commandes.test.ts",
+        "apps/web/e2e/atelier-nouveau.mjs"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "M08-PATH-053-A01",
+          "historical_clause_exact": "copie de travail de P.118",
+          "classification": "presente",
+          "justification": "Scénario navigateur importe exemple et vérifie copie modifiable/référence inchangée ; donnée synthétiqueP118 annoncée, exécution non faite.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "baseline_line": 57,
+              "current_line": 57,
+              "exact_line": "await page.locator('.example-card button:has-text(\"Importer\")').first().click();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "baseline_line": 83,
+              "current_line": 83,
+              "exact_line": "check(\"référence protégée : la barre d'état l'annonce\", /Exemple protégé : première modification dans une copie automatique\\./.test(await page.locator(\".atelier-n-reference\").textContent()));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "baseline_line": 89,
+              "current_line": 89,
+              "exact_line": "const copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "baseline_line": 90,
+              "current_line": 90,
+              "exact_line": "const referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "baseline_line": 91,
+              "current_line": 91,
+              "exact_line": "check(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-053-A02",
+          "historical_clause_exact": "mur `EX118-mezz-W-009` : changer l'épaisseur",
+          "classification": "absente",
+          "justification": "E2E choisit mur créé dans niveau essai et vérifie type/hauteur, pas épaisseur sur identifiant historique ; unité candidate ne comporte pas cette mutation.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "baseline_line": 181,
+              "current_line": 181,
+              "exact_line": "check(\"type : créé depuis un mur puis affecté à un autre mur\", typeCree.startsWith(\"Mur\") && (await page.locator('.inspecteur select[id^=\"type-\"] option:checked').textContent()) === typeCree);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "level": "e2e_navigateur",
+              "role": "assertion_voisine_non_equivalente"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "baseline_line": 267,
+              "current_line": 267,
+              "exact_line": "const murId = await page.evaluate(() => [...document.querySelectorAll(\".nav-objets button[data-objet]\")].map((b) => b.dataset.objet).find((t) => t.startsWith(\"mur-\")));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "level": "e2e_navigateur",
+              "role": "assertion_voisine_non_equivalente"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "baseline_line": 281,
+              "current_line": 281,
+              "exact_line": "check(\"pousser / tirer : la hauteur du mur a augmenté (> 3 m) et est enregistrée\", Number(hauteurApres.replace(\",\", \".\")) > 3, `${hauteurApres} ; ${murId} à ${JSON.stringify(pos)} ; sonde ${await page.evaluate((p) => window.fadiMesures3D.sonder(p.x, p.y), pos)}`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "level": "e2e_navigateur",
+              "role": "assertion_voisine_non_equivalente"
+            }
+          ],
+          "absence_scope": [
+            "packages/atelier-model/src/commandes/commandes.test.ts",
+            "apps/web/e2e/atelier-nouveau.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-053-A03",
+          "historical_clause_exact": "porte `EX118-mezz-D-001` toujours à t = 0,5",
+          "classification": "partielle",
+          "justification": "Unité pose porte synthétique à0,5 et vérifie son centre ; aucune conservationt0,5 après changement épaisseur du mur historique.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 44,
+              "current_line": 44,
+              "exact_line": "    const r = appliquerLot(etat, lot([{ type: \"ouverture.poser\", params: { classe: \"porte\", murHoteId: \"mur-w-1\", position: 0.5, largeur: m(0.9), hauteur: m(2.1) } }], \"d\"));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 48,
+              "current_line": 48,
+              "exact_line": "    expect(pointCaracteristique(r.etat, porte.id, \"centre\")).toEqual(pt(2, 0));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 69,
+              "current_line": 69,
+              "exact_line": "    expect(porte.params.position).toBeCloseTo(0.5, 12);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 115,
+              "current_line": 115,
+              "exact_line": "    expect((r.etat.objets[\"porte-o-1\"] as Occurrence<\"porte\">).params.position).toBe(0.25);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-053-A04",
+          "historical_clause_exact": "annuler : valeurs initiales identiques",
+          "classification": "partielle",
+          "justification": "Inverse exact d’un lot synthétique et undo renommage Bureau, pas valeurs mur/porte historiques.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 204,
+              "current_line": 204,
+              "exact_line": "    const retour = appliquerCommande(r.etat, r.inverse, { ids: generateurIds(\"undo\") });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 205,
+              "current_line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "baseline_line": 152,
+              "current_line": 152,
+              "exact_line": "check(\"Ctrl Z annule le renommage\", !(await navTexte()).includes(\"Bureau\"));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "baseline_line": 155,
+              "current_line": 155,
+              "exact_line": "check(\"Ctrl Maj Z le rétablit\", (await navTexte()).includes(\"Bureau\"));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-053-A05",
+          "historical_clause_exact": "second navigateur à la même révision",
+          "classification": "partielle",
+          "justification": "Comparaison barre-sync réelle en scénario nouveau mais après autres gestes, pas épaisseur murP118/porte cible.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "baseline_line": 346,
+              "current_line": 346,
+              "exact_line": "// Second navigateur (même compte) : il lit les mêmes révisions.",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "baseline_line": 347,
+              "current_line": 347,
+              "exact_line": "const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "baseline_line": 353,
+              "current_line": 353,
+              "exact_line": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        }
+      ],
+      "supplement_non_equivalent": []
+    },
+    {
+      "entry_id": "M08-PATH-079",
+      "source_fiche": "docs/atelier/fiches/DA-05-07.md",
+      "historical_source_line": 20,
+      "historical_exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Blocs · bibliothèque », lot 5) : copie de travail de P.118 : bibliothèque vide à l'ouverture ; définir deux blocs dans une bibliothèque, rechercher, placer ; recharger : même liste ; second navigateur à la même révision. |",
+      "historical_level": "e2e_navigateur",
+      "historical_acceptance_preserved": "**État : disponible (lot 5) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : tests `packages/atelier-model/src/commandes/bloc.test.ts` (regroupement par bibliothèque, nom ne différant que par la casse refusé) ; outil « Placer un bloc » (recherche, choix) ; compte rendu `lots/lot-5.md`.",
+      "mapping_candidates_unchanged": [
+        "packages/atelier-model/src/commandes/bloc.test.ts",
+        "apps/web/e2e/atelier-complements.mjs"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "M08-PATH-079-A01",
+          "historical_clause_exact": "copie de travail de P.118",
+          "classification": "presente",
+          "justification": "Compléments importe explicitement exempleP118 puis crée copie.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 109,
+              "current_line": 109,
+              "exact_line": "const reference = (await api(\"post\", \"/examples/p118-exemple-complet/import\")).body.id;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 110,
+              "current_line": 110,
+              "exact_line": "const pid = (await api(\"post\", `/projects/${reference}/copies`, { name: \"P.118 · compléments\" })).body.id;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-079-A02",
+          "historical_clause_exact": "bibliothèque vide à l'ouverture",
+          "classification": "absente",
+          "justification": "Projet neuf créé dans export/import, aucune assertion zéro définition ou état vide avant import.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 621,
+              "current_line": 621,
+              "exact_line": "  const neuf = (await api(\"post\", \"/projects\", { code: \"P.300\", name: \"Projet bibliothèque\" })).body.id;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion_voisine_non_equivalente"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 622,
+              "current_line": 622,
+              "exact_line": "  const nv0 = await lot(neuf, `n-${Date.now()}`, 0, [{ type: \"niveau.creer\", params: { id: \"rdc\", nom: \"RDC\", elevation: 0 } }]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion_voisine_non_equivalente"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 628,
+              "current_line": 628,
+              "exact_line": "    defs = Object.keys((await modele(neuf)).modele.definitions).length;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion_voisine_non_equivalente"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 631,
+              "current_line": 631,
+              "exact_line": "  check(\"bibliothèque : fichier exporté puis importé dans un projet neuf (définitions reprises)\", nv0.status === 200 && defs > 0, `${defs} définition(s)`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion_voisine_non_equivalente"
+            }
+          ],
+          "absence_scope": [
+            "packages/atelier-model/src/commandes/bloc.test.ts",
+            "apps/web/e2e/atelier-complements.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-079-A03",
+          "historical_clause_exact": "définir deux blocs dans une bibliothèque",
+          "classification": "partielle",
+          "justification": "Unité regroupe un bloc Mobilier ; autre test imbriqué utilise deux bibliothèquesA/B ; pas deux blocs même bibliothèque via navigateur.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 28,
+              "current_line": 28,
+              "exact_line": "      { type: \"bloc.definir\", params: { id: \"b\", nom: \"Table\", cibles: [\"e1\", \"e2\", \"t1\"], pointDeBase: pt(10, 10), bibliotheque: \"Mobilier\" } },",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 39,
+              "current_line": 39,
+              "exact_line": "    expect(bibliotheques(r)).toEqual([{ nom: \"Mobilier\", definitions: [{ id: \"b\", nom: \"Table\", nature: \"bloc\", version: 1, occurrences: 2 }] }]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 40,
+              "current_line": 40,
+              "exact_line": "    expect(() => appliquerLot(r, lot([{ type: \"bloc.definir\", params: { id: \"b2\", nom: \"Chaise\", cibles: [\"e1\"], pointDeBase: pt(10, 10), bibliotheque: \"mobilier\" } }]))).toThrow(/seule la casse diffère/);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 164,
+              "current_line": 164,
+              "exact_line": "      { type: \"bloc.definir\", params: { id: \"petit\", nom: \"Trait\", cibles: [\"seg\"], pointDeBase: pt(0, 0), bibliotheque: \"A\" } },",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 166,
+              "current_line": 166,
+              "exact_line": "      { type: \"bloc.definir\", params: { id: \"grand\", nom: \"Paire\", cibles: [\"o1\"], pointDeBase: pt(10, 0), bibliotheque: \"B\" } },",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-079-A04",
+          "historical_clause_exact": "rechercher",
+          "classification": "absente",
+          "justification": "Filtre reprise bibliothèque testé mais pas recherche de deux définitions du projet dans catalogue bibliothèques.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 212,
+              "current_line": 212,
+              "exact_line": "const champBib = await page.locator('[data-reprise=\"bibliotheque\"]').isVisible().catch(() => false);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autre_operation"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 215,
+              "current_line": 215,
+              "exact_line": "check(\"bibliothèque de définitions : filtre proposé, aperçu sans écriture\", champBib && /définition\\(s\\)/.test((await page.locator(\"[data-reprise-apercu]\").textContent().catch(() => \"\")) ?? \"\") && (await modele(cible)).revision === 2);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autre_operation"
+            }
+          ],
+          "absence_scope": [
+            "packages/atelier-model/src/commandes/bloc.test.ts",
+            "apps/web/e2e/atelier-complements.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-079-A05",
+          "historical_clause_exact": "placer",
+          "classification": "partielle",
+          "justification": "Placements synthétiques en unité ; E2E supplémentaire vérifie import de définitions, pas placement depuis bibliothèque.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 29,
+              "current_line": 29,
+              "exact_line": "      { type: \"bloc.placer\", params: { id: \"o1\", definitionId: \"b\", niveauId: \"rdc\", position: pt(0, 5) } },",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 30,
+              "current_line": 30,
+              "exact_line": "      { type: \"bloc.placer\", params: { id: \"o2\", definitionId: \"b\", niveauId: \"rdc\", position: pt(3, 5), angle: { value: 90, unit: \"deg\" } } },",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 34,
+              "current_line": 34,
+              "exact_line": "    expect(r.objets[\"o1\"]!.definitionId).toBe(\"b\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 35,
+              "current_line": 35,
+              "exact_line": "    expect(r.objets[\"o2\"]!.definitionId).toBe(\"b\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 631,
+              "current_line": 631,
+              "exact_line": "  check(\"bibliothèque : fichier exporté puis importé dans un projet neuf (définitions reprises)\", nv0.status === 200 && defs > 0, `${defs} définition(s)`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-079-A06",
+          "historical_clause_exact": "recharger : même liste",
+          "classification": "absente",
+          "justification": "Réouverture projet après import sans comparaison liste bibliothèque avant/après reload.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 623,
+              "current_line": 623,
+              "exact_line": "  await ouvrir(neuf, false);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autre_operation"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 628,
+              "current_line": 628,
+              "exact_line": "    defs = Object.keys((await modele(neuf)).modele.definitions).length;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autre_operation"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 631,
+              "current_line": 631,
+              "exact_line": "  check(\"bibliothèque : fichier exporté puis importé dans un projet neuf (définitions reprises)\", nv0.status === 200 && defs > 0, `${defs} définition(s)`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autre_operation"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 632,
+              "current_line": 632,
+              "exact_line": "  await ouvrir(pid);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autre_operation"
+            }
+          ],
+          "absence_scope": [
+            "packages/atelier-model/src/commandes/bloc.test.ts",
+            "apps/web/e2e/atelier-complements.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-079-A07",
+          "historical_clause_exact": "second navigateur à la même révision",
+          "classification": "absente",
+          "justification": "Seul second appareil de compléments vérifie préférences d’affichage, pas modèle/bibliothèque/révision.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 1872,
+              "current_line": 1872,
+              "exact_line": "  const ctx2 = await browser.newContext({ viewport: { width: 1440, height: 900 } });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autre_objectif"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 1880,
+              "current_line": 1880,
+              "exact_line": "  const vu = await page2.waitForSelector('[data-ensemble-local=\"Perso e2e\"]', { state: \"attached\", timeout: 20000 }).then(() => true, () => false);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autre_objectif"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 1889,
+              "current_line": 1889,
+              "exact_line": "  check(\"ensembles personnels : enregistrés sur un appareil, retrouvés et supprimés sur un autre du même compte\", !!serveur?.version && vu && retire, `${JSON.stringify(serveur).slice(0, 120)} · ${vu} · ${retire}`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autre_objectif"
+            }
+          ],
+          "absence_scope": [
+            "packages/atelier-model/src/commandes/bloc.test.ts",
+            "apps/web/e2e/atelier-complements.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        }
+      ],
+      "supplement_non_equivalent": [
+        {
+          "classification": "nonapplicable",
+          "reason": "Export/import bibliothèque D050 est une extension distincte, pas oracle de recherche/placement/reload du lot5.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 631,
+              "current_line": 631,
+              "exact_line": "  check(\"bibliothèque : fichier exporté puis importé dans un projet neuf (définitions reprises)\", nv0.status === 200 && defs > 0, `${defs} définition(s)`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-080",
+      "source_fiche": "docs/atelier/fiches/DA-05-09.md",
+      "historical_source_line": 21,
+      "historical_exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Composants · définir, placer, compter », lot 5) : copie de travail de P.118 : définir un composant, placer 3 occurrences, surcharger une propriété sur l'une ; le tableau de quantités compte 3 ; annuler ; second navigateur à la même révision. |",
+      "historical_level": "e2e_navigateur",
+      "historical_acceptance_preserved": "**État : disponible (lot 5) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : tests `packages/atelier-model/src/commandes/bloc.test.ts` (propriétés héritées, surcharge conservée à la redéfinition, comptage par définition, nombre sans unité refusé) ; compte rendu `lots/lot-5.md`.",
+      "mapping_candidates_unchanged": [
+        "packages/atelier-model/src/commandes/bloc.test.ts",
+        "apps/web/e2e/atelier-documents.mjs"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "M08-PATH-080-A01",
+          "historical_clause_exact": "copie de travail de P.118",
+          "classification": "presente",
+          "justification": "Scénario Documents crée copie par premier niveau essai avant opérations.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 95,
+              "current_line": 95,
+              "exact_line": "await page.locator('.example-card button:has-text(\"Importer\")').first().click();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 96,
+              "current_line": 96,
+              "exact_line": "await page.waitForURL(/\\/projets\\/proj_/, { timeout: 60000 });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 97,
+              "current_line": 97,
+              "exact_line": "const reference = page.url().split(\"?\")[0];",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 104,
+              "current_line": 104,
+              "exact_line": "await page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(reference), { timeout: 30000 });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 105,
+              "current_line": 105,
+              "exact_line": "url = page.url().split(\"?\")[0];",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-080-A02",
+          "historical_clause_exact": "définir un composant",
+          "classification": "partielle",
+          "justification": "Composant Lavabo en unité ; E2E Banc vérifie classe bloc simple, pas composant.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 72,
+              "current_line": 72,
+              "exact_line": "      { type: \"bloc.definir\", params: { id: \"c\", nom: \"Lavabo\", nature: \"composant\", cibles: [\"e2\"], pointDeBase: pt(10.6, 10.4), proprietes: { marque: { valeur: \"non renseignée\" }, debit: { valeur: 12, unite: \"l/min\" } }, classification: \"Sanitaires\" } },",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 77,
+              "current_line": 77,
+              "exact_line": "    expect(proprietesEffectives(r, r.objets[\"l1\"]!)[\"debit\"]).toEqual({ valeur: 12, unite: \"l/min\", source: \"definition\" });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 208,
+              "current_line": 208,
+              "exact_line": "check(\"bloc « Banc » : définition au catalogue, esquisse remplacée par une occurrence, seconde occurrence placée\", Object.values(m1.definitions).some((d) => d.classe === \"bloc\" && d.nom === \"Banc\") && occ.length === 2 && !m1.objets[esq.id] && (await page.locator(\".plan2d .obj-bloc\").count()) === 2);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-080-A03",
+          "historical_clause_exact": "placer 3 occurrences",
+          "classification": "partielle",
+          "justification": "Deux occurrences en unité et deux blocs simples en E2E ; aucun compte3.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 73,
+              "current_line": 73,
+              "exact_line": "      { type: \"bloc.placer\", params: { id: \"l1\", definitionId: \"c\", niveauId: \"rdc\", position: pt(1, 1) } },",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 74,
+              "current_line": 74,
+              "exact_line": "      { type: \"bloc.placer\", params: { id: \"l2\", definitionId: \"c\", niveauId: \"rdc\", position: pt(2, 1) } },",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 83,
+              "current_line": 83,
+              "exact_line": "    expect(t.lignes).toEqual([[\"c\", \"composant\", \"Lavabo\", \"Sanitaires\", 2, \"RDC\"]]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 208,
+              "current_line": 208,
+              "exact_line": "check(\"bloc « Banc » : définition au catalogue, esquisse remplacée par une occurrence, seconde occurrence placée\", Object.values(m1.definitions).some((d) => d.classe === \"bloc\" && d.nom === \"Banc\") && occ.length === 2 && !m1.objets[esq.id] && (await page.locator(\".plan2d .obj-bloc\").count()) === 2);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-080-A04",
+          "historical_clause_exact": "surcharger une propriété sur l'une",
+          "classification": "partielle",
+          "justification": "Débit9 sur occurrence l2 et conservation après redéfinition testés en unité, pas UI.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 75,
+              "current_line": 75,
+              "exact_line": "      { type: \"propriete.definir\", params: { id: \"l2\", nom: \"debit\", valeur: 9, unite: \"l/min\" } },",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 78,
+              "current_line": 78,
+              "exact_line": "    expect(proprietesEffectives(r, r.objets[\"l2\"]!)[\"debit\"]).toMatchObject({ valeur: 9, source: \"occurrence\" });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 79,
+              "current_line": 79,
+              "exact_line": "    r = appliquerLot(r, lot([{ type: \"bloc.definir\", params: { redefinir: \"c\", cibles: [\"e2\"], pointDeBase: pt(10.6, 10.4), proprietes: { debit: { valeur: 15, unite: \"l/min\" } } } }], \"re\")).etat;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 80,
+              "current_line": 80,
+              "exact_line": "    expect(proprietesEffectives(r, r.objets[\"l2\"]!)[\"debit\"]).toMatchObject({ valeur: 9, source: \"occurrence\" });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 81,
+              "current_line": 81,
+              "exact_line": "    expect(proprietesEffectives(r, r.objets[\"l1\"]!)[\"debit\"]).toMatchObject({ valeur: 15, source: \"definition\" });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-080-A05",
+          "historical_clause_exact": "le tableau de quantités compte 3",
+          "classification": "partielle",
+          "justification": "Tableau unité exige2 ; blocs E2E ne constituent pas quantité composants3.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 82,
+              "current_line": 82,
+              "exact_line": "    const t = genererTableau(r, \"composants\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 83,
+              "current_line": 83,
+              "exact_line": "    expect(t.lignes).toEqual([[\"c\", \"composant\", \"Lavabo\", \"Sanitaires\", 2, \"RDC\"]]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 208,
+              "current_line": 208,
+              "exact_line": "check(\"bloc « Banc » : définition au catalogue, esquisse remplacée par une occurrence, seconde occurrence placée\", Object.values(m1.definitions).some((d) => d.classe === \"bloc\" && d.nom === \"Banc\") && occ.length === 2 && !m1.objets[esq.id] && (await page.locator(\".plan2d .obj-bloc\").count()) === 2);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-080-A06",
+          "historical_clause_exact": "annuler",
+          "classification": "partielle",
+          "justification": "Inverse de redéfinition bloc unitaire prouvé ; pas annulation navigateur composant/quantités.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 48,
+              "current_line": 48,
+              "exact_line": "    const r = appliquerLot(e, lot([{ type: \"bloc.definir\", params: { redefinir: \"b\", cibles: [\"e1\", \"e2\"], pointDeBase: pt(10, 10) } }], \"re\"));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "baseline_line": 52,
+              "current_line": 52,
+              "exact_line": "    expect(appliquerLot(r.etat, lot([r.inverse], \"inv\")).etat.definitions[\"b\"]).toEqual(e.definitions[\"b\"]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+              "level": "unite_pure",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-080-A07",
+          "historical_clause_exact": "second navigateur à la même révision",
+          "classification": "absente",
+          "justification": "Documents n’ouvre qu’un contexte navigateur ; unité sans collaboration.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 30,
+              "current_line": 30,
+              "exact_line": "const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? undefined });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "contexte"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 31,
+              "current_line": 31,
+              "exact_line": "const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "contexte"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 32,
+              "current_line": 32,
+              "exact_line": "const page = await ctx.newPage();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "contexte"
+            },
+            {
+              "path": "apps/web/e2e/atelier-documents.mjs",
+              "baseline_line": 380,
+              "current_line": 380,
+              "exact_line": "await browser.close();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+              "level": "e2e_navigateur",
+              "role": "contexte"
+            }
+          ],
+          "absence_scope": [
+            "packages/atelier-model/src/commandes/bloc.test.ts",
+            "apps/web/e2e/atelier-documents.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        }
+      ],
+      "supplement_non_equivalent": []
+    },
+    {
+      "entry_id": "M08-PATH-089",
+      "source_fiche": "docs/atelier/fiches/DA-06-07.md",
+      "historical_source_line": 23,
+      "historical_exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Propriétés · BIM ») : copie de travail de P.118 : propriété sur `EX118-mezz-W-009` et sur un type de mur (héritée par ses murs) ; surcharge sur un mur ; retrait (« non évaluée ») ; annuler ; recharger : valeurs, provenance et statut identiques ; second navigateur à la même révision. |",
+      "historical_level": "e2e_navigateur",
+      "historical_acceptance_preserved": "**État : disponible (lots 3a, 5) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : `packages/atelier-model/src/commandes/commandes.test.ts`, `commandes/bloc.test.ts` (propriétés héritées des composants) ; comptes rendus `lots/lot-3a.md`, `lot-5.md`.",
+      "mapping_candidates_unchanged": [
+        "packages/atelier-model/src/commandes/commandes.test.ts",
+        "apps/web/e2e/atelier-complements.mjs"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "M08-PATH-089-A01",
+          "historical_clause_exact": "copie de travail de P.118",
+          "classification": "presente",
+          "justification": "Compléments copie explicite P118.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 109,
+              "current_line": 109,
+              "exact_line": "const reference = (await api(\"post\", \"/examples/p118-exemple-complet/import\")).body.id;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 110,
+              "current_line": 110,
+              "exact_line": "const pid = (await api(\"post\", `/projects/${reference}/copies`, { name: \"P.118 · compléments\" })).body.id;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-089-A02",
+          "historical_clause_exact": "propriété sur `EX118-mezz-W-009`",
+          "classification": "partielle",
+          "justification": "Objet synthétique w en unité, CSV surcroix-h en E2E ; pas murP118 précis.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 271,
+              "current_line": 271,
+              "exact_line": "    const r = appliquer(e, [{ type: \"propriete.definir\", params: { id: \"w\", nom: \"resistanceThermique\", valeur: 2.5, unite: \"m2.K/W\", statut: \"a-verifier\" } }]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 272,
+              "current_line": 272,
+              "exact_line": "    expect(r.etat.objets[\"w\"]!.proprietes[\"resistanceThermique\"]).toEqual({ valeur: 2.5, unite: \"m2.K/W\", provenance: \"saisie\", statut: \"a-verifier\" });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 599,
+              "current_line": 599,
+              "exact_line": "  (await import(\"node:fs\")).writeFileSync(cheminCsv, \"id;propriete;valeur;unite\\ncroix-h;Résistance au feu;EI 60;\\ncroix-h;Épaisseur relevée;20;\\n\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 609,
+              "current_line": 609,
+              "exact_line": "  check(\"propriétés importées d'un CSV, ligne numérique sans unité refusée\", propsCroix[\"Résistance au feu\"]?.valeur === \"EI 60\" && propsCroix[\"Résistance au feu\"]?.provenance === \"import\" && !propsCroix[\"Épaisseur relevée\"], JSON.stringify(Object.keys(propsCroix)));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-089-A03",
+          "historical_clause_exact": "sur un type de mur (héritée par ses murs)",
+          "classification": "absente",
+          "justification": "commandes.test ne teste pas propriété de définition/type ; la fiche cite aussi bloc.test mais ce n’est pas candidat de cette entrée immuable. Ne pas importer sa couverture implicitement.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 260,
+              "current_line": 260,
+              "exact_line": "  const base = () =>",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "objet_seul"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 263,
+              "current_line": 263,
+              "exact_line": "      { type: \"mur.tracer\", params: { id: \"w\", niveauId: \"rdc\", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3) } },",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "objet_seul"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 271,
+              "current_line": 271,
+              "exact_line": "    const r = appliquer(e, [{ type: \"propriete.definir\", params: { id: \"w\", nom: \"resistanceThermique\", valeur: 2.5, unite: \"m2.K/W\", statut: \"a-verifier\" } }]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "objet_seul"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 272,
+              "current_line": 272,
+              "exact_line": "    expect(r.etat.objets[\"w\"]!.proprietes[\"resistanceThermique\"]).toEqual({ valeur: 2.5, unite: \"m2.K/W\", provenance: \"saisie\", statut: \"a-verifier\" });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "objet_seul"
+            }
+          ],
+          "absence_scope": [
+            "packages/atelier-model/src/commandes/commandes.test.ts",
+            "apps/web/e2e/atelier-complements.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-089-A04",
+          "historical_clause_exact": "surcharge sur un mur",
+          "classification": "absente",
+          "justification": "Pas assertion propriété occurrence→héritage type de mur dans les deux candidats.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 272,
+              "current_line": 272,
+              "exact_line": "    expect(r.etat.objets[\"w\"]!.proprietes[\"resistanceThermique\"]).toEqual({ valeur: 2.5, unite: \"m2.K/W\", provenance: \"saisie\", statut: \"a-verifier\" });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "propriete_objet_seule"
+            }
+          ],
+          "absence_scope": [
+            "packages/atelier-model/src/commandes/commandes.test.ts",
+            "apps/web/e2e/atelier-complements.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-089-A05",
+          "historical_clause_exact": "retrait (« non évaluée »)",
+          "classification": "partielle",
+          "justification": "Retrait propriété objet pur vérifié undefined ; pas inspecteur navigateur ni héritage.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 273,
+              "current_line": 273,
+              "exact_line": "    expect(appliquer(r.etat, [{ type: \"propriete.definir\", params: { id: \"w\", nom: \"resistanceThermique\" } }]).etat.objets[\"w\"]!.proprietes[\"resistanceThermique\"]).toBeUndefined();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-089-A06",
+          "historical_clause_exact": "annuler",
+          "classification": "partielle",
+          "justification": "Inverse du lot propriété pure restaure état avant création ; pas retrait/UI complet.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 274,
+              "current_line": 274,
+              "exact_line": "    expect(appliquer(r.etat, [r.inverse]).etat).toEqual(e);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-089-A07",
+          "historical_clause_exact": "recharger : valeurs, provenance et statut identiques",
+          "classification": "partielle",
+          "justification": "Égalité propriété unité couvre valeur/unité/provenance/statut ; CSV E2E couvre valeur/provenance seulement, aucun reload identique.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 272,
+              "current_line": 272,
+              "exact_line": "    expect(r.etat.objets[\"w\"]!.proprietes[\"resistanceThermique\"]).toEqual({ valeur: 2.5, unite: \"m2.K/W\", provenance: \"saisie\", statut: \"a-verifier\" });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 609,
+              "current_line": 609,
+              "exact_line": "  check(\"propriétés importées d'un CSV, ligne numérique sans unité refusée\", propsCroix[\"Résistance au feu\"]?.valeur === \"EI 60\" && propsCroix[\"Résistance au feu\"]?.provenance === \"import\" && !propsCroix[\"Épaisseur relevée\"], JSON.stringify(Object.keys(propsCroix)));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-089-A08",
+          "historical_clause_exact": "second navigateur à la même révision",
+          "classification": "absente",
+          "justification": "Second appareil vérifie préférences et pas propriétés/révision.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 1880,
+              "current_line": 1880,
+              "exact_line": "  const vu = await page2.waitForSelector('[data-ensemble-local=\"Perso e2e\"]', { state: \"attached\", timeout: 20000 }).then(() => true, () => false);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autre_objectif"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 1889,
+              "current_line": 1889,
+              "exact_line": "  check(\"ensembles personnels : enregistrés sur un appareil, retrouvés et supprimés sur un autre du même compte\", !!serveur?.version && vu && retire, `${JSON.stringify(serveur).slice(0, 120)} · ${vu} · ${retire}`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autre_objectif"
+            }
+          ],
+          "absence_scope": [
+            "packages/atelier-model/src/commandes/commandes.test.ts",
+            "apps/web/e2e/atelier-complements.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        }
+      ],
+      "supplement_non_equivalent": [
+        {
+          "classification": "nonapplicable",
+          "reason": "CSV/refus unité est utile mais ne remplace pas scénario héritage/surcharge/rechargement.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 609,
+              "current_line": 609,
+              "exact_line": "  check(\"propriétés importées d'un CSV, ligne numérique sans unité refusée\", propsCroix[\"Résistance au feu\"]?.valeur === \"EI 60\" && propsCroix[\"Résistance au feu\"]?.provenance === \"import\" && !propsCroix[\"Épaisseur relevée\"], JSON.stringify(Object.keys(propsCroix)));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-091",
+      "source_fiche": "docs/atelier/fiches/DA-06-08.md",
+      "historical_source_line": 23,
+      "historical_exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Propriétés · classification ») : copie de travail de P.118 : tous les objets « non classés » au départ ; affecter `IfcWall` à un type de mur (hérité par ses murs) et un code de classification à `EX118-mezz-W-009` ; annuler ; recharger : identique ; second navigateur à la même révision. |",
+      "historical_level": "e2e_navigateur",
+      "historical_acceptance_preserved": "**État : disponible (lots 3a, 6) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : `packages/atelier-model/src/commandes/commandes.test.ts` (`classification.affecter`), export IFC (`echanges/echanges.test.ts`) ; comptes rendus `lots/lot-3a.md`, `lot-6.md`.",
+      "mapping_candidates_unchanged": [
+        "packages/atelier-model/src/commandes/commandes.test.ts",
+        "apps/web/e2e/atelier-complements.mjs"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "M08-PATH-091-A01",
+          "historical_clause_exact": "copie de travail de P.118",
+          "classification": "presente",
+          "justification": "CopieP118 explicite dans compléments.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 109,
+              "current_line": 109,
+              "exact_line": "const reference = (await api(\"post\", \"/examples/p118-exemple-complet/import\")).body.id;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 110,
+              "current_line": 110,
+              "exact_line": "const pid = (await api(\"post\", `/projects/${reference}/copies`, { name: \"P.118 · compléments\" })).body.id;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-091-A02",
+          "historical_clause_exact": "tous les objets « non classés » au départ",
+          "classification": "absente",
+          "justification": "Aucune assertion universelle avant classification ; candidat unité attend au contraire classeIfc issue ontologie après commande de code, à rapprocher des décisions sans réécrire fiche.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 279,
+              "current_line": 279,
+              "exact_line": "    const r = appliquer(base(), [{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"Uniclass\", code: \"EF_25_10\" } }]).etat;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "comportement_distinct"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 280,
+              "current_line": 280,
+              "exact_line": "    expect(r.objets[\"w\"]!.proprietes[\"classification:Uniclass\"]).toEqual({ valeur: \"EF_25_10\", provenance: \"saisie\", statut: \"declaree\" });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "comportement_distinct"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 281,
+              "current_line": 281,
+              "exact_line": "    expect(r.objets[\"w\"]!.proprietes[\"classeIfc\"]).toEqual({ valeur: \"IfcWall\", provenance: \"regle\", statut: \"verifiee\" });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "comportement_distinct"
+            }
+          ],
+          "absence_scope": [
+            "packages/atelier-model/src/commandes/commandes.test.ts",
+            "apps/web/e2e/atelier-complements.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-091-A03",
+          "historical_clause_exact": "affecter `IfcWall` à un type de mur (hérité par ses murs)",
+          "classification": "absente",
+          "justification": "Unité affecte codeUniclass objetw puis attend IfcWall regle ; E2E codeCFC objetmurA, aucun type ni héritage.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 279,
+              "current_line": 279,
+              "exact_line": "    const r = appliquer(base(), [{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"Uniclass\", code: \"EF_25_10\" } }]).etat;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 281,
+              "current_line": 281,
+              "exact_line": "    expect(r.objets[\"w\"]!.proprietes[\"classeIfc\"]).toEqual({ valeur: \"IfcWall\", provenance: \"regle\", statut: \"verifiee\" });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 817,
+              "current_line": 817,
+              "exact_line": "  await page.locator('[data-classif=\"systeme\"]').fill(\"CFC-e2e\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 819,
+              "current_line": 819,
+              "exact_line": "  await page.locator('[data-classification] button:has-text(\"Classer\")').click();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 825,
+              "current_line": 825,
+              "exact_line": "  check(\"classification : référentiel chargé depuis un CSV, code vérifié et libellé noté sur le mur\", !!ref && Object.keys(ref.params.codes).length === 2 && prop?.statut === \"verifiee\" && (await modele(pid)).modele.objets[murA.id]?.proprietes[\"classification:CFC-e2e:libelle\"]?.valeur === \"Maçonnerie\", `${JSON.stringify(ref?.params?.codes ?? null)} · ${JSON.stringify(prop)}`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [
+            "packages/atelier-model/src/commandes/commandes.test.ts",
+            "apps/web/e2e/atelier-complements.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-091-A04",
+          "historical_clause_exact": "un code de classification à `EX118-mezz-W-009`",
+          "classification": "partielle",
+          "justification": "Code/système réel sur murA choisi dynamiquement ; identité EX118-mezz-W-009 non imposée. Unité attend code exact sur w.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 279,
+              "current_line": 279,
+              "exact_line": "    const r = appliquer(base(), [{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"Uniclass\", code: \"EF_25_10\" } }]).etat;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 280,
+              "current_line": 280,
+              "exact_line": "    expect(r.objets[\"w\"]!.proprietes[\"classification:Uniclass\"]).toEqual({ valeur: \"EF_25_10\", provenance: \"saisie\", statut: \"declaree\" });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 118,
+              "current_line": 118,
+              "exact_line": "const murA = Object.values(depart.modele.objets).find((o) => o.classe === \"mur\" && dessinesA.includes(o.id)) ?? Object.values(depart.modele.objets).find((o) => o.classe === \"mur\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 817,
+              "current_line": 817,
+              "exact_line": "  await page.locator('[data-classif=\"systeme\"]').fill(\"CFC-e2e\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 818,
+              "current_line": 818,
+              "exact_line": "  await page.locator('[data-classif=\"code\"]').fill(\"211\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 825,
+              "current_line": 825,
+              "exact_line": "  check(\"classification : référentiel chargé depuis un CSV, code vérifié et libellé noté sur le mur\", !!ref && Object.keys(ref.params.codes).length === 2 && prop?.statut === \"verifiee\" && (await modele(pid)).modele.objets[murA.id]?.proprietes[\"classification:CFC-e2e:libelle\"]?.valeur === \"Maçonnerie\", `${JSON.stringify(ref?.params?.codes ?? null)} · ${JSON.stringify(prop)}`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-091-A05",
+          "historical_clause_exact": "annuler",
+          "classification": "absente",
+          "justification": "Retrait du code en unité n’est pas une inverse ni undo navigateur.",
+          "evidence": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "baseline_line": 282,
+              "current_line": 282,
+              "exact_line": "    expect(appliquer(r, [{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"Uniclass\", code: null } }]).etat.objets[\"w\"]!.proprietes[\"classification:Uniclass\"]).toBeUndefined();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+              "level": "unite_pure",
+              "role": "retrait_non_undo"
+            }
+          ],
+          "absence_scope": [
+            "packages/atelier-model/src/commandes/commandes.test.ts",
+            "apps/web/e2e/atelier-complements.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-091-A06",
+          "historical_clause_exact": "recharger : identique",
+          "classification": "absente",
+          "justification": "Aucune assertion de classification et provenance réidentiques après reload.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 825,
+              "current_line": 825,
+              "exact_line": "  check(\"classification : référentiel chargé depuis un CSV, code vérifié et libellé noté sur le mur\", !!ref && Object.keys(ref.params.codes).length === 2 && prop?.statut === \"verifiee\" && (await modele(pid)).modele.objets[murA.id]?.proprietes[\"classification:CFC-e2e:libelle\"]?.valeur === \"Maçonnerie\", `${JSON.stringify(ref?.params?.codes ?? null)} · ${JSON.stringify(prop)}`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion_ponctuelle"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 826,
+              "current_line": 826,
+              "exact_line": "  await page.keyboard.press(\"Escape\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion_ponctuelle"
+            }
+          ],
+          "absence_scope": [
+            "packages/atelier-model/src/commandes/commandes.test.ts",
+            "apps/web/e2e/atelier-complements.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-091-A07",
+          "historical_clause_exact": "second navigateur à la même révision",
+          "classification": "absente",
+          "justification": "Second appareil vérifie préférences, pas classifications/révision.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 1889,
+              "current_line": 1889,
+              "exact_line": "  check(\"ensembles personnels : enregistrés sur un appareil, retrouvés et supprimés sur un autre du même compte\", !!serveur?.version && vu && retire, `${JSON.stringify(serveur).slice(0, 120)} · ${vu} · ${retire}`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autre_objectif"
+            }
+          ],
+          "absence_scope": [
+            "packages/atelier-model/src/commandes/commandes.test.ts",
+            "apps/web/e2e/atelier-complements.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        }
+      ],
+      "supplement_non_equivalent": []
+    },
+    {
+      "entry_id": "M08-PATH-122",
+      "source_fiche": "docs/atelier/fiches/DA-21-06.md",
+      "historical_source_line": 21,
+      "historical_exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Collaboration · suivi ») : copie de travail de P.118 : trois modifications par deux navigateurs, panneau des modifications identique des deux côtés ; historique du mur `EX118-mezz-W-009` dans l'ordre ; annuler : nouvelle entrée, ancienne entrée toujours lisible. |",
+      "historical_level": "e2e_navigateur",
+      "historical_acceptance_preserved": "**État : disponible (lot 2 ; -d historique d'un objet : compléments, `GET /atelier/objets/:id/historique`, inspecteur, `atelier-complements.mjs`) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : `apps/api/src/routes/atelier-commands.test.ts` (journal dans la transaction, `GET /journal?apres=n`), panneau des modifications (`atelier-nouveau.mjs`) ; compte rendu `lots/lot-2.md`.",
+      "mapping_candidates_unchanged": [
+        "apps/api/src/routes/atelier-commands.test.ts",
+        "apps/web/e2e/atelier-complements.mjs"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "M08-PATH-122-A01",
+          "historical_clause_exact": "copie de travail de P.118",
+          "classification": "presente",
+          "justification": "E2E copieP118 explicite ; API historique utilise projet neuf synthétique distinct.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 109,
+              "current_line": 109,
+              "exact_line": "const reference = (await api(\"post\", \"/examples/p118-exemple-complet/import\")).body.id;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 110,
+              "current_line": 110,
+              "exact_line": "const pid = (await api(\"post\", `/projects/${reference}/copies`, { name: \"P.118 · compléments\" })).body.id;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 712,
+              "current_line": 711,
+              "exact_line": "    const pid = await projetVide(client);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-122-A02",
+          "historical_clause_exact": "trois modifications par deux navigateurs",
+          "classification": "partielle",
+          "justification": "API ordre crée/modifie/scinde même client ; autre scénario owner/editor existe mais ne combine pas trois modifications et deux panneaux navigateur.",
+          "evidence": [
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 713,
+              "current_line": 712,
+              "exact_line": "    expect((await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"h1\", 0, [niveau, mur(\"m1\", 6)]))).status).toBe(200);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 714,
+              "current_line": 713,
+              "exact_line": "    expect((await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"h2\", 1, [{ type: \"objet.modifier\", params: { id: \"m1\", params: { epaisseur: m(0.3) } } }]))).status).toBe(200);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 715,
+              "current_line": 714,
+              "exact_line": "    expect((await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"h3\", 2, [{ type: \"mur.scinder\", params: { id: \"m1\", t: 0.5 } }]))).status).toBe(200);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 718,
+              "current_line": 717,
+              "exact_line": "    expect(h.entrees.map((e: { action: string; revision: number }) => [e.action, e.revision])).toEqual([[\"cree\", 1], [\"modifie\", 2], [\"supprime\", 3]]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 93,
+              "current_line": 92,
+              "exact_line": "    const editor = await registerAndLogin(\"editor-conf@example.com\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 94,
+              "current_line": 93,
+              "exact_line": "    const pid = await projetVide(owner);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-122-A03",
+          "historical_clause_exact": "panneau des modifications identique des deux côtés",
+          "classification": "absente",
+          "justification": "E2E inspecteur historique unique ; aucun comparatif panneaux deux navigateurs.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 122,
+              "current_line": 122,
+              "exact_line": "await page.locator(\".inspecteur-historique summary\").click();",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autre_objectif"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 125,
+              "current_line": 125,
+              "exact_line": "check(\"historique de l'objet : la modification est listée avec son auteur et sa révision\", (await page.locator('.inspecteur-historique [data-historique=\"modifie\"]').count()) >= 1 && histo.includes(email), histo.slice(0, 200));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autre_objectif"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 1889,
+              "current_line": 1889,
+              "exact_line": "  check(\"ensembles personnels : enregistrés sur un appareil, retrouvés et supprimés sur un autre du même compte\", !!serveur?.version && vu && retire, `${JSON.stringify(serveur).slice(0, 120)} · ${vu} · ${retire}`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autre_objectif"
+            }
+          ],
+          "absence_scope": [
+            "apps/api/src/routes/atelier-commands.test.ts",
+            "apps/web/e2e/atelier-complements.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-122-A04",
+          "historical_clause_exact": "historique du mur `EX118-mezz-W-009` dans l'ordre",
+          "classification": "partielle",
+          "justification": "API exige ordre crée1/modifie2/supprime3 sur m1 ; E2E murA dynamique et ≥1modif/auteur, pas ordre ni mur exact.",
+          "evidence": [
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 718,
+              "current_line": 717,
+              "exact_line": "    expect(h.entrees.map((e: { action: string; revision: number }) => [e.action, e.revision])).toEqual([[\"cree\", 1], [\"modifie\", 2], [\"supprime\", 3]]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 720,
+              "current_line": 719,
+              "exact_line": "    expect(h.entrees[0].auteur).toBe(\"historique@example.com\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 118,
+              "current_line": 118,
+              "exact_line": "const murA = Object.values(depart.modele.objets).find((o) => o.classe === \"mur\" && dessinesA.includes(o.id)) ?? Object.values(depart.modele.objets).find((o) => o.classe === \"mur\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 125,
+              "current_line": 125,
+              "exact_line": "check(\"historique de l'objet : la modification est listée avec son auteur et sa révision\", (await page.locator('.inspecteur-historique [data-historique=\"modifie\"]').count()) >= 1 && histo.includes(email), histo.slice(0, 200));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-122-A05",
+          "historical_clause_exact": "annuler : nouvelle entrée",
+          "classification": "partielle",
+          "justification": "API teste nouvelle microversion4 et journal genres/révisions ; pas scénario historiqueP118 à deux navigateurs.",
+          "evidence": [
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 145,
+              "current_line": 144,
+              "exact_line": "    const undo1 = await client.post(`/projects/${pid}/atelier/commands/annuler`).send({ requestId: \"undo-1\", baseRevision: 3 });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 147,
+              "current_line": 146,
+              "exact_line": "    expect(undo1.body.revision).toBe(4);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 170,
+              "current_line": 169,
+              "exact_line": "    expect(journal.map((e) => e.kind)).toEqual([\"commande\", \"commande\", \"commande\", \"annulation\", \"annulation\", \"retablissement\", \"retablissement\", \"annulation\", \"commande\"]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 171,
+              "current_line": 170,
+              "exact_line": "    expect(journal.map((e) => e.resultRevision)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-122-A06",
+          "historical_clause_exact": "ancienne entrée toujours lisible",
+          "classification": "partielle",
+          "justification": "Journal complet conserve commandes précédentes après undo/redo ; E2E état passé lecture seule sans comparaison ancienne entrée précise après undo.",
+          "evidence": [
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 169,
+              "current_line": 168,
+              "exact_line": "    const journal = (await client.get(`/projects/${pid}/atelier/journal?apres=0`)).body.entrees as { kind: string; resultRevision: number }[];",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 170,
+              "current_line": 169,
+              "exact_line": "    expect(journal.map((e) => e.kind)).toEqual([\"commande\", \"commande\", \"commande\", \"annulation\", \"annulation\", \"retablissement\", \"retablissement\", \"annulation\", \"commande\"]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 171,
+              "current_line": 170,
+              "exact_line": "    expect(journal.map((e) => e.resultRevision)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 150,
+              "current_line": 150,
+              "exact_line": "check(\"consultation d'une révision passée : bandeau « lecture seule », barre d'enregistrement masquée\", (await page.locator(\".barre-consultation\").count()) === 1 && (await page.locator(\".barre-sync\").isHidden()), `révision ${revPassee}`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 153,
+              "current_line": 153,
+              "exact_line": "check(\"consultation : l'inspecteur n'offre aucun champ modifiable\", (await champEpaisseur.count()) === 0);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        }
+      ],
+      "supplement_non_equivalent": []
+    },
+    {
+      "entry_id": "M08-PATH-123",
+      "source_fiche": "docs/atelier/fiches/DA-21-07.md",
+      "historical_source_line": 21,
+      "historical_exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Collaboration · révisions ») : copie de travail de P.118 : bandeau « révision n » ; après modification d'un mur, le bilan Harmonie est « à recalculer », indique la révision dont il est issu et reste consultable ; recalcul à la demande : révision et empreinte mises à jour ; second navigateur à la même révision. |",
+      "historical_level": "e2e_navigateur",
+      "historical_acceptance_preserved": "**État : disponible (lots 2, 5, 7) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : `apps/api/src/routes/atelier-commands.test.ts` (révision, empreinte, péremption ; production tardive rattachée à sa révision, lot 9), versions nommées (lot 7) ; comptes rendus `lots/lot-2.md`, `lot-5.md`, `lot-7.md`.",
+      "mapping_candidates_unchanged": [
+        "apps/api/src/routes/atelier-commands.test.ts",
+        "apps/web/e2e/atelier-complements.mjs"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "M08-PATH-123-A01",
+          "historical_clause_exact": "copie de travail de P.118",
+          "classification": "presente",
+          "justification": "Compléments copieP118 explicite ; API caspéremption copie aussiP118.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 109,
+              "current_line": 109,
+              "exact_line": "const reference = (await api(\"post\", \"/examples/p118-exemple-complet/import\")).body.id;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 110,
+              "current_line": 110,
+              "exact_line": "const pid = (await api(\"post\", `/projects/${reference}/copies`, { name: \"P.118 · compléments\" })).body.id;",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 218,
+              "current_line": 217,
+              "exact_line": "    const imported = await client.post(\"/examples/p118-exemple-complet/import\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 220,
+              "current_line": 219,
+              "exact_line": "    const copy = await client.post(`/projects/${pid}/copies`).send({ name: \"Copie de travail\" });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 221,
+              "current_line": 220,
+              "exact_line": "    expect(copy.status).toBe(201);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-123-A02",
+          "historical_clause_exact": "bandeau « révision n »",
+          "classification": "partielle",
+          "justification": "Helperattend Enregistré·rN ; CSV historique par révision, pas vérification valeur bandeau attendue après geste.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 46,
+              "current_line": 46,
+              "exact_line": "const attendreEnregistre = () => page.waitForFunction(() => /^Enregistré · r\\d+/.test(document.querySelector(\".barre-sync\")?.textContent ?? \"\"), null, { timeout: 30000 });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 612,
+              "current_line": 612,
+              "exact_line": "  check(\"historique exporté en CSV (une ligne par révision)\", histo.status() === 200 && /^\\uFEFF?revision;date;nature;libelle;auteur/.test(histoTexte) && histoTexte.split(\"\\r\\n\").length > 5);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-123-A03",
+          "historical_clause_exact": "après modification d'un mur, le bilan Harmonie est « à recalculer »",
+          "classification": "partielle",
+          "justification": "API périme tableau-surfaces après hauteur murP118 et production tableau-murs tardive ; ce n’est pas bilan Harmonie ni étatUI demandé.",
+          "evidence": [
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 228,
+              "current_line": 227,
+              "exact_line": "    const r = await client.post(`/projects/${wid}/atelier/commands`).send(enveloppe(\"f1\", revision, [{ type: \"mur.modifier\", params: { id: \"EX118-mezz-W-009\", params: { hauteur: m(2.9) } } }], \"Hauteur mezzanine\"));",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 232,
+              "current_line": 231,
+              "exact_line": "    expect(docsApres.find((d) => d.kind === \"tableau-surfaces\")?.freshness).toBe(\"perime\");",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 238,
+              "current_line": 237,
+              "exact_line": "    expect(problemes.documentsPerimes.some((d: { kind: string }) => d.kind === \"tableau-surfaces\")).toBe(true);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 700,
+              "current_line": 699,
+              "exact_line": "    expect(murs).toMatchObject({ produced: { modelRevision: 1 }, freshness: \"perime\", current: { modelRevision: 2 } });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-123-A04",
+          "historical_clause_exact": "indique la révision dont il est issu",
+          "classification": "partielle",
+          "justification": "produced.modelRevision1/current2 testés pour tableau, pas bilan Harmonie navigateur.",
+          "evidence": [
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 694,
+              "current_line": 693,
+              "exact_line": "    expect(murs1.current.modelRevision).toBe(1);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 700,
+              "current_line": 699,
+              "exact_line": "    expect(murs).toMatchObject({ produced: { modelRevision: 1 }, freshness: \"perime\", current: { modelRevision: 2 } });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-123-A05",
+          "historical_clause_exact": "reste consultable",
+          "classification": "absente",
+          "justification": "Pas assertion consultation ancien bilanHarmonie périmé ; état passé modèle et CSV ne suffisent pas.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 150,
+              "current_line": 150,
+              "exact_line": "check(\"consultation d'une révision passée : bandeau « lecture seule », barre d'enregistrement masquée\", (await page.locator(\".barre-consultation\").count()) === 1 && (await page.locator(\".barre-sync\").isHidden()), `révision ${revPassee}`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autres_documents"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 612,
+              "current_line": 612,
+              "exact_line": "  check(\"historique exporté en CSV (une ligne par révision)\", histo.status() === 200 && /^\\uFEFF?revision;date;nature;libelle;auteur/.test(histoTexte) && histoTexte.split(\"\\r\\n\").length > 5);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autres_documents"
+            }
+          ],
+          "absence_scope": [
+            "apps/api/src/routes/atelier-commands.test.ts",
+            "apps/web/e2e/atelier-complements.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-123-A06",
+          "historical_clause_exact": "recalcul à la demande : révision et empreinte mises à jour",
+          "classification": "partielle",
+          "justification": "API génère tableau CSV puis attend producedRevision2/a-jour ; ne compare pas empreinte mise à jour et pasHarmonie.",
+          "evidence": [
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 698,
+              "current_line": 697,
+              "exact_line": "    await recordProducedDocument((await import(\"../db/client.js\")).db, pid, { kind: murs1.kind, label: murs1.label, fileName: murs1.fileName, modelRevision: 1, inputHash: murs1.current.inputHash, stepNumber: murs1.stepNumber }, new Date());",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 702,
+              "current_line": 701,
+              "exact_line": "    expect((await client.get(`/projects/${pid}/documents/atelier/tableaux/murs.csv`)).status).toBe(200);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            },
+            {
+              "path": "apps/api/src/routes/atelier-commands.test.ts",
+              "baseline_line": 705,
+              "current_line": 704,
+              "exact_line": "    expect(murs).toMatchObject({ produced: { modelRevision: 2 }, freshness: \"a-jour\" });",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+              "level": "integration_api",
+              "role": "assertion"
+            }
+          ],
+          "absence_scope": [],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        },
+        {
+          "assertion_id": "M08-PATH-123-A07",
+          "historical_clause_exact": "second navigateur à la même révision",
+          "classification": "absente",
+          "justification": "Second appareil compléments porte préférences, aucun comparatif modèleHarmonie.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 1880,
+              "current_line": 1880,
+              "exact_line": "  const vu = await page2.waitForSelector('[data-ensemble-local=\"Perso e2e\"]', { state: \"attached\", timeout: 20000 }).then(() => true, () => false);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autre_objectif"
+            },
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 1889,
+              "current_line": 1889,
+              "exact_line": "  check(\"ensembles personnels : enregistrés sur un appareil, retrouvés et supprimés sur un autre du même compte\", !!serveur?.version && vu && retire, `${JSON.stringify(serveur).slice(0, 120)} · ${vu} · ${retire}`);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "autre_objectif"
+            }
+          ],
+          "absence_scope": [
+            "apps/api/src/routes/atelier-commands.test.ts",
+            "apps/web/e2e/atelier-complements.mjs"
+          ],
+          "execution": "NON_EXECUTEE",
+          "historic_acceptance_changed": false
+        }
+      ],
+      "supplement_non_equivalent": [
+        {
+          "classification": "nonapplicable",
+          "reason": "Journal CSV contient révisions et entête, ne vérifie pas péremption/recalcul/empreinte Harmonie.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "baseline_line": 612,
+              "current_line": 612,
+              "exact_line": "  check(\"historique exporté en CSV (une ligne par révision)\", histo.status() === 200 && /^\\uFEFF?revision;date;nature;libelle;auteur/.test(histoTexte) && histoTexte.split(\"\\r\\n\").length > 5);",
+              "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "current_sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "level": "e2e_navigateur",
+              "role": "assertion"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "historical_assertion_counts": {
+    "partielle": 27,
+    "absente": 18,
+    "presente": 7
+  },
+  "historical_assertions_total": 52,
+  "supplement_nonapplicable_count": 3,
+  "findings": [
+    {
+      "id": "M08-8-CLASSIFICATION-SEMANTIQUE",
+      "severity": "P2_A_ARBITRER_DOCUMENTAIRE",
+      "source_fiche": "docs/atelier/fiches/DA-06-08.md",
+      "fiche_lines": [
+        11,
+        19
+      ],
+      "proof": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "baseline_line": 279,
+          "current_line": 279,
+          "exact_line": "    const r = appliquer(base(), [{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"Uniclass\", code: \"EF_25_10\" } }]).etat;",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "level": "unite_pure",
+          "role": "assertion"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "baseline_line": 281,
+          "current_line": 281,
+          "exact_line": "    expect(r.objets[\"w\"]!.proprietes[\"classeIfc\"]).toEqual({ valeur: \"IfcWall\", provenance: \"regle\", statut: \"verifiee\" });",
+          "current_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "current_sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "level": "unite_pure",
+          "role": "assertion"
+        }
+      ],
+      "finding": "Fiche interdit déduire classeIFC de classeFadi et la réserveàexport ; candidatunité attend propriétéclasseIfc provenance regle statutverifiee après commande codeUniclass objetw. Contradiction apparente d’oracle/source à rapprocher décisions actuelles avant remplacement de référence ; aucun comportement runtime ou décision technique correcte déduit.",
+      "action": "A0/A1 rapprocherD111 et autres décisions applicables ; conserver historiqueD174, soumettre arbitrage borné si conflit persiste, nepasmodifiercode/fiches par cette comparaison."
+    }
+  ],
+  "not_demonstrated": [
+    "8équivalencesE2E historiques, aucune ; 125équivalences non abordées",
+    "Succès courant unitaire/API/E2E ou validation de main ; scripts navigateur peuvent muter et ne sont pas exécutés",
+    "Couverture UI du pilotage rectangle et undo longueur ; porteP118 t0,5 après épaisseur ; bibliothèquevide/recherche/reload ; troiscomposants+quantité3",
+    "Héritage/surcharge propriétés/classification type de mur ; conservation après recharge et synchronisation simultanée des8scénarios",
+    "Troismodificationsdeuxnavigateurs et égalité panneaux ; ancien bilanHarmonie consultable/source/empreinte et recalcul àdemande",
+    "Absence de capacité métier : seules assertions candidates examinées, pas inventaire de tous tests possibles",
+    "AcceptationhistoriqueD174 reste intacte ; aucun nouveau statut Vérifié/Accepté, aucune fichecochée ; mapping125inchangé"
+  ],
+  "next_action": "A5 revue indépendante de chaque atome et bornage des oracles manquants ; A0 intègre documentaire sans remplacerlittérauxhistoriques ni conclureM08 ; implémentation/recetteDB3 restent autorisations distinctes",
+  "citation_metrics": {
+    "historical_assertion_evidence_occurrences": 178,
+    "supplement_non_equivalent_evidence_occurrences": 3,
+    "findings_evidence_occurrences": 2,
+    "all_evidence_occurrences": 183,
+    "unique_current_citations": 131,
+    "unique_key": [
+      "path",
+      "current_line",
+      "current_commit",
+      "exact_line"
+    ],
+    "explanation": "178 était le seul compteur des listes evidence des52sous-attendus ; ajouter3preuves supplémentaires et2preuves findings donne183 occurrences,131citations uniques. Aucun changement de contenu ni classement."
+  }
+}

@@ -1,0 +1,658 @@
+{
+  "mission": "MISSION-004 M14 préparation",
+  "source": "RT001 annexe B",
+  "statut": "18 dossiers techniques priorisés ; décisions de cadrage D01/02/07 retenues sans accordcode Studio",
+  "decisions": [
+    {
+      "id": "DEC-01",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1392,
+        1393,
+        1394
+      ],
+      "question_exacte": "Modèle physique du dessin 2D autonome et son stockage.",
+      "preuve_source_exacte": "Schéma, création sans 3D, sauvegarde/reprise, migration.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Adapter document/dessin existant en autorité2D indépendante",
+        "Nouveau document2D pur avec adaptateur compatible Atelier"
+      ],
+      "preuves_a_reunir": [
+        "Schéma, création sans 3D, sauvegarde/reprise, migration.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "Représentation de substitution3D interdite ; perte calques/cotes/identités lors migration",
+      "responsable_propose": "A2+A1+A6",
+      "porte_et_blocage_local": "G3 A.1/A.2",
+      "poc_a_definir_autoriser": "POC-2D",
+      "demande_humaine_canonique": "M002-D01",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "P0 spécification immédiate",
+      "sous_ensemble_dependent": "A.1/A.2",
+      "question_technique_restante": "Modèle physique 2D/stockage et réouverture sans 3D ; C-DRAWING2D",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    },
+    {
+      "id": "DEC-02",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1395,
+        1396,
+        1397
+      ],
+      "question_exacte": "Sémantique des associations et références topologiques 2D/3D.",
+      "preuve_source_exacte": "Identités, propagation, ambiguïtés, conflits et tests.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Association vers objet sémantique unique et mapping topologique prouvé",
+        "Référence liée ou copie indépendante explicites quand association non démontrable"
+      ],
+      "preuves_a_reunir": [
+        "Identités, propagation, ambiguïtés, conflits et tests.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "Double autorité ou cote rattachée à mauvaise face après découpe",
+      "responsable_propose": "A2+A5",
+      "porte_et_blocage_local": "G3 A.4",
+      "poc_a_definir_autoriser": "POC-ASSOCIATION",
+      "demande_humaine_canonique": "M002-D01",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "P0 avant association",
+      "sous_ensemble_dependent": "A.4",
+      "question_technique_restante": "Correspondance topologique prouvée ou à résoudre, copie / référence / associé ; C-ASSOCIATION",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    },
+    {
+      "id": "DEC-03",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1398,
+        1399,
+        1400
+      ],
+      "question_exacte": "Définition Étude / Variante / Révision et migration des projets.",
+      "preuve_source_exacte": "Entités, isolation, historique, restauration.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Étude/variante comme entités propres avec révisions communes adaptées",
+        "Couche d'étude sur existant et correspondance explicite des projets bifurqués"
+      ],
+      "preuves_a_reunir": [
+        "Entités, isolation, historique, restauration.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "Perte droits/filiation, confusion projet/variante et deux chaînes d'écriture",
+      "responsable_propose": "A2+A1+A6",
+      "porte_et_blocage_local": "G3 A.1 et contexte I",
+      "poc_a_definir_autoriser": "POC-CONTEXTE",
+      "demande_humaine_canonique": "M002-D01,M002-D07",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "P0 spécification immédiate",
+      "sous_ensemble_dependent": "A.1/I contexte",
+      "question_technique_restante": "Étude/Variante/Révision, schéma/writerAuthority/version et appartenance ; C-STUDY/C-STUDIO-CONTEXT",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    },
+    {
+      "id": "DEC-04",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1401,
+        1402,
+        1403
+      ],
+      "question_exacte": "Profils standard, métier, personnels et partage d’équipe.",
+      "preuve_source_exacte": "UX, permissions, export/import, synchronisation.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Profils standard/métier/personnel synchronisés avec compte existant",
+        "Même socle plus profil équipe versionné optionnel reporté séparément"
+      ],
+      "preuves_a_reunir": [
+        "UX, permissions, export/import, synchronisation.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "Profil importé confère droit ou efface configuration/source",
+      "responsable_propose": "A1+A4+A5",
+      "porte_et_blocage_local": "G3 B profils",
+      "poc_a_definir_autoriser": "POC-CHARGEMENT",
+      "demande_humaine_canonique": "M002-D07",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "P0 avant B",
+      "sous_ensemble_dependent": "B profils",
+      "question_technique_restante": "Profils standard/métier/personnel, permissions indépendantes et conflits raccourcis ; option équipe non impliquée D07",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    },
+    {
+      "id": "DEC-05",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1404,
+        1405,
+        1406
+      ],
+      "question_exacte": "Support et gouvernance des manifests Registry.",
+      "preuve_source_exacte": "Validation au build, offline, compatibilité et confiance.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Manifeste statique léger validé build avec validation invocation",
+        "Catalogue versionné servi par API avec cache hors ligne et politique confiance"
+      ],
+      "preuves_a_reunir": [
+        "Validation au build, offline, compatibilité et confiance.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "Registre devient exécution arbitraire ou contrat déprécié rend travail illisible",
+      "responsable_propose": "A2+A5",
+      "porte_et_blocage_local": "G3 B Registry",
+      "poc_a_definir_autoriser": "POC-CHARGEMENT",
+      "demande_humaine_canonique": "M002-D01,M002-D02",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "P0 avant B",
+      "sous_ensemble_dependent": "B Registry",
+      "question_technique_restante": "Manifeste léger/version/gouvernance, pas exécution arbitraire",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    },
+    {
+      "id": "DEC-06",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1407,
+        1408,
+        1409
+      ],
+      "question_exacte": "API et limites du Tool Manager.",
+      "preuve_source_exacte": "Séquence activation/désactivation, événements, tests.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Manager orchestrateur central des machines existantes",
+        "Adaptateurs par famille derrière API Manager commune"
+      ],
+      "preuves_a_reunir": [
+        "Séquence activation/désactivation, événements, tests.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "Manager recalcule métier, perd geste ou contourne validation centrale",
+      "responsable_propose": "A2+A4",
+      "porte_et_blocage_local": "G3 B Manager",
+      "poc_a_definir_autoriser": "POC-CHARGEMENT",
+      "demande_humaine_canonique": "M002-D07",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "P0 avant B",
+      "sous_ensemble_dependent": "B Manager",
+      "question_technique_restante": "Cycle activation/geste, frontière Manager/commande/moteur",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    },
+    {
+      "id": "DEC-07",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1410,
+        1411,
+        1412
+      ],
+      "question_exacte": "Granularité des chunks, préchargement et cache.",
+      "preuve_source_exacte": "Bundle analysis, première action, réseau et mémoire.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Chunks par familles et dépendances mutualisées avec cache profil",
+        "Sous-ensembles plus fins retenus seulement sur mesure à froid / à chaud"
+      ],
+      "preuves_a_reunir": [
+        "Bundle analysis, première action, réseau et mémoire.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "Précache global cache un coût réseau initial ou multiplie instances lourdes",
+      "responsable_propose": "A2+A6+A5",
+      "porte_et_blocage_local": "G3 B chargement",
+      "poc_a_definir_autoriser": "POC-CHARGEMENT",
+      "demande_humaine_canonique": "M002-D07",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "P0 avant B",
+      "sous_ensemble_dependent": "B chargement",
+      "question_technique_restante": "Coût à froid / à chaud réel et précache/fichier/instance distincts",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    },
+    {
+      "id": "DEC-08",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1413,
+        1414,
+        1415
+      ],
+      "question_exacte": "Renderer 2D cible et seuil d’optimisation/bascule.",
+      "preuve_source_exacte": "Fidélité SVG/Canvas/GPU, GPU réel et accessibilité.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Conserver SVG/React sous oracle, optimiser après mesures",
+        "Canvas2D/OffscreenCanvas/GPU si fidélité/accessibilité/export et gain démontrés"
+      ],
+      "preuves_a_reunir": [
+        "Fidélité SVG/Canvas/GPU, GPU réel et accessibilité.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "Remplacement détruit texte/cotation/fidélité ou seuil GPU inventé",
+      "responsable_propose": "A2+A4+A5",
+      "porte_et_blocage_local": "G3 rendu retenu A.2 ; C/F seulement pour bascule ultérieure",
+      "poc_a_definir_autoriser": "POC-2D",
+      "demande_humaine_canonique": "M002-D07",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "P1 après mesures",
+      "sous_ensemble_dependent": "A.2 rendu retenu puis C/F si bascule",
+      "question_technique_restante": "Rendu existant candidat, aucun remplacement imposé ; baseline de fidélité avant optimisation",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    },
+    {
+      "id": "DEC-09",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1416,
+        1417,
+        1418
+      ],
+      "question_exacte": "Structure de l’index spatial et algorithme de snapping.",
+      "preuve_source_exacte": "Résultats exacts, densités, insertion/suppression et p95.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Balayage simple sur petite scène et index spatial mesuré selon densité",
+        "R-tree/quadtree/grille ou partitionnement selon corpus, pas choix universel"
+      ],
+      "preuves_a_reunir": [
+        "Résultats exacts, densités, insertion/suppression et p95.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "Snapping/intersection/cible diffère de référence après indexation",
+      "responsable_propose": "A2+A5",
+      "porte_et_blocage_local": "G3 C ; ne bloque pas cadrage I",
+      "poc_a_definir_autoriser": "POC-INDEX",
+      "demande_humaine_canonique": "M002-D07",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "P1 après corpus",
+      "sous_ensemble_dependent": "C",
+      "question_technique_restante": "Index si utile sur mesure ; snapping/cibles/priorités identiques",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    },
+    {
+      "id": "DEC-10",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1419,
+        1420,
+        1421
+      ],
+      "question_exacte": "Invalidation partielle de la scène 3D.",
+      "preuve_source_exacte": "Tables de picking, cas hôtes/dépendances, benchmarks.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Invalidation conservatrice avec repli reconstruction complète",
+        "Lots incrémentaux et buffers réservés si picking/hôtes restent corrects"
+      ],
+      "preuves_a_reunir": [
+        "Tables de picking, cas hôtes/dépendances, benchmarks.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "Objet fantôme, triangle vers mauvais ID, hôte non recalculé",
+      "responsable_propose": "A2+A5",
+      "porte_et_blocage_local": "G3 C ; pas prérequis global de navigation",
+      "poc_a_definir_autoriser": "POC-INDEX",
+      "demande_humaine_canonique": "M002-D07",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "P1 après corpus",
+      "sous_ensemble_dependent": "C",
+      "question_technique_restante": "Invalidation correcte/picking/hôtes, repli reconstruction valide",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    },
+    {
+      "id": "DEC-11",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1422,
+        1423,
+        1424
+      ],
+      "question_exacte": "Gestion des workers, mémoire et OCCT.",
+      "preuve_source_exacte": "Crash, temps, instances, quotas, reprise.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Worker exact persistant mutualisé avec reprise/crash/quota validés",
+        "Service serveur pour tâches ciblées après comparaison droits/coûts/latence"
+      ],
+      "preuves_a_reunir": [
+        "Crash, temps, instances, quotas, reprise.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "Pending infini, résultat périmé engagé ou fuite WASM",
+      "responsable_propose": "A2+A6+A5",
+      "porte_et_blocage_local": "Avant exposition lourde ; G3 D pour ordonnanceur complet",
+      "poc_a_definir_autoriser": "POC-REPRISE",
+      "demande_humaine_canonique": "M002-D07",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "P1 avec protection minimale avant lourd",
+      "sous_ensemble_dependent": "D et opération lourde exposée",
+      "question_technique_restante": "Crash/recréation/quotas/résultat périmé et pending résolu",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    },
+    {
+      "id": "DEC-12",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1425,
+        1426,
+        1427
+      ],
+      "question_exacte": "Historique et undo/redo entre sous-modèles.",
+      "preuve_source_exacte": "Deltas, commandes, révisions et conflits réels.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Historique hybride commandes/inverses/deltas/snapshots existants adaptés",
+        "Nouvelle coordination entre sous-modèles sans remplacer mécanismes corrects"
+      ],
+      "preuves_a_reunir": [
+        "Deltas, commandes, révisions et conflits réels.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "Annulation détruit changements d'autrui ou publication réécrite",
+      "responsable_propose": "A2+A5",
+      "porte_et_blocage_local": "G3 A.5",
+      "poc_a_definir_autoriser": "POC-CONFLIT",
+      "demande_humaine_canonique": "M002-D01",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "P0 avant commandes associées",
+      "sous_ensemble_dependent": "A.5",
+      "question_technique_restante": "Historique hybride/idempotence/conflit/annulation du travail d’autrui ; C-COMMAND",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    },
+    {
+      "id": "DEC-13",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1428,
+        1429,
+        1430
+      ],
+      "question_exacte": "Appareils, profils de charge et budgets de performance.",
+      "preuve_source_exacte": "Jeux S1–S7 et limites d’acceptation validées.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Profil pilote bureau+mobile réels avec corpus autorisés et seuils après mesure",
+        "Profils de charge multiples avec budgets distincts et limites d'usage déclarées"
+      ],
+      "preuves_a_reunir": [
+        "Jeux S1–S7 et limites d’acceptation validées.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "SwiftShader assimilé GPU réel ou seuil par outil arbitraire",
+      "responsable_propose": "A1+A5+A6",
+      "porte_et_blocage_local": "Protocole G1/X ; budgets avant acceptation du périmètre",
+      "poc_a_definir_autoriser": "POC-CHARGEMENT,POC-INDEX,POC-REPRISE",
+      "demande_humaine_canonique": "M002-D07",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "P0 protocole, budgets après mesures",
+      "sous_ensemble_dependent": "X puis acceptation performances",
+      "question_technique_restante": "Appareils/navigateurs/corpus/répétitions définis ; seuil non inventé, pas de verrou G0",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    },
+    {
+      "id": "DEC-14",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1431,
+        1432,
+        1433
+      ],
+      "question_exacte": "Profil et stratégie des outils utilisables hors ligne.",
+      "preuve_source_exacte": "Disponibilité, quota/cache, contrat versionné, reconnection.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Profil pré-téléchargé et file locale versionnée, confirmation centrale à reconnexion",
+        "Socle hors ligne restreint avec indisponibilité explicite des autres capacités"
+      ],
+      "preuves_a_reunir": [
+        "Disponibilité, quota/cache, contrat versionné, reconnection.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "Outil absent cache annoncé prêt ou upgrade efface commandes pendantes",
+      "responsable_propose": "A2+A4+A6",
+      "porte_et_blocage_local": "G3 B/R",
+      "poc_a_definir_autoriser": "POC-REPRISE",
+      "demande_humaine_canonique": "M002-D07",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "P0 avant B/R hors ligne",
+      "sous_ensemble_dependent": "B/R",
+      "question_technique_restante": "Présence et compatibilité du cache et préservation de la file ; pas approbation centrale hors ligne",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    },
+    {
+      "id": "DEC-15",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1434,
+        1435,
+        1436
+      ],
+      "question_exacte": "Extensions et adaptateur MCP, si retenus.",
+      "preuve_source_exacte": "Risques, consentement, droits, schémas et confirmations.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Exclure explicitement extensions/MCP du pilote, conserver option visible",
+        "Retenir adaptateur borné selon droits/contrats/confirmations après décision propre"
+      ],
+      "preuves_a_reunir": [
+        "Risques, consentement, droits, schémas et confirmations.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "Extension script arbitraire ou IA contourne permissions/confirmation",
+      "responsable_propose": "A2+A5+A1",
+      "porte_et_blocage_local": "G3 F seulement ; aucun blocage global si option exclue par décision",
+      "poc_a_definir_autoriser": "POC-MCP si option retenue",
+      "demande_humaine_canonique": "M002-D02",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "Reporté du MVP, obligation conservée",
+      "sous_ensemble_dependent": "F",
+      "question_technique_restante": "D02 reporte IA externe/MCP/tiers ; garder la sécurité/contrat pour éventuelle reprise",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    },
+    {
+      "id": "DEC-16",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1437,
+        1438,
+        1439
+      ],
+      "question_exacte": "Manifeste de publication multi-sources.",
+      "preuve_source_exacte": "Empreintes, versions coordonnées, statut des approbations.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Étendre publication/version/volume existants en manifeste coordonné immuable",
+        "Service logique publication partagé avec adaptateur des anciennes publications"
+      ],
+      "preuves_a_reunir": [
+        "Empreintes, versions coordonnées, statut des approbations.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "Approbation ne couvre pas fichiers réels ou retrait efface historique",
+      "responsable_propose": "A1+A2+A5",
+      "porte_et_blocage_local": "Contrat dès G1 ; G3 E ; E nécessaire MVP terminable",
+      "poc_a_definir_autoriser": "POC-PUBLICATION",
+      "demande_humaine_canonique": "M002-D01",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "P0 contrat dès G1 ; avant E",
+      "sous_ensemble_dependent": "E",
+      "question_technique_restante": "Permissions approbation/publication déjà distinctes D07 ; reste modèle du manifeste et ensemble exact ; C-PUBLICATION",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    },
+    {
+      "id": "DEC-17",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1440,
+        1441,
+        1442
+      ],
+      "question_exacte": "Qualité adaptative et concessions graphiques admises.",
+      "preuve_source_exacte": "Comparaison visuelle et non-régression géométrique.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Qualité fixe explicite sur pilote tant que budgets tenus",
+        "Réduction effets/ombres/résolution mesurée sans altérer données/snapping"
+      ],
+      "preuves_a_reunir": [
+        "Comparaison visuelle et non-régression géométrique.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "FPS gagné au prix de cotes/quantités ou export simplifié trompeur",
+      "responsable_propose": "A1+A2+A4+A5",
+      "porte_et_blocage_local": "G3 C/F selon concessions retenues",
+      "poc_a_definir_autoriser": "POC-INDEX",
+      "demande_humaine_canonique": "M002-D07",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "P1 si adaptativité retenue",
+      "sous_ensemble_dependent": "C/F",
+      "question_technique_restante": "Concessions visuelles seules, pas géométrie/snapping/métrés",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    },
+    {
+      "id": "DEC-18",
+      "source_path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "source_xml_paragraphs": [
+        1443,
+        1444,
+        1445
+      ],
+      "question_exacte": "Réutilisation effective des moteurs et services Fadi.",
+      "preuve_source_exacte": "Audit sur commit de livraison, tests, coûts, licences.",
+      "statut": "À définir",
+      "note_preparation": "Dossier technique priorisé ; arbitrage non adopté par simple dossier ; DEC-15 report du MVP acquis mais implémentation de l’option non livrée",
+      "options_a_comparer": [
+        "Réutiliser moteurs/services existants par interfaces publiques adaptées",
+        "Isoler/remplacer seulement sous-composant non conforme sur preuve/bénéfice"
+      ],
+      "preuves_a_reunir": [
+        "Audit sur commit de livraison, tests, coûts, licences.",
+        "Résultats/corpus/SHA/build/environnement/version de contrat et revue compétente",
+        "Dossier impacts données/droits/compatibilité/migration/rollback du sous-ensemble"
+      ],
+      "risque_specifique": "Réécriture sans besoin, duplication base/modèle, retrait fonctions industrielles ou licence perdue",
+      "responsable_propose": "A2+A6+A5+A1",
+      "porte_et_blocage_local": "G3 de chaque sous-ensemble, pas clôture globale fictive",
+      "poc_a_definir_autoriser": "TousPOC applicables",
+      "demande_humaine_canonique": "M002-D01,M002-D06",
+      "impact_retour_arriere": "Conserver état/identités antérieurs et table de compatibilité ; ne pas migrer ni retirer accès dans cette préparation. Définir récupération des écritures nouvelles avant bascule.",
+      "condition_decision": "Alternatives comparées sur critères du RT001 ; preuve applicable et approbateur explicite ; absence de preuve garde décision ouverte.",
+      "prochaine_action": "Compléter seulement le choix technique restant pour le sous-ensemble désigné, relier aux preuves/corpus et contrat A2 ; respecter cadrage D01/D02/D07 retenu ; code Studio interdit sans décision bornée.",
+      "priorite_mission004": "P0 spécification immédiate puis par lot",
+      "sous_ensemble_dependent": "Tous sous-ensembles applicables",
+      "question_technique_restante": "Réutilisation/native/licences/interfaces ; aucun retrait systématique, C-* candidats de chaque lot",
+      "decisions_cadrage_deja_acquises": "M002-D01 RT001 / pilote ; M002-D02 reports du MVP ; M002-D07 navigation/permissions retenus dans leurs portées, ne pas reposer",
+      "etat_preparation": "En cours"
+    }
+  ],
+  "schema_version": 2,
+  "baseline_sha256": "b83c6a3a17878b00998c8aa28d504b5b904164aade615c50bc0e3bb8e4deb130",
+  "autorite": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098"
+}

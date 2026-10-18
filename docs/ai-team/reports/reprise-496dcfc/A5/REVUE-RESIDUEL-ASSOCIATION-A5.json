@@ -1,0 +1,542 @@
+{
+  "review": "A5 revue indépendante quatre résiduels association/historique A3",
+  "input": {
+    "path": "/workspace/work/resume496/agents/A3/RESIDUEL-ASSOCIATION-HISTORIQUE-A3.json",
+    "sha256": "c44c067f379edc1063320cab66246c3bfee49de93ec9eb915a19963960af662e"
+  },
+  "reference_documents_commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+  "scope_ids": [
+    "A.4-03",
+    "A.4-04",
+    "A.4-07",
+    "A.5-09"
+  ],
+  "case_count": 20,
+  "source_checks": [
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "sha256_match": true
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.2.md",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "sha256_match": true
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.3.md",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "sha256_match": true
+    },
+    {
+      "path": "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "sha256_match": true
+    },
+    {
+      "path": "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "sha256_match": true
+    },
+    {
+      "path": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "sha256_match": true
+    },
+    {
+      "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "sha256_match": true
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A3/DEC18-MOTEURS-PUBLICS-CANDIDATS.json",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "sha256_match": true
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "sha256_match": true
+    },
+    {
+      "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "sha256_match": true
+    }
+  ],
+  "exact_citations_verified": 46,
+  "errors": [],
+  "matrix": [
+    {
+      "case": "A.4-03/edition-croisee",
+      "task": "A.4-03",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "Oracle candidat borné, scénario/refus et avant-après pertinents ; rattachement existant ne prouve ni exécution ni couverture déjà acquise.",
+      "existing_TEST_refs": [
+        "TEST-003",
+        "TEST-009",
+        "TEST-010"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "Même contexte synthétique P/S/V ; mur W, ouverture O hôte W, révision R0. Deux intentions séquentielles, la seconde capturant la révision acceptée de la première. Reprendre le cas RT 6×3×0,2 m et largeur d’ouverture 1→1,2 m seulement pour les métrés.",
+        "expected": "Même objectId W, O reliée au même hôte ; une nouvelle révision par commande acceptée, effets et projections corrélés à leurs sources. Le geste 3D ne crée pas Wbis.",
+        "oracle": "Comparer les identités W/O/hôte et les paramètres canoniques après chaque étape, pas seulement l’image. Pour cet unique cas RT sans autres déductions : net 3,180 puis 3,096 m³ ; sinon métrés explicitement périmés jusqu’au recalcul. Vérifier qu’aucun second writer n’a accepté une copie divergente."
+      },
+      "candidate_extensions_explicit": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+      "limit_preserved": "Les valeurs RT sont un oracle synthétique limité, pas une règle générale de métrés. Les identités/transactions sont logiques ; aucun stockage, endpoint ou objectId physique choisi.",
+      "trigger": "Après revue A2/A1/A5 du contrat associé et preuve de capacité autorisée : fixer corpus S2/S6 et appliquer l’oracle au SHA réel ; aucun essai maintenant.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.4-03/projections-fraicheur",
+      "task": "A.4-03",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "Oracle candidat borné, scénario/refus et avant-après pertinents ; rattachement existant ne prouve ni exécution ni couverture déjà acquise.",
+      "existing_TEST_refs": [
+        "TEST-003",
+        "TEST-014"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "Une commande acceptée passe R0→R1 ; une projection 2D ou 3D reste sur R0 ou un calcul R0 revient ensuite.",
+        "expected": "La définition W/R1 reste unique ; état courant/périmé/recalcul en cours explicite. Aucun affichage ancien ne devient source d’un nouveau commit ou métrage annoncé actuel.",
+        "oracle": "Vérifier correspondance objectId/sourceRevision des deux surfaces et invalidations ; si les métrés ne sont pas recalculés, leur état périmé est visible. Le résultat R0 arrivé tard produit zéro nouvel effet canonique sur R1."
+      },
+      "candidate_extensions_explicit": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+      "limit_preserved": "Aucun délai de rafraîchissement ou budget FPS fixé ; le cas ne prouve ni renderer ni worker réels.",
+      "trigger": "Lorsque le mécanisme de projection/invalidation et son protocole de révision sont définis pour le lot autorisé, joindre preuve avant/après et résultat périmé.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.4-03/historique-reouverture",
+      "task": "A.4-03",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "Oracle candidat borné, scénario/refus et avant-après pertinents ; rattachement existant ne prouve ni exécution ni couverture déjà acquise.",
+      "existing_TEST_refs": [
+        "TEST-011",
+        "TEST-012"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "État associé avant/après une édition ; annulation puis rétablissement sur une tête autorisée, fermeture puis réouverture du contexte/révision exacts. Variante séparée : autre édition intervenue avant l’annulation.",
+        "expected": "Valeurs, hôtes, références et métrés retrouvent l’état attendu ; les révisions historiques restent identifiables. En concurrence incompatible : conflit explicite et travail d’autrui conservé.",
+        "oracle": "Comparer états canoniques et relations complets, historique accepté et identités de commande, puis la source réellement rouverte. Une capture identique ou un inverse mémoire seul ne prouve pas la durabilité."
+      },
+      "candidate_extensions_explicit": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+      "limit_preserved": "Le mécanisme hybride et la persistance ne sont pas sélectionnés ici ; aucun appel DB, coupure ou restauration exécuté.",
+      "trigger": "Après décision DEC12 utile au périmètre, capacité de reprise livrée et accord d’essai sûr : associer corpus S2/S6 et preuve de fermeture/réouverture.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.4-03/publication-historique",
+      "task": "A.4-03",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "Anciennepublication/approbation restefigée ; refuserR1sousaccordR0ne détruitpasR0 ; E/M24 requis seulementaucritèrefinal.",
+      "existing_TEST_refs": [
+        "TEST-010",
+        "TEST-018",
+        "TEST-038"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "Dossier publié sur R0/W et ses pièces ; nouvelle édition depuis l’autre planche produit R1. Tentative de publier R1 sous l’approbation R0.",
+        "expected": "Ancien manifeste, sources, pièces et empreintes restent ceux de R0 ; R1 nécessite l’approbation/acte adéquat. Aucune substitution latest.",
+        "oracle": "Comparer manifeste, versions et empreintes avant/après la nouvelle édition ; le refus de nouvelle publication n’efface ni n’annule l’ancienne. Conserver les permissions séparées approbation/publication."
+      },
+      "candidate_extensions_explicit": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+      "limit_preserved": "Critère final dépendant d’E/M24, pas précondition artificielle pour commencer la spécification A.4. Aucun dossier réellement publié.",
+      "trigger": "Quand la capacité de publication du pilote et ses droits seront autorisés/disponibles, rattacher la preuve à ce critère AC001 sans déclarer M20 complet avant elle.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.4-04/deplacement",
+      "task": "A.4-04",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "Oracle candidat borné, scénario/refus et avant-après pertinents ; rattachement existant ne prouve ni exécution ni couverture déjà acquise.",
+      "existing_TEST_refs": [
+        "TEST-008"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "Ouverture O dans W avec contraintes explicites. Une variante de cas déplace O à l’intérieur ; une autre tente une position hors hôte. Changer un seul paramètre fautif par variante.",
+        "expected": "Hôte, position et quantités restent cohérents dans une même opération ; hors hôte : refus atomique ou état de résolution explicitement décidé, sans détachement silencieux.",
+        "oracle": "Avant/après : hostId, paramètres de position, contraintes, cotes, état des métrés et révision. En refus, zéro modification canonique et aucune révision acceptée supplémentaire ; une trace de refus expurgée est permise."
+      },
+      "candidate_extensions_explicit": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+      "limit_preserved": "La politique de résolution n’est pas choisie ici ; ne pas considérer toute position hors hôte automatiquement réparable.",
+      "trigger": "DEC02 doit préciser limites/contraintes et politique de résolution du cas ; A5 isole les fautes dans le corpus avant tout essai.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.4-04/suppression-hote",
+      "task": "A.4-04",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "PolitiqueDEC02 nonchoisie : aucune cascade/tombstone/identité survivante inférée ; mapping démontré ou ruptureexplicite/refus, sans proximité arbitraire. ExtensionTEST007 déclarée.",
+      "existing_TEST_refs": [
+        "TEST-007",
+        "TEST-008",
+        "TEST-011"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "Intention explicite de supprimer W alors que O, une cote et une contrainte le référencent. Révision/source et portée de suppression déclarées.",
+        "expected": "Aucune disparition implicite d’O/cote/contrainte ni réaffectation par proximité. Selon politique DEC02 ratifiée : commande refusée sans effet, ou changement de relations/statut de rupture explicitement pris dans la même opération et conservant la provenance.",
+        "oracle": "Inventaire avant/après de chaque entité et relation ; objet supprimé, référence conservée à résoudre ou refus sont distingués. Le contrat doit rendre chaque perte/rupture visible et réversible selon l’historique, pas seulement enlever la géométrie de la scène."
+      },
+      "candidate_extensions_explicit": "Rattachement candidat à TEST007/008/011 ; suppression d’hôte est une déclinaison documentaire nouvelle, pas un test déjà prescrit/exécuté",
+      "limit_preserved": "Extension proposée des oracles de référence/hôte : le catalogue ne prescrit pas à lui seul une politique de cascade ou de tombstone. Aucun choix physique fait.",
+      "trigger": "Attendre le choix précis DEC02 de cycle de vie/suppression et ses effets ; ensuite compléter seulement les assertions liées à cette décision.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.4-04/fractionnement",
+      "task": "A.4-04",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "PolitiqueDEC02 nonchoisie : aucune cascade/tombstone/identité survivante inférée ; mapping démontré ou ruptureexplicite/refus, sans proximité arbitraire. ExtensionTEST007 déclarée.",
+      "existing_TEST_refs": [
+        "TEST-007",
+        "TEST-011"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "W ou une face référencée est fractionné ; O/cote pointe sur la zone concernée. Construire deux variantes : correspondance univoque démontrable et plusieurs cibles plausibles.",
+        "expected": "Références suivent le mapping démontré ou sont conservées en rupture explicite ; aucune sélection arbitraire de la partie la plus proche. Identités nouvelles/maintenues et provenance ne sont déclarées que suivant la politique de fractionnement décidée.",
+        "oracle": "Comparer table de correspondance et source exacte de chaque relation, pas la seule distance. Pour l’ambiguïté : aucun commit d’une association choisie au hasard, pas de métrage courant trompeur ; historique préservé."
+      },
+      "candidate_extensions_explicit": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+      "limit_preserved": "TEST007 concerne une face cotée ; son extension au fractionnement d’un hôte architectural est proposée et reste à revoir. AC001 ne décide pas quel ID survivra à une création de plusieurs objets.",
+      "trigger": "Après décision DEC02 sur identité/mapping et corpus de correspondance ciblé, soumettre le cas précis à revue A2/A5 ; pas de nouveau solveur.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.4-04/reference-invalide",
+      "task": "A.4-04",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "Oracle candidat borné, scénario/refus et avant-après pertinents ; rattachement existant ne prouve ni exécution ni couverture déjà acquise.",
+      "existing_TEST_refs": [
+        "TEST-007",
+        "TEST-012",
+        "TEST-035"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "Variantes indépendantes : hôte inexistant ; hôte d’un autre projet ; version de relation obsolète ; cible disparue après capture de la commande.",
+        "expected": "Refus de contexte/version/ambiguïté avant effet, ou rupture à résoudre conformément au contrat ; aucune fuite interprojet ni rattachement implicite.",
+        "oracle": "Comparer objet, hostId, références, révision et journal accepté avant/après chaque refus. Une mise en cache ou un libellé UI « réparé » ne fait pas preuve de réparation canonique."
+      },
+      "candidate_extensions_explicit": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+      "limit_preserved": "Les codes d’erreur de M17 sont candidats ; aucun mapping HTTP ni politique de réparation nouvelle n’est annoncé.",
+      "trigger": "Fixer les versions de référence et le verdict attendu de chaque variante lors du contrat DEC02/12, puis preuve ciblée sur capacité autorisée.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.4-07/independant",
+      "task": "A.4-07",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "36m³ analytique local rectangle12m²×3m, aucune exécutionmoteur ni capacitéforme générale ; indépendance2D etidentités/copie traçables.",
+      "existing_TEST_refs": [
+        "TEST-004",
+        "TEST-005"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "Profil fermé synthétique, unité m et repère identifiés ; hauteur 3 m, direction normale explicite. Exemple analytique limité : rectangle 6×2 m, aire 12 m². Mode indépendant demandé, pas déduit.",
+        "expected": "Cible 3D nouvelle et source 2D identifiable ; le dessin peut encore être sérialisé/rouvert/édité sans objet 3D substitut. Modifier ensuite une copie indépendante ne modifie pas la source, et réciproquement selon le contrat de copie.",
+        "oracle": "Pour ce prisme normal sans trou ni autre opération : volume candidat 12×3=36 m³ et direction déclarée. Comparer identités/provenance et conservation du dessin ; cet oracle ne démontre ni forme générale, ni topologie, ni durabilité."
+      },
+      "candidate_extensions_explicit": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+      "limit_preserved": "36 m³ est une valeur analytique synthétique nouvelle, pas un résultat moteur obtenu ni une règle normative. Les primitives géométriques et leur adaptateur restent à qualifier.",
+      "trigger": "Après accord sur la sémantique de conversion/copie et le contrat d’extrusion DEC18, isoler le cas dans S1/S5 ; pas de chargement moteur maintenant.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.4-07/suivi-explicite",
+      "task": "A.4-07",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "Liéeépinglée ne suit pas latest automatiquement ; associé seulementpropagationdéclarée ; sourceprimitive≠objectIdassocié. Extrusionnative≠preuve suiviStudio.",
+      "existing_TEST_refs": [
+        "TEST-005",
+        "TEST-006",
+        "TEST-007"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "Mode de relation déclaré et source de profil versionnée ; modifier le profil après la première extrusion, puis faire revenir un calcul ancien.",
+        "expected": "Suivant relation DEC02 approuvée : recalcul correct ou invalidation explicite de la cible. Source et cible restent traçables ; résultat ancien non engagé. L’édition d’une projection ne confère aucun pouvoir inverse universel sur le profil. Pour une référence liée, la version épinglée reste applicable jusqu’à acceptation explicite de sa mise à jour ; une source plus récente n’autorise pas à elle seule une propagation. Le mode associé suit uniquement sa règle de propagation déclarée.",
+        "oracle": "Comparer sourceRevision/profil, référence de relation, paramètres hauteur/direction et fraîcheur de la cible ; vérifier qu’aucun suivi n’existe si le lien a été rompu. Distinguer même objectId de l’objet associé et identités de ses primitives sources."
+      },
+      "candidate_extensions_explicit": "Extension candidate des TEST005/006 et du mapping TEST007 ; aucune équivalence entre preuve moteur et suivi métier",
+      "limit_preserved": "Ni conservation d’un maillage ni fonction d’extrusion native ne prouvent cette relation Studio. Politique de propagation/réparation toujours ouverte.",
+      "trigger": "DEC02 définit relation, versions et sens autorisés ; DEC18 qualifie l’opération publique ; ensuite seulement formaliser la preuve de suivi.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.4-07/entrees-refusees",
+      "task": "A.4-07",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "Oracle candidat borné, scénario/refus et avant-après pertinents ; rattachement existant ne prouve ni exécution ni couverture déjà acquise.",
+      "existing_TEST_refs": [
+        "TEST-005",
+        "TEST-012"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "Une faute par variante : hauteur absente/non finie ; direction absente/non finie/nulle ; repère inconnu ; unité incompatible ; transformation sans version ; source périmée.",
+        "expected": "Refus ciblé ou conflit avant création d’un solide partiel et avant modification du dessin. Aucune normalisation, conversion de repère ou hauteur par défaut silencieuse.",
+        "oracle": "Ancien profil, identités, relations et état canonique restent identiques ; aucun objet partiel ou journal accepté. Les règles sur hauteur nulle/signée et vecteur non unitaire restent à décider explicitement, sans imposer ici une convention physique."
+      },
+      "candidate_extensions_explicit": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+      "limit_preserved": "TEST005 prescrit hauteur/direction absente ou non finie ; autres variantes sont rattachements candidats issus EX023/M17, pas déjà démontrées.",
+      "trigger": "Préciser conventions d’unité/repère et validation de direction dans le sous-lot choisi ; A5 peut alors produire les variantes exactes sans faute supplémentaire.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.4-07/preuve-native-vs-studio",
+      "task": "A.4-07",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "Oracle candidat borné, scénario/refus et avant-après pertinents ; rattachement existant ne prouve ni exécution ni couverture déjà acquise.",
+      "existing_TEST_refs": [
+        "TEST-005",
+        "TEST-006"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "Réemployer inventaire DEC18 au code 5e0285 : MTR03 topologie/maillage Planche ; MTR06 façade MoteurExact/OperationExacte ; MTR08 commandes ; MTR09 versions/reprise. Distinguer sources de tests présentes et exécutions historiques exactes.",
+        "expected": "Conserver deux colonnes : preuve native bornée au SHA/fichier/opération/oracle ; preuve Studio future portant profil/hauteur/direction/relation/contexte/versions/durabilité. Une colonne ne remplit pas l’autre.",
+        "oracle": "Vérifier que le dossier cite API publique, version, limites de mesh/BRep et provenance ; les tests « présents » restent non exécutés dans cette étude. Les 492 tests CLASSIF historiques ne démontrent pas TEST005/006 Studio ni un moteur complet."
+      },
+      "candidate_extensions_explicit": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+      "limit_preserved": "L’inventaire DEC18 est statique et daté ; aucun nouvel import de moteur, relecture source applicative, benchmark ou opération d’extrusion exécutée.",
+      "trigger": "Au choix précis d’adaptateur/opération DEC18 : requalifier le delta de SHA et rattacher une preuve native ciblée, puis la preuve Studio distincte après autorisation.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.5-09/ack-perdu",
+      "task": "A.5-09",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "Point central correct : même requête/scope/contenu autorisés déjà durable → restituer R1 sans nouveaucommit même si têteR2. Comparaison au canoniqueavantrejeu, pas rollback versavantpremiercommit ; disponibilité/rétention ouverte.",
+      "existing_TEST_refs": [
+        "TEST-013"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "Commande C acceptée sur R0→R1 mais réponse perdue ; la tête avance ensuite R2. Même acteur autorisé, même portée, requestId et contenu lors de la reprise documentaire.",
+        "expected": "Avant confirmation retrouvée : état indéterminé et intention conservée. Après revalidation et recherche du résultat : même résultat historique R1, zéro nouvelle mutation ; R2 ne devient pas une deuxième exécution de C.",
+        "oracle": "Comparer au canonique capturé AVANT le rejeu, pas à l’état antérieur au premier commit. Le résultat durable, eventId/transaction/révision de C sont identiques ; compteur d’engagements de C reste un. Ne pas refuser à tort ce rejeu seulement parce que la tête a avancé."
+      },
+      "candidate_extensions_explicit": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+      "limit_preserved": "Aucun paquet réseau envoyé, aucune panne simulée. Le stockage de résultats et sa rétention restent à choisir ; le cas ne garantit pas la disponibilité après expiration.",
+      "trigger": "Fixer déduplication/rétention et protocole de lookup dans DEC12/M17 ; future preuve sur capacité/cible autorisées, pas sur un modèle mémoire présenté serveur.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.5-09/requestId-divergent",
+      "task": "A.5-09",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "Mêmeclécontenudifférent/preview→commit refusée ; ancienrésultat immuable ; canonicalisation et codeREQUEST_ID_REUSED candidats non implémentés.",
+      "existing_TEST_refs": [
+        "TEST-013"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "Conserver requestId de C et modifier un seul paramètre, ou transformer preview en commit sous cette même clé. Comparaison au résultat déjà existant.",
+        "expected": "Refus de réutilisation divergente ; ancien résultat/historique conservé, aucune seconde mutation. Une intention réellement nouvelle doit être identifiée séparément.",
+        "oracle": "Zéro nouvel engagement canonique/outbox accepté ; empreinte et résultat de C inchangés. REQUEST_ID_REUSED est seulement le libellé candidat M17, pas un endpoint/code implémenté."
+      },
+      "candidate_extensions_explicit": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+      "limit_preserved": "La canonicalisation/empreinte physique n’est pas définie ici ; aucune règle arbitraire de hash remplace l’équivalence sémantique à ratifier.",
+      "trigger": "DEC12/16 et choix résiduel de canonicalisation précis ; reprendre uniquement cette variante après décision, sans refaire la méthode d’idempotence.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.5-09/autre-compte",
+      "task": "A.5-09",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "Oracle candidat borné, scénario/refus et avant-après pertinents ; rattachement existant ne prouve ni exécution ni couverture déjà acquise.",
+      "existing_TEST_refs": [
+        "TEST-035"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "File locale préparée pour compte A/projet P/variante V ; reconnexion de B ou navigation vers autre projet. Une variante de faute par test futur.",
+        "expected": "File A isolée/verrouillée selon politique approuvée ; aucune transmission au nom de B ni fuite du résultat/pièce d’A. Aucun réadressage à la variante visible.",
+        "oracle": "Comparer propriétaire et scope de chaque intention ; requête/résultat ne divulguent pas les données interdites et zéro effet canonique dans le nouveau contexte. Conserver la demande d’origine au lieu de l’effacer pour afficher enregistré."
+      },
+      "candidate_extensions_explicit": "Rattachement candidat du TEST035 de contexte/projet au cas de compte changé, appuyé directement par NAV",
+      "limit_preserved": "Le stockage local et son chiffrement/isolement restent des choix ouverts ; le scénario documentaire ne prouve pas leur réalisation.",
+      "trigger": "Définir les droits de lecture/reprise et le stockage de queue du sous-lot ; A4/A5 vérifient cas NAV liés avant tout essai.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.5-09/droit-revoque",
+      "task": "A.5-09",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "Refusnouvelleaction/lectureactuelle, pas annulationrétroactivecommit ; aucune donnéeinterdite retournée. TEST018publication étendu àédition explicitementcandidat.",
+      "existing_TEST_refs": [
+        "TEST-018",
+        "TEST-035"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "Même compte et contexte, intention pending ; droit de mutation/lecture du résultat retiré avant reprise. Le commit antérieur éventuellement réussi est traité séparément.",
+        "expected": "Refus d’envoi ou de lecture non autorisés, état local explicite et brouillon conservé seulement selon politique autorisée. Aucun retour de données interdites ; aucun faux succès.",
+        "oracle": "Zéro nouveau commit et aucune fuite. Ne pas annuler rétrospectivement un commit déjà durable ; le refus porte sur la nouvelle action ou la lecture actuelle. Les publications antérieures restent identifiables."
+      },
+      "candidate_extensions_explicit": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+      "limit_preserved": "TEST018 porte directement publication ; extension à l’édition/reprise est candidate via M17/NAV. Aucun rôle réel ni permission physique attribué.",
+      "trigger": "Matrice de permissions approuvée et mécanisme de revalidation exposé par le futur lot ; preuve distincte de simple visibilité UI.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.5-09/nouvelle-demande-base-perimee",
+      "task": "A.5-09",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "Distinct duplicata : nouveau requestId/baseancienne → conflit/refus ou résolution autorisée, aucun retourancienneconfirmation pour contourner préconditions.",
+      "existing_TEST_refs": [
+        "TEST-012",
+        "TEST-011"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "Nouveau requestId après interruption avec base R0 alors que W/relations ont évolué ; variante alternative visant une révision historique en consultation.",
+        "expected": "Conflit/refus explicite ou recalcul/résolution autorisée ; aucun last-write-wins ni mutation de la révision historique.",
+        "oracle": "Comparer canonique, références/hôtes, journal accepté et publication avant/après refus. Ne pas appliquer à ce cas la règle de restitution d’un ancien résultat déjà durable du cas ACK perdu."
+      },
+      "candidate_extensions_explicit": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+      "limit_preserved": "La stratégie de fusion/rebase physique n’est pas choisie ; absence de conflit dans un exemple JSON ne la démontre pas.",
+      "trigger": "Après choix de versions/contrat et politique de rebase DEC12 : construire corpus avec mutation concurrente ciblée et revue A2/A5.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.5-09/contrat-queue-incompatible",
+      "task": "A.5-09",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "Oracle candidat borné, scénario/refus et avant-après pertinents ; rattachement existant ne prouve ni exécution ni couverture déjà acquise.",
+      "existing_TEST_refs": [
+        "TEST-013"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "Commande persistée avec contractVersion/schemaVersion non supporté, ou résultat dont le lecteur ne comprend pas les champs requis ; une faute ciblée par variante.",
+        "expected": "Refus/incompatibilité signalée, demande et provenance conservées pour résolution ; pas downgrade silencieux, purge de queue ou migration non autorisée.",
+        "oracle": "Zéro engagement nouveau ; versions et intention d’origine encore traçables. Ne pas prétendre conservation universelle des champs inconnus par les lecteurs Atelier actuels : leur adéquation est un manque M05 documenté."
+      },
+      "candidate_extensions_explicit": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+      "limit_preserved": "Extension proposée au TEST013 ; formats et politique de compatibilité sont des choix M05/M17/DEC12, pas un nouveau schéma dans ce delta.",
+      "trigger": "Quand les choix résiduels catalogue de versions/clients offline sont tranchés, ajouter uniquement la table lecteurs/commandes touchée.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.5-09/fermeture-annulation",
+      "task": "A.5-09",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "FermetureUI/cacheannulé n’annulepascommitserveur ; compensationnouvellecommande revalidée ; anciencalcul non autoengagé.",
+      "existing_TEST_refs": [
+        "TEST-011",
+        "TEST-014"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "Commande envoyée/commit confirmé ou indéterminé ; quitter la planche, fermer la fenêtre ou demander annulation. Cas distinct : résultat d’une ancienne génération arrive après capacité d’engager révoquée.",
+        "expected": "État pending/indéterminé/conflit conservé dans son contexte ; aucun effacement d’événement/publication. Si compensation autorisée, nouvelle intention avec révalidation. Résultat tardif non auto-engagé.",
+        "oracle": "Comparer journal accepté et publication immuables ; garder les intentions et statuts de la file, pas de « sauvegardé » sans durabilité. En refus de compensation, le commit d’origine reste ; un cache abandonné n’est pas preuve d’annulation serveur."
+      },
+      "candidate_extensions_explicit": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+      "limit_preserved": "Aucune fermeture forcée, worker ou interruption réseau exécuté. Les timeouts et stratégies d’arrêt ne sont pas fixés par ce document.",
+      "trigger": "Réemployer les états M23 et NAV une fois la file durable/capacité d’annulation du lot est autorisée ; pas de nouveau gestionnaire de tâches.",
+      "no_execution_or_acceptance": true
+    },
+    {
+      "case": "A.5-09/coupe-notification",
+      "task": "A.5-09",
+      "verdict_A5": "Recevable en préparation documentaire seulement",
+      "independent_quality_note": "Oracle candidat borné, scénario/refus et avant-après pertinents ; rattachement existant ne prouve ni exécution ni couverture déjà acquise.",
+      "existing_TEST_refs": [
+        "TEST-013",
+        "TEST-014",
+        "TEST-038"
+      ],
+      "TEST_refs_exist": true,
+      "source_refs_resolve": true,
+      "unresolved_TEST_refs": [],
+      "unresolved_source_refs": [],
+      "negative_and_state_comparison_reviewed": {
+        "input": "Combinaison documentaire volontairement incohérente de révision et résultats/journal/outbox, ou redélivrance du même eventId ; variantes séparées.",
+        "expected": "Incohérence signalée et pas de promotion/rejeu aveugle ; notification répétée n’ajoute ni commande ni publication. Resynchronisation depuis source autoritaire selon contrat à ratifier.",
+        "oracle": "Comparer les liens de révision et identités de demande/événement ; aucun nouvel effet du doublon, aucune révision plus récente écrasée par un résultat ancien. Une série de GET ou un JSON parseable ne prouve pas la coupe."
+      },
+      "candidate_extensions_explicit": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+      "limit_preserved": "Extension candidate de ces oracles et de M23/M27 ; aucune restauration réelle ou transaction multi-autorité démontrée, mécanisme physique encore ouvert.",
+      "trigger": "Après décision sur coupe/epoch/commit et autorisation bornée de récupération, compléter le manifeste existant et fournir preuve de cohérence, sans second mécanisme de restauration.",
+      "no_execution_or_acceptance": true
+    }
+  ],
+  "principal_distinction": "Rejeu identité/contenu/scope identiques déjà confirmés : restitutiondurable sans réappliquer, même têteavancée. NouvelleintentionnouvelrequestId/basepérimée : préconditionsactuelles/refusconflit/résolutionautorisée. Droitactuel demeure requis pour lirele résultat, sans supprimercommit antérieur.",
+  "normative_limits": [
+    "A3prépare, A2propriétaire ; quatreIDsouverts, aucun changementstatut44.",
+    "20souscas sont déclinaisonscandidates des38TEST ; extensionssuppressions/compte/contrat/worker/coupe clairement nommées, aucune couverture nouvelleexécutée.",
+    "M17/M23/M27/NAV sont contratscandidats repris, aucune APIphysique/cascade/topologie/rétention/gate adoptée.",
+    "492CLASSIF ettests natifs présents ne prouvent ni extrusionStudio ni association ni persistance.",
+    "Comparaisonsarithmétiques3.180/3.096 et36m³ limitéesauxfixturesanalytiques ; pasmesure/renderermoteur ni normeuniverselle."
+  ],
+  "verdict": "Favorable documentaire, souslimites explicites conservées ; aucune réserve factuelle bloquante trouvée.",
+  "execution": "LectureGit/JSON/CSV etempreintes uniquement. Aucun test/runner/app/API/DB/service/moteur/scan/nouveaucatalogue/protocole/registre/gate."
+}

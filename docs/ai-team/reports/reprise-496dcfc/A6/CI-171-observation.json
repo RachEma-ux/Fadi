@@ -1,0 +1,101 @@
+{
+  "head_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+  "run_id": 39130408506,
+  "jobs": [
+    {
+      "id": 117684235447,
+      "name": "Classification — modèle pur sans base (intégration non exécutée)",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Installer sans script de cycle de vie",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Vérifier les types sans exécuter le serveur",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Suite complète pure du modèle Atelier",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Construire sans lancer API ni appliquer de schéma",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Expliciter la couverture et les limites du lot pur",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 117684236342,
+      "name": "e2e",
+      "status": "completed",
+      "conclusion": "skipped",
+      "steps": []
+    },
+    {
+      "id": 117684236606,
+      "name": "image",
+      "status": "completed",
+      "conclusion": "skipped",
+      "steps": []
+    },
+    {
+      "id": 117684236645,
+      "name": "validate",
+      "status": "completed",
+      "conclusion": "skipped",
+      "steps": []
+    }
+  ],
+  "selected_log_lines": [
+    "2026-10-18T13:10:57.6157275Z node: v22.23.3",
+    "2026-10-18T13:10:57.6158129Z npm: 10.9.9",
+    "2026-10-18T13:10:57.6289599Z ##[group]Run npm ci --ignore-scripts --no-audit --no-fund",
+    "2026-10-18T13:12:13.4812480Z \u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m107 passed\u001b[39m\u001b[22m\u001b[90m (107)\u001b[39m",
+    "2026-10-18T13:12:13.4814146Z \u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m492 passed\u001b[39m\u001b[22m\u001b[90m (492)\u001b[39m"
+  ],
+  "services_initialized_in_job": false,
+  "postgres_migrations_api_e2e_executed": false,
+  "rerun": false,
+  "limits": "Pure model tests and compilation only; skipped jobs are not integration success; no merge/deployment approval."
+}

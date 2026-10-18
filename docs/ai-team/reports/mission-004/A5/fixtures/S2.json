@@ -1,0 +1,57 @@
+{
+  "schema": "fixture-documentaire-proposee/1",
+  "provenance": "Création synthétique Mission004 sous délégation D01/D07 ; aucun client/production",
+  "rights": "Contenu original préparé pour Fadi ; aucune ressource externe",
+  "purpose": "Spécification de données, pas format import/API implémenté",
+  "frame": "local",
+  "coordinate_unit": "mm",
+  "execution": "Non exécuté dans Studio",
+  "approval": "Préparation autorisée, gate/réalisation Studio non acceptées",
+  "decisions": [
+    "Q-M003-D01",
+    "Q-M003-D02",
+    "Q-M003-D07"
+  ],
+  "performance_budgets": "À fixer DEC13, aucune capacité/latence garantie",
+  "corpus_id": "S2",
+  "label": "Mur associé et ouverture — oracle normatif TEST009/010",
+  "context": {
+    "projectId": "syn-pavillon",
+    "studyId": "syn-study-01",
+    "variantId": "syn-variant-A",
+    "revisionId": "syn-revision-01"
+  },
+  "source": "STUDIO-PLAN-001 TEST009/010 ; REF02 §19.2",
+  "wall": {
+    "id": "wall-a",
+    "length": 6000,
+    "height": 3000,
+    "thickness": 200
+  },
+  "opening": {
+    "id": "opening-a",
+    "hostId": "wall-a",
+    "width": 1000,
+    "height": 2100
+  },
+  "update": {
+    "openingWidth": 1200,
+    "revision": "syn-revision-02"
+  },
+  "oracles": {
+    "gross_mm3": 3600000000,
+    "deducted_before_mm3": 420000000,
+    "net_before_mm3": 3180000000,
+    "deducted_after_mm3": 504000000,
+    "net_after_mm3": 3096000000,
+    "net_before_m3": "3.180",
+    "net_after_m3": "3.096",
+    "historic_revision_unchanged": true,
+    "same_wall_id_in_2d_3d": true
+  },
+  "negative_variants": [
+    "Porte hors hôte : refus atomique ou résolution explicite",
+    "Modifier programme automatiquement depuis surface dessinée : interdit",
+    "Résultat calcul ancien : non engagé"
+  ]
+}

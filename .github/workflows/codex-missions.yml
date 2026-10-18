@@ -1,0 +1,37 @@
+name: Codex — couverture des missions
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codex-missions-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mission-coverage:
+    name: Codex — 31 missions et 630 tâches
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Tester le contrôle documentaire sans base ni réseau
+        run: python3 -m unittest discover -s docs/ai-team -p 'test_check_missions.py' -v
+      - name: Contrôler la source et chaque affectation
+        run: python3 docs/ai-team/check_missions.py --check --export "$RUNNER_TEMP/fadi-mission-map"
+      - name: Publier le rapport dans le résumé du job
+        run: cat "$RUNNER_TEMP/fadi-mission-map/coverage-report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Conserver les 630 affectations et leurs sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-mission-coverage-${{ github.run_id }}
+          path: ${{ runner.temp }}/fadi-mission-map/
+          if-no-files-found: error
+          retention-days: 30

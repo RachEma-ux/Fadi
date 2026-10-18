@@ -1,0 +1,188 @@
+{
+  "observed_utc": "2026-10-18T09:45:00Z",
+  "reference_sha": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+  "main": {
+    "sha": "27c0c5a35e2f116752a83a9c66459484488a1975",
+    "protected": false
+  },
+  "runtime": {
+    "environment_id": "ccarenv_b64_Y2NhcmVudl8zMThjZDQ3ODMzZDA4MTkxOGMyMWVmMTI0ZmI5M2M3Mw",
+    "source_config_version_id": "86e0b524-cc34-4740-a083-4cd350cc1b5d~cecfgver_6ad44033595c819397365ad72a44da2c",
+    "spec_revision": "18",
+    "observed_spec_revision": "18",
+    "observations_current": true,
+    "observed_phase": "running",
+    "network_policy_state": "enforced"
+  },
+  "runs": [
+    {
+      "id": 39114417819,
+      "name": "Codex — couverture des missions",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "html_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39114417819"
+    },
+    {
+      "id": 39114417883,
+      "name": "Fadi — isolation des autres applications",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "html_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39114417883"
+    },
+    {
+      "id": 39114417840,
+      "name": "Continuité de développement",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "html_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39114417840"
+    },
+    {
+      "id": 39114417812,
+      "name": "CI",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "html_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39114417812"
+    },
+    {
+      "id": 39095745135,
+      "name": "Continuité de développement",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "27c0c5a35e2f116752a83a9c66459484488a1975",
+      "html_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39095745135"
+    },
+    {
+      "id": 39095745118,
+      "name": "Fadi — isolation des autres applications",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "27c0c5a35e2f116752a83a9c66459484488a1975",
+      "html_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39095745118"
+    },
+    {
+      "id": 39095745108,
+      "name": "CI",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "27c0c5a35e2f116752a83a9c66459484488a1975",
+      "html_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39095745108"
+    }
+  ],
+  "checks": [
+    {
+      "name": "Codex — 31 missions et 630 tâches",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368
+    },
+    {
+      "name": "e2e",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368
+    },
+    {
+      "name": "image",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368
+    },
+    {
+      "name": "Continuité — docs, checkpoints et tests",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368
+    },
+    {
+      "name": "no-foreign-app-reference",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368
+    },
+    {
+      "name": "validate",
+      "status": "completed",
+      "conclusion": "success",
+      "app_id": 15368
+    }
+  ],
+  "db": {
+    "state": "exited",
+    "exit_code": 255,
+    "oom_killed": false,
+    "error": "",
+    "started_at": "2026-10-18T02:44:34.223093493Z",
+    "finished_at": "2026-10-18T03:52:07.048637257Z",
+    "image": "postgis/postgis:16-3.4",
+    "restart_policy": "no",
+    "last_log": "2026-10-18T03:24:08.040Z checkpoint complete",
+    "cause": "non démontrée"
+  },
+  "ports": {
+    "localhost_3001": "ECONNREFUSED",
+    "localhost_3002": "ECONNREFUSED",
+    "localhost_5173": "ECONNREFUSED",
+    "localhost_5432": "ECONNREFUSED",
+    "proxy_8080": "connected",
+    "proxy_8088": "ECONNREFUSED"
+  },
+  "versions": {
+    "cloud": {
+      "node": "24.19.0",
+      "npm": "11.9.0",
+      "python": "3.12.14",
+      "chromium": "154.0.8037.57",
+      "playwright": "1.56.0 (lockfile et copie dépendances /workspace/Fadi)",
+      "ifcopenshell": "0.9.0 uniquement /workspace/fadi-ifc-venv"
+    },
+    "ci165": {
+      "node": "22.23.3",
+      "npm": "10.9.9",
+      "python": "3.11.17",
+      "chromium": "141.0.7390.37 build1194",
+      "playwright": "1.56.0 lockfile",
+      "ifcopenshell": "0.9.0"
+    }
+  },
+  "ci_test_counts": [
+    47,
+    95,
+    468,
+    744,
+    22,
+    108,
+    273
+  ],
+  "ci_test_sum": 1757,
+  "ci_ignored": 1,
+  "ci_ifc_success": 3,
+  "ifc_reimport": {
+    "IfcWall": 0,
+    "IfcBuildingElementProxy": 1539
+  },
+  "source_endpoints": [
+    "branches/main",
+    "pulls/165",
+    "pulls/152",
+    "issues/146",
+    "issues/149/comments?per_page=100",
+    "actions/runs?head_sha=<sha>&per_page=100",
+    "commits/<sha>/check-runs?per_page=100",
+    "actions/runs/39114417812/jobs?per_page=100"
+  ],
+  "source_jobs": [
+    117637164835,
+    117637165006
+  ]
+}

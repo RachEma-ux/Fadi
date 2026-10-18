@@ -1,4 +1,4 @@
-# Dossier de recette — Atelier P2 (DrawAll V4.1), lots P2-0 à P2-8
+# Dossier de recette — Atelier Fadi P2, lots P2-0 à P2-8 (historique, périmètre à réévaluer)
 
 Établi le 9 octobre 2026 par le chef de projet (exécution continue décidée en D-183, décisions 10.1 déléguées et
 consignées une à une, D-184 à D-190). Ce dossier dit **ce qui est livré en P2, où en est la preuve, ce que vous pouvez

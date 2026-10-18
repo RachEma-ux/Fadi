@@ -1,0 +1,68 @@
+{
+  "date_UTC": "2026-10-18",
+  "scope": "Réconciliation nécessaire des branches des lots autorisés, aucun merge PR versmain",
+  "commits": [
+    {
+      "PR": 169,
+      "head": "9b34dca9de8c3d1432d6f19315e4f0049d8bfd01",
+      "parents": [
+        "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+        "817bd36e7d4b1ab60ab9c00309509c7cdfed0798"
+      ],
+      "tree": "d2ed2b52a2740ac6462f0c7254b98accacf9c462",
+      "workflow_sha256": "c5933b1aebf6def658037cf27989f2af7cb60e41adb88120e19107dacba87c44",
+      "author": "Codex <codex@openai.com>",
+      "status": "Commit local et arbre conformes aux revuesA3/A5/A6 ; push sur branche du lot seulement autorisé par A0 dans la portée de développement déjà acquise."
+    },
+    {
+      "PR": 171,
+      "head": "25bca793c483bcb99c5254a86efabbd1f8b29015",
+      "parents": [
+        "5e0285d37f23c7c539502664036f0a2ff0986409",
+        "817bd36e7d4b1ab60ab9c00309509c7cdfed0798"
+      ],
+      "tree": "25ed42d10145ba49835c0a4a3708460271cf5b59",
+      "workflow_sha256": "beca2dea96a0cef5dd027b16fe6bbcf5099b3b73c196210ca2f02ca47ad618b9",
+      "author": "Codex <codex@openai.com>",
+      "status": "Commit local et arbre conformes aux revuesA3/A5/A6 ; push sur branche du lot seulement autorisé par A0 dans la portée de développement déjà acquise."
+    }
+  ],
+  "preconditions": [
+    "Avis A5/A6 sur fichiers actuels",
+    "Contrôle A6 autres workflows",
+    "Aucun changement applicatif supplémentaire",
+    "Push normal sansforce sur branches PR existantes",
+    "CI propre à chaque nouveau SHA avant verdict"
+  ],
+  "limites": [
+    "Comparaisons Actions == insensibles à la casse",
+    "Contenus des actions externes non réaudités intégralement ; versions et étapes inchangées",
+    "Aucun service/DB réelle/API/migration/manual-builder déclenché"
+  ],
+  "push_A0": [
+    {
+      "PR": 169,
+      "sha": "9b34dca9de8c3d1432d6f19315e4f0049d8bfd01",
+      "branche": "fix/157-test-database-guard",
+      "resultat": "Push normal réussi, sansforce"
+    },
+    {
+      "PR": 171,
+      "sha": "25bca793c483bcb99c5254a86efabbd1f8b29015",
+      "branche": "fix/156-classification-no-ifc-inference",
+      "resultat": "Push normal réussi, sansforce"
+    }
+  ],
+  "patch_archives": [
+    {
+      "original_name": "RECONCILIATION-169-WORKFLOW.patch",
+      "original_sha256": "9e08a1eecc7df81b227df0bc93278ba46be34d789252be6e3fcccc100191b940",
+      "archive": "docs/ai-team/reports/reprise-496dcfc/A3/RECONCILIATION-169-WORKFLOW.patch.json"
+    },
+    {
+      "original_name": "RECONCILIATION-171-WORKFLOW.patch",
+      "original_sha256": "2dc90c762e832efb427cac19682f2144b309a29064e9394fcb89967b8fb8ceb7",
+      "archive": "docs/ai-team/reports/reprise-496dcfc/A3/RECONCILIATION-171-WORKFLOW.patch.json"
+    }
+  ]
+}

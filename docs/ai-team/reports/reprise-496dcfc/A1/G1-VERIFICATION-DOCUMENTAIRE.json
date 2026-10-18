@@ -1,0 +1,13 @@
+{
+  "checks_executed": [
+    "ParsingJSON2documents",
+    "3exemplesvalideslogiques et10refusillustratifs présents",
+    "Hashesdocumentaires2contenus→révisions recalculés",
+    "Révisionprécédenteetcontenuprécédent inchangés après exempleA2"
+  ],
+  "product_tests_executed": 0,
+  "runtime_schema_executed": false,
+  "DEC01_DEC03_physical_closed": false,
+  "G1_accepted": false,
+  "repo_modified": false
+}

@@ -1,0 +1,72 @@
+{
+  "schema": "fixture-documentaire-proposee/1",
+  "provenance": "Création synthétique Mission004 sous délégation D01/D07 ; aucun client/production",
+  "rights": "Contenu original préparé pour Fadi ; aucune ressource externe",
+  "purpose": "Spécification de données, pas format import/API implémenté",
+  "frame": "local",
+  "coordinate_unit": "mm",
+  "execution": "Non exécuté dans Studio",
+  "approval": "Préparation autorisée, gate/réalisation Studio non acceptées",
+  "decisions": [
+    "Q-M003-D01",
+    "Q-M003-D02",
+    "Q-M003-D07"
+  ],
+  "performance_budgets": "À fixer DEC13, aucune capacité/latence garantie",
+  "corpus_id": "S4",
+  "label": "Deux niveaux et instances, jeu de coordination réduit",
+  "context": {
+    "projectId": "syn-pavillon",
+    "studyId": "syn-study-01",
+    "variantId": "syn-variant-A",
+    "revisionId": "syn-revision-01"
+  },
+  "levels": [
+    {
+      "id": "level-0",
+      "elevation": 0
+    },
+    {
+      "id": "level-1",
+      "elevation": 3000
+    }
+  ],
+  "instances": [
+    {
+      "id": "column-0",
+      "levelId": "level-0",
+      "familyId": "column-syn",
+      "origin": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "column-1",
+      "levelId": "level-1",
+      "familyId": "column-syn",
+      "origin": [
+        0,
+        0,
+        3000
+      ]
+    }
+  ],
+  "other_project": {
+    "projectId": "syn-forbidden",
+    "objectId": "foreign-column"
+  },
+  "oracles": {
+    "level_count": 2,
+    "instance_count": 2,
+    "instance_ids_distinct": true,
+    "picking_preserves_source_identity": true,
+    "cross_project_server_access_refused": true
+  },
+  "negative_variants": [
+    "Instance supprimée mais index conservé : jamais sélectionner autre instance",
+    "Identifiant foreign-column dans URL/job/export : refus sans fuite"
+  ],
+  "limit": "Deux niveaux synthétiques ne démontrent pas capacité immeuble dense ni conception structurelle réglementaire"
+}

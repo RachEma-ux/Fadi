@@ -1,0 +1,40 @@
+name: Continuité de développement
+
+# Vérification sur TOUTES les PR : ce job pourra être exigé par une règle GitHub.
+# Ne pas filtrer par chemins, sinon un check requis resterait Pending sur certaines PR.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: continuity-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  continuity-check:
+    name: Continuité — docs, checkpoints et tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests unitaires des règles de reprise
+        run: node --test scripts/check-continuity.test.mjs
+      - name: Vérifier tous les dossiers de chantier
+        run: node scripts/check-continuity.mjs
+      - name: Vérifier les checkpoints des chantiers modifiés (PR seulement)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch origin "$BASE_REF"
+          node scripts/check-continuity.mjs --changed-base "origin/$BASE_REF"

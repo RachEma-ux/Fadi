@@ -1,0 +1,666 @@
+{
+  "reviewer": "A5",
+  "cohort": "016-018-020-022",
+  "reviewed_agent": "A4",
+  "input_path": "/workspace/work/resume496/agents/A4/M08-016-018-020-022-UX.json",
+  "input_sha256": "509ac69293230038a38b66171d0772444269a329c8707f6a854a8dbb04daaaa5",
+  "code_reference": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "mode": "Lecture seule ; zéro test/browser/app/DB/service/réseau",
+  "source_errors": [],
+  "citation_occurrences_verified": 32,
+  "unique_citations": 26,
+  "sources_verified": {
+    "docs/atelier/fiches/DA-01-12.md": "4b8f1ca12a0ec4793a3d0f012d2910a6b576dd0c317eb169f2fc1d05ee91cc44",
+    "apps/web/e2e/atelier-documents.mjs": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+    "apps/web/e2e/atelier-nouveau.mjs": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+    "packages/atelier-model/src/documents/documents.test.ts": "694b3e54d755dd74e4ae1c14d38c3ba05afbbf2c1b674c77054abe41321c3be2",
+    "docs/atelier/fiches/DA-02-01.md": "743e60ae1d52b6f123631c0abbf475acb4d7fee6ba1ad4273740dc10d9faae02",
+    "apps/web/e2e/atelier-complements.mjs": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+    "packages/atelier-model/src/commandes/commandes.test.ts": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+    "apps/api/src/routes/atelier-commands.test.ts": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+    "docs/atelier/fiches/DA-02-02.md": "fe232596e7c430eb532e5289d11bc4ffd2043fc2289f6723ade37ba20e40e3eb",
+    "apps/web/src/modules/atelier/nouveau/nouveau.test.ts": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+    "docs/atelier/fiches/DA-02-03.md": "724f2789e0295a0c35937f70e8b0cd12297d3301648b8ea8f05966b5d5545c06"
+  },
+  "original_independent_review": "M08-016-018-020-022-LECTURE-INDEPENDANTE-A5.json",
+  "clauses_reviewed": 25,
+  "clause_reviews": [
+    {
+      "entry_id": "M08-PATH-016",
+      "clause_ordinal": 1,
+      "expected": "Façade nord de P.118 générée",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Candidat crée façade SUD sur modèleP118 avec niveau synthétique ; autreorientation≠attendue nord. Vue3Dfaçadenord de nouveau n’est pas générationdocumentserveur.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "lines": [
+            232,
+            240
+          ],
+          "exact_excerpt": "await mesurer(\"nouvelle façade sud → aperçu (visibilité par faces, modèle complet)\", async () => {\n  await page.locator(\".docs-nouvelle > summary\").click();\n  await page.locator('[data-nouvelle=\"facade-sud\"]').click();\n  await page.waitForFunction(() => document.querySelectorAll(\"[data-vue]\").length === 2, null, { timeout: 30000 });\n  await page.waitForSelector('[data-detail=\"vue\"] .docs-svg svg', { timeout: 60000 });\n});\nawait page.locator('[data-detail=\"vue\"] .docs-reglages select').first().selectOption(\"200\");\nawait page.locator('[data-detail=\"vue\"] .docs-reglages button[type=\"submit\"]').click();\nawait enregistre();",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            234,
+            243
+          ],
+          "exact_excerpt": "const vides2 = [];\nfor (const vue of [\"Plan (dessus)\", \"Coupe nord–sud\", \"Coupe est–ouest\", \"Façade sud\", \"Façade nord\", \"Façade est\", \"Façade ouest\"]) {\n  const n0 = await rendus();\n  await page.locator('.vue3d-commandes select[aria-label=\"Vue\"]').selectOption({ label: vue });\n  await attendreRendu(n0).catch(() => {});\n  const t = await page.evaluate(() => window.fadiMesures3D.triangles);\n  if (!(t > 0)) vides2.push(vue);\n  if (vue === \"Coupe nord–sud\" || vue === \"Façade sud\") await page.screenshot({ path: `${OUT}/3b-${vue.startsWith(\"Coupe\") ? \"coupe-ns\" : \"facade-sud\"}.png` });\n}\ncheck(\"vues techniques : plan, coupes N–S / E–O, quatre façades rendues\", vides2.length === 0, vides2.join(\", \"));",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-016",
+      "clause_ordinal": 2,
+      "expected": "Mode lignes cachées changé",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Aucune sélection/assertion lignesCachees dans les deux candidats déclarés ; seules échelles100/200 changées.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "lines": [
+            227,
+            240
+          ],
+          "exact_excerpt": "const apercuPlan = await page.locator('[data-detail=\"vue\"] .docs-svg').innerHTML();\ncheck(\"plan du niveau : murs coupés en poché, cote « à réparer » signalée dans le dessin, convention des portes non requise (aucune porte)\", /fill=\"#404040\"/.test(apercuPlan) && /à réparer/.test(apercuPlan));\nawait page.locator('[data-detail=\"vue\"] .docs-reglages select').first().selectOption(\"100\");\nawait page.locator('[data-detail=\"vue\"] .docs-reglages button[type=\"submit\"]').click();\nawait enregistre();\nawait mesurer(\"nouvelle façade sud → aperçu (visibilité par faces, modèle complet)\", async () => {\n  await page.locator(\".docs-nouvelle > summary\").click();\n  await page.locator('[data-nouvelle=\"facade-sud\"]').click();\n  await page.waitForFunction(() => document.querySelectorAll(\"[data-vue]\").length === 2, null, { timeout: 30000 });\n  await page.waitForSelector('[data-detail=\"vue\"] .docs-svg svg', { timeout: 60000 });\n});\nawait page.locator('[data-detail=\"vue\"] .docs-reglages select').first().selectOption(\"200\");\nawait page.locator('[data-detail=\"vue\"] .docs-reglages button[type=\"submit\"]').click();\nawait enregistre();",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-016",
+      "clause_ordinal": 3,
+      "expected": "Révision et fraîcheur affichées pour cette façade",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Candidat lit headerx-model-revision et fraîcheur de FEUILLE PDF ; pasassertionrévision/fraîcheurdelafaçadenord.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "lines": [
+            335,
+            352
+          ],
+          "exact_excerpt": "// PDF de la feuille, produit par le serveur à la révision courante et inscrit au catalogue.\nconst feuilleId = await page.locator(\"[data-feuille]\").first().getAttribute(\"data-feuille\");\nconst href = await page.locator('[data-detail=\"feuille\"] [data-format=\"pdf\"]').getAttribute(\"href\");\nlet telechargement;\nawait mesurer(\"PDF de la feuille A1 (2 vues) produit par le serveur\", async () => {\n  [telechargement] = await Promise.all([page.waitForEvent(\"download\", { timeout: 60000 }), page.locator('[data-detail=\"feuille\"] [data-format=\"pdf\"]').click()]);\n  await telechargement.path();\n});\nconst octets = (await import(\"node:fs\")).readFileSync(await telechargement.path());\nconst pdf = await page.request.get(`${BASE}${href}`);\nconst revision = Number(pdf.headers()[\"x-model-revision\"]);\nconst cat = async () => (await (await page.request.get(`${BASE}/projects/${pid()}/documents`)).json()).documents;\nconst docFeuille = (await cat()).find((d) => d.kind === `atelier-feuille-${feuilleId}-pdf`);\ncheck(\"PDF de la feuille : application/pdf, %PDF-1.4, inscrit au catalogue « à jour » à la révision courante\", pdf.status() === 200 && pdf.headers()[\"content-type\"] === \"application/pdf\" && telechargement.suggestedFilename().endsWith(\".pdf\") && octets.subarray(0, 8).toString(\"latin1\") === \"%PDF-1.4\" && docFeuille?.freshness === \"a-jour\" && docFeuille.produced.modelRevision === revision, `${octets.length} octets · révision ${revision}`);\nconst pdf2 = await pdf.body();\ncheck(\"PDF reproductible : deux productions à la même révision, mêmes octets\", Buffer.compare(octets, pdf2) === 0);\nawait page.waitForFunction(() => document.querySelector('[data-detail=\"feuille\"] [data-fraicheur]')?.getAttribute(\"data-fraicheur\") === \"a-jour\", null, { timeout: 15000 }).catch(() => {});\ncheck(\"Atelier : la feuille affiche « À jour » après production\", (await page.locator('[data-detail=\"feuille\"] [data-fraicheur]').getAttribute(\"data-fraicheur\")) === \"a-jour\");",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-016",
+      "clause_ordinal": 4,
+      "expected": "Après mur dessiné la façade devient à recalculer, plus actuelle",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Phaseobjet changée rendfeuilleperime UI/catalogue ; ni murdessiné ni assertionfaçadenordàrecalculer.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "lines": [
+            354,
+            362
+          ],
+          "exact_excerpt": "// Une commande qui change le dessin : la feuille devient périmée (dessin modifié).\nawait allerEnPlan(page);\nawait page.locator(`.nav-objets button[data-objet=\"${gc.id}\"]`).click();\nawait page.locator(\"#phase-objet\").selectOption(\"\");\nawait enregistre();\nawait page.locator('.barre-mode button:has-text(\"Documents\")').click();\nawait page.locator('[data-feuille]').first().click();\nawait page.waitForFunction(() => document.querySelector('[data-detail=\"feuille\"] [data-fraicheur]')?.getAttribute(\"data-fraicheur\") === \"perime\", null, { timeout: 15000 }).catch(() => {});\ncheck(\"après une commande : la feuille est « périmée » (dessin changé), au catalogue comme dans l'Atelier\", (await page.locator('[data-detail=\"feuille\"] [data-fraicheur]').getAttribute(\"data-fraicheur\")) === \"perime\" && (await cat()).find((d) => d.kind === `atelier-feuille-${feuilleId}-pdf`)?.freshness === \"perime\");",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-016",
+      "clause_ordinal": 5,
+      "expected": "Cas visibilité reproductible/ambiguïté, lecture/production/droits/offline de fiche complète",
+      "submitted_status": "non conclu",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "non conclu",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Testsunitairesdocument couvrent prismes/intervalles àunautreniveau ; cesgaranties complètes nenapportentpas scénariobrowser source. PasrevueexhaustiveAPI/droits/docstardifs réaliséeici.",
+      "evidence_checked": [
+        {
+          "path": "packages/atelier-model/src/documents/documents.test.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "694b3e54d755dd74e4ae1c14d38c3ba05afbbf2c1b674c77054abe41321c3be2",
+          "lines": [
+            40,
+            51
+          ],
+          "exact_excerpt": "describe(\"visibilité par faces (DA-01-12)\", () => {\n  it(\"prisme A devant prisme B : l'arête basse de B est cachée sur [1 ; 2], visible sur [2 ; 3] ; son arête haute reste entière\", () => {\n    const A = boite(\"A\", 0, 0, 0, 2, 1, 1);\n    const B = boite(\"B\", 1, 3, 0, 3, 4, 2);\n    const r = projeterMaillages([A, B], NORD, { coupe: false, profondeurMax: null, lignesCachees: true });\n    expect(sur(r.vues, \"B\", 0)).toEqual([[2, 3]]);\n    // Parties cachées sur la ligne z = 0 : l'arête avant de B derrière A ([1 ; 2]) et son arête arrière derrière B lui-même.\n    expect(sur(r.cachees, \"B\", 0)).toContainEqual([1, 2]);\n    expect(sur(r.cachees, \"B\", 0)).toContainEqual([1, 3]);\n    expect(sur(r.vues, \"B\", 2)).toEqual([[1, 3]]);\n    // Arête verticale de B en x = 1 : cachée jusqu'à z = 1 (hauteur de A), visible au-dessus.\n    const vert = r.vues.filter((s) => s.objetId === \"B\" && Math.abs(s.a.x - 1) < 1e-9 && Math.abs(s.b.x - 1) < 1e-9).map((s) => [Math.min(s.a.y, s.b.y), Math.max(s.a.y, s.b.y)]);",
+          "level": "Unitaire pur assertion lue",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-018",
+      "clause_ordinal": 1,
+      "expected": "Copie travail P.118 et murNoyauA mezzanineEX118-mezz-W-009 avecporteEX118-mezz-D-001 t0.5",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "CopieexempleP118 présente mais crée niveauEssailot3a etmur synthétique ; ne sélectionnepas cesIDs historiques.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            85,
+            94
+          ],
+          "exact_excerpt": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus.\nawait page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });\nurl = page.url().split(\"?\")[0];\nawait page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });\nconst copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();\nconst referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();\ncheck(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));\ncheck(\"site : CRS, aire de la parcelle et origine du repère local affichés\", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator(\"#atelier-site-info\").textContent()));\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(200);",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            101,
+            121
+          ],
+          "exact_excerpt": "// Mur au clavier : M, clic, saisie 4, Entrée → un mur de 4 m.\nawait page.keyboard.press(\"m\");\ncheck(\"raccourci M → outil Mur\", (await page.locator('.atelier-n-outils .outil.est-actif').textContent()).includes(\"Mur\"));\nawait mesurer(\"tracer un mur (clic + saisie 4 + Entrée) → mur affiché\", async () => {\n  await page.mouse.move(cx - 100, cy);\n  await page.mouse.click(cx - 100, cy);\n  await page.mouse.move(cx + 50, cy);\n  await page.keyboard.type(\"4;0\");\n  await page.keyboard.press(\"Enter\");\n  await page.waitForSelector(\".plan2d .obj-mur, .plan2d [data-objet^='mur-']\", { timeout: 5000 }).catch(async (err) => {\n    await page.screenshot({ path: `${OUT}/echec-mur.png` });\n    console.log(\"diagnostic :\", await page.evaluate(() => ({ etat: document.querySelector(\".atelier-n-etat\")?.textContent, niveau: document.querySelector(\".nav-niveaux [aria-pressed=true]\")?.textContent, outil: document.querySelector(\".atelier-n-outils .est-actif\")?.textContent, saisie: document.querySelector(\"#saisie-precision\")?.value, actif: document.activeElement?.outerHTML.slice(0, 80) })));\n    throw err;\n  });\n});\n// Trois murs de plus en saisie de précision « dx;dy » pour fermer le carré.\nconst echelle = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nconst pas = 4 * echelle;\nfor (const saisie of [\"0;4\", \"-4;0\", \"0;-4\"]) {\n  await page.keyboard.type(saisie);\n  await page.keyboard.press(\"Enter\");",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-018",
+      "clause_ordinal": 2,
+      "expected": "Déplacement par vecteur saisi au clavier",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Candidatnommé exerceglissersouris1m etsimplechangementtexte ; complément E2E distinct tape2 surpl-w3 X avecégalité2m maispasvecteurcompletdumurprescrit.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            288,
+            321
+          ],
+          "exact_excerpt": "// Manipulation directe en plan (DA-02-17) : sélectionner un mur, le glisser d'un mètre.\nawait page.keyboard.press(\"Escape\");\nconst murPlan = page.locator(`.plan2d [data-objet=\"${murId}\"]`);\nconst bMur = await murPlan.boundingBox();\nconst ech2 = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nawait mesurer(\"sélection d'un mur au clic → inspecteur affiché\", async () => {\n  const selectionne = () => page.waitForFunction((id) => document.querySelector(\".inspecteur-meta\")?.textContent?.includes(id), murId, { timeout: 5000 });\n  await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  // Un rendu du plan peut être en cours au moment du clic (retour de la 3D) : un second clic, une seule fois.\n  if (!(await selectionne().then(() => true, () => false))) {\n    // Le plan peut s'être recadré après le retour de la 3D : la boîte du mur est relue avant le second clic.\n    await page.keyboard.press(\"Escape\");\n    await page.waitForTimeout(800);\n    const b2 = (await murPlan.boundingBox()) ?? bMur;\n    Object.assign(bMur, b2);\n    await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n    if (!(await selectionne().then(() => true, () => false))) {\n      const sous = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute(\"class\") ?? \"\"} objet=${e?.closest(\"[data-objet]\")?.getAttribute(\"data-objet\") ?? \"-\"}`; }, [bMur.x + bMur.width / 2, bMur.y + bMur.height / 2]);\n      check(\"sélection d'un mur au clic\", false, `sous le pointeur : ${sous} ; boîte ${JSON.stringify(bMur)} ; inspecteur : ${(await page.locator(\".inspecteur\").textContent())?.slice(0, 160)}`);\n      await page.screenshot({ path: `${OUT}/3b-selection-echec.png` });\n    }\n  }\n});\nconst avantDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {\n  await page.mouse.move(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  await page.mouse.down();\n  for (let k = 1; k <= 10; k++) await page.mouse.move(bMur.x + bMur.width / 2 + (k * ech2) / 10, bMur.y + bMur.height / 2 + 0.3);\n  await page.mouse.up();\n  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 10000 });\n});\nconst apresDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait page.waitForFunction(() => document.querySelector(\".mod-journal\")?.textContent?.includes(\"Déplacer\"), null, { timeout: 5000 }).catch(() => {});\ncheck(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+          "lines": [
+            1254,
+            1267
+          ],
+          "exact_excerpt": "  if (fx) {\n    await page.mouse.move(fx.x + fx.width / 2, fx.y + fx.height / 2);\n    await page.mouse.down();\n    for (let k = 1; k <= 4; k++) await page.mouse.move(fx.x + fx.width / 2 + k * 5, fx.y + fx.height / 2);\n    await page.keyboard.type(\"2\");\n    await page.keyboard.press(\"Enter\");\n    await page.mouse.up();\n  }\n  let a1 = a0;\n  for (let k = 0; k < 30 && a1.x === a0.x; k++) {\n    a1 = (await modele(pid)).modele.objets[\"pl-w3\"].params.a;\n    if (a1.x === a0.x) await page.waitForTimeout(500);\n  }\n  check(\"manipulateur 2D : « 2 » tapé pendant le glissement de la flèche X = déplacement de 2 m exactement\", Math.abs(a1.x - a0.x - 2) < 1e-9 && a1.y === a0.y, `${a0.x} → ${a1.x}`);",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-018",
+      "clause_ordinal": 3,
+      "expected": "Porte hébergée t0.5 inchangée après déplacement",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Pasassertionporte/t pourdéplacement E2E ; unitaire utiliseporte à0.25 sanspreuveE2E.",
+      "evidence_checked": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "lines": [
+            101,
+            116
+          ],
+          "exact_excerpt": "  function murAvecPorte(): ModeleAtelier {\n    let etat = appliquerLot(socle(), lot([{ type: \"mur.tracer\", params: murParams(0, 0, 4, 0) }], \"w\")).etat;\n    etat = appliquerLot(etat, lot([\n      { type: \"ouverture.poser\", params: { classe: \"porte\", murHoteId: \"mur-w-1\", position: 0.25, largeur: m(0.8), hauteur: m(2.1), repere: \"P1\" } },\n      { type: \"cotation.creer\", params: { niveauId: \"rdc\", a: pt(0, 1), b: pt(4, 1), decalage: m(1) } },\n      { type: \"cotation.rattacher\", params: { id: \"cotation-o-2\", objetId: \"mur-w-1\", caracteristique: \"face-gauche\" } },\n    ], \"o\")).etat;\n    return etat;\n  }\n\n  it(\"déplace un mur : ses ouvertures suivent, une ouverture seule est refusée\", () => {\n    const etat = murAvecPorte();\n    const r = appliquerLot(etat, lot([{ type: \"transformer.deplacer\", params: { dx: 1, dy: 2 }, cibles: [\"mur-w-1\"] }], \"t\"));\n    expect(pointCaracteristique(r.etat, \"porte-o-1\", \"centre\")).toEqual(pt(2, 2));\n    expect((r.etat.objets[\"porte-o-1\"] as Occurrence<\"porte\">).params.position).toBe(0.25);\n    expect(() => appliquerLot(etat, lot([{ type: \"transformer.deplacer\", params: { dx: 1, dy: 0 }, cibles: [\"porte-o-1\"] }]))).toThrow(/suit son mur/);",
+          "level": "Unitaire pur assertion lue",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-018",
+      "clause_ordinal": 4,
+      "expected": "Annulation restitue coordonnées initiales identiques",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Controlz puisrévisionsuivanteattendue, pascomparaisonexactecoordonnéesavant/aprèsannulation.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            322,
+            326
+          ],
+          "exact_excerpt": "// Annulation du déplacement : attendre qu'elle soit enregistrée (révision suivante) avant les exports, sinon un\n// export peut être produit à la révision d'avant l'annulation.\nconst revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-018",
+      "clause_ordinal": 5,
+      "expected": "Second navigateur à même révision",
+      "submitted_status": "présent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "présent",
+      "A5_reason": "Présent pour seule égalité textuelle barres des deuxcontextes (nouveau353) ; pas preuve de coordonnées/porte du murNoyauA ni succès exécuté. A5partiel portait le scénario complet, grains distincts.",
+      "submitted_reason_checked": "Assertion textuelle .barre-sync égale àpremier et3murs/Bureau ; présentcommecodedassertion seulement,pasrésultatexécuté niétatNoyauA vérifié.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-018",
+      "clause_ordinal": 6,
+      "expected": "Ligne ⏱ déplacement d’un élément sans seuil",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Mesurer imprimeduréedu glisser souslibellédifférent, pasligneexacte attendue ; le tempsneprouvepasexactitude.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            22,
+            28
+          ],
+          "exact_excerpt": "const mesures = [];\nconst mesurer = async (nom, fn) => {\n  const t = performance.now();\n  await fn();\n  const ms = Math.round(performance.now() - t);\n  mesures.push([nom, ms]);\n  console.log(`⏱ ${nom} : ${ms} ms`);",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            312,
+            321
+          ],
+          "exact_excerpt": "await mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {\n  await page.mouse.move(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  await page.mouse.down();\n  for (let k = 1; k <= 10; k++) await page.mouse.move(bMur.x + bMur.width / 2 + (k * ech2) / 10, bMur.y + bMur.height / 2 + 0.3);\n  await page.mouse.up();\n  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 10000 });\n});\nconst apresDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait page.waitForFunction(() => document.querySelector(\".mod-journal\")?.textContent?.includes(\"Déplacer\"), null, { timeout: 5000 }).catch(() => {});\ncheck(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-018",
+      "clause_ordinal": 7,
+      "expected": "Microversion +1, inverse exact etréseau/droits/rejeu de la fiche complète",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté avec bornage du contexte",
+      "A5_final_qualification": "non conclu pour garanties complètes de fiche ; compléments partiels distincts",
+      "A5_reason": "Contexte agrège plusieurs invariants. Analogues unit/API distincts ne démontrent pas totalité microversion/inverse/offline/droits/champs ; aucune recetteE2E acquise.",
+      "submitted_reason_checked": "E2E enregistrementetannulationrévision>, pasmicroversionexacte nihorsligne ; APIgénérique révision/rejeu et409/423 existentmaisautreopération/nonE2E.",
+      "evidence_checked": [
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+          "lines": [
+            46,
+            58
+          ],
+          "exact_excerpt": "  it(\"valide un lot, avance la révision, journalise, et rejoue une requête répétée sans réappliquer (T06)\", async () => {\n    const client = await registerAndLogin(\"cmd@example.com\");\n    const pid = await projetVide(client);\n    const premier = await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"r1\", 0, [niveau, mur(\"m1\")], \"Niveau et mur\"));\n    expect(premier.status).toBe(200);\n    expect(premier.body).toMatchObject({ revision: 1, applique: [{ type: \"niveau.creer\", objetIds: [\"rdc\"] }, { type: \"mur.tracer\", objetIds: [\"m1\"] }] });\n    expect(premier.body.effets.crees.sort()).toEqual([\"m1\", \"rdc\"]);\n    const rejoue = await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"r1\", 0, [niveau, mur(\"m1\")], \"Niveau et mur\"));\n    expect(rejoue.status).toBe(200);\n    expect(rejoue.body).toMatchObject({ revision: 1, rejouee: true });\n    const modele = await client.get(`/projects/${pid}/atelier/model`);\n    expect(modele.status).toBe(200);\n    expect(modele.body.revision).toBe(1);",
+          "level": "API integration assertion lue, non exécutée",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+          "lines": [
+            90,
+            133
+          ],
+          "exact_excerpt": "  it(\"répond 409 détaillé sur une révision de base dépassée, avec les objets touchés entre-temps (T08)\", async () => {\n    const owner = await registerAndLogin(\"owner-conf@example.com\");\n    const editor = await registerAndLogin(\"editor-conf@example.com\");\n    const pid = await projetVide(owner);\n    expect((await owner.post(`/projects/${pid}/members`).send({ email: \"editor-conf@example.com\", role: \"editeur\" })).status).toBe(201);\n    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"c1\", 0, [niveau, mur(\"m1\")]))).status).toBe(200);\n    // Les deux lisent la révision 1 ; le propriétaire modifie m1 d'abord.\n    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"c2\", 1, [{ type: \"mur.modifier\", params: { id: \"m1\", params: { epaisseur: m(0.3) } } }], \"Épaisseur\"))).status).toBe(200);\n    const stale = await editor.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"c3\", 1, [{ type: \"mur.modifier\", params: { id: \"m1\", params: { hauteur: m(2.8) } } }]));\n    expect(stale.status).toBe(409);\n    expect(stale.body).toMatchObject({ erreur: \"conflit\", motif: \"revision\", baseRevision: 1, revisionCourante: 2 });\n    expect(stale.body.conflits).toHaveLength(1);\n    expect(stale.body.conflits[0]).toMatchObject({ objetId: \"m1\", revision: 2 });\n    expect(stale.body.conflits[0].etatServeur.params.epaisseur).toEqual(m(0.3));\n    // Rebase explicite : même lot sur la révision courante, validé.\n    const rebase = await editor.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"c3\", 2, [{ type: \"mur.modifier\", params: { id: \"m1\", params: { hauteur: m(2.8) } } }]));\n    expect(rebase.status).toBe(200);\n    expect(rebase.body.revision).toBe(3);\n    const modele = (await owner.get(`/projects/${pid}/atelier/model`)).body.modele;\n    expect(modele.objets.m1.params).toMatchObject({ epaisseur: m(0.3), hauteur: m(2.8) });\n    // Un objet supprimé par autrui ne réapparaît pas : précondition → 409.\n    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"c4\", 3, [{ type: \"mur.supprimer\", params: { id: \"m1\" } }]))).status).toBe(200);\n    const fantome = await editor.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"c5\", 4, [{ type: \"mur.modifier\", params: { id: \"m1\", params: { hauteur: m(3) } } }]));\n    expect(fantome.status).toBe(409);\n    expect(fantome.body.motif).toBe(\"precondition\");\n  });\n\n  it(\"applique les droits : lecteur refusé (403), étranger introuvable (404), réservation d'autrui (423) (T10)\", async () => {\n    const owner = await registerAndLogin(\"owner-rights@example.com\");\n    const reader = await registerAndLogin(\"reader-rights@example.com\");\n    const stranger = await registerAndLogin(\"stranger-rights@example.com\");\n    const pid = await projetVide(owner);\n    expect((await owner.post(`/projects/${pid}/members`).send({ email: \"reader-rights@example.com\", role: \"lecteur\" })).status).toBe(201);\n    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"d1\", 0, [niveau]))).status).toBe(200);\n    expect((await reader.get(`/projects/${pid}/atelier/model`)).status).toBe(200);\n    expect((await reader.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"d2\", 1, [mur(\"m1\")]))).status).toBe(403);\n    expect((await stranger.get(`/projects/${pid}/atelier/model`)).status).toBe(404);\n    expect((await stranger.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"d3\", 1, [mur(\"m1\")]))).status).toBe(404);\n    // Réservation d'édition par le propriétaire : un éditeur est refusé 423.\n    const editor = await registerAndLogin(\"editor-rights@example.com\");\n    expect((await owner.post(`/projects/${pid}/members`).send({ email: \"editor-rights@example.com\", role: \"editeur\" })).status).toBe(201);\n    expect((await owner.put(`/projects/${pid}/lock`)).status).toBe(200);\n    const locked = await editor.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"d4\", 1, [mur(\"m1\")]));\n    expect(locked.status).toBe(423);",
+          "level": "API integration assertion lue, non exécutée",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-020",
+      "clause_ordinal": 1,
+      "expected": "Copier NoyauA mezzanine danscopietravailP118",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "atelier-nouveau candidatnenchaîneaucuneopération transformer.copier/copiermur, niIDNoyauA ; lacopietravailprojet ne vautpasduplicationobjet.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            85,
+            94
+          ],
+          "exact_excerpt": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus.\nawait page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });\nurl = page.url().split(\"?\")[0];\nawait page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });\nconst copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();\nconst referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();\ncheck(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));\ncheck(\"site : CRS, aire de la parcelle et origine du repère local affichés\", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator(\"#atelier-site-info\").textContent()));\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(200);",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-020",
+      "clause_ordinal": 2,
+      "expected": "Murs+1 etportes+1",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "PasassertionE2Eeffectifaprèscopiemur ; unitairelit effetscrees mur/porte etsource conservée.",
+      "evidence_checked": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "lines": [
+            119,
+            127
+          ],
+          "exact_excerpt": "  it(\"copie un mur avec des copies de ses ouvertures, sans repère ni statut\", () => {\n    const r = appliquerLot(murAvecPorte(), lot([{ type: \"transformer.copier\", params: { dx: 0, dy: 5 }, cibles: [\"mur-w-1\"] }], \"c\"));\n    expect(r.effets.crees).toEqual([\"mur-c-1\", \"porte-c-2\"]);\n    const copie = r.etat.objets[\"porte-c-2\"] as Occurrence<\"porte\">;\n    expect(copie.params.murHoteId).toBe(\"mur-c-1\");\n    expect(copie.params.repere).toBeNull();\n    expect(ouverturesDuMur(r.etat, \"mur-w-1\")).toHaveLength(1);\n    expect(pointCaracteristique(r.etat, \"porte-c-2\", \"centre\")).toEqual(pt(1, 5));\n  });",
+          "level": "Unitaire pur assertion lue",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-020",
+      "clause_ordinal": 3,
+      "expected": "Repèreportecopiéevide",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Assert unitairetoBeNull existe maispasE2E niinspectionbrowser de copie.",
+      "evidence_checked": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "lines": [
+            119,
+            127
+          ],
+          "exact_excerpt": "  it(\"copie un mur avec des copies de ses ouvertures, sans repère ni statut\", () => {\n    const r = appliquerLot(murAvecPorte(), lot([{ type: \"transformer.copier\", params: { dx: 0, dy: 5 }, cibles: [\"mur-w-1\"] }], \"c\"));\n    expect(r.effets.crees).toEqual([\"mur-c-1\", \"porte-c-2\"]);\n    const copie = r.etat.objets[\"porte-c-2\"] as Occurrence<\"porte\">;\n    expect(copie.params.murHoteId).toBe(\"mur-c-1\");\n    expect(copie.params.repere).toBeNull();\n    expect(ouverturesDuMur(r.etat, \"mur-w-1\")).toHaveLength(1);\n    expect(pointCaracteristique(r.etat, \"porte-c-2\", \"centre\")).toEqual(pt(1, 5));\n  });",
+          "level": "Unitaire pur assertion lue",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-020",
+      "clause_ordinal": 4,
+      "expected": "Annuler copie restitue effectifs initiaux",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "AnnulationE2Erencontrée concernemurglissé,nonsuppressionexactecopies ; aucunchainagecopier/undo.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            322,
+            326
+          ],
+          "exact_excerpt": "// Annulation du déplacement : attendre qu'elle soit enregistrée (révision suivante) avant les exports, sinon un\n// export peut être produit à la révision d'avant l'annulation.\nconst revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-020",
+      "clause_ordinal": 5,
+      "expected": "Horslignecopieenfilepuisrepriseconnexion",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Pas setOffline ni couperéseaucopie danscandidat414lignes ; untestgenericrequêterejeu ne prouvepasDexie/browserreconnexion.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-020",
+      "clause_ordinal": 6,
+      "expected": "Contexteclavier/copieindépendante/IDdéterministes/champsnonhérités",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté avec bornage du contexte",
+      "A5_final_qualification": "non conclu pour garanties complètes de fiche ; compléments partiels distincts",
+      "A5_reason": "Contexte agrège plusieurs invariants. Analogues unit/API distincts ne démontrent pas totalité microversion/inverse/offline/droits/champs ; aucune recetteE2E acquise.",
+      "submitted_reason_checked": "Unitaireporte hôtenouvelID/repereNull/sourceconservée ; nouveautestAltCopierprésent maisuneintention n’estpasE2Educycle et toutesclasses/statuts.",
+      "evidence_checked": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "lines": [
+            119,
+            127
+          ],
+          "exact_excerpt": "  it(\"copie un mur avec des copies de ses ouvertures, sans repère ni statut\", () => {\n    const r = appliquerLot(murAvecPorte(), lot([{ type: \"transformer.copier\", params: { dx: 0, dy: 5 }, cibles: [\"mur-w-1\"] }], \"c\"));\n    expect(r.effets.crees).toEqual([\"mur-c-1\", \"porte-c-2\"]);\n    const copie = r.etat.objets[\"porte-c-2\"] as Occurrence<\"porte\">;\n    expect(copie.params.murHoteId).toBe(\"mur-c-1\");\n    expect(copie.params.repere).toBeNull();\n    expect(ouverturesDuMur(r.etat, \"mur-w-1\")).toHaveLength(1);\n    expect(pointCaracteristique(r.etat, \"porte-c-2\", \"centre\")).toEqual(pt(1, 5));\n  });",
+          "level": "Unitaire pur assertion lue",
+          "execution": "Non exécuté"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "lines": [
+            455,
+            461
+          ],
+          "exact_excerpt": "describe(\"copier avec codes suivants (D-060)\", () => {\n  it(\"Alt au second clic : codes « suivant »\", () => {\n    const etat = socle();\n    const u = ui({ selection: [\"x\"], pointsEnCours: [pt(0, 0)] });\n    expect(clic(\"copier\", pt(1, 0), etat, u, { ...opts, alt: true }).commandes[0]).toMatchObject({ type: \"transformer.copier\", params: { dx: 1, dy: 0, codes: \"suivant\" } });\n    expect(clic(\"copier\", pt(1, 0), etat, u, opts).commandes[0]!.params).not.toHaveProperty(\"codes\");\n  });",
+          "level": "Unitaire UI/adaptateur assertion lue",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-022",
+      "clause_ordinal": 1,
+      "expected": "NoyauA mezzanineEX118-mezz-W-009 autourpointa",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Candidatatelier-nouveau ne tourneaucunmur ; caméraorbite/toucher ≠rotationobjet.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            369,
+            405
+          ],
+          "exact_excerpt": "// 3D au toucher (téléphone) : toucher sélectionne, un doigt fait tourner, deux doigts zooment.\nconst tel = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2, storageState: await ctx.storageState() });\nconst pt3 = await tel.newPage();\npt3.on(\"pageerror\", (e) => erreursPage.push(`téléphone : ${e.message}`));\nawait pt3.goto(`${url}?module=atelier`);\nawait pt3.waitForSelector(\".plan2d\");\nawait pt3.locator('.barre-mode button:has-text(\"3D\")').tap();\nawait pt3.waitForFunction(() => (window.fadiMesures3D?.triangles ?? 0) > 0, null, { timeout: 30000 });\nawait pt3.locator('.vue3d-commandes select[aria-label=\"Présentation\"]').selectOption({ label: \"Niveau actif\" });\nawait pt3.waitForTimeout(400);\nconst murTel = await pt3.evaluate(() => {\n  const groupe = [...document.querySelectorAll(\".nav-objets details\")].find((d) => d.querySelector(\"summary\").textContent.trim().startsWith(\"Mur\"));\n  const ids = groupe ? [...groupe.querySelectorAll(\"button[data-objet]\")].map((b) => b.dataset.objet) : [];\n  for (const id of ids) {\n    const p = window.fadiMesures3D.localiser(id);\n    if (p && window.fadiMesures3D.sonder(p.x, p.y) === id) return { id, ...p };\n  }\n  return null;\n});\nconst cTel = await pt3.locator(\".vue3d-canevas\").boundingBox();\nif (murTel) await pt3.touchscreen.tap(cTel.x + murTel.x, cTel.y + murTel.y);\nawait pt3.waitForTimeout(300);\ncheck(\"téléphone 3D : toucher un mur le sélectionne\", !!murTel && (await pt3.locator(\".inspecteur h3\").first().textContent()).startsWith(\"Mur\"), JSON.stringify(murTel));\nconst cdp = await tel.newCDPSession(pt3);\nconst n0Tel = await pt3.evaluate(() => window.fadiMesures3D.rendus.length);\nconst toucher = (type, points) => cdp.send(\"Input.dispatchTouchEvent\", { type, touchPoints: points.map(([x, y], id) => ({ x: cTel.x + x, y: cTel.y + y, id })) });\nawait toucher(\"touchStart\", [[100, 200]]);\nfor (let k = 1; k <= 12; k++) await toucher(\"touchMove\", [[100 + k * 10, 200]]);\nawait toucher(\"touchEnd\", []);\nawait pt3.waitForTimeout(200);\nconst n1Tel = await pt3.evaluate(() => window.fadiMesures3D.rendus.length);\nawait toucher(\"touchStart\", [[150, 250], [250, 250]]);\nfor (let k = 1; k <= 10; k++) await toucher(\"touchMove\", [[150 - k * 6, 250], [250 + k * 6, 250]]);\nawait toucher(\"touchEnd\", []);\nawait pt3.waitForTimeout(200);\nconst n2Tel = await pt3.evaluate(() => window.fadiMesures3D.rendus.length);\ncheck(\"téléphone 3D : un doigt fait tourner, deux doigts zooment (images rendues)\", n1Tel > n0Tel + 3 && n2Tel > n1Tel + 3, `${n0Tel} → ${n1Tel} → ${n2Tel}`);",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-022",
+      "clause_ordinal": 2,
+      "expected": "Angle90° saisia uclavier",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté avec séparation obligatoire des périmètres",
+      "A5_final_qualification": "absent dans candidat nommé ; partiel dans complément distinct",
+      "A5_reason": "atelier-nouveau ne tourne pas objet ; complément autreE2E pivotpl-w3/90 est explicitement distinct et ne remplace ni pointa niNoyauA. Ne pas présenter le partiel comme assertion présente dans candidat.",
+      "submitted_reason_checked": "Candidatabsent maiscomplémentdistinctpl-w3 tape90 surpivotdéplacé etassertperpendiculaire/longueur ; paspointa niNoyauA.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+          "lines": [
+            1277,
+            1295
+          ],
+          "exact_excerpt": "  const deplace = (await page.locator(\".manip-pivot-deplace\").count()) === 1;\n  const w0 = (await modele(pid)).modele.objets[\"pl-w3\"].params;\n  const fr = await page.locator('[data-poignee=\"r\"]').boundingBox();\n  if (fr) {\n    await page.mouse.move(fr.x + fr.width / 2, fr.y + fr.height / 2);\n    await page.mouse.down();\n    for (let k = 1; k <= 4; k++) await page.mouse.move(fr.x + fr.width / 2 - k * 6, fr.y + fr.height / 2 - k * 4);\n    await page.keyboard.type(\"90\");\n    await page.keyboard.press(\"Enter\");\n    await page.mouse.up();\n  }\n  let w1 = w0;\n  for (let k = 0; k < 30 && w1.a.x === w0.a.x && w1.a.y === w0.a.y; k++) {\n    w1 = (await modele(pid)).modele.objets[\"pl-w3\"].params;\n    if (w1.a.x === w0.a.x && w1.a.y === w0.a.y) await page.waitForTimeout(500);\n  }\n  const mil = (w) => ({ x: (w.a.x + w.b.x) / 2, y: (w.a.y + w.b.y) / 2 });\n  const longueur = (w) => Math.hypot(w.b.x - w.a.x, w.b.y - w.a.y);\n  check(\"manipulateur 2D : pivot déplacé, rotation de 90° tapée autour de lui (le milieu du mur bouge, la longueur reste)\", deplace && Math.hypot(mil(w1).x - mil(w0).x, mil(w1).y - mil(w0).y) > 0.01 && Math.abs(longueur(w1) - longueur(w0)) < 1e-6 && Math.abs((w1.b.x - w1.a.x) * (w0.b.x - w0.a.x) + (w1.b.y - w1.a.y) * (w0.b.y - w0.a.y)) < 1e-6, `pivot ${deplace} · ${JSON.stringify(mil(w0))} → ${JSON.stringify(mil(w1))}`);",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-022",
+      "clause_ordinal": 3,
+      "expected": "PorteEX118-mezz-D-001 t0.5 conservé",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Pasassertiondeporteaprèsrotation danscandidatni bloccomplémentpivot ; unitaireadaptateurrotation n’applique pasrotationau muravecporte ducasdécrit.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "lines": [
+            572,
+            592
+          ],
+          "exact_excerpt": "  it(\"boîte et pivot ; valeurs (axe, angle au pas, facteur) ; une commande, rien pour une valeur nulle ; ouverture seule : aucun manipulateur\", async () => {\n    const { boiteManipulateur, apercuManip, commandeManip } = await import(\"./plan2d/Plan2D\");\n    const etat = carre(socle());\n    const ids = Object.keys(etat.objets);\n    const b = boiteManipulateur(etat, ids, \"rdc\", segmentsDuNiveau(etat, \"rdc\"))!;\n    expect(b.pivot).toMatchObject({ x: 2, y: 2 });\n    expect(boiteManipulateur(etat, ids, \"r1\", segmentsDuNiveau(etat, \"rdc\"))).toBeNull();\n    const x = apercuManip(\"x\", pt(2, 2), pt(3.5, 7), b.pivot, false);\n    expect([x.dx, x.dy]).toEqual([1.5, 0]);\n    const r = apercuManip(\"r\", pt(4, 2), pt(2, 4.02), b.pivot, false);\n    expect(r.angle).toBe(90);\n    expect(apercuManip(\"r\", pt(4, 2), pt(3.2, 3.3), b.pivot, true).angle).toBe(45);\n    const s = apercuManip(\"s\", pt(4, 4), pt(6, 6), b.pivot, false);\n    expect(s.facteur).toBe(2);\n    const c = commandeManip(r, b.pivot, ids)!;\n    expect(c.commande.type).toBe(\"transformer.tourner\");\n    expect(appliquer(etat, [c.commande]).objets).toBeDefined();\n    expect(commandeManip(apercuManip(\"x\", pt(0, 0), pt(0, 0), b.pivot, false), b.pivot, ids)).toBeNull();\n    const avecPorte = appliquer(etat, [{ type: \"ouverture.poser\", params: { classe: \"porte\", murHoteId: ids[0], position: 0.5, largeur: m(0.9), hauteur: m(2.1) } }]);\n    const porte = Object.keys(avecPorte.objets).find((id) => avecPorte.objets[id]!.classe === \"porte\")!;\n    expect(boiteManipulateur(avecPorte, [porte], \"rdc\", segmentsDuNiveau(avecPorte, \"rdc\"))).toBeNull();",
+          "level": "Unitaire UI/adaptateur assertion lue",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-022",
+      "clause_ordinal": 4,
+      "expected": "Jonctionsvoisins listées danspanneau",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Pasassertionjonctionsaprèsrotationdanscandidat ; aucuneéquivalenceparoutilvisible.",
+      "evidence_checked": []
+    },
+    {
+      "entry_id": "M08-PATH-022",
+      "clause_ordinal": 5,
+      "expected": "Annuler rotation",
+      "submitted_status": "absent",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "absent",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Controlzcandidatannuleglissermur,pasrotation90NoyauA.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            322,
+            326
+          ],
+          "exact_excerpt": "// Annulation du déplacement : attendre qu'elle soit enregistrée (révision suivante) avant les exports, sinon un\n// export peut être produit à la révision d'avant l'annulation.\nconst revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-022",
+      "clause_ordinal": 6,
+      "expected": "Second navigateur aprèsrotation",
+      "submitted_status": "partiel",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "partiel",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "Secondnavigateurprésentmaisvérifieétatgénéral3murs/Bureau/texte révision, sansrotation.",
+      "evidence_checked": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues",
+          "execution": "Non exécuté"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-022",
+      "clause_ordinal": 7,
+      "expected": "Inversevaleursenregistrées/microversion/conflit/reseau/droits de fiche complète",
+      "submitted_status": "non conclu",
+      "A5_verdict": "Accepté dans portée bornée",
+      "A5_final_qualification": "non conclu",
+      "A5_reason": "Qualification compatible avec lecture indépendante ; extrait exact revérifié. Partiel demeure une analogie et non conformité du prédicat historique.",
+      "submitted_reason_checked": "PaspreuveE2Ecibléedecesinvariants ; APIgénérique ettestsunitaires ne sontpas récettelivredececas.Pasconclusionrégressioncode ouacceptationhistoriqueeffacée.",
+      "evidence_checked": []
+    }
+  ],
+  "full_equivalences_demonstrated": 0,
+  "historical_acceptance": "D174 et Suivi/extensions lus, conservés ; qualification preuves non refonte des décisions. Aucune case ou gate validée.",
+  "scope_note": "Absences bornées au candidat demandé. Compléments autreE2E/unité/API sont séparés, jamais réputés satisfaire le scénario navigateur historique. Source ou assertion présente ne signifie pas exécution passée.",
+  "granularity_reconciliation": "A5 27atomes historiques avec copies séparées (3préparations présentes), A4 25clauses comprenant21historiques et4contextes larges. A4 regroupe copie+objet exact, offline+reprise, révision+fraîcheur ; A5 les sépare. Présent standaloneégalitébarreA4 compatible avec partielscénariocibleA5 ; aucun pourcentage à calculer."
+}

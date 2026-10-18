@@ -1,0 +1,141 @@
+{
+  "review": "A2-G1-DEC01-DEC03-COMPLEMENTS",
+  "scope": "Revue architecturale documentaire bornée, aucune ratification physique ni G1",
+  "sources": [
+    {
+      "path": "A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03.md",
+      "sha256": "1c5729fb7510c5df2375926ec7bdb68913ed51d8e7fb67f912047c3ef8037cd6"
+    },
+    {
+      "path": "A1/G1-SCHEMAS-LOGIQUES-DOCUMENTAIRES.json",
+      "sha256": "10eaa0026cd55e48d43b9a78157dc9104e0aeb27142d0c19ddb0b7728e0adc73"
+    },
+    {
+      "path": "A1/G1-EXEMPLES-DOCUMENTAIRES-2D-IDENTITES.json",
+      "sha256": "6e7e232844f1990193cd54cd7086b8bd4c1bb93d89bbf49094790f9329290a08"
+    }
+  ],
+  "comparison_sources": [
+    {
+      "path": "A2/M05-M17-CONTRATS-DURABLES.md",
+      "sha256": "893d4917fe810867b589727e82d1789db56453f86c78fbfab56b294acedac84b"
+    },
+    {
+      "path": "A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+      "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917"
+    },
+    {
+      "path": "A1/studio-141-fiches-v2.json",
+      "sha256": "48c8aa1093bec1fda771961d4d0fb7827ba7e4775f72ed9afe6cf29feada2df3"
+    }
+  ],
+  "method": [
+    "Trois fichiers lus entièrement ; trois positifs et dix négatifs lus par parcours des objets et comparaison récursive exhaustive aux positifs, tous deltas examinés.",
+    "Empreintes illustratives de deux contenus courants et du contenu ancien conservé recalculées, contexte/révisions/filiation/identités contrôlés. Aucun validateur métier exécuté.",
+    "Décisions6250109830/6250110124/6250110501 rapprochées de l’export A0 ; orientations acquises et G0 cadrage reconnus, inconnues et restrictions conservées."
+  ],
+  "verdict": "COHERENCE_LOGIQUE_SOUS_CLARIFICATION_VOCABULAIRE_VERSION_CONTENU",
+  "blocking_findings": [],
+  "documentary_findings": [
+    {
+      "id": "A2-G1-VERSION-01",
+      "state": "CLARIFICATION_TRANSMISE_A1",
+      "severity": "P3_documentaire",
+      "evidence": "Schéma logique rappelle documentVersion de pièce livrée, tandis que canonicalDocument2D et revision.canonicalSources portent documentVersion1/2.",
+      "request": "Distinguer explicitement version de contenu canonique et version de pièce publiée (exemple contentVersion), sans imposer stockage ou nouveau contrat physique.",
+      "effect": "Évite confusion des versions ; pas nouvelle décision à demander au propriétaire."
+    }
+  ],
+  "checks": [
+    "Projet transverse, Étude et Variante à identités propres, parenté autorisée serveur, Révision immuable appartenant à une seule Variante.",
+    "Étude sans variante et sans géométrie permise ; document2D autonome sans modèle3D de substitution ; variante obligatoire avant géométrie éditée.",
+    "Trois autorités candidates et écrivain unique ; vues/projections reconstruisibles ; conversion/référence/copie/association explicites, pas double source canonique.",
+    "IF001 rattachement et identité serveur, IF004 base, IF006 enveloppe commune conservée ; pas nouveau format de transport ni route API.",
+    "Anciennes révisions/contenus conservés, provenance de fork/mapping ancienne variante-projet explicites ; aucune migration silencieuse.",
+    "Réouverture historique ne substitue pas latest ; publication selon IF009 et M24 sur ensemble exact, droits approve/publish distincts.",
+    "Pas choix UUID/SQL/moteur/stockage physique ou canonicalisation production adopté ; DEC01/03 physiques et DEC02/12/16/18 restent conditionnées."
+  ],
+  "example_reviews": [
+    {
+      "exampleId": "G1-DOC-POS-STUDY",
+      "verdict": "COHERENT_LOGIQUE_NON_EXECUTE",
+      "reason": "Étude sansvariante permise, géométrieabsente"
+    },
+    {
+      "exampleId": "G1-DOC-POS-2D",
+      "verdict": "COHERENT_LOGIQUE_NON_EXECUTE",
+      "reason": "Dessin2Dcanonique autonome, révisionimmuable, aucun3D requis"
+    },
+    {
+      "exampleId": "G1-DOC-POS-NEXT-REVISION",
+      "verdict": "COHERENT_LOGIQUE_NON_EXECUTE",
+      "reason": "Nouvelle révision et contenu2D, anciennesrévision/pièceconservées, identitésdocument/primitivesstables"
+    },
+    {
+      "exampleId": "G1-DOC-NEG-ORPHAN",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Géométrie sansvariante propriétaire",
+      "limits": "Ordre des contrôles non décidé ; hashes périmés des négatifs annoncés, ne pas les présenter comme preuve d’un moteur de validation."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-PARENTS",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Étude d’un autreprojet",
+      "limits": "Ordre des contrôles non décidé ; hashes périmés des négatifs annoncés, ne pas les présenter comme preuve d’un moteur de validation."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-IMMUTABLE",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Mutationd’une révisionhistorique au lieu nouvellecommande",
+      "limits": "Ordre des contrôles non décidé ; hashes périmés des négatifs annoncés, ne pas les présenter comme preuve d’un moteur de validation."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-UNIT",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Coordonnées2D sansunité explicite",
+      "limits": "Ordre des contrôles non décidé ; hashes périmés des négatifs annoncés, ne pas les présenter comme preuve d’un moteur de validation."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-ID-REUSE",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Deuxprimitives réutilisentmêmeID",
+      "limits": "Ordre des contrôles non décidé ; hashes périmés des négatifs annoncés, ne pas les présenter comme preuve d’un moteur de validation."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-STALE-BASE",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Base commande incompatible têtecourante",
+      "limits": "Ordre des contrôles non décidé ; hashes périmés des négatifs annoncés, ne pas les présenter comme preuve d’un moteur de validation."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-WRITER",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Writer modèle3D choisi pour document2D",
+      "limits": "Ordre des contrôles non décidé ; hashes périmés des négatifs annoncés, ne pas les présenter comme preuve d’un moteur de validation."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-TARGET",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Cote référence primitive inconnue",
+      "limits": "Ordre des contrôles non décidé ; hashes périmés des négatifs annoncés, ne pas les présenter comme preuve d’un moteur de validation."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-MIGRATION",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Ancienprojetfork présenté comme étude/variante sans mapping",
+      "limits": "Ordre des contrôles non décidé ; hashes périmés des négatifs annoncés, ne pas les présenter comme preuve d’un moteur de validation."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-LATEST",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Réouverturehistorique substitue latest",
+      "limits": "Ordre des contrôles non décidé ; hashes périmés des négatifs annoncés, ne pas les présenter comme preuve d’un moteur de validation."
+    }
+  ],
+  "limits": [
+    "Aucune application ou API exécutée, donnée enregistrée, permission effective ou récupération démontrée.",
+    "Cette revue ne ferme ni DEC01/03 physiques, G1, G2–G4 ni la conformité des141 exigences.",
+    "Fichiers M17/M24 historiques non réécrits par A2 ; A0 seul intègre les amendements retenus.",
+    "Une structure JSON lisible et ses hashes ne constituent ni format Studio livré ni validation d’une étude terminable."
+  ]
+}

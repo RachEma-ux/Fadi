@@ -1,0 +1,31 @@
+{
+  "review": "A6 traceability only, not oracle validation",
+  "reference_code": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "cohorts": {
+    "A2/M08-UNITE-017-039.json": {
+      "file_sha256": "f950dacb5d26fa79ea60e8fc4623d412e41c259ea7c889c814bd6ef28131078a",
+      "stats": {
+        "source_hashes": 20,
+        "git_blobs": 20,
+        "single_line_quotes": 569,
+        "range_quotes": 0,
+        "local_hashes": 0
+      }
+    },
+    "A4/M08-E2E-024-045.json": {
+      "file_sha256": "9842c8cfa2ae75f17f36542cbccfbbbd6fee56272ad21640e245d5a8ca9fea7b",
+      "stats": {
+        "source_hashes": 83,
+        "git_blobs": 0,
+        "single_line_quotes": 12,
+        "range_quotes": 71,
+        "local_hashes": 1
+      }
+    }
+  },
+  "unique_git_sources": 38,
+  "errors": [],
+  "passed": true,
+  "runtime_tests": false,
+  "modified_sources_or_mapping": false
+}

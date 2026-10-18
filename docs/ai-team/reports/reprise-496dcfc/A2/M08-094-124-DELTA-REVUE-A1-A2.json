@@ -1,0 +1,112 @@
+{
+  "review": "M08-094-124-DELTA-REVUE-A1-A2",
+  "original_sha256": "d3041cc2dd3ae7c48a82ce1d46608204b9f2505dcdae26eeac9755fa8c083c5f",
+  "original_preserved": true,
+  "source_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "changes": [
+    {
+      "entry_id": "M08-PATH-094",
+      "expected": "Inverse restituevaleurs",
+      "previous_classification": "absent",
+      "corrected_classification": "partiel",
+      "reason": "Lot composite création mur/porte/niveau inclut explicitement pose de porte ; égalité JSON après inverse prouve cette pose composite. Pas inverse de modification/scission ni références de porte ciblées.",
+      "previous_evidence": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 205,
+          "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-124",
+      "expected": "Sitesanschoix nonrepris",
+      "previous_classification": "present",
+      "corrected_classification": "partiel",
+      "reason": "Parcelle null seule assertée ; site comprend aussi emprise, non comparée. Aucun site entier démontré.",
+      "previous_evidence": [
+        {
+          "path": "packages/atelier-model/src/reprise.test.ts",
+          "line": 37,
+          "exact_line": "    expect(r.etat.site.parcelle).toBeNull();",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+        }
+      ]
+    }
+  ],
+  "adjusted_counts": {
+    "present": 13,
+    "partiel": 28,
+    "absent": 94
+  },
+  "limits": "Précisions statiques uniquement, aucune nouvelle exécution ; A1 revue indépendante à conserver avec original et delta.",
+  "additional_evidence": [
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "line": 199,
+      "exact_line": "      { type: \"mur.tracer\", params: murParams(0, 0, 4, 0) },",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "line": 200,
+      "exact_line": "      { type: \"ouverture.poser\", params: { classe: \"porte\", murHoteId: \"mur-k-1\", position: 0.5, largeur: m(0.9), hauteur: m(2.1) } },",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "line": 201,
+      "exact_line": "      { type: \"niveau.modifier\", params: { id: \"rdc\", nom: \"Rez\" } },",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "line": 202,
+      "exact_line": "    ], \"k\"));",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "line": 203,
+      "exact_line": "    expect(Object.keys(r.etat.objets)).toHaveLength(2);",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "line": 204,
+      "exact_line": "    const retour = appliquerCommande(r.etat, r.inverse, { ids: generateurIds(\"undo\") });",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "line": 205,
+      "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "line": 206,
+      "exact_line": "    expect(retour.effets.supprimes.sort()).toEqual([\"mur-k-1\", \"porte-k-2\"]);",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "line": 207,
+      "exact_line": "    // rétablir = réappliquer l'inverse de l'inverse",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "line": 208,
+      "exact_line": "    const redo = appliquerLot(retour.etat, lot(r.inverse.type === \"interne.restaurer\" ? [{ type: \"mur.tracer\", params: murParams(0, 0, 4, 0) }] : [], \"k2\"));",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "line": 209,
+      "exact_line": "    expect(Object.keys(redo.etat.objets)).toHaveLength(1);",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+    }
+  ]
+}

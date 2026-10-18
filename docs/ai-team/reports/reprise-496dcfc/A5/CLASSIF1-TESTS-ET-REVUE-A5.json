@@ -1,0 +1,67 @@
+{
+  "reviewer": "A5",
+  "authority": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250110849",
+  "inventory_review": "CLASSIF1-REVUE-CONJOINTE-A5.json",
+  "checkout": "/workspace/work/resume496/classification-code",
+  "local_head": "a4caaab0e6665480f09febe3914c960b424b6b47",
+  "head_note": "Tests sur modifications non commitées, pas résultat attribuable au seul HEAD baseline ; A0 seul commit et revalidation SHA requise. Inventaire a15d650 reste référence lecture, fichiers métier initiaux identiques à maina4caaab.",
+  "test": {
+    "command": "../../node_modules/.bin/vitest run src/commandes/classification-conservation.test.ts",
+    "cwd": "/workspace/work/resume496/classification-code/packages/atelier-model",
+    "exit_code": 0,
+    "file_count": 1,
+    "tests_passed": 24,
+    "tests_failed": 0,
+    "time_UTC": "2026-10-18 13:06:28",
+    "duration_seconds": 2.12,
+    "log": "classification-conservation-final.log",
+    "log_sha256": "78757c001570390222a8f59e42217ca90881d45c3fcda6473627c7de52b22cbe"
+  },
+  "files": [
+    {
+      "path": "packages/atelier-model/src/commandes/organisation.ts",
+      "sha256_working_tree": "cc6fc5d7174e69079ce2b6180a117518c15e03e3c2bbdae58fc930ebf86970ad",
+      "bytes": 40235
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "sha256_working_tree": "6f1fd64ec0ff7244e13706cba3deb5d2ce55a8a7ac7ffd42bb11aea7b3bb7057",
+      "bytes": 21443
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/classification-conservation.test.ts",
+      "sha256_working_tree": "a0e30f9ca0480538dcdb6959cb318ecc365726c0139025678ebed658e3f4db15",
+      "bytes": 12063
+    }
+  ],
+  "ownership": "A5 seul nouveau test classification-conservation.test.ts ; A3 réducteur+oracle historique, A6 workflow ; aucune autre écriture code A5.",
+  "matrix": {
+    "single_target": 14,
+    "mixed_ids": 2,
+    "atomic_refusal": 4,
+    "explicit_proposal": 1,
+    "derived_export_control": 2,
+    "imported_object": 1,
+    "detail": "Sept déclarations (absence, saisie/import cohérente/incohérente, ancienne regle-verifiee cohérente/incohérente)×libre/chargé, chaque cas3opérations+inverses exacts/rejeu pur. Les24 tests ne sont pas24scénarios API ni une recetteBIM."
+  },
+  "review": "Suppression seule écriture canonique+commentaire aligné, oracle obsolète remplacé par absence/inverses ; code/libellé/retrait et autres assertions conservés. Pas de modification moteur/export/UI/schema ni données.",
+  "runtime_limits": [
+    "Aucun rootnpmtest, API, DB, E2E, service, migration ou production.",
+    "Objets uniquement synthétiques en mémoire ; IFC exporteur pur existant, pas validation externe du format ni conservation paramétrique.",
+    "Unknownattrs dans intersection TypeScript locale de fixture, pas nouvelle API/validation de ces champs.",
+    "A3 produit suiteatelier/typecheck/build ; aucune preuve transférée avant réception.",
+    "CI/workflow modifié parallèlement par A6 hors propriétéA5 : revue séparéeA6/A0 nécessaire."
+  ],
+  "historical_first_run": {
+    "command": "../../node_modules/.bin/vitest run src/commandes/classification-conservation.test.ts",
+    "cwd": "/workspace/work/resume496/classification-code/packages/atelier-model",
+    "exit_code": 0,
+    "file_count": 1,
+    "tests_passed": 22,
+    "tests_failed": 0,
+    "time_UTC": "2026-10-18 13:05:28",
+    "duration_seconds": 6.44,
+    "log": "classification-conservation-first.log",
+    "log_sha256": "431dc15ed43a5e2eb9a16fc31d5b627481bddd18005d25cb2ab8392fcf725e24"
+  }
+}
