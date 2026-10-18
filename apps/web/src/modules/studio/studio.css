@@ -14,3 +14,25 @@
   padding: 8px 12px;
   border-left: 3px solid currentColor;
 }
+.studio-domaines,
+.studio-planches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+.studio-domaines a,
+.studio-planches a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  text-decoration: none;
+}
+.studio-domaines a[aria-current],
+.studio-planches a[aria-current] {
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.08);
+}

@@ -614,3 +614,13 @@ export const studioEtudes = pgTable("studio_etudes", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("studio_etudes_project_idx").on(t.projectId, t.createdAt)]);
+
+/** Variante de Studio : rattachée à une seule étude du même projet, nom unique dans l'étude (index sur lower(nom), init.sql). */
+export const studioVariantes = pgTable("studio_variantes", {
+  id: text("id").primaryKey(),
+  etudeId: text("etude_id").notNull().references(() => studioEtudes.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  nom: text("nom").notNull(),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_variantes_etude_idx").on(t.projectId, t.etudeId, t.createdAt)]);

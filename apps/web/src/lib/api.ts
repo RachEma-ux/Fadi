@@ -101,6 +101,15 @@ export interface EtudeStudio {
   updatedAt: string;
 }
 
+/** Variante d'une étude de Studio : nom unique dans l'étude. */
+export interface VarianteStudio {
+  id: string;
+  etudeId: string;
+  projectId: string;
+  nom: string;
+  createdAt: string;
+}
+
 export interface Project {
   id: string;
   ownerId: string;
@@ -753,6 +762,12 @@ export const api = {
   getEtudeStudio: (projectId: string, etudeId: string) => request<EtudeStudio>(`/projects/${encodeURIComponent(projectId)}/studio/etudes/${encodeURIComponent(etudeId)}`),
   creerEtudeStudio: (projectId: string, nom: string, description: string) =>
     request<EtudeStudio>(`/projects/${encodeURIComponent(projectId)}/studio/etudes`, { method: "POST", body: JSON.stringify({ nom, description }) }),
+  listVariantesStudio: (projectId: string, etudeId: string) =>
+    request<VarianteStudio[]>(`/projects/${encodeURIComponent(projectId)}/studio/etudes/${encodeURIComponent(etudeId)}/variantes`),
+  getVarianteStudio: (projectId: string, etudeId: string, variantId: string) =>
+    request<VarianteStudio>(`/projects/${encodeURIComponent(projectId)}/studio/etudes/${encodeURIComponent(etudeId)}/variantes/${encodeURIComponent(variantId)}`),
+  creerVarianteStudio: (projectId: string, etudeId: string, nom: string) =>
+    request<VarianteStudio>(`/projects/${encodeURIComponent(projectId)}/studio/etudes/${encodeURIComponent(etudeId)}/variantes`, { method: "POST", body: JSON.stringify({ nom }) }),
 
   // R2 : planning métier authentifié et versionné. Aucune date fictive n'est enregistrée.
   getProjectPlanning: (projectId: string) => request<ProjectPlanning>(`/projects/${encodeURIComponent(projectId)}/planning`),

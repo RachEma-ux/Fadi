@@ -72,3 +72,56 @@ describe("études de Studio", () => {
     expect((await stranger.client.get(`${etudes(autre)}/${etude.id}`)).status).toBe(404);
   });
 });
+
+const variantes = (pid: string, eid: string) => `${etudes(pid)}/${eid}/variantes`;
+
+describe("variantes d'une étude de Studio", () => {
+  it("création, liste ordonnée, lecture ; nom unique dans l'étude sans tenir compte de la casse", async () => {
+    const owner = await account("variantes-owner@example.com");
+    const pid = await project(owner.client, "P.VAR");
+    const e1 = (await owner.client.post(etudes(pid)).send({ nom: "Implantation" })).body.id as string;
+    const e2 = (await owner.client.post(etudes(pid)).send({ nom: "Façades" })).body.id as string;
+    expect((await owner.client.get(variantes(pid, e1))).body).toEqual([]);
+    const a = await owner.client.post(variantes(pid, e1)).send({ nom: "  Nord  " });
+    expect(a.status).toBe(201);
+    expect(a.body).toMatchObject({ etudeId: e1, projectId: pid, nom: "Nord" });
+    expect(a.body.id).toMatch(/^var/);
+    expect((await owner.client.post(variantes(pid, e1)).send({ nom: "Sud" })).status).toBe(201);
+    expect((await owner.client.get(variantes(pid, e1))).body.map((v: { nom: string }) => v.nom)).toEqual(["Nord", "Sud"]);
+    expect((await owner.client.get(`${variantes(pid, e1)}/${a.body.id}`)).body.nom).toBe("Nord");
+    expect((await owner.client.post(variantes(pid, e1)).send({ nom: "NORD" })).status).toBe(409);
+    expect((await owner.client.post(variantes(pid, e1)).send({ nom: " " })).status).toBe(400);
+    expect((await owner.client.post(variantes(pid, e1)).send({ nom: "x".repeat(121) })).status).toBe(400);
+    expect((await owner.client.post(variantes(pid, e2)).send({ nom: "Nord" })).status).toBe(201);
+    // Une variante n'est lisible que sous son étude.
+    expect((await owner.client.get(`${variantes(pid, e2)}/${a.body.id}`)).status).toBe(404);
+  });
+
+  it("deux créations simultanées du même nom : une seule variante, l'autre reçoit 409", async () => {
+    const owner = await account("variantes-course@example.com");
+    const pid = await project(owner.client, "P.VCOURSE");
+    const eid = (await owner.client.post(etudes(pid)).send({ nom: "Course" })).body.id as string;
+    const [r1, r2] = await Promise.all([owner.client.post(variantes(pid, eid)).send({ nom: "Même" }), owner.client.post(variantes(pid, eid)).send({ nom: "Même" })]);
+    expect([r1.status, r2.status].sort()).toEqual([201, 409]);
+    expect((await owner.client.get(variantes(pid, eid))).body).toHaveLength(1);
+  });
+
+  it("droits relus par le serveur : lecteur consulte sans créer, inconnu ne voit rien, étude d'un autre projet introuvable", async () => {
+    const owner = await account("variantes-prop@example.com");
+    const reader = await account("variantes-lecteur@example.com");
+    const stranger = await account("variantes-inconnu@example.com");
+    const pid = await project(owner.client, "P.VDROITS");
+    const eid = (await owner.client.post(etudes(pid)).send({ nom: "Partagée" })).body.id as string;
+    const vid = (await owner.client.post(variantes(pid, eid)).send({ nom: "A" })).body.id as string;
+    expect((await owner.client.post(`/projects/${pid}/members`).send({ email: "variantes-lecteur@example.com", role: "lecteur" })).status).toBe(201);
+    expect((await reader.client.get(variantes(pid, eid))).body).toHaveLength(1);
+    expect((await reader.client.get(`${variantes(pid, eid)}/${vid}`)).status).toBe(200);
+    expect((await reader.client.post(variantes(pid, eid)).send({ nom: "Interdite" })).status).toBe(403);
+    expect((await stranger.client.get(variantes(pid, eid))).status).toBe(404);
+    expect((await stranger.client.get(`${variantes(pid, eid)}/${vid}`)).status).toBe(404);
+    const autre = await project(stranger.client, "P.VETRANGER");
+    expect((await stranger.client.get(variantes(autre, eid))).status).toBe(404);
+    expect((await stranger.client.post(variantes(autre, eid)).send({ nom: "Intruse" })).status).toBe(404);
+    expect((await stranger.client.get(`${variantes(autre, eid)}/${vid}`)).status).toBe(404);
+  });
+});

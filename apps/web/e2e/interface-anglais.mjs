@@ -97,6 +97,11 @@ async function releve(nom) {
   return r.length;
 }
 
+// Studio : une étude et une variante pour relever leurs écrans (leurs noms sont des données du projet).
+const etudeEn = (await api("post", `/projects/${pid}/studio/etudes`, { nom: "Étude EN" })).body.id;
+const varianteEn = (await api("post", `/projects/${pid}/studio/etudes/${etudeEn}/variantes`, { nom: "Variante EN" })).body.id;
+recolter(["Étude EN", "Variante EN"]);
+
 const ecrans = [
   ["accueil", "/accueil"],
   ["accueil-projet", `/projets/${pid}`],
@@ -113,6 +118,9 @@ const ecrans = [
   ["collaboration", `/projets/${pid}?module=collaboration`],
   ["studio", "/studio"],
   ["studio-projet", `/studio/projets/${pid}`],
+  ["studio-etude", `/studio/projets/${pid}/etudes/${etudeEn}`],
+  ["studio-variante", `/studio/projets/${pid}/etudes/${etudeEn}/variantes/${varianteEn}?domaine=dessin&planche=2d`],
+  ["studio-variante-bim", `/studio/projets/${pid}/etudes/${etudeEn}/variantes/${varianteEn}?domaine=bim`],
   ["atelier", `/projets/${pid}?module=atelier`],
 ];
 for (const [nom, url] of ecrans) {

@@ -10,14 +10,25 @@ export type RouteStudio =
   | { vue: "accueil" }
   | { vue: "projet"; projectId: string }
   | { vue: "etude"; projectId: string; etudeId: string }
+  | { vue: "variante"; projectId: string; etudeId: string; variantId: string; domaine: DomaineStudio; planche: PlancheStudio | null }
   | { vue: "inconnue"; chemin: string };
+
+/** Domaines d'une variante ; la planche (2D / 3D) n'a de sens que dans le dessin et se choisit explicitement. */
+export const DOMAINES_STUDIO = ["dessin", "bim", "visualisation", "documentation"] as const;
+export type DomaineStudio = (typeof DOMAINES_STUDIO)[number];
+export const PLANCHES_STUDIO = ["2d", "3d"] as const;
+export type PlancheStudio = (typeof PLANCHES_STUDIO)[number];
 
 /** Identifiant opaque admis dans un segment : il n'est jamais interprété comme un nom de fichier. */
 const ID = /^[A-Za-z0-9_-]{1,128}$/;
 
 export const estRouteStudio = (pathname: string): boolean => pathname === RACINE_STUDIO || pathname.startsWith(`${RACINE_STUDIO}/`);
 
-export function lireRouteStudio(pathname: string): RouteStudio {
+/**
+ * `search` ne compte que pour une variante : `domaine` absent vaut « dessin » ; une valeur inconnue, répétée, une
+ * planche hors du dessin ou un paramètre étranger donnent l'écran « adresse non reconnue », jamais une correction.
+ */
+export function lireRouteStudio(pathname: string, search = ""): RouteStudio {
   const reste = pathname.slice(RACINE_STUDIO.length).replace(/\/+$/, "");
   if (!estRouteStudio(pathname) || reste === "") return estRouteStudio(pathname) ? { vue: "accueil" } : { vue: "inconnue", chemin: pathname };
   const segments = reste.slice(1).split("/");
@@ -27,13 +38,28 @@ export function lireRouteStudio(pathname: string): RouteStudio {
   } catch {
     return { vue: "inconnue", chemin: pathname };
   }
-  const [projets, projectId = "", etudes, etudeId = ""] = ids;
-  if (projets !== "projets" || !ID.test(projectId)) return { vue: "inconnue", chemin: pathname };
+  const [projets, projectId = "", etudes, etudeId = "", variantes, variantId = ""] = ids;
+  const inconnue: RouteStudio = { vue: "inconnue", chemin: pathname + search };
+  if (projets !== "projets" || !ID.test(projectId)) return inconnue;
   if (ids.length === 2) return { vue: "projet", projectId };
-  if (ids.length === 4 && etudes === "etudes" && ID.test(etudeId)) return { vue: "etude", projectId, etudeId };
-  return { vue: "inconnue", chemin: pathname };
+  if (etudes !== "etudes" || !ID.test(etudeId)) return inconnue;
+  if (ids.length === 4) return { vue: "etude", projectId, etudeId };
+  if (ids.length !== 6 || variantes !== "variantes" || !ID.test(variantId)) return inconnue;
+  const params = new URLSearchParams(search);
+  if ([...params.keys()].some((k) => k !== "domaine" && k !== "planche") || params.getAll("domaine").length > 1 || params.getAll("planche").length > 1) return inconnue;
+  const domaine = params.get("domaine") ?? "dessin";
+  const planche = params.get("planche");
+  if (!(DOMAINES_STUDIO as readonly string[]).includes(domaine)) return inconnue;
+  if (planche !== null && (domaine !== "dessin" || !(PLANCHES_STUDIO as readonly string[]).includes(planche))) return inconnue;
+  return { vue: "variante", projectId, etudeId, variantId, domaine: domaine as DomaineStudio, planche: planche as PlancheStudio | null };
 }
 
 export const cheminProjetStudio = (projectId: string): string => `${RACINE_STUDIO}/projets/${encodeURIComponent(projectId)}`;
 
 export const cheminEtudeStudio = (projectId: string, etudeId: string): string => `${cheminProjetStudio(projectId)}/etudes/${encodeURIComponent(etudeId)}`;
+
+export function cheminVarianteStudio(projectId: string, etudeId: string, variantId: string, domaine: DomaineStudio = "dessin", planche: PlancheStudio | null = null): string {
+  const params = new URLSearchParams({ domaine });
+  if (domaine === "dessin" && planche) params.set("planche", planche);
+  return `${cheminEtudeStudio(projectId, etudeId)}/variantes/${encodeURIComponent(variantId)}?${params}`;
+}

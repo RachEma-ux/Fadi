@@ -476,3 +476,16 @@ CREATE TABLE IF NOT EXISTS studio_etudes (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS studio_etudes_nom_idx ON studio_etudes (project_id, lower(nom));
 CREATE INDEX IF NOT EXISTS studio_etudes_project_idx ON studio_etudes (project_id, created_at);
+
+-- Studio : une variante appartient à une seule étude (et donc à un seul projet, répété pour l'isolation des requêtes) ;
+-- nom unique dans l'étude.
+CREATE TABLE IF NOT EXISTS studio_variantes (
+  id text PRIMARY KEY,
+  etude_id text NOT NULL REFERENCES studio_etudes (id) ON DELETE CASCADE,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  nom text NOT NULL,
+  author_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_variantes_nom_idx ON studio_variantes (etude_id, lower(nom));
+CREATE INDEX IF NOT EXISTS studio_variantes_etude_idx ON studio_variantes (project_id, etude_id, created_at);

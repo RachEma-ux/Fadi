@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cheminEtudeStudio, cheminProjetStudio, estRouteStudio, lireRouteStudio } from "./routes-studio";
+import { cheminEtudeStudio, cheminProjetStudio, cheminVarianteStudio, estRouteStudio, lireRouteStudio } from "./routes-studio";
 
 describe("adresses de Studio (lot I)", () => {
   it("accueil : /studio, avec ou sans barre finale", () => {
@@ -18,6 +18,29 @@ describe("adresses de Studio (lot I)", () => {
     expect(lireRouteStudio("/studio/projets/p_1/etudes").vue).toBe("inconnue");
     expect(lireRouteStudio("/studio/projets/p_1/etudes/etu_2/x").vue).toBe("inconnue");
     expect(lireRouteStudio("/studio/projets/p_1/autre/etu_2").vue).toBe("inconnue");
+  });
+
+  it("variante : domaine et planche dans l'adresse, aller-retour exact", () => {
+    const lire = (chemin: string) => {
+      const [p, q = ""] = chemin.split("?");
+      return lireRouteStudio(p!, q ? `?${q}` : "");
+    };
+    const base = { vue: "variante", projectId: "p_1", etudeId: "etu_2", variantId: "var_3" };
+    expect(lire(cheminVarianteStudio("p_1", "etu_2", "var_3"))).toEqual({ ...base, domaine: "dessin", planche: null });
+    expect(lire(cheminVarianteStudio("p_1", "etu_2", "var_3", "dessin", "3d"))).toEqual({ ...base, domaine: "dessin", planche: "3d" });
+    expect(lire(cheminVarianteStudio("p_1", "etu_2", "var_3", "bim", "2d"))).toEqual({ ...base, domaine: "bim", planche: null });
+    expect(cheminVarianteStudio("p_1", "etu_2", "var_3", "bim", "2d")).not.toContain("planche");
+    expect(lireRouteStudio("/studio/projets/p_1/etudes/etu_2/variantes/var_3")).toEqual({ ...base, domaine: "dessin", planche: null });
+    for (const domaine of ["visualisation", "documentation"]) expect(lire(cheminVarianteStudio("p_1", "etu_2", "var_3", domaine as "bim"))).toMatchObject({ domaine });
+  });
+
+  it("variante : domaine inconnu, planche hors dessin, paramètre répété ou étranger → adresse non reconnue", () => {
+    const chemin = "/studio/projets/p_1/etudes/etu_2/variantes/var_3";
+    for (const q of ["?domaine=rendu", "?domaine=bim&planche=2d", "?planche=4d", "?domaine=dessin&domaine=bim", "?planche=2d&planche=3d", "?vue=x", "?domaine="]) {
+      expect(lireRouteStudio(chemin, q).vue).toBe("inconnue");
+    }
+    expect(lireRouteStudio("/studio/projets/p_1/etudes/etu_2/variantes").vue).toBe("inconnue");
+    expect(lireRouteStudio(`${chemin}/x`).vue).toBe("inconnue");
   });
 
   it("adresse inconnue ou identifiant non admis : écran explicite, jamais un repli silencieux", () => {

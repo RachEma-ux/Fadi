@@ -142,6 +142,56 @@ try {
   await b.page.locator("[data-studio-etudes]").waitFor();
   check("études : un lecteur voit les études sans formulaire de création", (await b.page.locator("[data-studio-lecture-seule]").isVisible()) && (await b.page.locator("[data-studio-creer-etude]").count()) === 0);
 
+  // Variantes : création, domaines et planche dans l'adresse, historique, refus, aucune géométrie créée.
+  await page.goto(urlEtude);
+  await page.locator("[data-studio-aucune-variante]").waitFor();
+  await page.fill("#studio-variante-nom", "Variante nord");
+  requetes.length = 0;
+  await page.locator('[data-studio-creer-variante] button[type="submit"]').click();
+  await page.waitForURL(/\/variantes\/var_[^?]+\?domaine=dessin$/);
+  await page.locator('[data-studio-domaine-actif="dessin"]').waitFor();
+  const urlVariante = page.url();
+  check("variantes : la création ouvre la variante sur le dessin, sans planche imposée", (await page.locator("main.studio-page h1").textContent()) === "Variante nord" && (await page.locator("[data-studio-planche-aucune]").isVisible()) && (await page.locator(".studio-fil").textContent()).includes("Implantation nord"));
+  await page.locator('[data-studio-planche="3d"]').click();
+  await page.waitForURL(/domaine=dessin&planche=3d$/);
+  await page.locator('[data-studio-planche-active="3d"]').waitFor();
+  await page.locator('[data-studio-domaine="bim"]').click();
+  await page.waitForURL(/domaine=bim$/);
+  await page.locator('[data-studio-domaine-actif="bim"]').waitFor();
+  check("variantes : chaque domaine a son adresse, la planche ne suit pas hors du dessin", !page.url().includes("planche"));
+  await page.locator('[data-studio-domaine="dessin"]').click();
+  await page.waitForURL(/domaine=dessin$/);
+  await page.goBack();
+  await page.locator('[data-studio-domaine-actif="bim"]').waitFor();
+  await page.goBack();
+  await page.locator('[data-studio-planche-active="3d"]').waitFor();
+  check("variantes : précédent restitue domaine et planche", page.url().endsWith("domaine=dessin&planche=3d"));
+  await page.reload();
+  await page.locator('[data-studio-planche-active="3d"]').waitFor();
+  check("variantes : l'actualisation restitue la planche choisie", true);
+  check("variantes : aucune lecture ni écriture du Parcours, de l'Atelier ou de la Planche", requetes.filter((p) => !p.startsWith("/assets/") && /\/steps|\/programme|\/atelier|\/planche/.test(p)).length === 0, requetes.join(" "));
+  await page.goto(`${urlVariante.split("?")[0]}?domaine=bim&planche=2d`);
+  await page.locator("[data-studio-inconnue]").waitFor();
+  check("variantes : planche hors du dessin → adresse non reconnue, conservée", page.url().endsWith("domaine=bim&planche=2d"));
+  await page.goto(`${urlVariante.split("?")[0]}?domaine=rendu`);
+  await page.locator("[data-studio-inconnue]").waitFor();
+  check("variantes : domaine inconnu → adresse non reconnue", true);
+  await page.goto(urlEtude);
+  await page.locator("[data-studio-variantes] li").first().waitFor();
+  await page.fill("#studio-variante-nom", "VARIANTE NORD");
+  await page.locator('[data-studio-creer-variante] button[type="submit"]').click();
+  await page.locator("[data-studio-creer-variante] [role=alert]").waitFor();
+  check("variantes : un nom déjà pris dans l'étude est refusé avec un message", (await page.locator("[data-studio-creer-variante] [role=alert]").textContent()).includes("existe déjà"));
+  await b.page.goto(urlEtude);
+  await b.page.locator("[data-studio-variantes]").waitFor();
+  check("variantes : un lecteur voit les variantes sans formulaire de création", (await b.page.locator("[data-studio-creer-variante]").count()) === 0);
+  await b.page.goto(urlVariante);
+  await b.page.locator('[data-studio-domaine-actif="dessin"]').waitFor();
+  check("variantes : un lecteur ouvre la variante", (await b.page.locator("main.studio-page h1").textContent()) === "Variante nord");
+  await page.goto(`${BASE}/studio/projets/${pA2.id}/etudes/${etudeId}/variantes/${urlVariante.split("?")[0].split("/").pop()}`);
+  await page.locator("[data-studio-refus]").waitFor();
+  check("variantes : une variante ouverte sous un autre projet est refusée", !(await page.locator("#workspace-content").textContent()).includes("Variante nord"));
+
   // Accessibilité de l'accueil Studio.
   await page.goto(`${BASE}/studio`);
   await page.locator("[data-studio-projets]").waitFor();
