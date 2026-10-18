@@ -1,0 +1,23 @@
+/* Panneau de quantités Studio (E.3-04 / E.3-05). */
+.studio-quantites{margin-top:24px;padding:22px;background:#fff;border:1px solid #d5e1e4;border-radius:12px;min-width:0;overflow-wrap:anywhere;font-size:13px}
+.studio-quantites h2{font-size:17px;margin:0 0 8px}.studio-quantites h3{font-size:15px;margin:20px 0 8px}
+.studio-quantites p{color:#4f666d;margin:6px 0}
+.studio-quantites-filtres{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;margin:14px 0}
+.studio-quantites-filtres label,.studio-quantites-ajustement label{display:flex;flex-direction:column;gap:6px;margin:0}
+.studio-quantites select,.studio-quantites textarea,.studio-quantites input:not([type=checkbox]){border:1px solid #b9cbd0;border-radius:7px;padding:9px;font:inherit;min-height:40px;box-sizing:border-box;max-width:100%}
+.studio-quantites label.studio-quantites-case{flex-direction:row;align-items:center;gap:8px;min-height:40px}.studio-quantites-case input{width:auto;margin:0}
+.studio-quantites-bouton{display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box;border:1px solid #b9cdd0;border-radius:8px;padding:9px 13px;background:#fff;color:var(--studio-ink,#173b43);text-decoration:none}
+.studio-quantites-bouton:hover:not([aria-disabled]){background:#edf5f3;border-color:#1a6b70}.studio-quantites-bouton[aria-disabled]{opacity:.48;cursor:not-allowed}
+.studio-quantites-defile{overflow-x:auto;max-width:100%}
+.studio-quantites table{border-collapse:collapse;width:100%;min-width:560px}
+.studio-quantites th,.studio-quantites td{border-bottom:1px solid #e3eaec;padding:6px 8px;text-align:right;vertical-align:top;font-variant-numeric:tabular-nums}
+.studio-quantites th[scope=row],.studio-quantites td:nth-child(2){text-align:left}.studio-quantites thead th{font-size:12px;color:#577079;font-weight:600}
+.studio-quantites tfoot th,.studio-quantites tfoot td{border-top:2px solid #c9d8dc;border-bottom:0}
+.studio-quantites-ne{color:#9a5b17;font-style:italic}.studio-quantites-sans{color:#9aabb0}.studio-quantites-derivee{color:#657c83}
+.studio-quantites [data-ajustee] strong{color:#1a6b70}
+.studio-quantites-masque{font-weight:400;color:#9a5b17;font-size:12px}
+.studio-quantites-calque[data-masque]{opacity:.85}
+.studio-quantites-ajustement fieldset{border:1px solid #e3eaec;border-radius:10px;padding:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:0}
+.studio-quantites-ajustement legend{font-weight:600}.studio-quantites-ajustement button{justify-self:start}
+.studio-quantites-journal{padding-left:20px;display:grid;gap:4px}.studio-quantites-journal li[data-en-vigueur]{font-weight:600}
+@media(max-width:540px){.studio-quantites{padding:14px}}
