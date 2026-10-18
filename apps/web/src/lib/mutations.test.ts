@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { QueryClient } from "@tanstack/react-query";
-import { ApiError, type ParcoursStep } from "./api";
-import { adoptStep, canReplayFieldConflict, conflictsStore, isProjectPendingMutation, MUTATION_KEYS, recordConflict, recordConflictRetryFailure, resumeProjectMutations } from "./mutations";
+import { QueryClient, QueryObserver } from "@tanstack/react-query";
+import { ApiError, type ParcoursStep, type ProjectComment } from "./api";
+import { adoptComment, adoptStep, canReplayFieldConflict, conflictsStore, isProjectPendingMutation, MUTATION_KEYS, recordConflict, recordConflictRetryFailure, resumeProjectMutations } from "./mutations";
 import { reachability } from "./reachability";
 
 const clients: QueryClient[] = [];
@@ -75,5 +75,35 @@ describe("mutations et conflits propres à un dossier", () => {
     }
     expect(client.getQueryState(["history", "user", "a"])!.isInvalidated).toBe(true);
     expect(client.getQueryState(["history", "user", "b"])!.isInvalidated).toBe(false);
+  });
+});
+
+describe("commentaire publié pendant la première lecture du fil", () => {
+  const comment = (id: string): ProjectComment => ({ id, stepNumber: 8, parentId: null, atelierRevision: null, authorEmail: "a@example.com", body: "texte", createdAt: "2026-10-18T00:00:00.000Z", mine: true });
+  it("annule la lecture partie avant l'écriture et relit le fil : le commentaire accepté s'affiche", async () => {
+    const client = queryClient();
+    const key = ["comments", "p", 8];
+    // Le serveur a déjà servi la première lecture (sans le commentaire) ; sa réponse arrive après la publication.
+    let rendrePremiere: (v: ProjectComment[]) => void = () => undefined;
+    const premiere = new Promise<ProjectComment[]>((r) => { rendrePremiere = r; });
+    let lectures = 0;
+    // Une requête active (le pli de l'étape monté) : invalidateQueries la relit.
+    const obs = new QueryObserver(client, { queryKey: key, queryFn: () => (++lectures === 1 ? premiere : Promise.resolve([comment("c1")])) });
+    const stop = obs.subscribe(() => undefined);
+    expect(client.getQueryState(key)!.fetchStatus).toBe("fetching");
+    expect(client.getQueryData(key)).toBeUndefined();
+    const adoption = adoptComment(client, comment("c1"), { projectId: "p", body: "texte", stepNumber: 8 });
+    rendrePremiere([]);
+    await adoption;
+    expect(lectures).toBe(2);
+    expect((client.getQueryData<ProjectComment[]>(key) ?? []).map((c) => c.id)).toEqual(["c1"]);
+    stop();
+  });
+  it("ajoute aussitôt le commentaire au fil déjà lu de son étape, sans doublon", async () => {
+    const client = queryClient();
+    client.setQueryData(["comments", "p", 8], [comment("c0")]);
+    await adoptComment(client, comment("c1"), { projectId: "p", body: "texte", stepNumber: 8 });
+    await adoptComment(client, comment("c1"), { projectId: "p", body: "texte", stepNumber: 8 });
+    expect(client.getQueryData<ProjectComment[]>(["comments", "p", 8])!.map((c) => c.id)).toEqual(["c0", "c1"]);
   });
 });
