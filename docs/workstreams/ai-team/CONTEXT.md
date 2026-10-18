@@ -19,3 +19,7 @@ Aucun changement de DrawAll ; préserver normes, fonctions industrielles et 21 �
 ## Hypothèses et questions ouvertes
 
 La disponibilité de sous-agents, la révision Cloud, les autorisations des lots et la CI courante doivent être constatées. Ne pas confondre création des missions et exécution ; les jalons #149 doivent être revérifiés sans refaire par défaut les opérations.
+
+## Provenance récupérée
+
+Mission 003 conserve les originaux Mission 002 sous docs/ai-team/reports/mission-002-originals/, avec manifeste et limites. Le registre actif est docs/workstreams/studio/task-register.json ; missions.json reste l’autorité des affectations, les sources Studio l’autorité des textes. Aucun second programme créé.

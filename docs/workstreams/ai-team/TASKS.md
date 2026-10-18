@@ -21,3 +21,7 @@ Pièces originales à récupérer ; code/POC et essais mutateurs en attente d’
 ## Critères de sortie
 
 Toutes les missions gardent leurs critères. Chaque ID Studio a ses états de travail/conformité/test distincts, preuve, décision et prochaine action. Aucune case cochée ni mission close par dérivation depuis les 630 affectations ou L1–L6. STATUS/HANDOFF mis à jour ensemble ; pas de nouvel audit général à la place de l’exploitation des pièces existantes.
+
+## Avancement Mission 003 — transfert vérifié
+
+M00/M29 : récupération des cinq rapports, consolidation A0, registre 630 et 104 EX et propositions historiques effectuée avec empreintes. La préparation des 141 fiches et des contrats continue ; aucune mission applicative close. Voir rapport de récupération ; les mentions « originaux non versés » ci-dessus décrivent désormais le checkpoint de réception historique. Une nouvelle validation des documents/CI est requise sur chaque tête publiée.

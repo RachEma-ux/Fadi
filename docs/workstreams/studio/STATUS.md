@@ -2,6 +2,14 @@
 
 Mis à jour : 2026-10-18 (UTC).
 
+## Checkpoint Mission 003 — récupération des originaux
+
+Les originaux de Mission 002 sont maintenant retrouvés et archivés sans modification d’octets : [rapport et limites](../../ai-team/reports/MISSION-003-RECUPERATION.md), [manifeste](../../ai-team/reports/mission-002-originals/manifest.json).19 fichiers inventoriés,14 pièces non redondantes versées. DEC/NAV/matrices sont intégrées aux rapports originaux ; aucun fichier autonome INV/IF/AC/DEC original inventé.
+
+Le [registre consolidé 630](../studio/task-register.json) conserve les 630 affectations/textes exacts, les six vérifications documentaires et tous les blocages. Aucune case source cochée ni tâche produit acceptée. M00/M29 restent en cours ; transfert des originaux vérifié, préparation des 141 fiches et des autres missions en cours. Les paragraphes antérieurs ci-dessous constituent le relevé de réception avant ce transfert.
+
+Référence programme avant ce checkpoint : a09c11d397c8527987c3d1c4410ebb2eb240a819 ; CI exacte 39114417812 réussie (pas la preuve de ce nouveau commit). Prochaine action autorisée : intégrer les spécifications des agents puis les contrôler/publier ; A3, code/POC/migrations/services/admin/fusions/production restent non autorisés.
+
 ## État
 
 Suivi présent sur la branche docs/156-codex-missions-completes, PR #165 non fusionnée au contrôle. Absent du main 27c0c5a35e2f116752a83a9c66459484488a1975 : cette absence ne justifie pas de créer une seconde version. Réception de la qualification initiale Mission 002 ; aucune réalisation ou acceptation Studio attestée par ce document.

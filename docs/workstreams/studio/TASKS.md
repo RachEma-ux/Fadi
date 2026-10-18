@@ -21,3 +21,7 @@ Ratification des références/pilote, exclusions et contrat de navigation ; preu
 ## Critères de sortie
 
 Chaque ID garde responsable, état de travail, verdict de conformité, état du test, décision, preuve, Issue/PR et prochaine action. Les trois parcours doivent aboutir à des résultats métier acceptés avec E ; R avant généralisation et F selon arbitrages. Conserver toutes les réserves et options ; actualiser STATUS/HANDOFF ensemble avant revue.
+
+## Avancement Mission 003 — transfert vérifié
+
+M00/M29 : récupération des cinq rapports, consolidation A0, registre 630 et 104 EX et propositions historiques effectuée avec empreintes. La préparation des 141 fiches et des contrats continue ; aucune mission applicative close. Voir rapport de récupération ; les mentions « originaux non versés » ci-dessus décrivent désormais le checkpoint de réception historique. Une nouvelle validation des documents/CI est requise sur chaque tête publiée.

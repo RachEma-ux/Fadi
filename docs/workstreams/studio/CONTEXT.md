@@ -19,3 +19,7 @@ Entrée verticale Studio, accès sans étape Parcours, services Fadi partagés, 
 ## Hypothèses et questions ouvertes
 
 Placement précis, routes, composants/paquets, modèles physiques, budgets et DEC restent à instruire selon le sous-lot. Les capacités existantes et les preuves doivent être qualifiées avant de cocher les tâches. Une fiche TR complète ne vaut pas conformité du produit.
+
+## Provenance récupérée
+
+Mission 003 conserve les originaux Mission 002 sous docs/ai-team/reports/mission-002-originals/, avec manifeste et limites. Le registre actif est docs/workstreams/studio/task-register.json ; missions.json reste l’autorité des affectations, les sources Studio l’autorité des textes. Aucun second programme créé.
