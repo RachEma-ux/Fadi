@@ -8889,5 +8889,7 @@
 "Space": "Space",
 "Saisissez des nombres finis dans tous les champs.": "Enter finite numbers in every field.",
 "La largeur et la hauteur doivent être strictement positives.": "Width and height must be strictly positive.",
-"Sauvegarde reçue, mais version courante indisponible. Réessayez la même sauvegarde.": "Save received, but the current version is unavailable. Retry the same save."
+"Sauvegarde reçue, mais version courante indisponible. Réessayez la même sauvegarde.": "Save received, but the current version is unavailable. Retry the same save.",
+"Chargement impossible pour le moment.": "Loading is not possible right now.",
+"Le serveur n’a pas répondu ; aucune donnée n’a été modifiée.": "The server did not respond; no data was changed."
 }

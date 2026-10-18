@@ -493,6 +493,15 @@ CREATE INDEX IF NOT EXISTS studio_variantes_etude_idx ON studio_variantes (proje
 -- Studio : révisions immuables d'une variante (orientation DEC-03). Chaque révision porte un contenu complet et validé
 -- (document 2D, orientation DEC-01), son parent, son empreinte et la requête qui l'a créée (idempotence) ; numéro
 -- croissant dans la variante. Aucune mise à jour : le déclencheur refuse toute modification d'une révision.
+-- Une base de validation où le Studio V1 retiré (#181, studio-v1.sql) avait créé sa propre table studio_revisions
+-- échoue ici explicitement plutôt qu'à la création d'index : rien n'est supprimé automatiquement.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'studio_revisions' AND column_name = 'variant_id') THEN
+    RAISE EXCEPTION 'studio_revisions existe au format du Studio V1 retiré : recréer cette base de validation jetable (aucune donnée supprimée automatiquement).';
+  END IF;
+END;
+$$;
 CREATE TABLE IF NOT EXISTS studio_revisions (
   id text PRIMARY KEY,
   variante_id text NOT NULL REFERENCES studio_variantes (id) ON DELETE CASCADE,
