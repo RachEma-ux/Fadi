@@ -1,0 +1,135 @@
+/**
+ * Panneau « Commentaires » d'une variante Studio. Règles de la Collaboration, vérifiées par le serveur : tout membre du
+ * projet commente (lecteur compris, même quand la planche est en lecture seule), répond en fil, et seul l'auteur
+ * supprime son commentaire (suppression douce : le fil reste lisible). Un commentaire peut citer les objets
+ * sélectionnés qui existent dans la révision affichée ; cliquer un commentaire ancré sélectionne ces objets.
+ * Un envoi non confirmé se rejoue avec le même `requestId` : jamais de doublon.
+ */
+import { useRef, useState, type FormEvent } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { StudioDocument } from "@parcours/atelier-model";
+import { api, ApiError, type StudioComment } from "../../../lib/api";
+import { LOCALE } from "../../../lib/i18n";
+import { ancrageSelection, objetsPresents, regrouperFils } from "./fils";
+import "./commentaires.css";
+
+export interface PanneauCommentairesProps {
+  projectId: string;
+  studyId: string;
+  variantId: string;
+  /** Révision affichée (tête ou révision historique) et son document enregistré. */
+  revisionId: string;
+  revision: StudioDocument;
+  /** Dessin affiché (brouillon compris) : les objets cités y sont recherchés pour la sélection. */
+  dessin: StudioDocument;
+  selection: readonly string[];
+  /** Droit de modifier la planche, relu par le serveur (les commentaires restent permis sans lui). */
+  canWrite: boolean;
+  surSelection: (ids: string[]) => void;
+}
+
+const refused = (e: unknown) => e instanceof ApiError && [401, 403, 404].includes(e.status);
+const date = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(LOCALE, { dateStyle: "medium", timeStyle: "short" }); };
+
+function demandeId(demande: { current: { cle: string; id: string } | null }, cle: string): string {
+  if (demande.current?.cle !== cle) demande.current = { cle, id: crypto.randomUUID() };
+  return demande.current.id;
+}
+
+export function PanneauCommentaires(props: PanneauCommentairesProps) {
+  const { projectId, studyId, variantId } = props;
+  const cle = ["studio-comments", projectId, studyId, variantId];
+  const client = useQueryClient();
+  const comments = useQuery({ queryKey: cle, queryFn: () => api.studioComments(projectId, studyId, variantId), retry: (n, e) => !refused(e) && n < 1 });
+  const [info, setInfo] = useState("");
+  const fils = comments.data ? regrouperFils(comments.data.comments) : [];
+  const relire = () => client.invalidateQueries({ queryKey: cle });
+
+  function choisir(c: StudioComment) {
+    if (!c.objectIds.length) return;
+    const { presents, absents } = objetsPresents(c, props.dessin);
+    props.surSelection(presents);
+    setInfo(absents ? `${absents} objet(s) cité(s) absent(s) du dessin affiché.` : "");
+  }
+
+  return <section className="studio-revisions studio-commentaires" aria-labelledby="studio-commentaires-titre" data-studio-commentaires>
+    <h2 id="studio-commentaires-titre">Commentaires</h2>
+    <p className="studio-revisions-sub">Tout membre du projet peut commenter et répondre ; seul l’auteur supprime son commentaire.</p>
+    {!props.canWrite && <p role="status" data-studio-commentaires-lecture-seule>Planche en lecture seule : vous ne pouvez pas modifier le dessin, mais vous pouvez commenter.</p>}
+    <NouveauCommentaire {...props} surEnvoye={relire} />
+    {info && <p className="studio-info" role="status">{info}</p>}
+    {comments.isPending && <p role="status">Chargement des commentaires…</p>}
+    {comments.isError && <p role="alert">Commentaires indisponibles. <button type="button" onClick={() => void comments.refetch()}>Réessayer</button></p>}
+    {comments.data && fils.length === 0 && <p data-studio-aucun-commentaire>Aucun commentaire sur cette variante.</p>}
+    {fils.length > 0 && <ol className="studio-commentaires-fils">{fils.map((f) => <li key={f.origine.id} data-studio-fil={f.origine.id}>
+      <Commentaire {...props} c={f.origine} surChoisir={choisir} surModifie={relire} />
+      {f.reponses.length > 0 && <ol className="studio-commentaires-reponses">{f.reponses.map((r) => <li key={r.id}><Commentaire {...props} c={r} surChoisir={choisir} surModifie={relire} /></li>)}</ol>}
+    </li>)}</ol>}
+  </section>;
+}
+
+function NouveauCommentaire(props: PanneauCommentairesProps & { parentId?: string; surEnvoye: () => void; surFermer?: () => void }) {
+  const [body, setBody] = useState("");
+  const [ancrer, setAncrer] = useState(true);
+  const [envoi, setEnvoi] = useState(false);
+  const [error, setError] = useState("");
+  const enCours = useRef(false);
+  const demande = useRef<{ cle: string; id: string } | null>(null);
+  const { citables, nonEnregistres } = ancrageSelection(props.selection, props.revision);
+  const objets = !props.parentId && ancrer ? citables : [];
+  async function envoyer(e: FormEvent) {
+    e.preventDefault();
+    const texte = body.trim();
+    if (!texte || enCours.current) return;
+    enCours.current = true; setEnvoi(true); setError("");
+    const input = { body: texte, ...(props.parentId ? { parentId: props.parentId } : {}), ...(objets.length ? { objectIds: objets, revisionId: props.revisionId } : {}) };
+    try {
+      await api.createStudioComment(props.projectId, props.studyId, props.variantId, { ...input, requestId: demandeId(demande, JSON.stringify(input)) });
+      demande.current = null; setBody("");
+      props.surEnvoye(); props.surFermer?.();
+    } catch (err) {
+      setError(err instanceof ApiError && err.status < 500 && err.status !== 408 ? "Commentaire refusé par le serveur." : "Envoi non confirmé. Réessayez : le même commentaire sera rejoué sans doublon.");
+    } finally { enCours.current = false; setEnvoi(false); }
+  }
+  const id = `studio-commentaire-${props.parentId ?? "nouveau"}`;
+  return <form className="studio-commentaires-form" onSubmit={(e) => void envoyer(e)} data-studio-commenter={props.parentId ? "reponse" : "nouveau"}>
+    <label htmlFor={id}>{props.parentId ? "Votre réponse" : "Nouveau commentaire"}</label>
+    <textarea id={id} required maxLength={4000} rows={3} value={body} onChange={(e) => setBody(e.target.value)} />
+    {!props.parentId && citables.length > 0 && <label className="studio-commentaires-ancre"><input type="checkbox" checked={ancrer} onChange={(e) => setAncrer(e.target.checked)} data-studio-ancrer /> {`Citer la sélection (${citables.length} objet(s))`}</label>}
+    {!props.parentId && ancrer && nonEnregistres.length > 0 && <p className="studio-info">{`${nonEnregistres.length} objet(s) non enregistré(s) ne peuvent pas être cités.`}</p>}
+    {error && <p role="alert">{error}</p>}
+    <div className="studio-commentaires-actions">
+      <button type="submit" disabled={envoi || !body.trim()}>{props.parentId ? "Répondre" : "Commenter"}</button>
+      {props.surFermer && <button type="button" onClick={props.surFermer}>Fermer</button>}
+    </div>
+  </form>;
+}
+
+function Commentaire(props: PanneauCommentairesProps & { c: StudioComment; surChoisir: (c: StudioComment) => void; surModifie: () => void }) {
+  const { c } = props;
+  const [repondre, setRepondre] = useState(false);
+  const [error, setError] = useState("");
+  const [suppression, setSuppression] = useState(false);
+  async function supprimer() {
+    if (!window.confirm("Supprimer ce commentaire ?")) return;
+    setSuppression(true); setError("");
+    try { await api.deleteStudioComment(props.projectId, props.studyId, props.variantId, c.id); props.surModifie(); }
+    catch { setError("Suppression refusée ou non confirmée."); }
+    finally { setSuppression(false); }
+  }
+  return <article className="studio-commentaire" data-studio-commentaire={c.id} data-studio-commentaire-supprime={c.deletedAt ? "" : undefined}>
+    <p className="studio-commentaire-entete">
+      <strong>{c.mine ? "Vous" : <span translate="no">{c.authorEmail}</span>}</strong>
+      <span translate="no">{date(c.createdAt)}</span>
+      {c.revisionId && c.revisionId !== props.revisionId && <span>Révision <span translate="no" title={c.revisionId}>{c.revisionId.slice(-8)}</span></span>}
+    </p>
+    {c.deletedAt ? <p className="studio-commentaire-supprime">Commentaire supprimé par son auteur.</p> : <p className="studio-commentaire-texte" translate="no">{c.body}</p>}
+    <div className="studio-commentaires-actions">
+      {c.objectIds.length > 0 && <button type="button" onClick={() => props.surChoisir(c)} data-studio-commentaire-objets={c.objectIds.join(" ")}>{`Sélectionner les objets cités (${c.objectIds.length})`}</button>}
+      {!c.parentId && <button type="button" aria-expanded={repondre} onClick={() => setRepondre((v) => !v)}>Répondre</button>}
+      {c.mine && !c.deletedAt && <button type="button" disabled={suppression} onClick={() => void supprimer()} data-studio-supprimer-commentaire>Supprimer</button>}
+    </div>
+    {error && <p role="alert">{error}</p>}
+    {repondre && <NouveauCommentaire {...props} parentId={c.id} surEnvoye={props.surModifie} surFermer={() => setRepondre(false)} />}
+  </article>;
+}

@@ -9,7 +9,7 @@
  * BASE_URL=http://localhost:3001 OUT=atelier-captures/studio node apps/web/e2e/studio-navigation.mjs
  */
 import { chromium } from "playwright";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
 
@@ -170,7 +170,7 @@ try {
 
   // Révision passée : lecture seule par ?revision=, aucun enregistrement possible, retour à la version courante.
   const ancienne = revisions.revisions[1].id;
-  await historique.nth(1).getByRole("link").click();
+  await historique.nth(1).locator("a:not([data-studio-comparer-tete])").click();
   await page.waitForURL(`${BASE}/studio/projets/${pA.id}/etudes/${studyId}/variantes/${variantId}?revision=${encodeURIComponent(ancienne)}`);
   await page.locator("[data-studio-lecture-seule-revision]").waitFor();
   check("révision passée : document d'origine (vide), lecture seule, enregistrement désactivé", (await page.locator('svg [role="button"]').count()) === 0 && (await outils.getByRole("button", { name: "Enregistrer", exact: true }).isDisabled()));
@@ -483,8 +483,41 @@ try {
   check("Vue 3D : relue après actualisation, le volume est rendu", (await vue3d.getAttribute("data-studio-volumes")) === "1");
   await outils.locator('[data-studio-commande="vue-3d"]').click();
   await planche.waitFor();
+
+  // Feuille (Maj+P, barre Présentation) : A3 paysage à 1:100, cartouche prérempli (nom de l'étude), feuille SVG
+  // téléchargée à sa taille réelle, impression de la seule feuille.
+  const boutonFeuille = outils.locator('[data-studio-barre="presentation"] [data-studio-commande="feuille"][aria-keyshortcuts="Shift+P"]');
+  check("Feuille : commande dans la barre Présentation, raccourci Maj+P", (await boutonFeuille.count()) === 1);
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+P");
+  const feuille = page.locator("[data-studio-feuille]");
+  await feuille.waitFor();
+  await feuille.locator("[data-studio-feuille-format]").selectOption("A3");
+  await feuille.locator("[data-studio-feuille-orientation]").selectOption("paysage");
+  await feuille.locator("[data-studio-feuille-echelle]").selectOption("100");
+  const apercuFeuille = feuille.locator('[data-studio-feuille-apercu] svg[data-format="A3"][data-orientation="paysage"][data-scale="100"]');
+  await apercuFeuille.waitFor();
+  check("Feuille : aperçu A3 paysage 1:100, cartouche avec le nom de l'étude", (await apercuFeuille.getAttribute("width")) === "420mm" && (await apercuFeuille.locator('[data-sheet-part="title-block"] [data-id="cartouche.study"]').textContent()) === "Implantation nord" && (await apercuFeuille.locator('[data-id="cartouche.scale"]').textContent()) === "1:100");
+  check("Feuille : champs préremplis par les données réelles, titre laissé vide, nord non orienté", (await feuille.locator('[data-studio-feuille-champ="projectCode"]').inputValue()) === "P.STU.A" && (await feuille.locator('[data-studio-feuille-champ="study"]').inputValue()) === "Implantation nord" && (await feuille.locator('[data-studio-feuille-champ="title"]').inputValue()) === "" && (await apercuFeuille.locator('[data-id="cartouche.north"]').textContent()) === "Nord : non orienté" && (await apercuFeuille.locator('[data-sheet-part="north"]').count()) === 0);
+  const lienFeuille = feuille.locator("a[data-studio-feuille-svg]");
+  await page.waitForFunction(() => document.querySelector("a[data-studio-feuille-svg]")?.getAttribute("href")?.startsWith("blob:"));
+  const [telechargement] = await Promise.all([page.waitForEvent("download"), lienFeuille.click()]);
+  const svgFeuille = readFileSync(await telechargement.path(), "utf8");
+  check("Feuille : le SVG téléchargé est la feuille A3 paysage (420 mm) avec son cartouche", /<svg [^>]*width="420mm" height="297mm"/.test(svgFeuille) && svgFeuille.includes(">Implantation nord</text>") && telechargement.suggestedFilename().endsWith("-A3-paysage.svg"), telechargement.suggestedFilename());
+  await page.emulateMedia({ media: "print" });
+  const impression = await page.evaluate(() => {
+    const copie = document.querySelector("body > .studio-feuille-impression svg");
+    const r = copie?.getBoundingClientRect();
+    return { largeur: r?.width ?? 0, dialogue: getComputedStyle(document.querySelector("#root") ?? document.body.firstElementChild).display };
+  });
+  await page.emulateMedia({ media: "screen" });
+  check("Feuille : à l'impression, seule la feuille paraît, à sa taille réelle (420 mm)", Math.abs(impression.largeur - (420 / 25.4) * 96) < 2 && impression.dialogue === "none", JSON.stringify(impression));
+  await page.getByRole("dialog").getByRole("button", { name: "Fermer", exact: true }).click();
+  await feuille.waitFor({ state: "detached" });
+
   await page.goto(`${base}?revision=${encodeURIComponent(ancienne)}`);
   await page.locator("[data-studio-lecture-seule-revision]").waitFor();
+  check("Feuille : disponible en révision historique (lecture seule)", await outils.locator('[data-studio-commande="feuille"]').isEnabled());
   check("exports : en révision historique, le lien porte la révision affichée", (await lienExport("svg")) === `${variantePath}/export?format=svg&revision=${encodeURIComponent(ancienne)}` && (await lienExport("dxf")) === `${variantePath}/export?format=dxf&revision=${encodeURIComponent(ancienne)}`);
 
   // Accessibilité de l'accueil Studio.

@@ -5,6 +5,8 @@ export * from "./studio/history.js";
 export * from "./studio/export.js";
 export * from "./studio/mesh-3d.js";
 export * from "./studio/ifc.js";
+export * from "./studio/feuille.js";
+export * from "./studio/comparaison.js";
 export * from "./ontologie.js";
 export * from "./modele.js";
 export * from "./geometrie.js";

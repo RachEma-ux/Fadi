@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cheminEtudeStudio, cheminProjetStudio, cheminVarianteStudio, estRouteStudio, lireRouteStudio } from "./routes-studio";
+import { cheminComparaisonStudio, cheminEtudeStudio, cheminProjetStudio, cheminVarianteStudio, estRouteStudio, lireRouteStudio, valeurCoteStudio } from "./routes-studio";
 
 const lire = (chemin: string) => {
   const [p, q = ""] = chemin.split("?");
@@ -39,6 +39,26 @@ describe("adresses de Studio", () => {
     }
     expect(lireRouteStudio("/studio/projets/p_1/etudes/s_2/variantes").vue).toBe("inconnue");
     expect(lireRouteStudio(`${chemin}/x`).vue).toBe("inconnue");
+  });
+
+  it("comparaison : sans paramètre, tête ou révision de chaque côté, aller-retour exact", () => {
+    const base = { vue: "comparer", projectId: "p_1", studyId: "s_2" };
+    expect(lireRouteStudio(cheminComparaisonStudio("p_1", "s_2"))).toEqual({ ...base, de: null, a: null });
+    expect(cheminComparaisonStudio("p_1", "s_2")).toBe("/studio/projets/p_1/etudes/s_2/comparer");
+    const de = { variantId: "v_1", revisionId: "studio_revision_4" }, a = { variantId: "v_2", revisionId: null };
+    expect(lire(cheminComparaisonStudio("p_1", "s_2", de, a))).toEqual({ ...base, de, a });
+    expect(lire(cheminComparaisonStudio("p_1", "s_2", null, a))).toEqual({ ...base, de: null, a });
+    expect(lireRouteStudio("/studio/projets/p_1/etudes/s_2/comparer", "?de=v_1:r_2&a=v_3")).toEqual({ ...base, de: { variantId: "v_1", revisionId: "r_2" }, a: { variantId: "v_3", revisionId: null } });
+    expect(valeurCoteStudio(de)).toBe("v_1:studio_revision_4");
+  });
+
+  it("comparaison : paramètre répété, vide, mal formé ou étranger → adresse non reconnue", () => {
+    const chemin = "/studio/projets/p_1/etudes/s_2/comparer";
+    for (const q of ["?de=a&de=b", "?de=", "?a=v:", "?a=:r", "?de=v:r:x", "?de=..%2Fx", "?revision=r", "?de=v&x=1", "?a=v%20w"]) {
+      expect(lireRouteStudio(chemin, q).vue).toBe("inconnue");
+    }
+    expect(lireRouteStudio(`${chemin}/x`).vue).toBe("inconnue");
+    expect(lireRouteStudio("/studio/projets/p_1/etudes/s_2/comparaison").vue).toBe("inconnue");
   });
 
   it("paramètre sur l'accueil, un projet ou une étude → adresse non reconnue", () => {

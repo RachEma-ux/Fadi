@@ -8,9 +8,10 @@ import { Component, useRef, useState, type FormEvent, type ReactNode } from "rea
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError, ROLE_LABEL } from "../../lib/api";
-import { cheminEtudeStudio, cheminProjetStudio, cheminVarianteStudio, lireRouteStudio, RACINE_STUDIO } from "./routes-studio";
+import { cheminComparaisonStudio, cheminEtudeStudio, cheminProjetStudio, cheminVarianteStudio, lireRouteStudio, RACINE_STUDIO } from "./routes-studio";
 import { StudioRefus } from "./studio-ecrans";
 import { VariantWorkspace } from "./VariantWorkspace";
+import { PageComparaison } from "./comparaison/PageComparaison";
 import "./studio.css";
 
 /** Une création non confirmée (réseau, 5xx) se rejoue avec le même requestId : le serveur rend la même étude ou variante, sans doublon. */
@@ -53,14 +54,17 @@ export function StudioShell() {
           <nav className="studio-fil" aria-label="Fil d’Ariane Studio">
             <Link to={RACINE_STUDIO}>Studio</Link>
             {route.vue !== "inconnue" && <FilProjet projectId={route.projectId} lien={route.vue !== "projet"} />}
-            {(route.vue === "etude" || route.vue === "variante") && <FilEtude projectId={route.projectId} studyId={route.studyId} lien={route.vue === "variante"} />}
+            {(route.vue === "etude" || route.vue === "variante" || route.vue === "comparer") && <FilEtude projectId={route.projectId} studyId={route.studyId} lien={route.vue !== "etude"} />}
+            {route.vue === "comparer" && <span aria-current="page"> / {"Comparer"}</span>}
             {route.vue === "variante" && <FilVariante projectId={route.projectId} studyId={route.studyId} variantId={route.variantId} />}
+            {route.vue !== "inconnue" && <BadgeRole projectId={route.projectId} />}
           </nav>
         )}
         {route.vue === "accueil" && <StudioAccueil />}
         {route.vue === "projet" && <StudioProjet projectId={route.projectId} />}
         {route.vue === "etude" && <StudioEtude projectId={route.projectId} studyId={route.studyId} />}
         {route.vue === "variante" && <VariantWorkspace key={`${route.projectId}/${route.studyId}/${route.variantId}/${route.revisionId ?? ""}`} projectId={route.projectId} studyId={route.studyId} variantId={route.variantId} revisionId={route.revisionId} />}
+        {route.vue === "comparer" && <PageComparaison projectId={route.projectId} studyId={route.studyId} de={route.de} a={route.a} />}
         {route.vue === "inconnue" && (
           <section className="studio-welcome" role="alert" data-studio-inconnue>
             <h1>Adresse Studio non reconnue</h1>
@@ -81,6 +85,14 @@ function FilProjet({ projectId, lien }: { projectId: string; lien: boolean }) {
   // Tant que l'accès n'est pas confirmé, le fil ne nomme pas le projet.
   const nom = projet.data && !refused(projet.error) ? <span translate="no">{projet.data.code}</span> : "Projet";
   return <span> / {lien ? <Link to={cheminProjetStudio(projectId)}>{nom}</Link> : <span aria-current="page">{nom}</span>}</span>;
+}
+
+/** Rôle de l'utilisateur sur le projet, tel que le serveur le renvoie avec le projet (jamais déduit côté client). */
+function BadgeRole({ projectId }: { projectId: string }) {
+  const projet = useProjet(projectId);
+  if (!projet.data || refused(projet.error)) return null;
+  const role = projet.data.role ?? "proprietaire";
+  return <span className="studio-revision-tag studio-role" style={{ marginLeft: "auto" }} data-studio-role={role}>{`Votre rôle : ${ROLE_LABEL[role]}`}</span>;
 }
 
 function FilEtude({ projectId, studyId, lien }: { projectId: string; studyId: string; lien: boolean }) {
@@ -222,6 +234,7 @@ function StudioEtude({ projectId, studyId }: { projectId: string; studyId: strin
           ))}
         </ul>
       )}
+      <p><Link to={cheminComparaisonStudio(projectId, study.id)} data-studio-lien-comparer>Comparer les variantes et révisions →</Link></p>
       {canWrite
         ? <CreerVariante projectId={projectId} studyId={study.id} />
         : <p data-studio-lecture-seule>Lecture seule : la création de variantes est réservée aux membres autorisés à modifier ce projet.</p>}

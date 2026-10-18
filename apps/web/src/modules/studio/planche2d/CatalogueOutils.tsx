@@ -35,7 +35,8 @@ function useFocusDialogue() {
   return champ;
 }
 
-function Dialogue({ titre, id, classe, surFermer, children }: { titre: string; id: string; classe: string; surFermer: () => void; children: ReactNode }) {
+/** Boîte de dialogue modale de la planche (Échap ou clic sur le fond la ferme). */
+export function Dialogue({ titre, id, classe, surFermer, children }: { titre: string; id: string; classe: string; surFermer: () => void; children: ReactNode }) {
   const touche = (e: KeyboardEvent) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); surFermer(); } };
   return (
     <div className="studio-dialogue-fond" onMouseDown={(e) => { if (e.target === e.currentTarget) surFermer(); }}>

@@ -652,3 +652,26 @@ export const studioRevisions = pgTable("studio_revisions", {
   uniqueIndex("studio_revisions_request_unique").on(t.variantId, t.requestId),
   uniqueIndex("studio_revisions_variant_id_unique").on(t.variantId, t.id),
 ]);
+
+/**
+ * Commentaires d'une variante Studio (règles de la Collaboration : tout membre commente, l'auteur seul supprime) ;
+ * ancrage facultatif à une révision de la même variante et à des objets de son document. Suppression douce par
+ * l'auteur (`deleted_at`) : le fil reste lisible. Les FK composites « même variante » sont dans init.sql.
+ */
+export const studioComments = pgTable("studio_comments", {
+  id: text("id").primaryKey(),
+  variantId: text("variant_id").notNull().references(() => studioVariants.id, { onDelete: "cascade" }),
+  revisionId: text("revision_id"),
+  objectIds: jsonb("object_ids").$type<string[]>().notNull().default([]),
+  parentId: text("parent_id"),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  body: text("body").notNull(),
+  // Création idempotente : unique par variante quand renseigné (index partiel studio_comments_request_unique, init.sql).
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+}, (t) => [
+  index("studio_comments_variant_idx").on(t.variantId, t.createdAt),
+  uniqueIndex("studio_comments_variant_id_unique").on(t.variantId, t.id),
+]);
