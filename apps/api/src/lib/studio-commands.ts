@@ -2,7 +2,7 @@
 import { and, asc, desc, eq } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { applyStudioCommands, exportStudioDxf, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, StudioValidationError, validateStudioDocument, type StudioEnvelope } from "@parcours/atelier-model";
+import { applyStudioCommands, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, StudioValidationError, validateStudioDocument, type StudioEnvelope } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { projectMembers, studioRevisions, studioStudies, studioVariants, type StudioContext } from "../db/schema.js";
 import { newId } from "./ids.js";
@@ -209,11 +209,13 @@ export async function createStudioVariant(projectId: string, studyId: string, ac
   });
 }
 
-export const STUDIO_EXPORT_FORMATS = ["svg", "dxf"] as const;
+export const STUDIO_EXPORT_FORMATS = ["svg", "dxf", "ifc"] as const;
 export type StudioExportFormat = (typeof STUDIO_EXPORT_FORMATS)[number];
 export const STUDIO_EXPORT_CONTENT_TYPES: Readonly<Record<StudioExportFormat, string>> = Object.freeze({
   svg: "image/svg+xml; charset=utf-8",
   dxf: "application/dxf",
+  // IFC STEP (ISO 10303-21) : chaînes encodées en ASCII (`\X2\`), aucun charset à déclarer.
+  ifc: "application/x-step",
 });
 export interface StudioExportFile { format: StudioExportFormat; contentType: string; filename: string; revisionId: string; body: string }
 
@@ -228,7 +230,18 @@ export function studioFileSegment(value: string, fallback: string): string {
 export async function exportStudioVariant(q: Querier, scope: StudioScope, actorId: string, format: StudioExportFormat, revisionId?: string): Promise<StudioExportFile> {
   const context = await readStudioContext(q, scope, actorId, revisionId);
   const doc = context.revision.document;
-  const body = format === "svg" ? exportStudioSvg(doc) : exportStudioDxf(doc);
+  let body: string;
+  if (format === "svg") body = exportStudioSvg(doc);
+  else if (format === "dxf") body = exportStudioDxf(doc);
+  else {
+    // Horodatage de la révision exportée (reproductible) ; GlobalId dérivés de la variante et des identifiants Studio.
+    const [row] = await q.select({ createdAt: studioRevisions.createdAt }).from(studioRevisions).where(eq(studioRevisions.id, context.revision.id)).limit(1);
+    if (!row) return notFound();
+    body = exportStudioIfc(doc, {
+      studyName: context.study.name, variantName: context.variant.name, revisionId: context.revision.id,
+      timestamp: row.createdAt.toISOString().slice(0, 19), key: `${context.study.id}|${context.variant.id}`,
+    });
+  }
   const filename = [
     studioFileSegment(context.study.name, "etude"), studioFileSegment(context.variant.name, "variante"),
     studioFileSegment(context.revision.id.slice(-8), "revision"),

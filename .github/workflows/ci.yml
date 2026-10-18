@@ -204,7 +204,8 @@ jobs:
       - name: Corpus IFC validé par IfcOpenShell (apps/api/test-corpus/ifc/)
         run: |
           npx --workspace=@fadi/api tsx test-corpus/ifc/generer.ts ../../ifc-sortie
-          for f in petit p118 p118-reimporte; do python3 apps/api/test-corpus/ifc/valider.py ifc-sortie/$f.ifc ifc-sortie/$f.attendus.json; done
+          npx --workspace=@fadi/api tsx test-corpus/ifc/generer-studio.ts ../../ifc-sortie
+          for f in petit p118 p118-reimporte studio; do python3 apps/api/test-corpus/ifc/valider.py ifc-sortie/$f.ifc ifc-sortie/$f.attendus.json; done
 
   # Scénario Playwright de bout en bout (apps/web/e2e/parcours-scenario.mjs) :
   # le parcours complet sur P.118 — import, 21 étapes, Atelier, parcelle,

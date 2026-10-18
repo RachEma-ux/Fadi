@@ -10,17 +10,17 @@ export type StudioToolEntry = (typeof STUDIO_TOOLS)[number];
 export type StudioToolId = StudioToolEntry["toolId"];
 export type IdCommandeEditeur =
   | "annuler" | "retablir" | "annuler-trace" | "enregistrer" | "tout-selectionner"
-  | "zoom-avant" | "zoom-arriere" | "cadrer" | "plein-ecran"
+  | "zoom-avant" | "zoom-arriere" | "cadrer" | "plein-ecran" | "vue-3d"
   | "accrochage-sommets" | "accrochage-grille"
-  | "exporter-svg" | "exporter-dxf"
+  | "exporter-svg" | "exporter-dxf" | "exporter-ifc"
   | "outils" | "palette";
 export type GroupeCommande = "edition" | "vue" | "accrochage" | "export" | "catalogue";
 export type BarreStudio = StudioToolGroup | GroupeCommande;
 export type IconeCommande =
   | "studio-undo" | "studio-redo" | "studio-cancel" | "studio-save" | "studio-select-all"
-  | "studio-zoom-in" | "studio-zoom-out" | "studio-frame" | "studio-fullscreen"
+  | "studio-zoom-in" | "studio-zoom-out" | "studio-frame" | "studio-fullscreen" | "studio-view-3d"
   | "studio-snap-vertex" | "studio-snap-grid"
-  | "studio-export-svg" | "studio-export-dxf"
+  | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc"
   | "studio-catalog" | "studio-palette";
 
 export interface CommandeEditeur {
@@ -37,7 +37,7 @@ export interface CommandeEditeur {
   /** Bascule (bouton enfoncé ou non) : accrochages. */
   readonly bascule?: boolean;
   /** Téléchargement par un lien (export) plutôt qu'une action de la page. */
-  readonly telechargement?: "svg" | "dxf";
+  readonly telechargement?: "svg" | "dxf" | "ifc";
   /** Le raccourci reste actif quand le focus est dans un champ de saisie. */
   readonly dansUnChamp?: boolean;
 }
@@ -53,10 +53,14 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "zoom-arriere", libelleFR: "Zoom arrière", raccourci: "-", iconeSymbolique: "studio-zoom-out", groupe: "vue", ecrit: false },
   { id: "cadrer", libelleFR: "Cadrer", raccourci: "Shift+Z", iconeSymbolique: "studio-frame", groupe: "vue", ecrit: false },
   { id: "plein-ecran", libelleFR: "Plein écran / Quitter", raccourci: "Ctrl+Shift+F", iconeSymbolique: "studio-fullscreen", groupe: "vue", ecrit: false },
+  // F3 est réservé (recherche du navigateur) et Maj+3 dépend de la disposition du clavier : Maj+D (« 3D »).
+  { id: "vue-3d", libelleFR: "Vue 3D", raccourci: "Shift+D", iconeSymbolique: "studio-view-3d", groupe: "vue", ecrit: false, bascule: true },
   { id: "accrochage-sommets", libelleFR: "Accrocher aux sommets", raccourci: "Shift+S", iconeSymbolique: "studio-snap-vertex", groupe: "accrochage", ecrit: false, bascule: true },
   { id: "accrochage-grille", libelleFR: "Accrocher à la grille", raccourci: "F9", iconeSymbolique: "studio-snap-grid", groupe: "accrochage", ecrit: false, bascule: true },
   { id: "exporter-svg", libelleFR: "Exporter SVG", raccourci: "Shift+V", iconeSymbolique: "studio-export-svg", groupe: "export", ecrit: false, telechargement: "svg" },
   { id: "exporter-dxf", libelleFR: "Exporter DXF", raccourci: "Shift+X", iconeSymbolique: "studio-export-dxf", groupe: "export", ecrit: false, telechargement: "dxf" },
+  // IFC4X3 des seuls objets extrudés (Maj+I : I comme IFC, libre et non réservé).
+  { id: "exporter-ifc", libelleFR: "Exporter IFC", raccourci: "Shift+I", iconeSymbolique: "studio-export-ifc", groupe: "export", ecrit: false, telechargement: "ifc" },
   { id: "outils", libelleFR: "Outils", raccourci: "Shift+O", iconeSymbolique: "studio-catalog", groupe: "catalogue", ecrit: false },
   { id: "palette", libelleFR: "Palette de commandes", raccourci: "Ctrl+K", iconeSymbolique: "studio-palette", groupe: "catalogue", ecrit: false, dansUnChamp: true },
 ] as const);
@@ -66,6 +70,7 @@ export const BARRES_STUDIO: readonly { id: BarreStudio; libelleFR: string }[] = 
   { id: "dessin", libelleFR: "Dessin" },
   { id: "modification", libelleFR: "Modification" },
   { id: "calques", libelleFR: "Calques" },
+  { id: "volume", libelleFR: "Volume" },
   { id: "edition", libelleFR: "Édition" },
   { id: "vue", libelleFR: "Vue" },
   { id: "accrochage", libelleFR: "Accrochage" },

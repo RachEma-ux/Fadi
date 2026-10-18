@@ -1,0 +1,4 @@
+.studio-vue3d{background:#fff;border:1px solid #d9e2e5;box-shadow:0 6px 20px #153b4310;padding:10px}
+.studio-vue3d-bandeau{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;font-size:12px;color:#4f666d;margin-bottom:8px}
+.studio-vue3d-hote{width:100%;min-height:240px}
+.studio-vue3d-hote canvas{display:block;width:100%;touch-action:none}

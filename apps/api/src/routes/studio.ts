@@ -61,7 +61,7 @@ studioRouter.get("/studies/:studyId/variants/:variantId", endpoint(async (req, r
 studioRouter.get("/studies/:studyId/variants/:variantId/revisions/:revisionId", endpoint(async (req, res) => {
   res.json(await readStudioContext(db, scope(req), req.user!.id, req.params["revisionId"] as string));
 }));
-/** Fichier SVG ou DXF d'une révision (tête par défaut) ; droits et refus identiques à la lecture de la variante. */
+/** Fichier SVG, DXF ou IFC d'une révision (tête par défaut) ; droits et refus identiques à la lecture de la variante. */
 studioRouter.get("/studies/:studyId/variants/:variantId/export", endpoint(async (req, res) => {
   const parsed = exportSchema.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
@@ -73,7 +73,7 @@ studioRouter.get("/studies/:studyId/variants/:variantId/export", endpoint(async 
   res.setHeader("X-Content-Type-Options", "nosniff");
   // Un SVG ouvert directement n'exécute aucun script et ne charge aucune ressource.
   if (file.format === "svg") res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
-  // Tampon : Express n'ajoute pas de charset au type déclaré (le DXF est de l'ASCII strict).
+  // Tampon : Express n'ajoute pas de charset au type déclaré (le DXF et l'IFC sont de l'ASCII strict).
   res.status(200).send(Buffer.from(file.body, "utf8"));
 }));
 studioRouter.post("/studies/:studyId/variants/:variantId/commands", endpoint(async (req, res) => {

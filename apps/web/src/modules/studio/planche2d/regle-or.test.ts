@@ -36,7 +36,7 @@ function evenement(r: string) {
   return { key, ctrlKey: parts.includes("Ctrl"), metaKey: false, shiftKey, altKey: false };
 }
 
-const LIENS = { "exporter-svg": "/projects/p/studio/studies/s/variants/v/export?format=svg", "exporter-dxf": "/projects/p/studio/studies/s/variants/v/export?format=dxf" };
+const LIENS = { "exporter-svg": "/projects/p/studio/studies/s/variants/v/export?format=svg", "exporter-dxf": "/projects/p/studio/studies/s/variants/v/export?format=dxf", "exporter-ifc": "/projects/p/studio/studies/s/variants/v/export?format=ifc" };
 const barre = () => renderToStaticMarkup(createElement(BarreOutils, {
   outil: "studio.dessin.selection", outilDisponible: () => true, commandeDisponible: () => true, surOutil: () => {}, surCommande: () => {},
   basculeActive: { "accrochage-sommets": true, "accrochage-grille": false }, lienCommande: LIENS,
@@ -60,7 +60,7 @@ describe("Planche 2D de Studio — règle d'or", () => {
     for (const b of BARRES_STUDIO) expect(outilsDeBarre(b.id).length + commandesDeBarre(b.id).length, b.id).toBeGreaterThan(0);
     expect(STUDIO_TOOLS.filter((t) => t.nature === "mutation").map((t) => t.toolId)).toEqual([...STUDIO_COMMAND_TOOL_IDS]);
     // Vue, accrochage, exports et catalogue : les commandes livrées avec la sélection multiple et le zoom.
-    for (const id of ["tout-selectionner", "zoom-avant", "zoom-arriere", "accrochage-sommets", "accrochage-grille", "exporter-svg", "exporter-dxf", "outils", "palette"]) {
+    for (const id of ["tout-selectionner", "zoom-avant", "zoom-arriere", "accrochage-sommets", "accrochage-grille", "exporter-svg", "exporter-dxf", "exporter-ifc", "outils", "palette"]) {
       expect(COMMANDES_EDITEUR.some((c) => c.id === id), id).toBe(true);
     }
   });
@@ -91,6 +91,17 @@ describe("Planche 2D de Studio — règle d'or", () => {
     expect(cibleRaccourci("=")).toEqual({ type: "commande", id: "zoom-avant" });
     expect(cibleRaccourci("-")).toEqual({ type: "commande", id: "zoom-arriere" });
     expect(cibleRaccourci("Ctrl+A")).toEqual({ type: "commande", id: "tout-selectionner" });
+    // Volume et vue 3D : Maj+E extrude, Maj+F aplatit, Maj+D bascule la vue 3D (F3, réservé, n'est jamais pris).
+    expect(cibleRaccourci("Shift+E")).toEqual({ type: "outil", toolId: "studio.objet.extruder" });
+    expect(cibleRaccourci("Shift+F")).toEqual({ type: "outil", toolId: "studio.objet.aplatir" });
+    expect(cibleRaccourci("Shift+D")).toEqual({ type: "commande", id: "vue-3d" });
+    expect(cibleRaccourci("F3")).toBeNull();
+    // Export IFC : Maj+I, Ctrl+Maj+I (outils de développement) reste au navigateur.
+    expect(cibleRaccourci("Shift+I")).toEqual({ type: "commande", id: "exporter-ifc" });
+    expect(cibleRaccourci("Ctrl+Shift+I")).toBeNull();
+    expect(COMMANDES_EDITEUR.find((c) => c.id === "exporter-ifc")).toMatchObject({ groupe: "export", ecrit: false, telechargement: "ifc", iconeSymbolique: "studio-export-ifc" });
+    expect(outilsDeBarre("volume").map((t) => t.toolId)).toEqual(["studio.objet.extruder", "studio.objet.aplatir"]);
+    expect(COMMANDES_EDITEUR.find((c) => c.id === "vue-3d")).toMatchObject({ groupe: "vue", bascule: true, ecrit: false, iconeSymbolique: "studio-view-3d" });
     // Dans un champ de saisie, seuls Enregistrer et la palette restent actifs.
     expect(actifDansUnChamp("Ctrl+S")).toBe(true);
     expect(actifDansUnChamp("Ctrl+K")).toBe(true);
@@ -122,6 +133,7 @@ describe("Planche 2D de Studio — règle d'or", () => {
       expect(html).toMatch(new RegExp(`<a [^>]*href="${echapper(href.replace(/&/g, "&amp;"))}"[^>]*download=""[^>]*data-studio-commande="${id}"`));
     }
     expect(studioExportUrl("p", "s", "v", "svg")).toBe(LIENS["exporter-svg"]);
+    expect(studioExportUrl("p", "s", "v", "ifc")).toBe(LIENS["exporter-ifc"]);
     expect(studioExportUrl("p 1", "s", "v", "dxf", "r/1")).toBe("/projects/p%201/studio/studies/s/variants/v/export?format=dxf&revision=r%2F1");
     // Indisponible : ni adresse ni téléchargement.
     const inactif = renderToStaticMarkup(createElement(BarreOutils, { outil: "studio.dessin.selection", outilDisponible: () => true, commandeDisponible: () => false, surOutil: () => {}, surCommande: () => {}, lienCommande: LIENS }));
