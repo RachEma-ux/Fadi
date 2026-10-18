@@ -57,8 +57,26 @@
       "commande": "script node ponctuel : résolution par path.resolve de chaque import relatif statique ou dynamique littéral de apps/web/src et apps/api/src",
       "resultat": "877 imports relatifs analysés ; 0 résolu dans l'application interdite",
       "lecture": "le faux négatif E2 n'est exploité par aucun import actuel ; le garde reste à corriger pour l'avenir"
+    },
+    {
+      "id": "E6",
+      "cible": "copie isolée, script de la PR #152 (tête f2777230e3e9c3bd6a2a5f61e2147acd1fba4b38), typescript du dépôt lié",
+      "fichier": "apps/web/src/relatif.ts",
+      "contenu": "import { x } from \"../../api/src/interne\";",
+      "code_sortie": 1,
+      "sortie": "FORBIDDEN_BOUNDARY : @fadi/web -> @fadi/api (../../api/src/interne) ; plus EMPTY_SCOPE propre à la copie sans paquet",
+      "lecture": "le faux négatif E2 est corrigé par la PR #152 non fusionnée"
+    },
+    {
+      "id": "E7",
+      "cible": "copie isolée, script de la PR #152",
+      "fichier": "apps/web/src/modules/studio/a.ts",
+      "contenu": "import { y } from \"../atelier/nouveau/interne\";",
+      "code_sortie": 1,
+      "sortie": "seule violation : EMPTY_SCOPE propre à la copie ; aucun signalement de l'import entre modules web",
+      "lecture": "#152 n'introduit pas de frontière entre modules web ; règles Studio à ajouter"
     }
   ],
-  "correctif_propose_non_applique": "Résoudre chaque spécificateur relatif par rapport au fichier importateur (path.resolve(dirname(file), spec)) puis refuser toute cible située sous le dossier de l'application interdite ; ajouter un test node --test couvrant E1, E2 et un cas licite. Lot de code à autoriser (A3), CI à ajuster par A6 si nécessaire.",
-  "limite": "E1–E4 sur copie isolée ; E5 montre qu'aucun import relatif actuel ne franchit la frontière web/api (imports par gabarit non couverts). Aucun test applicatif, aucune recette NAV."
+  "correctif_propose_non_applique": "Déjà couvert par la PR #152 (résolution TypeScript/path.resolve, E6). Si #152 n'est pas retenue : résoudre chaque spécificateur relatif par rapport au fichier importateur puis refuser toute cible sous l'application interdite, avec test. Dans les deux cas, les frontières entre modules web pour Studio (E3/E7) restent à décider et tester.",
+  "limite": "E1–E4, E6–E7 sur copies isolées ; E5 montre qu'aucun import relatif actuel ne franchit la frontière web/api (imports par gabarit non couverts). PR #152 lue et exécutée hors dépôt, non modifiée. Aucun test applicatif, aucune recette NAV."
 }

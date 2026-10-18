@@ -108,7 +108,7 @@ Contrôles exécutés (non destructifs ; détail dans [`REP-07-ESSAIS.json`](REP
 
 Constats :
 
-- **E2 est un faux négatif réel du garde existant.** Un chemin relatif qui ne contient pas la chaîne `apps/api` échappe au contrôle, même s'il se résout dans `apps/api`. Correctif proposé pour un lot autorisé (A3/A6), **non appliqué** : résoudre le chemin relatif par rapport au fichier (`path.resolve(dirname(file), spec)`), puis comparer au dossier interdit.
+- **E2 est un faux négatif réel du garde existant.** Un chemin relatif qui ne contient pas la chaîne `apps/api` échappe au contrôle, même s'il se résout dans `apps/api`. Correctif : **déjà couvert par la PR #152** (essai E6 ci-dessous) ; à défaut de #152, un lot autorisé (A3/A6), **non appliqué ici**, pourrait résoudre le chemin relatif par rapport au fichier (`path.resolve(dirname(file), spec)`), puis comparer au dossier interdit.
 - **E3.** Il n'existe aucune frontière entre modules de `apps/web`. Le Plan §2.1 le dit (« ne garantit pas à lui seul toutes les frontières »). Règles candidates pour Studio, à décider : `modules/studio/**` n'importe pas les internes de `modules/atelier/nouveau/**` ni de `modules/parcours/**`, seulement des contrats publics déclarés ; tout nouveau paquet `packages/studio-*` a un manifeste ; les moteurs passent par leurs interfaces publiques (orientation DEC-18). Chaque règle doit être accompagnée de son test.
 - **Tests.** `scripts/` n'a aucun test propre à ce script ; seul `check-continuity` en a un.
 
@@ -122,6 +122,17 @@ Constats :
    Ces contrôles prouvent la **forme** des dossiers, pas la véracité de leur contenu ; le README le dit lui-même.
 3. **Application concrète dans cette tâche.** Le travail a été annoncé dans #166 avant exécution. Il est livré sur une branche courte et dans un dossier séparé, sans écrire `STATUS`, `HANDOFF` ni le registre, dont A0 est propriétaire unique. Un delta de registre est proposé à A0 ([`DELTA-REGISTRE-PROPOSE.json`](DELTA-REGISTRE-PROPOSE.json)). Les trois états « Implémenté / Vérifié / Accepté » restent distincts : rien n'est « Accepté ».
 4. **Limite rappelée par le README.** `main` n'était pas protégé lors de l'audit. Le ruleset relève d'une décision administrative (Q-M003-D05) et n'est pas traité ici.
+
+## Impact des PR ouvertes #142 et #152 (non modifiées)
+
+Ce point répond au critère proposé par la [qualification des 203 tâches](https://github.com/RachEma-ux/Fadi/blob/6b6139007c532d06a54ca99578967c7a451c321b/docs/ai-team/reports/qualification-203/definitions-203.json) : « analyser l'impact sur #142/#152 sans modifier ces PR ».
+
+| PR | État observé le 18/10 | Fichiers examinés touchés | Impact sur les constats |
+|---|---|---|---|
+| [#142](https://github.com/RachEma-ux/Fadi/pull/142) « gabarit pleine largeur et barre des modules commune » | ouverte, non fusionnée ; tête `0d96060…`, base `3bcda929` (en retard de 98 commits sur `main`), `mergeable_state: unstable` | `use-immersive.ts`, `ProjectShell.tsx`, `ProjectModuleNav.tsx` | **REP-05 :** la PR renomme la classe en `atelier-workspace` et supprime le masquage automatique de l'enveloppe (« must NOT hide Fadi's header, rail or module navigation »). Elle ajoute une mesure de hauteur par `ResizeObserver`. Si elle est fusionnée, le risque NAV-008 de REP-05 disparaît pour l'Atelier, mais le drapeau reste global et sans compteur. **REP-04 :** une seule `ProjectModuleNav`, placée avant les métadonnées, y compris sur l'accueil du projet. Les points 1 à 3 de REP-04 restent à relire sur sa tête. |
+| [#152](https://github.com/RachEma-ux/Fadi/pull/152) « L1 — renforcer les garde-fous de l'architecture native » | brouillon, non fusionnée ; tête `f277723…`, base `5cf61d1` | `scripts/check-module-deps.mjs` (+165 / −80) | **REP-07 :** la réécriture résout les imports avec `ts.resolveModuleName` ou `path.resolve`. **Essai E6** (copie isolée, script de #152) : l'import relatif E2 est détecté (`FORBIDDEN_BOUNDARY : @fadi/web -> @fadi/api`). **Essai E7 :** l'import entre modules web E3 n'est **pas** détecté. Le faux négatif E2 est donc déjà traité par #152 : le correctif proposé plus haut devient inutile si #152 est fusionnée. Les frontières propres à Studio restent à ajouter dans tous les cas. |
+
+Ni #142 ni #152 n'ont été modifiées, relancées ni commentées. Leur fusion reste une décision du propriétaire.
 
 ## Ce que ces sept tâches ne prouvent pas
 

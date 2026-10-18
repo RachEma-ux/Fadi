@@ -189,7 +189,7 @@
       "blocage": {
         "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture de check-module-deps.mjs et essais E0–E5 exécutés : conforme au dépôt, faux négatif des imports relatifs sans « apps/api » démontré sur copie isolée, 0 occurrence actuelle.",
+        "essais_effectues": "Lecture de check-module-deps.mjs et essais E0–E7 exécutés : conforme au dépôt, faux négatif des imports relatifs sans « apps/api » démontré sur copie isolée (0 occurrence actuelle), corrigé par la PR #152 non fusionnée ; impacts #142/#152 analysés sans les modifier.",
         "deblocage": null
       },
       "suite": "Relire au commit de réalisation du lot I ; les options et règles candidates alimentent ROUTE-09 / ADR-01 sans les trancher.",
@@ -200,7 +200,7 @@
           "section": "REP-07",
           "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
           "auteur": "Claude Code (hors équipe Codex), annonce #166 6250697907",
-          "constat": "Lecture de check-module-deps.mjs et essais E0–E5 exécutés : conforme au dépôt, faux négatif des imports relatifs sans « apps/api » démontré sur copie isolée, 0 occurrence actuelle.",
+          "constat": "Lecture de check-module-deps.mjs et essais E0–E7 exécutés : conforme au dépôt, faux négatif des imports relatifs sans « apps/api » démontré sur copie isolée (0 occurrence actuelle), corrigé par la PR #152 non fusionnée ; impacts #142/#152 analysés sans les modifier.",
           "limite": "Condition d’examen documentaire seulement ; aucune conformité Studio, aucune recette NAV/E2E exécutée, aucune case source cochée ; revue A2/A5 et intégration A0 requises."
         },
         {

@@ -13,7 +13,7 @@ L'équipe Codex était à P630 = 34/630. Ses agents étaient occupés par les re
 | Fichier | Rôle |
 |---|---|
 | [`REP-02-08-CONSTATS.md`](REP-02-08-CONSTATS.md) | Constats REP-02 à REP-08 avec liens ligne par ligne au `817bd36`. Blobs identiques au REP-01 `5cf61d1`. |
-| [`REP-07-ESSAIS.json`](REP-07-ESSAIS.json) | Essais E0 à E5 de `check-module-deps.mjs`. Un faux négatif est démontré (import relatif vers `apps/api` non détecté), avec 0 occurrence actuelle. |
+| [`REP-07-ESSAIS.json`](REP-07-ESSAIS.json) | Essais E0 à E7 de `check-module-deps.mjs`. Un faux négatif est démontré (import relatif vers `apps/api` non détecté), avec 0 occurrence actuelle ; il est déjà corrigé par la PR #152, non fusionnée (E6). |
 | [`REP-09-REQUALIFICATION.md`](REP-09-REQUALIFICATION.md) et [`.json`](REP-09-REQUALIFICATION.json) | Les 14 observations de l'annexe A de REF-02, requalifiées. La lecture statique et les tests exécutés sont séparés. |
 | [`DELTA-REGISTRE-PROPOSE.json`](DELTA-REGISTRE-PROPOSE.json) | Delta proposé pour le registre 630. Il est **non appliqué** ; A0 l'intègre ou le rejette après revue. |
 | [`../../tableau_registre.py`](../../tableau_registre.py) et [`test_tableau_registre.py`](../../test_tableau_registre.py) | Outil de compteurs, de contrôle de cohérence et d'intégration de delta, avec 11 tests unitaires. |
@@ -27,7 +27,7 @@ L'équipe Codex était à P630 = 34/630. Ses agents étaient occupés par les re
 | REP-04 | À définir | Vérifié (examen documentaire) | lecture statique |
 | REP-05 | À définir | Vérifié (examen documentaire) | lecture statique ; E2E citée mais non exécutée |
 | REP-06 | À définir | Vérifié (examen documentaire) | lecture statique ; options a/b/c non tranchées |
-| REP-07 | À définir | Vérifié (examen documentaire) | lecture + 6 essais exécutés |
+| REP-07 | À définir | Vérifié (examen documentaire) | lecture + 8 essais exécutés (dont 2 sur le script de #152) |
 | REP-08 | À définir | Vérifié (examen documentaire) | lecture + `check-continuity` et 8/8 tests exécutés |
 | REP-09 | À définir | Vérifié (examen documentaire) | lecture statique des 14 OBS (13 confirmées, OBS-11 partielle) + 198 tests unitaires purs exécutés |
 
@@ -38,8 +38,9 @@ Si A0 intègre le delta tel quel, le registre passe de 34 à 42 conditions véri
 1. **REP-06.** Ajouter `studio` à `MODULES` ferait passer Studio par `ProjectShell`, ce que NAV-002 et le Plan §2.1 excluent. L'entrée globale demande un mécanisme distinct, à décider dans ROUTE-09 / ADR-01.
 2. **REP-05.** La classe `atelier-immersive` masque la barre latérale. C'est un drapeau global sans compteur. Studio ne doit pas la réutiliser (NAV-008).
 3. **REP-04.** `ProjectShell` interroge toujours les étapes du Parcours. En revanche, l'accès, la synchronisation, les verrous et les conflits sont déjà réutilisables sans lui.
-4. **REP-07.** Le garde web↔api se contourne par un chemin relatif. Un correctif est proposé pour un lot de code autorisé (A3/A6) ; il n'est pas appliqué.
+4. **REP-07.** Le garde web↔api se contourne par un chemin relatif. La PR #152 (brouillon) le corrige déjà (E6), mais n'ajoute aucune frontière entre modules web (E7) : les règles propres à Studio restent à décider.
 5. **REP-02.** Le repli `*` envoie vers `/accueil` sans message, et il n'y a aucune `ErrorBoundary` autour des morceaux chargés à la demande. Les deux points sont à couvrir par NAV-004 et NAV-008.
+6. **#142 / #152.** La PR #142, ouverte et en retard de 98 commits sur `main`, supprime le masquage automatique de l'enveloppe (REP-05) et réorganise `ProjectShell` (REP-04). Si elle est fusionnée, REP-04 et REP-05 sont à relire sur sa tête. Détail dans [`REP-02-08-CONSTATS.md`](REP-02-08-CONSTATS.md#impact-des-pr-ouvertes-142-et-152-non-modifiées).
 
 ## Pour A0 : intégrer en une commande
 
