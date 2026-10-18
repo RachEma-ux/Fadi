@@ -103,6 +103,15 @@ const MESSAGES_REFUS = {
   variante: "Variante introuvable, ou vous n’y avez pas accès.",
 } as const;
 
+/** Erreur de chargement qui n'est pas un refus (serveur, réseau) : on propose de réessayer, sans conclure à l'absence d'accès. */
+const ErreurChargement = ({ surReessai }: { surReessai: () => void }) => (
+  <section className="panel" role="alert" data-studio-erreur-chargement>
+    <h1>Chargement impossible pour le moment.</h1>
+    <p>Le serveur n’a pas répondu ; aucune donnée n’a été modifiée.</p>
+    <button type="button" onClick={surReessai}>Réessayer</button>
+  </section>
+);
+
 const Refus = ({ quoi }: { quoi: keyof typeof MESSAGES_REFUS }) => (
   <section className="panel" role="alert" data-studio-refus>
     <h1>{MESSAGES_REFUS[quoi]}</h1>
@@ -161,6 +170,7 @@ function StudioProjet({ projectId }: { projectId: string }) {
   const projet = useProjetStudio(projectId);
   const etudes = useQuery({ queryKey: ["studio-etudes", projectId], queryFn: () => api.listEtudesStudio(projectId), enabled: !!projet.data && !denied(projet.error), staleTime: 30_000 });
   if (projet.isPending) return <p role="status">Chargement du projet…</p>;
+  if (projet.error && !denied(projet.error) && !projet.data) return <ErreurChargement surReessai={() => void projet.refetch()} />;
   if (!projet.data || denied(projet.error)) return <Refus quoi="projet" />;
   const p = projet.data;
   const role = p.role ?? "proprietaire";
@@ -235,7 +245,9 @@ function StudioEtude({ projectId, etudeId }: { projectId: string; etudeId: strin
   const projet = useProjetStudio(projectId);
   const etude = useEtudeStudio(projectId, etudeId);
   if (projet.isPending || etude.isPending) return <p role="status">Chargement de l’étude…</p>;
+  if (projet.error && !denied(projet.error) && !projet.data) return <ErreurChargement surReessai={() => void projet.refetch()} />;
   if (!projet.data || denied(projet.error)) return <Refus quoi="projet" />;
+  if (etude.error && !denied(etude.error) && !etude.data) return <ErreurChargement surReessai={() => void etude.refetch()} />;
   if (!etude.data || denied(etude.error)) return <Refus quoi="etude" />;
   const e = etude.data;
   return (
@@ -319,8 +331,11 @@ function StudioVariante({ projectId, etudeId, variantId, domaine, planche, revis
   const etude = useEtudeStudio(projectId, etudeId);
   const variante = useVarianteStudio(projectId, etudeId, variantId);
   if (projet.isPending || etude.isPending || variante.isPending) return <p role="status">Chargement de la variante…</p>;
+  if (projet.error && !denied(projet.error) && !projet.data) return <ErreurChargement surReessai={() => void projet.refetch()} />;
   if (!projet.data || denied(projet.error)) return <Refus quoi="projet" />;
+  if (etude.error && !denied(etude.error) && !etude.data) return <ErreurChargement surReessai={() => void etude.refetch()} />;
   if (!etude.data || denied(etude.error)) return <Refus quoi="etude" />;
+  if (variante.error && !denied(variante.error) && !variante.data) return <ErreurChargement surReessai={() => void variante.refetch()} />;
   if (!variante.data || denied(variante.error)) return <Refus quoi="variante" />;
   const v = variante.data;
   return (
