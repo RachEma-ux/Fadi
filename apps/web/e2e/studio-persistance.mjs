@@ -129,7 +129,7 @@ if (PHASE === 'reopen') {
   const expectedOrder = [s.variantId, variantB.body?.variant?.id, variantC.body?.variant?.id];
   const variants = await owner('GET', `${studyPath}/variants`);
   check('variantes listées : initiale d\'abord puis ordre de création', variants.status === 200 && JSON.stringify(variants.body.variants.map((x) => x.id)) === JSON.stringify(expectedOrder), JSON.stringify(variants.body).slice(0, 300));
-  check('variantes listées : forme { id, name, headRevisionId }', variants.body?.variants?.every((x) => Object.keys(x).sort().join() === 'headRevisionId,id,name'));
+  check('variantes listées : forme { id, name, headRevisionId, archived, derivedFrom }', variants.body?.variants?.every((x) => Object.keys(x).sort().join() === 'archived,derivedFrom,headRevisionId,id,name' && x.archived === false && x.derivedFrom === null));
   const studyAgain = await owner('GET', studyPath);
   check('étude relue : même ordre de variantes', JSON.stringify(studyAgain.body?.variants) === JSON.stringify(variants.body?.variants));
   const commandOnB = await owner('POST', `${root}/${s.studyId}/variants/${variantB.body.variant.id}/commands`, { contractVersion: 'studio-commands/1', requestId: `recette-${randomUUID()}`, baseRevisionId: variantB.body.revision.id, commands: [{ toolId: 'studio.dessin.ligne', params: { id: 'ligne-b', type: 'line', start: { x: 0, y: 0 }, end: { x: 1, y: 1 } } }] });
@@ -387,6 +387,112 @@ if (PHASE === 'reopen') {
   check('études d\'une étape : autre compte refusé (403/404), anonyme 401', [403, 404].includes((await ofStep(foreign, 2)).status) && (await ofStep(anonymous, 2)).status === 401);
   check('études d\'une étape : les liens d\'un projet ne fuient pas dans un autre', (await ofStep(foreign, 2, foreignProject.body?.id)).body?.studies?.length === 0);
   const linkedSteps = (await owner('GET', stepsPath)).body?.steps?.map((x) => x.number);
+
+  // Cycle de vie (étude dédiée, l'étude de recette reste intacte pour la réouverture) : dérivation d'une révision passée,
+  // renommage, archivage sans suppression (masqué des listes, lisible par son adresse, commandes refusées 409), désarchivage.
+  const life = await owner('POST', root, { name: 'Étude cycle de vie' });
+  const lifePath = `${root}/${life.body?.study?.id}`;
+  const lv = { projectId, studyId: life.body?.study?.id, variantId: life.body?.variant?.id };
+  const cmd = (base, commands) => ({ contractVersion: 'studio-commands/1', requestId: `recette-${randomUUID()}`, baseRevisionId: base, commands });
+  const l1 = await owner('POST', `${variantPath(lv)}/commands`, cmd(life.body?.revision?.id, [
+    { toolId: 'studio.dessin.ligne', params: { id: 'cv-ligne', type: 'line', start: { x: 0, y: 0 }, end: { x: 4, y: 0 } } },
+    { toolId: 'studio.dessin.rectangle', params: { id: 'cv-rect', type: 'rectangle', origin: { x: 0, y: 1 }, width: 2, height: 1 } },
+  ]));
+  const l2 = await owner('POST', `${variantPath(lv)}/commands`, cmd(l1.body?.revision?.id, [{ toolId: 'studio.dessin.deplacer', params: { id: 'cv-ligne', dx: 3, dy: 0 } }]));
+  check('cycle de vie : étude et deux révisions enregistrées', life.status === 201 && l1.status === 200 && l2.status === 200, `${life.status} ${l1.status} ${l2.status}`);
+  const pastRevision = await owner('GET', `${variantPath(lv)}/revisions/${l1.body?.revision?.id}`);
+  const deriveRequestId = `derivation-${randomUUID()}`;
+  const deriveBody = { name: '  Variante dérivée  ', fromVariantId: lv.variantId, fromRevisionId: l1.body?.revision?.id, requestId: deriveRequestId };
+  const derived = await owner('POST', `${lifePath}/variants`, deriveBody);
+  check('dérivation d\'une révision passée (201) : document identique à cette révision, mêmes identifiants d\'objets, sans parent',
+    derived.status === 201 && derived.body.replayed === false && derived.body.variant.name === 'Variante dérivée' && derived.body.revision.parentRevisionId === null
+    && canonical(derived.body.revision.document) === canonical(pastRevision.body?.revision?.document) && JSON.stringify(derived.body.revision.document.objects.map((o) => o.id)) === JSON.stringify(['cv-ligne', 'cv-rect'])
+    && derived.body.revision.document.objects.find((o) => o.id === 'cv-ligne')?.end.x === 4, `${derived.status} ${JSON.stringify(derived.body).slice(0, 300)}`);
+  check('dérivation : provenance renvoyée (variante et révision sources)', JSON.stringify(derived.body?.derivedFrom) === JSON.stringify({ variantId: lv.variantId, revisionId: l1.body?.revision?.id }));
+  const dv = { ...lv, variantId: derived.body?.variant?.id };
+  const derivedRead = await owner('GET', variantPath(dv));
+  check('dérivation : variante relue avec sa provenance, active et modifiable', derivedRead.status === 200 && JSON.stringify(derivedRead.body.derivedFrom) === JSON.stringify(derived.body.derivedFrom) && derivedRead.body.archived === false && derivedRead.body.canWrite === true && canonical(derivedRead.body.revision.document) === canonical(pastRevision.body?.revision?.document));
+  const derivedHistory = await owner('GET', `${variantPath(dv)}/revisions`);
+  check('dérivation : une seule révision, source variant-derivation', derivedHistory.status === 200 && derivedHistory.body.revisions.length === 1 && derivedHistory.body.revisions[0].source === 'variant-derivation' && derivedHistory.body.revisions[0].parentRevisionId === null, JSON.stringify(derivedHistory.body));
+  const lifeVariants = await owner('GET', `${lifePath}/variants`);
+  check('dérivation : provenance dans la liste des variantes', JSON.stringify(lifeVariants.body?.variants?.find((x) => x.id === dv.variantId)?.derivedFrom) === JSON.stringify(derived.body?.derivedFrom) && lifeVariants.body.variants[0].derivedFrom === null);
+  check('dérivation : la variante source est inchangée', (await owner('GET', variantPath(lv))).body?.revision?.id === l2.body?.revision?.id);
+  const derivedAgain = await owner('POST', `${lifePath}/variants`, deriveBody);
+  check('dérivation rejouée (même requestId) : 201, mêmes identifiants, replayed=true', derivedAgain.status === 201 && derivedAgain.body.replayed === true && derivedAgain.body.variant.id === dv.variantId && derivedAgain.body.revision.id === derived.body.revision.id);
+  check('dérivation rejouée avec une autre révision source : 409 request_conflict', (await owner('POST', `${lifePath}/variants`, { ...deriveBody, fromRevisionId: l2.body?.revision?.id })).body?.error === 'request_conflict');
+  check('dérivation rejouée sans source : 409 request_conflict', (await owner('POST', `${lifePath}/variants`, { name: 'Variante dérivée', requestId: deriveRequestId })).body?.error === 'request_conflict');
+  check('variante simple rejouée en dérivation : 409 request_conflict', (await owner('POST', `${idealStudyPath}/variants`, { name: 'Variante idempotente', requestId: variantRequestId, fromVariantId: ideal.body.variant.id })).body?.error === 'request_conflict');
+  const fromHead = await owner('POST', `${lifePath}/variants`, { name: 'Dérivée de la tête', fromVariantId: lv.variantId });
+  check('dérivation sans révision : tête de la source copiée', fromHead.status === 201 && fromHead.body.derivedFrom?.revisionId === l2.body?.revision?.id && fromHead.body.revision.document.objects.find((o) => o.id === 'cv-ligne')?.end.x === 7, JSON.stringify(fromHead.body).slice(0, 200));
+  check('dérivation : fromRevisionId sans fromVariantId → 400', (await owner('POST', `${lifePath}/variants`, { name: 'X', fromRevisionId: l1.body?.revision?.id })).status === 400);
+  check('dérivation : identifiant source mal formé → 400', (await owner('POST', `${lifePath}/variants`, { name: 'X', fromVariantId: 'pas valide !' })).status === 400);
+  check('dérivation : variante d\'une autre étude du même projet → 404', (await owner('POST', `${lifePath}/variants`, { name: 'X', fromVariantId: s.variantId })).status === 404);
+  check('dérivation : révision d\'une autre variante → 404', (await owner('POST', `${lifePath}/variants`, { name: 'X', fromVariantId: lv.variantId, fromRevisionId: moved.body.revision.id })).status === 404);
+  check('dérivation : révision inconnue → 404', (await owner('POST', `${lifePath}/variants`, { name: 'X', fromVariantId: lv.variantId, fromRevisionId: 'studio_revision_inconnue' })).status === 404);
+  check('dérivation : variante d\'un autre projet → 404', (await owner('POST', `${lifePath}/variants`, { name: 'X', fromVariantId: foreignStudy.body?.variant?.id })).status === 404);
+  check('dérivation : lecteur 403, autre compte 403/404, anonyme 401', (await reader('POST', `${lifePath}/variants`, { name: 'X', fromVariantId: lv.variantId })).status === 403 && [403, 404].includes((await foreign('POST', `${lifePath}/variants`, { name: 'X', fromVariantId: lv.variantId })).status) && (await anonymous('POST', `${lifePath}/variants`, { name: 'X', fromVariantId: lv.variantId })).status === 401);
+  const onDerivedEnvelope = cmd(derived.body?.revision?.id, [{ toolId: 'studio.dessin.deplacer', params: { id: 'cv-rect', dx: 0, dy: 1 } }]);
+  const onDerived = await owner('POST', `${variantPath(dv)}/commands`, onDerivedEnvelope);
+  check('variante dérivée : commande acceptée, source intacte', onDerived.status === 200 && (await owner('GET', variantPath(lv))).body?.revision?.id === l2.body?.revision?.id);
+
+  // Renommage.
+  const renamed = await owner('PATCH', lifePath, { name: '  Étude renommée  ' });
+  check('renommage d\'étude (200) : nom épuré, date de création conservée, updatedAt ISO', renamed.status === 200 && renamed.body.study.name === 'Étude renommée' && isIso(renamed.body.study.updatedAt) && renamed.body.study.createdAt === (await owner('GET', root)).body?.studies?.find((x) => x.id === lv.studyId)?.createdAt, `${renamed.status} ${JSON.stringify(renamed.body).slice(0, 200)}`);
+  check('renommage d\'étude : relu dans la liste et dans la variante', (await owner('GET', root)).body?.studies?.find((x) => x.id === lv.studyId)?.name === 'Étude renommée' && (await owner('GET', variantPath(lv))).body?.study?.name === 'Étude renommée');
+  const renamedVariant = await owner('PATCH', variantPath(dv), { name: 'Dérivée renommée' });
+  check('renommage de variante (200)', renamedVariant.status === 200 && renamedVariant.body.variant.name === 'Dérivée renommée' && renamedVariant.body.variant.id === dv.variantId && (await owner('GET', variantPath(dv))).body?.variant?.name === 'Dérivée renommée', JSON.stringify(renamedVariant.body));
+  check('renommage : éditeur autorisé', (await editor('PATCH', variantPath(dv), { name: 'Dérivée renommée' })).status === 200);
+  check('renommage : nom vide, trop long, champ inconnu → 400', (await owner('PATCH', lifePath, { name: '  ' })).status === 400 && (await owner('PATCH', lifePath, { name: 'x'.repeat(201) })).status === 400 && (await owner('PATCH', variantPath(dv), { name: 'X', extra: 1 })).status === 400);
+  check('renommage : lecteur 403, autre compte 403/404, anonyme 401', (await reader('PATCH', lifePath, { name: 'Lecteur' })).status === 403 && (await reader('PATCH', variantPath(dv), { name: 'Lecteur' })).status === 403 && [403, 404].includes((await foreign('PATCH', lifePath, { name: 'Intrus' })).status) && (await anonymous('PATCH', lifePath, { name: 'Anonyme' })).status === 401);
+  check('renommage : variante d\'une autre étude → 404, étude d\'un autre projet → 404', (await owner('PATCH', `${lifePath}/variants/${s.variantId}`, { name: 'Croisée' })).status === 404 && (await owner('PATCH', elsewhere, { name: 'Ailleurs' })).status === 404);
+
+  // Archivage d'une variante.
+  const archivedVariant = await owner('POST', `${variantPath(dv)}/archive`);
+  check('archivage de variante (200, archived=true)', archivedVariant.status === 200 && archivedVariant.body.variant.archived === true, JSON.stringify(archivedVariant.body));
+  check('archivage de variante répété : 200, idempotent', (await owner('POST', `${variantPath(dv)}/archive`)).body?.variant?.archived === true);
+  check('variante archivée : masquée de la liste par défaut et de l\'étude', !(await owner('GET', `${lifePath}/variants`)).body?.variants?.some((x) => x.id === dv.variantId) && !(await owner('GET', lifePath)).body?.variants?.some((x) => x.id === dv.variantId));
+  const withArchives = await owner('GET', `${lifePath}/variants?archives=1`);
+  check('variante archivée : listée avec ?archives=1, badge archived', withArchives.status === 200 && withArchives.body.variants.find((x) => x.id === dv.variantId)?.archived === true && (await owner('GET', `${lifePath}?archives=1`)).body?.variants?.some((x) => x.id === dv.variantId));
+  const archivedRead = await owner('GET', variantPath(dv));
+  check('variante archivée : lecture directe 200, lecture seule', archivedRead.status === 200 && archivedRead.body.canWrite === false && archivedRead.body.archived === true && archivedRead.body.revision.id === onDerived.body?.revision?.id);
+  const refusedCmd = await owner('POST', `${variantPath(dv)}/commands`, cmd(onDerived.body?.revision?.id, [{ toolId: 'studio.dessin.deplacer', params: { id: 'cv-rect', dx: 1, dy: 0 } }]));
+  check('variante archivée : commande refusée 409 archived, tête inchangée', refusedCmd.status === 409 && refusedCmd.body?.error === 'archived' && (await owner('GET', variantPath(dv))).body?.revision?.id === onDerived.body?.revision?.id, `${refusedCmd.status} ${JSON.stringify(refusedCmd.body)}`);
+  const replayArchived = await owner('POST', `${variantPath(dv)}/commands`, onDerivedEnvelope);
+  check('variante archivée : rejeu d\'un lot déjà accepté rendu tel quel (200, replayed), rien d\'écrit', replayArchived.status === 200 && replayArchived.body?.replayed === true && replayArchived.body.revision.id === onDerived.body?.revision?.id, `${replayArchived.status} ${JSON.stringify(replayArchived.body).slice(0, 200)}`);
+  check('variante archivée : renommage refusé 409 archived', (await owner('PATCH', variantPath(dv), { name: 'Interdit' })).body?.error === 'archived');
+  check('variante archivée : historique et export toujours lisibles', (await owner('GET', `${variantPath(dv)}/revisions`)).status === 200 && (await owner('GET', `${variantPath(dv)}/export?format=svg`)).status === 200);
+  check('variante archivée : dérivation depuis une archive permise (lecture)', (await owner('POST', `${lifePath}/variants`, { name: 'Depuis une archive', fromVariantId: dv.variantId })).status === 201);
+  const initialArchive = await owner('POST', `${variantPath(lv)}/archive`);
+  check('variante initiale d\'une étude active : archivage refusé 400 initial_variant', initialArchive.status === 400 && initialArchive.body?.error === 'initial_variant', `${initialArchive.status} ${JSON.stringify(initialArchive.body)}`);
+  check('archivage : lecteur 403, autre compte 403/404, anonyme 401', (await reader('POST', `${variantPath(dv)}/unarchive`)).status === 403 && (await reader('POST', `${lifePath}/archive`)).status === 403 && [403, 404].includes((await foreign('POST', `${lifePath}/archive`)).status) && (await anonymous('POST', `${lifePath}/archive`)).status === 401);
+  check('archivage : variante d\'une autre étude → 404, étude d\'un autre projet → 404', (await owner('POST', `${lifePath}/variants/${s.variantId}/archive`)).status === 404 && (await owner('POST', `${elsewhere}/archive`)).status === 404);
+  check('listes : ?archives autre que 1 ou paramètre inconnu → 400', (await owner('GET', `${lifePath}/variants?archives=2`)).status === 400 && (await owner('GET', `${root}?x=1`)).status === 400 && (await owner('GET', `${lifePath}?archives=1&archives=1`)).status === 400);
+
+  // Archivage de l'étude.
+  const archivedStudy = await owner('POST', `${lifePath}/archive`);
+  check('archivage d\'étude (200) : archivée, lecture seule, gérable', archivedStudy.status === 200 && archivedStudy.body.study.archived === true && archivedStudy.body.canWrite === false && archivedStudy.body.canManage === true, JSON.stringify(archivedStudy.body).slice(0, 300));
+  check('étude archivée : masquée de la liste par défaut, listée avec ?archives=1', !(await owner('GET', root)).body?.studies?.some((x) => x.id === lv.studyId) && (await owner('GET', `${root}?archives=1`)).body?.studies?.find((x) => x.id === lv.studyId)?.archived === true);
+  const archivedStudyRead = await owner('GET', lifePath);
+  check('étude archivée : lecture directe 200, lecture seule', archivedStudyRead.status === 200 && archivedStudyRead.body.study.archived === true && archivedStudyRead.body.canWrite === false);
+  check('étude archivée : le lecteur la lit, sans droit de gestion', (await reader('GET', lifePath)).body?.canManage === false);
+  const initialRead = await owner('GET', variantPath(lv));
+  check('étude archivée : variante initiale lisible en lecture seule', initialRead.status === 200 && initialRead.body.canWrite === false && initialRead.body.archived === true);
+  const refusedInitial = await owner('POST', `${variantPath(lv)}/commands`, cmd(l2.body?.revision?.id, [{ toolId: 'studio.dessin.deplacer', params: { id: 'cv-ligne', dx: 1, dy: 0 } }]));
+  check('étude archivée : commande refusée 409 archived', refusedInitial.status === 409 && refusedInitial.body?.error === 'archived', `${refusedInitial.status} ${JSON.stringify(refusedInitial.body)}`);
+  check('étude archivée : création et dérivation de variante refusées 409 archived', (await owner('POST', `${lifePath}/variants`, { name: 'Interdite' })).body?.error === 'archived' && (await owner('POST', `${lifePath}/variants`, { name: 'Interdite', fromVariantId: lv.variantId })).body?.error === 'archived');
+  check('étude archivée : renommage refusé 409 archived', (await owner('PATCH', lifePath, { name: 'Interdit' })).body?.error === 'archived');
+  check('étude archivée : sa variante initiale peut alors être archivée', (await owner('POST', `${variantPath(lv)}/archive`)).body?.variant?.archived === true);
+
+  // Désarchivage.
+  const unarchivedStudy = await owner('POST', `${lifePath}/unarchive`);
+  check('désarchivage d\'étude (200) : relistée, modifiable, variante initiale réactivée', unarchivedStudy.status === 200 && unarchivedStudy.body.study.archived === false && unarchivedStudy.body.canWrite === true && unarchivedStudy.body.variants[0]?.id === lv.variantId && unarchivedStudy.body.variants[0]?.archived === false && (await owner('GET', root)).body?.studies?.some((x) => x.id === lv.studyId), JSON.stringify(unarchivedStudy.body).slice(0, 300));
+  const afterUnarchive = await owner('POST', `${variantPath(lv)}/commands`, cmd(l2.body?.revision?.id, [{ toolId: 'studio.dessin.deplacer', params: { id: 'cv-ligne', dx: 1, dy: 0 } }]));
+  check('désarchivage : commande de nouveau acceptée sur la tête', afterUnarchive.status === 200 && afterUnarchive.body.revision.parentRevisionId === l2.body?.revision?.id);
+  check('désarchivage d\'étude : la variante archivée à part le reste', !(await owner('GET', `${lifePath}/variants`)).body?.variants?.some((x) => x.id === dv.variantId));
+  const unarchivedVariant = await owner('POST', `${variantPath(dv)}/unarchive`);
+  check('désarchivage de variante : relistée, modifiable', unarchivedVariant.status === 200 && unarchivedVariant.body.variant.archived === false && (await owner('GET', `${lifePath}/variants`)).body?.variants?.some((x) => x.id === dv.variantId) && (await owner('GET', variantPath(dv))).body?.canWrite === true);
+  check('désarchivage de variante : commande acceptée', (await owner('POST', `${variantPath(dv)}/commands`, cmd(onDerived.body?.revision?.id, [{ toolId: 'studio.dessin.deplacer', params: { id: 'cv-rect', dx: 1, dy: 0 } }]))).status === 200);
+  check('cycle de vie : rien n\'a été supprimé (historique de la dérivée complet)', (await owner('GET', `${variantPath(dv)}/revisions`)).body?.revisions?.length === 3);
 
   if (STATE) writeFileSync(STATE, JSON.stringify({ ...s, commentIds, linkedSteps, owner: ownerCredentials, headRevisionId: head.body.revision.id, initialRevisionId: created.body.revision.id, documentSha256: digest(head.body.revision.document), variantIds: expectedOrder, revisionIds: ids, exportStudy: { studyId: ev.studyId, variantId: ev.variantId, svgSha256: digest(svg.text) } }), { mode: 0o600 });
 }

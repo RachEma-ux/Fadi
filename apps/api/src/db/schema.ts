@@ -613,7 +613,11 @@ export interface StudioContext {
   variant: { id: string; name: string; studyId: string; headRevisionId: string };
   revision: { id: string; parentRevisionId: string | null; document: StudioDocument };
   canWrite: boolean;
+  /** Réponse de création d'une variante : variante et révision sources d'une dérivation, null sinon. */
+  derivedFrom?: StudioProvenance | null;
 }
+/** Provenance d'une variante dérivée : variante et révision de la même étude dont le document a été copié. */
+export interface StudioProvenance { variantId: string; revisionId: string }
 
 export const studioStudies = pgTable("studio_studies", {
   id: text("id").primaryKey(),
@@ -624,6 +628,9 @@ export const studioStudies = pgTable("studio_studies", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   // Création idempotente : unique par projet quand renseigné (index partiel studio_studies_creation_request_unique, init.sql).
   creationRequestId: text("creation_request_id"),
+  // Cycle de vie : dernier renommage ou (dés)archivage ; archivée = masquée des listes, lisible, non modifiable.
+  updatedAt: timestamp("updated_at", { withTimezone: true }),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
 }, (t) => [index("studio_studies_project_idx").on(t.projectId)]);
 
 export const studioVariants = pgTable("studio_variants", {
@@ -634,6 +641,11 @@ export const studioVariants = pgTable("studio_variants", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   // Création idempotente : unique par étude quand renseigné (index partiel studio_variants_creation_request_unique, init.sql).
   creationRequestId: text("creation_request_id"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  // Provenance d'une variante dérivée (paire renseignée ensemble ; FK composite vers la révision source, init.sql).
+  derivedFromVariantId: text("derived_from_variant_id"),
+  derivedFromRevisionId: text("derived_from_revision_id"),
 }, (t) => [uniqueIndex("studio_variants_study_id_unique").on(t.studyId, t.id)]);
 
 /** Append-only : une réponse historique n'est jamais reconstruite depuis le head actuel. */
@@ -646,7 +658,7 @@ export const studioRevisions = pgTable("studio_revisions", {
   envelope: jsonb("envelope").$type<StudioEnvelope | null>(),
   requestId: text("request_id").notNull(),
   payloadHash: text("payload_hash").notNull(),
-  source: text("source").$type<"authenticated-session" | "study-initialization" | "variant-initialization">().notNull(),
+  source: text("source").$type<"authenticated-session" | "study-initialization" | "variant-initialization" | "variant-derivation">().notNull(),
   authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   response: jsonb("response").$type<StudioContext>().notNull(),

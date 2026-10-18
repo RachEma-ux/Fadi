@@ -6,13 +6,18 @@ import { requireAuth } from "../middleware/require-auth.js";
 import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioStudy, STUDIO_EXPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
 import { createStudioComment, deleteStudioComment, listStudioComments, studioCommentSchema } from "../lib/studio-commentaires.js";
 import { listStudiesOfStep, listStudioStudySteps, setStudioStudySteps, studioStudyStepsSchema } from "../lib/studio-liens.js";
+import { renameStudioStudy, renameStudioVariant, setStudioStudyArchived, setStudioVariantArchived, studioRenameSchema } from "../lib/studio-variantes.js";
 
 export const studioRouter = Router({ mergeParams: true });
 studioRouter.use(requireAuth);
 studioRouter.use(json({ limit: "1mb" }));
 // `requestId` facultatif : même règle d'identifiant que les enveloppes de commandes ; rejeu = réponse 201 d'origine.
 const studySchema = z.object({ name: z.string().trim().min(1).max(200), requestId: studioIdentifierSchema.optional() }).strict();
-const variantSchema = z.object({ name: z.string().trim().min(1).max(200), requestId: studioIdentifierSchema.optional() }).strict();
+// Dérivation facultative : `fromVariantId` (même étude) et, si donnée, `fromRevisionId` (de cette variante ; tête sinon).
+const variantSchema = z.object({
+  name: z.string().trim().min(1).max(200), requestId: studioIdentifierSchema.optional(),
+  fromVariantId: studioIdentifierSchema.optional(), fromRevisionId: studioIdentifierSchema.optional(),
+}).strict().refine((v) => v.fromRevisionId === undefined || v.fromVariantId !== undefined, { message: "fromRevisionId exige fromVariantId.", path: ["fromRevisionId"] });
 const exportSchema = z.object({ format: z.enum(STUDIO_EXPORT_FORMATS), revision: studioIdentifierSchema.optional() });
 function scope(req: Request): StudioScope {
   const params = req.params as Record<string, string>;
@@ -27,13 +32,25 @@ function endpoint(handler: (req: Request, res: Response) => Promise<void>) {
     }
   };
 }
+/**
+ * Listes : seul paramètre admis `archives=1` (inclut les études ou variantes archivées) ; `null` = requête refusée (400).
+ */
+function archivesOf(req: Request): boolean | null {
+  const query = req.query as Record<string, unknown>;
+  if (Object.keys(query).some((key) => key !== "archives")) return null;
+  if (query["archives"] === undefined) return false;
+  return query["archives"] === "1" ? true : null;
+}
+const archivesRefused = (res: Response) => res.status(400).json({ error: "invalid_input", message: "Seul paramètre admis : archives=1." });
 /** 201 dans les deux cas ; un rejeu renvoie le corps d'origine avec `replayed: true` et l'en-tête Idempotent-Replayed. */
 function created(res: Response, body: StudioCreation): void {
   res.setHeader("Idempotent-Replayed", String(body.replayed));
   res.status(201).json(body);
 }
 studioRouter.get("/studies", endpoint(async (req, res) => {
-  res.json(await listStudioStudies(scope(req).projectId, req.user!.id));
+  const archives = archivesOf(req);
+  if (archives === null) { archivesRefused(res); return; }
+  res.json(await listStudioStudies(scope(req).projectId, req.user!.id, archives));
 }));
 studioRouter.post("/studies", endpoint(async (req, res) => {
   const parsed = studySchema.safeParse(req.body);
@@ -41,8 +58,34 @@ studioRouter.post("/studies", endpoint(async (req, res) => {
   created(res, await createStudioStudy(scope(req).projectId, req.user!.id, parsed.data.name, parsed.data.requestId));
 }));
 studioRouter.get("/studies/:studyId", endpoint(async (req, res) => {
+  const archives = archivesOf(req);
+  if (archives === null) { archivesRefused(res); return; }
   const s = scope(req);
-  res.json(await readStudioStudy(db, s.projectId, s.studyId, req.user!.id));
+  res.json(await readStudioStudy(db, s.projectId, s.studyId, req.user!.id, archives));
+}));
+/** Renommage (`modify`) : nom épuré 1..200 ; une étude archivée → 409 archived. */
+studioRouter.patch("/studies/:studyId", endpoint(async (req, res) => {
+  const parsed = studioRenameSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
+  const s = scope(req);
+  res.json(await renameStudioStudy(s.projectId, s.studyId, req.user!.id, parsed.data.name));
+}));
+/** Archivage sans suppression (`modify`), idempotent ; l'étude reste lisible par son adresse, en lecture seule. */
+for (const [action, archived] of [["archive", true], ["unarchive", false]] as const) {
+  studioRouter.post(`/studies/:studyId/${action}`, endpoint(async (req, res) => {
+    const s = scope(req);
+    res.json(await setStudioStudyArchived(s.projectId, s.studyId, req.user!.id, archived));
+  }));
+  studioRouter.post(`/studies/:studyId/variants/:variantId/${action}`, endpoint(async (req, res) => {
+    const s = scope(req);
+    res.json(await setStudioVariantArchived(s.projectId, s.studyId, s.variantId, req.user!.id, archived));
+  }));
+}
+studioRouter.patch("/studies/:studyId/variants/:variantId", endpoint(async (req, res) => {
+  const parsed = studioRenameSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
+  const s = scope(req);
+  res.json(await renameStudioVariant(s.projectId, s.studyId, s.variantId, req.user!.id, parsed.data.name));
 }));
 /** Comparaison lecture seule : `from` et `to` = `variantId[:revisionId]` de la même étude ; seuls ces deux paramètres. */
 studioRouter.get("/studies/:studyId/compare", endpoint(async (req, res) => {
@@ -56,14 +99,18 @@ studioRouter.get("/studies/:studyId/compare", endpoint(async (req, res) => {
   res.json(await compareStudioRevisions(db, s.projectId, s.studyId, req.user!.id, from, to));
 }));
 studioRouter.get("/studies/:studyId/variants", endpoint(async (req, res) => {
+  const archives = archivesOf(req);
+  if (archives === null) { archivesRefused(res); return; }
   const s = scope(req);
-  res.json(await listStudioVariants(db, s.projectId, s.studyId, req.user!.id));
+  res.json(await listStudioVariants(db, s.projectId, s.studyId, req.user!.id, archives));
 }));
 studioRouter.post("/studies/:studyId/variants", endpoint(async (req, res) => {
   const parsed = variantSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
   const s = scope(req);
-  created(res, await createStudioVariant(s.projectId, s.studyId, req.user!.id, parsed.data.name, parsed.data.requestId));
+  const { name, requestId, fromVariantId, fromRevisionId } = parsed.data;
+  const from = fromVariantId === undefined ? undefined : { variantId: fromVariantId, ...(fromRevisionId === undefined ? {} : { revisionId: fromRevisionId }) };
+  created(res, await createStudioVariant(s.projectId, s.studyId, req.user!.id, name, requestId, from));
 }));
 studioRouter.get("/studies/:studyId/variants/:variantId/revisions", endpoint(async (req, res) => {
   res.json(await listStudioRevisions(db, scope(req), req.user!.id));

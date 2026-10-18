@@ -1,10 +1,10 @@
 /** Handler Studio de l'orchestrateur commun : droits, rejeu, base, révision append-only. */
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, StudioValidationError, validateStudioDocument, type StudioDifferenceDocuments, type StudioEnvelope } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
-import { projectMembers, studioRevisions, studioStudies, studioVariants, type StudioContext } from "../db/schema.js";
+import { projectMembers, studioRevisions, studioStudies, studioVariants, type StudioContext, type StudioProvenance } from "../db/schema.js";
 import { newId } from "./ids.js";
 import { loadProjectAccess, projectAccessRefusal, type AccessibleProject, type ProjectNeed } from "./owned-project.js";
 import { orchestrerCommandesDansTransaction, type Tx } from "./atelier-validation.js";
@@ -47,22 +47,31 @@ export function studioPayloadHash(envelope: StudioEnvelope): string {
   return createHash("sha256").update(canonical(envelope)).digest("hex");
 }
 
-function notFound(): never { throw new StudioRequestError(404, { error: "not_found" }); }
-function assertAccess(access: AccessibleProject | null, actorId: string, need: ProjectNeed): AccessibleProject {
+export function notFound(): never { throw new StudioRequestError(404, { error: "not_found" }); }
+/** Étude ou variante archivée : lisible, jamais modifiée (409 `archived`, rien n'est écrit). */
+export function studioArchivedRefusal(): never {
+  throw new StudioRequestError(409, { error: "archived", message: "Cette étude ou cette variante est archivée : elle reste lisible mais ne peut pas être modifiée." });
+}
+export function assertAccess(access: AccessibleProject | null, actorId: string, need: ProjectNeed): AccessibleProject {
   const refusal = projectAccessRefusal(access, actorId, need);
   if (refusal) throw new StudioRequestError(refusal.status, refusal.body);
   return access!;
 }
 
 /** Verrouille également le membre : une révocation concurrente ne traverse pas le commit. */
-async function lockedAccess(tx: Tx, projectId: string, actorId: string): Promise<AccessibleProject> {
+export async function lockedAccess(tx: Tx, projectId: string, actorId: string): Promise<AccessibleProject> {
   await lockProject(tx, projectId);
   await tx.select({ userId: projectMembers.userId }).from(projectMembers)
     .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, actorId))).for("share");
   return assertAccess(await loadProjectAccess(projectId, actorId, tx), actorId, "read");
 }
 
-export async function readStudioContext(q: Querier, scope: StudioScope, actorId: string, revisionId?: string): Promise<StudioContext> {
+/** Lecture d'une variante : `archived` si l'étude ou la variante l'est (alors `canWrite` faux) ; provenance d'une dérivation. */
+export type StudioRead = StudioContext & { archived: boolean; derivedFrom: StudioProvenance | null };
+const provenanceOf = (row: { derivedFromVariantId: string | null; derivedFromRevisionId: string | null }): StudioProvenance | null =>
+  row.derivedFromVariantId && row.derivedFromRevisionId ? { variantId: row.derivedFromVariantId, revisionId: row.derivedFromRevisionId } : null;
+
+export async function readStudioContext(q: Querier, scope: StudioScope, actorId: string, revisionId?: string): Promise<StudioRead> {
   const access = assertAccess(await loadProjectAccess(scope.projectId, actorId, q), actorId, "read");
   const [study] = await q.select().from(studioStudies)
     .where(and(eq(studioStudies.id, scope.studyId), eq(studioStudies.projectId, scope.projectId))).limit(1);
@@ -73,56 +82,77 @@ export async function readStudioContext(q: Querier, scope: StudioScope, actorId:
   const [revision] = await q.select().from(studioRevisions)
     .where(and(eq(studioRevisions.id, revisionId ?? variant.headRevisionId), eq(studioRevisions.variantId, variant.id))).limit(1);
   if (!revision) return notFound();
+  const archived = study.archivedAt !== null || variant.archivedAt !== null;
   return {
     study: { id: study.id, name: study.name, projectId: study.projectId },
     variant: { id: variant.id, name: variant.name, studyId: study.id, headRevisionId: variant.headRevisionId },
     revision: { id: revision.id, parentRevisionId: revision.parentRevisionId, document: validateStudioDocument(revision.document) },
-    canWrite: revisionId === undefined && projectAccessRefusal(access, actorId, "modify") === null,
+    canWrite: revisionId === undefined && !archived && projectAccessRefusal(access, actorId, "modify") === null,
+    archived, derivedFrom: provenanceOf(variant),
   };
 }
 
-export async function listStudioStudies(projectId: string, actorId: string) {
+/** Études du projet ; les archivées seulement avec `includeArchived` (`?archives=1`). */
+export async function listStudioStudies(projectId: string, actorId: string, includeArchived = false) {
   assertAccess(await loadProjectAccess(projectId, actorId), actorId, "read");
-  const rows = await db.select({ id: studioStudies.id, name: studioStudies.name, initialVariantId: studioStudies.initialVariantId, createdAt: studioStudies.createdAt })
-    .from(studioStudies).where(eq(studioStudies.projectId, projectId)).orderBy(asc(studioStudies.createdAt), asc(studioStudies.id));
-  return { studies: rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() })) };
+  const rows = await db.select({ id: studioStudies.id, name: studioStudies.name, initialVariantId: studioStudies.initialVariantId, createdAt: studioStudies.createdAt, updatedAt: studioStudies.updatedAt, archivedAt: studioStudies.archivedAt })
+    .from(studioStudies).where(includeArchived ? eq(studioStudies.projectId, projectId) : and(eq(studioStudies.projectId, projectId), isNull(studioStudies.archivedAt)))
+    .orderBy(asc(studioStudies.createdAt), asc(studioStudies.id));
+  return { studies: rows.map(({ archivedAt, ...row }) => ({ ...row, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt?.toISOString() ?? null, archived: archivedAt !== null })) };
 }
 
-export interface StudioVariantSummary { id: string; name: string; headRevisionId: string }
+export interface StudioVariantSummary { id: string; name: string; headRevisionId: string; archived: boolean; derivedFrom: StudioProvenance | null }
 export interface StudioStudyRead {
-  study: { id: string; name: string; projectId: string; initialVariantId: string; createdAt: string };
+  study: { id: string; name: string; projectId: string; initialVariantId: string; createdAt: string; updatedAt: string | null; archived: boolean };
   variants: StudioVariantSummary[];
+  /** Écriture dans l'étude (droit `modify` et étude active). */
   canWrite: boolean;
+  /** Droit `modify` seul : renommer reste refusé sur une archive, mais la désarchiver est permis. */
+  canManage: boolean;
 }
 export interface StudioRevisionSummary { id: string; parentRevisionId: string | null; source: string; authorId: string; createdAt: string }
 
 /** Étude du projet de l'URL, sinon 404 (une étude d'un autre projet n'est pas révélée). */
-async function studyOf(q: Querier, projectId: string, studyId: string) {
+export async function studyOf(q: Querier, projectId: string, studyId: string) {
   const [study] = await q.select().from(studioStudies)
     .where(and(eq(studioStudies.id, studyId), eq(studioStudies.projectId, projectId))).limit(1);
   return study ?? notFound();
 }
 
-/** Variante initiale d'abord, puis les autres par ordre de création (identifiant en départage). */
-async function variantsOf(q: Querier, study: { id: string; initialVariantId: string }): Promise<StudioVariantSummary[]> {
-  const rows = await q.select({ id: studioVariants.id, name: studioVariants.name, headRevisionId: studioVariants.headRevisionId })
-    .from(studioVariants).where(eq(studioVariants.studyId, study.id)).orderBy(asc(studioVariants.createdAt), asc(studioVariants.id));
+export const studioVariantSummaryColumns = {
+  id: studioVariants.id, name: studioVariants.name, headRevisionId: studioVariants.headRevisionId, archivedAt: studioVariants.archivedAt,
+  derivedFromVariantId: studioVariants.derivedFromVariantId, derivedFromRevisionId: studioVariants.derivedFromRevisionId,
+};
+type VariantSummaryRow = { id: string; name: string; headRevisionId: string; archivedAt: Date | null; derivedFromVariantId: string | null; derivedFromRevisionId: string | null };
+export const toVariantSummary = (row: VariantSummaryRow): StudioVariantSummary =>
+  ({ id: row.id, name: row.name, headRevisionId: row.headRevisionId, archived: row.archivedAt !== null, derivedFrom: provenanceOf(row) });
+
+/** Variante initiale d'abord, puis les autres par ordre de création (identifiant en départage) ; archivées sur demande. */
+async function variantsOf(q: Querier, study: { id: string; initialVariantId: string }, includeArchived: boolean): Promise<StudioVariantSummary[]> {
+  const rows = (await q.select(studioVariantSummaryColumns).from(studioVariants)
+    .where(includeArchived ? eq(studioVariants.studyId, study.id) : and(eq(studioVariants.studyId, study.id), isNull(studioVariants.archivedAt)))
+    .orderBy(asc(studioVariants.createdAt), asc(studioVariants.id))).map(toVariantSummary);
   return [...rows.filter((row) => row.id === study.initialVariantId), ...rows.filter((row) => row.id !== study.initialVariantId)];
 }
 
-export async function readStudioStudy(q: Querier, projectId: string, studyId: string, actorId: string): Promise<StudioStudyRead> {
+/** Étude lue par son adresse, archivée comprise (lecture seule) ; ses variantes archivées seulement avec `includeArchived`. */
+export async function readStudioStudy(q: Querier, projectId: string, studyId: string, actorId: string, includeArchived = false): Promise<StudioStudyRead> {
   const access = assertAccess(await loadProjectAccess(projectId, actorId, q), actorId, "read");
   const study = await studyOf(q, projectId, studyId);
+  const canManage = projectAccessRefusal(access, actorId, "modify") === null;
   return {
-    study: { id: study.id, name: study.name, projectId: study.projectId, initialVariantId: study.initialVariantId, createdAt: study.createdAt.toISOString() },
-    variants: await variantsOf(q, study),
-    canWrite: projectAccessRefusal(access, actorId, "modify") === null,
+    study: {
+      id: study.id, name: study.name, projectId: study.projectId, initialVariantId: study.initialVariantId, createdAt: study.createdAt.toISOString(),
+      updatedAt: study.updatedAt?.toISOString() ?? null, archived: study.archivedAt !== null,
+    },
+    variants: await variantsOf(q, study, includeArchived),
+    canWrite: canManage && study.archivedAt === null, canManage,
   };
 }
 
-export async function listStudioVariants(q: Querier, projectId: string, studyId: string, actorId: string): Promise<{ variants: StudioVariantSummary[] }> {
+export async function listStudioVariants(q: Querier, projectId: string, studyId: string, actorId: string, includeArchived = false): Promise<{ variants: StudioVariantSummary[] }> {
   assertAccess(await loadProjectAccess(projectId, actorId, q), actorId, "read");
-  return { variants: await variantsOf(q, await studyOf(q, projectId, studyId)) };
+  return { variants: await variantsOf(q, await studyOf(q, projectId, studyId), includeArchived) };
 }
 
 /** Historique d'une variante, du plus récent au plus ancien ; lecture seule, aucun document renvoyé. */
@@ -146,11 +176,12 @@ export type StudioCreation = StudioContext & { replayed: boolean };
  * Rejeu d'une création identifiée par `requestId` : la réponse 201 d'origine est relue dans la révision
  * d'initialisation (append-only), jamais reconstruite. Autre auteur ou autre nom → 409 request_conflict.
  */
-async function replayCreation(tx: Tx, variantId: string, source: "study-initialization" | "variant-initialization", actorId: string, name: string, storedName: (response: StudioContext) => string): Promise<StudioCreation> {
+type InitialSource = "study-initialization" | "variant-initialization" | "variant-derivation";
+async function replayCreation(tx: Tx, variantId: string, sources: InitialSource[], actorId: string, name: string, storedName: (response: StudioContext) => string, sameOrigin: (response: StudioContext) => boolean = () => true): Promise<StudioCreation> {
   const [initial] = await tx.select({ authorId: studioRevisions.authorId, response: studioRevisions.response }).from(studioRevisions)
-    .where(and(eq(studioRevisions.variantId, variantId), eq(studioRevisions.source, source))).limit(1);
+    .where(and(eq(studioRevisions.variantId, variantId), inArray(studioRevisions.source, sources))).limit(1);
   if (!initial) throw new Error("studio_creation_without_initial_revision");
-  if (initial.authorId !== actorId || storedName(initial.response) !== name) {
+  if (initial.authorId !== actorId || storedName(initial.response) !== name || !sameOrigin(initial.response)) {
     throw new StudioRequestError(409, { error: "request_conflict", message: "Cet identifiant de requête est déjà utilisé pour un autre contenu ou auteur." });
   }
   return { ...structuredClone(initial.response), replayed: true };
@@ -163,7 +194,7 @@ export async function createStudioStudy(projectId: string, actorId: string, name
     if (requestId !== undefined) {
       const [previous] = await tx.select({ initialVariantId: studioStudies.initialVariantId }).from(studioStudies)
         .where(and(eq(studioStudies.projectId, projectId), eq(studioStudies.creationRequestId, requestId))).limit(1);
-      if (previous) return replayCreation(tx, previous.initialVariantId, "study-initialization", actorId, name, (r) => r.study.name);
+      if (previous) return replayCreation(tx, previous.initialVariantId, ["study-initialization"], actorId, name, (r) => r.study.name);
     }
     const studyId = newId("studio_study"), variantId = newId("studio_variant"), revisionId = newId("studio_revision");
     const response: StudioContext = {
@@ -182,8 +213,16 @@ export async function createStudioStudy(projectId: string, actorId: string, name
   });
 }
 
-/** Nouvelle variante d'une étude existante : une seule révision initiale, document vide, sans parent. */
-export async function createStudioVariant(projectId: string, studyId: string, actorId: string, name: string, requestId?: string): Promise<StudioCreation> {
+/** Source d'une dérivation : variante de la même étude, révision donnée (sinon sa tête au moment de la création). */
+export interface StudioDerivationSource { variantId: string; revisionId?: string }
+
+/**
+ * Nouvelle variante d'une étude active : une seule révision initiale, sans parent. Document vide, ou — dérivation —
+ * copie profonde (mêmes identifiants d'objets) du document d'une révision d'une variante de la même étude, sinon 404 ;
+ * la provenance est enregistrée sur la variante et renvoyée (`derivedFrom`). Rejeu par `requestId` : même auteur, même
+ * nom et même source, sinon 409 request_conflict ; une étude archivée refuse toute nouvelle variante (409 archived).
+ */
+export async function createStudioVariant(projectId: string, studyId: string, actorId: string, name: string, requestId?: string, from?: StudioDerivationSource): Promise<StudioCreation> {
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
@@ -191,19 +230,41 @@ export async function createStudioVariant(projectId: string, studyId: string, ac
     if (requestId !== undefined) {
       const [previous] = await tx.select({ id: studioVariants.id }).from(studioVariants)
         .where(and(eq(studioVariants.studyId, study.id), eq(studioVariants.creationRequestId, requestId))).limit(1);
-      if (previous) return replayCreation(tx, previous.id, "variant-initialization", actorId, name, (r) => r.variant.name);
+      if (previous) {
+        return replayCreation(tx, previous.id, ["variant-initialization", "variant-derivation"], actorId, name, (r) => r.variant.name, (r) => {
+          const stored = r.derivedFrom ?? null;
+          if (!from) return stored === null;
+          return stored !== null && stored.variantId === from.variantId && (from.revisionId === undefined || stored.revisionId === from.revisionId);
+        });
+      }
+    }
+    if (study.archivedAt !== null) return studioArchivedRefusal();
+    let document = newStudioDocument(newId("studio_document"));
+    let derivedFrom: StudioProvenance | null = null;
+    if (from) {
+      const [source] = await tx.select({ id: studioVariants.id, headRevisionId: studioVariants.headRevisionId }).from(studioVariants)
+        .where(and(eq(studioVariants.id, from.variantId), eq(studioVariants.studyId, study.id))).limit(1);
+      if (!source) return notFound();
+      const [revision] = await tx.select({ id: studioRevisions.id, document: studioRevisions.document }).from(studioRevisions)
+        .where(and(eq(studioRevisions.id, from.revisionId ?? source.headRevisionId), eq(studioRevisions.variantId, source.id))).limit(1);
+      if (!revision) return notFound();
+      document = structuredClone(validateStudioDocument(revision.document));
+      derivedFrom = { variantId: source.id, revisionId: revision.id };
     }
     const variantId = newId("studio_variant"), revisionId = newId("studio_revision");
     const response: StudioContext = {
       study: { id: study.id, name: study.name, projectId },
       variant: { id: variantId, name, studyId: study.id, headRevisionId: revisionId },
-      revision: { id: revisionId, parentRevisionId: null, document: newStudioDocument(newId("studio_document")) }, canWrite: true,
+      revision: { id: revisionId, parentRevisionId: null, document }, canWrite: true, derivedFrom,
     };
-    await tx.insert(studioVariants).values({ id: variantId, studyId: study.id, name, headRevisionId: revisionId, creationRequestId: requestId ?? null });
+    await tx.insert(studioVariants).values({
+      id: variantId, studyId: study.id, name, headRevisionId: revisionId, creationRequestId: requestId ?? null,
+      derivedFromVariantId: derivedFrom?.variantId ?? null, derivedFromRevisionId: derivedFrom?.revisionId ?? null,
+    });
     await tx.insert(studioRevisions).values({
-      id: revisionId, variantId, parentRevisionId: null, document: response.revision.document, envelope: null,
-      requestId: newId("initialization"), payloadHash: createHash("sha256").update(JSON.stringify({ projectId, studyId: study.id, variantId, name })).digest("hex"),
-      source: "variant-initialization", authorId: actorId, response,
+      id: revisionId, variantId, parentRevisionId: null, document, envelope: null,
+      requestId: newId("initialization"), payloadHash: createHash("sha256").update(JSON.stringify({ projectId, studyId: study.id, variantId, name, derivedFrom })).digest("hex"),
+      source: derivedFrom ? "variant-derivation" : "variant-initialization", authorId: actorId, response,
     });
     return { ...response, replayed: false };
   });
@@ -284,7 +345,7 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
   const envelope = parseStudioEnvelope(input);
   const payloadHash = studioPayloadHash(envelope);
   return db.transaction(async (tx) => {
-    let current: StudioContext | undefined;
+    let current: StudioRead | undefined;
     return orchestrerCommandesDansTransaction<StudioContext & { replayed: boolean }>(tx, { kind: "studio", ...scope }, {
       prepare: async (transaction) => {
         const access = await lockedAccess(transaction, scope.projectId, actorId);
@@ -308,6 +369,8 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
       },
       execute: async (transaction) => {
         if (!current) throw new Error("studio_scope_not_prepared");
+        // Lu sous les verrous du projet et de la variante : un (dés)archivage concurrent est sérialisé avec ce lot.
+        if (current.archived) return studioArchivedRefusal();
         if (envelope.baseRevisionId !== current.variant.headRevisionId) {
           throw new StudioRequestError(409, { error: "stale_revision", headRevisionId: current.variant.headRevisionId });
         }
