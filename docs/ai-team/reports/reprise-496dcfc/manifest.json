@@ -1,0 +1,125 @@
+{
+  "reprise": "496dcfc7bf80868ef21216d667187087db32a738",
+  "kind": "Nouvelles preuves du même programme156, pas second registre",
+  "files": [
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+      "source_session": "/workspace/work/resume496/agents/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+      "sha256": "a5dec6aa0afbbe56f7f5bdebb9a3397b70a991bae352d4c93d6ef45d9719adba",
+      "bytes": 8991,
+      "note": "Copie à octets identiques, provenance locale résolue ici vers chemin GitHub."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-DELTA-4-IDS-PROPOSE.json",
+      "source_session": "/workspace/work/resume496/agents/A1/G0-DELTA-4-IDS-PROPOSE.json",
+      "sha256": "b785536491674942c83beecf813507aa5b20f3689d8e095917ff4bdcad168fad",
+      "bytes": 41377,
+      "note": "Copie à octets identiques, provenance locale résolue ici vers chemin GitHub."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/M08-PATH-001-007-COMPARAISON.json",
+      "source_session": "/workspace/work/resume496/agents/A2/M08-PATH-001-007-COMPARAISON.json",
+      "sha256": "7374fb3b4ff38899f4690971333ed1598920502af3fc387a41e4c29765598902",
+      "bytes": 231397,
+      "note": "Copie à octets identiques, provenance locale résolue ici vers chemin GitHub."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/M08-PATH-001-007-COMPARAISON.md",
+      "source_session": "/workspace/work/resume496/agents/A2/M08-PATH-001-007-COMPARAISON.md",
+      "sha256": "9ad1d8b087ba7af2d88123df3909f299389ed456908b1a68498ae0f3aa5974bc",
+      "bytes": 3886,
+      "note": "Copie à octets identiques, provenance locale résolue ici vers chemin GitHub."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A4/REVUE-G0-ACTE-DELTA4.json",
+      "source_session": "/workspace/work/resume496/agents/A4/REVUE-G0-ACTE-DELTA4.json",
+      "sha256": "21bfe3ad4acac34985dd2c88e672d35098fa704a3507fba167cde2015aaf44c7",
+      "bytes": 4025,
+      "note": "Copie à octets identiques, provenance locale résolue ici vers chemin GitHub."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A4/CSP-KML-CORPUS-DOCUMENTAIRE.json",
+      "source_session": "/workspace/work/resume496/agents/A4/CSP-KML-CORPUS-DOCUMENTAIRE.json",
+      "sha256": "63041d8f8c79ee781d1c81c713452ff35315ac77af80f114a9d322969dc8add1",
+      "bytes": 5045,
+      "note": "Copie à octets identiques, provenance locale résolue ici vers chemin GitHub."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A4/CSP-KML-DELTA-DECISION.md",
+      "source_session": "/workspace/work/resume496/agents/A4/CSP-KML-DELTA-DECISION.md",
+      "sha256": "2f32c0673d1ff490b09724f6996205656c2bfeca27a6352677471ee3f0fb5de9",
+      "bytes": 5607,
+      "note": "Copie à octets identiques, provenance locale résolue ici vers chemin GitHub."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/M08-001-007-REVUE-INDEPENDANTE.json",
+      "source_session": "/workspace/work/resume496/agents/A5/M08-001-007-REVUE-INDEPENDANTE.json",
+      "sha256": "d05aa59783c39b73f221c09957b5ce430c565ee9f25d59eaa4070b298b1ca4bc",
+      "bytes": 146081,
+      "note": "Copie à octets identiques, provenance locale résolue ici vers chemin GitHub."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/M08-001-007-CONFRONTATION-A2-A5.json",
+      "source_session": "/workspace/work/resume496/agents/A5/M08-001-007-CONFRONTATION-A2-A5.json",
+      "sha256": "1942e09f76e023e0898522142c48286dc10acf02d58c1e690f988d587440d5d7",
+      "bytes": 100601,
+      "note": "Copie à octets identiques, provenance locale résolue ici vers chemin GitHub."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/M08-001-007-REVUE-INDEPENDANTE.md",
+      "source_session": "/workspace/work/resume496/agents/A5/M08-001-007-REVUE-INDEPENDANTE.md",
+      "sha256": "030402a5ad633075adc4c3e37193d5236ff399a5dc1b0aaed55ed9630f61c3cf",
+      "bytes": 11468,
+      "note": "Copie à octets identiques, provenance locale résolue ici vers chemin GitHub."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A6/CI-DOC-CONTEXT-PROOFS.json",
+      "source_session": "/workspace/work/resume496/agents/A6/CI-DOC-CONTEXT-PROOFS.json",
+      "sha256": "8caf9417fd9521b367e218605d2a6ee38fe8148268a5735f5365fd192688443f",
+      "bytes": 4299,
+      "note": "Copie à octets identiques, provenance locale résolue ici vers chemin GitHub."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A6/CI-DOC-IMPLEMENTATION.md",
+      "source_session": "/workspace/work/resume496/agents/A6/CI-DOC-IMPLEMENTATION.md",
+      "sha256": "da67a77b92621f5d4c5afc6124c7546b65368b12fc78728749358489353a9813",
+      "bytes": 2884,
+      "note": "Copie à octets identiques, provenance locale résolue ici vers chemin GitHub."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/CLASSIF1-INVENTAIRE-A2.json",
+      "source_session": "/workspace/work/resume496/agents/A2/CLASSIF1-INVENTAIRE-A2.json",
+      "sha256": "fac54baa0b0268dc998fe4ebcf62c9a47335096591da8ee278b1b6afb52f7d39",
+      "bytes": 98354,
+      "note": "Inventairepréalableconjointavantcode ; pas preuve runtime."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/CLASSIF1-INVENTAIRE-A2.md",
+      "source_session": "/workspace/work/resume496/agents/A2/CLASSIF1-INVENTAIRE-A2.md",
+      "sha256": "4ee7f1a641fa421c17e3df5b7d4f6a137c044afc25c32a158cee3008005aa525",
+      "bytes": 5270,
+      "note": "Inventairepréalableconjointavantcode ; pas preuve runtime."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/CLASSIF1-INVENTAIRE-INDEPENDANT-A5.json",
+      "source_session": "/workspace/work/resume496/agents/A5/CLASSIF1-INVENTAIRE-INDEPENDANT-A5.json",
+      "sha256": "a047a5925eba616fba9f923654edc76f492adc1869f11d5642644e81896db974",
+      "bytes": 86741,
+      "note": "Inventairepréalableconjointavantcode ; pas preuve runtime."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/CLASSIF1-INVENTAIRE-INDEPENDANT-A5.md",
+      "source_session": "/workspace/work/resume496/agents/A5/CLASSIF1-INVENTAIRE-INDEPENDANT-A5.md",
+      "sha256": "79b576a0ee48bae11b3836ab48275a11af90893dc11220c529d54b117ab9e508",
+      "bytes": 6162,
+      "note": "Inventairepréalableconjointavantcode ; pas preuve runtime."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/CLASSIF1-REVUE-CONJOINTE-A5.json",
+      "source_session": "/workspace/work/resume496/agents/A5/CLASSIF1-REVUE-CONJOINTE-A5.json",
+      "sha256": "ef65fe28720344ed351b0a7bffa6d00903842cc6344b3a56855c0215ba43bf97",
+      "bytes": 4024,
+      "note": "Inventairepréalableconjointavantcode ; pas preuve runtime."
+    }
+  ]
+}

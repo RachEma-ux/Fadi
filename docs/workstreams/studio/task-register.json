@@ -11,7 +11,7 @@
     "path": "docs/ai-team/reports/mission-002-originals/A1-630-taches.csv",
     "sha256": "eb47f0c8b273718e537160a84eb00a626acf541fce690ef65c0a08cb3f2db894"
   },
-  "note": "630 IDs/descriptions conservés.30 conditions documentaires vérifiées dont24 revues individuellement Mission004 ; zéro case source cochée, zéro fonctionnalité/gate/acceptation métier Studio.141 fiches v2 restent En cours. Suite après7b0cca4 :32qualifications individuelles supplémentaires,29En cours/2Bloqué/1Àdéfinir, sansnouvelleclôture ; P630reste30/630.",
+  "note": "630IDs inchangés ;34conditions documentaires vérifiées/acceptées dont4G0 au dossier exact et décision6250109830. Zéro case source/HTML cochée, aucune fonctionnalitéStudio acceptée ;141fiches restentEn cours, DEC01/03 physiques ouvertes.",
   "tasks": [
     {
       "id": "SRC-01",
@@ -1390,11 +1390,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "Bloqué",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Accepté",
+      "conformite": "Condition documentaire du cadrageG0 satisfaite, aucune conformité fonctionnelle Studio évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Décision et contenu documentaire vérifiés ; aucun test métier exécuté."
       },
       "preuves": [
         {
@@ -1422,6 +1422,14 @@
           "ID": "CAD-DEC-01",
           "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
           "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
+        },
+        {
+          "type": "G0_cadrage_documentaire",
+          "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "sha256": "a5dec6aa0afbbe56f7f5bdebb9a3397b70a991bae352d4c93d6ef45d9719adba",
+          "decision_comment": 6250109830,
+          "dossier_SHA": "7b0cca44fa44449cae80785dea078a857be4180c",
+          "revue": "docs/ai-team/reports/reprise-496dcfc/A4/REVUE-G0-ACTE-DELTA4.json"
         }
       ],
       "github": {
@@ -1430,18 +1438,22 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Acte distinct de passage G0 dans canal166/registre de décision ; pas déductible choix pilote.",
+        "cause": null,
         "responsable": "A1",
-        "essais_effectues": "D01 retient usage pilote, trois revues de cadrage disponibles, critères dossier finalisés.",
-        "deblocage": "Passage G0 à enregistrer selon166 ; D01/D02/D07 ne sont plus questions ouvertes."
+        "essais_effectues": "Dossier exact et troisrevues confrontés à décision6250109830 ; quatreconditions documentaires individuelles revues A4,10ancres vérifiées A0.",
+        "deblocage": null
       },
-      "suite": "A0 présenter référence dossier/revues et consigner réponse de porte, sans autorisation codeStudio implicite.",
+      "suite": "Conserver acteG0 et réserves ; instruire contrats physiques/droits/corpus/POC aux portesG1–G3 distinctes. CAD-DEC-03 personnes/disponibilités reste ouvert.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "condition": "Premierusage etcritères ratifiés àG0.",
+        "nature": "cadrage documentaireG0",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "acceptation_cadrage_G0": true,
+        "G1_G4_acceptes": false
       },
       "historique": [
         {
@@ -1463,12 +1475,19 @@
           "statut": "Bloqué",
           "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
           "limite": "État de préparation, aucune clôture/acceptation/gate."
+        },
+        {
+          "origine": "Reprise496dcfc, décisionChatGPT6250109830, revueA4 et contrôleA0",
+          "ancien_statut": "Bloqué",
+          "statut": "Accepté",
+          "portee": "Cadrage documentaire G0 seulement, aucun produit/capacité accepté",
+          "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json"
         }
       ],
       "preparation_documentaire": {
-        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
-        "prochaine_action": "A0 présenter référence dossier/revues et consigner réponse de porte, sans autorisation codeStudio implicite."
+        "etat": "Condition de cadrageG0 vérifiée/acceptée dans portée exacte, pas conformité produit",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+        "prochaine_action": "Conserver acteG0 et réserves ; instruire contrats physiques/droits/corpus/POC aux portesG1–G3 distinctes. CAD-DEC-03 personnes/disponibilités reste ouvert."
       },
       "qualification_individuelle_mission004": {
         "nature": "gate/décision",
@@ -7812,11 +7831,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "En cours",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire du cadrageG0 satisfaite, aucune conformité fonctionnelle Studio évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Décision et contenu documentaire vérifiés ; aucun test métier exécuté."
       },
       "preuves": [
         {
@@ -7844,6 +7863,14 @@
           "ID": "G0-01",
           "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
           "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
+        },
+        {
+          "type": "G0_cadrage_documentaire",
+          "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "sha256": "a5dec6aa0afbbe56f7f5bdebb9a3397b70a991bae352d4c93d6ef45d9719adba",
+          "decision_comment": 6250109830,
+          "dossier_SHA": "7b0cca44fa44449cae80785dea078a857be4180c",
+          "revue": "docs/ai-team/reports/reprise-496dcfc/A4/REVUE-G0-ACTE-DELTA4.json"
         }
       ],
       "github": {
@@ -7852,18 +7879,22 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Réception explicite de cetID parA5/A0 et référencecheckpoint ; passageG0 est tâcheG003distincte.",
+        "cause": null,
         "responsable": "A1",
-        "essais_effectues": "G0M004 toutessections, troisrevuescadrage sansréservebloquante, décisionretenueD01/02/07.",
-        "deblocage": "Aucune nouvelle décisionD01/02/07 ; acteG0distinct à enregistrer166."
+        "essais_effectues": "Dossier exact et troisrevues confrontés à décision6250109830 ; quatreconditions documentaires individuelles revues A4,10ancres vérifiées A0.",
+        "deblocage": null
       },
-      "suite": "A5/A0 contrôler pièces/contraintes/responsables pour cetID, puis qualifier sa complétudedocumentaire sans fermerG003.",
+      "suite": "Conserver acteG0 et réserves ; instruire contrats physiques/droits/corpus/POC aux portesG1–G3 distinctes. CAD-DEC-03 personnes/disponibilités reste ouvert.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "condition": "Dossier constitué avec DEM01/sources/premierusage/pilote/responsables.",
+        "nature": "cadrage documentaireG0",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "acceptation_cadrage_G0": true,
+        "G1_G4_acceptes": false
       },
       "historique": [
         {
@@ -7885,12 +7916,19 @@
           "statut": "En cours",
           "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
           "limite": "État de préparation, aucune clôture/acceptation/gate."
+        },
+        {
+          "origine": "Reprise496dcfc, décisionChatGPT6250109830, revueA4 et contrôleA0",
+          "ancien_statut": "En cours",
+          "statut": "Vérifié",
+          "portee": "Cadrage documentaire G0 seulement, aucun produit/capacité accepté",
+          "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json"
         }
       ],
       "preparation_documentaire": {
-        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
-        "prochaine_action": "A5/A0 contrôler pièces/contraintes/responsables pour cetID, puis qualifier sa complétudedocumentaire sans fermerG003."
+        "etat": "Condition de cadrageG0 vérifiée/acceptée dans portée exacte, pas conformité produit",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+        "prochaine_action": "Conserver acteG0 et réserves ; instruire contrats physiques/droits/corpus/POC aux portesG1–G3 distinctes. CAD-DEC-03 personnes/disponibilités reste ouvert."
       },
       "qualification_individuelle_mission004": {
         "nature": "constitution dossier documentaire",
@@ -7916,11 +7954,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "En cours",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire du cadrageG0 satisfaite, aucune conformité fonctionnelle Studio évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Décision et contenu documentaire vérifiés ; aucun test métier exécuté."
       },
       "preuves": [
         {
@@ -7948,6 +7986,14 @@
           "ID": "G0-02",
           "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
           "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
+        },
+        {
+          "type": "G0_cadrage_documentaire",
+          "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "sha256": "a5dec6aa0afbbe56f7f5bdebb9a3397b70a991bae352d4c93d6ef45d9719adba",
+          "decision_comment": 6250109830,
+          "dossier_SHA": "7b0cca44fa44449cae80785dea078a857be4180c",
+          "revue": "docs/ai-team/reports/reprise-496dcfc/A4/REVUE-G0-ACTE-DELTA4.json"
         }
       ],
       "github": {
@@ -7956,18 +8002,22 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Vérification individuelle deG002 à rattacher aux revues/preuves ; pasacceptationgate ou scénarioexécuté.",
+        "cause": null,
         "responsable": "A1",
-        "essais_effectues": "Troisparcours minimaux avec finutile/quantités/permissions et reportsD02, troisrevuesG0.",
-        "deblocage": "D01/02choixretenus, nepasreposer ; G003reste indépendant."
+        "essais_effectues": "Dossier exact et troisrevues confrontés à décision6250109830 ; quatreconditions documentaires individuelles revues A4,10ancres vérifiées A0.",
+        "deblocage": null
       },
-      "suite": "A5 confirmer contenu critèreparcritère et distinction reportduMVP/conservationprogramme ; A0 journalise résultat de cettevérification.",
+      "suite": "Conserver acteG0 et réserves ; instruire contrats physiques/droits/corpus/POC aux portesG1–G3 distinctes. CAD-DEC-03 personnes/disponibilités reste ouvert.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "condition": "Critères premierusage explicites et optionsexclues/reportées nommées, vérification tracée.",
+        "nature": "cadrage documentaireG0",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "acceptation_cadrage_G0": true,
+        "G1_G4_acceptes": false
       },
       "historique": [
         {
@@ -7989,12 +8039,19 @@
           "statut": "En cours",
           "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
           "limite": "État de préparation, aucune clôture/acceptation/gate."
+        },
+        {
+          "origine": "Reprise496dcfc, décisionChatGPT6250109830, revueA4 et contrôleA0",
+          "ancien_statut": "En cours",
+          "statut": "Vérifié",
+          "portee": "Cadrage documentaire G0 seulement, aucun produit/capacité accepté",
+          "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json"
         }
       ],
       "preparation_documentaire": {
-        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
-        "prochaine_action": "A5 confirmer contenu critèreparcritère et distinction reportduMVP/conservationprogramme ; A0 journalise résultat de cettevérification."
+        "etat": "Condition de cadrageG0 vérifiée/acceptée dans portée exacte, pas conformité produit",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+        "prochaine_action": "Conserver acteG0 et réserves ; instruire contrats physiques/droits/corpus/POC aux portesG1–G3 distinctes. CAD-DEC-03 personnes/disponibilités reste ouvert."
       },
       "qualification_individuelle_mission004": {
         "nature": "vérification documentaire",
@@ -8020,11 +8077,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "Bloqué",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Accepté",
+      "conformite": "Condition documentaire du cadrageG0 satisfaite, aucune conformité fonctionnelle Studio évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Décision et contenu documentaire vérifiés ; aucun test métier exécuté."
       },
       "preuves": [
         {
@@ -8052,6 +8109,14 @@
           "ID": "G0-03",
           "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
           "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
+        },
+        {
+          "type": "G0_cadrage_documentaire",
+          "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "sha256": "a5dec6aa0afbbe56f7f5bdebb9a3397b70a991bae352d4c93d6ef45d9719adba",
+          "decision_comment": 6250109830,
+          "dossier_SHA": "7b0cca44fa44449cae80785dea078a857be4180c",
+          "revue": "docs/ai-team/reports/reprise-496dcfc/A4/REVUE-G0-ACTE-DELTA4.json"
         }
       ],
       "github": {
@@ -8060,18 +8125,22 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Réponse/acte explicite de passage de porte G0 dans166 ; aucun telaccord déduit ouconsigné parA1.",
+        "cause": null,
         "responsable": "A1",
-        "essais_effectues": "Dossier etrevuescadrage disponibles ; D01/02/07 retenus pourpréparer.",
-        "deblocage": "ATTENTE décisionG0 canal166 ; pas nouvellequestion identiqueD01/02/07."
+        "essais_effectues": "Dossier exact et troisrevues confrontés à décision6250109830 ; quatreconditions documentaires individuelles revues A4,10ancres vérifiées A0.",
+        "deblocage": null
       },
-      "suite": "A0 consulter décision166 aucheckpoint, conserver ceG003nonclos tantqu’accord inexistant, poursuivreG1documentaire indépendante.",
+      "suite": "Conserver acteG0 et réserves ; instruire contrats physiques/droits/corpus/POC aux portesG1–G3 distinctes. CAD-DEC-03 personnes/disponibilités reste ouvert.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "condition": "Acceptation de cible/critèresG0 obtenue et enregistrée avec source exacte sans fermer inconnues.",
+        "nature": "cadrage documentaireG0",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "acceptation_cadrage_G0": true,
+        "G1_G4_acceptes": false
       },
       "historique": [
         {
@@ -8093,12 +8162,19 @@
           "statut": "Bloqué",
           "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
           "limite": "État de préparation, aucune clôture/acceptation/gate."
+        },
+        {
+          "origine": "Reprise496dcfc, décisionChatGPT6250109830, revueA4 et contrôleA0",
+          "ancien_statut": "Bloqué",
+          "statut": "Accepté",
+          "portee": "Cadrage documentaire G0 seulement, aucun produit/capacité accepté",
+          "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json"
         }
       ],
       "preparation_documentaire": {
-        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
-        "prochaine_action": "A0 consulter décision166 aucheckpoint, conserver ceG003nonclos tantqu’accord inexistant, poursuivreG1documentaire indépendante."
+        "etat": "Condition de cadrageG0 vérifiée/acceptée dans portée exacte, pas conformité produit",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+        "prochaine_action": "Conserver acteG0 et réserves ; instruire contrats physiques/droits/corpus/POC aux portesG1–G3 distinctes. CAD-DEC-03 personnes/disponibilités reste ouvert."
       },
       "qualification_individuelle_mission004": {
         "nature": "gate/acceptation explicite",
@@ -54617,9 +54693,9 @@
       "raison": "DEV_SCOPE et baseline du périmètre accepté non établis ; ne pas inventer un dénominateur."
     },
     "P630": {
-      "V630": 30,
+      "V630": 34,
       "denominateur": 630,
-      "pourcentage": 4.8,
+      "pourcentage": 5.4,
       "IDs": [
         "SRC-01",
         "SRC-02",
@@ -54630,6 +54706,7 @@
         "CAD-02",
         "CAD-03",
         "CAD-06",
+        "CAD-DEC-01",
         "CAD-DEC-04",
         "REP-01",
         "UX-01",
@@ -54649,10 +54726,17 @@
         "ROUTE-06",
         "ROUTE-07",
         "ROUTE-08",
+        "G0-01",
+        "G0-02",
+        "G0-03",
         "PROV-01",
         "PROV-02"
       ],
-      "limite": "30 tâches documentaires hétérogènes vérifiées ; zéro réalisation/acceptation Studio. Pas un taux de développement. Preuves portées par le commit de ce registre."
+      "limite": "32conditions documentaires Vérifié et2Accepté cadrageG0 seulement ; zéro acceptation de fonctionnalité Studio. Pas un taux de développement.",
+      "mapping_barre": {
+        "Vérifié documentaire": 32,
+        "Accepté cadrage documentaire G0": 2
+      }
     }
   },
   "active_preparations": {
@@ -54660,6 +54744,24 @@
     "decisions18": "docs/ai-team/reports/mission-004/A1/studio-18-decisions-v2.json",
     "navigation9": "docs/ai-team/reports/mission-004/A4/NAV-M004.json",
     "oracles38": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
-    "historique": "docs/ai-team/reports/mission-003/README.md"
+    "historique": "docs/ai-team/reports/mission-003/README.md",
+    "acte_G0": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json"
+  },
+  "gate_G0": {
+    "statut": "Accepté",
+    "portee": "Cadrage documentaire uniquement",
+    "decision_comment": 6250109830,
+    "dossier_SHA": "7b0cca44fa44449cae80785dea078a857be4180c",
+    "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+    "inconnues_conservees": [
+      "personnes/disponibilitésCADDEC03",
+      "contratsphysiques",
+      "droitsfinaux",
+      "corpuscomplet",
+      "seuils/budgets",
+      "POC",
+      "migration/rollback"
+    ],
+    "G1_G4_acceptes": false
   }
 }

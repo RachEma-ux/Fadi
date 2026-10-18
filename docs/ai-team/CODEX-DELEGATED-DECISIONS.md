@@ -69,3 +69,15 @@ Checkpoint de suite publié : `7a4d200094505651a434194a128f774f6336de50`, même 
 - [Q-M004-CSP-KML](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250047620) : arbitrage des assets distants dans la spécification CSP, sans code/enforcement/chargement réseau autorisés par la question.
 
 Aucune réponse à ces questions n’est présumée. Elles conservent leurs responsables ; la prochaine analyse READY M08-PATH-001..007 est indépendante et décrite dans HANDOFF.
+
+## 7. Six décisions effectivement reçues lors de la reprise496dcfc
+
+Les commentaires #1666250109536/9830/6250110124/0501/0849/1226 et la directive6250119063 sont lus, [ACK6250149589](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250149589) publié. [Export et preuves de reprise](reports/reprise-496dcfc/README.md). Les mentions antérieures « en attente » décrivent leurs checkpoints, pas l’état actuel.
+
+- CI documentaire165 optionA autorisée et implémentée sous conditions strictes et contrôles au SHAexact ; pas de DB ni fusion.
+- G0 **Accepté cadrage documentaire** uniquement, dossier7b0cca4 et réserves exactes ; quatreIDs seulement satisfaits. G1–G4 et codeStudio non acceptés.
+- DEC01/03 optionA retenues pour préparer G1 ; décisions physiques et preuves restent ouvertes, aucun SQL/POC/migration.
+- A3-CLASSIF-1 pur autorisé après inventaire des consommateurs A2/A5 et dans une branche/PR distincte de169 ; suspendre uniquement son code si effet non couvert.
+- CSP/KML optionA retenue pour spécification, pas de domaine approuvé implicitement, header/enforcement/scan réseau ou runtime autorisé.
+
+Ces décisions ne sont pas reposées ; A0 poursuit les seules sous-tâches dont la précondition est satisfaite et conserve tous les blocages locaux.

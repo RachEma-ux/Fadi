@@ -21,13 +21,14 @@
       "source_ranges": [],
       "inputs": [],
       "execution": {
-        "checkpoint": "Mission004 après instructions63e804b, code PR169/a15d650",
+        "checkpoint": "Reprise496dcfc, décisions6250109536..6250111226",
         "statut": "En cours",
-        "constat": "Coordination des sept rôles réellement exécutée ; code DB et preuves documentaires consolidés, aucun programme clos.",
+        "constat": "Reprise effective496dcfc, sixdécisions lues, ACK6250149589 ; A2/A5 septoracles et A0 consolidation ; programme31missions toujoursouvert.",
         "responsable": "A0",
         "preuves": [
           "docs/ai-team/reports/mission-003/README.md",
-          "docs/ai-team/reports/mission-004/README.md"
+          "docs/ai-team/reports/mission-004/README.md",
+          "docs/ai-team/reports/reprise-496dcfc/README.md"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -37,9 +38,9 @@
           "cause": "Réalisation/accords/preuves aval distincts restent requis pour clore la mission entière ; la sous-tâche documentaire READY continue.",
           "responsable": "A0",
           "essais_effectues": "Coordination des sept rôles réellement exécutée ; code DB et preuves documentaires consolidés, aucun programme clos.",
-          "prochaine_action": "Relire #166, traiter prochaine sous-tâche READY ; publier preuves dans suivi existant sans déclencher de base réelle."
+          "prochaine_action": "Poursuivre les sous-tâches prêtes, CI documentaires au SHA exact et classement des décisions sans réauditer les preuves inchangées."
         },
-        "suite": "Relire #166, traiter prochaine sous-tâche READY ; publier preuves dans suivi existant sans déclencher de base réelle.",
+        "suite": "Poursuivre les sous-tâches prêtes, CI documentaires au SHA exact et classement des décisions sans réauditer les preuves inchangées.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -60,6 +61,27 @@
               "prochaine_action": "Contrôler réponses #166, puis poursuivre les seules tâches autorisées."
             },
             "suite": "Contrôler réponses #166, puis poursuivre les seules tâches autorisées."
+          },
+          {
+            "checkpoint": "Mission004 après instructions63e804b, code PR169/a15d650",
+            "statut": "En cours",
+            "constat": "Coordination des sept rôles réellement exécutée ; code DB et preuves documentaires consolidés, aucun programme clos.",
+            "responsable": "A0",
+            "preuves": [
+              "docs/ai-team/reports/mission-003/README.md",
+              "docs/ai-team/reports/mission-004/README.md"
+            ],
+            "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
+            "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
+            "cloturee": false,
+            "acceptation_metier": false,
+            "blocage": {
+              "cause": "Réalisation/accords/preuves aval distincts restent requis pour clore la mission entière ; la sous-tâche documentaire READY continue.",
+              "responsable": "A0",
+              "essais_effectues": "Coordination des sept rôles réellement exécutée ; code DB et preuves documentaires consolidés, aucun programme clos.",
+              "prochaine_action": "Poursuivre les sous-tâches prêtes, CI documentaires au SHA exact et classement des décisions sans réauditer les preuves inchangées."
+            },
+            "suite": "Relire #166, traiter prochaine sous-tâche READY ; publier preuves dans suivi existant sans déclencher de base réelle."
           }
         ]
       }
@@ -246,9 +268,9 @@
         "M02:protection prouvée avant essais en base"
       ],
       "execution": {
-        "checkpoint": "Mission004 après instructions63e804b, code PR169/a15d650",
+        "checkpoint": "Reprise496dcfc, décisions6250109536..6250111226",
         "statut": "En cours",
-        "constat": "CI169 pure réussie au SHA a15d650, jobsDB skipped ; échec CI154 historique conservé ; versions Node/Chromium qualifiées.",
+        "constat": "CI documentaire pure implémentée sous6250109536,11contextes/6diffs/5basesinvalides validés localement ; anciensjobs inchangés horsconditionciblée.",
         "responsable": "A5",
         "preuves": [
           "docs/ai-team/reports/mission-003/A6/RAPPORT-A6-M01-M03-M04-M10.md",
@@ -256,7 +278,10 @@
           "docs/ai-team/reports/mission-003/A5/CI154-NON-REGRESSION.md",
           "docs/ai-team/reports/mission-004/A6/CI-169-observation.json",
           "docs/ai-team/reports/mission-004/A6/M03-M04-preuves.json",
-          "docs/ai-team/reports/mission-004/README.md"
+          "docs/ai-team/reports/mission-004/README.md",
+          "docs/ai-team/reports/reprise-496dcfc/A6/CI-DOC-CONTEXT-PROOFS.json",
+          "docs/ai-team/reports/reprise-496dcfc/CI-REVUE-A0.json",
+          "docs/ai-team/reports/reprise-496dcfc/README.md"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -266,9 +291,9 @@
           "cause": "Réalisation/accords/preuves aval distincts restent requis pour clore la mission entière ; la sous-tâche documentaire READY continue.",
           "responsable": "A5",
           "essais_effectues": "CI169 pure réussie au SHA a15d650, jobsDB skipped ; échec CI154 historique conservé ; versions Node/Chromium qualifiées.",
-          "prochaine_action": "Maintenir distinction skip/succès et preuves par SHA ; résoudre Q-M004-CI-DOC-PURE avant synchronisation165, sans [skip ci]."
+          "prochaine_action": "Contrôler diff final, publier165 puis relire jobs/skips au SHAexact ; aucun résultat transféré des anciensruns."
         },
-        "suite": "Maintenir distinction skip/succès et preuves par SHA ; résoudre Q-M004-CI-DOC-PURE avant synchronisation165, sans [skip ci].",
+        "suite": "Contrôler diff final, publier165 puis relire jobs/skips au SHAexact ; aucun résultat transféré des anciensruns.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -291,6 +316,31 @@
               "prochaine_action": "Conserver échec CI154 ; contrat de snapshot et protocole déterministe préparés. Après accord de lot et M02/cible sûre, distinguer défaut serveur/snapshot/cache/corrélation sans affaiblir+1."
             },
             "suite": "Conserver échec CI154 ; contrat de snapshot et protocole déterministe préparés. Après accord de lot et M02/cible sûre, distinguer défaut serveur/snapshot/cache/corrélation sans affaiblir+1."
+          },
+          {
+            "checkpoint": "Mission004 après instructions63e804b, code PR169/a15d650",
+            "statut": "En cours",
+            "constat": "CI169 pure réussie au SHA a15d650, jobsDB skipped ; échec CI154 historique conservé ; versions Node/Chromium qualifiées.",
+            "responsable": "A5",
+            "preuves": [
+              "docs/ai-team/reports/mission-003/A6/RAPPORT-A6-M01-M03-M04-M10.md",
+              "docs/ai-team/reports/mission-003/A6/CI-PR154-76e43d1.md",
+              "docs/ai-team/reports/mission-003/A5/CI154-NON-REGRESSION.md",
+              "docs/ai-team/reports/mission-004/A6/CI-169-observation.json",
+              "docs/ai-team/reports/mission-004/A6/M03-M04-preuves.json",
+              "docs/ai-team/reports/mission-004/README.md"
+            ],
+            "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
+            "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
+            "cloturee": false,
+            "acceptation_metier": false,
+            "blocage": {
+              "cause": "Réalisation/accords/preuves aval distincts restent requis pour clore la mission entière ; la sous-tâche documentaire READY continue.",
+              "responsable": "A5",
+              "essais_effectues": "CI169 pure réussie au SHA a15d650, jobsDB skipped ; échec CI154 historique conservé ; versions Node/Chromium qualifiées.",
+              "prochaine_action": "Contrôler diff final, publier165 puis relire jobs/skips au SHAexact ; aucun résultat transféré des anciensruns."
+            },
+            "suite": "Maintenir distinction skip/succès et preuves par SHA ; résoudre Q-M004-CI-DOC-PURE avant synchronisation165, sans [skip ci]."
           }
         ]
       }
@@ -471,9 +521,9 @@
         "M00:inventaire et décision de conservation"
       ],
       "execution": {
-        "checkpoint": "Mission004 après instructions63e804b, code PR169/a15d650",
+        "checkpoint": "Reprise496dcfc, décisions6250109536..6250111226",
         "statut": "En cours",
-        "constat": "125 occurrences/69fiches/33chemins rapprochés ;185 relations candidates et305 citations exactes contrôlées, sans équivalence d’oracles. Puis huitentrées de niveaux différents examinées :52sous-attendus,7présents27partiels18absents,183occurrences/131citationsuniques exactes ; revue A5 indépendante. Conflit P2 classification confirmé statiquement :écritureclasseIfc inconditionnelle aprèscode/retrait, contrairementcontrat relu ;7sources/96lignes, pasruntime.",
+        "constat": "M08-PATH-001..007 :49sous-attendus (1préparationprésente/24partiels/24absents),39contextesnonconclus ;204citations/128uniques exactes, revueA5 indépendante réconciliée sans fausseéquivalence.",
         "responsable": "A2",
         "preuves": [
           "docs/ai-team/reports/mission-003/A2/isolation-nominal-review.json",
@@ -487,7 +537,10 @@
           "docs/ai-team/reports/mission-004/README.md",
           "docs/ai-team/reports/mission-004/A2/M08-8-ORACLES-COMPARAISON.json",
           "docs/ai-team/reports/mission-004/A5/M08-8-REVUE-INDEPENDANTE-A5.json",
-          "docs/ai-team/reports/mission-004/A2/M08-CLASSIFICATION-CONFLIT-STATIQUE.md"
+          "docs/ai-team/reports/mission-004/A2/M08-CLASSIFICATION-CONFLIT-STATIQUE.md",
+          "docs/ai-team/reports/reprise-496dcfc/A2/M08-PATH-001-007-COMPARAISON.json",
+          "docs/ai-team/reports/reprise-496dcfc/A5/M08-001-007-CONFRONTATION-A2-A5.json",
+          "docs/ai-team/reports/reprise-496dcfc/README.md"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -497,9 +550,9 @@
           "cause": "Réalisation/accords/preuves aval distincts restent requis pour clore la mission entière ; la sous-tâche documentaire READY continue.",
           "responsable": "A2",
           "essais_effectues": "125 occurrences/69fiches/33chemins rapprochés ;185 relations candidates et305 citations exactes contrôlées, sans équivalence d’oracles.",
-          "prochaine_action": "Comparer attendus des entrées restantes sans équivalence déduite ; commencer M08-PATH-001..007. Instruire écart apparent DA06-08/classeIfc en relisant D111 avant arbitrage."
+          "prochaine_action": "Poursuivre prochaine cohorte non analysée M08-PATH-009..015, en vérifiant doublons avec huitentréesM004 déjà traitées ; aucun test nécessaire pour lecture."
         },
-        "suite": "Comparer attendus des entrées restantes sans équivalence déduite ; commencer M08-PATH-001..007. Instruire écart apparent DA06-08/classeIfc en relisant D111 avant arbitrage.",
+        "suite": "Poursuivre prochaine cohorte non analysée M08-PATH-009..015, en vérifiant doublons avec huitentréesM004 déjà traitées ; aucun test nécessaire pour lecture.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -524,6 +577,37 @@
               "prochaine_action": "Rapprocher les125 chemins absents selon validation prévue/historique/courante ; conserver DA-09-09 prospectif sans inventer de fiche, puis qualifier hors scanner/licences selon périmètre."
             },
             "suite": "Rapprocher les125 chemins absents selon validation prévue/historique/courante ; conserver DA-09-09 prospectif sans inventer de fiche, puis qualifier hors scanner/licences selon périmètre."
+          },
+          {
+            "checkpoint": "Mission004 après instructions63e804b, code PR169/a15d650",
+            "statut": "En cours",
+            "constat": "125 occurrences/69fiches/33chemins rapprochés ;185 relations candidates et305 citations exactes contrôlées, sans équivalence d’oracles. Puis huitentrées de niveaux différents examinées :52sous-attendus,7présents27partiels18absents,183occurrences/131citationsuniques exactes ; revue A5 indépendante. Conflit P2 classification confirmé statiquement :écritureclasseIfc inconditionnelle aprèscode/retrait, contrairementcontrat relu ;7sources/96lignes, pasruntime.",
+            "responsable": "A2",
+            "preuves": [
+              "docs/ai-team/reports/mission-003/A2/isolation-nominal-review.json",
+              "docs/ai-team/reports/mission-003/A2/isolation-extra-docs-review.json",
+              "docs/ai-team/reports/mission-003/A2/isolation-code-review.json",
+              "docs/ai-team/reports/mission-003/A2/isolation-fiches-review.json",
+              "docs/ai-team/reports/mission-003/A2/isolation-nominal-supplement.json",
+              "docs/ai-team/reports/mission-004/A2/M08-125-PATH-MAPPING.json",
+              "docs/ai-team/reports/mission-004/A5/M08-REVUE-ORACLES-A5.json",
+              "docs/ai-team/reports/mission-004/validation-M08-A0.json",
+              "docs/ai-team/reports/mission-004/README.md",
+              "docs/ai-team/reports/mission-004/A2/M08-8-ORACLES-COMPARAISON.json",
+              "docs/ai-team/reports/mission-004/A5/M08-8-REVUE-INDEPENDANTE-A5.json",
+              "docs/ai-team/reports/mission-004/A2/M08-CLASSIFICATION-CONFLIT-STATIQUE.md"
+            ],
+            "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
+            "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
+            "cloturee": false,
+            "acceptation_metier": false,
+            "blocage": {
+              "cause": "Réalisation/accords/preuves aval distincts restent requis pour clore la mission entière ; la sous-tâche documentaire READY continue.",
+              "responsable": "A2",
+              "essais_effectues": "125 occurrences/69fiches/33chemins rapprochés ;185 relations candidates et305 citations exactes contrôlées, sans équivalence d’oracles.",
+              "prochaine_action": "Poursuivre prochaine cohorte non analysée M08-PATH-009..015, en vérifiant doublons avec huitentréesM004 déjà traitées ; aucun test nécessaire pour lecture."
+            },
+            "suite": "Comparer attendus des entrées restantes sans équivalence déduite ; commencer M08-PATH-001..007. Instruire écart apparent DA06-08/classeIfc en relisant D111 avant arbitrage."
           }
         ]
       }
@@ -540,15 +624,17 @@
         "M02:garde avant tests avec données"
       ],
       "execution": {
-        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "checkpoint": "Reprise496dcfc, décisions6250109536..6250111226",
         "statut": "En cours",
-        "constat": "CSPfalse relu au SHAcode169, inventaire réel par usage dont23scriptsinlineParcelle/WASMOCCT/MapTiler,14oracles et dossier CSP/SCAN prêts à autoriser ; aucun scan externe ou code appliqué.",
+        "constat": "CSP/KML optionA de préparation retenue6250111226 ; origines identifiées distinctes des approbations,9casdocetfallbackneutre sans header/enforcement/scanréseau.",
         "responsable": "A5",
         "preuves": [
           "docs/ai-team/reports/mission-003/A5/A5-M02-M09-M15-M26.md",
           "docs/ai-team/reports/mission-004/A5/M09-LOT-A3-CSP-SCAN-PRET-A-AUTORISER.md",
           "docs/ai-team/reports/mission-004/A5/M09-INVENTAIRE-POINTS.json",
-          "docs/ai-team/reports/mission-004/A5/M09-WORKFLOW-PUR-PROPOSE.md"
+          "docs/ai-team/reports/mission-004/A5/M09-WORKFLOW-PUR-PROPOSE.md",
+          "docs/ai-team/reports/reprise-496dcfc/A4/CSP-KML-DELTA-DECISION.md",
+          "docs/ai-team/reports/reprise-496dcfc/README.md"
         ],
         "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
         "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
@@ -558,9 +644,34 @@
           "cause": "Code et scan externe non autorisés dans ce lot ; préparation documentaire achevée, recette future.",
           "responsable": "A5",
           "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
-          "prochaine_action": "Revue du lot A3-CSP/SCAN puis accord de code distinct ; préparer politique par usage/ReportOnly et refus, sans unsafe-eval global supposé."
+          "prochaine_action": "Documenter origines effectivement approuvées si disponibles ; sinon rester en spécification, proxylotdistinct sans implementation."
         },
-        "suite": "Revue du lot A3-CSP/SCAN puis accord de code distinct ; préparer politique par usage/ReportOnly et refus, sans unsafe-eval global supposé."
+        "suite": "Documenter origines effectivement approuvées si disponibles ; sinon rester en spécification, proxylotdistinct sans implementation.",
+        "historique": [
+          {
+            "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+            "statut": "En cours",
+            "constat": "CSPfalse relu au SHAcode169, inventaire réel par usage dont23scriptsinlineParcelle/WASMOCCT/MapTiler,14oracles et dossier CSP/SCAN prêts à autoriser ; aucun scan externe ou code appliqué.",
+            "responsable": "A5",
+            "preuves": [
+              "docs/ai-team/reports/mission-003/A5/A5-M02-M09-M15-M26.md",
+              "docs/ai-team/reports/mission-004/A5/M09-LOT-A3-CSP-SCAN-PRET-A-AUTORISER.md",
+              "docs/ai-team/reports/mission-004/A5/M09-INVENTAIRE-POINTS.json",
+              "docs/ai-team/reports/mission-004/A5/M09-WORKFLOW-PUR-PROPOSE.md"
+            ],
+            "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+            "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+            "cloturee": false,
+            "acceptation_metier": false,
+            "blocage": {
+              "cause": "Code et scan externe non autorisés dans ce lot ; préparation documentaire achevée, recette future.",
+              "responsable": "A5",
+              "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+              "prochaine_action": "Documenter origines effectivement approuvées si disponibles ; sinon rester en spécification, proxylotdistinct sans implementation."
+            },
+            "suite": "Revue du lot A3-CSP/SCAN puis accord de code distinct ; préparer politique par usage/ReportOnly et refus, sans unsafe-eval global supposé."
+          }
+        ]
       }
     },
     {
@@ -619,9 +730,9 @@
         "M00:références identifiées"
       ],
       "execution": {
-        "checkpoint": "Mission004 après instructions63e804b, code PR169/a15d650",
+        "checkpoint": "Reprise496dcfc, décisions6250109536..6250111226",
         "statut": "En cours",
-        "constat": "D01/D02 retenus ; dossierG0 finalisé et revu A2/A4/A5 ; conditions documentaires par ID vérifiées, pas gate passée.",
+        "constat": "G0 accepté cadrage documentaire par6250109830 surdossier7b0cca4 ;4IDs bornés revusA4/intégrés, personnesCADDEC03 et toutesinconnuesaval maintenues.",
         "responsable": "A1",
         "preuves": [
           "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
@@ -629,7 +740,10 @@
           "docs/ai-team/reports/mission-004/A2/G0-REVUE-A2.json",
           "docs/ai-team/reports/mission-004/A4/REVUE-G0-A1.json",
           "docs/ai-team/reports/mission-004/A5/G0-REVUE-A5.json",
-          "docs/ai-team/reports/mission-004/README.md"
+          "docs/ai-team/reports/mission-004/README.md",
+          "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "docs/ai-team/reports/reprise-496dcfc/A4/REVUE-G0-ACTE-DELTA4.json",
+          "docs/ai-team/reports/reprise-496dcfc/README.md"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -639,9 +753,9 @@
           "cause": "Réalisation/accords/preuves aval distincts restent requis pour clore la mission entière ; la sous-tâche documentaire READY continue.",
           "responsable": "A1",
           "essais_effectues": "D01/D02 retenus ; dossierG0 finalisé et revu A2/A4/A5 ; conditions documentaires par ID vérifiées, pas gate passée.",
-          "prochaine_action": "Soumettre le dossier G0 complet et ses revues au décideur délégué, puis instruire G1 ; ne pas redemander choix du pilote."
+          "prochaine_action": "PréparerG1 sous orientationsDEC01/03 ; aucun codeStudio, POC, G1–G4 ou migration autorisé par G0."
         },
-        "suite": "Soumettre le dossier G0 complet et ses revues au décideur délégué, puis instruire G1 ; ne pas redemander choix du pilote.",
+        "suite": "PréparerG1 sous orientationsDEC01/03 ; aucun codeStudio, POC, G1–G4 ou migration autorisé par G0.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -662,6 +776,31 @@
               "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
             },
             "suite": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+          },
+          {
+            "checkpoint": "Mission004 après instructions63e804b, code PR169/a15d650",
+            "statut": "En cours",
+            "constat": "D01/D02 retenus ; dossierG0 finalisé et revu A2/A4/A5 ; conditions documentaires par ID vérifiées, pas gate passée.",
+            "responsable": "A1",
+            "preuves": [
+              "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
+              "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+              "docs/ai-team/reports/mission-004/A2/G0-REVUE-A2.json",
+              "docs/ai-team/reports/mission-004/A4/REVUE-G0-A1.json",
+              "docs/ai-team/reports/mission-004/A5/G0-REVUE-A5.json",
+              "docs/ai-team/reports/mission-004/README.md"
+            ],
+            "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
+            "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
+            "cloturee": false,
+            "acceptation_metier": false,
+            "blocage": {
+              "cause": "Réalisation/accords/preuves aval distincts restent requis pour clore la mission entière ; la sous-tâche documentaire READY continue.",
+              "responsable": "A1",
+              "essais_effectues": "D01/D02 retenus ; dossierG0 finalisé et revu A2/A4/A5 ; conditions documentaires par ID vérifiées, pas gate passée.",
+              "prochaine_action": "PréparerG1 sous orientationsDEC01/03 ; aucun codeStudio, POC, G1–G4 ou migration autorisé par G0."
+            },
+            "suite": "Soumettre le dossier G0 complet et ses revues au décideur délégué, puis instruire G1 ; ne pas redemander choix du pilote."
           }
         ]
       }
@@ -819,13 +958,14 @@
         "M00:autorisation spécifique du POC"
       ],
       "execution": {
-        "checkpoint": "Mission004 après instructions63e804b, code PR169/a15d650",
+        "checkpoint": "Reprise496dcfc, décisions6250109536..6250111226",
         "statut": "En cours",
-        "constat": "18 décisions physiques priorisées, exemples durables préparés ; DEC01/03/18 puis02/12 ; aucun POC/G2/G3 exécuté ou accepté.",
+        "constat": "OrientationsDEC01/03 optionA retenues par6250110124/0501 ; documents2Dautonomes etidentités propres, DECphysiques non closes.",
         "responsable": "A2",
         "preuves": [
           "docs/ai-team/reports/mission-003/A1/studio-18-decisions.json",
-          "docs/ai-team/reports/mission-004/README.md"
+          "docs/ai-team/reports/mission-004/README.md",
+          "docs/ai-team/reports/reprise-496dcfc/README.md"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -835,9 +975,9 @@
           "cause": "Réalisation/accords/preuves aval distincts restent requis pour clore la mission entière ; la sous-tâche documentaire READY continue.",
           "responsable": "A2",
           "essais_effectues": "18 décisions physiques priorisées, exemples durables préparés ; DEC01/03/18 puis02/12 ; aucun POC/G2/G3 exécuté ou accepté.",
-          "prochaine_action": "Soumettre questions techniques bornées sur dossiers concrets ; POC uniquement après autorisation du sous-lot."
+          "prochaine_action": "Compléter schémas/coûts/compatibilité/preuves et sous-ensemblesG1 ; aucune réalisation/POC ouverte implicitement."
         },
-        "suite": "Soumettre questions techniques bornées sur dossiers concrets ; POC uniquement après autorisation du sous-lot.",
+        "suite": "Compléter schémas/coûts/compatibilité/preuves et sous-ensemblesG1 ; aucune réalisation/POC ouverte implicitement.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -858,6 +998,27 @@
               "prochaine_action": "Prioriser DEC01/02/03/12/18 et autorisation POC distincte sur corpus sûr."
             },
             "suite": "Prioriser DEC01/02/03/12/18 et autorisation POC distincte sur corpus sûr."
+          },
+          {
+            "checkpoint": "Mission004 après instructions63e804b, code PR169/a15d650",
+            "statut": "En cours",
+            "constat": "18 décisions physiques priorisées, exemples durables préparés ; DEC01/03/18 puis02/12 ; aucun POC/G2/G3 exécuté ou accepté.",
+            "responsable": "A2",
+            "preuves": [
+              "docs/ai-team/reports/mission-003/A1/studio-18-decisions.json",
+              "docs/ai-team/reports/mission-004/README.md"
+            ],
+            "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
+            "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
+            "cloturee": false,
+            "acceptation_metier": false,
+            "blocage": {
+              "cause": "Réalisation/accords/preuves aval distincts restent requis pour clore la mission entière ; la sous-tâche documentaire READY continue.",
+              "responsable": "A2",
+              "essais_effectues": "18 décisions physiques priorisées, exemples durables préparés ; DEC01/03/18 puis02/12 ; aucun POC/G2/G3 exécuté ou accepté.",
+              "prochaine_action": "Compléter schémas/coûts/compatibilité/preuves et sous-ensemblesG1 ; aucune réalisation/POC ouverte implicitement."
+            },
+            "suite": "Soumettre questions techniques bornées sur dossiers concrets ; POC uniquement après autorisation du sous-lot."
           }
         ]
       }
@@ -1652,13 +1813,14 @@
         "M11:sources du chantier"
       ],
       "execution": {
-        "checkpoint": "Mission004 après instructions63e804b, code PR169/a15d650",
+        "checkpoint": "Reprise496dcfc, décisions6250109536..6250111226",
         "statut": "En cours",
-        "constat": "Checkpoints et registre uniques maintenus ;30conditions documentaires vérifiées, branche temporaire de sauvegarde si165CI incompatible.",
+        "constat": "Checkpoints496dcfc repris sanssecondprogramme, registre630unique, publicationcanonique165 préparée avec workflow sansDB autorisé.",
         "responsable": "A0",
         "preuves": [
           "docs/ai-team/reports/mission-003/README.md",
-          "docs/ai-team/reports/mission-004/README.md"
+          "docs/ai-team/reports/mission-004/README.md",
+          "docs/ai-team/reports/reprise-496dcfc/README.md"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -1668,9 +1830,9 @@
           "cause": "Réalisation/accords/preuves aval distincts restent requis pour clore la mission entière ; la sous-tâche documentaire READY continue.",
           "responsable": "A0",
           "essais_effectues": "Checkpoints et registre uniques maintenus ;30conditions documentaires vérifiées, branche temporaire de sauvegarde si165CI incompatible.",
-          "prochaine_action": "Lire réponses166 et HEAD exacts ; rattacher ce checkpoint à165 après cheminCI sûr sans créer second programme."
+          "prochaine_action": "Après chaque étape : tests/docpreuves, STATUS/HANDOFF ensemble, progrès166 puis prochaineREADY."
         },
-        "suite": "Lire réponses166 et HEAD exacts ; rattacher ce checkpoint à165 après cheminCI sûr sans créer second programme.",
+        "suite": "Après chaque étape : tests/docpreuves, STATUS/HANDOFF ensemble, progrès166 puis prochaineREADY.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -1691,6 +1853,27 @@
               "prochaine_action": "Maintenir réponses, CI exacte et STATUS/HANDOFF ensemble à chaque reprise."
             },
             "suite": "Maintenir réponses, CI exacte et STATUS/HANDOFF ensemble à chaque reprise."
+          },
+          {
+            "checkpoint": "Mission004 après instructions63e804b, code PR169/a15d650",
+            "statut": "En cours",
+            "constat": "Checkpoints et registre uniques maintenus ;30conditions documentaires vérifiées, branche temporaire de sauvegarde si165CI incompatible.",
+            "responsable": "A0",
+            "preuves": [
+              "docs/ai-team/reports/mission-003/README.md",
+              "docs/ai-team/reports/mission-004/README.md"
+            ],
+            "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
+            "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
+            "cloturee": false,
+            "acceptation_metier": false,
+            "blocage": {
+              "cause": "Réalisation/accords/preuves aval distincts restent requis pour clore la mission entière ; la sous-tâche documentaire READY continue.",
+              "responsable": "A0",
+              "essais_effectues": "Checkpoints et registre uniques maintenus ;30conditions documentaires vérifiées, branche temporaire de sauvegarde si165CI incompatible.",
+              "prochaine_action": "Après chaque étape : tests/docpreuves, STATUS/HANDOFF ensemble, progrès166 puis prochaineREADY."
+            },
+            "suite": "Lire réponses166 et HEAD exacts ; rattacher ce checkpoint à165 après cheminCI sûr sans créer second programme."
           }
         ]
       }

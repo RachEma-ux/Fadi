@@ -1,0 +1,8 @@
+{
+  "baseline": "496dcfc7bf80868ef21216d667187087db32a738",
+  "workflow_sha256": "9542a7ca056edcb50f3ecb1892b47e242dc45aa9589c3d7463a4f93a31e9f7ec",
+  "trois_jobs_applicatifs_inchanges_sauf_condition": true,
+  "job_documentaire_sans_services": true,
+  "controle_diff_avant_controles": true,
+  "aucun_workflow_exécute": true
+}

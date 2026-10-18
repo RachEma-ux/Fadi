@@ -1,0 +1,1784 @@
+{
+  "mission": "A3-CLASSIF-1_PRECONDITION_A2",
+  "reference": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "authorization": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250110849",
+  "mode": "LECTURE_SEULE_AUCUN_TEST_CODE_APP_DB_SERVICE",
+  "status": "INVENTAIRE_A2_COMPLET_DANS_PERIMETRE_DECLARE_RELECTURE_CONJOINTE_A5",
+  "scope": "Sources suivies Git apps/packages/scripts/.github au SHA exact, symboles directs et préfixes classification ; contrôle complémentaire du reste du dépôt hors docs/Studio sans autre occurrence de ce motif. Documents normatifs et anciens rapports séparés des consommateurs opérationnels.",
+  "method": {
+    "direct_pattern": "classeIfc|classesIfc|affecterClassification|classification\\.affecter|controleClassesIfc|classesIfcAttendues|proposerClassification|classification:|classification-regle|annexe-c",
+    "direct_matching_lines": 81,
+    "direct_matching_files": 19,
+    "generic_pattern": "Object.(entries|keys|values)(...proprietes|.proprietes[|proprietes:|proprietes)",
+    "generic_matching_lines": 114,
+    "generic_matching_files": 31,
+    "notes": [
+      "Chaque ligne brute du motif est consignée, y compris imports/commentaires/variables homonymes et classification composant distincte ; aucune occurrence supprimée pour arranger le bilan.",
+      "La première recherche adjacente .ifc capturait fichiers IFC et données JSON sans rapport : écartée des métriques, pas utilisée comme preuve de consommateurs.",
+      "Flux pertinent relu : UI/proposition→dispatcher→réducteur→contrôles/verrous→inverse ; diagnostic/API/export distincts.",
+      "Cette exhaustivité statique porte sur motifs et sources accessibles, pas des données, anciens clients, plugins ou références construites à runtime."
+    ]
+  },
+  "direct_consumers": [
+    {
+      "path": "apps/api/src/routes/atelier-commands.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "4cf62fb62154cd7435fff87cc801d1e89ccaad76",
+      "sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+      "role": "assertions intégration lues",
+      "impact": "948–955 vérifie IfcDoor déclaré et diagnostic. Lecture seule ; ne pas lancer API/DB sous mandat pur.",
+      "literal_evidence": [
+        {
+          "line": 952,
+          "exact_line": "    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"c1\", 0, [niveau, mur(\"m1\"), { type: \"propriete.definir\", params: { id: \"m1\", nom: \"classeIfc\", valeur: \"IfcDoor\" } }]))).status).toBe(200);"
+        },
+        {
+          "line": 954,
+          "exact_line": "    expect(p.classesIfc).toHaveLength(1);"
+        },
+        {
+          "line": 955,
+          "exact_line": "    expect(p.classesIfc[0]).toMatchObject({ objetId: \"m1\", declaree: \"IfcDoor\", attendues: [\"IfcWall\"] });"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "apps/api/src/routes/atelier-commands.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "ec21af8ea3b0501725b15ab8555d612845802c9a",
+      "sha256": "efc43e42757bd328338d240169720c6604cca832882573c0fecd8a5f01c50d32",
+      "role": "façade de lecture",
+      "impact": "GET problemes appelle controleClassesIfc sur modèle chargé avec droit read. Aucune adaptation physique attendue ; API non exécutée.",
+      "literal_evidence": [
+        {
+          "line": 29,
+          "exact_line": "  controleClassesIfc,"
+        },
+        {
+          "line": 232,
+          "exact_line": "    classesIfc: charge ? controleClassesIfc(charge.etat) : [],"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "apps/web/e2e/atelier-complements.mjs",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "a38c75ae79336e1afa058142ce3650ac974e5d58",
+      "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+      "role": "assertions navigateur lues",
+      "impact": "Code/libellé au référentiel et lot règle +1 ; ne testent pas classeIfc. Conserver sources, aucun navigateur lancé.",
+      "literal_evidence": [
+        {
+          "line": 822,
+          "exact_line": "    prop = (await modele(pid)).modele.objets[murA.id]?.proprietes[\"classification:CFC-e2e\"] ?? null;"
+        },
+        {
+          "line": 825,
+          "exact_line": "  check(\"classification : référentiel chargé depuis un CSV, code vérifié et libellé noté sur le mur\", !!ref && Object.keys(ref.params.codes).length === 2 && prop?.statut === \"verifiee\" && (await modele(pid)).modele.objets[murA.id]?.proprietes[\"classification:CFC-e2e:libelle\"]?.valeur === \"Maçonnerie\", `${JSON.stringify(ref?.params?.codes ?? null)} · ${JSON.stringify(prop)}`);"
+        },
+        {
+          "line": 1748,
+          "exact_line": "    classes = Object.values(md.modele.objets).filter((o) => o.proprietes?.[\"classification:E2E\"]?.valeur === \"R-1\").length;"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "apps/web/src/lib/api.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "e0669ad5b63108673508aeb078d10172b2fb0554",
+      "sha256": "95ab92214575696fe46aba7f83bdae167286c24b85c3af95a08c74155f0a2f0a",
+      "role": "contrat de réponse dérivée",
+      "impact": "Type classesIfc?:IncoherenceClasseIfc[] ; pas autorité persistante ni attente de propriété calculée.",
+      "literal_evidence": [
+        {
+          "line": 1143,
+          "exact_line": "  classesIfc?: import(\"@parcours/atelier-model\").IncoherenceClasseIfc[];"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Complements.tsx",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "67b88849202f65d571845f73b9ec266251c1b9ce",
+      "sha256": "97c34ce0c3a04271db430dd6d9d5a9b31d506e0ff6a800eb4e2566133b548b03",
+      "role": "émetteur UI et lecteur codes",
+      "impact": "Retrait code=null, multi-sélection liste de commandes id et règle ids. La classification descriptive du composant (bloc.definir) est un champ différent, à préserver.",
+      "literal_evidence": [
+        {
+          "line": 13,
+          "exact_line": "  proposerClassification,"
+        },
+        {
+          "line": 69,
+          "exact_line": "  const actuels = sel.length === 1 ? Object.entries(sel[0]!.proprietes).filter(([k]) => k.startsWith(\"classification:\") && !k.endsWith(\":libelle\")).map(([k, v]) => ({ systeme: k.slice(\"classification:\".length), code: String(v.valeur), statut: v.statut, libelle: sel[0]!.proprietes[`${k}:libelle`]?.valeur as string | undefined })) : [];"
+        },
+        {
+          "line": 79,
+          "exact_line": "              {!readOnly && <button type=\"button\" className=\"lien\" onClick={() => onCommandes([{ type: \"classification.affecter\", params: { id: sel[0]!.id, systeme: a.systeme, code: null } }], `Retirer la classification ${a.systeme}`)}>Retirer</button>}"
+        },
+        {
+          "line": 85,
+          "exact_line": "        <form className=\"classif-formulaire\" onSubmit={(e) => { e.preventDefault(); if (systeme.trim() && code.trim()) onCommandes(sel.map((o) => ({ type: \"classification.affecter\", params: { id: o.id, systeme: systeme.trim(), code: code.trim() } })), `Classer ${sel.length > 1 ? `${sel.length} objets` : sel[0]!.id} : ${systeme.trim()} ${code.trim()}`); }}>"
+        },
+        {
+          "line": 143,
+          "exact_line": "  const p = classe ? proposerClassification(etat, { classe, systeme, code, definitionId: type || null, niveauId: niveauSeul ? niveauId : null, remplacer }) : null;"
+        },
+        {
+          "line": 212,
+          "exact_line": "            onCommandes([{ type: \"bloc.definir\", params: { nom: nom.trim(), nature, cibles: sel.map((o) => o.id), pointDeBase: pt(base.x, base.y), bibliotheque: biblio.trim() || null, classification: nature === \"composant\" ? classification.trim() || null : null, remplacer } }], `${nature === \"composant\" ? \"Composant\" : \"Bloc\"} « ${nom.trim()} »`);"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Inspecteur.tsx",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "d70715cb71ab5e63c435ab29ebd91027ce04bceb",
+      "sha256": "add64226d4b65c59c1fcb25d0b61f3548618d22150fdc8db92492566585437b7",
+      "role": "lecture et édition génériques",
+      "impact": "255–263 affiche toutes propriétés ;1551 colonnes hors classification:* ;2030 concerne propriété groupe/calque, pas cible occurrence de CLASSIF1. Ligne/colonne/compteur implicites peuvent ne plus apparaître : effet attendu sans changementUI.",
+      "literal_evidence": [
+        {
+          "line": 1551,
+          "exact_line": "  const colonnes = [...new Set([...lignes.flatMap((o) => Object.keys(o.proprietes).filter((k) => !k.startsWith(\"classification:\"))), ...colonnesAjoutees])].sort((a, b) => a.localeCompare(b, \"fr\"));"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Modifications.tsx",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "65a1a87948b2412b6abeeee325409113cf912409",
+      "sha256": "6906c4517ffea0794feb1afaac42fa110d0b746f406141ca2d5c05d7a5cce0fe",
+      "role": "lecture diagnostics API",
+      "impact": "Affiche classesIfc et messages dérivés. Une déclaration désormais conservée peut laisser apparaître un avertissement auparavant effacé ; comportement D111 attendu, pas besoin UI démontré.",
+      "literal_evidence": [
+        {
+          "line": 141,
+          "exact_line": "      {bilan.data?.classesIfc && bilan.data.classesIfc.length > 0 && ("
+        },
+        {
+          "line": 142,
+          "exact_line": "        <details className=\"mod-problemes\" open data-classes-ifc={bilan.data.classesIfc.length}>"
+        },
+        {
+          "line": 144,
+          "exact_line": "            Classes IFC à vérifier (annexe C) <span className=\"nav-detail\">{bilan.data.classesIfc.length}</span>"
+        },
+        {
+          "line": 147,
+          "exact_line": "            {bilan.data.classesIfc.slice(0, 100).map((c) => ("
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "packages/atelier-model/src/annexe-c.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "f02e7add67412d09797be94a628813fa0c320aac",
+      "sha256": "19840668ea9f1b829611a0edf6203f30f3148a702e5e5b89510b20ee2f149d72",
+      "role": "assertions pures D111/D112",
+      "impact": "Déclaration incohérente conservée, export AnnexeC, proposition/exclusions, lots/inverse. Combinaison code externe + déclaration avant/après manquante à ajouter dans tests purs.",
+      "literal_evidence": [
+        {
+          "line": 2,
+          "exact_line": "import { ANNEXE_C, classesIfcAttendues, controleClassesIfc } from \"./annexe-c.js\";"
+        },
+        {
+          "line": 13,
+          "exact_line": "    for (const c of Object.keys(CLASSES) as Classe[]) expect(classesIfcAttendues(c)).toContain(CLASSES[c].ifc);"
+        },
+        {
+          "line": 22,
+          "exact_line": "      { type: \"propriete.definir\", params: { id: \"w1\", nom: \"classeIfc\", valeur: \"IfcDoor\" } },"
+        },
+        {
+          "line": 23,
+          "exact_line": "      { type: \"propriete.definir\", params: { id: \"w2\", nom: \"classeIfc\", valeur: \"ifcwall\" } },"
+        },
+        {
+          "line": 25,
+          "exact_line": "    const x = controleClassesIfc(e);"
+        },
+        {
+          "line": 27,
+          "exact_line": "    expect(e.objets[\"w1\"]!.proprietes[\"classeIfc\"]!.valeur).toBe(\"IfcDoor\");"
+        },
+        {
+          "line": 36,
+          "exact_line": "    const { proposerClassification } = await import(\"./classification-regle.js\");"
+        },
+        {
+          "line": 44,
+          "exact_line": "      { type: \"classification.affecter\", params: { id: \"w2\", systeme: \"CFC\", code: \"211\" } },"
+        },
+        {
+          "line": 47,
+          "exact_line": "    const p = proposerClassification(e, { classe: \"mur\", systeme: \"CFC\", code: \"214\", niveauId: \"n\" });"
+        },
+        {
+          "line": 51,
+          "exact_line": "    expect(p.commandes).toEqual([{ type: \"classification.affecter\", params: { ids: [\"w1\"], systeme: \"CFC\", code: \"214\" } }]);"
+        },
+        {
+          "line": 52,
+          "exact_line": "    expect(e.objets[\"w1\"]!.proprietes[\"classification:CFC\"]).toBeUndefined();"
+        },
+        {
+          "line": 53,
+          "exact_line": "    const tous = proposerClassification(e, { classe: \"mur\", systeme: \"CFC\", code: \"214\", remplacer: true });"
+        },
+        {
+          "line": 56,
+          "exact_line": "    expect([\"w1\", \"w2\", \"w3\"].map((id) => r.etat.objets[id]!.proprietes[\"classification:CFC\"]!.valeur)).toEqual([\"214\", \"214\", \"214\"]);"
+        },
+        {
+          "line": 58,
+          "exact_line": "    expect(proposerClassification(e, { classe: \"mur\", systeme: \"CFC\", code: \"\" }).commandes).toEqual([]);"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "packages/atelier-model/src/annexe-c.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "91b42157ac23f1ab5ee7391f87292c7711af69de",
+      "sha256": "d1862832a2da82c63be358c29302130f45ae1baef7137bbfafcde4a9ed85ede0",
+      "role": "lecture canonique dérivée",
+      "impact": "Compare déclaration existante sans mutation, ignore objet-importe. Absence ne fabrique ni propriété ni anomalie ; incohérence conservée et signalée.",
+      "literal_evidence": [
+        {
+          "line": 4,
+          "exact_line": " * `classeIfc`, saisie ou importée) qui n'en fait pas partie est signalée — jamais corrigée : l'export garde la classe"
+        },
+        {
+          "line": 52,
+          "exact_line": "export const classesIfcAttendues = (classe: Classe): readonly string[] => ANNEXE_C[classe] ?? [CLASSES[classe].ifc];"
+        },
+        {
+          "line": 62,
+          "exact_line": "export function controleClassesIfc(etat: ModeleAtelier): IncoherenceClasseIfc[] {"
+        },
+        {
+          "line": 67,
+          "exact_line": "    const v = o.proprietes?.[\"classeIfc\"]?.valeur;"
+        },
+        {
+          "line": 69,
+          "exact_line": "    const attendues = classesIfcAttendues(o.classe);"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "packages/atelier-model/src/classification-regle.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "e55a345796421a28023f8770863bc40e1e176fd5",
+      "sha256": "4c9cbe7f83402e33f83b0d31c2caba9f3118f3efd00f4c786cb4bf75bdf4c469",
+      "role": "émetteur de lots ids",
+      "impact": "Sélection classe/type/niveau, exclusions verrouillés/déjà classés et proposition explicite. Pas propagation ou écriture automatique ; conserver critères.",
+      "literal_evidence": [
+        {
+          "line": 3,
+          "exact_line": " * désigne des objets ; la proposition liste les cibles et les commandes `classification.affecter` d'un seul lot, que"
+        },
+        {
+          "line": 31,
+          "exact_line": "export function proposerClassification(etat: ModeleAtelier, r: RegleClassification): PropositionClassification {"
+        },
+        {
+          "line": 45,
+          "exact_line": "    const actuel = o.proprietes[`classification:${systeme}`]?.valeur;"
+        },
+        {
+          "line": 53,
+          "exact_line": "  const commandes: Commande[] = systeme && code && cibles.length ? [{ type: \"classification.affecter\", params: { ids: cibles, systeme, code } }] : [];"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "b1cf02c1a04663aeb329e7fd9b724a6f400a73cb",
+      "sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+      "role": "assertions pures autre sémantique",
+      "impact": "Classification Sanitaires de composant et propriétés effectives, pas classeIfc implicite. Garder non-régression sans détourner son contrat.",
+      "literal_evidence": [
+        {
+          "line": 72,
+          "exact_line": "      { type: \"bloc.definir\", params: { id: \"c\", nom: \"Lavabo\", nature: \"composant\", cibles: [\"e2\"], pointDeBase: pt(10.6, 10.4), proprietes: { marque: { valeur: \"non renseignée\" }, debit: { valeur: 12, unite: \"l/min\" } }, classification: \"Sanitaires\" } },"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/bloc.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "19d394220f070aca70bb704d6ce054e3dd618851",
+      "sha256": "b7d91a3bb472f5e11bacd8304543c6075403a6f3175a85981c776004ccf6d4c6",
+      "role": "lecture générique et classification composant",
+      "impact": "proprietesEffectives211–217 combine propriétés définition/occurrence sans inventer nouvel héritage IFC. Attribut classification de définition est distinct ; ne pas modifier définitions.",
+      "literal_evidence": [
+        {
+          "line": 54,
+          "exact_line": "  classification: string | null;"
+        },
+        {
+          "line": 142,
+          "exact_line": "      classification: p[\"classification\"] === undefined && anciens ? anciens.classification : lire.chaineOuNull(p, \"classification\"),"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "458b232273b5e5529ff6489804371cba011901db",
+      "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+      "role": "oracle contradictoire",
+      "impact": "281 exige propriété déduite ; doit évoluer vers invariance/absence selon autorisation, sans réduire assertions code et retrait.",
+      "literal_evidence": [
+        {
+          "line": 279,
+          "exact_line": "    const r = appliquer(base(), [{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"Uniclass\", code: \"EF_25_10\" } }]).etat;"
+        },
+        {
+          "line": 280,
+          "exact_line": "    expect(r.objets[\"w\"]!.proprietes[\"classification:Uniclass\"]).toEqual({ valeur: \"EF_25_10\", provenance: \"saisie\", statut: \"declaree\" });"
+        },
+        {
+          "line": 281,
+          "exact_line": "    expect(r.objets[\"w\"]!.proprietes[\"classeIfc\"]).toEqual({ valeur: \"IfcWall\", provenance: \"regle\", statut: \"verifiee\" });"
+        },
+        {
+          "line": 282,
+          "exact_line": "    expect(appliquer(r, [{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"Uniclass\", code: null } }]).etat.objets[\"w\"]!.proprietes[\"classification:Uniclass\"]).toBeUndefined();"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/index.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "6df8663bc325337bd4cd2aa5c7dab0b2ece3619e",
+      "sha256": "ee0dd04b4976c17d5f77a261730d239c8d125a2442ca8013c464d59dc8ce09b3",
+      "role": "dispatch et pipeline pur",
+      "impact": "id/ids vers même réducteur, puis contrôles de domaine/verrous. Tester via appliquerLot, pas uniquement appel direct ; inverse différentiel au niveau du lot.",
+      "literal_evidence": [
+        {
+          "line": 60,
+          "exact_line": "import { affecterClassification, affecterPhase, definirPropriete, rattacherReference, reducteursCalque, reducteursDefinition, reducteursGroupe, reducteursNiveau, reducteursSite, reducteursType, reparerReference } from \"./organisation.js\";"
+        },
+        {
+          "line": 292,
+          "exact_line": "  \"classification.affecter\": (etat, p) => {"
+        },
+        {
+          "line": 293,
+          "exact_line": "    if (!Array.isArray(p[\"ids\"])) return affecterClassification(etat, p);"
+        },
+        {
+          "line": 299,
+          "exact_line": "      const r = affecterClassification(courant, { ...p, id });"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/organisation.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "8c2f00472ec1dd9a903071396940a092eef1cbc9",
+      "sha256": "792399409ba93824808c5ca445ee3d169fc02d68bb0e7ee0541455eee17af26b",
+      "role": "écriture canonique et retrait",
+      "impact": "436 crée/remplace classeIfc après les deux branches. Garder propriétés existantes intégralement, code/libellé et effets ; commentaire414 à aligner dans correction autorisée.",
+      "literal_evidence": [
+        {
+          "line": 415,
+          "exact_line": "export function affecterClassification(etat: ModeleAtelier, p: Brut): ResultatCommande {"
+        },
+        {
+          "line": 428,
+          "exact_line": "    delete proprietes[`classification:${systeme}`];"
+        },
+        {
+          "line": 429,
+          "exact_line": "    delete proprietes[`classification:${systeme}:libelle`];"
+        },
+        {
+          "line": 431,
+          "exact_line": "    proprietes[`classification:${systeme}`] = { valeur: code, provenance: \"saisie\", statut: ref ? \"verifiee\" : \"declaree\" };"
+        },
+        {
+          "line": 433,
+          "exact_line": "    if (libelle) proprietes[`classification:${systeme}:libelle`] = { valeur: libelle, provenance: \"import\", statut: \"verifiee\" };"
+        },
+        {
+          "line": 434,
+          "exact_line": "    else delete proprietes[`classification:${systeme}:libelle`];"
+        },
+        {
+          "line": 436,
+          "exact_line": "  proprietes[\"classeIfc\"] = { valeur: CLASSES[o.classe].ifc, provenance: \"regle\", statut: \"verifiee\" };"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "6a2dbb2e60eb300e988cec2996fff80264fce0c4",
+      "sha256": "a3a870f1f187e3475d0a5d7f298f961e4665ff712bdab918dc15f1bd6b3f2c7a",
+      "role": "assertions pures D065",
+      "impact": "Code libre déclaré, code chargé vérifié/libellé, inconnu refusé et retrait ; export IfcClassification/Reference/Association à conserver.",
+      "literal_evidence": [
+        {
+          "line": 18,
+          "exact_line": "    const libre = appliquerLot(e, lot([{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"CFC\", code: \"999\" } }], \"l\")).etat;"
+        },
+        {
+          "line": 19,
+          "exact_line": "    expect(libre.objets[\"w\"]!.proprietes[\"classification:CFC\"]).toMatchObject({ valeur: \"999\", statut: \"declaree\" });"
+        },
+        {
+          "line": 20,
+          "exact_line": "    const r = appliquerLot(e, lot([charger, { type: \"classification.affecter\", params: { id: \"w\", systeme: \"CFC\", code: \"211.1\" } }], \"c\")).etat;"
+        },
+        {
+          "line": 21,
+          "exact_line": "    expect(r.objets[\"w\"]!.proprietes[\"classification:CFC\"]).toMatchObject({ valeur: \"211.1\", statut: \"verifiee\" });"
+        },
+        {
+          "line": 22,
+          "exact_line": "    expect(r.objets[\"w\"]!.proprietes[\"classification:CFC:libelle\"]).toMatchObject({ valeur: \"Échafaudages\" });"
+        },
+        {
+          "line": 23,
+          "exact_line": "    expect(() => appliquerLot(r, lot([{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"CFC\", code: \"212\" } }]))).toThrow(/absent du référentiel CFC \\(2017\\).*codes proches : 211, 211\\.1, 214/);"
+        },
+        {
+          "line": 25,
+          "exact_line": "    const x = appliquerLot(r, lot([{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"CFC\", code: null } }], \"x\")).etat;"
+        },
+        {
+          "line": 26,
+          "exact_line": "    expect(Object.keys(x.objets[\"w\"]!.proprietes).filter((k) => k.startsWith(\"classification:\"))).toEqual([]);"
+        },
+        {
+          "line": 54,
+          "exact_line": "    const e = appliquerLot(base(), lot([charger, { type: \"classification.affecter\", params: { id: \"w\", systeme: \"CFC\", code: \"211.1\" } }], \"c\")).etat;"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/referentiels.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "976beb6b32a689ee97606b29662efe9b491f790f",
+      "sha256": "9aca8b202fe75af7462a98d6c57100e99f5b5d6604efd94277cee94ebdaee132",
+      "role": "contrat référentiel",
+      "impact": "Chargement/retrait référentiel distinct du retrait du code objet ; ne pas confondre codes vérifiés et classeIFC.",
+      "literal_evidence": [
+        {
+          "line": 5,
+          "exact_line": " * remplace (version suivante). Quand un référentiel du système existe, `classification.affecter` refuse un code qui"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/ifc.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "3b31a7df41007a681d9bbb8c656e475e4d123465",
+      "sha256": "4e3de1b2be7a5b7974744e45ee536b26e1daca05bc877d6e07c9a397bc5ea520",
+      "role": "export dérivé et variables homonymes",
+      "impact": "Deux variables locales classeIfc de sélection de produits ne lisent pas propriété canonique. Codes classification:* exportés en associations ; contrôle final ajoute remarques. Ne pas changer moteur ni mapping AnnexeC.",
+      "literal_evidence": [
+        {
+          "line": 44,
+          "exact_line": "import { controleClassesIfc } from \"../annexe-c.js\";"
+        },
+        {
+          "line": 397,
+          "exact_line": "          const classeIfc = ouv.classe === \"porte\" ? \"IFCDOOR\" : \"IFCWINDOW\";"
+        },
+        {
+          "line": 430,
+          "exact_line": "          const remplissage = s.ajouter(`${classeIfc}(${gid(ouv.id)},$,${opt(ouv.params.repere ?? ouv.id)},$,$,${ref(placementRemplissage)},${ref(forme([corpsSolide(corps)]))},${opt(ouv.params.repere)},${reelStep(ouv.params.hauteur.value)},${reelStep(w)},${ouv.classe === \"porte\" ? \".DOOR.\" : \".WINDOW.\"},${operation},${operationLibre})`);"
+        },
+        {
+          "line": 493,
+          "exact_line": "        const classeIfc = o.classe === \"escalier\" ? \"IFCSTAIR\" : o.classe === \"garde-corps\" ? \"IFCRAILING\" : \"IFCBUILDINGELEMENTPROXY\";"
+        },
+        {
+          "line": 495,
+          "exact_line": "        const id = s.ajouter(`${classeIfc}(${gid(o.id)},$,${opt(nom ?? (def ? def.nom : o.id))},$,${o.classe === \"solide\" ? chaineStep(o.params.role) : \"$\"},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : \"$\"},$,${type})`);"
+        },
+        {
+          "line": 1124,
+          "exact_line": "      if (!k.startsWith(\"classification:\") || k.endsWith(\":libelle\")) continue;"
+        },
+        {
+          "line": 1125,
+          "exact_line": "      const systeme = k.slice(\"classification:\".length);"
+        },
+        {
+          "line": 1187,
+          "exact_line": "  for (const x of controleClassesIfc(etat)) remarques.add(`${x.message}.`);"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    },
+    {
+      "path": "packages/atelier-model/src/index.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "8de844c237534e110a0d8c07b7b8430aa7c1c9b0",
+      "sha256": "285d0018b95a727e522f575a8e34c399b91e549a335dacc01ea549c28e4102f4",
+      "role": "façades publiques",
+      "impact": "Réexports AnnexeC, proposition et propriétés effectives ; aucun changement de surface attendu.",
+      "literal_evidence": [
+        {
+          "line": 15,
+          "exact_line": "export * from \"./annexe-c.js\";"
+        },
+        {
+          "line": 16,
+          "exact_line": "export * from \"./classification-regle.js\";"
+        }
+      ],
+      "app_write_required_outside_authorized_reducer": false
+    }
+  ],
+  "generic_property_inventory": [
+    {
+      "path": "apps/api/src/db/schema.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "d80b8e09a2e0a50b6c14df6815fea8faaedd0f2a",
+      "sha256": "2bbdbff5fd05a454f334824a45dcd47b2d0b675e98a71a33780a593b2e956396",
+      "category": "transport_persistance_générique",
+      "impact": "Propriétés opaques chargées/persistées, sans nouvelle colonne. Aucun accès DB ni migration ; préserver contenu existant, ne pas réparer anciennes valeurs.",
+      "evidence": [
+        {
+          "line": 335,
+          "exact_line": "    proprietes: jsonb(\"proprietes\").$type<Record<string, unknown>>().notNull().default({}),"
+        },
+        {
+          "line": 382,
+          "exact_line": "    proprietes: jsonb(\"proprietes\").$type<Record<string, unknown> | null>(),"
+        },
+        {
+          "line": 394,
+          "exact_line": "    proprietes: jsonb(\"proprietes\").$type<Record<string, unknown> | null>(),"
+        },
+        {
+          "line": 435,
+          "exact_line": "  proprietes: jsonb(\"proprietes\").$type<Record<string, unknown>>().notNull().default({}),"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "apps/api/src/lib/atelier-modele.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "98afbb7e772d5341564850748263bbfe2c9720ec",
+      "sha256": "36e38ba149fe3512862d5a94fca4e18f1f0a6da4214e201c1047afe51e2948dc",
+      "category": "transport_persistance_générique",
+      "impact": "Propriétés opaques chargées/persistées, sans nouvelle colonne. Aucun accès DB ni migration ; préserver contenu existant, ne pas réparer anciennes valeurs.",
+      "evidence": [
+        {
+          "line": 51,
+          "exact_line": "        { id: o.id, classe: o.classe, niveauId: o.niveauId, definitionId: o.definitionId, calqueId: o.calqueId, groupeId: o.groupeId, phase: o.phase, params: o.params, proprietes: o.proprietes, ...(o.verrouille ? { verrouille: true } : {}) } as unknown as OccurrenceQuelconque,"
+        },
+        {
+          "line": 56,
+          "exact_line": "    calques: Object.fromEntries(calques.map((c): [string, Calque] => [c.id, { id: c.id, nom: c.nom, couleur: c.couleur, remplissage: c.remplissage, visible: c.visible, verrouille: c.verrouille, ordre: c.ordre, ...(c.parentId ? { parentId: c.parentId } : {}), ...(c.gele ? { gele: true } : {}), ...(c.proprietes && Object.keys(c.proprietes).length ? { proprietes: c.proprietes as NonNullable<Calque[\"proprietes\"]> } : {}) }])),"
+        },
+        {
+          "line": 57,
+          "exact_line": "    groupes: Object.fromEntries(groupes.map((g): [string, Groupe] => [g.id, { id: g.id, nom: g.nom, ...(g.verrouille ? { verrouille: true as const } : {}), ...(g.proprietes && Object.keys(g.proprietes).length ? { proprietes: g.proprietes as NonNullable<Groupe[\"proprietes\"]> } : {}), ...(g.reseau ? { reseau: g.reseau as unknown as NonNullable<Groupe[\"reseau\"]> } : {}) }])),"
+        },
+        {
+          "line": 61,
+          "exact_line": "    proprietes: siteRow.proprietes as ModeleAtelier[\"proprietes\"],"
+        },
+        {
+          "line": 79,
+          "exact_line": "  proprietes: o.proprietes as unknown as Record<string, unknown>,"
+        },
+        {
+          "line": 97,
+          "exact_line": "    proprietes: etat.proprietes as unknown as Record<string, unknown>,"
+        },
+        {
+          "line": 112,
+          "exact_line": "  for (const lot of lots(Object.values(etat.calques).map((c) => ({ projectId, id: c.id, nom: c.nom, couleur: c.couleur, remplissage: c.remplissage, visible: c.visible, verrouille: c.verrouille, ordre: c.ordre, parentId: c.parentId ?? null, gele: !!c.gele, proprietes: c.proprietes ?? null })))) await tx.insert(atelierCalques).values(lot);"
+        },
+        {
+          "line": 113,
+          "exact_line": "  for (const lot of lots(Object.values(etat.groupes).map((g) => ({ projectId, id: g.id, nom: g.nom, verrouille: g.verrouille === true, proprietes: g.proprietes ?? null, reseau: (g.reseau as unknown as Record<string, unknown> | undefined) ?? null })))) await tx.insert(atelierGroupes).values(lot);"
+        },
+        {
+          "line": 142,
+          "exact_line": "  await sync(\"calques\", atelierCalques, apres.calques, (c) => ({ projectId, id: c.id, nom: c.nom, couleur: c.couleur, remplissage: c.remplissage, visible: c.visible, verrouille: c.verrouille, ordre: c.ordre, parentId: c.parentId ?? null, gele: !!c.gele, proprietes: c.proprietes ?? null }));"
+        },
+        {
+          "line": 143,
+          "exact_line": "  await sync(\"groupes\", atelierGroupes, apres.groupes, (g) => ({ projectId, id: g.id, nom: g.nom, verrouille: g.verrouille === true, proprietes: g.proprietes ?? null, reseau: (g.reseau as unknown as Record<string, unknown> | undefined) ?? null }));"
+        },
+        {
+          "line": 156,
+          "exact_line": "        proprietes: apres.proprietes as unknown as Record<string, unknown>,"
+        },
+        {
+          "line": 167,
+          "exact_line": "  await tx.insert(atelierSite).values({ projectId, parcelle: null, emprise: null, hypotheses: [], sources: [], structure: null, proprietes: {}, nativeId, updatedAt: new Date() }).onConflictDoNothing();"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "apps/api/src/routes/atelier-commands.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "4cf62fb62154cd7435fff87cc801d1e89ccaad76",
+      "sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+      "category": "assertions_et_fixtures_génériques",
+      "impact": "Aucune nouvelle dépendance explicite à classeIfc calculée ; assertions existantes à conserver, nouveaux oracles de conservation nécessaires.",
+      "evidence": [
+        {
+          "line": 381,
+          "exact_line": "    const mur = Object.values(mmModele.objets as Record<string, { classe: string; params: { ifcClasse: string }; proprietes: Record<string, { valeur: unknown; unite?: string; provenance: string; statut: string }> }>).find((o) => o.classe === \"objet-importe\" && o.params.ifcClasse === \"IfcWall\")!;"
+        },
+        {
+          "line": 382,
+          "exact_line": "    expect(mur.proprietes[\"ifc:type\"]).toMatchObject({ valeur: \"Mur beton 200\", provenance: \"import\", statut: \"declaree\" });"
+        },
+        {
+          "line": 383,
+          "exact_line": "    expect(mur.proprietes[\"ifc:materiaux\"]!.valeur).toBe(\"Beton 180 mm ; Enduit 20 mm\");"
+        },
+        {
+          "line": 384,
+          "exact_line": "    expect(mur.proprietes[\"ifc:epaisseurCouches\"]).toMatchObject({ valeur: 0.2, unite: \"m\" });"
+        },
+        {
+          "line": 385,
+          "exact_line": "    expect(mur.proprietes[\"ifc:Pset_WallCommon.IsExternal\"]!.valeur).toBe(true);"
+        },
+        {
+          "line": 386,
+          "exact_line": "    expect(mur.proprietes[\"ifc:Pset_WallCommon.ThermalTransmittance\"]).toMatchObject({ valeur: 0.25, unite: \"IfcThermalTransmittanceMeasure\" });"
+        },
+        {
+          "line": 772,
+          "exact_line": "    expect(Object.values(modele.objets as Record<string, { proprietes: Record<string, { provenance: string }> }>).every((o) => o.proprietes[\"reprise:origine\"]?.provenance === \"import\")).toBe(true);"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Complements.tsx",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "67b88849202f65d571845f73b9ec266251c1b9ce",
+      "sha256": "97c34ce0c3a04271db430dd6d9d5a9b31d506e0ff6a800eb4e2566133b548b03",
+      "category": "consommateur_ou_constructeur_générique",
+      "impact": "Retrait code=null, multi-sélection liste de commandes id et règle ids. La classification descriptive du composant (bloc.definir) est un champ différent, à préserver.",
+      "evidence": [
+        {
+          "line": 69,
+          "exact_line": "  const actuels = sel.length === 1 ? Object.entries(sel[0]!.proprietes).filter(([k]) => k.startsWith(\"classification:\") && !k.endsWith(\":libelle\")).map(([k, v]) => ({ systeme: k.slice(\"classification:\".length), code: String(v.valeur), statut: v.statut, libelle: sel[0]!.proprietes[`${k}:libelle`]?.valeur as string | undefined })) : [];"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Inspecteur.tsx",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "d70715cb71ab5e63c435ab29ebd91027ce04bceb",
+      "sha256": "add64226d4b65c59c1fcb25d0b61f3548618d22150fdc8db92492566585437b7",
+      "category": "consommateur_ou_constructeur_générique",
+      "impact": "255–263 affiche toutes propriétés ;1551 colonnes hors classification:* ;2030 concerne propriété groupe/calque, pas cible occurrence de CLASSIF1. Ligne/colonne/compteur implicites peuvent ne plus apparaître : effet attendu sans changementUI.",
+      "evidence": [
+        {
+          "line": 255,
+          "exact_line": "      {Object.keys(o.proprietes).length > 0 && ("
+        },
+        {
+          "line": 257,
+          "exact_line": "          <summary>Propriétés ({Object.keys(o.proprietes).length})</summary>"
+        },
+        {
+          "line": 259,
+          "exact_line": "            {Object.entries(o.proprietes).map(([k, p]) => ("
+        },
+        {
+          "line": 1551,
+          "exact_line": "  const colonnes = [...new Set([...lignes.flatMap((o) => Object.keys(o.proprietes).filter((k) => !k.startsWith(\"classification:\"))), ...colonnesAjoutees])].sort((a, b) => a.localeCompare(b, \"fr\"));"
+        },
+        {
+          "line": 1553,
+          "exact_line": "    const v = o.proprietes[k]?.valeur;"
+        },
+        {
+          "line": 1556,
+          "exact_line": "  const unite = (k: string) => lignes.map((o) => o.proprietes[k]?.unite).find((u) => !!u) ?? null;"
+        },
+        {
+          "line": 1573,
+          "exact_line": "      const u = o.proprietes[k]?.unite ?? unite(k);"
+        },
+        {
+          "line": 2025,
+          "exact_line": "export function ProprietesCible({ cible, proprietes, readOnly, onCommandes, libelle }: { cible: { groupeId: string } | { calqueCible: string }; proprietes: Record<string, { valeur: unknown; unite?: string | null }> | undefined; readOnly: boolean; onCommandes: PropsInspecteur[\"onCommandes\"]; libelle: string }) {"
+        },
+        {
+          "line": 2030,
+          "exact_line": "  const entrees = Object.entries(proprietes ?? {}).sort(([a], [b]) => a.localeCompare(b, \"fr\"));"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/annexe-c.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "f02e7add67412d09797be94a628813fa0c320aac",
+      "sha256": "19840668ea9f1b829611a0edf6203f30f3148a702e5e5b89510b20ee2f149d72",
+      "category": "assertions_et_fixtures_génériques",
+      "impact": "Aucune nouvelle dépendance explicite à classeIfc calculée ; assertions existantes à conserver, nouveaux oracles de conservation nécessaires.",
+      "evidence": [
+        {
+          "line": 27,
+          "exact_line": "    expect(e.objets[\"w1\"]!.proprietes[\"classeIfc\"]!.valeur).toBe(\"IfcDoor\");"
+        },
+        {
+          "line": 52,
+          "exact_line": "    expect(e.objets[\"w1\"]!.proprietes[\"classification:CFC\"]).toBeUndefined();"
+        },
+        {
+          "line": 56,
+          "exact_line": "    expect([\"w1\", \"w2\", \"w3\"].map((id) => r.etat.objets[id]!.proprietes[\"classification:CFC\"]!.valeur)).toEqual([\"214\", \"214\", \"214\"]);"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/archive.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "1c4c10db20c3d25772b5f01ab20e09f3cc0e00a5",
+      "sha256": "3e9eb7a485cf3ffda71a4239f723762385c851c386ad5463557a9bc12d7835a5",
+      "category": "copie_archive_diff_ou_projection_générique",
+      "impact": "Objets/propriétés peuvent être transportés ou comparés sans nommer classeIfc. Conservation de tout champ et inverse exact exigés ; pas nettoyage.",
+      "evidence": [
+        {
+          "line": 60,
+          "exact_line": "    else modele.calques[id] = { id, nom: c[\"nom\"], couleur: typeof c[\"couleur\"] === \"string\" ? c[\"couleur\"] : null, remplissage: typeof c[\"remplissage\"] === \"string\" ? c[\"remplissage\"] : null, visible: c[\"visible\"], verrouille: c[\"verrouille\"], ordre: c[\"ordre\"], ...(typeof c[\"parentId\"] === \"string\" && c[\"parentId\"] ? { parentId: c[\"parentId\"] } : {}), ...(c[\"gele\"] === true ? { gele: true } : {}), ...(estRecord(c[\"proprietes\"]) && Object.keys(c[\"proprietes\"]).length ? { proprietes: c[\"proprietes\"] as never } : {}) };"
+        },
+        {
+          "line": 65,
+          "exact_line": "    else modele.groupes[id] = { id, nom: g[\"nom\"], ...(g[\"verrouille\"] === true ? { verrouille: true as const } : {}), ...(estRecord(g[\"proprietes\"]) && Object.keys(g[\"proprietes\"]).length ? { proprietes: g[\"proprietes\"] as never } : {}), ...(reseauValide(g[\"reseau\"]) ? { reseau: g[\"reseau\"] as never } : {}) };"
+        },
+        {
+          "line": 109,
+          "exact_line": "      modele.objets[id] = { id, classe, niveauId, calqueId, groupeId, definitionId, phase: typeof o[\"phase\"] === \"string\" ? o[\"phase\"] : null, params, proprietes: estRecord(o[\"proprietes\"]) ? (o[\"proprietes\"] as OccurrenceQuelconque[\"proprietes\"]) : {}, ...(o[\"verrouille\"] === true ? { verrouille: true as const } : {}) } as OccurrenceQuelconque;"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/blocs-places.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "a57c990071dd3ca5485fa1965a8083114a923333",
+      "sha256": "59e6e15a170bc1e261f3874f3083c747aaae5a1a8a8c1687b2ead3145d97742a",
+      "category": "copie_archive_diff_ou_projection_générique",
+      "impact": "Objets/propriétés peuvent être transportés ou comparés sans nommer classeIfc. Conservation de tout champ et inverse exact exigés ; pas nettoyage.",
+      "evidence": [
+        {
+          "line": 89,
+          "exact_line": "    objets.push({ id, classe: e.classe, niveauId: o.niveauId, definitionId: null, calqueId: o.calqueId, groupeId: null, phase: null, params: p, proprietes: {} } as unknown as OccurrenceQuelconque);"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/classification-regle.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "e55a345796421a28023f8770863bc40e1e176fd5",
+      "sha256": "4c9cbe7f83402e33f83b0d31c2caba9f3118f3efd00f4c786cb4bf75bdf4c469",
+      "category": "consommateur_ou_constructeur_générique",
+      "impact": "Sélection classe/type/niveau, exclusions verrouillés/déjà classés et proposition explicite. Pas propagation ou écriture automatique ; conserver critères.",
+      "evidence": [
+        {
+          "line": 45,
+          "exact_line": "    const actuel = o.proprietes[`classification:${systeme}`]?.valeur;"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/altimetrie.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "7b31a57d6d074e1cdc19263641e6f66fed656bc8",
+      "sha256": "91fde1990a51c43bc511cda763ab6cc2668554da3f9a6f0b9961ee308ac343eb",
+      "category": "propriétés_spécifiques_autres_domaines",
+      "impact": "Occurrences concernent autres clés métier (matériau, trame, provenance, altimétrie), pas attente explicite de classeIfc calculée ; fonctions industrielles conservées.",
+      "evidence": [
+        {
+          "line": 21,
+          "exact_line": "  const a = etat.proprietes[\"site:altimetrie:altitude\"]?.valeur;"
+        },
+        {
+          "line": 22,
+          "exact_line": "  const s = etat.proprietes[\"site:altimetrie:systeme\"]?.valeur;"
+        },
+        {
+          "line": 23,
+          "exact_line": "  const src = etat.proprietes[\"site:altimetrie:source\"]?.valeur;"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/base.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "fee67dcb89d226620e3d8b556dbc4440fc411b4c",
+      "sha256": "c3b7e504f32e2a22ed3415d8cf61ee60d77bf7417b1f3ccf3417e75f2d3f4deb",
+      "category": "copie_archive_diff_ou_projection_générique",
+      "impact": "Objets/propriétés peuvent être transportés ou comparés sans nommer classeIfc. Conservation de tout champ et inverse exact exigés ; pas nettoyage.",
+      "evidence": [
+        {
+          "line": 227,
+          "exact_line": "  if (avant.proprietes !== apres.proprietes) diff.proprietes = avant.proprietes;"
+        },
+        {
+          "line": 244,
+          "exact_line": "  if (diff.proprietes) suivant.proprietes = diff.proprietes;"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "b1cf02c1a04663aeb329e7fd9b724a6f400a73cb",
+      "sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403",
+      "category": "assertions_et_fixtures_génériques",
+      "impact": "Aucune nouvelle dépendance explicite à classeIfc calculée ; assertions existantes à conserver, nouveaux oracles de conservation nécessaires.",
+      "evidence": [
+        {
+          "line": 70,
+          "exact_line": "    expect(() => appliquerLot(e, lot([{ type: \"bloc.definir\", params: { nom: \"Lavabo\", nature: \"composant\", cibles: [\"e2\"], pointDeBase: pt(10.6, 10.4), proprietes: { debit: { valeur: 12 } } } }]))).toThrow(/sans unité/);"
+        },
+        {
+          "line": 72,
+          "exact_line": "      { type: \"bloc.definir\", params: { id: \"c\", nom: \"Lavabo\", nature: \"composant\", cibles: [\"e2\"], pointDeBase: pt(10.6, 10.4), proprietes: { marque: { valeur: \"non renseignée\" }, debit: { valeur: 12, unite: \"l/min\" } }, classification: \"Sanitaires\" } },"
+        },
+        {
+          "line": 79,
+          "exact_line": "    r = appliquerLot(r, lot([{ type: \"bloc.definir\", params: { redefinir: \"c\", cibles: [\"e2\"], pointDeBase: pt(10.6, 10.4), proprietes: { debit: { valeur: 15, unite: \"l/min\" } } } }], \"re\")).etat;"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/bloc.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "19d394220f070aca70bb704d6ce054e3dd618851",
+      "sha256": "b7d91a3bb472f5e11bacd8304543c6075403a6f3175a85981c776004ccf6d4c6",
+      "category": "consommateur_ou_constructeur_générique",
+      "impact": "proprietesEffectives211–217 combine propriétés définition/occurrence sans inventer nouvel héritage IFC. Attribut classification de définition est distinct ; ne pas modifier définitions.",
+      "evidence": [
+        {
+          "line": 53,
+          "exact_line": "  proprietes: Record<string, { valeur: string | number | boolean; unite: string | null }>;"
+        },
+        {
+          "line": 141,
+          "exact_line": "      proprietes: p[\"proprietes\"] === undefined && anciens ? anciens.proprietes : lireProprietesComposant(p),"
+        },
+        {
+          "line": 183,
+          "exact_line": "    return creerOccurrence(etat, { id: p[\"id\"], niveauId: p[\"niveauId\"], calqueId: p[\"calqueId\"], definitionId, phase: p[\"phase\"], proprietes: p[\"proprietes\"], params: { position: p[\"position\"], angle: p[\"angle\"] ?? { value: 0, unit: \"deg\" }, echelle: p[\"echelle\"] ?? 1, ...(p[\"miroir\"] === true ? { miroir: true } : {}) } }, ctx, \"bloc-occurrence\");"
+        },
+        {
+          "line": 200,
+          "exact_line": "    let copie = { id, classe: e.classe, niveauId: o.niveauId, definitionId: e.classe === \"bloc-occurrence\" ? (e.definitionId ?? null) : null, calqueId: e.calqueId ?? o.calqueId, groupeId: null, phase: o.phase, params: p0, proprietes: {} } as unknown as OccurrenceQuelconque;"
+        },
+        {
+          "line": 216,
+          "exact_line": "  for (const [k, v] of Object.entries(o.proprietes)) out[k] = { valeur: v.valeur, unite: v.unite ?? null, source: \"occurrence\" };"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "458b232273b5e5529ff6489804371cba011901db",
+      "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+      "category": "assertions_et_fixtures_génériques",
+      "impact": "Aucune nouvelle dépendance explicite à classeIfc calculée ; assertions existantes à conserver, nouveaux oracles de conservation nécessaires.",
+      "evidence": [
+        {
+          "line": 272,
+          "exact_line": "    expect(r.etat.objets[\"w\"]!.proprietes[\"resistanceThermique\"]).toEqual({ valeur: 2.5, unite: \"m2.K/W\", provenance: \"saisie\", statut: \"a-verifier\" });"
+        },
+        {
+          "line": 273,
+          "exact_line": "    expect(appliquer(r.etat, [{ type: \"propriete.definir\", params: { id: \"w\", nom: \"resistanceThermique\" } }]).etat.objets[\"w\"]!.proprietes[\"resistanceThermique\"]).toBeUndefined();"
+        },
+        {
+          "line": 280,
+          "exact_line": "    expect(r.objets[\"w\"]!.proprietes[\"classification:Uniclass\"]).toEqual({ valeur: \"EF_25_10\", provenance: \"saisie\", statut: \"declaree\" });"
+        },
+        {
+          "line": 281,
+          "exact_line": "    expect(r.objets[\"w\"]!.proprietes[\"classeIfc\"]).toEqual({ valeur: \"IfcWall\", provenance: \"regle\", statut: \"verifiee\" });"
+        },
+        {
+          "line": 282,
+          "exact_line": "    expect(appliquer(r, [{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"Uniclass\", code: null } }]).etat.objets[\"w\"]!.proprietes[\"classification:Uniclass\"]).toBeUndefined();"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/index.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "6df8663bc325337bd4cd2aa5c7dab0b2ece3619e",
+      "sha256": "ee0dd04b4976c17d5f77a261730d239c8d125a2442ca8013c464d59dc8ce09b3",
+      "category": "consommateur_ou_constructeur_générique",
+      "impact": "id/ids vers même réducteur, puis contrôles de domaine/verrous. Tester via appliquerLot, pas uniquement appel direct ; inverse différentiel au niveau du lot.",
+      "evidence": [
+        {
+          "line": 141,
+          "exact_line": "      [nouvel]: { ...o, id: nouvel, groupeId: null, proprietes: {}, params: { ...o.params, contour: parts[1], code: null, etiquette: null } } as OccurrenceQuelconque,"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/objets.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "d54f5a09afd760f45b72270e0e54e3d6041580fb",
+      "sha256": "8a118398436699bd239dae0a0ac8877f115148517f98da37e698224eff2de4dd",
+      "category": "consommateur_ou_constructeur_générique",
+      "impact": "Propriétés structurées transmises ; aucune nouvelle dépendance explicite à la déduction interdite identifiée.",
+      "evidence": [
+        {
+          "line": 67,
+          "exact_line": "    proprietes: lireProprietes(p),"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/organisation.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "8c2f00472ec1dd9a903071396940a092eef1cbc9",
+      "sha256": "792399409ba93824808c5ca445ee3d169fc02d68bb0e7ee0541455eee17af26b",
+      "category": "consommateur_ou_constructeur_générique",
+      "impact": "436 crée/remplace classeIfc après les deux branches. Garder propriétés existantes intégralement, code/libellé et effets ; commentaire414 à aligner dans correction autorisée.",
+      "evidence": [
+        {
+          "line": 382,
+          "exact_line": "      const { proprietes: _p, ...reste } = x;"
+        },
+        {
+          "line": 384,
+          "exact_line": "      return (Object.keys(proprietes).length ? { ...reste, proprietes } : reste) as T;"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "6a2dbb2e60eb300e988cec2996fff80264fce0c4",
+      "sha256": "a3a870f1f187e3475d0a5d7f298f961e4665ff712bdab918dc15f1bd6b3f2c7a",
+      "category": "assertions_et_fixtures_génériques",
+      "impact": "Aucune nouvelle dépendance explicite à classeIfc calculée ; assertions existantes à conserver, nouveaux oracles de conservation nécessaires.",
+      "evidence": [
+        {
+          "line": 19,
+          "exact_line": "    expect(libre.objets[\"w\"]!.proprietes[\"classification:CFC\"]).toMatchObject({ valeur: \"999\", statut: \"declaree\" });"
+        },
+        {
+          "line": 21,
+          "exact_line": "    expect(r.objets[\"w\"]!.proprietes[\"classification:CFC\"]).toMatchObject({ valeur: \"211.1\", statut: \"verifiee\" });"
+        },
+        {
+          "line": 22,
+          "exact_line": "    expect(r.objets[\"w\"]!.proprietes[\"classification:CFC:libelle\"]).toMatchObject({ valeur: \"Échafaudages\" });"
+        },
+        {
+          "line": 26,
+          "exact_line": "    expect(Object.keys(x.objets[\"w\"]!.proprietes).filter((k) => k.startsWith(\"classification:\"))).toEqual([]);"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/documents/tableaux.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "e997dcf4e280814f9f5308502bbfe6b711d9bdf2",
+      "sha256": "4aa36d2c6a5f230cd332e311c0fadb249374691dfd52e8affb1449b1c3743857",
+      "category": "propriétés_spécifiques_autres_domaines",
+      "impact": "Occurrences concernent autres clés métier (matériau, trame, provenance, altimétrie), pas attente explicite de classeIfc calculée ; fonctions industrielles conservées.",
+      "evidence": [
+        {
+          "line": 169,
+          "exact_line": "          lignes.push([n.nom, o.id, \"poteau\", o.params.nom, \"poteau\", `${o.params.formeId} ${Math.round(o.params.largeur.value * 1000)} × ${Math.round(o.params.profondeur.value * 1000)}${o.params.epaisseurProfil ? ` e ${Math.round(o.params.epaisseurProfil.value * 1000)}` : \"\"} mm`, null, ((o.proprietes[\"materiauNom\"]?.valeur ?? o.proprietes[\"materiau\"]?.valeur) as string | undefined) ?? null, h === null ? null : r3(h), vol === null ? null : r3(vol), null, \"non\", (o.proprietes[\"trame\"]?.valeur as string | undefined) ?? null, coulageDe(o.id)]);"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/ifc.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "3b31a7df41007a681d9bbb8c656e475e4d123465",
+      "sha256": "4e3de1b2be7a5b7974744e45ee536b26e1daca05bc877d6e07c9a397bc5ea520",
+      "category": "consommateur_ou_constructeur_générique",
+      "impact": "Deux variables locales classeIfc de sélection de produits ne lisent pas propriété canonique. Codes classification:* exportés en associations ; contrôle final ajoute remarques. Ne pas changer moteur ni mapping AnnexeC.",
+      "evidence": [
+        {
+          "line": 226,
+          "exact_line": "  const psets: { objets: number[]; nom: string; proprietes: string[] }[] = [];"
+        },
+        {
+          "line": 227,
+          "exact_line": "  const pset = (objet: number, nom: string, proprietes: (string | null)[]) => {"
+        },
+        {
+          "line": 229,
+          "exact_line": "    if (props.length) psets.push({ objets: [objet], nom, proprietes: props });"
+        },
+        {
+          "line": 513,
+          "exact_line": "            ...Object.entries(pd.proprietes ?? {}).map(([k, v]) => `#${prop(k, typeof v.valeur === \"number\" ? `IFCREAL(${reelStep(v.valeur)})` : typeof v.valeur === \"boolean\" ? `IFCBOOLEAN(${v.valeur ? \".T.\" : \".F.\"})` : label(String(v.valeur)))}`),"
+        },
+        {
+          "line": 1123,
+          "exact_line": "    for (const [k, v] of Object.entries(o.proprietes).sort(([x], [y]) => (x < y ? -1 : x > y ? 1 : 0))) {"
+        },
+        {
+          "line": 1128,
+          "exact_line": "      const e = parCode.get(cle) ?? { systeme, code, libelle: (o.proprietes[`${k}:libelle`]?.valeur as string | undefined) ?? null, objets: [] };"
+        },
+        {
+          "line": 1173,
+          "exact_line": "  const natives = (Object.values(etat.objets) as OccurrenceQuelconque[]).reduce((n, o) => n + Object.keys(o.proprietes).filter((k) => k.startsWith(\"natif:\")).length, 0);"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/proprietes-csv.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "819dca06d241576e4407bfc289684dd33d010171",
+      "sha256": "c5e3abb1d1e0e81a96f48f24fb114c30e7ae5c814eb9bd6afeadbc13d32a0936",
+      "category": "assertions_et_fixtures_génériques",
+      "impact": "Aucune nouvelle dépendance explicite à classeIfc calculée ; assertions existantes à conserver, nouveaux oracles de conservation nécessaires.",
+      "evidence": [
+        {
+          "line": 28,
+          "exact_line": "    expect(r.objets[\"p1\"]!.proprietes[\"Hauteur sous plafond\"]).toMatchObject({ valeur: 2.6, unite: \"m\", provenance: \"import\", statut: \"declaree\" });"
+        },
+        {
+          "line": 29,
+          "exact_line": "    expect(r.objets[\"p2\"]!.proprietes[\"Ventilée\"]!.valeur).toBe(true);"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/import/natif.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "12f87ec468257ee03fb4cd41b435531e21c41694",
+      "sha256": "fdcb23d4fb61e01081880110bc3f57f596b98f62d012ef01e7cdf56f625ddf99",
+      "category": "assertions_et_fixtures_génériques",
+      "impact": "Aucune nouvelle dépendance explicite à classeIfc calculée ; assertions existantes à conserver, nouveaux oracles de conservation nécessaires.",
+      "evidence": [
+        {
+          "line": 109,
+          "exact_line": "    expect(modele.proprietes[\"natif:meta.layoutV819\"]).toBeDefined();"
+        },
+        {
+          "line": 110,
+          "exact_line": "    expect(modele.proprietes[\"natif:registry\"]?.valeur).toMatchObject({ id: \"p118-demo-v819\" });"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/import/natif.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "36f8a17a1029e9c6594dbb897271abe6b7c06fc4",
+      "sha256": "7985dc880a4ea28fb2d216bd4db09ba3b5e73e87955c4d0a14962f1df3fb71d7",
+      "category": "provenance_import",
+      "impact": "Sources importées et propriétés doivent rester intactes ; ce lot n’autorise aucune réinterprétation des données existantes.",
+      "evidence": [
+        {
+          "line": 167,
+          "exact_line": "        proprietes: restes(w, [\"id\", \"a\", \"b\", \"thickness\", \"height\", \"type\", \"layer\", \"name\"]),"
+        },
+        {
+          "line": 192,
+          "exact_line": "          proprietes: restes(q, [\"id\", \"hostWallId\", \"t\", \"width\", \"height\", \"sill\", \"mark\", \"layer\"]),"
+        },
+        {
+          "line": 232,
+          "exact_line": "        proprietes: restes(s, [\"id\", \"a\", \"b\", \"width\", \"height\", \"steps\", \"risers\", \"waistThickness\", \"baseOffset\", \"sourceLevel\", \"targetLevel\", \"stairGroup\", \"planReferenceOnly\", \"name\", \"layer\"]),"
+        },
+        {
+          "line": 260,
+          "exact_line": "        proprietes: restes(c, [\"id\", \"p\", \"shapeId\", \"width\", \"depth\", \"height\", \"angle\", \"name\", \"designStatus\", \"layer\"]),"
+        },
+        {
+          "line": 288,
+          "exact_line": "        proprietes: restes(r, [\"level\", \"code\", \"name\", \"area\", \"category\", \"notes\", \"polygons\", \"label\"]),"
+        },
+        {
+          "line": 303,
+          "exact_line": "        objets[id] = { id, classe: \"dalle\", ...commun, params: { contour, trous: trousP, epaisseur: longueur(p[\"height\"]) ?? { value: 0, unit: \"m\" }, decalageBase: longueur(p[\"baseOffset\"]) ?? { value: 0, unit: \"m\" }, nom: chaine(p[\"name\"]) }, proprietes: restes(p, [...consommes, \"height\", \"baseOffset\"]) };"
+        },
+        {
+          "line": 306,
+          "exact_line": "        objets[id] = { id, classe: \"toiture\", ...commun, params: { contour, trous: trousP, type: \"plate\", epaisseur: longueur(p[\"height\"]) ?? { value: 0, unit: \"m\" }, pente: null, decalageBase: longueur(p[\"baseOffset\"]) ?? { value: 0, unit: \"m\" }, nom: chaine(p[\"name\"]) }, proprietes: restes(p, [...consommes, \"height\", \"baseOffset\"]) };"
+        },
+        {
+          "line": 312,
+          "exact_line": "        objets[id] = { id, classe: \"piece\", ...commun, params: { contour, trous: trousP, code, nom: reste.length ? reste.join(\" · \") : nomComplet || \"Pièce\", categorie: null, aireDeclaree: null, notes: null, etiquette: null }, proprietes: { ...restes(p, consommes), \"natif:name\": importee(nomComplet) } };"
+        },
+        {
+          "line": 315,
+          "exact_line": "        objets[id] = { id, classe: \"zone\", ...commun, params: { contour, trous: trousP, nom: chaine(p[\"name\"]) ?? \"Zone\", categorie: null }, proprietes: restes(p, consommes) };"
+        },
+        {
+          "line": 318,
+          "exact_line": "        objets[id] = { id, classe: \"reference-plan\", ...commun, params: { contour, trous: trousP, source: null, echelle: null, nom: chaine(p[\"name\"]) }, proprietes: restes(p, consommes) };"
+        },
+        {
+          "line": 327,
+          "exact_line": "          proprietes: restes(p, [...consommes, \"height\", \"baseOffset\", \"thickness\", \"color\"]),"
+        },
+        {
+          "line": 336,
+          "exact_line": "      objets[id] = { id, classe: \"cotation\", niveauId: niveau.id, definitionId: null, calqueId: calqueDe(dm), groupeId: null, phase: null, params: { a: point(dm[\"a\"], `${id}.a`), b: point(dm[\"b\"], `${id}.b`), decalage: longueur(dm[\"offset\"]) ?? { value: 0, unit: \"m\" } }, proprietes: restes(dm, [\"id\", \"kind\", \"a\", \"b\", \"offset\", \"layer\"]) };"
+        },
+        {
+          "line": 342,
+          "exact_line": "      objets[id] = { id, classe: \"texte\", niveauId: niveau.id, definitionId: null, calqueId: calqueDe(t), groupeId: null, phase: null, params: { position: pt(nombre(t[\"x\"]) ?? 0, nombre(t[\"y\"]) ?? 0), texte: chaine(t[\"text\"]) ?? \"\" }, proprietes: restes(t, [\"id\", \"kind\", \"x\", \"y\", \"text\", \"layer\"]) };"
+        },
+        {
+          "line": 349,
+          "exact_line": "      modele.proprietes[`natif:levels.${niveau.id}.${k}`] = importee(v);"
+        },
+        {
+          "line": 428,
+          "exact_line": "  for (const [k, v] of Object.entries(meta)) if (![\"structure\", \"assumptions\", \"sources\"].includes(k)) modele.proprietes[`natif:meta.${k}`] = importee(v);"
+        },
+        {
+          "line": 429,
+          "exact_line": "  if (jeu.registry) modele.proprietes[\"natif:registry\"] = importee(jeu.registry);"
+        },
+        {
+          "line": 430,
+          "exact_line": "  for (const [k, v] of Object.entries(floor)) if (![\"levels\", \"layers\", \"meta\"].includes(k)) modele.proprietes[`natif:floorDesign.${k}`] = importee(v);"
+        },
+        {
+          "line": 434,
+          "exact_line": "  for (const o of Object.values(objets)) o.proprietes[RANG_NATIF] = importee(rang++);"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/modele.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "aac2c3600a01e20c4a0aa36d7d5a7c3704102706",
+      "sha256": "d7c689c43c61aea6801e67335d97fef30b143f4a0edf49b443e50a1b0e1757bc",
+      "category": "consommateur_ou_constructeur_générique",
+      "impact": "Propriétés structurées transmises ; aucune nouvelle dépendance explicite à la déduction interdite identifiée.",
+      "evidence": [
+        {
+          "line": 1001,
+          "exact_line": "  proprietes: Record<string, Propriete>;"
+        },
+        {
+          "line": 1145,
+          "exact_line": "  proprietes: Record<string, Propriete>;"
+        },
+        {
+          "line": 1162,
+          "exact_line": "    proprietes: {},"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/structure/beton.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "bf01c61d6e4a2a07e57c581675f8bfbbc84d0a97",
+      "sha256": "1392a05e17d2d4d40235bf11d2714f9326619cb18b8fca95c01c0632327111f9",
+      "category": "propriétés_spécifiques_autres_domaines",
+      "impact": "Occurrences concernent autres clés métier (matériau, trame, provenance, altimétrie), pas attente explicite de classeIfc calculée ; fonctions industrielles conservées.",
+      "evidence": [
+        {
+          "line": 11,
+          "exact_line": "  return norm(o.proprietes[\"materiau\"]?.valeur).startsWith(\"beton\");"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/structure/index.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "9bc183fd7335561a949b1d23a6ebee61c7a76f49",
+      "sha256": "1f4b646334dde8f1029e2054edf90c4564589fdedefeb8cb4dc355d3d29457e9",
+      "category": "propriétés_spécifiques_autres_domaines",
+      "impact": "Occurrences concernent autres clés métier (matériau, trame, provenance, altimétrie), pas attente explicite de classeIfc calculée ; fonctions industrielles conservées.",
+      "evidence": [
+        {
+          "line": 31,
+          "exact_line": "  return (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o) => (o.classe === \"poutre\" && o.params.trameId === trameId) || (o.classe === \"poteau\" && o.proprietes[\"trame\"]?.valeur === trameId)).sort((a, b) => (a.id < b.id ? -1 : 1));"
+        },
+        {
+          "line": 124,
+          "exact_line": "        r = enchainer(r, (e) => creerOccurrence(e, { niveauId: trame.niveauId, calqueId: trame.calqueId, params: { ...(sp as Brut), point: q.point, hauteur, angle: trame.params.angle, nom: `${trame.params.nom} ${q.file}${q.rang}` }, proprietes: { trame: { valeur: id, provenance: \"calcul\", statut: \"declaree\" }, materiau: { valeur: materiau, provenance: \"saisie\", statut: \"declaree\" }, ...(materiauNom ? { materiauNom: { valeur: materiauNom, provenance: \"saisie\", statut: \"declaree\" } } : {}) } }, ctx, \"poteau\"));"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/structure/structure.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "e83985ead0a8dd6d3ebd02d4026c0683ccb64932",
+      "sha256": "ee6b8e68ddefaa215e6b751ee60d88b1344eb9196640b41b42d4a9e02576ef6a",
+      "category": "assertions_et_fixtures_génériques",
+      "impact": "Aucune nouvelle dépendance explicite à classeIfc calculée ; assertions existantes à conserver, nouveaux oracles de conservation nécessaires.",
+      "evidence": [
+        {
+          "line": 125,
+          "exact_line": "    expect(poteaux[0]!.proprietes[\"trame\"]?.valeur).toBe(\"t1\");"
+        },
+        {
+          "line": 137,
+          "exact_line": "    expect(Object.values(e5.objets).filter((o) => o.classe === \"poteau\").every((o) => o.proprietes[\"trame\"] === undefined)).toBe(true);"
+        },
+        {
+          "line": 161,
+          "exact_line": "      { type: \"poteau.creer\", params: { id: \"c1\", niveauId: \"n1\", point: pt(0, 0), formeId: \"rectangle\", largeur: m(0.3), profondeur: m(0.3), hauteur: m(3), angle: { value: 0, unit: \"deg\" }, proprietes: { materiau: { valeur: \"béton C25/30 (déclaré)\", provenance: \"saisie\", statut: \"declaree\" } } } },"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/presse-papiers.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "b6728aed660c8a0d0c3c51937c325a2e83065a52",
+      "sha256": "400be88722f4c267fa4683016c3c46bce4107803c5a5fe8af0974f3ad6ce517e",
+      "category": "copie_archive_diff_ou_projection_générique",
+      "impact": "Objets/propriétés peuvent être transportés ou comparés sans nommer classeIfc. Conservation de tout champ et inverse exact exigés ; pas nettoyage.",
+      "evidence": [
+        {
+          "line": 180,
+          "exact_line": "        proprietes: o.proprietes,"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/projection/analyse.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "0fa1896aefc10d69ca2088406e970a07b2ae4a37",
+      "sha256": "ae61b49461682688d0bb44df85665efb346d6e98eac0f274c5087139f8eabc2e",
+      "category": "propriétés_spécifiques_autres_domaines",
+      "impact": "Occurrences concernent autres clés métier (matériau, trame, provenance, altimétrie), pas attente explicite de classeIfc calculée ; fonctions industrielles conservées.",
+      "evidence": [
+        {
+          "line": 15,
+          "exact_line": "const rangDe = (o: { proprietes: Record<string, Propriete> }) => {"
+        },
+        {
+          "line": 16,
+          "exact_line": "  const v = o.proprietes[RANG_NATIF]?.valeur;"
+        },
+        {
+          "line": 24,
+          "exact_line": "function natif(o: { proprietes: Record<string, Propriete> }): Record<string, unknown> {"
+        },
+        {
+          "line": 26,
+          "exact_line": "  for (const [k, v] of Object.entries(o.proprietes)) if (k.startsWith(\"natif:\") && !k.includes(\".\") && k !== RANG_NATIF) out[k.slice(6)] = v.valeur;"
+        },
+        {
+          "line": 58,
+          "exact_line": "  for (const [k, v] of Object.entries(etat.proprietes)) if (k.startsWith(\"natif:meta.\")) meta[k.slice(\"natif:meta.\".length)] = v.valeur;"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/reprise.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "7449908dfb8d4f7ae95bc493b5df3a80b3602ce3",
+      "sha256": "07ad4cef2d368abf0706b47b38ef7071ecb463c10ff7423875027bc2de00e5d4",
+      "category": "assertions_et_fixtures_génériques",
+      "impact": "Aucune nouvelle dépendance explicite à classeIfc calculée ; assertions existantes à conserver, nouveaux oracles de conservation nécessaires.",
+      "evidence": [
+        {
+          "line": 28,
+          "exact_line": "    expect(murs.every((o) => o.id.startsWith(\"reprise-\") && String(o.proprietes[\"reprise:origine\"]?.valeur).includes(\"P.118\"))).toBe(true);"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    },
+    {
+      "path": "packages/atelier-model/src/versions.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "5f60bbc23f69815302a83e53b043acb8cc7cb4dd",
+      "sha256": "24d9119d6c592760cfe321feeeebcfe53bd0b01a354f5e0367bb8cdd1a08425d",
+      "category": "copie_archive_diff_ou_projection_générique",
+      "impact": "Objets/propriétés peuvent être transportés ou comparés sans nommer classeIfc. Conservation de tout champ et inverse exact exigés ; pas nettoyage.",
+      "evidence": [
+        {
+          "line": 85,
+          "exact_line": "  if (!egal(cible.proprietes, courant.proprietes)) diff.proprietes = cible.proprietes;"
+        }
+      ],
+      "qualification_limit": "Index complet des occurrences du motif déclaré, pas preuve contre clé calculée arbitrairement ou consommateurs externes."
+    }
+  ],
+  "additional_pipeline_proofs": [
+    {
+      "path": "packages/atelier-model/src/commandes/verrous.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "1667fe8b59ccc2aea877f8ba08bac0f67f78e918",
+      "sha256": "696198e5e7925f61b1bee99581191cc0641eeb1bc62fd2b08797c7d60b6f6997",
+      "evidence": [
+        {
+          "line": 45,
+          "exact_line": "export function controlerVerrous(avant: ModeleAtelier, apres: ModeleAtelier, type: string): void {"
+        },
+        {
+          "line": 46,
+          "exact_line": "  if (type === \"objet.verrouiller\" || type.startsWith(\"interne.\")) return;"
+        },
+        {
+          "line": 47,
+          "exact_line": "  if (avant.objets === apres.objets) return;"
+        },
+        {
+          "line": 48,
+          "exact_line": "  const groupesVerrouilles = Object.values(avant.groupes).some((g) => g.verrouille);"
+        },
+        {
+          "line": 49,
+          "exact_line": "  const calquesGeles = Object.values(avant.calques).some((c) => c.gele);"
+        },
+        {
+          "line": 50,
+          "exact_line": "  for (const o of Object.values(avant.objets)) {"
+        },
+        {
+          "line": 51,
+          "exact_line": "    if (!o.verrouille && !(groupesVerrouilles && o.groupeId && avant.groupes[o.groupeId]?.verrouille) && !(calquesGeles && o.calqueId && avant.calques[o.calqueId]?.gele)) continue;"
+        },
+        {
+          "line": 52,
+          "exact_line": "    const n = apres.objets[o.id];"
+        },
+        {
+          "line": 53,
+          "exact_line": "    if (n === o || (n && egaux(n, o))) continue;"
+        },
+        {
+          "line": 54,
+          "exact_line": "    const raison = raisonVerrou(avant, o)!;"
+        },
+        {
+          "line": 55,
+          "exact_line": "    throw new ErreurCommande(\"precondition\", \"id\", `${o.id} : ${raison} — ${n ? \"modification\" : \"suppression\"} refusée, ${avant.calques[o.calqueId ?? \"\"]?.gele && !o.verrouille ? \"dégeler le calque\" : \"le déverrouiller\"} d'abord`);"
+        }
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/automatisation/regles-classes.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "b686d191f2838092a03c1aca010750d3ff690d80",
+      "sha256": "d0a2ea136068ef3376962d52fe4dda4ae02ca360459e08a3ec9f6251ab62747e",
+      "evidence": [
+        {
+          "line": 19,
+          "exact_line": "export function valeursObjet(etat: Pick<ModeleAtelier, \"niveaux\">, o: OccurrenceQuelconque): Record<string, number> {"
+        },
+        {
+          "line": 21,
+          "exact_line": "  for (const [k, v] of Object.entries(o.params as Record<string, unknown>)) {"
+        },
+        {
+          "line": 34,
+          "exact_line": "  if (o.niveauId && etat.niveaux[o.niveauId]) {"
+        },
+        {
+          "line": 35,
+          "exact_line": "    const n = etat.niveaux[o.niveauId]!;"
+        },
+        {
+          "line": 39,
+          "exact_line": "  return out;"
+        },
+        {
+          "line": 62,
+          "exact_line": "    for (const o of cibles) {"
+        },
+        {
+          "line": 81,
+          "exact_line": "export function controlerReglesClasses(_avant: ModeleAtelier, etat: ModeleAtelier, ctx: ContexteCommande): ResultatCommande {"
+        }
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/proprietes-csv.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "3197519587af883264af2d42d9cee608b0dc60f1",
+      "sha256": "57babba669d6f3b20b0fa1264e15304f2bd68988c2cf03675aa802b493dc7c06",
+      "evidence": [
+        {
+          "line": 48,
+          "exact_line": "export function commandesProprietesCsv(etat: ModeleAtelier, texte: string): { commandes: Commande[]; rapport: RapportProprietesCsv } {"
+        },
+        {
+          "line": 78,
+          "exact_line": "    commandes.push({ type: \"propriete.definir\", params: { id, nom, valeur, ...(unite ? { unite } : {}), provenance: \"import\", statut: \"declaree\" } });"
+        }
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Echanges.tsx",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "32d0cec2d9ff4b3f9026bf31803dc961a326798b",
+      "sha256": "d6ccf8b38c78536c4458089d9f803f58aa3f670180d4afe58c8fab02b0731f00",
+      "evidence": [
+        {
+          "line": 106,
+          "exact_line": "      const { commandes, rapport } = commandesProprietesCsv(client.getSnapshot().etat, await f.text());"
+        }
+      ]
+    }
+  ],
+  "all_sources": [
+    {
+      "path": "apps/api/src/db/schema.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "d80b8e09a2e0a50b6c14df6815fea8faaedd0f2a",
+      "sha256": "2bbdbff5fd05a454f334824a45dcd47b2d0b675e98a71a33780a593b2e956396"
+    },
+    {
+      "path": "apps/api/src/lib/atelier-modele.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "98afbb7e772d5341564850748263bbfe2c9720ec",
+      "sha256": "36e38ba149fe3512862d5a94fca4e18f1f0a6da4214e201c1047afe51e2948dc"
+    },
+    {
+      "path": "apps/api/src/routes/atelier-commands.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "4cf62fb62154cd7435fff87cc801d1e89ccaad76",
+      "sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841"
+    },
+    {
+      "path": "apps/api/src/routes/atelier-commands.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "ec21af8ea3b0501725b15ab8555d612845802c9a",
+      "sha256": "efc43e42757bd328338d240169720c6604cca832882573c0fecd8a5f01c50d32"
+    },
+    {
+      "path": "apps/web/e2e/atelier-complements.mjs",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "a38c75ae79336e1afa058142ce3650ac974e5d58",
+      "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280"
+    },
+    {
+      "path": "apps/web/src/lib/api.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "e0669ad5b63108673508aeb078d10172b2fb0554",
+      "sha256": "95ab92214575696fe46aba7f83bdae167286c24b85c3af95a08c74155f0a2f0a"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Complements.tsx",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "67b88849202f65d571845f73b9ec266251c1b9ce",
+      "sha256": "97c34ce0c3a04271db430dd6d9d5a9b31d506e0ff6a800eb4e2566133b548b03"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Echanges.tsx",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "32d0cec2d9ff4b3f9026bf31803dc961a326798b",
+      "sha256": "d6ccf8b38c78536c4458089d9f803f58aa3f670180d4afe58c8fab02b0731f00"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Inspecteur.tsx",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "d70715cb71ab5e63c435ab29ebd91027ce04bceb",
+      "sha256": "add64226d4b65c59c1fcb25d0b61f3548618d22150fdc8db92492566585437b7"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Modifications.tsx",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "65a1a87948b2412b6abeeee325409113cf912409",
+      "sha256": "6906c4517ffea0794feb1afaac42fa110d0b746f406141ca2d5c05d7a5cce0fe"
+    },
+    {
+      "path": "packages/atelier-model/src/annexe-c.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "f02e7add67412d09797be94a628813fa0c320aac",
+      "sha256": "19840668ea9f1b829611a0edf6203f30f3148a702e5e5b89510b20ee2f149d72"
+    },
+    {
+      "path": "packages/atelier-model/src/annexe-c.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "91b42157ac23f1ab5ee7391f87292c7711af69de",
+      "sha256": "d1862832a2da82c63be358c29302130f45ae1baef7137bbfafcde4a9ed85ede0"
+    },
+    {
+      "path": "packages/atelier-model/src/archive.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "1c4c10db20c3d25772b5f01ab20e09f3cc0e00a5",
+      "sha256": "3e9eb7a485cf3ffda71a4239f723762385c851c386ad5463557a9bc12d7835a5"
+    },
+    {
+      "path": "packages/atelier-model/src/automatisation/regles-classes.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "b686d191f2838092a03c1aca010750d3ff690d80",
+      "sha256": "d0a2ea136068ef3376962d52fe4dda4ae02ca360459e08a3ec9f6251ab62747e"
+    },
+    {
+      "path": "packages/atelier-model/src/blocs-places.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "a57c990071dd3ca5485fa1965a8083114a923333",
+      "sha256": "59e6e15a170bc1e261f3874f3083c747aaae5a1a8a8c1687b2ead3145d97742a"
+    },
+    {
+      "path": "packages/atelier-model/src/classification-regle.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "e55a345796421a28023f8770863bc40e1e176fd5",
+      "sha256": "4c9cbe7f83402e33f83b0d31c2caba9f3118f3efd00f4c786cb4bf75bdf4c469"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/altimetrie.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "7b31a57d6d074e1cdc19263641e6f66fed656bc8",
+      "sha256": "91fde1990a51c43bc511cda763ab6cc2668554da3f9a6f0b9961ee308ac343eb"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/base.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "fee67dcb89d226620e3d8b556dbc4440fc411b4c",
+      "sha256": "c3b7e504f32e2a22ed3415d8cf61ee60d77bf7417b1f3ccf3417e75f2d3f4deb"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "b1cf02c1a04663aeb329e7fd9b724a6f400a73cb",
+      "sha256": "6aaab56147c906b4f2c69bb921c8409e39f9b592fa5fffdb6a0dffc4cf089403"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/bloc.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "19d394220f070aca70bb704d6ce054e3dd618851",
+      "sha256": "b7d91a3bb472f5e11bacd8304543c6075403a6f3175a85981c776004ccf6d4c6"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "458b232273b5e5529ff6489804371cba011901db",
+      "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/index.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "6df8663bc325337bd4cd2aa5c7dab0b2ece3619e",
+      "sha256": "ee0dd04b4976c17d5f77a261730d239c8d125a2442ca8013c464d59dc8ce09b3"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/objets.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "d54f5a09afd760f45b72270e0e54e3d6041580fb",
+      "sha256": "8a118398436699bd239dae0a0ac8877f115148517f98da37e698224eff2de4dd"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/organisation.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "8c2f00472ec1dd9a903071396940a092eef1cbc9",
+      "sha256": "792399409ba93824808c5ca445ee3d169fc02d68bb0e7ee0541455eee17af26b"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "6a2dbb2e60eb300e988cec2996fff80264fce0c4",
+      "sha256": "a3a870f1f187e3475d0a5d7f298f961e4665ff712bdab918dc15f1bd6b3f2c7a"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/referentiels.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "976beb6b32a689ee97606b29662efe9b491f790f",
+      "sha256": "9aca8b202fe75af7462a98d6c57100e99f5b5d6604efd94277cee94ebdaee132"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/verrous.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "1667fe8b59ccc2aea877f8ba08bac0f67f78e918",
+      "sha256": "696198e5e7925f61b1bee99581191cc0641eeb1bc62fd2b08797c7d60b6f6997"
+    },
+    {
+      "path": "packages/atelier-model/src/documents/tableaux.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "e997dcf4e280814f9f5308502bbfe6b711d9bdf2",
+      "sha256": "4aa36d2c6a5f230cd332e311c0fadb249374691dfd52e8affb1449b1c3743857"
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/ifc.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "3b31a7df41007a681d9bbb8c656e475e4d123465",
+      "sha256": "4e3de1b2be7a5b7974744e45ee536b26e1daca05bc877d6e07c9a397bc5ea520"
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/proprietes-csv.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "819dca06d241576e4407bfc289684dd33d010171",
+      "sha256": "c5e3abb1d1e0e81a96f48f24fb114c30e7ae5c814eb9bd6afeadbc13d32a0936"
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/proprietes-csv.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "3197519587af883264af2d42d9cee608b0dc60f1",
+      "sha256": "57babba669d6f3b20b0fa1264e15304f2bd68988c2cf03675aa802b493dc7c06"
+    },
+    {
+      "path": "packages/atelier-model/src/import/natif.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "12f87ec468257ee03fb4cd41b435531e21c41694",
+      "sha256": "fdcb23d4fb61e01081880110bc3f57f596b98f62d012ef01e7cdf56f625ddf99"
+    },
+    {
+      "path": "packages/atelier-model/src/import/natif.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "36f8a17a1029e9c6594dbb897271abe6b7c06fc4",
+      "sha256": "7985dc880a4ea28fb2d216bd4db09ba3b5e73e87955c4d0a14962f1df3fb71d7"
+    },
+    {
+      "path": "packages/atelier-model/src/index.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "8de844c237534e110a0d8c07b7b8430aa7c1c9b0",
+      "sha256": "285d0018b95a727e522f575a8e34c399b91e549a335dacc01ea549c28e4102f4"
+    },
+    {
+      "path": "packages/atelier-model/src/modele.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "aac2c3600a01e20c4a0aa36d7d5a7c3704102706",
+      "sha256": "d7c689c43c61aea6801e67335d97fef30b143f4a0edf49b443e50a1b0e1757bc"
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/structure/beton.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "bf01c61d6e4a2a07e57c581675f8bfbbc84d0a97",
+      "sha256": "1392a05e17d2d4d40235bf11d2714f9326619cb18b8fca95c01c0632327111f9"
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/structure/index.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "9bc183fd7335561a949b1d23a6ebee61c7a76f49",
+      "sha256": "1f4b646334dde8f1029e2054edf90c4564589fdedefeb8cb4dc355d3d29457e9"
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/structure/structure.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "e83985ead0a8dd6d3ebd02d4026c0683ccb64932",
+      "sha256": "ee6b8e68ddefaa215e6b751ee60d88b1344eb9196640b41b42d4a9e02576ef6a"
+    },
+    {
+      "path": "packages/atelier-model/src/presse-papiers.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "b6728aed660c8a0d0c3c51937c325a2e83065a52",
+      "sha256": "400be88722f4c267fa4683016c3c46bce4107803c5a5fe8af0974f3ad6ce517e"
+    },
+    {
+      "path": "packages/atelier-model/src/projection/analyse.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "0fa1896aefc10d69ca2088406e970a07b2ae4a37",
+      "sha256": "ae61b49461682688d0bb44df85665efb346d6e98eac0f274c5087139f8eabc2e"
+    },
+    {
+      "path": "packages/atelier-model/src/reprise.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "7449908dfb8d4f7ae95bc493b5df3a80b3602ce3",
+      "sha256": "07ad4cef2d368abf0706b47b38ef7071ecb463c10ff7423875027bc2de00e5d4"
+    },
+    {
+      "path": "packages/atelier-model/src/versions.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "5f60bbc23f69815302a83e53b043acb8cc7cb4dd",
+      "sha256": "24d9119d6c592760cfe321feeeebcfe53bd0b01a354f5e0367bb8cdd1a08425d"
+    }
+  ],
+  "cross_review_A5": {
+    "source": "/workspace/work/resume496/agents/A5/CLASSIF1-INVENTAIRE-INDEPENDANT-A5.json",
+    "sha256": "84cb6cf5b20303c019116fb9511742d6392c819a1407331f1f12deb994fb0279",
+    "all_source_hashes_match": true,
+    "source_count": 15,
+    "agreement": "Même writer436 et mêmes consommateurs directs ; A2 inclut explicitement type/rendu diagnostics, E2E et index générique supplémentaire. Compteurs différents car motifs/périmètres différents, aucun désaccord sémantique identifié.",
+    "A5_final_concurrence": "À consigner par A5 sur ce JSON figé avant activation A3 par A0."
+  },
+  "named_expected_impacts": [
+    {
+      "id": "CLASSIF-I01",
+      "impact": "Aucune déclaration absente créée ; déclaration saisie/importée/ancienne regle-verifiee conservée entière.",
+      "covered_by_authorized_scope": true
+    },
+    {
+      "id": "CLASSIF-I02",
+      "impact": "Liste, colonne et compteur génériques peuvent ne plus montrer une propriété auparavant fabriquée. Aucun changement UI nécessaire démontré.",
+      "covered_by_authorized_scope": true
+    },
+    {
+      "id": "CLASSIF-I03",
+      "impact": "Diagnostic AnnexeC et remarque export peuvent rester visibles après code externe au lieu d’être effacés par écrasement. Mapping produit IFC et associations restent dérivés/inchangés.",
+      "covered_by_authorized_scope": true
+    },
+    {
+      "id": "CLASSIF-I04",
+      "impact": "Diff/inverse/archives/copies conservent propriétés entières ; anciennes valeurs non réécrites.",
+      "covered_by_authorized_scope": true
+    },
+    {
+      "id": "CLASSIF-I05",
+      "impact": "Une classeIFC déclarée sur une définition peut apparaître par projection générique de composant ; aucune fonctionnalité nouvelle de classification type/héritage livrée.",
+      "covered_by_authorized_scope": true
+    }
+  ],
+  "pure_tests_required": [
+    "Tableau absent/saisie/import/ancienne regle-verifiee, cohérent ou non, valeurs/provenance/statut/unité/attributs inconnus imbriqués conservés.",
+    "Ajouter/remplacer/retirer code pour système libre et référentiel ; autres systèmes/propriétés inchangés.",
+    "id/ids états mixtes, répétabilité, objets exclus intacts ; cible inconnue/verrouillée/code invalide après première valide : comparer entrée profonde entière et zéro effet observable.",
+    "Passer par appliquerLot, contrôles post-réducteur et inverse ; inverse exact de chaque cas et du lot, effets cohérents.",
+    "Diagnostic/export purs avant/après code : déclaration inchangée et remarque si nécessaire ; propriétés absentes non inventées, traitements objet-importe/AnnexeC/association externe conservés.",
+    "Ne pas affaiblir référentiels, proposition/exclusions ou tests autres domaines ; ne pas utiliser titre/toThrow seul comme preuve atomique."
+  ],
+  "effects_requiring_extended_scope_identified": [],
+  "precondition_verdict": "Aucun effet identifié exigeant de modifier UI/API/IFC-engine/schéma ou données hors du lot autorisé ; inventaire A2 prêt pour accord conjoint A5 et activation A3 par A0, pas autorisation nouvelle créée par A2.",
+  "stop_condition": "Si A3/A5 découvre effet nécessitant autre code ou réparation de données, suspendre uniquement écriture nouvelle concernée et demander extension explicite ; ne pas changer des assertions pour cacher une défaillance.",
+  "runtime_regressions_not_executed": [
+    "API GET problemes, E2E classification/lot et rendu UI relus seulement. Leur non-exécution ne doit pas être présentée comme recette réussie.",
+    "Aucune base ou donnée réelle inventoriée ; aucun nombre de fichiers clients ou pertes affirmé."
+  ],
+  "limits": [
+    "Pas preuve exhaustive contre accès dynamiques ou consommateur externe ; aucun accès DrawAll.",
+    "Inventaire générique mécanique plus qualifications locales, pas audit général de tous algorithmes.",
+    "Pas migration/normalisation des anciennes valeurs calculées, ni nouveau schéma/contrat de type/héritage.",
+    "Sources historiques et mapping125 restent immuables."
+  ]
+}

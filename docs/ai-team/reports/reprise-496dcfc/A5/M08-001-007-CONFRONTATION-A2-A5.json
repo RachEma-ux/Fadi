@@ -1,0 +1,1800 @@
+{
+  "reviewer": "A5",
+  "comparison_sha256": "7374fb3b4ff38899f4690971333ed1598920502af3fc387a41e4c29765598902",
+  "code_sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "status": "Revue indépendante achevée ; zéro équivalence complète et aucune correction de fiche appliquée",
+  "sources_verified": 9,
+  "citation_occurrences_verified": 204,
+  "unique_citations": 128,
+  "source_errors": [],
+  "A2_atom_counts": {
+    "absent": 24,
+    "partiel": 24,
+    "présent": 1
+  },
+  "own_independent_snapshot": "M08-001-007-REVUE-INDEPENDANTE.json",
+  "own_atom_counts": {
+    "présent": 5,
+    "partiel": 17,
+    "absent": 26
+  },
+  "partition_note": "A5 a décomposé48 atomes, A2 49 : A5 sépare copie et mezzanine dans chaque E2E (5 préparations présentes), A2 compose ces clauses pour004–007 (partielles) ; A2 sépare zoom/pan/mode, undo/redo, tolérance/validation, suppression/panneau. Les compteurs ne sont pas comparables ni des tests/percentages.",
+  "semantic_reconciliation": [
+    {
+      "id": "M08-PATH-002-A05",
+      "note": "A5 exige +1 sur ligne et classe absent ; A2 classe partiel via attente > après undo mur. Le prédicat exact+1 reste absent pour les deux, donc partiel autre geste acceptable sans couverture acquise."
+    },
+    {
+      "id": "M08-PATH-007-A02",
+      "note": "A5 partiel par analogue polyligne contrainte, A2 absent pour quatre lignes jointives. A2 plus précis pour le prédicat historique : absent retenu sans nier contrainte horizontale réellement assertée."
+    },
+    {
+      "id": "M08-PATH-007-A05",
+      "note": "A5 groupait suppression et panneau absent ; A2 isole analogie cotation àréparer partielle. Aucune des deux revues ne démontre contrainte/panneau attendu."
+    }
+  ],
+  "assertion_reviews": [
+    {
+      "id": "M08-PATH-001-A01",
+      "historical_clause_exact": "repère non local refusé",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "line": 400,
+          "exact_line": "  it(\"la projection écran ↔ local est réversible, y vers le haut\", () => {",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "level": "unite_pure",
+          "role": "autre_invariant"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "line": 405,
+          "exact_line": "    expect(distance(p, pt(4, 5))).toBeLessThan(1e-9);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "level": "unite_pure",
+          "role": "autre_invariant"
+        }
+      ],
+      "A5_independent_reason": "Aucun appel d’esquisse invalide en frame non local dans les deux candidats. La projection écran/local n’est pas ce refus.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-001-A02",
+      "historical_clause_exact": "unité incompatible refusée",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 37,
+          "exact_line": "    expect(() => appliquerLot(etat, lot([{ type: \"mur.tracer\", params: { ...murParams(0, 0, 4, 0), epaisseur: 0.2 } }]))).toThrow(/unité incompatible/);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "level": "unite_pure",
+          "role": "assertion"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 38,
+          "exact_line": "    expect(() => appliquerLot(etat, lot([{ type: \"mur.tracer\", params: { ...murParams(0, 0, 4, 0), epaisseur: { value: 20, unit: \"cm\" } } }]))).toThrow(ErreurCommande);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "level": "unite_pure",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Refus sans unité/cm explicite, mais sur mur.tracer et son épaisseur ; pas sur esquisse/points.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-001-A03",
+      "historical_clause_exact": "longueur sous tolérance refusée",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 39,
+          "exact_line": "    expect(() => appliquerLot(etat, lot([{ type: \"mur.tracer\", params: murParams(1, 1, 1, 1) }]))).toThrow(/longueur nulle/);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "level": "unite_pure",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Longueur de mur nulle refusée ; aucun segment d’esquisse non nul sous le seuil déclaré.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-001-A04",
+      "historical_clause_exact": "calque verrouillé refusé",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 96,
+          "exact_line": "    expect(() => appliquerLot(etat, lot([{ type: \"mur.tracer\", params: murParams(0, 0, 4, 0, { calqueId: \"Verrou\" }) }]))).toThrow(/verrouillé/);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "level": "unite_pure",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "line": 636,
+          "exact_line": "      { type: \"objet.verrouiller\", params: { ids: [\"t3\"], verrouille: true } },",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "level": "unite_pure",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "line": 640,
+          "exact_line": "    expect(r.label).toMatch(/verrouillée/);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "level": "unite_pure",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Le refus porte sur mur.tracer, pas esquisse ; test de gomme conserve objet verrouillé mais autre commande.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-001-A05",
+      "historical_clause_exact": "même enveloppe → mêmes identifiants",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 26,
+          "exact_line": "    const a = appliquerLot(etat, lot([{ type: \"mur.tracer\", params: murParams(0, 0, 4, 0) }], \"abc\"));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "level": "unite_pure",
+          "role": "assertion"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 27,
+          "exact_line": "    const b = appliquerLot(etat, lot([{ type: \"mur.tracer\", params: murParams(0, 0, 4, 0) }], \"abc\"));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "level": "unite_pure",
+          "role": "assertion"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 28,
+          "exact_line": "    expect(a.effets.crees).toEqual([\"mur-abc-1\"]);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "level": "unite_pure",
+          "role": "assertion"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 29,
+          "exact_line": "    expect(JSON.stringify(a.etat)).toBe(JSON.stringify(b.etat));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "level": "unite_pure",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Identité déterministe testée pour mur ; aucun double rejeu de la même enveloppe d’esquisse.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-001-A06",
+      "historical_clause_exact": "inverse ∘ commande = état initial identique",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 198,
+          "exact_line": "    const r = appliquerLot(etat, lot([",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "level": "unite_pure",
+          "role": "assertion"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 204,
+          "exact_line": "    const retour = appliquerCommande(r.etat, r.inverse, { ids: generateurIds(\"undo\") });",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "level": "unite_pure",
+          "role": "assertion"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 205,
+          "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "level": "unite_pure",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Inverse exact pour lot mur/porte/niveau, pas lot esquisse.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-002-A01",
+      "historical_clause_exact": "copie de travail de P.118",
+      "A2_classification": "présent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 57,
+          "exact_line": "await page.locator('.example-card button:has-text(\"Importer\")').first().click();",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 67,
+          "exact_line": "check(\"P.118 : le plan du premier niveau est dessiné depuis le modèle typé\", nbObjets > 50, String(nbObjets));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 83,
+          "exact_line": "check(\"référence protégée : la barre d'état l'annonce\", /Exemple protégé : première modification dans une copie automatique\\./.test(await page.locator(\".atelier-n-reference\").textContent()));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 91,
+          "exact_line": "check(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Préparation par import exemple, copie modifiable vérifiée ; pas scénario exécuté.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-002-A02",
+      "historical_clause_exact": "mezzanine",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 75,
+          "exact_line": "await page.locator(\".nav-niveaux button\").nth(1).click();",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "corpus_différent"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 79,
+          "exact_line": "// Nouveau niveau vierge pour tracer.",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "corpus_différent"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 81,
+          "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").first().fill(\"Essai lot 3a\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "corpus_différent"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 82,
+          "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").nth(1).fill(\"20\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "corpus_différent"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 93,
+          "exact_line": "await page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "corpus_différent"
+        }
+      ],
+      "A5_independent_reason": "Gestes sur niveau Essai lot3a créé à20m ; le niveau importé secondaire seulement visité sans tracé de ligne.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-002-A03",
+      "historical_clause_exact": "ligne tracée au clavier puis au pointeur",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 101,
+          "exact_line": "// Mur au clavier : M, clic, saisie 4, Entrée → un mur de 4 m.",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 108,
+          "exact_line": "  await page.keyboard.type(\"4;0\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 109,
+          "exact_line": "  await page.keyboard.press(\"Enter\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 131,
+          "exact_line": "check(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Murs tracés avec souris et saisie4;0 ; aucune esquisse.ligne testée au navigateur.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-002-A04",
+      "historical_clause_exact": "coordonnées de l'inspecteur égales aux valeurs saisies",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 144,
+          "exact_line": "check(\"inspecteur : renommer → commande appliquée\", (await page.locator(\".inspecteur h3\").textContent()).includes(\"Bureau\"));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "autres_assertions"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 281,
+          "exact_line": "check(\"pousser / tirer : la hauteur du mur a augmenté (> 3 m) et est enregistrée\", Number(hauteurApres.replace(\",\", \".\")) > 3, `${hauteurApres} ; ${murId} à ${JSON.stringify(pos)} ; sonde ${await page.evaluate((p) => window.fadiMesures3D.sonder(p.x, p.y), pos)}`);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "autres_assertions"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 321,
+          "exact_line": "check(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "autres_assertions"
+        }
+      ],
+      "A5_independent_reason": "Inspecteur vérifie nom de pièce/hauteur mur et déplacement, pas coordonnées égales à la ligne saisie.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-002-A05",
+      "historical_clause_exact": "révision +1 par geste",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 278,
+          "exact_line": "  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 30000 });",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 324,
+          "exact_line": "const revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 326,
+          "exact_line": "await page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Attend enregistré ou >ancienne révision après undo déplacement, sans égalité+1 à chaque tracé de ligne.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-002-A06",
+      "historical_clause_exact": "relecture au second navigateur",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 347,
+          "exact_line": "const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 349,
+          "exact_line": "await page2.goto(`${url}?module=atelier`);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 353,
+          "exact_line": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Second navigateur compare murs/pièce/barre-sync d’un autre scénario, pas ligne précision.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-002-A07",
+      "historical_clause_exact": "zoom",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 207,
+          "exact_line": "await mesurer(\"passage en 3D (chargement de three.js, maillage du P.118) → première image\", async () => {",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "vue_sans_oracle_revision"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 244,
+          "exact_line": "await page.locator('.vue3d-commandes select[aria-label=\"Vue\"]').selectOption({ label: \"Perspective\" });",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "vue_sans_oracle_revision"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 245,
+          "exact_line": "// Orbite : 60 trames de glisser, budget de trame mesuré.",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "vue_sans_oracle_revision"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 261,
+          "exact_line": "check(\"orbite : au moins 30 images rendues, p95 du rendu < 16 ms\", orbite.length >= 30 && p95 < 16, `${orbite.length} images, p95 ${p95.toFixed(2)} ms`);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "vue_sans_oracle_revision"
+        }
+      ],
+      "A5_independent_reason": "Des interactions de vue existent, mais aucune assertion révision avant/après ce changement ; pas preuve de R10.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-002-A08",
+      "historical_clause_exact": "panoramique",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 207,
+          "exact_line": "await mesurer(\"passage en 3D (chargement de three.js, maillage du P.118) → première image\", async () => {",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "vue_sans_oracle_revision"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 244,
+          "exact_line": "await page.locator('.vue3d-commandes select[aria-label=\"Vue\"]').selectOption({ label: \"Perspective\" });",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "vue_sans_oracle_revision"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 245,
+          "exact_line": "// Orbite : 60 trames de glisser, budget de trame mesuré.",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "vue_sans_oracle_revision"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 261,
+          "exact_line": "check(\"orbite : au moins 30 images rendues, p95 du rendu < 16 ms\", orbite.length >= 30 && p95 < 16, `${orbite.length} images, p95 ${p95.toFixed(2)} ms`);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "vue_sans_oracle_revision"
+        }
+      ],
+      "A5_independent_reason": "Des interactions de vue existent, mais aucune assertion révision avant/après ce changement ; pas preuve de R10.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-002-A09",
+      "historical_clause_exact": "changement de mode",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 207,
+          "exact_line": "await mesurer(\"passage en 3D (chargement de three.js, maillage du P.118) → première image\", async () => {",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "vue_sans_oracle_revision"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 244,
+          "exact_line": "await page.locator('.vue3d-commandes select[aria-label=\"Vue\"]').selectOption({ label: \"Perspective\" });",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "vue_sans_oracle_revision"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 245,
+          "exact_line": "// Orbite : 60 trames de glisser, budget de trame mesuré.",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "vue_sans_oracle_revision"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 261,
+          "exact_line": "check(\"orbite : au moins 30 images rendues, p95 du rendu < 16 ms\", orbite.length >= 30 && p95 < 16, `${orbite.length} images, p95 ${p95.toFixed(2)} ms`);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "vue_sans_oracle_revision"
+        }
+      ],
+      "A5_independent_reason": "Des interactions de vue existent, mais aucune assertion révision avant/après ce changement ; pas preuve de R10.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-003-A01",
+      "historical_clause_exact": "a = b refusé",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 39,
+          "exact_line": "    expect(() => appliquerLot(etat, lot([{ type: \"mur.tracer\", params: murParams(1, 1, 1, 1) }]))).toThrow(/longueur nulle/);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "level": "unite_pure",
+          "role": "autre_classe"
+        }
+      ],
+      "A5_independent_reason": "Aucun refus de rectangle à coins confondus ; un mur de longueur nulle est un autre objet.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-003-A02",
+      "historical_clause_exact": "largeur nulle refusée",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "line": 118,
+          "exact_line": "      { type: \"esquisse.rectangle\", params: { id: \"e1\", niveauId: \"rdc\", points: [pt(10, 10), pt(11.2, 10.8)] } },",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "level": "unite_pure",
+          "role": "préparations_rectangles_valides"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "line": 159,
+          "exact_line": "    const etat = appliquer(socle(), [{ type: \"esquisse.rectangle\", params: { id: \"r\", niveauId: \"rdc\", points: [pt(0, 0), pt(2, 1)] } }]);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "level": "unite_pure",
+          "role": "préparations_rectangles_valides"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "line": 371,
+          "exact_line": "      { type: \"esquisse.rectangle\", params: { niveauId: \"rdc\", points: [pt(0, 0), pt(2, 1)] } },",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "level": "unite_pure",
+          "role": "préparations_rectangles_valides"
+        }
+      ],
+      "A5_independent_reason": "Aucun test négatif rectangle de largeur nulle dans les candidats.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-003-A03",
+      "historical_clause_exact": "angle 0° : coins aux positions attendues",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "line": 118,
+          "exact_line": "      { type: \"esquisse.rectangle\", params: { id: \"e1\", niveauId: \"rdc\", points: [pt(10, 10), pt(11.2, 10.8)] } },",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "level": "unite_pure",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "line": 123,
+          "exact_line": "    expect(cache.segments.filter((s) => s.objetId === \"o1\")).toHaveLength(4);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "level": "unite_pure",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "line": 124,
+          "exact_line": "    expect(accrocher(pt(1.19, 5.01), cache, etatUi.get().accrochages, 0.1, null).point).toMatchObject({ x: 1.2, y: 5 });",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "level": "unite_pure",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "line": 159,
+          "exact_line": "    const etat = appliquer(socle(), [{ type: \"esquisse.rectangle\", params: { id: \"r\", niveauId: \"rdc\", points: [pt(0, 0), pt(2, 1)] } }]);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "level": "unite_pure",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "line": 167,
+          "exact_line": "      expect(Math.min(...s.params.contour.map((q) => q.x))).toBe(1);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "level": "unite_pure",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Rectangle valide sert au bloc/extrusion, positions placées après transformation testées, pas oracle des quatre coins natifs à0°.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-003-A04",
+      "historical_clause_exact": "angle 90° : mêmes dimensions, coins recalculés à la tolérance près",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "line": 204,
+          "exact_line": "    const e = appliquer(socle(), [{ type: \"refexterne.rattacher\", params: { id: \"voisin\", nom: \"Voisin\", projetSourceId: \"s\", publicationId: \"pub\", revisionSource: 2, empreinteSource: \"x\", niveauSourceId: \"r\", niveauId: \"rdc\", position: pt(50, 0), angle: { value: 90, unit: \"deg\" }, calqueId: null } }]);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "level": "unite_pure",
+          "role": "autres_angles"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "line": 671,
+          "exact_line": "    const s = saisie(\"ligne\", \"2;0\", [pt(0, 0)], null, etat, ui({ outil: \"ligne\", pointsEnCours: [pt(0, 0)], repere: { origine: pt(0, 0), angle: 90 } }), opts)!;",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "level": "unite_pure",
+          "role": "autres_angles"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "line": 690,
+          "exact_line": "    expect((r.commandes[0]!.params as { angleDepart: number }).angleDepart).toBe(90);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "level": "unite_pure",
+          "role": "autres_angles"
+        }
+      ],
+      "A5_independent_reason": "Angle90 dans repère de saisie, référence ou escalier ne vérifie pas rotation rectangle et dimensions.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-003-A05",
+      "historical_clause_exact": "aire = longueur × largeur",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "line": 296,
+          "exact_line": "  it(\"propose la pièce de la boucle de murs cliquée, avec son aire calculée\", () => {",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "level": "unite_pure",
+          "role": "autre_objet"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+          "line": 300,
+          "exact_line": "    expect(r.label).toBe(\"Pièce 16,00 m²\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+          "level": "unite_pure",
+          "role": "autre_objet"
+        }
+      ],
+      "A5_independent_reason": "Pièce16m² déduite de murs ne constitue pas aire d’une esquisse rectangle.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-003-A06",
+      "historical_clause_exact": "inverse restitue l'état",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 198,
+          "exact_line": "    const r = appliquerLot(etat, lot([",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "level": "unite_pure",
+          "role": "assertion"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 204,
+          "exact_line": "    const retour = appliquerCommande(r.etat, r.inverse, { ids: generateurIds(\"undo\") });",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "level": "unite_pure",
+          "role": "assertion"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 205,
+          "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "level": "unite_pure",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Inverse exact générique mur/porte/niveau, aucun rectangle dans lot inverse.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-004-A01",
+      "historical_clause_exact": "rectangle par deux coins accrochés à la grille 0,50 m",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 101,
+          "exact_line": "// Mur au clavier : M, clic, saisie 4, Entrée → un mur de 4 m.",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "murs_non_rectangles"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 119,
+          "exact_line": "for (const saisie of [\"0;4\", \"-4;0\", \"0;-4\"]) {",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "murs_non_rectangles"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 131,
+          "exact_line": "check(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "murs_non_rectangles"
+        }
+      ],
+      "A5_independent_reason": "Scénario E2E ne trace pas de rectangle esquisse ni ne valide cette grille.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-004-A02",
+      "historical_clause_exact": "puis par dimensions saisies",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 108,
+          "exact_line": "  await page.keyboard.type(\"4;0\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "autre_commande"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 119,
+          "exact_line": "for (const saisie of [\"0;4\", \"-4;0\", \"0;-4\"]) {",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "autre_commande"
+        }
+      ],
+      "A5_independent_reason": "4;0 et0;4 dessinent des murs, pas un rectangle paramétré.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-004-A03",
+      "historical_clause_exact": "mezzanine de la copie de travail P.118",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 81,
+          "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").first().fill(\"Essai lot 3a\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 82,
+          "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").nth(1).fill(\"20\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 91,
+          "exact_line": "check(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 93,
+          "exact_line": "await page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "CopieP118 oui, niveau Essai lot3a à20m pour les gestes ; aucune recette mezzanine rectangle.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-004-A04",
+      "historical_clause_exact": "dimensions relues dans l'inspecteur",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 281,
+          "exact_line": "check(\"pousser / tirer : la hauteur du mur a augmenté (> 3 m) et est enregistrée\", Number(hauteurApres.replace(\",\", \".\")) > 3, `${hauteurApres} ; ${murId} à ${JSON.stringify(pos)} ; sonde ${await page.evaluate((p) => window.fadiMesures3D.sonder(p.x, p.y), pos)}`);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "hauteur_mur_seulement"
+        }
+      ],
+      "A5_independent_reason": "Aucun rectangle ni comparaison de ses dimensions inspecteur.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-004-A05",
+      "historical_clause_exact": "poignée de coin",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 288,
+          "exact_line": "// Manipulation directe en plan (DA-02-17) : sélectionner un mur, le glisser d'un mètre.",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "autre_geste"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 312,
+          "exact_line": "await mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "autre_geste"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 321,
+          "exact_line": "check(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "autre_geste"
+        }
+      ],
+      "A5_independent_reason": "Le glisser testé concerne un mur, aucune poignée coin rectangle.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-004-A06",
+      "historical_clause_exact": "annuler",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 150,
+          "exact_line": "await page.keyboard.press(\"Control+z\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 152,
+          "exact_line": "check(\"Ctrl Z annule le renommage\", !(await navTexte()).includes(\"Bureau\"));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 325,
+          "exact_line": "await page.keyboard.press(\"Control+z\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 326,
+          "exact_line": "await page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Undo renommage pièce et déplacement mur, pas rectangle.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-004-A07",
+      "historical_clause_exact": "rétablir",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 153,
+          "exact_line": "await page.keyboard.press(\"Control+Shift+z\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 155,
+          "exact_line": "check(\"Ctrl Maj Z le rétablit\", (await navTexte()).includes(\"Bureau\"));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Redo du renommage pièce uniquement.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-004-A08",
+      "historical_clause_exact": "second navigateur",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 353,
+          "exact_line": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Second navigateur confirme murs/pièce et barre-sync, pas rectangle.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-005-A01",
+      "historical_clause_exact": "spline de cinq points",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 131,
+          "exact_line": "check(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "murs_seulement"
+        }
+      ],
+      "A5_independent_reason": "Aucune création spline navigateur dans candidat.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-005-A02",
+      "historical_clause_exact": "mezzanine de la copie de travail P.118",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 81,
+          "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").first().fill(\"Essai lot 3a\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 82,
+          "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").nth(1).fill(\"20\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 91,
+          "exact_line": "check(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 93,
+          "exact_line": "await page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "CopieP118 vérifiée, gestes sur niveauEssai20m ; spline absente.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-005-A03",
+      "historical_clause_exact": "un point de passage déplacé par poignée",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 288,
+          "exact_line": "// Manipulation directe en plan (DA-02-17) : sélectionner un mur, le glisser d'un mètre.",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "autre_geste"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 321,
+          "exact_line": "check(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "autre_geste"
+        }
+      ],
+      "A5_independent_reason": "Déplacement mur ne démontre pas poignée de point spline.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-005-A04",
+      "historical_clause_exact": "annuler",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 152,
+          "exact_line": "check(\"Ctrl Z annule le renommage\", !(await navTexte()).includes(\"Bureau\"));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 325,
+          "exact_line": "await page.keyboard.press(\"Control+z\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 326,
+          "exact_line": "await page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Undo présent mais sur nom de pièce/déplacement mur.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-005-A05",
+      "historical_clause_exact": "rétablir",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 155,
+          "exact_line": "check(\"Ctrl Maj Z le rétablit\", (await navTexte()).includes(\"Bureau\"));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Redo du renommage de pièce, pas spline.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-005-A06",
+      "historical_clause_exact": "second navigateur",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 353,
+          "exact_line": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "État murs/pièce partagé, pas spline ni points.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-006-A01",
+      "historical_clause_exact": "tracé au pointeur (émulation tactile Chromium)",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 370,
+          "exact_line": "const tel = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2, storageState: await ctx.storageState() });",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "autre_modalité"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 375,
+          "exact_line": "await pt3.locator('.barre-mode button:has-text(\"3D\")').tap();",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "autre_modalité"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 391,
+          "exact_line": "check(\"téléphone 3D : toucher un mur le sélectionne\", !!murTel && (await pt3.locator(\".inspecteur h3\").first().textContent()).startsWith(\"Mur\"), JSON.stringify(murTel));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "autre_modalité"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 405,
+          "exact_line": "check(\"téléphone 3D : un doigt fait tourner, deux doigts zooment (images rendues)\", n1Tel > n0Tel + 3 && n2Tel > n1Tel + 3, `${n0Tel} → ${n1Tel} → ${n2Tel}`);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "autre_modalité"
+        }
+      ],
+      "A5_independent_reason": "Émulation tactile teste sélection/orbite/pincement3D, pas mainlevée dessin2D.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-006-A02",
+      "historical_clause_exact": "mezzanine de la copie de travail P.118",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 81,
+          "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").first().fill(\"Essai lot 3a\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 82,
+          "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").nth(1).fill(\"20\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 91,
+          "exact_line": "check(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "CopieP118 présente, mais aucun geste mainlevée mezzanine.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-006-A03",
+      "historical_clause_exact": "tolérance réglée",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 405,
+          "exact_line": "check(\"téléphone 3D : un doigt fait tourner, deux doigts zooment (images rendues)\", n1Tel > n0Tel + 3 && n2Tel > n1Tel + 3, `${n0Tel} → ${n1Tel} → ${n2Tel}`);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "autre_test"
+        }
+      ],
+      "A5_independent_reason": "Aucun réglage de tolérance mainlevée dans candidat.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-006-A04",
+      "historical_clause_exact": "validation : révision +1",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 324,
+          "exact_line": "const revAvantAnnuler = Number(((await page.locator(\".barre-sync\").textContent()) ?? \"\").match(/r(\\d+)/)?.[1] ?? NaN);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "undo_mur_non_equivalent"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 326,
+          "exact_line": "await page.waitForFunction((r) => { const m = (document.querySelector(\".barre-sync\")?.textContent ?? \"\").match(/^Enregistré · r(\\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "undo_mur_non_equivalent"
+        }
+      ],
+      "A5_independent_reason": "Aucune validation mainlevée ni assertion+1 correspondante.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-006-A05",
+      "historical_clause_exact": "geste à deux doigts : aucune révision",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 400,
+          "exact_line": "await toucher(\"touchStart\", [[150, 250], [250, 250]]);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 401,
+          "exact_line": "for (let k = 1; k <= 10; k++) await toucher(\"touchMove\", [[150 - k * 6, 250], [250 + k * 6, 250]]);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 405,
+          "exact_line": "check(\"téléphone 3D : un doigt fait tourner, deux doigts zooment (images rendues)\", n1Tel > n0Tel + 3 && n2Tel > n1Tel + 3, `${n0Tel} → ${n1Tel} → ${n2Tel}`);",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Pincement3D testé en nombreimages ; aucune vérification de révision inchangée ni absencecommande2D.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-006-A06",
+      "historical_clause_exact": "annuler",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 152,
+          "exact_line": "check(\"Ctrl Z annule le renommage\", !(await navTexte()).includes(\"Bureau\"));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 325,
+          "exact_line": "await page.keyboard.press(\"Control+z\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Undo existe pour autres gestes, pas mainlevée.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-006-A07",
+      "historical_clause_exact": "second navigateur",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "line": 353,
+          "exact_line": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Comparaison murs/pièce, pas tracé mainlevée.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-007-A01",
+      "historical_clause_exact": "mezzanine de la copie de travail P.118",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 95,
+          "exact_line": "await page.locator('.example-card button:has-text(\"Importer\")').first().click();",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 101,
+          "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").first().fill(\"Essai lot 5\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 102,
+          "exact_line": "await page.locator(\".navigateur .nav-formulaire input\").nth(1).fill(\"30\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 104,
+          "exact_line": "await page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(reference), { timeout: 30000 });",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 107,
+          "exact_line": "await page.locator('.nav-niveaux button:has-text(\"Essai lot 5\")').click();",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Copie exemple créée mais niveauEssai lot5 à30m, pas mezzanine.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-007-A02",
+      "historical_clause_exact": "quatre lignes contraintes en rectangle",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 169,
+          "exact_line": "// Esquisse contrainte : horizontal sur le premier segment.",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 172,
+          "exact_line": "for (const s of [\"3;0,5\", \"0;2\"]) {",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 179,
+          "exact_line": "const esq = await attendreObjet((o) => o.classe === \"esquisse\" && o.params.forme === \"polyligne\", \"polyligne\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 186,
+          "exact_line": "check(\"contrainte « horizontal » : premier segment rendu horizontal, contrainte listée avec les degrés de liberté\", Math.abs(esqApres.params.points[0].y - esqApres.params.points[1].y) < 1e-6 && (await page.locator(\".liste-contraintes li\").count()) === 1 && /degré\\(s\\) de liberté/.test(await page.locator(\".inspecteur-contraintes > summary\").textContent()), JSON.stringify(esqApres.params.points.slice(0, 2).map((p) => [p.x, p.y])));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 195,
+          "exact_line": "check(\"contrainte « angle » 90° : second segment perpendiculaire au premier, deux contraintes listées\", Math.abs(prodScal) < 1e-4 && (await page.locator(\".liste-contraintes li\").count()) === 2, JSON.stringify(esqAngle.map((p) => [p.x, p.y])));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Polyligne de trois points reçoit horizontal puis angle ; pas quatre lignes jointives.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-007-A03",
+      "historical_clause_exact": "indicateur « 4 degrés de liberté »",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 186,
+          "exact_line": "check(\"contrainte « horizontal » : premier segment rendu horizontal, contrainte listée avec les degrés de liberté\", Math.abs(esqApres.params.points[0].y - esqApres.params.points[1].y) < 1e-6 && (await page.locator(\".liste-contraintes li\").count()) === 1 && /degré\\(s\\) de liberté/.test(await page.locator(\".inspecteur-contraintes > summary\").textContent()), JSON.stringify(esqApres.params.points.slice(0, 2).map((p) => [p.x, p.y])));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Prédicat teste seulement présence texte degré(s) de liberté, pas nombre4.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-007-A04",
+      "historical_clause_exact": "suppression d'une des lignes",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 135,
+          "exact_line": "await outil(\"Scinder\");",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "autre_geste"
+        },
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 142,
+          "exact_line": "check(\"scission du mur : deux murs, la cote passe « à réparer » (tracé rouge et libellé)\", (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 2 && (await page.locator(\".plan2d .cotation-a-reparer\").count()) === 1 && /à réparer/.test(await page.locator(\".plan2d .obj-cotation text\").textContent()));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "autre_geste"
+        }
+      ],
+      "A5_independent_reason": "Scission mur existe ; aucune suppression ligne contrainte correspondante.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-007-A05",
+      "historical_clause_exact": "contrainte « à réparer » dans le panneau des problèmes",
+      "A2_classification": "partiel",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 142,
+          "exact_line": "check(\"scission du mur : deux murs, la cote passe « à réparer » (tracé rouge et libellé)\", (await page.locator(\".plan2d [data-objet^='mur-']\").count()) === 2 && (await page.locator(\".plan2d .cotation-a-reparer\").count()) === 1 && /à réparer/.test(await page.locator(\".plan2d .obj-cotation text\").textContent()));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        },
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 228,
+          "exact_line": "check(\"plan du niveau : murs coupés en poché, cote « à réparer » signalée dans le dessin, convention des portes non requise (aucune porte)\", /fill=\"#404040\"/.test(apercuPlan) && /à réparer/.test(apercuPlan));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "assertion"
+        }
+      ],
+      "A5_independent_reason": "Cote associative après scission devient àréparer dans dessin ; pas contrainte d’esquisse ni panneau des problèmes.",
+      "limite_partiel": "Analogie sur autre objet/état/modalité seulement ; le prédicat historique exact reste non démontré."
+    },
+    {
+      "id": "M08-PATH-007-A06",
+      "historical_clause_exact": "annuler la ramène",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 186,
+          "exact_line": "check(\"contrainte « horizontal » : premier segment rendu horizontal, contrainte listée avec les degrés de liberté\", Math.abs(esqApres.params.points[0].y - esqApres.params.points[1].y) < 1e-6 && (await page.locator(\".liste-contraintes li\").count()) === 1 && /degré\\(s\\) de liberté/.test(await page.locator(\".inspecteur-contraintes > summary\").textContent()), JSON.stringify(esqApres.params.points.slice(0, 2).map((p) => [p.x, p.y])));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "contraintes_sans_undo"
+        },
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 195,
+          "exact_line": "check(\"contrainte « angle » 90° : second segment perpendiculaire au premier, deux contraintes listées\", Math.abs(prodScal) < 1e-4 && (await page.locator(\".liste-contraintes li\").count()) === 2, JSON.stringify(esqAngle.map((p) => [p.x, p.y])));",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "contraintes_sans_undo"
+        }
+      ],
+      "A5_independent_reason": "Aucun undo de suppression ligne contrainte dans ce script.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    },
+    {
+      "id": "M08-PATH-007-A07",
+      "historical_clause_exact": "second navigateur",
+      "A2_classification": "absent",
+      "A5_review": "Acceptable comme classement documentaire borné ; aucun résultat runtime ni couverture exacte transférée.",
+      "verdict_review": "Accepté comme qualification statique bornée, pas acceptation du produit",
+      "verified_excerpts": [
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 30,
+          "exact_line": "const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? undefined });",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "contexte"
+        },
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 31,
+          "exact_line": "const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "contexte"
+        },
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 32,
+          "exact_line": "const page = await ctx.newPage();",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "contexte"
+        },
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "line": 380,
+          "exact_line": "await browser.close();",
+          "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "level": "e2e_navigateur",
+          "role": "contexte"
+        }
+      ],
+      "A5_independent_reason": "Un contexte/page unique, aucun second navigateur.",
+      "limite_partiel": "Absence bornée aux candidats, ou présence de préparation seulement."
+    }
+  ],
+  "atomicity_inverse": "Revus par entrée : toThrow sur murs sans comparaison état après refus ne démontre pas atomicité spécifique ; inverse exact lot murs/porte/niveau ne démontre pas rectangle/esquisse ; undo/redo renommage pièce ne démontre pas dessin spline/mainlevée. Contextes API409/droits/fileDexie non conclus, hors exécution.",
+  "final_verdict": "A2 documentaire publiable dans périmètre borné après stabilisation/hash ; garder prescriptions historiques et D174, aucun remplacement automatique chemins ni gate/P630/acceptation produit.",
+  "context_invariants_reviewed": 39,
+  "A2_stable_sha256_expected": "7374fb3b4ff38899f4690971333ed1598920502af3fc387a41e4c29765598902",
+  "A2_stable_hash_matches": true,
+  "reviews_accepted": 49,
+  "reviews_rejected": 0,
+  "genuine_false_positive_in_A2": []
+}
