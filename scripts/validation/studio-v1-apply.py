@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Preflight existing own disposable profile; optional additive Studio schema only."""
+"""Preflight existing own disposable profile; never mutates the schema (Studio tables come from init.sql)."""
 import json,os,stat,subprocess,sys,re,hashlib
 from pathlib import Path
 def main():
@@ -27,13 +27,6 @@ def main():
    lines.append(key+'='+value)
   envpath.write_text('\n'.join(lines)+'\n'); os.chmod(envpath,0o600)
   m['port']=actual_port; manifest.write_text(json.dumps(m,indent=2)+'\n')
- if len(args)>1:
-  schema=Path(args[1]);text=schema.read_text();assert hashlib.sha256(schema.read_bytes()).hexdigest()=='67653e6b33a2b4312bd1a4d4f658105a46601ff26f5b70f0a30eabe5094717e0', 'Unreviewed Studio SQL refused'
-  digest=hashlib.sha256(text.encode()).hexdigest()
-  if m.get('studioSchemaApplied'):
-   assert m.get('studioSchemaSha256')==digest, 'Applied Studio schema hash mismatch'
-   assert sql("SELECT count(*) FROM pg_tables WHERE schemaname='public' AND tablename IN ('studio_studies','studio_variants','studio_revisions');")=='3'
-  else:
-   sql('SET ROLE studio_owner; '+text+' RESET ROLE; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO studio_app;');m['studioSchemaApplied']=True;m['studioSchemaSha256']=digest;manifest.write_text(json.dumps(m,indent=2)+'\n')
- print('Disposable identity, labels, loopback, marker and non-superuser role verified; '+('Studio schema pinned hash verified (applied only if absent).' if len(args)>1 else 'no schema mutation.'))
+ if len(args)>1:raise SystemExit('Studio schema is applied by init.sql at profile bootstrap; no separate schema file is accepted')
+ print('Disposable identity, labels, loopback, marker and non-superuser role verified; no schema mutation.')
 if __name__=='__main__':main()
