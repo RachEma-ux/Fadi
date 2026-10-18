@@ -1,7 +1,10 @@
 /**
  * Annuler / rétablir LOCAL de la Planche (cahier-planche §5.7, C6) : historique de modèles immuables, une opération =
  * un pas ; une correction au champ Mesures après coup (`remplaceDernier`) remplace le dernier pas au lieu d'en
- * ajouter un. Brouillon jusqu'au lot 7 : aucune commande, aucun journal serveur. Pur.
+ * ajouter un. Depuis le lot 7, ce module reste local et pur : il ne connaît ni commande ni serveur, mais `Planche.tsx`
+ * (`poserHistorique`) envoie chaque pas qui change le modèle (opération, annulation, rétablissement) en commande
+ * `planche.operation` (différence structurelle + empreinte d'arrivée, validée par le serveur, R9). Les pas conservés
+ * ici sont des modèles complets ; les différences ne servent qu'à la persistance.
  */
 import type { Modele } from "@parcours/planche-model";
 
@@ -17,7 +20,7 @@ export interface Historique {
   readonly futur: readonly Pas[];
 }
 
-/** Nombre de pas conservés (choix Fadi : borne mémoire du brouillon). */
+/** Nombre de pas conservés (choix Fadi : borne mémoire de l'historique local). */
 export const PAS_MAX = 200;
 
 export function historiqueInitial(modele: Modele): Historique {
