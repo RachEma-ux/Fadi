@@ -49,3 +49,13 @@ GITHUB_TOKEN=... python3 scripts/update-studio-daily.py
 ```
 
 Respecter les restrictions : dépôt public, aucun secret, aucune base ni test destructif. Ce workflow n'active **pas** Codex Cloud ; l'exécution de Codex est vérifiée à partir de ses ACK et preuves GitHub. Suivi : [Issue #167](https://github.com/RachEma-ux/Fadi/issues/167).
+
+## Tableau de bord autonome (sans ouvrir les paramètres ChatGPT)
+
+Accès au fichier : [Fadi_Dashboard_Horaire.html](Fadi_Dashboard_Horaire.html). Il s'agit d'une page HTML autonome, adaptée à l'écran mobile, qui lit **en lecture seule** les commentaires du canal GitHub #166, l'état de la PR #165, le SHA de `main` et les exécutions CI publiques à chaque ouverture ou clic **Actualiser**.
+
+Cette page est distincte de la checklist interactive. Elle affiche deux indicateurs, les statuts des 630 tâches, les 31 missions, les questions/décisions, la CI et des liens directs. La baseline du développement fonctionnel reste `N/D %` tant que `DEV_SCOPE` n'est pas ratifié. Les nombres tirés de rapports Codex sont **attribués à leur source**, pas homologués.
+
+**Publication :** un fichier HTML `blob` dans GitHub montre du code, **pas une page web navigable**. La PR #168 doit d'abord être fusionnée si l'on veut activer le workflow quotidien. Pour obtenir une URL HTTPS publique qui rende le tableau de bord, il faut en outre publier ce fichier sur un hébergement statique **explicitement autorisé** (GitHub Pages si disponible et configuré, ou service existant approuvé). Aucune adresse GitHub Pages, ni URL de production `fadimmo.com`, n'est présumée active. Le fichier peut aussi s'ouvrir localement comme document HTML, auquel cas les appels GitHub dépendent des permissions réseau du navigateur.
+
+Le rapport horaire ChatGPT continue à paraître dans sa conversation. Le lien de tâche « Hourly » ouvre ses **paramètres** dans l'interface native ; cette page autonome n'en modifie pas le comportement.
