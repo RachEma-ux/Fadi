@@ -99,3 +99,9 @@ Pour démarrer A3-DB-1/2 : reprendre #157, ouvrir une **branche courte distincte
 ## 14. Mission 004 — démarrage explicite du lot autorisé
 
 Le [prompt Mission 004](CODEX-MISSION-004-PROMPT.md) est le texte opérationnel à exécuter dès qu'une session Codex Cloud Fadi est active. Il renvoie au [mandat de décisions déléguées](CODEX-DELEGATED-DECISIONS.md) et à l'autorisation [A3-DB-1/2 dans #157](https://github.com/RachEma-ux/Fadi/issues/157#issuecomment-6249524044). Les questions D01–D07 ont reçu des décisions dans [#166](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098). A0 doit poster `[CODEX-ACK][DELEGATED-WORKFLOW]`, démarrer A3-DB-1/2 sur une PR de code séparée **sans connexion réelle à la base ni fusion**, et poursuivre les tâches documentaires indépendantes. Une nouvelle question technique ne justifie jamais un arrêt global.
+
+## 15. Portée réelle : programme permanent de missions, pas un arrêt après Mission 004
+
+**La Mission 004 n'est qu'un jalon de démarrage et A3-DB-1/2 son premier lot autorisé.** Son achèvement ou l'ouverture de sa PR ne ferme ni la session active ni le mandat général. Continuer immédiatement les **31 missions M00–M30 et les 630 tâches Studio** selon leurs dépendances et permissions, en sélectionnant toutes les sous-tâches `READY` et en conservant celles bloquées. Lire en priorité la [section 8 du prompt opérationnel Mission 004](CODEX-MISSION-004-PROMPT.md) : c'est la boucle d'ordonnancement applicable après **chaque** livraison, sans jamais attendre la revue d'une PR pour continuer les tâches indépendantes.
+
+A0 n'annonce **fin du programme** qu'après preuves et acceptation réelle des obligations approuvées, et décisions explicites sur les exclusions. Avant toute limite de durée de session, poster `[CODEX-HANDOFF][NEXT-READY]` dans #166 et synchroniser STATUS/HANDOFF. Aucun fichier de consignes ni contrôle horaire ne garantit un processus Codex permanent après l'arrêt effectif d'une session.
