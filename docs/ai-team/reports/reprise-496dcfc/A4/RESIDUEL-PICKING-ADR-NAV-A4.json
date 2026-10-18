@@ -1,0 +1,384 @@
+{
+  "objet": "Trois résiduels seulement : C.2-03, ADR-01, ADR-02",
+  "date": "2026-10-18",
+  "statut": "Addendum documentaire proposé ; aucune modification de statut canonique",
+  "reference": "main 817bd36e7d4b1ab60ab9c00309509c7cdfed0798 ; pièces scratch hashées individuellement",
+  "sources": {
+    "A2_NEXT": {
+      "path": "/workspace/work/resume496/agents/A2/NEXT-READY-POST203-A2.json",
+      "sha256": "aebe223472c8e61939d495fc0d903f4682e983e014dbda98485026317985ac55"
+    },
+    "A2_QUAL": {
+      "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+      "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+    },
+    "COEX": {
+      "path": "/workspace/work/resume496/agents/A2/COEX03-COMPLEMENT-A2.json",
+      "sha256": "eac9b7efbf7623db99ea0fbaef0daa416c53a533581e20dc0c17f615711ddd8a"
+    },
+    "LOT_C": {
+      "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-003/A2/LOT-C.md",
+      "sha256": "415c97de50efc82801d397532dc98b405bf9a11424db7fafb401b2f04d5619d7",
+      "citations": [
+        {
+          "line": 9,
+          "text": "**Contrat candidat à ratifier :** C-PROJECTION : sourceRevisionId,objectId→drawId/triangle/instance,dirtyObjects/layers,indexVersion. insert/update/delete cohérents calques/droits ; broad phase candidate, narrow phase référence inchangée avec tolérances et départages. Repli reconstruction complète si invalidation douteuse."
+        },
+        {
+          "line": 43,
+          "text": "> EX-050 — Projection reconstructible. La scène de chaque planche contient uniquement des données dérivées : traces visibles, maillages, positions GPU, styles de sélection, poignées, boîtes englobantes et index. Les identités des objets canoniques sont conservées dans une table de correspondance stable, y compris lorsque plusieurs objets partagent un lot de rendu."
+        },
+        {
+          "line": 47,
+          "text": "> EX-051 — Projection en état identifié. La projection affiche son sourceRevisionId et les domaines de données périmées. Une modification de géométrie acceptée invalide les dépendances graphiques correspondantes ; un résultat de worker calculé sur une autre révision ne peut la modifier comme s’il était courant."
+        },
+        {
+          "line": 59,
+          "text": "> EX-054 — Maintien. L’index est cohérent avec la révision source et les états de calques, références et sélections autorisées. Insert/remove/update ciblés sont privilégiés si prouvés efficaces ; reconstruction en worker possible pour grands changements. La requête temps réel peut rester sur le fil principal si elle respecte les mesures de latence."
+        },
+        {
+          "line": 99,
+          "text": "> AC-004. Sur un corpus comportant objets superposés, densités variables, intersections et références liées, l’index accéléré doit fournir les mêmes cibles et points d’accrochage (dans la tolérance déclarée) que l’algorithme de référence, avec traces des cas ambigus."
+        }
+      ]
+    },
+    "NAV": {
+      "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+      "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+      "citations": [
+        {
+          "line": 17,
+          "text": "| `/studio/projets/:projectId/etudes/:studyId` | Cadrage, sources et variantes de l'étude appartenant au projet. Étude sans variante permise, géométrie interdite sans variante. |"
+        },
+        {
+          "line": 19,
+          "text": "| `/studio/projets/:projectId/etudes/:studyId/variantes/:variantId/revisions/:revisionId` | Consultation d'une révision identifiée et immuable de cette variante. Éditer crée une intention explicite vers travail courant/nouvelle variante, jamais une mutation de cette révision. |"
+        },
+        {
+          "line": 21,
+          "text": "Tous les identifiants sont opaques, encodés comme segments ; type/longueur admis par contrat A2, jamais interprétés comme noms de fichiers. Résolution serveur vérifie existence **et** projectId↔studyId↔variantId↔revisionId et droits sur chaque ressource. Aucune redirection automatique vers le dernier projet en cas de lien interdit. Un contexte obsolète n'est pas remplacé silencieusement. Ordre de priorité : URL explicite autorisée, puis choix utilisateur ; dernier contexte personnel = suggestion seulement. Aucun paramètre URL ne transmet une permission."
+        },
+        {
+          "line": 25,
+          "text": "Absence de domaine : écran d'accueil de variante, sans créer de planche. Absence de planche en dessin : choix explicite 2D/3D ; reprendre une préférence peut pré-sélectionner le choix sans créer de géométrie. Domaine inconnu/planche inconnue ou `planche` hors dessin : afficher un état URL non reconnue et lien vers contexte parent valide, aucune mutation ; pas de substitution métier silencieuse. Paramètres d'interface sans effet métier (panneau/caméra) restent hors de ce contrat initial. Ne pas coder de données privées dans URL ou analytics."
+        },
+        {
+          "line": 27,
+          "text": "Précédent/suivant et refresh conservent les segments et choix domaine/planche ; changement de domaine crée une entrée d'historique. Canonicalisation pure de paramètres d'affichage peut utiliser replace, sans perdre contexte ni modifier les modèles. Les liens historiques ne pointent jamais implicitement vers « latest ». Les chemins d'API ne sont pas déduits mécaniquement des routes web."
+        },
+        {
+          "line": 33,
+          "text": "AppShell doit reconnaître `/studio/...` pour le bandeau, mais n'active pas Projets. HomeTopbar actuel appelle étapes/programme quand projectId existe : adaptation par façade ou contrat de bandeau borné, sans faire de Parcours une dépendance de Studio. Les données d'étapes restent consultables par lien explicite lorsque nécessaire. Switching projet détruit ou isole la scène/caches de l'ancien contexte ; un retour de requête tardive ne remplace pas le nouveau contexte. Droit révoqué invalide les vues sensibles selon politique cache arrêtée par A2/A5, y compris offline."
+        },
+        {
+          "line": 50,
+          "text": "Plein écran : bouton explicite « Plein écran » / « Full screen » et sortie « Quitter le plein écran » / « Exit full screen ». Ne pas appliquer automatiquement `atelier-immersive`. Fullscreen API est facultative : échec/refus laisse le mode normal utilisable. Bouton de sortie visible et clavier utilisable ; Échap ferme d'abord menu/geste selon contrat de l'outil et ne constitue pas l'unique sortie. Événement fullscreenchange synchronise le bouton ; sortie système conserve contexte, file et focus. Navigation Fadi demeure réaccessible via sortie, sans masquer une erreur de sauvegarde."
+        },
+        {
+          "line": 64,
+          "text": "| Local durable / pending / confirmé | Trois états explicites, conflits/refus séparés. | Bouton « Enregistré » confondant stockage local et confirmation centrale. |"
+        },
+        {
+          "line": 65,
+          "text": "| Conflit/résultat périmé | Base/courant et résolution autorisée ; résultat périmé non engagé. | Last-write-wins ou application double après reconnexion. |"
+        },
+        {
+          "line": 68,
+          "text": "Droits logiques candidats : lire étude, créer étude, modifier variante, exécuter contrôle, commenter, soumettre, approuver, publier. Mapper aux permissions Fadi et au verrou d'édition sans inventer une élévation d'administrateur. Profil personnel ne modifie aucun droit ; découverte≠exécution. Permission perdue pendant attente : refus serveur, conserver un brouillon local autorisé selon politique, pas de confirmation réussie."
+        },
+        {
+          "line": 70,
+          "text": "FR source dans composants + en.json et messages.ts pour l'ergonomie Atelier réutilisée. Nom Studio identique FR/EN ; libellés des domaines traduits sans traduire données, noms de projet, exemples ou livrables. Locale nombres/dates suit dispositif existant. Changer de langue recharge actuellement la page (`lib/i18n/index.ts`) : soumettre au même garde de transition que fermeture/refresh, sans se reposer seulement sur beforeunload."
+        },
+        {
+          "line": 104,
+          "text": "### Authentification et deep link : contrat précis supplémentaire"
+        },
+        {
+          "line": 114,
+          "text": "Approbation et publication ont deux capacités logiques indépendantes. Matrice de recette : lecteur aucune ; concepteur mutation autorisée seulement ; approbateur approuve l’ensemble identifié sans droit publier implicite ; publieur diffuse seulement sous approbation valide ; rôle cumulatif uniquement si configuration explicite des deux permissions et décision tracée. Administrateur technique sans délégation métier ne gagne aucun droit implicite. Révoquer une permission avant l’acte déclenche refus serveur même si le bouton était visible."
+        }
+      ]
+    },
+    "NAV9": {
+      "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/NAV-M004.json",
+      "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2"
+    },
+    "M21": {
+      "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/M21-CONTRAT-MINIMAL.md",
+      "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625",
+      "citations": [
+        {
+          "line": 15,
+          "text": "- Registry : métadonnées et contrats de capacités légers, indépendants des modèles/objets de scène. Domaines stables dessin/bim/visualisation/documentation. Planche2D/3D existe en dessin seulement ; une capacité peut agir dans plusieurs contextes via adaptateurs explicités."
+        },
+        {
+          "line": 16,
+          "text": "- ToolId canonique stable distinct du label FR/EN, du raccourci, du commandType et de l’objectId métier. `example.*` signale un exemple non réservé ; sa publication ne migre aucun identifiant actuel."
+        },
+        {
+          "line": 18,
+          "text": "- Manager : découvre/recherche, réconcilie profil/contexte, résout chargement/activation et cycle des machines. N’effectue pas calcul géométrique autoritaire, ne valide pas les droits centraux et n’écrit pas directement les données."
+        },
+        {
+          "line": 25,
+          "text": "Chaque activation garde projectId/studyId/variantId/baseRevisionId, utilisateur/permissions effectives, writerAuthority/schemaVersion et propriétaire de document/modèle. Contexte résolu serveur, jamais seulement URL/dernier projet. Domaines peuvent être ouverts sans initialiser les moteurs des autres domaines."
+        },
+        {
+          "line": 61,
+          "text": "Label compréhensible FRsource + EN pour nom/aide/état/erreur, sans traduire données de projet ou livrables. Rechercher «échelle» propose accès et homothétie distincts avec descriptions/contextes ; afficher motif refus/incompatibilité. Icône propre et barre appropriée par outil/commande livrée ; touches candidates testées collision contexte/OS/navigateur/disposition physique avant acceptation, ne pas remplacer les raccourcis Fadi relevés sans décision."
+        },
+        {
+          "line": 65,
+          "text": "### 7. Télémétrie minimale sans contenu métier — proposition non instrumentée"
+        },
+        {
+          "line": 84,
+          "text": "Le catalogue distingue désormais `result_category` (drawing2d/free3d/architectural-object/derived-check-result/review-decision/immutable-publication) et `writer_authority_candidate`. Mapping documentaire géométrique : drawing2d→drawing2d, free3d→model3d, architectural-object→associated, selon noms candidats C-STUDY A2/M24 A1. Les autres catégories ont writer_authority_candidate=null : contrôle/approbation/publication ne créent pas une quatrième autorité géométrique ; leur service propriétaire métier reste à définir. Ces valeurs ne renomment aucune classe persistée ni n’autorisent un client à choisir son écrivain ; le serveur établit writerAuthority. Le validateur JSON contrôle ce mapping candidat, sans prouver son implémentation."
+        }
+      ]
+    },
+    "G1_INDEX": {
+      "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+      "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073"
+    },
+    "G1_REVIEW": {
+      "path": "/workspace/work/resume496/agents/A4/G1-INDEX-REVUE-CIBLEE-A4.json",
+      "sha256": "b9a5421b6d12de8fcb936da089c2d753db187bd179b1710c7a32a72369b02255"
+    },
+    "NAV_DELTA": {
+      "path": "/workspace/work/resume496/agents/A4/NAV-DELTA-G1-v2.json",
+      "sha256": "ece28669451e2a220172a5562a37bba54de0ef544e95b507623c77dd0429ff2e"
+    },
+    "DURABLE": {
+      "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+      "sha256": "893d4917fe810867b589727e82d1789db56453f86c78fbfab56b294acedac84b",
+      "citations": [
+        {
+          "line": 9,
+          "text": "Projet → Étude → Variante → Révision. Le projet transverse garde son propriétaire Fadi ; l'étude rattache sources, programme de référence et hypothèses, sans réécrire ces données sources. Créer une étude sans variante est permis ; aucune géométrie persistée n'est éditée sans variante propriétaire. Une variante appartient à exactement une étude, une étude à exactement un projet. Une révision appartient à exactement une variante. Les références croisées sont autorisées et vérifiées serveur ; une combinaison d'identifiants existants mais provenant de parents différents est refusée. IDs opaques stables non réutilisés, sensibilité à la casse conservée ; longueur/encodage transport à ratifier, pas normalisation des anciens IDs Atelier (qui acceptent notamment des noms de calques)."
+        },
+        {
+          "line": 23,
+          "text": "Un objet/révision a un seul couple propriétaire logique + writerAuthority autorisé, établi serveur. Deux surfaces peuvent afficher le même objet, elles n'obtiennent pas deux droits d'écriture directs. Une copie indépendante reçoit nouvel ID et provenance ; une référence liée reste distincte d'une copie. L'autorité associée ne duplique pas les quantités transverses autoritaires ni le programme approuvé. Une vue graphique n'est jamais une autorité métier."
+        },
+        {
+          "line": 27,
+          "text": "D07 navigation conservée : Studio autonome après Projets, quatre domaines, deux planches indépendantes dans Dessin. La route ne crée rien, n'accorde aucun droit et ne sélectionne pas implicitement une planche. Réemploi du contrat NAV A4, pas de ProjectShell comme contexte autoritaire, pas d'iframe ou raccourci Atelier. Référencer plutôt que redéfinir cette interface."
+        },
+        {
+          "line": 37,
+          "text": "Commit : engagement atomique de toutes données canoniques touchées, révision de sortie, journal IF-011 et événement/outbox durable. La notification seule ne confirme rien. Succès expose résultat/revision/event/transaction/effets/portées invalidées ; caches restent reconstruisibles. Job IF-003 renvoie sa révision source ; résultat périmé, annulé ou sans droit renouvelé ne s'engage pas automatiquement. Undo/redo est une nouvelle opération contrôlée sur tête courante, pas déplacement destructif d'un pointeur historique. Un rebase incompatible refuse et présente résolution/recalcul, pas écrasement."
+        }
+      ]
+    }
+  },
+  "C.2-03": {
+    "definition_exacte": "Conserver le bon identifiant de sélection après suppression ou modification d’objet.",
+    "proprietaire": "A2 ; A4 prépare seulement les usages/oracles",
+    "delta": [
+      {
+        "id": "PICK-EMPTY",
+        "etat": "Sélection vide",
+        "contrat_candidat": "Aucune cible sélectionnée, commandes dépendantes désactivées avec raison accessible ; pas de remplacement automatique.",
+        "cas_futur": "Cliquer le fond vide puis invoquer commande objet : aucune mutation ni ciblage ancien.",
+        "oracle": "Contrôler sélection canonique vide ET absence surbrillance/poignées/inspecteur ancien ; notification FR/EN si nécessaire.",
+        "status": "Préparation documentaire, non exécuté",
+        "sources": [
+          "A2_QUAL#/items [id=C.2-03]",
+          "LOT_C:9,43,47,59,99",
+          "DURABLE:9,23,37",
+          "NAV:21,33,64,65"
+        ]
+      },
+      {
+        "id": "PICK-MODIFIED",
+        "etat": "Objet modifié, identité conservée",
+        "contrat_candidat": "Conserver objectId et contexte autorisé si objet subsiste ; reconstruire projection à la révision acceptée.",
+        "cas_futur": "Déplacer A : ancien emplacement ne sélectionne plus A si aucune géométrie restante ; nouvel emplacement sélectionne A.",
+        "oracle": "Comparer cible géométrique, objectId, inspecteur et commandes à référence ; simple ID conservé insuffisant.",
+        "status": "Préparation documentaire, non exécuté",
+        "sources": [
+          "A2_QUAL#/items [id=C.2-03]",
+          "LOT_C:9,43,47,59,99",
+          "DURABLE:9,23,37",
+          "NAV:21,33,64,65"
+        ]
+      },
+      {
+        "id": "PICK-DELETED",
+        "etat": "Objet supprimé",
+        "contrat_candidat": "Invalider ciblage périmé ; option candidate vider sélection + message, ou conserver témoin non éditable explicitement marqué. Choix UX non arbitré.",
+        "cas_futur": "Supprimer A ; réutiliser un drawId pour B : aucune commande destinée à A ne cible B.",
+        "oracle": "Absence de highlight fantôme/poignées actives et refus de commande sur ancien objet ; remplacement automatique interdit sans contrat explicite.",
+        "status": "Préparation documentaire, non exécuté",
+        "sources": [
+          "A2_QUAL#/items [id=C.2-03]",
+          "LOT_C:9,43,47,59,99",
+          "DURABLE:9,23,37",
+          "NAV:21,33,64,65"
+        ]
+      },
+      {
+        "id": "PICK-UNAVAILABLE",
+        "etat": "Représentation indisponible",
+        "contrat_candidat": "Distinguer absence objet et projection en chargement/échec ; sélection canonique connue peut rester informative seulement si droits vérifiés.",
+        "cas_futur": "Géométrie A non chargée : ne pas afficher picking prêt ni inventer B ; reprise reconstruit la bonne révision.",
+        "oracle": "État et raison accessibles ; ciblage géométrique non confirmé ne devient pas preuve ; aucune donnée divulguée après révocation.",
+        "status": "Préparation documentaire, non exécuté",
+        "sources": [
+          "A2_QUAL#/items [id=C.2-03]",
+          "LOT_C:9,43,47,59,99",
+          "DURABLE:9,23,37",
+          "NAV:21,33,64,65"
+        ]
+      },
+      {
+        "id": "PICK-STALE",
+        "etat": "Résultat asynchrone périmé",
+        "contrat_candidat": "Résultat d’ancien contexte ou ancienne révision ne retargete pas sélection courante.",
+        "cas_futur": "Pointer A puis changer variante/révision avant réponse worker : réponse ancienne ignorée.",
+        "oracle": "P/S/V/R, sourceRevisionId et droits concordent pour résultat appliqué ; observer aucun changement sur nouvelle variante.",
+        "status": "Préparation documentaire, non exécuté",
+        "sources": [
+          "A2_QUAL#/items [id=C.2-03]",
+          "LOT_C:9,43,47,59,99",
+          "DURABLE:9,23,37",
+          "NAV:21,33,64,65"
+        ]
+      },
+      {
+        "id": "PICK-BATCH",
+        "etat": "Lot de rendu et ambiguïté",
+        "contrat_candidat": "Mapping stable objets/instances/triangles ; priorité et tolérance de référence restent à fixer, aucune valeur inventée.",
+        "cas_futur": "Deux objets superposés, calque caché ou référence non sélectionnable ; comparer index et référence.",
+        "oracle": "Cible et point géométrique identiques selon règle déclarée, traces ambiguïtés ; présence du même ID dans scène insuffisante.",
+        "status": "Préparation documentaire, non exécuté",
+        "sources": [
+          "A2_QUAL#/items [id=C.2-03]",
+          "LOT_C:9,43,47,59,99",
+          "DURABLE:9,23,37",
+          "NAV:21,33,64,65"
+        ]
+      },
+      {
+        "id": "PICK-UNDO",
+        "etat": "Annulation et restauration",
+        "contrat_candidat": "Une inversion est une nouvelle commande ; reconstruction au contexte/révision courant. Restaurer sélection n’est pas impliqué par restaurer objet.",
+        "cas_futur": "Undo suppression A, puis redo ; identité canonique et mapping vérifiés ; aucun ancien drawId réaffecté silencieusement.",
+        "oracle": "Cohérence géométrie/état autorisé ; politique de restauration sélection à décider, pas déduite du journal.",
+        "status": "Préparation documentaire, non exécuté",
+        "sources": [
+          "A2_QUAL#/items [id=C.2-03]",
+          "LOT_C:9,43,47,59,99",
+          "DURABLE:9,23,37",
+          "NAV:21,33,64,65"
+        ]
+      },
+      {
+        "id": "PICK-MULTI",
+        "etat": "Sélection multiple et accès",
+        "contrat_candidat": "Retirer/invalider membres supprimés ou interdits sans détourner les autres ; détail UX candidat.",
+        "cas_futur": "A+B sélectionnés ; supprimer A ou retirer accès A ; B reste cohérent si autorisé.",
+        "oracle": "Aucune action collective sur objet absent/interdit, compte accessible exact sans fuite metadata ; politique sélection partielle à arbitrer.",
+        "status": "Préparation documentaire, non exécuté",
+        "sources": [
+          "A2_QUAL#/items [id=C.2-03]",
+          "LOT_C:9,43,47,59,99",
+          "DURABLE:9,23,37",
+          "NAV:21,33,64,65"
+        ]
+      }
+    ],
+    "choix_non_arbitres": [
+      "Sélection supprimée : vider avec notification ou témoin non éditable",
+      "Sélection partielle multiple et restauration après undo",
+      "Correspondances remplacement/scission et règles géométriques ambiguës/tolérances"
+    ],
+    "next_trigger": "A2 confirme contrat effets/identités et A0 fait arbitrer les seules politiques UX ouvertes ; A5 peut alors préparer corpus synthétique géométrique et assertions, exécution uniquement après autorisation appropriée."
+  },
+  "ADR-01": {
+    "id": "ADR-01",
+    "nature": "ADDENDUM préparatoire, aucun ADR créé/adopté",
+    "source_definition": "Ouvrir la décision d’intégration distincte proposée, par exemple ADR-STUDIO-NAV-01, sans remplacer une DEC existante.",
+    "responsabilite": "Claude annonce proposition ADR-01/02 dans ccr-119809c5-an2z9a, commentaire #166/6251022689 relayé par A0 ; pièces non revues ici. A2 conserve responsabilité registre ; A0 réconcilie chemin, auteur/décideur et doublons avant versement.",
+    "index_reutilisable": [
+      {
+        "piece": "G1_INDEX",
+        "usage": "Périmètre I/A.1 et quatre conditions G1 ; insuffisances relues dans G1_REVIEW, aucune porte passée."
+      },
+      {
+        "piece": "NAV",
+        "usage": "D07 acté pour spécifications ; routes physiques candidates, autonomie et garde des transitions."
+      },
+      {
+        "piece": "NAV9",
+        "usage": "Neuf NAV existants, aucune nouvelle numérotation ni recette exécutée."
+      },
+      {
+        "piece": "NAV_DELTA",
+        "usage": "Delta G1v2 déjà livré : identités, contexte et sauvegarde ; pas de duplication."
+      },
+      {
+        "piece": "COEX",
+        "usage": "Matrice sept groupes existants/quatre logiques futurs ; préserver trois réserves R-AUTORITE/R-REFUS-SERVEUR/R-TRANSFERT et quatre questions existantes."
+      },
+      {
+        "piece": "DURABLE",
+        "usage": "Autorité canonique unique ≠ client unique ; historique/versions et écritures contrôlées."
+      }
+    ],
+    "champs_encore_vides": [
+      "Chemin/nom ADR canonique réservé par A0",
+      "Décideur humain et date de décision",
+      "Option de coexistence retenue par périmètre",
+      "Contrat physique de transfert/versions et prise en charge des files en attente"
+    ],
+    "next_trigger": "Publication des pièces Claude : revue delta contre cet index et questions existantes, sans nouvelle question identique ni adoption automatique."
+  },
+  "ADR-02": {
+    "id": "ADR-02",
+    "nature": "ADDENDUM lacunes/options seulement ; ne redécrit pas pages NAV",
+    "source_definition": "Y documenter routes, contexte, droits, comportements mobile/plein écran, coexistence Atelier et tests NAV.",
+    "matrice": [
+      {
+        "aspect": "Routes et contexte",
+        "renvoi": "NAV:17,19,21,25,27 ; NAV_DELTA ; G1_INDEX",
+        "acquis": "Hiérarchie vérifiée serveur, historique immuable et aucune création implicite.",
+        "ouvert": "Adoption des routes/query physiques et mapping des identités existantes ; pas de fallback silencieux vers dernier projet."
+      },
+      {
+        "aspect": "Permissions et refus",
+        "renvoi": "NAV:33,68,114 ; M21:25 ; COEX#/trois_reserves/R-REFUS-SERVEUR",
+        "acquis": "Approbation/publication distinctes, cumul explicite ; UI ne confère aucun droit.",
+        "ouvert": "Mapping aux capacités serveur, politique masque introuvable/refus et suppression cache à révocation ; options sans fuite, contrôle serveur à démontrer."
+      },
+      {
+        "aspect": "Mobile/clavier/FR-EN/plein écran",
+        "renvoi": "NAV:50,70 ; M21:61 ; NAV9 NAV-008/009",
+        "acquis": "Plein écran explicite avec sortie visible/fallback ; langue UI sans traduction des données métier.",
+        "ouvert": "Écrans réels/focus restauration et mesures mobiles/clavier à produire ; valeurs ergonomiques candidates non certifiées."
+      },
+      {
+        "aspect": "Sauvegarde et transitions",
+        "renvoi": "NAV:64,65,104 ; NAV_DELTA ; DURABLE:37",
+        "acquis": "Local/en attente/confirmé central distincts ; ancien requestId jamais réadressé au nouveau contexte.",
+        "ouvert": "Contrat physique idempotence/réconciliation/retour réseau et choix explicite rester/résoudre/abandonner ; abandon UI ≠ annulation serveur."
+      },
+      {
+        "aspect": "Coexistence et tests",
+        "renvoi": "COEX#/trois_reserves et /questions_existantes ; NAV9 ; M21:18",
+        "acquis": "Atelier/Planche natifs et 21 étapes conservés ; Studio autonome ; aucune seconde autorité concurrente.",
+        "ouvert": "Options client(s) compatibles, transfert et accès historique restent à arbitrer ; aucune preuve runtime déduite de NAV/M21. PR #142 recouvrement à réconcilier, SHA actuel non recontrôlé dans cette tâche."
+      }
+    ],
+    "next_trigger": "Réutiliser les renvois dans proposition Claude après publication ; A0/A2 rapprochent options physiques et réserves, puis décision humaine explicite. Ni gate G1–4 ni code autorisé."
+  },
+  "limites": [
+    "Aucun code/UI/POC/test/browser/API/DB/service/mesure exécuté.",
+    "Aucun ADR canonique, aucune DEC historique réécrite ; D07 et PR142 préservés.",
+    "Aucune disponibilité humaine, estimation, seuil, résultat de recette ou CI actuelle inventé.",
+    "G1 et contrats physiques ouverts ; aucun Vérifié/Accepté/cochage ni gate.",
+    "Commentaire Claude signalé par A0, pas reconsulté sur réseau ; aucun dossier Claude non publié prétendu relu."
+  ]
+}

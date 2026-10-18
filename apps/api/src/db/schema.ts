@@ -603,3 +603,4 @@ export const atelierPropositions = pgTable("atelier_propositions", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   decidedAt: timestamp("decided_at", { withTimezone: true }),
 });
+

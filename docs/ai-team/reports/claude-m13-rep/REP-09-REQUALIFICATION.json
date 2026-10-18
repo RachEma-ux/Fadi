@@ -1,0 +1,405 @@
+{
+  "tache": "REP-09",
+  "reference_audit": "3bcda9296eaa0a0376ca5d2279dd71f52a75184b",
+  "reference_requalification": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "methode": "Lecture statique seule, sans modifier le dépôt et sans lancer npm, tests, build, navigateur ni service. Chemins résolus par `git ls-tree -r --name-only` aux deux commits ; empreintes de blob par `git rev-parse <sha>:<chemin>` (une empreinte identique veut dire un contenu identique octet pour octet) ; écart global vérifié par `git diff --stat 3bcda929 817bd36 -- apps packages` : 6 fichiers touchés, tous des commentaires ou des README (dont `apps/api/src/db/schema.ts`, un commentaire de la ligne 301). Aucun fichier source des 14 observations n'a changé entre l'audit et le HEAD. Chaque citation a été relue par `git show 817bd36:<chemin> | sed -n 'N,Mp'` ou `cat -n`. Tests existants : fichiers `*.test.ts(x)` trouvés par `git grep` sur les import, qu'ils soient statiques ou faits par `await import(...)`. Les recettes e2e (`apps/web/e2e/*.mjs`) ne sont pas des `*.test.ts` : elles ne sont citées que dans `limite`. Aucun test n'a été exécuté par cette tâche. Les comptes d'OBS-11 sont faits sur le texte source (bornes du tableau, motifs d'entrée, éléments produits par `.map`) ; ce ne sont pas des comptes à l'exécution.",
+  "observations": [
+    {
+      "id": "OBS-01",
+      "chemins_resolus": [
+        "apps/web/src/modules/atelier/nouveau/plan2d/Plan2D.tsx",
+        "apps/web/src/modules/atelier/nouveau/plan2d/rendu.tsx"
+      ],
+      "blob_3bcda929": {
+        "apps/web/src/modules/atelier/nouveau/plan2d/Plan2D.tsx": "73f9559c17cb1a1e2351675ecb9af4b174632773",
+        "apps/web/src/modules/atelier/nouveau/plan2d/rendu.tsx": "4db7bdd90d9636f1403ac80693849314b946355c"
+      },
+      "blob_817bd36": {
+        "apps/web/src/modules/atelier/nouveau/plan2d/Plan2D.tsx": "73f9559c17cb1a1e2351675ecb9af4b174632773",
+        "apps/web/src/modules/atelier/nouveau/plan2d/rendu.tsx": "4db7bdd90d9636f1403ac80693849314b946355c"
+      },
+      "modifie_depuis_audit": false,
+      "constat_statique_HEAD": "Le plan 2D est un élément <svg> rendu par React. Chaque objet est un composant React mémoïsé qui produit des <path>, <line> et <g>. Preuves : Plan2D.tsx:551 `<svg` (racine du rendu, refermée en 684) ; Plan2D.tsx:618 `<Objet2D o={o} etat={etat} pr={pr} selectionne={selection.has(o.id)} survole={ui.survol === o.id} />` ; rendu.tsx:38 `export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole }: PropsObjet) {` ; rendu.tsx:51 `<path d={d} fill={COULEURS[\"toiture\"]} ... />`. Aucun canvas ni getContext dans Plan2D.tsx (git grep).",
+      "verdict_statique": "confirmé",
+      "ecarts": "Une précision : chaque objet est un élément SVG distinct (Objet2D mémoïsé par `memo`). Il n'y a ni tampon unique ni canvas.",
+      "tests_existants": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts"
+      ],
+      "tests_executes_par_cette_tache": true,
+      "limite": "nouveau.test.ts importe seulement des fonctions pures de Plan2D (lignes 12 et 98 : `splineEditable`, `gommer`…). Aucun test unitaire ne monte le composant ni ne mesure le rendu. La lecture ne dit rien du coût du DOM SVG ni de la réconciliation React sur un grand modèle. La recette e2e apps/web/e2e/atelier-nouveau.mjs n'a pas été lancée."
+    },
+    {
+      "id": "OBS-02",
+      "chemins_resolus": [
+        "apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts"
+      ],
+      "blob_3bcda929": {
+        "apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts": "2a93faaaf9cddb0325bcf7986450e4a400738e41"
+      },
+      "blob_817bd36": {
+        "apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts": "2a93faaaf9cddb0325bcf7986450e4a400738e41"
+      },
+      "modifie_depuis_audit": false,
+      "constat_statique_HEAD": "L'accrochage cherche dans un tableau plat de segments, sans index spatial. Les accroches extrémité, milieu, perpendiculaire et proche parcourent tout le tableau. L'intersection teste les paires de segments retenus à moins de 2 × rayon. Preuves : accrochage.ts:265 `const segs = cache.segments.filter((s) => !exclure.includes(s.objetId));` ; accrochage.ts:275 `const proches = segs.filter((s) => projectionSurSegment(p, s.a, s.b).distance <= rayon * 2);` ; accrochage.ts:276 `for (let i = 0; i < proches.length; i++) for (let j = i + 1; j < proches.length; j++) {` ; accrochage.ts:277 `const x = intersectionSegments(...)`. Le cache est rebâti à chaque nouvel état : Plan2D.tsx:128 `const cache = useMemo(() => avecExternes(segmentsDuNiveau(etat, ui.niveauId), externesNiveau), [etat, ui.niveauId, externesNiveau]);`.",
+      "verdict_statique": "confirmé",
+      "ecarts": "Compléments : (1) `segmentsDuNiveau` (ligne 38) parcourt tous les objets à chaque changement d'état ; (2) une référence externe est tronquée à 20 000 traits (ligne 33 : `x.traits.slice(0, 20000)`) ; (3) `exclure.includes` fait une recherche linéaire pour chaque segment ; (4) le grep ne trouve aucune grille, aucun quadtree ni aucun index spatial.",
+      "tests_existants": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts"
+      ],
+      "tests_executes_par_cette_tache": true,
+      "limite": "La lecture montre la complexité (linéaire pour la plupart des accroches, quadratique sur les segments proches), pas le temps réel par mouvement de pointeur. nouveau.test.ts:6 importe `accrocher` et `segmentsDuNiveau` et vérifie des résultats ponctuels (ligne 124), pas des performances."
+    },
+    {
+      "id": "OBS-03",
+      "chemins_resolus": [
+        "apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts"
+      ],
+      "blob_3bcda929": {
+        "apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts": "c9b0831455396bc30c352bdd3150d58233899b46"
+      },
+      "blob_817bd36": {
+        "apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts": "c9b0831455396bc30c352bdd3150d58233899b46"
+      },
+      "modifie_depuis_audit": false,
+      "constat_statique_HEAD": "La scène 3D utilise three.js en WebGL2. WebGPU est une option : le module est importé dynamiquement, avec repli sur WebGL2 en cas d'absence ou d'échec. Le rendu se fait à la demande, par un seul requestAnimationFrame. Preuves : scene3d.ts:2 `three.js WebGL2 par défaut, WebGPU en option avec repli` ; scene3d.ts:192-194 `if (webgpu && typeof navigator !== \"undefined\" && \"gpu\" in navigator) { try { const module = await import(\"three/webgpu\");` ; scene3d.ts:204 `moteur = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, powerPreference: \"high-performance\" })` ; scene3d.ts:1156-1157 `if (this.demande || !this.moteur) return; this.demande = requestAnimationFrame(() => {`.",
+      "verdict_statique": "confirmé",
+      "ecarts": "Le « batching » n'utilise ni BatchedMesh ni InstancedMesh. Le code fusionne les maillages à la main dans un BufferGeometry par lot, avec la clé niveau|couleur|opacité|classe|groupe (scene3d.ts:301 `const cle = `${m.niveauId ?? \"-\"}|${m.couleur}|${m.opacite}|${classeEclate(o.classe)}|${o.groupeId ?? \"\"}`;`, puis 335-337). Les contrôles relancent le rendu sur l'événement `change` (lignes 212-215). Le repli WebGPU → WebGL2 couvre l'échec de `init()` (catch, ligne 199).",
+      "tests_existants": [],
+      "tests_executes_par_cette_tache": false,
+      "limite": "Aucun test unitaire n'importe scene3d.ts. La lecture ne prouve ni que WebGPU s'initialise ou se replie vraiment dans un navigateur donné, ni le nombre d'appels de dessin réel, ni le temps de trame sur GPU. La recette e2e apps/web/e2e/atelier-nouveau.mjs n'a pas été lancée."
+    },
+    {
+      "id": "OBS-04",
+      "chemins_resolus": [
+        "apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts"
+      ],
+      "blob_3bcda929": {
+        "apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts": "c9b0831455396bc30c352bdd3150d58233899b46"
+      },
+      "blob_817bd36": {
+        "apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts": "c9b0831455396bc30c352bdd3150d58233899b46"
+      },
+      "modifie_depuis_audit": false,
+      "constat_statique_HEAD": "Le maillage de chaque objet est mis en cache : une WeakMap indexée par l'objet, invalidée par une clé texte. En revanche, `majModele()` détruit et reconstruit TOUS les lots (tampons, arêtes EdgesGeometry) à chaque nouvel état, même pour un seul objet modifié. Preuves : scene3d.ts:161 `private cache = new WeakMap<object, { cle: string; m: Maillage | null }>();` ; scene3d.ts:250-251 `const c = this.cache.get(o); if (c && c.cle === cle) return c.m;` ; scene3d.ts:280-283 `majModele(etat: ModeleAtelier): void { if (etat === this.etat) return; this.etat = etat; for (const l of this.lots) {` (dispose des géométries, puis `this.lots = [];` ligne 290) ; scene3d.ts:347 `const geoAretes = new THREE.EdgesGeometry(geo, 25);`.",
+      "verdict_statique": "confirmé",
+      "ecarts": "Précisions : `majStyles` force aussi une reconstruction complète (lignes 271-275 : `this.etat = null; if (etat) this.majModele(etat);`). La clé de cache d'un mur comprend ses ouvertures hôtes, et pour cela parcourt tous les objets (ligne 245). EdgesGeometry est recalculé sur chaque lot fusionné à chaque reconstruction.",
+      "tests_existants": [],
+      "tests_executes_par_cette_tache": false,
+      "limite": "Le coût réel d'une reconstruction (temps CPU, mémoire, ramasse-miettes) sur un grand modèle n'est ni mesuré ni testé. Aucun test unitaire n'importe scene3d.ts."
+    },
+    {
+      "id": "OBS-05",
+      "chemins_resolus": [
+        "apps/web/src/modules/atelier/nouveau/planche/vue-planche.ts"
+      ],
+      "blob_3bcda929": {
+        "apps/web/src/modules/atelier/nouveau/planche/vue-planche.ts": "7fc5c7c51a819ea3750c9212302ebb7f743ccf61"
+      },
+      "blob_817bd36": {
+        "apps/web/src/modules/atelier/nouveau/planche/vue-planche.ts": "7fc5c7c51a819ea3750c9212302ebb7f743ccf61"
+      },
+      "modifie_depuis_audit": false,
+      "constat_statique_HEAD": "La vue Planche utilise three.js en WebGL2 seul : pas de WebGPU, pas de React. Elle sépare des groupes modèle, sélection, aperçu et annotations, et ajoute une surcouche DOM (SVG de contour, marqueur, infobulle, étiquettes). Le rendu se fait à la demande. Preuves : vue-planche.ts:226 `private readonly moteur: THREE.WebGLRenderer;` ; vue-planche.ts:230-233 `groupeModele` / `groupeSelection` / `groupeApercu` / `groupeAnnotations = new THREE.Group();` ; vue-planche.ts:283 `this.surcouche.append(this.contourSvg, this.marqueur, this.infobulle, this.cadre, this.etiquettesDom);` ; vue-planche.ts:778-780 `rendre(): void { if (this.demande) return; this.demande = requestAnimationFrame(() => {`.",
+      "verdict_statique": "confirmé",
+      "ecarts": "Précision : WebGL2 seulement (en-tête ligne 2 : `Vue three.js (WebGL2, R14)`). Le constat historique ne le disait pas. `majModele` vide le groupe modèle puis recalcule `geometrieVisible` sur tout le modèle (lignes 396-403).",
+      "tests_existants": [
+        "apps/web/src/modules/atelier/nouveau/planche/planche.test.ts"
+      ],
+      "tests_executes_par_cette_tache": true,
+      "limite": "planche.test.ts:6 importe seulement la fonction pure `trianglesFace`. Ni la scène WebGL, ni les couches, ni le rendu à la demande ne sont couverts par un test unitaire. Les recettes e2e apps/web/e2e/planche-*.mjs n'ont pas été lancées. Les performances sont inconnues."
+    },
+    {
+      "id": "OBS-06",
+      "chemins_resolus": [
+        "packages/planche-model/src/outils/index.ts",
+        "packages/planche-model/src/index.ts"
+      ],
+      "blob_3bcda929": {
+        "packages/planche-model/src/outils/index.ts": "2de4b5f31a06f67864c49b93c9da975d9ed251e0",
+        "packages/planche-model/src/index.ts": "b4115f50e38e492acfed0ff7a405a99404c931ae"
+      },
+      "blob_817bd36": {
+        "packages/planche-model/src/outils/index.ts": "2de4b5f31a06f67864c49b93c9da975d9ed251e0",
+        "packages/planche-model/src/index.ts": "b4115f50e38e492acfed0ff7a405a99404c931ae"
+      },
+      "modifie_depuis_audit": false,
+      "constat_statique_HEAD": "Les six registres de machines (tracé, formes, modification, mesure, matériau, profilés) sont importés statiquement. Ils sont fusionnés dans une Map au chargement du module, et le point d'entrée du paquet réexporte le tout. Preuves : outils/index.ts:3 `import { MACHINES_TRACE } from \"./registre-trace.js\";` (lignes 3-8 pour les six registres) ; outils/index.ts:25-26 `export const MACHINES: ReadonlyMap<string, MachineOutil<any>> = new Map( [...MACHINES_TRACE, ...MACHINES_FORMES, ...MACHINES_MODIFICATION, ...MACHINES_MESURE, ...MACHINES_MATERIAU, ...MACHINES_PROFILES].map(...)` ; packages/planche-model/src/index.ts:13 `export * from \"./outils/index.js\";`.",
+      "verdict_statique": "confirmé",
+      "ecarts": "Nuance côté application : le composant Planche lui-même est chargé paresseusement (apps/web/src/modules/atelier/nouveau/AtelierNouveau.tsx:50 `const Planche = lazy(() => import(\"./planche/Planche\")...`). L'import statique vaut donc à l'intérieur du paquet. Dans quel morceau du build tout cela atterrit n'a pas été établi.",
+      "tests_existants": [
+        "packages/planche-model/src/outils/registre-formes.test.ts",
+        "packages/planche-model/src/outils/selection.test.ts"
+      ],
+      "tests_executes_par_cette_tache": true,
+      "limite": "Ni la taille des morceaux, ni le tree-shaking, ni le coût de chargement ne sont établis : il faudrait un build et une analyse du bundle, non faits. Les tests (registre-formes.test.ts:3, selection.test.ts:249) vérifient `machineParId`, pas le chargement."
+    },
+    {
+      "id": "OBS-07",
+      "chemins_resolus": [
+        "apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts",
+        "apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts"
+      ],
+      "blob_3bcda929": {
+        "apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts": "5d6e8f9ae27e8070f567da3b07dc86f83c9d6e60",
+        "apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts": "8c1a16e6f47734f208aa006cd3476f6866a4ca07"
+      },
+      "blob_817bd36": {
+        "apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts": "5d6e8f9ae27e8070f567da3b07dc86f83c9d6e60",
+        "apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts": "8c1a16e6f47734f208aa006cd3476f6866a4ca07"
+      },
+      "modifie_depuis_audit": false,
+      "constat_statique_HEAD": "Le client crée un seul Worker module, au premier appel (`obtenirFil`), et le garde. Le Worker charge OCCT/WASM une fois, de façon paresseuse. Après un événement `error`, le Worker est terminé et `fil = null` : `obtenirFil` renvoie alors null pour le reste de la session, sans recréer le Worker. Il n'y a ni délai d'attente ni gestionnaire `messageerror`. Preuves : moteur-exact.ts:27 `if (fil !== undefined) return fil;` ; moteur-exact.ts:29 `fil = typeof Worker === \"undefined\" ? null : new Worker(new URL(\"./exact.worker.ts\", import.meta.url), { type: \"module\", name: \"fadi-noyau-exact\" });` ; moteur-exact.ts:40-42 `fil?.terminate(); fil = null; changer(\"echec\");` ; exact.worker.ts:18 `const charger = (wasm?: string) => (moteur ??= MoteurExact.charger({ wasm: wasm || wasmUrl }).catch((e) => { moteur = null; throw e; }));`.",
+      "verdict_statique": "confirmé",
+      "ecarts": "Précisions sur la récupération limitée. Un échec de chargement du WASM dans le Worker permet un nouvel essai (`moteur = null`, worker:18). Une erreur fatale du Worker, elle, ne se rattrape pas sans recharger la page (moteur-exact.ts:27 et 41). Une demande sans réponse reste en attente indéfiniment (Map `enAttente`, ligne 14, sans délai). L'URL du WASM peut être remplacée par localStorage (lignes 22-24).",
+      "tests_existants": [
+        "packages/geometry-exact/src/index.test.ts",
+        "apps/api/src/routes/atelier-exact.test.ts"
+      ],
+      "tests_executes_par_cette_tache": true,
+      "limite": "Aucun test unitaire n'importe moteur-exact.ts ni exact.worker.ts. Les tests cités couvrent le noyau `@parcours/geometry-exact` et la route serveur, pas le Worker du navigateur. Le temps de chargement, la mémoire WASM et le comportement après un plantage ne sont pas vérifiés. La recette e2e apps/web/e2e/p2-noyau-exact.mjs n'a pas été lancée."
+    },
+    {
+      "id": "OBS-08",
+      "chemins_resolus": [
+        "apps/web/src/modules/atelier/nouveau/documents/generation-client.ts",
+        "apps/web/src/modules/atelier/nouveau/documents/generation.worker.ts"
+      ],
+      "blob_3bcda929": {
+        "apps/web/src/modules/atelier/nouveau/documents/generation-client.ts": "91260b3be73aa97f487218626c335e8e70b0b06e",
+        "apps/web/src/modules/atelier/nouveau/documents/generation.worker.ts": "7fa5667c40804c852a19b1703308d1f20b1e4daf"
+      },
+      "blob_817bd36": {
+        "apps/web/src/modules/atelier/nouveau/documents/generation-client.ts": "91260b3be73aa97f487218626c335e8e70b0b06e",
+        "apps/web/src/modules/atelier/nouveau/documents/generation.worker.ts": "7fa5667c40804c852a19b1703308d1f20b1e4daf"
+      },
+      "modifie_depuis_audit": false,
+      "constat_statique_HEAD": "Les vues et les feuilles sont générées dans un Worker dédié, une seule instance. En cas d'absence ou d'erreur du Worker, la génération se replie sur le fil principal. Chaque demande envoie l'état complet du modèle (`etat`) au Worker. Preuves : generation-client.ts:17 `fil = typeof Worker === \"undefined\" ? null : new Worker(new URL(\"./generation.worker.ts\", import.meta.url), { type: \"module\", name: \"fadi-documents\" });` ; generation-client.ts:40 `if (!w) return Promise.resolve().then(local);` ; generation-client.ts:46 `if (err instanceof Error && err.message === \"fil de génération indisponible\") return local();` ; generation-client.ts:52 `demander({ nature: \"vue\", etat, params, definitionId, options }, () => genererVue(etat, params, definitionId, options));`.",
+      "verdict_statique": "confirmé",
+      "ecarts": "Compléments absents du constat historique : un repli sur le fil principal existe (lignes 2-3, 40, 46) ; le modèle entier est copié par clone structuré à chaque demande (lignes 52 et 55) ; le Worker est séquentiel, sans annulation.",
+      "tests_existants": [
+        "packages/atelier-model/src/documents/documents.test.ts"
+      ],
+      "tests_executes_par_cette_tache": true,
+      "limite": "Aucun test unitaire n'importe generation-client.ts ni generation.worker.ts. documents.test.ts couvre les fonctions pures `genererVue` et `composerFeuille` du paquet, pas le transport par Worker. Le coût du clonage et la réactivité ne sont pas mesurés. La recette e2e apps/web/e2e/atelier-documents.mjs n'a pas été lancée."
+    },
+    {
+      "id": "OBS-09",
+      "chemins_resolus": [
+        "apps/web/src/modules/atelier/nouveau/planche/historique.ts",
+        "packages/planche-model/src/delta.ts",
+        "apps/web/src/modules/atelier/nouveau/planche/Planche.tsx"
+      ],
+      "blob_3bcda929": {
+        "apps/web/src/modules/atelier/nouveau/planche/historique.ts": "b1e0ad3503650816eddb75104498296304c71844",
+        "packages/planche-model/src/delta.ts": "072fbe6d0416cb9ec27c52b22beb829b53010fc2",
+        "apps/web/src/modules/atelier/nouveau/planche/Planche.tsx": "bebac015e48f01beaed80696dcc777a5728028d8"
+      },
+      "blob_817bd36": {
+        "apps/web/src/modules/atelier/nouveau/planche/historique.ts": "b1e0ad3503650816eddb75104498296304c71844",
+        "packages/planche-model/src/delta.ts": "072fbe6d0416cb9ec27c52b22beb829b53010fc2",
+        "apps/web/src/modules/atelier/nouveau/planche/Planche.tsx": "bebac015e48f01beaed80696dcc777a5728028d8"
+      },
+      "modifie_depuis_audit": false,
+      "constat_statique_HEAD": "La Planche tient son propre historique local de modèles immuables (au plus 200 pas). Chaque pas (opération, annulation, rétablissement) est AUSSI envoyé comme commande Atelier `planche.operation`, avec un delta structurel et une empreinte. Les deux mécanismes coexistent. Preuves : historique.ts:21 `export const PAS_MAX = 200;` ; delta.ts:5 `Une opération de la Planche (un pas d'historique) devient une commande `planche.operation { delta, empreinteApres }`` ; Planche.tsx:451 `const delta = differencePlanche(avant, h.present.modele);` ; Planche.tsx:454 `void Promise.resolve(envoyer([{ type: \"planche.operation\", params: { id, libelle, delta, empreinteApres: empreintePlanche(h.present.modele) } }], libelle))...`.",
+      "verdict_statique": "confirmé",
+      "ecarts": "Le commentaire d'en-tête de historique.ts:4 (`Brouillon jusqu'au lot 7 : aucune commande, aucun journal serveur.`) est périmé : depuis le lot 7, Planche.tsx:446-454 envoie chaque pas au journal Atelier. L'historique local conserve des modèles complets, pas des deltas (historique.ts:9 `readonly modele: Modele;`). Les deltas servent à la persistance.",
+      "tests_existants": [
+        "apps/web/src/modules/atelier/nouveau/planche/planche.test.ts",
+        "packages/planche-model/src/delta.test.ts",
+        "packages/atelier-model/src/commandes/planches.test.ts",
+        "apps/api/src/routes/atelier-planches.test.ts"
+      ],
+      "tests_executes_par_cette_tache": true,
+      "limite": "La lecture ne prouve pas la cohérence à l'exécution entre l'annuler local et l'annuler du journal serveur, ni le comportement en cas de refus 409 (Planche.tsx:454 affiche seulement un message). La mémoire occupée par 200 modèles complets n'est pas mesurée."
+    },
+    {
+      "id": "OBS-10",
+      "chemins_resolus": [
+        "apps/web/vite.config.ts",
+        "apps/web/public/sw.js"
+      ],
+      "blob_3bcda929": {
+        "apps/web/vite.config.ts": "ebe7fb064431ac4ca36fe9a02388f9cd5d641933",
+        "apps/web/public/sw.js": "9f4ad5dd22bd51364a663a0112bb50d4b35a3ad8"
+      },
+      "blob_817bd36": {
+        "apps/web/vite.config.ts": "ebe7fb064431ac4ca36fe9a02388f9cd5d641933",
+        "apps/web/public/sw.js": "9f4ad5dd22bd51364a663a0112bb50d4b35a3ad8"
+      },
+      "modifie_depuis_audit": false,
+      "constat_statique_HEAD": "Au build, le plugin `fadi-sw-build-id` injecte dans sw.js la liste de TOUS les fichiers du bundle d'extension js, css, html, svg, woff, woff2, png ou json, y compris les morceaux chargés paresseusement. Seuls les fichiers dont le nom contient `three.webgpu` sont exclus. Le service worker les met tous en cache à l'installation. Preuves : vite.config.ts:14 `paresseusement : projet, Atelier et sa vue 3D, bibliothèque), outil` ; vite.config.ts:48 `const assets = [...new Set([\"/index.html\", ...Object.keys(bundle).map((name) => `/${name}`), ...publicFiles(\"parcelle\")])].filter((p) => /\\.(js|css|html|svg|woff2?|png|json)$/.test(p) && !p.includes(\"three.webgpu\"));` ; sw.js:15 `const PRECACHE = \"__FADI_ASSETS__\";` ; sw.js:25 `await Promise.all(list.map((path) => cache.add(path).catch(() => undefined)));`.",
+      "verdict_statique": "confirmé",
+      "ecarts": "Précisions : ce précache est voulu et documenté (vite.config.ts:12-16 : ouverture hors réseau). Le `.wasm` OCCT n'a pas d'extension retenue par le filtre de la ligne 48, il n'est donc pas précaché. WebGPU est exclu explicitement (ligne 49).",
+      "tests_existants": [],
+      "tests_executes_par_cette_tache": false,
+      "limite": "Le nombre de morceaux et le volume précaché ne se connaissent qu'après un build, non fait. Il n'a pas été vérifié si les morceaux des Workers figurent dans `bundle`. apps/api/src/app.test.ts:64 écrit un sw.js factice pour tester la distribution par l'API, et ne couvre pas le plugin Vite. Le comportement réel du service worker dans un navigateur n'a pas été observé."
+    },
+    {
+      "id": "OBS-11",
+      "chemins_resolus": [
+        "packages/planche-model/src/catalogue-outils.ts",
+        "apps/web/src/modules/atelier/nouveau/outils.ts",
+        "apps/web/src/modules/atelier/nouveau/panneaux/Palette.tsx"
+      ],
+      "blob_3bcda929": {
+        "packages/planche-model/src/catalogue-outils.ts": "30a5dfde237f42e3fbe699837256cbf7db364e53",
+        "apps/web/src/modules/atelier/nouveau/outils.ts": "b45b534ea3a69fbbbc2a3989769e39873fda020a",
+        "apps/web/src/modules/atelier/nouveau/panneaux/Palette.tsx": "b4df0a8e06abd6b47269f6b4d1e0c53828b2e687"
+      },
+      "blob_817bd36": {
+        "packages/planche-model/src/catalogue-outils.ts": "30a5dfde237f42e3fbe699837256cbf7db364e53",
+        "apps/web/src/modules/atelier/nouveau/outils.ts": "b45b534ea3a69fbbbc2a3989769e39873fda020a",
+        "apps/web/src/modules/atelier/nouveau/panneaux/Palette.tsx": "b4df0a8e06abd6b47269f6b4d1e0c53828b2e687"
+      },
+      "modifie_depuis_audit": false,
+      "constat_statique_HEAD": "PLANCHE. Source : le tableau `OUTILS` de catalogue-outils.ts, des lignes 216 (`export const OUTILS: readonly Outil[] = [`) à 1807 (`];`). Méthode : dans ces bornes, `grep -cE '^    id: \"'` compte 47 objets littéraux, sans identifiant répété (`sort | uniq -d` vide). S'y ajoute un seul élément généré, aux lignes 1273-1297 (`...( [ [\"intersection\", ...], [\"union\", ...], [\"soustraction\", ...], [\"ajuster\", ...], [\"scinder\", ...] ] as const ).map(`) : 5 outils « solide » `offre: \"payante\"`, dont aucun identifiant ne recoupe les 47. Le grep des lignes d'indentation 2 trouve ce seul spread dans le tableau. Total statique : 52 entrées, 52 identifiants distincts (47 littéraux et 5 générés). ATELIER. Source : le tableau `OUTILS` de apps/web/src/modules/atelier/nouveau/outils.ts, des lignes 34 à 148. La palette affiche `rechercherOutils(texte)` (Palette.tsx:22), qui renvoie `[...OUTILS]` quand la recherche est vide (outils.ts:161). Méthode : `grep -cE '^  O\\(\\{ id: \"'` sur les lignes 35-147 donne 111 entrées ; les deux autres lignes du tableau sont des commentaires. Identifiants distincts : 110 (`sort -u`). Un seul doublon, `echelle` : outils.ts:84 `O({ id: \"echelle\", libelle: \"Échelle\", famille: \"creer\", ...` (échelle d'accès, P2-6) et outils.ts:120 `O({ id: \"echelle\", libelle: \"Échelle\", famille: \"modifier\", ...` (mise à l'échelle). outils.ts:150 `Object.fromEntries(OUTILS.map((o) => [o.id, o]))` garde la dernière entrée (ligne 120) pour `OUTILS_PAR_ID[\"echelle\"]`.",
+      "verdict_statique": "partiellement confirmé",
+      "ecarts": "Atelier : 111 entrées et 110 identifiants distincts, avec la collision `echelle` : chiffres confirmés exactement, fichier inchangé depuis l'audit. Planche : le total statique est de 52 entrées et non de 47. Le chiffre historique correspond au nombre d'objets littéraux et omet les 5 outils booléens payants produits par `.map` (lignes 1273-1297). Le compte de l'Atelier porte sur le registre entier : le niveau d'affichage et l'activation des ontologies peuvent restreindre ce qui est proposé à l'exécution (outils.ts:154-155 `outilsVisibles`).",
+      "tests_existants": [
+        "packages/planche-model/src/catalogue-outils.test.ts",
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "apps/web/src/modules/atelier/nouveau/planche/barres-outils.test.ts",
+        "apps/web/src/modules/atelier/nouveau/planche/planche.test.ts",
+        "apps/web/src/modules/atelier/nouveau/planche/registre-commandes.test.ts"
+      ],
+      "tests_executes_par_cette_tache": true,
+      "limite": "Ce sont des comptes du texte source. Ils supposent que les motifs `^    id: \"` (Planche) et `^  O({ id: \"` (Atelier) captent chaque entrée littérale, ce qui a été vérifié en listant les lignes hors motif dans les bornes des tableaux. Aucun test ne fige ces nombres : nouveau.test.ts:392 et barres-outils.test.ts:35 et 79 comparent à `OUTILS.length`. Aucun test d'unicité des identifiants de l'Atelier n'a été trouvé. Le nombre d'outils réellement visibles dans l'interface dépend de l'exécution (niveau d'affichage, ontologies, offre)."
+    },
+    {
+      "id": "OBS-12",
+      "chemins_resolus": [
+        "docs/atelier/p0-mesures.md",
+        "docs/atelier/p2-mesures.md"
+      ],
+      "blob_3bcda929": {
+        "docs/atelier/p0-mesures.md": "dd050028d4534729028d284d33518f022b1ac267",
+        "docs/atelier/p2-mesures.md": "206a212256f0eb16bca6f11406e944b36029f7cb"
+      },
+      "blob_817bd36": {
+        "docs/atelier/p0-mesures.md": "dd050028d4534729028d284d33518f022b1ac267",
+        "docs/atelier/p2-mesures.md": "206a212256f0eb16bca6f11406e944b36029f7cb"
+      },
+      "modifie_depuis_audit": false,
+      "constat_statique_HEAD": "Résultats documentés, pas reproduits. p0-mesures.md:19 `| Rendu graphique | **logiciel** : `ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)), SwiftShader driver)` ... ; aucun GPU |` ; p0-mesures.md:36-37 `poteaux en `InstancedMesh` par niveau → **1 199 maillages, 1 199 draw calls** (dont 330 instances).` / `- **B** : `InstancedMesh` pour toute classe, par niveau (6 niveaux × 4 classes) → **24 maillages, 24 draw calls**,` ; p0-mesures.md:65 `| Draw calls / triangles par trame | 1 199 / 18 204 | 24 / 18 204 | — | `renderer.info.render` |` ; p0-mesures.md:217-218 `Passer de 1 199 à 24 draw calls ramène le coût CPU de `render()` de 15 ms à 0,17 ms par trame`. OCCT : p2-mesures.md:15 `| Rendu graphique | logiciel (SwiftShader), mêmes drapeaux qu'au lot 0 ... ; aucun GPU |` ; p2-mesures.md:42 `| `OcctKernel.init` | **111,1 ms** | **125,8 ms** |` ; p2-mesures.md:45 `... | **449,8 ms** au total ; ...`.",
+      "verdict_statique": "confirmé",
+      "ecarts": "Nuance importante. Le passage de 1 199 à 24 appels a été mesuré sur deux variantes d'une scène de banc, la variante B étant en InstancedMesh (p0-mesures.md:33-38). Ce n'est pas une mesure du code actuel de scene3d.ts, qui fusionne des tampons par niveau, couleur, opacité, classe et groupe (scene3d.ts:301) et non par InstancedMesh. Le commentaire scene3d.ts:3-4 cite ce chiffre en référence. Le document dit lui-même que les temps absolus ne sont pas représentatifs d'un GPU réel (p0-mesures.md:26-27) et que les mesures sur l'appareil de référence restent à faire (p0-mesures.md:28-29).",
+      "tests_existants": [],
+      "tests_executes_par_cette_tache": false,
+      "limite": "Aucun banc n'a été relancé (scripts/bench/ non exécutés). Les chiffres sont ceux des documents datés du 3 et du 8 octobre 2026, sur rendu logiciel SwiftShader : ils ne disent rien d'un GPU matériel ni du nombre d'appels de la scène réelle au HEAD."
+    },
+    {
+      "id": "OBS-13",
+      "chemins_resolus": [
+        "package.json",
+        "apps/web/package.json",
+        "apps/api/package.json",
+        "apps/api/src/db/schema.ts"
+      ],
+      "blob_3bcda929": {
+        "package.json": "7e3f73e2226193dae30838944ef4ab6baa7ebbcd",
+        "apps/web/package.json": "33cc57ca7caa72c36d047e633a912645909c1b24",
+        "apps/api/package.json": "50dfc88136a7cdc85eaac8107d8b4580bb1278f7",
+        "apps/api/src/db/schema.ts": "469252b73a8fb64ab87592d6c26d1bfdbbb5d602"
+      },
+      "blob_817bd36": {
+        "package.json": "7e3f73e2226193dae30838944ef4ab6baa7ebbcd",
+        "apps/web/package.json": "33cc57ca7caa72c36d047e633a912645909c1b24",
+        "apps/api/package.json": "50dfc88136a7cdc85eaac8107d8b4580bb1278f7",
+        "apps/api/src/db/schema.ts": "d80b8e09a2e0a50b6c14df6815fea8faaedd0f2a"
+      },
+      "modifie_depuis_audit": true,
+      "constat_statique_HEAD": "Monorepo npm à workspaces `apps/*` et `packages/*`. Applications : apps/api et apps/web. Paquets : atelier-model, core-geometry, domain-model, geometry-exact, planche-model (git ls-tree). Preuves : package.json:6-8 `\"workspaces\": [ \"apps/*\", \"packages/*\"` ; apps/web/package.json:25 `\"react\": \"~19.1.1\",`, :37 `\"vite\": \"~6.4.1\",`, :36 `\"typescript\": \"~5.9.3\",` ; apps/api/package.json:25 `\"express\": \"~5.1.0\",`, :28 `\"pg\": \"~8.16.3\",`, :24 `\"drizzle-orm\": \"~0.45.3\",` ; apps/api/src/db/schema.ts:2 ` * Schéma Drizzle — PostgreSQL + PostGIS.`.",
+      "verdict_statique": "confirmé",
+      "ecarts": "Seul schema.ts a changé depuis l'audit, et ce n'est qu'un commentaire (ligne 301 : « chantier DrawAll V4.1 » devient « Atelier Fadi »). La structure est identique.",
+      "tests_existants": [],
+      "tests_executes_par_cette_tache": false,
+      "limite": "Observation de structure : aucun test ne la « couvre » en propre. Les versions sont celles déclarées dans package.json (plages ~). Les versions installées (package-lock, node_modules) et le bon fonctionnement de PostgreSQL et PostGIS n'ont pas été vérifiés à l'exécution."
+    },
+    {
+      "id": "OBS-14",
+      "chemins_resolus": [
+        "apps/api/src/routes/atelier-commands.ts",
+        "apps/api/src/routes/atelier-versions.ts",
+        "apps/api/src/routes/documents.ts",
+        "apps/api/src/routes/projects.ts"
+      ],
+      "blob_3bcda929": {
+        "apps/api/src/routes/atelier-commands.ts": "ec21af8ea3b0501725b15ab8555d612845802c9a",
+        "apps/api/src/routes/atelier-versions.ts": "989d588e03e19c118788460d4ebd659098b3b77f",
+        "apps/api/src/routes/documents.ts": "b250667667703d37d0db7791cdcb20277bce2c14",
+        "apps/api/src/routes/projects.ts": "f162f33b7dd53f901c805ece28e5eb142b9353f6"
+      },
+      "blob_817bd36": {
+        "apps/api/src/routes/atelier-commands.ts": "ec21af8ea3b0501725b15ab8555d612845802c9a",
+        "apps/api/src/routes/atelier-versions.ts": "989d588e03e19c118788460d4ebd659098b3b77f",
+        "apps/api/src/routes/documents.ts": "b250667667703d37d0db7791cdcb20277bce2c14",
+        "apps/api/src/routes/projects.ts": "f162f33b7dd53f901c805ece28e5eb142b9353f6"
+      },
+      "modifie_depuis_audit": false,
+      "constat_statique_HEAD": "Le bus de commandes impose une révision de base (409 si elle n'est pas à jour) et tient un journal avec annuler et rétablir. On y trouve aussi des versions nommées, variantes et publications, ainsi que des imports et exports (IFC, STEP, archive de projet, journal CSV, dessins). Preuves : atelier-commands.ts:7-8 ``baseRevision` = révision courante sinon 409 détaillé, mêmes réducteurs que le navigateur, transaction (différentiel + journal + boîte de sortie + `projects.model_revision + 1`), idempotence par `requestId` ;` ; atelier-commands.ts:270-271 `if (enveloppe.baseRevision !== project.modelRevision) { res.status(409).json({ erreur: \"conflit\", motif: \"revision\", ...` ; atelier-versions.ts:5 `- `GET /versions`, `POST /versions`, `GET /versions/:id`, `POST /versions/:id/restaurer` : versions nommées` ; atelier-commands.ts:353 `atelierCommandsRouter.post(\"/import-ifc\", ...` (de même :423 `/import-step`, :140 `/planches/:plancheId/export.ifc`, documents.ts:138 `/atelier/modele.ifc`, projects.ts:131 `projectsRouter.post(\"/import\", ...`).",
+      "verdict_statique": "confirmé",
+      "ecarts": null,
+      "tests_existants": [
+        "apps/api/src/routes/atelier-commands.test.ts",
+        "apps/api/src/routes/atelier-planches.test.ts",
+        "packages/atelier-model/src/versions.test.ts",
+        "packages/atelier-model/src/commandes/planches.test.ts"
+      ],
+      "tests_executes_par_cette_tache": true,
+      "limite": "La présence des routes et de leurs commentaires ne prouve pas leur bon fonctionnement. Les tests d'API cités exigent PostgreSQL et PostGIS et n'ont pas été lancés. La concurrence réelle (verrou de ligne, idempotence), les performances du journal et la fidélité des exports et imports ne sont pas établies par lecture."
+    }
+  ],
+  "auteur": "Claude Code (hors équipe Codex) ; lecture statique par un sous-agent Claude réellement exécuté, citations vérifiées par échantillon (scene3d.ts, Plan2D.tsx, accrochage.ts, catalogue-outils.ts, outils.ts, moteur-exact.ts, historique.ts, vite.config.ts, p0-mesures.md) ; une ligne corrigée (scene3d.ts:298 → 301).",
+  "tests_executes": {
+    "principe": "Tests unitaires purs (vitest), sans base, API, réseau ni navigateur ; aucun test apps/api lancé (garde M02). Ils couvrent des fonctions pures voisines des composants, pas le rendu GPU, le service worker ni les performances.",
+    "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+    "date_utc": "2026-10-18",
+    "lots": [
+      {
+        "espace": "apps/web",
+        "commande": "npx vitest run src/modules/atelier/nouveau/nouveau.test.ts src/modules/atelier/nouveau/planche/planche.test.ts src/modules/atelier/nouveau/planche/barres-outils.test.ts src/modules/atelier/nouveau/planche/registre-commandes.test.ts",
+        "resultat": "4 fichiers, 106 tests réussis",
+        "obs": [
+          "OBS-01",
+          "OBS-02",
+          "OBS-05",
+          "OBS-09",
+          "OBS-11"
+        ]
+      },
+      {
+        "espace": "packages/planche-model",
+        "commande": "npx vitest run src/catalogue-outils.test.ts src/outils/registre-formes.test.ts src/outils/selection.test.ts src/delta.test.ts",
+        "resultat": "4 fichiers, 48 tests réussis",
+        "obs": [
+          "OBS-06",
+          "OBS-09",
+          "OBS-11"
+        ]
+      },
+      {
+        "espace": "packages/atelier-model",
+        "commande": "npx vitest run src/documents/documents.test.ts src/versions.test.ts src/commandes/planches.test.ts",
+        "resultat": "3 fichiers, 22 tests réussis",
+        "obs": [
+          "OBS-08",
+          "OBS-09",
+          "OBS-14"
+        ]
+      },
+      {
+        "espace": "packages/geometry-exact",
+        "commande": "npx vitest run src/index.test.ts",
+        "resultat": "1 fichier, 22 tests réussis",
+        "obs": [
+          "OBS-07"
+        ]
+      }
+    ],
+    "non_executes": [
+      "apps/api/src/routes/*.test.ts (exigent PostgreSQL ; suite destructive non lancée sans cible jetable attestée)",
+      "apps/web/e2e/*.mjs (API, base, navigateur)",
+      "aucun test n’existe pour scene3d.ts, moteur-exact.ts, exact.worker.ts, generation-client.ts, vite.config.ts"
+    ]
+  }
+}

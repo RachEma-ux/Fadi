@@ -40,19 +40,22 @@ Le frontend (`npm run dev` à la racine) relaie `/auth`, `/projects`,
 ## Tests
 
 ```sh
-sudo -u postgres psql -c "CREATE DATABASE fadi_test OWNER fadi;"
-cp .env.test.example .env.test
-npm run db:migrate --workspace=@fadi/api -- # DATABASE_URL doit alors pointer vers fadi_test
-npm test --workspace=@fadi/api
+# Depuis la racine : garde et intégration entièrement simulées, sans base.
+npm run test:db-guard
 ```
 
-Les tests (`src/app.test.ts`, 52) tournent contre une vraie base Postgres —
-volontairement pas de mock de la couche base de données, parce que
+Les douze suites API d'intégration conservent leurs scénarios contre une
+vraie base Postgres — volontairement pas de mock de la couche base de données, parce que
 l'autorisation par ressource (propriétaire, éditeur, lecteur, réservation
 d'édition) et la sérialisation des écritures sont justement ce qui doit
-être vérifié, et un mock les masquerait. La CI fait tourner un service
-`postgis/postgis` dédié, puis le scénario Playwright complet contre l'API
-construite.
+être vérifié, et un mock les masquerait. Elles sont désormais fermées par
+défaut : `TEST_DATABASE_URL` explicite et attestation indépendante obligatoire,
+sans repli sur `DATABASE_URL`. Le registre d'autorités du lot DB-1/2 est vide.
+Le provisionnement, l'enrôlement de clé et les essais réels relèvent du lot
+DB-3 avec accord distinct ; créer une base nommée `fadi_test` ou définir
+`NODE_ENV=test` ne suffit pas. Ne pas lancer les anciennes commandes de
+migration, d'intégration ou de recette pour contourner cette barrière.
+Voir [le contrat et les limites DB-1/2](src/testing/README.md).
 
 ## Modèle de sécurité (voir aussi `references/security.md` de la skill)
 

@@ -1,0 +1,1583 @@
+{
+  "objet": "Quatre deltas résiduels finis COEX-01/G3-01/G3-03/ADR-05",
+  "sources": [
+    {
+      "path": "/workspace/work/resume496/agents/A2/NEXT-READY-POST203-A2.json",
+      "sha256": "aebe223472c8e61939d495fc0d903f4682e983e014dbda98485026317985ac55"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/source-COEX-01-QUALIFICATION.json",
+      "sha256": "3801912ae414f1f07d1b5cbd5904f20f928b36470e1b04ee09395996bbcdbdae"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/source-ADR-04-REGISTRE-RISQUES.json",
+      "sha256": "bd8da03b9cdc6b7d671261ae1d65e393c010dd0c331b61cdc42c1b94567175b4"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1-v2.json",
+      "sha256": "ea5300f241df47d168b1c3f0fc7180cd189b70d7d6b64e5f299a55522dd52f0c"
+    },
+    {
+      "path": "/workspace/work/mission004/agents/A1/studio-18-decisions-v2.json",
+      "sha256": "f36eed4b8c246387e5fd853eadd1a773bdeeb7e94d32f44f44352ba3b1cbc49e"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A2/M05-M17-CHOIX-RESIDUELS-A2.json",
+      "sha256": "917ac7aa79493d4c8f2302d7b1ec881d3126b865e7b959a36cb9a659b94bc1c6"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A3/DEC18-MOTEURS-PUBLICS-CANDIDATS.json",
+      "sha256": "24de7c5169d0d1bb5d3f1be2119c5186065ae9f2c5fc45277c6a5318b7164c8b"
+    }
+  ],
+  "COEX-01": {
+    "delta": "Onzefonctions vers22groupesdéjàqualifiés ; seuls candidatsutiles sélectionnés, pas nouvellequalificationcomposants",
+    "fiches_fonctions": [
+      {
+        "fonction_numero": 1,
+        "fonction_exacte": "Entrer par Studio, routes complètes et contexte partiel",
+        "index_line": 29,
+        "index_exact": "| Entrer par Studio, routes complètes et contexte partiel | AppShell/auth existants, façade contexte ; A4/A2 | NAV sections Routes/Surface/Façade, IF001 ; NAV001–006/008/009 | URL autorisée donne bon contexte ; absence projet/étude/variante mène choix, aucun GET créateur ni étapeParcours validée | Interface physique façade et mapping ressource/erreur/focus, dépendances #142 requalifiées |",
+        "contrats_candidats": [
+          "C-STUDIO-CONTEXT"
+        ],
+        "interface_publique_a_instruire": "Façade publique de contexte/routage Studio proposée ; aucun import direct AtelierNouveau/ProjectShell.",
+        "groupes_reemployes": [
+          {
+            "id": "C02",
+            "composant_exact": "Enveloppe `nouveau/AtelierNouveau.tsx`",
+            "qualification_Claude_proposee_inchangee": [
+              "Isoler"
+            ],
+            "preuve_exacte_Claude": "Point d'entrée de l'Atelier actuel. Studio ne l'embarque pas (ARC-10, Plan §3.1).",
+            "condition_decision_exacte": "ADR-STUDIO-NAV-01",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C08",
+            "composant_exact": "Panneaux `nouveau/panneaux/` (32 fichiers)",
+            "qualification_Claude_proposee_inchangee": [
+              "Isoler"
+            ],
+            "preuve_exacte_Claude": "Interface propre à l'Atelier (barre D-195, réglages, versions…). Plan §3.3 : « la réutilisation d'une fonction ne signifie pas recopier l'ensemble du module ».",
+            "condition_decision_exacte": "ARC-04 ; chaque reprise justifiée par une fiche",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C10",
+            "composant_exact": "État d'interface, navigation, raccourcis, actions (`nouveau/etat-ui.ts`, `navigation*.ts`, `raccourcis.ts`, `actions.ts`, `messages.ts`)",
+            "qualification_Claude_proposee_inchangee": [
+              "Isoler"
+            ],
+            "preuve_exacte_Claude": "Propres à l'ergonomie de l'Atelier. La règle d'or de la Planche (icône, barre, raccourci) s'applique à ses outils.",
+            "condition_decision_exacte": "Le registre Studio (lot B) définit les siens",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C12",
+            "composant_exact": "Mode immersif `apps/web/src/lib/use-immersive.ts`",
+            "qualification_Claude_proposee_inchangee": [
+              "Isoler"
+            ],
+            "preuve_exacte_Claude": "REP-05 : drapeau global qui masque la barre latérale (NAV-008). La PR #142, ouverte, le transforme.",
+            "condition_decision_exacte": "Lecture de #142 si elle est fusionnée",
+            "decision": "Non adoptée ; question6250995231 existante"
+          }
+        ],
+        "preuve_manquante": "Interface physique façade et mapping ressource/erreur/focus, dépendances #142 requalifiées",
+        "usage": "Rattachement candidat, pas preuve export public du composant ; DEC18/A3 et revueA6 font autorité pour exports/libs."
+      },
+      {
+        "fonction_numero": 2,
+        "fonction_exacte": "Résoudre parenté et autorisations",
+        "index_line": 30,
+        "index_exact": "| Résoudre parenté et autorisations | Service projets/identité Fadi, décision serveur ; A2 | C-STUDY/NAV/IF001/004, EX087/088/092 ; TEST035 | Tous IDs existants mais parents différents → refus sans fuite ni mutation ; URL/profil ne crée aucun droit | Politique tenant/ressource/masquage refus et droits finaux non ratifiés |",
+        "contrats_candidats": [
+          "C-STUDY"
+        ],
+        "interface_publique_a_instruire": "Service projet/identité + résolveur de parenté/droits côté serveur ; API publique Studio reste à ratifier.",
+        "groupes_reemployes": [
+          {
+            "id": "C16",
+            "composant_exact": "Paquets `core-geometry` et `domain-model`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Géométrie et repères purs, et distinction exigence / hypothèse / recommandation (AGENTS.md).",
+            "condition_decision_exacte": "Aucune",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C17",
+            "composant_exact": "Service de commandes `apps/api/src/routes/atelier-commands.ts`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Seul écrivain du modèle (R9, [P/…/atelier-modele.ts#L5-L6](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/lib/atelier-modele.ts#L5-L6)). Il impose la révision de base (409), l'idempotence et le journal ([#L1-L12](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/routes/atelier-commands.ts#L1-L12)).",
+            "condition_decision_exacte": "ARC-DATA-05 à ARC-DATA-07",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C18",
+            "composant_exact": "Persistance du modèle `apps/api/src/lib/atelier-modele.ts` et tables `atelier_*`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Écriture par différentiel, appelée seulement par le service de commandes et les imports contrôlés.",
+            "condition_decision_exacte": "DEC-01 et DEC-03 : correspondance avec le stockage Studio",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C19",
+            "composant_exact": "Versions, variantes, publications et verrous `routes/atelier-versions.ts`, `lib/atelier-versions.ts`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver",
+              "Correspondance explicite"
+            ],
+            "preuve_exacte_Claude": "Une variante actuelle est un **projet** bifurqué (`atelier_variants.project_id` / `parent_id`, [L499-L515](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/db/schema.ts#L499-L515)). Ce n'est pas la Variante Studio de DEC-03. Une correspondance explicite est requise, sans migration silencieuse.",
+            "condition_decision_exacte": "DEC-03, MIG-COEX-02",
+            "decision": "Non adoptée ; question6250995231 existante"
+          }
+        ],
+        "preuve_manquante": "Politique tenant/ressource/masquage refus et droits finaux non ratifiés",
+        "usage": "Rattachement candidat, pas preuve export public du composant ; DEC18/A3 et revueA6 font autorité pour exports/libs."
+      },
+      {
+        "fonction_numero": 3,
+        "fonction_exacte": "Cadrer/lire/créer une étude, sources autorisées",
+        "index_line": 31,
+        "index_exact": "| Cadrer/lire/créer une étude, sources autorisées | Étude identité propre dans Projet transverse, références catalogueFadi ; A2/A1 | M17§1 et NAVSources étude ; IF001 | Étude sans variante autorisée ; géométrie persistée orpheline interdite ; source d'autrui non divulguée | Transport/validation des champs/stockage/transaction, choix physiquesDEC03 |",
+        "contrats_candidats": [
+          "C-STUDY"
+        ],
+        "interface_publique_a_instruire": "Façade Étude rattachée au Projet ; pas accès direct aux tables atelier_* depuis UI.",
+        "groupes_reemployes": [
+          {
+            "id": "C16",
+            "composant_exact": "Paquets `core-geometry` et `domain-model`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Géométrie et repères purs, et distinction exigence / hypothèse / recommandation (AGENTS.md).",
+            "condition_decision_exacte": "Aucune",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C18",
+            "composant_exact": "Persistance du modèle `apps/api/src/lib/atelier-modele.ts` et tables `atelier_*`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Écriture par différentiel, appelée seulement par le service de commandes et les imports contrôlés.",
+            "condition_decision_exacte": "DEC-01 et DEC-03 : correspondance avec le stockage Studio",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C19",
+            "composant_exact": "Versions, variantes, publications et verrous `routes/atelier-versions.ts`, `lib/atelier-versions.ts`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver",
+              "Correspondance explicite"
+            ],
+            "preuve_exacte_Claude": "Une variante actuelle est un **projet** bifurqué (`atelier_variants.project_id` / `parent_id`, [L499-L515](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/db/schema.ts#L499-L515)). Ce n'est pas la Variante Studio de DEC-03. Une correspondance explicite est requise, sans migration silencieuse.",
+            "condition_decision_exacte": "DEC-03, MIG-COEX-02",
+            "decision": "Non adoptée ; question6250995231 existante"
+          }
+        ],
+        "preuve_manquante": "Transport/validation des champs/stockage/transaction, choix physiquesDEC03",
+        "usage": "Rattachement candidat, pas preuve export public du composant ; DEC18/A3 et revueA6 font autorité pour exports/libs."
+      },
+      {
+        "fonction_numero": 4,
+        "fonction_exacte": "Créer/lire une variante, provenance d'un fork",
+        "index_line": 32,
+        "index_exact": "| Créer/lire une variante, provenance d'un fork | Variante identité propre, uniqueÉtude/Projet ; A2 | C-STUDY, M17§1/2, EX013 | Nouvelle identité et filiation ; aucune propagation vers origine ; références/propriétaires cohérents | Allocation IDs/cycle de vie, mapping anciens projets-forks ; migration non réalisée |",
+        "contrats_candidats": [
+          "C-STUDY"
+        ],
+        "interface_publique_a_instruire": "Service fork/variante par contexte complet ; mapping ancien projet-fork explicite, pas copie opaque.",
+        "groupes_reemployes": [
+          {
+            "id": "C13",
+            "composant_exact": "Paquet `packages/atelier-model`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Modèle canonique, réducteurs purs et commandes, partagés entre navigateur et serveur (R9). Les identités Étude / Variante / Révision sont à ajouter selon l'orientation DEC-03.",
+            "condition_decision_exacte": "DEC-01, DEC-02, DEC-03 (contrats physiques ouverts)",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C18",
+            "composant_exact": "Persistance du modèle `apps/api/src/lib/atelier-modele.ts` et tables `atelier_*`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Écriture par différentiel, appelée seulement par le service de commandes et les imports contrôlés.",
+            "condition_decision_exacte": "DEC-01 et DEC-03 : correspondance avec le stockage Studio",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C19",
+            "composant_exact": "Versions, variantes, publications et verrous `routes/atelier-versions.ts`, `lib/atelier-versions.ts`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver",
+              "Correspondance explicite"
+            ],
+            "preuve_exacte_Claude": "Une variante actuelle est un **projet** bifurqué (`atelier_variants.project_id` / `parent_id`, [L499-L515](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/db/schema.ts#L499-L515)). Ce n'est pas la Variante Studio de DEC-03. Une correspondance explicite est requise, sans migration silencieuse.",
+            "condition_decision_exacte": "DEC-03, MIG-COEX-02",
+            "decision": "Non adoptée ; question6250995231 existante"
+          }
+        ],
+        "preuve_manquante": "Allocation IDs/cycle de vie, mapping anciens projets-forks ; migration non réalisée",
+        "usage": "Rattachement candidat, pas preuve export public du composant ; DEC18/A3 et revueA6 font autorité pour exports/libs."
+      },
+      {
+        "fonction_numero": 5,
+        "fonction_exacte": "Créer/citer un contenu2D autonome, vide ou défini selon contrat",
+        "index_line": 33,
+        "index_exact": "| Créer/citer un contenu2D autonome, vide ou défini selon contrat | Document canonique drawing2d, writer unique serveur ; A2 | C-DRAWING2D/M17§2, G1-DELTA-v2 ; EX004/020/023 | Aucune création de modèle3D de substitution ; unités/repère/version/IDs explicites ; calque/cote vers cible valide | Types physiques, contraintes/schema/compatibilité et coûtDEC01 ; absence3D/persistance encore à prouverG2 |",
+        "contrats_candidats": [
+          "C-DRAWING2D"
+        ],
+        "interface_publique_a_instruire": "Document2D canonique + primitives pures réutilisables ; renderer React interne reste adaptateur, pas APIpublique présumée.",
+        "groupes_reemployes": [
+          {
+            "id": "C03",
+            "composant_exact": "Plan 2D `nouveau/plan2d/` (`Plan2D.tsx`, `rendu.tsx`, `accrochage.ts`…)",
+            "qualification_Claude_proposee_inchangee": [
+              "Compléter"
+            ],
+            "preuve_exacte_Claude": "OBS-01 : SVG React ; OBS-02 : accrochage sans index spatial. C'est le candidat au document 2D autonome, sous l'orientation DEC-01.",
+            "condition_decision_exacte": "DEC-08, DEC-09, lot C ; non-régression d'accrochage",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C13",
+            "composant_exact": "Paquet `packages/atelier-model`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Modèle canonique, réducteurs purs et commandes, partagés entre navigateur et serveur (R9). Les identités Étude / Variante / Révision sont à ajouter selon l'orientation DEC-03.",
+            "condition_decision_exacte": "DEC-01, DEC-02, DEC-03 (contrats physiques ouverts)",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C16",
+            "composant_exact": "Paquets `core-geometry` et `domain-model`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Géométrie et repères purs, et distinction exigence / hypothèse / recommandation (AGENTS.md).",
+            "condition_decision_exacte": "Aucune",
+            "decision": "Non adoptée ; question6250995231 existante"
+          }
+        ],
+        "preuve_manquante": "Types physiques, contraintes/schema/compatibilité et coûtDEC01 ; absence3D/persistance encore à prouverG2",
+        "usage": "Rattachement candidat, pas preuve export public du composant ; DEC18/A3 et revueA6 font autorité pour exports/libs."
+      },
+      {
+        "fonction_numero": 6,
+        "fonction_exacte": "Engager une modification et produire révision",
+        "index_line": 34,
+        "index_exact": "| Engager une modification et produire révision | C-COMMAND, propriétaire de donnée et transaction autoritaire ; A2 | M17§3, IF004/006/011, EX017/018/045–049 | Précondition version/droits/writer avant effet ; refus atomique ; même requestId/contenu retourne premier résultat, pas doublon ; changement de contenu sous mêmeID refusé | Atomicité/déduplication/limites/quotas/reprise et historique physique, DEC12/03 |",
+        "contrats_candidats": [
+          "C-COMMAND"
+        ],
+        "interface_publique_a_instruire": "Façade commande validée/enveloppecontexte + bus existant candidat ; un writer ettransaction, pas deuxième bus.",
+        "groupes_reemployes": [
+          {
+            "id": "C01",
+            "composant_exact": "Bus client `apps/web/src/modules/atelier/bus/` (`atelier-client.ts`, `etat-projet.ts`)",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Chemin client unique vers le service de commandes : file locale, rejeu (`packages/atelier-model/src/sync.ts`). Studio doit passer par le même bus (RISK-07, R9).",
+            "condition_decision_exacte": "ARC-07 et ARC-DATA-05 : enveloppe enrichie du contexte étude / variante (DEC-03)",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C13",
+            "composant_exact": "Paquet `packages/atelier-model`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Modèle canonique, réducteurs purs et commandes, partagés entre navigateur et serveur (R9). Les identités Étude / Variante / Révision sont à ajouter selon l'orientation DEC-03.",
+            "condition_decision_exacte": "DEC-01, DEC-02, DEC-03 (contrats physiques ouverts)",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C17",
+            "composant_exact": "Service de commandes `apps/api/src/routes/atelier-commands.ts`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Seul écrivain du modèle (R9, [P/…/atelier-modele.ts#L5-L6](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/lib/atelier-modele.ts#L5-L6)). Il impose la révision de base (409), l'idempotence et le journal ([#L1-L12](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/routes/atelier-commands.ts#L1-L12)).",
+            "condition_decision_exacte": "ARC-DATA-05 à ARC-DATA-07",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C21",
+            "composant_exact": "File locale `apps/web/src/lib/local-store.ts` (Dexie `fadi-local` v4 : `lots`, `modelCache`, `keyValue`)",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Elle contient les commandes hors ligne en attente. MIG-COEX-04 interdit de les supprimer avant bascule.",
+            "condition_decision_exacte": "MIG-COEX-04, TEST-036",
+            "decision": "Non adoptée ; question6250995231 existante"
+          }
+        ],
+        "preuve_manquante": "Atomicité/déduplication/limites/quotas/reprise et historique physique, DEC12/03",
+        "usage": "Rattachement candidat, pas preuve export public du composant ; DEC18/A3 et revueA6 font autorité pour exports/libs."
+      },
+      {
+        "fonction_numero": 7,
+        "fonction_exacte": "Lire une révision historique exacte",
+        "index_line": 35,
+        "index_exact": "| Lire une révision historique exacte | Révision immuable d'une uniquevariante et sourcescitées ; A2 | M17§4, M24§6, IF004/009/011 | Identités et empreintes cohérentes ; aucune substitutionlatest ; éditionhistorique exige nouvelle intention | Snapshot en coupe logique, lecteurcompatible et contrôle droits parsource ; preuvelecturecohérente à établir |",
+        "contrats_candidats": [
+          "C-STUDY"
+        ],
+        "interface_publique_a_instruire": "Lecteur snapshot complet immuable souscontexte etempreintes ; endpoint physique à ratifier.",
+        "groupes_reemployes": [
+          {
+            "id": "C18",
+            "composant_exact": "Persistance du modèle `apps/api/src/lib/atelier-modele.ts` et tables `atelier_*`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Écriture par différentiel, appelée seulement par le service de commandes et les imports contrôlés.",
+            "condition_decision_exacte": "DEC-01 et DEC-03 : correspondance avec le stockage Studio",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C19",
+            "composant_exact": "Versions, variantes, publications et verrous `routes/atelier-versions.ts`, `lib/atelier-versions.ts`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver",
+              "Correspondance explicite"
+            ],
+            "preuve_exacte_Claude": "Une variante actuelle est un **projet** bifurqué (`atelier_variants.project_id` / `parent_id`, [L499-L515](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/db/schema.ts#L499-L515)). Ce n'est pas la Variante Studio de DEC-03. Une correspondance explicite est requise, sans migration silencieuse.",
+            "condition_decision_exacte": "DEC-03, MIG-COEX-02",
+            "decision": "Non adoptée ; question6250995231 existante"
+          }
+        ],
+        "preuve_manquante": "Snapshot en coupe logique, lecteurcompatible et contrôle droits parsource ; preuvelecturecohérente à établir",
+        "usage": "Rattachement candidat, pas preuve export public du composant ; DEC18/A3 et revueA6 font autorité pour exports/libs."
+      },
+      {
+        "fonction_numero": 8,
+        "fonction_exacte": "Sauvegarder/fermer/rouvrir",
+        "index_line": 36,
+        "index_exact": "| Sauvegarder/fermer/rouvrir | Contenus canoniques confirmés, pas scènes/caches ; A2/A6 | C-STUDY/C-DRAWING2D, M24§3/6, EX089/090 | Accusé suit engagementdurable, après coupure distinguer confirmé/pending/conflit ; retrouver contenu exact sous bon compte | Choix persistance/incident/reconnexion et garanties de reprise, mesures non inventées |",
+        "contrats_candidats": [
+          "C-STUDY",
+          "C-DRAWING2D"
+        ],
+        "interface_publique_a_instruire": "Persistance/queue versionnées parfaçade ; scènes etprécache ne sont pas canonique.",
+        "groupes_reemployes": [
+          {
+            "id": "C01",
+            "composant_exact": "Bus client `apps/web/src/modules/atelier/bus/` (`atelier-client.ts`, `etat-projet.ts`)",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Chemin client unique vers le service de commandes : file locale, rejeu (`packages/atelier-model/src/sync.ts`). Studio doit passer par le même bus (RISK-07, R9).",
+            "condition_decision_exacte": "ARC-07 et ARC-DATA-05 : enveloppe enrichie du contexte étude / variante (DEC-03)",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C18",
+            "composant_exact": "Persistance du modèle `apps/api/src/lib/atelier-modele.ts` et tables `atelier_*`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Écriture par différentiel, appelée seulement par le service de commandes et les imports contrôlés.",
+            "condition_decision_exacte": "DEC-01 et DEC-03 : correspondance avec le stockage Studio",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C19",
+            "composant_exact": "Versions, variantes, publications et verrous `routes/atelier-versions.ts`, `lib/atelier-versions.ts`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver",
+              "Correspondance explicite"
+            ],
+            "preuve_exacte_Claude": "Une variante actuelle est un **projet** bifurqué (`atelier_variants.project_id` / `parent_id`, [L499-L515](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/db/schema.ts#L499-L515)). Ce n'est pas la Variante Studio de DEC-03. Une correspondance explicite est requise, sans migration silencieuse.",
+            "condition_decision_exacte": "DEC-03, MIG-COEX-02",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C21",
+            "composant_exact": "File locale `apps/web/src/lib/local-store.ts` (Dexie `fadi-local` v4 : `lots`, `modelCache`, `keyValue`)",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Elle contient les commandes hors ligne en attente. MIG-COEX-04 interdit de les supprimer avant bascule.",
+            "condition_decision_exacte": "MIG-COEX-04, TEST-036",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C22",
+            "composant_exact": "Précache du service worker `apps/web/vite.config.ts` et `public/sw.js`",
+            "qualification_Claude_proposee_inchangee": [
+              "Compléter"
+            ],
+            "preuve_exacte_Claude": "OBS-10 : tous les morceaux du build sont précachés, y compris ceux chargés à la demande.",
+            "condition_decision_exacte": "DEC-07, lot B.3, TEST-016",
+            "decision": "Non adoptée ; question6250995231 existante"
+          }
+        ],
+        "preuve_manquante": "Choix persistance/incident/reconnexion et garanties de reprise, mesures non inventées",
+        "usage": "Rattachement candidat, pas preuve export public du composant ; DEC18/A3 et revueA6 font autorité pour exports/libs."
+      },
+      {
+        "fonction_numero": 9,
+        "fonction_exacte": "Gérer versions et compatibilité",
+        "index_line": 37,
+        "index_exact": "| Gérer versions et compatibilité | Contrats/formats/snapshots versionnés, chaque service propriétaire ; A2 | M17§1/5, M24§7/8, EX019/030/044/091 | schemaVersion/contractVersion/revisionId/baseRevisionId/contentVersion illustratif/documentVersion pièce non confondus ; inconnues refusées ou conservées avec rapport | Matrice lecteurs/imports/exports anciensformats réels, décision transformation/rollback ; aucun autobump |",
+        "contrats_candidats": [
+          "C-COMMAND",
+          "C-STUDY"
+        ],
+        "interface_publique_a_instruire": "Lecteurs/writers versionnés compatibles ; inconnus conservés/refusés selon décision, pas autobump.",
+        "groupes_reemployes": [
+          {
+            "id": "C13",
+            "composant_exact": "Paquet `packages/atelier-model`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Modèle canonique, réducteurs purs et commandes, partagés entre navigateur et serveur (R9). Les identités Étude / Variante / Révision sont à ajouter selon l'orientation DEC-03.",
+            "condition_decision_exacte": "DEC-01, DEC-02, DEC-03 (contrats physiques ouverts)",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C16",
+            "composant_exact": "Paquets `core-geometry` et `domain-model`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Géométrie et repères purs, et distinction exigence / hypothèse / recommandation (AGENTS.md).",
+            "condition_decision_exacte": "Aucune",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C18",
+            "composant_exact": "Persistance du modèle `apps/api/src/lib/atelier-modele.ts` et tables `atelier_*`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Écriture par différentiel, appelée seulement par le service de commandes et les imports contrôlés.",
+            "condition_decision_exacte": "DEC-01 et DEC-03 : correspondance avec le stockage Studio",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C19",
+            "composant_exact": "Versions, variantes, publications et verrous `routes/atelier-versions.ts`, `lib/atelier-versions.ts`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver",
+              "Correspondance explicite"
+            ],
+            "preuve_exacte_Claude": "Une variante actuelle est un **projet** bifurqué (`atelier_variants.project_id` / `parent_id`, [L499-L515](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/db/schema.ts#L499-L515)). Ce n'est pas la Variante Studio de DEC-03. Une correspondance explicite est requise, sans migration silencieuse.",
+            "condition_decision_exacte": "DEC-03, MIG-COEX-02",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C21",
+            "composant_exact": "File locale `apps/web/src/lib/local-store.ts` (Dexie `fadi-local` v4 : `lots`, `modelCache`, `keyValue`)",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Elle contient les commandes hors ligne en attente. MIG-COEX-04 interdit de les supprimer avant bascule.",
+            "condition_decision_exacte": "MIG-COEX-04, TEST-036",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C22",
+            "composant_exact": "Précache du service worker `apps/web/vite.config.ts` et `public/sw.js`",
+            "qualification_Claude_proposee_inchangee": [
+              "Compléter"
+            ],
+            "preuve_exacte_Claude": "OBS-10 : tous les morceaux du build sont précachés, y compris ceux chargés à la demande.",
+            "condition_decision_exacte": "DEC-07, lot B.3, TEST-016",
+            "decision": "Non adoptée ; question6250995231 existante"
+          }
+        ],
+        "preuve_manquante": "Matrice lecteurs/imports/exports anciensformats réels, décision transformation/rollback ; aucun autobump",
+        "usage": "Rattachement candidat, pas preuve export public du composant ; DEC18/A3 et revueA6 font autorité pour exports/libs."
+      },
+      {
+        "fonction_numero": 10,
+        "fonction_exacte": "Protéger navigation, actions/pending et changement compte",
+        "index_line": 38,
+        "index_exact": "| Protéger navigation, actions/pending et changement compte | UI guide ; commande/queue propriétaire fait autorité ; A4/A2/A5 | NAVTransition/auth, M21cycle, M17C-COMMAND ; NAV007/008 | Quitter ≠ sauver, fermerUI ≠ annuler serveur ; queueA jamais envoyée sousB ; contexte ancien non réadressé | Protocole durable de queue/annulation et compatibilitéSW ; pas garanti par seul dialogue |",
+        "contrats_candidats": [
+          "C-STUDIO-CONTEXT",
+          "C-COMMAND"
+        ],
+        "interface_publique_a_instruire": "UI transition/auth vers propriétairequeue/commande ; annulerUI≠annulerserveur, pas mutationcontexte pending.",
+        "groupes_reemployes": [
+          {
+            "id": "C01",
+            "composant_exact": "Bus client `apps/web/src/modules/atelier/bus/` (`atelier-client.ts`, `etat-projet.ts`)",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Chemin client unique vers le service de commandes : file locale, rejeu (`packages/atelier-model/src/sync.ts`). Studio doit passer par le même bus (RISK-07, R9).",
+            "condition_decision_exacte": "ARC-07 et ARC-DATA-05 : enveloppe enrichie du contexte étude / variante (DEC-03)",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C10",
+            "composant_exact": "État d'interface, navigation, raccourcis, actions (`nouveau/etat-ui.ts`, `navigation*.ts`, `raccourcis.ts`, `actions.ts`, `messages.ts`)",
+            "qualification_Claude_proposee_inchangee": [
+              "Isoler"
+            ],
+            "preuve_exacte_Claude": "Propres à l'ergonomie de l'Atelier. La règle d'or de la Planche (icône, barre, raccourci) s'applique à ses outils.",
+            "condition_decision_exacte": "Le registre Studio (lot B) définit les siens",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C12",
+            "composant_exact": "Mode immersif `apps/web/src/lib/use-immersive.ts`",
+            "qualification_Claude_proposee_inchangee": [
+              "Isoler"
+            ],
+            "preuve_exacte_Claude": "REP-05 : drapeau global qui masque la barre latérale (NAV-008). La PR #142, ouverte, le transforme.",
+            "condition_decision_exacte": "Lecture de #142 si elle est fusionnée",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C21",
+            "composant_exact": "File locale `apps/web/src/lib/local-store.ts` (Dexie `fadi-local` v4 : `lots`, `modelCache`, `keyValue`)",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "Elle contient les commandes hors ligne en attente. MIG-COEX-04 interdit de les supprimer avant bascule.",
+            "condition_decision_exacte": "MIG-COEX-04, TEST-036",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C22",
+            "composant_exact": "Précache du service worker `apps/web/vite.config.ts` et `public/sw.js`",
+            "qualification_Claude_proposee_inchangee": [
+              "Compléter"
+            ],
+            "preuve_exacte_Claude": "OBS-10 : tous les morceaux du build sont précachés, y compris ceux chargés à la demande.",
+            "condition_decision_exacte": "DEC-07, lot B.3, TEST-016",
+            "decision": "Non adoptée ; question6250995231 existante"
+          }
+        ],
+        "preuve_manquante": "Protocole durable de queue/annulation et compatibilitéSW ; pas garanti par seul dialogue",
+        "usage": "Rattachement candidat, pas preuve export public du composant ; DEC18/A3 et revueA6 font autorité pour exports/libs."
+      },
+      {
+        "fonction_numero": 11,
+        "fonction_exacte": "Préparer contrats aval sans réaliser E/B",
+        "index_line": 39,
+        "index_exact": "| Préparer contrats aval sans réaliser E/B | Catalogue léger et C-PUBLICATION/IF009, pas nouveau modèle canonique ; A4/A1/A2 | M21, M24§2–8 | Registry métadonnées seul ; approbation/publication distinctes ; contenuexact référencé, pas hashclient faisant preuve | DEC04–07/14/16 pour lots concernés ; absence de ces fonctions dans I/A.1 ne vaut pas livraison du MVP |",
+        "contrats_candidats": [
+          "C-REGISTRY",
+          "C-PUBLICATION"
+        ],
+        "interface_publique_a_instruire": "Métadonnées Registry etréférences publicationexacte seulement ; servicesE/B complets horspremierlot.",
+        "groupes_reemployes": [
+          {
+            "id": "C07",
+            "composant_exact": "Génération documentaire `nouveau/documents/`",
+            "qualification_Claude_proposee_inchangee": [
+              "Compléter"
+            ],
+            "preuve_exacte_Claude": "OBS-08 : worker dédié avec repli sur le fil principal, modèle entier copié à chaque demande, aucune annulation.",
+            "condition_decision_exacte": "Lot D et lot E",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C09",
+            "composant_exact": "Palette `nouveau/outils.ts`",
+            "qualification_Claude_proposee_inchangee": [
+              "Corriger"
+            ],
+            "preuve_exacte_Claude": "OBS-11 : 111 entrées pour 110 identifiants. La collision `echelle` (lignes 84 et 120) masque la première entrée dans `OUTILS_PAR_ID`.",
+            "condition_decision_exacte": "Lot B (registre) ; correction de code à autoriser",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C11",
+            "composant_exact": "Revue de conception et Harmonie (`DesignReview.tsx`, `AtelierHarmonyPage.tsx`)",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver"
+            ],
+            "preuve_exacte_Claude": "AGENTS.md : Harmonie est intégrée aux étapes. Studio ne la duplique pas.",
+            "condition_decision_exacte": "Aucune",
+            "decision": "Non adoptée ; question6250995231 existante"
+          },
+          {
+            "id": "C19",
+            "composant_exact": "Versions, variantes, publications et verrous `routes/atelier-versions.ts`, `lib/atelier-versions.ts`",
+            "qualification_Claude_proposee_inchangee": [
+              "Conserver",
+              "Correspondance explicite"
+            ],
+            "preuve_exacte_Claude": "Une variante actuelle est un **projet** bifurqué (`atelier_variants.project_id` / `parent_id`, [L499-L515](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/db/schema.ts#L499-L515)). Ce n'est pas la Variante Studio de DEC-03. Une correspondance explicite est requise, sans migration silencieuse.",
+            "condition_decision_exacte": "DEC-03, MIG-COEX-02",
+            "decision": "Non adoptée ; question6250995231 existante"
+          }
+        ],
+        "preuve_manquante": "DEC04–07/14/16 pour lots concernés ; absence de ces fonctions dans I/A.1 ne vaut pas livraison du MVP",
+        "usage": "Rattachement candidat, pas preuve export public du composant ; DEC18/A3 et revueA6 font autorité pour exports/libs."
+      }
+    ],
+    "hors_selection_groupes_conserves": [
+      "C04",
+      "C05",
+      "C06",
+      "C14",
+      "C15",
+      "C20"
+    ]
+  },
+  "G3-01": {
+    "delta": "Frontières nécessaires I/A.1 vsinterfaces/horslot depuis18DEC+10choix, pas acteG3",
+    "decisions": [
+      {
+        "id": "DEC-01",
+        "question_exacte": "Modèle physique du dessin 2D autonome et son stockage.",
+        "preuve_source_exacte": "Schéma, création sans 3D, sauvegarde/reprise, migration.",
+        "source_paragraphs": [
+          1392,
+          1393,
+          1394
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "Avant donnée2D durableA.1 ; orientationautonomie déjàretenue, physique ouvert.",
+        "categorie": "Décision nécessaire avant effet durable/import",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      },
+      {
+        "id": "DEC-02",
+        "question_exacte": "Sémantique des associations et références topologiques 2D/3D.",
+        "preuve_source_exacte": "Identités, propagation, ambiguïtés, conflits et tests.",
+        "source_paragraphs": [
+          1395,
+          1396,
+          1397
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "Contrat association aval seulement ; démonstrationassociée horsI/A.1.",
+        "categorie": "Interface ou condition aval à préserver",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      },
+      {
+        "id": "DEC-03",
+        "question_exacte": "Définition Étude / Variante / Révision et migration des projets.",
+        "preuve_source_exacte": "Entités, isolation, historique, restauration.",
+        "source_paragraphs": [
+          1398,
+          1399,
+          1400
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "Avant identités/persistanceA.1 ; orientationmétierretenue, mappingancienfork ouvert.",
+        "categorie": "Décision nécessaire avant effet durable/import",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      },
+      {
+        "id": "DEC-04",
+        "question_exacte": "Profils standard, métier, personnels et partage d’équipe.",
+        "preuve_source_exacte": "UX, permissions, export/import, synchronisation.",
+        "source_paragraphs": [
+          1401,
+          1402,
+          1403
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "Métadonnées/profilminimum à délimiter ; Manager completB horspremierlot.",
+        "categorie": "Interface ou condition aval à préserver",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      },
+      {
+        "id": "DEC-05",
+        "question_exacte": "Support et gouvernance des manifests Registry.",
+        "preuve_source_exacte": "Validation au build, offline, compatibilité et confiance.",
+        "source_paragraphs": [
+          1404,
+          1405,
+          1406
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "Métadonnées Registry à versionner sansB complet.",
+        "categorie": "Interface ou condition aval à préserver",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      },
+      {
+        "id": "DEC-06",
+        "question_exacte": "API et limites du Tool Manager.",
+        "preuve_source_exacte": "Séquence activation/désactivation, événements, tests.",
+        "source_paragraphs": [
+          1407,
+          1408,
+          1409
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "Portée Manager future préservée ; pas chargeur intégré livré.",
+        "categorie": "Interface ou condition aval à préserver",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      },
+      {
+        "id": "DEC-07",
+        "question_exacte": "Granularité des chunks, préchargement et cache.",
+        "preuve_source_exacte": "Bundle analysis, première action, réseau et mémoire.",
+        "source_paragraphs": [
+          1410,
+          1411,
+          1412
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "Frontière route/chargement etpréservationnavigation à instruire avant exposerI.",
+        "categorie": "Interface ou condition aval à préserver",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      },
+      {
+        "id": "DEC-08",
+        "question_exacte": "Renderer 2D cible et seuil d’optimisation/bascule.",
+        "preuve_source_exacte": "Fidélité SVG/Canvas/GPU, GPU réel et accessibilité.",
+        "source_paragraphs": [
+          1413,
+          1414,
+          1415
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "Hors réalisation initiale I/A.1 : moteur3D/optimisation/avancé correspondant ; exigence conservée avant lot dépendant.",
+        "categorie": "Option/lot hors livraison initiale conservé",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      },
+      {
+        "id": "DEC-09",
+        "question_exacte": "Structure de l’index spatial et algorithme de snapping.",
+        "preuve_source_exacte": "Résultats exacts, densités, insertion/suppression et p95.",
+        "source_paragraphs": [
+          1416,
+          1417,
+          1418
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "Hors réalisation initiale I/A.1 : moteur3D/optimisation/avancé correspondant ; exigence conservée avant lot dépendant.",
+        "categorie": "Option/lot hors livraison initiale conservé",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      },
+      {
+        "id": "DEC-10",
+        "question_exacte": "Invalidation partielle de la scène 3D.",
+        "preuve_source_exacte": "Tables de picking, cas hôtes/dépendances, benchmarks.",
+        "source_paragraphs": [
+          1419,
+          1420,
+          1421
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "Hors réalisation initiale I/A.1 : moteur3D/optimisation/avancé correspondant ; exigence conservée avant lot dépendant.",
+        "categorie": "Option/lot hors livraison initiale conservé",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      },
+      {
+        "id": "DEC-11",
+        "question_exacte": "Gestion des workers, mémoire et OCCT.",
+        "preuve_source_exacte": "Crash, temps, instances, quotas, reprise.",
+        "source_paragraphs": [
+          1422,
+          1423,
+          1424
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "Hors réalisation initiale I/A.1 : moteur3D/optimisation/avancé correspondant ; exigence conservée avant lot dépendant.",
+        "categorie": "Option/lot hors livraison initiale conservé",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      },
+      {
+        "id": "DEC-12",
+        "question_exacte": "Historique et undo/redo entre sous-modèles.",
+        "preuve_source_exacte": "Deltas, commandes, révisions et conflits réels.",
+        "source_paragraphs": [
+          1425,
+          1426,
+          1427
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "Avant commande/historique durableA.1 ; coupe/undo intermodèles à décider.",
+        "categorie": "Décision nécessaire avant effet durable/import",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      },
+      {
+        "id": "DEC-13",
+        "question_exacte": "Appareils, profils de charge et budgets de performance.",
+        "preuve_source_exacte": "Jeux S1–S7 et limites d’acceptation validées.",
+        "source_paragraphs": [
+          1428,
+          1429,
+          1430
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "Aucun budget inventé ; chiffrage doit annoncerappareil/charge/mesure, pas seuil universel.",
+        "categorie": "Interface ou condition aval à préserver",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      },
+      {
+        "id": "DEC-14",
+        "question_exacte": "Profil et stratégie des outils utilisables hors ligne.",
+        "preuve_source_exacte": "Disponibilité, quota/cache, contrat versionné, reconnection.",
+        "source_paragraphs": [
+          1431,
+          1432,
+          1433
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "États pending/horsligne ducontrat ; politiqueécrivains/coexistence à décider avant reprise.",
+        "categorie": "Interface ou condition aval à préserver",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      },
+      {
+        "id": "DEC-15",
+        "question_exacte": "Extensions et adaptateur MCP, si retenus.",
+        "preuve_source_exacte": "Risques, consentement, droits, schémas et confirmations.",
+        "source_paragraphs": [
+          1434,
+          1435,
+          1436
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "Hors réalisation initiale I/A.1 : moteur3D/optimisation/avancé correspondant ; exigence conservée avant lot dépendant.",
+        "categorie": "Option/lot hors livraison initiale conservé",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      },
+      {
+        "id": "DEC-16",
+        "question_exacte": "Manifeste de publication multi-sources.",
+        "preuve_source_exacte": "Empreintes, versions coordonnées, statut des approbations.",
+        "source_paragraphs": [
+          1437,
+          1438,
+          1439
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "Manifeste eninterface seulement ; publication complèteE horsI/A.1.",
+        "categorie": "Interface ou condition aval à préserver",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      },
+      {
+        "id": "DEC-17",
+        "question_exacte": "Qualité adaptative et concessions graphiques admises.",
+        "preuve_source_exacte": "Comparaison visuelle et non-régression géométrique.",
+        "source_paragraphs": [
+          1440,
+          1441,
+          1442
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "Hors réalisation initiale I/A.1 : moteur3D/optimisation/avancé correspondant ; exigence conservée avant lot dépendant.",
+        "categorie": "Option/lot hors livraison initiale conservé",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      },
+      {
+        "id": "DEC-18",
+        "question_exacte": "Réutilisation effective des moteurs et services Fadi.",
+        "preuve_source_exacte": "Audit sur commit de livraison, tests, coûts, licences.",
+        "source_paragraphs": [
+          1443,
+          1444,
+          1445
+        ],
+        "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "pertinence_proposee": "Avant import/adaptation moteur exécuté ; inventaires statiques ne prouvent pas réutilisationruntime.",
+        "categorie": "Décision nécessaire avant effet durable/import",
+        "statut": "Décisionphysique nonréputée adoptée ; cadragesD01/02/07 etorientationsDEC01/03 acquisnonreposés"
+      }
+    ],
+    "dix_choix_reemployes": [
+      {
+        "id": "R3-COMP-01",
+        "choix_exact": "Noms et compatibilité des versions",
+        "frontiere_exacte": "Avant modèle durable A.1/A.2 ; navigation papier I peut continuer.",
+        "reste_exact": "Ratifier représentation/valeurs physiques des versions initiales et politique lecteur pour versions inconnues/plus récentes, sans choisir ici des numéros.",
+        "DEC_rapprochement_propose": [
+          "DEC-01",
+          "DEC-03"
+        ],
+        "fonction_cibles_proposees": [
+          5,
+          9
+        ],
+        "preuve_exacte_existante": [
+          {
+            "source": "G1v2",
+            "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+            "line": 34,
+            "exact_line": "Dans les exemples v2 uniquement, `contentVersion` désigne la version illustrative du **contenu canonique** cité par une révision ; `documentVersion` reste la version de **pièce livrée** dans le manifeste M24/IF-009. `revisionId` est l'état historique immuable de la variante, `schemaVersion` le format du contenu et `contractVersion` le contrat de commande. Ces notions ne sont pas interchangeables. Le champ illustratif `contentVersion` ne décide ni nouveau format applicatif, ni stockage, ni allocation d'ID. Il évite seulement l'ambiguïté du premier exemple. Les fichiers initiaux restent historiques ; le v2 est actif pour cette clarification."
+          },
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 11,
+            "exact_line": "`schemaVersion` qualifie chaque document persistant ; `contractVersion` l'opération, `revisionId` un état immuable, `baseRevisionId` la précondition d'écriture, `documentVersion` une version de pièce. Ces cinq notions ne sont pas interchangeables. Une révision inclut contexte, parent(s), transaction et références de contenus versionnés avec empreintes. Un fork produit nouveaux IDs propriétaires et provenance vers la source ; aucune propagation implicite. Un historique consulté est immuable ; modifier signifie nouvelle commande sur tête autorisée ou fork explicite, jamais mutation d'une révision existante."
+          }
+        ],
+        "adoption": false
+      },
+      {
+        "id": "R3-COMP-02",
+        "choix_exact": "Commandes Atelier /1,/2,/3 versus enveloppe Studio",
+        "frontiere_exacte": "Avant premier écrivain Studio A.1 ; pas nécessaire pour affichage de navigation sans effet.",
+        "reste_exact": "Fixer matrice opération/version et contrat d’adaptation du contexte Studio/baseRevisionId vers services existants ; ne pas assimiler routeAtelier baseRevision numérique à identités Studio.",
+        "DEC_rapprochement_propose": [
+          "DEC-03",
+          "DEC-12"
+        ],
+        "fonction_cibles_proposees": [
+          6
+        ],
+        "preuve_exacte_existante": [
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 52,
+            "exact_line": "| commandes/base.ts | CONTRAT_COMMANDES atelier-commands/3 ; CONTRATS_ACCEPTES /1 /2 /3 | Garder noms/champs existants ; acceptation de chaîne ne prouve pas chaque opération ancienne/nouvelle compatible |"
+          },
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 53,
+            "exact_line": "| routes/atelier-commands.ts | enveloppe requestId, baseRevision numérique >=0, contract enum accepté, label, commands ; 1 MiB, max500 commandes, cibles max5000 | Ne pas envoyer scope/baseRevisionId Studio à cette route comme si compatible ; adaptateur explicite requis |"
+          },
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 31,
+            "exact_line": "L'enveloppe illustrative IF-006 est réutilisée telle quelle : requestId/toolId/contractVersion/actorId/scope(projectId,studyId,variantId,baseRevisionId)/targetIds/operation/parameters/mode. Les variantes de représentation physique restent à ratifier ; aucune route nouvelle annoncée. Les métadonnées writerAuthority, expectedObjectVersions et relationVersions des exemples se trouvent dans une section documentaire `preconditions`, pas ajoutées en prétendant modifier IF-006. Leur emplacement physique est ouvert."
+          }
+        ],
+        "adoption": false
+      },
+      {
+        "id": "R3-COMP-03",
+        "choix_exact": "Archives et propriétés inconnues",
+        "frontiere_exacte": "Avant sauvegarde/réouverture durable, pas blocage des études de navigation I.",
+        "reste_exact": "Décider conservation des champs inconnus ou rapport de pertes/refus selon sens lecture/import/export, et lecteurs Studio initiaux.",
+        "DEC_rapprochement_propose": [
+          "DEC-01",
+          "DEC-03"
+        ],
+        "fonction_cibles_proposees": [
+          7,
+          8,
+          9
+        ],
+        "preuve_exacte_existante": [
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 56,
+            "exact_line": "| archive.ts verifierModele | accepte uniquement version numérique1, reconstruit via validateurs ; refuse version2 | Pas de lecteurs modèle v2/v3 ni conservation universelle des champs inconnus démontrés ; migration future avec rapport des pertes |"
+          },
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 60,
+            "exact_line": "| import/natif.ts | import design.v13 à sens unique vers modèle1, rapport transformations/restes | design.v13 n'est ni commandes/3 ni archive Studio ; ne prouve pas round-trip ni IFC paramétrique complet |"
+          }
+        ],
+        "adoption": false
+      },
+      {
+        "id": "R3-COMP-04",
+        "choix_exact": "Lecture des publications héritées",
+        "frontiere_exacte": "Avant références/publication du premier parcours terminable ; lecture/navigation seule peut rester explicitement indisponible.",
+        "reste_exact": "Ratifier politique de lecture contrat absent,/1,/2,/3 + version modèle supérieure ; conserver refus actuels tant qu’un élargissement et ses oracles ne sont pas approuvés.",
+        "DEC_rapprochement_propose": [
+          "DEC-16"
+        ],
+        "fonction_cibles_proposees": [
+          7,
+          11
+        ],
+        "preuve_exacte_existante": [
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 59,
+            "exact_line": "| lib/atelier-refexterne.ts lisible | contrat publication absent ou exactement CONTRAT_COMMANDES ; version modèle non supérieure à actuelle | Plus restrictif que CONTRATS_ACCEPTES : publication sous /2 peut être refusée bien que commande /2 acceptée. Ne pas élargir sans oracle |"
+          },
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 45,
+            "exact_line": "IF-009 gouverne le manifeste de publication : identifiant, intention/usage, date/auteur, approbation, documents ordonnés documentId/version/empreinte, modèles/règles, contrôles, observations bloquantes résolues ou dérogées et décision sur cet ensemble exact. Les exemples utilisent des empreintes illustratives explicitement non calculées ; pas de document publiable réel. Changer un document, règle ou observation après approbation exige nouveau manifeste et nouvelle validation adaptée ; publication antérieure immuable. Les blobs héritent des droits de la source et de leur politique de publication ; un hash ne donne pas un droit public. Format de sérialisation canonique pour hash, signature éventuelle, URI des blobs, manifeste de restauration et vérification à ratifier. Aucune seconde base métier ou stockage GPU comme source autoritaire."
+          },
+          {
+            "source": "G1v2",
+            "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+            "line": 58,
+            "exact_line": "4. Réouverturehistorique : résoudre publication/révision exactes, revalider droits et parenté, vérifier pièces/empreintes/lecteurs compatibles, puis reconstruire les projections. Source manquante/inconnue/divergente → état explicite/récupération, jamais substitutionlatest."
+          }
+        ],
+        "adoption": false
+      },
+      {
+        "id": "R3-COMP-05",
+        "choix_exact": "IDs physiques, parenté et coexistence des anciens forks",
+        "frontiere_exacte": "Avant persistance ou adaptation de données héritées ; première navigation sans données inventées reste préparatoire.",
+        "reste_exact": "Choisir allocation/encodage/longueur/casse des IDs et mapping explicite forkprojet→étude/variante/provenance, avec refus collision/parentmixte ; pas UUID/SQL imposé ici.",
+        "DEC_rapprochement_propose": [
+          "DEC-03"
+        ],
+        "fonction_cibles_proposees": [
+          2,
+          3,
+          4
+        ],
+        "preuve_exacte_existante": [
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 9,
+            "exact_line": "Projet → Étude → Variante → Révision. Le projet transverse garde son propriétaire Fadi ; l'étude rattache sources, programme de référence et hypothèses, sans réécrire ces données sources. Créer une étude sans variante est permis ; aucune géométrie persistée n'est éditée sans variante propriétaire. Une variante appartient à exactement une étude, une étude à exactement un projet. Une révision appartient à exactement une variante. Les références croisées sont autorisées et vérifiées serveur ; une combinaison d'identifiants existants mais provenant de parents différents est refusée. IDs opaques stables non réutilisés, sensibilité à la casse conservée ; longueur/encodage transport à ratifier, pas normalisation des anciens IDs Atelier (qui acceptent notamment des noms de calques)."
+          },
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 58,
+            "exact_line": "| lib/atelier-versions.ts | snapshots nommés et publications, cataloguesActuels enregistre CONTRAT_COMMANDES et version modèle ; variantes = projets bifurqués | Réutiliser algorithmes d'inverses/diff et pièces immuables ; pas assimilables à étude/variante Studio sans mapping |"
+          },
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 25,
+            "exact_line": "Atelier et Studio peuvent partager un moteur via adaptateur public, mais une même donnée partagée garde un écrivain unique. Tout mode de coexistence « Studio écrit l'ancien Atelier et sa nouvelle copie » est refusé. La forme physique de l'adaptateur et le choix de réutiliser un document existant demeurent DEC-18/01 ; le champ candidat writerAuthority n'est pas une colonne existante. Une transition d'autorité serait une opération explicite, atomique, auditée, avec refus si commandes hors ligne en attente et restauration prouvée ; aucune migration proposée ici n'est autorisée."
+          },
+          {
+            "source": "G1v2",
+            "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+            "line": 46,
+            "exact_line": "| Fork | Nouvelles identités propriétaires et provenance verssource selon contrat ; paspropagation implicite d'une copie. | Mapping explicite des anciennes variantes-projets ; pas renommer/copier/migrer silencieusement les données existantes |"
+          },
+          {
+            "source": "G1v2",
+            "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+            "line": 48,
+            "exact_line": "| WriterAuthority | Un écrivain unique pour chaque donnée canonique2D/3Dlibre/associée ; vues/scènes ne sont pas écrivains. | Deux planches ne fabriquent pas deux copiesautoritaires du même mur ; migration d'autorité distincte et non autorisée ici |"
+          }
+        ],
+        "adoption": false
+      },
+      {
+        "id": "R3-COMP-06",
+        "choix_exact": "Déduplication et expiration des résultats durables",
+        "frontiere_exacte": "Avant writer durable A.1 et production ; pas précondition de simple lecture I.",
+        "reste_exact": "Ratifier clé/portée authentifiée, canonicalisation du contenu de déduplication, durée du résultat et comportement aprèsexpiration ; aucun changement rétention décidé ici.",
+        "DEC_rapprochement_propose": [
+          "DEC-12"
+        ],
+        "fonction_cibles_proposees": [
+          6,
+          8
+        ],
+        "preuve_exacte_existante": [
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 35,
+            "exact_line": "Proposition de déduplication : clé serveur de portée tenant/projet/étude/variante + identité authentifiée + requestId, conservant empreinte sémantique du message et résultat durable. Même clé et contenu identique retourne le même résultat sans nouvel effet, même si la tête a avancé ; même clé et autre contenu refuse REQUEST_ID_REUSED. La durée de rétention et le traitement après expiration restent à décider avant production, sans changer silencieusement la rétention des sauvegardes. Une nouvelle commande reçoit nouvel ID. Preview ne confirme pas de sauvegarde ; passage preview→commit n'est pas un replay de contenu différent sous même clé."
+          },
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 39,
+            "exact_line": "Codes d'erreurs **candidats**, pas codes API actuels : UNAUTHENTICATED, INVALID_IDENTIFIER, FORBIDDEN_SCOPE, CONTEXT_PARENT_MISMATCH, SCHEMA_UNSUPPORTED, CONTRACT_UNSUPPORTED, REVISION_CONFLICT, OBJECT_VERSION_CONFLICT, WRITER_MISMATCH, REQUEST_ID_REUSED, AMBIGUOUS_REFERENCE, IMMUTABLE_REVISION, INPUT_LIMIT, DURABILITY_FAILED, PUBLICATION_INCOMPLETE, APPROVAL_MISMATCH. Chaque refus produit zéro effet canonique et trace de refus sans secret. Ne pas révéler l'existence d'une ressource interdite ; mapping HTTP/masquage 403/404 à décider. Timeout réseau après commit peut donner résultat indéterminé côté navigateur : réinterroger par requestId, jamais annoncer l'annulation du commit sans preuve."
+          }
+        ],
+        "adoption": false
+      },
+      {
+        "id": "R3-COMP-07",
+        "choix_exact": "Snapshot cohérent et frontière de commit/version",
+        "frontiere_exacte": "Avant sauvegarde durable et publication A.1 ; ne bloque pas schémas/documentation I.",
+        "reste_exact": "Choisir mécanisme transaction/isolement ou ensembles de versions pour lire et engager canonique/révision/journal/outbox de même coupe ; format physique ouvert.",
+        "DEC_rapprochement_propose": [
+          "DEC-03",
+          "DEC-12"
+        ],
+        "fonction_cibles_proposees": [
+          6,
+          7,
+          8
+        ],
+        "preuve_exacte_existante": [
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 37,
+            "exact_line": "Commit : engagement atomique de toutes données canoniques touchées, révision de sortie, journal IF-011 et événement/outbox durable. La notification seule ne confirme rien. Succès expose résultat/revision/event/transaction/effets/portées invalidées ; caches restent reconstruisibles. Job IF-003 renvoie sa révision source ; résultat périmé, annulé ou sans droit renouvelé ne s'engage pas automatiquement. Undo/redo est une nouvelle opération contrôlée sur tête courante, pas déplacement destructif d'un pointeur historique. Un rebase incompatible refuse et présente résolution/recalcul, pas écrasement."
+          },
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 43,
+            "exact_line": "Candidat snapshot : identifiant/version de schéma/contexte complet/révision/parents/transaction/auteur et heure serveur ; liste des trois autorités présentes et références immuables de leurs documents, versions, empreintes, unités/repères ; sources et règles versionnées ; associations et leur état ; journal et observations référencés. Une branche A peut contenir seulement le dessin2D ; B seulement le modèle3D ; C l'autorité associée et ses projections. Aucun snapshot n'exige un sous-modèle absent pour simuler la conformité. Manifeste et contenus doivent constituer une même coupe logique, protégée contre lectures entrelacées : le défaut potentiel GET Atelier décrit dans CI154-SNAPSHOT-CONTRAT n'est pas une recette de snapshot cohérent. Choix transaction/isolement/version-set à ratifier et éprouver."
+          },
+          {
+            "source": "G1v2",
+            "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+            "line": 56,
+            "exact_line": "2. Le dossier candidat est une **coupe logique cohérente** des références versionnées/empreintées. Pièces, règles, contrôles, observations et sources citées doivent correspondre à l'ensemble effectivement examiné ; une série de GET ne prouve pas cette cohérence."
+          }
+        ],
+        "adoption": false
+      },
+      {
+        "id": "R3-COMP-08",
+        "choix_exact": "Canonicalisation et versions de contenu/publication",
+        "frontiere_exacte": "Avant identité de contenu durable et publication ; pas bloquant pour maquettes/navigation sans persistance.",
+        "reste_exact": "Ratifier octets canoniques, encodage/données nonfinies/ordre des pièces, version du procédé et traitement des anciens lecteurs ; signature/URI seulement si retenues.",
+        "DEC_rapprochement_propose": [
+          "DEC-01",
+          "DEC-16"
+        ],
+        "fonction_cibles_proposees": [
+          5,
+          7,
+          9,
+          11
+        ],
+        "preuve_exacte_existante": [
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 45,
+            "exact_line": "IF-009 gouverne le manifeste de publication : identifiant, intention/usage, date/auteur, approbation, documents ordonnés documentId/version/empreinte, modèles/règles, contrôles, observations bloquantes résolues ou dérogées et décision sur cet ensemble exact. Les exemples utilisent des empreintes illustratives explicitement non calculées ; pas de document publiable réel. Changer un document, règle ou observation après approbation exige nouveau manifeste et nouvelle validation adaptée ; publication antérieure immuable. Les blobs héritent des droits de la source et de leur politique de publication ; un hash ne donne pas un droit public. Format de sérialisation canonique pour hash, signature éventuelle, URI des blobs, manifeste de restauration et vérification à ratifier. Aucune seconde base métier ou stockage GPU comme source autoritaire."
+          },
+          {
+            "source": "G1v2",
+            "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+            "line": 60,
+            "exact_line": "6. La méthode de hash des exemplesJSON M24 ne décide pas la canonicalisation de production ; DEC16 reste ouverte. IFC en proxies/représentations ne prouve pas sourcecanonique paramétrique ni certification ; matrice par sens/version/entité et pertes reste requise."
+          }
+        ],
+        "adoption": false
+      },
+      {
+        "id": "R3-COMP-09",
+        "choix_exact": "Loader de l’export public polygonArea",
+        "frontiere_exacte": "Avant tout import exécuté G2 ; statique viable n’est pas une autorisation ni preuve de runtime.",
+        "reste_exact": "Éprouver sous autorisation le runner existant exact, résolution workspace/TS ESM exports src/index.ts et spécificateurs .js→.ts, hooks et confinement ; décider compatible ou souspointbloqué.",
+        "DEC_rapprochement_propose": [
+          "DEC-18"
+        ],
+        "fonction_cibles_proposees": [
+          5
+        ],
+        "preuve_exacte_existante": [
+          {
+            "source": "G2",
+            "path": "/workspace/work/resume496/agents/A2/G2-GRAPHE-IMPORT-PUBLIC-A2.json",
+            "line": 154,
+            "exact_line": "    \"loader_condition\": \"Le futur runner autorisé doit déjà gérer source TypeScript ESM et résolution des spécificateurs relatifs .js vers sources .ts. moduleResolution Bundler est un choix de résolution de compilation, pas un chargeur runtime. Aucun import exécuté ici ; commande/loader futur à faire relire A5/A6. Ni compatibilité plain node ni disponibilité de dist/index.js déduites.\""
+          },
+          {
+            "source": "G2",
+            "path": "/workspace/work/resume496/agents/A2/G2-GRAPHE-IMPORT-PUBLIC-A2.json",
+            "line": 157,
+            "exact_line": "    \"runtime_nodes\": ["
+          },
+          {
+            "source": "G2",
+            "path": "/workspace/work/resume496/agents/A2/G2-GRAPHE-IMPORT-PUBLIC-A2.json",
+            "line": 249,
+            "exact_line": "    \"evaluation_order_for_unbundled_esm\": \"Dépendances évaluées avant entrée : geometry puis parcel-geometry puis site-zoning puis index selon ordre de réexportations, chaque module une fois par instance ESM. Pas une observation runtime.\","
+          }
+        ],
+        "adoption": false
+      },
+      {
+        "id": "R3-COMP-10",
+        "choix_exact": "Compatibilité des clients/offline et transition de versions",
+        "frontiere_exacte": "Avant transition ou coexistence d’écrivains ; I sanswriter peut être étudié indépendamment.",
+        "reste_exact": "Fixer capacitédeclaredclient/version supportée, refus ou miseenrésolution des anciennes commandes offline et procédure de reprise avant changement d’autorité.",
+        "DEC_rapprochement_propose": [
+          "DEC-07",
+          "DEC-14"
+        ],
+        "fonction_cibles_proposees": [
+          8,
+          9,
+          10
+        ],
+        "preuve_exacte_existante": [
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 25,
+            "exact_line": "Atelier et Studio peuvent partager un moteur via adaptateur public, mais une même donnée partagée garde un écrivain unique. Tout mode de coexistence « Studio écrit l'ancien Atelier et sa nouvelle copie » est refusé. La forme physique de l'adaptateur et le choix de réutiliser un document existant demeurent DEC-18/01 ; le champ candidat writerAuthority n'est pas une colonne existante. Une transition d'autorité serait une opération explicite, atomique, auditée, avec refus si commandes hors ligne en attente et restauration prouvée ; aucune migration proposée ici n'est autorisée."
+          },
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 62,
+            "exact_line": "Acceptation future M05 : matrice distincte **commandes /1,/2,/3**, modèle1/archive valide-invalide, publications contrat absent,/1,/2,/3 et modèle supérieur ; vieux journals/profils/queue offline ; undo/redo ; mêmes requestId ; données inconnues/conservation ou rapport de pertes ; comparaison modèle/journal/outbox avant-après refus. Corpus synthétique et versionné, tests purs puis DB3 distincte pour intégration. Aucun auto-bump, renommage de constante, migration ou conversion d'archives par ce document."
+          },
+          {
+            "source": "M17",
+            "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+            "line": 37,
+            "exact_line": "Commit : engagement atomique de toutes données canoniques touchées, révision de sortie, journal IF-011 et événement/outbox durable. La notification seule ne confirme rien. Succès expose résultat/revision/event/transaction/effets/portées invalidées ; caches restent reconstruisibles. Job IF-003 renvoie sa révision source ; résultat périmé, annulé ou sans droit renouvelé ne s'engage pas automatiquement. Undo/redo est une nouvelle opération contrôlée sur tête courante, pas déplacement destructif d'un pointeur historique. Un rebase incompatible refuse et présente résolution/recalcul, pas écrasement."
+          }
+        ],
+        "adoption": false
+      }
+    ]
+  },
+  "G3-03": {
+    "delta": "Rattachement desestimationscompétentes manquantes par travée de travail ; pas coûtinventé",
+    "demandes_structurees": [
+      {
+        "sousensemble": "I navigation/contexte",
+        "estimateur_competent_role": "A4+A2",
+        "preconditions_estimation": "Routes/erreurs/focus/permissions décidés, composantspublicsC02/08/10/12",
+        "estimation_a_recevoir": "Charge intégrationnavigationFR/EN/accessibilité etnombreétats/recettes à couvrir",
+        "format_requis": "Hypothèses/périmètre/fichierspossédés/dépendances, chargeplage+unité, incertitude, disponibilitéhumaineconfirmée, date/version etestimateur effectif.",
+        "valeur": "Inconnue ; aucun chiffre ni disponibilitéinventé",
+        "source": "IndexG1 +10choix +LOT-I/X/A.1 déjàpréparés",
+        "statut": "Demande structurée préparée, estimation ni obtenue ni approuvée"
+      },
+      {
+        "sousensemble": "A.1identités/lecteurs",
+        "estimateur_competent_role": "A2+A3",
+        "preconditions_estimation": "DEC03 etchoixCOMP01/03/05/07/08 retenus",
+        "estimation_a_recevoir": "Effort modèle/lecteurs/adaptateurs etincertitudecompatanciensforks",
+        "format_requis": "Hypothèses/périmètre/fichierspossédés/dépendances, chargeplage+unité, incertitude, disponibilitéhumaineconfirmée, date/version etestimateur effectif.",
+        "valeur": "Inconnue ; aucun chiffre ni disponibilitéinventé",
+        "source": "IndexG1 +10choix +LOT-I/X/A.1 déjàpréparés",
+        "statut": "Demande structurée préparée, estimation ni obtenue ni approuvée"
+      },
+      {
+        "sousensemble": "A.1commande/persistance",
+        "estimateur_competent_role": "A2+A3+A6",
+        "preconditions_estimation": "COMP02/06/07/10 etwriter/transact/queue décidés",
+        "estimation_a_recevoir": "Effort commande/déduplication/reprise/rollback, coûtsrétention etstockage à mesurer",
+        "format_requis": "Hypothèses/périmètre/fichierspossédés/dépendances, chargeplage+unité, incertitude, disponibilitéhumaineconfirmée, date/version etestimateur effectif.",
+        "valeur": "Inconnue ; aucun chiffre ni disponibilitéinventé",
+        "source": "IndexG1 +10choix +LOT-I/X/A.1 déjàpréparés",
+        "statut": "Demande structurée préparée, estimation ni obtenue ni approuvée"
+      },
+      {
+        "sousensemble": "Document2D canonique minimal",
+        "estimateur_competent_role": "A2+A3",
+        "preconditions_estimation": "DEC01 etDEC18, géométrieshorslot explicitement délimitées",
+        "estimation_a_recevoir": "Effort canonique/primitives/validation/réouverture sansréaliseréditeurA.2complet",
+        "format_requis": "Hypothèses/périmètre/fichierspossédés/dépendances, chargeplage+unité, incertitude, disponibilitéhumaineconfirmée, date/version etestimateur effectif.",
+        "valeur": "Inconnue ; aucun chiffre ni disponibilitéinventé",
+        "source": "IndexG1 +10choix +LOT-I/X/A.1 déjàpréparés",
+        "statut": "Demande structurée préparée, estimation ni obtenue ni approuvée"
+      },
+      {
+        "sousensemble": "Xpreuves/recettes",
+        "estimateur_competent_role": "A5",
+        "preconditions_estimation": "53exigences sélectionnées/27TESTcandidats, corpuspartiel etcritèresdécidés",
+        "estimation_a_recevoir": "Charge corpus/oracles/négatifs/nonrégression etpreuveSHAexacte",
+        "format_requis": "Hypothèses/périmètre/fichierspossédés/dépendances, chargeplage+unité, incertitude, disponibilitéhumaineconfirmée, date/version etestimateur effectif.",
+        "valeur": "Inconnue ; aucun chiffre ni disponibilitéinventé",
+        "source": "IndexG1 +10choix +LOT-I/X/A.1 déjàpréparés",
+        "statut": "Demande structurée préparée, estimation ni obtenue ni approuvée"
+      },
+      {
+        "sousensemble": "Exploitation/compatretour",
+        "estimateur_competent_role": "A6+A2",
+        "preconditions_estimation": "COMP03/05/10 etnouvellesécritures prisesencompte",
+        "estimation_a_recevoir": "Coûtsprotocolesbackup/restore/migration simulée etpreuves sansdonnéesréelles",
+        "format_requis": "Hypothèses/périmètre/fichierspossédés/dépendances, chargeplage+unité, incertitude, disponibilitéhumaineconfirmée, date/version etestimateur effectif.",
+        "valeur": "Inconnue ; aucun chiffre ni disponibilitéinventé",
+        "source": "IndexG1 +10choix +LOT-I/X/A.1 déjàpréparés",
+        "statut": "Demande structurée préparée, estimation ni obtenue ni approuvée"
+      }
+    ]
+  },
+  "ADR-05": {
+    "delta": "Prioritésqualitatives proposées au pilote ; dixrisquesRTet7NAVconservés sansnouvelleID",
+    "propositions": [
+      {
+        "id": "RISK-01",
+        "source_exacte": {
+          "id": "RISK-01",
+          "risque": "Double autorité 2D/3D",
+          "gravite_initiale": "Critique",
+          "mesure": "Protocole d’associations, objets canoniques, tests 001–010."
+        },
+        "priorite_qualitative_proposee": "Priorité pilote immédiate I/A.1 proposée",
+        "motif": "Isolationcontexte/droits, unwriter, identitéhistorique etnavigationautonome conditionnentpremierI/A.1.",
+        "probabilite": "Inconnue, nonchiffrée",
+        "decision": "Proposition à A0/A1/A5 etautorité ; nonconfirmée",
+        "preuve_a_obtenir": "Revuecontrat puis oracleciblé sousbuild/corpus/accord, pas présentefiche de risque seule."
+      },
+      {
+        "id": "RISK-02",
+        "source_exacte": {
+          "id": "RISK-02",
+          "risque": "Snapping différent après indexation",
+          "gravite_initiale": "Critique",
+          "mesure": "Oracle de géométrie + tests densité et ambiguïtés."
+        },
+        "priorite_qualitative_proposee": "Avant charge/outil/format concerné proposé",
+        "motif": "Risque conservé, souslot technique horspremiereffet ; pas suppression ni acceptationrésiduelle.",
+        "probabilite": "Inconnue, nonchiffrée",
+        "decision": "Proposition à A0/A1/A5 etautorité ; nonconfirmée",
+        "preuve_a_obtenir": "Revuecontrat puis oracleciblé sousbuild/corpus/accord, pas présentefiche de risque seule."
+      },
+      {
+        "id": "RISK-03",
+        "source_exacte": {
+          "id": "RISK-03",
+          "risque": "Commande rejouée ou conflit perdu",
+          "gravite_initiale": "Critique",
+          "mesure": "Idempotence, transaction et E2E concurrent."
+        },
+        "priorite_qualitative_proposee": "Priorité pilote immédiate I/A.1 proposée",
+        "motif": "Isolationcontexte/droits, unwriter, identitéhistorique etnavigationautonome conditionnentpremierI/A.1.",
+        "probabilite": "Inconnue, nonchiffrée",
+        "decision": "Proposition à A0/A1/A5 etautorité ; nonconfirmée",
+        "preuve_a_obtenir": "Revuecontrat puis oracleciblé sousbuild/corpus/accord, pas présentefiche de risque seule."
+      },
+      {
+        "id": "RISK-04",
+        "source_exacte": {
+          "id": "RISK-04",
+          "risque": "Publication sur mauvais contenu",
+          "gravite_initiale": "Critique",
+          "mesure": "Manifeste immuable, empreintes, garde d’approbation."
+        },
+        "priorite_qualitative_proposee": "Avant publication E proposé",
+        "motif": "Approbationetpublication contenuexact conditionnentterminabilité, pasnavigationpapier.",
+        "probabilite": "Inconnue, nonchiffrée",
+        "decision": "Proposition à A0/A1/A5 etautorité ; nonconfirmée",
+        "preuve_a_obtenir": "Revuecontrat puis oracleciblé sousbuild/corpus/accord, pas présentefiche de risque seule."
+      },
+      {
+        "id": "RISK-05",
+        "source_exacte": {
+          "id": "RISK-05",
+          "risque": "Profil personnalisable mais tous moteurs chargés",
+          "gravite_initiale": "Élevée",
+          "mesure": "Contrôle bundles/service worker et mesure cache froid."
+        },
+        "priorite_qualitative_proposee": "Avant charge/outil/format concerné proposé",
+        "motif": "Risque conservé, souslot technique horspremiereffet ; pas suppression ni acceptationrésiduelle.",
+        "probabilite": "Inconnue, nonchiffrée",
+        "decision": "Proposition à A0/A1/A5 etautorité ; nonconfirmée",
+        "preuve_a_obtenir": "Revuecontrat puis oracleciblé sousbuild/corpus/accord, pas présentefiche de risque seule."
+      },
+      {
+        "id": "RISK-06",
+        "source_exacte": {
+          "id": "RISK-06",
+          "risque": "Memory leak OCCT/Three",
+          "gravite_initiale": "Élevée",
+          "mesure": "Bench fermeture/réouverture + limites/concurrence."
+        },
+        "priorite_qualitative_proposee": "Avant charge/outil/format concerné proposé",
+        "motif": "Risque conservé, souslot technique horspremiereffet ; pas suppression ni acceptationrésiduelle.",
+        "probabilite": "Inconnue, nonchiffrée",
+        "decision": "Proposition à A0/A1/A5 etautorité ; nonconfirmée",
+        "preuve_a_obtenir": "Revuecontrat puis oracleciblé sousbuild/corpus/accord, pas présentefiche de risque seule."
+      },
+      {
+        "id": "RISK-07",
+        "source_exacte": {
+          "id": "RISK-07",
+          "risque": "Extension/MCP contournant les droits",
+          "gravite_initiale": "Critique",
+          "mesure": "Même bus de commandes et validation serveur."
+        },
+        "priorite_qualitative_proposee": "Avant charge/outil/format concerné proposé",
+        "motif": "Risque conservé, souslot technique horspremiereffet ; pas suppression ni acceptationrésiduelle.",
+        "probabilite": "Inconnue, nonchiffrée",
+        "decision": "Proposition à A0/A1/A5 etautorité ; nonconfirmée",
+        "preuve_a_obtenir": "Revuecontrat puis oracleciblé sousbuild/corpus/accord, pas présentefiche de risque seule."
+      },
+      {
+        "id": "RISK-08",
+        "source_exacte": {
+          "id": "RISK-08",
+          "risque": "Migration détruisant références et historique",
+          "gravite_initiale": "Critique",
+          "mesure": "Corpus historique, dry-run, sauvegarde restaurable, rollback."
+        },
+        "priorite_qualitative_proposee": "Priorité pilote immédiate I/A.1 proposée",
+        "motif": "Isolationcontexte/droits, unwriter, identitéhistorique etnavigationautonome conditionnentpremierI/A.1.",
+        "probabilite": "Inconnue, nonchiffrée",
+        "decision": "Proposition à A0/A1/A5 etautorité ; nonconfirmée",
+        "preuve_a_obtenir": "Revuecontrat puis oracleciblé sousbuild/corpus/accord, pas présentefiche de risque seule."
+      },
+      {
+        "id": "RISK-09",
+        "source_exacte": {
+          "id": "RISK-09",
+          "risque": "Mesures GPU non transférables",
+          "gravite_initiale": "Moyenne/élevée",
+          "mesure": "Profils appareils réels + séparation CPU/GPU."
+        },
+        "priorite_qualitative_proposee": "Avant charge/outil/format concerné proposé",
+        "motif": "Risque conservé, souslot technique horspremiereffet ; pas suppression ni acceptationrésiduelle.",
+        "probabilite": "Inconnue, nonchiffrée",
+        "decision": "Proposition à A0/A1/A5 etautorité ; nonconfirmée",
+        "preuve_a_obtenir": "Revuecontrat puis oracleciblé sousbuild/corpus/accord, pas présentefiche de risque seule."
+      },
+      {
+        "id": "RISK-10",
+        "source_exacte": {
+          "id": "RISK-10",
+          "risque": "Formats annoncés au-delà de la couverture",
+          "gravite_initiale": "Élevée",
+          "mesure": "Matrice par entité/sens, rapports de perte et tests aller-retour."
+        },
+        "priorite_qualitative_proposee": "Avant charge/outil/format concerné proposé",
+        "motif": "Risque conservé, souslot technique horspremiereffet ; pas suppression ni acceptationrésiduelle.",
+        "probabilite": "Inconnue, nonchiffrée",
+        "decision": "Proposition à A0/A1/A5 etautorité ; nonconfirmée",
+        "preuve_a_obtenir": "Revuecontrat puis oracleciblé sousbuild/corpus/accord, pas présentefiche de risque seule."
+      },
+      {
+        "id": "NAV-R01",
+        "source_exacte": {
+          "id_propose": "NAV-R01",
+          "risque": "Studio réduit à un raccourci vers l’Atelier, ou servi par ProjectShell",
+          "origine": "Plan §10",
+          "preuves": [
+            "REP-04",
+            "REP-06"
+          ],
+          "recette": "NAV-002, ROUTE-09",
+          "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+        },
+        "priorite_qualitative_proposee": "Priorité pilote immédiate I/A.1 proposée",
+        "motif": "Isolationcontexte/droits, unwriter, identitéhistorique etnavigationautonome conditionnentpremierI/A.1.",
+        "probabilite": "Inconnue, nonchiffrée",
+        "decision": "Proposition à A0/A1/A5 etautorité ; nonconfirmée",
+        "preuve_a_obtenir": "Revuecontrat puis oracleciblé sousbuild/corpus/accord, pas présentefiche de risque seule."
+      },
+      {
+        "id": "NAV-R02",
+        "source_exacte": {
+          "id_propose": "NAV-R02",
+          "risque": "Barre latérale masquée par le mode immersif",
+          "origine": "Plan §10",
+          "preuves": [
+            "REP-05",
+            "PR #142"
+          ],
+          "recette": "NAV-008",
+          "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+        },
+        "priorite_qualitative_proposee": "Priorité pilote immédiate I/A.1 proposée",
+        "motif": "Isolationcontexte/droits, unwriter, identitéhistorique etnavigationautonome conditionnentpremierI/A.1.",
+        "probabilite": "Inconnue, nonchiffrée",
+        "decision": "Proposition à A0/A1/A5 etautorité ; nonconfirmée",
+        "preuve_a_obtenir": "Revuecontrat puis oracleciblé sousbuild/corpus/accord, pas présentefiche de risque seule."
+      },
+      {
+        "id": "NAV-R03",
+        "source_exacte": {
+          "id_propose": "NAV-R03",
+          "risque": "Mauvais projet dans le bandeau ou la commande",
+          "origine": "Plan §10",
+          "preuves": [
+            "REP-02",
+            "REP-03"
+          ],
+          "recette": "NAV-006",
+          "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+        },
+        "priorite_qualitative_proposee": "Priorité pilote immédiate I/A.1 proposée",
+        "motif": "Isolationcontexte/droits, unwriter, identitéhistorique etnavigationautonome conditionnentpremierI/A.1.",
+        "probabilite": "Inconnue, nonchiffrée",
+        "decision": "Proposition à A0/A1/A5 etautorité ; nonconfirmée",
+        "preuve_a_obtenir": "Revuecontrat puis oracleciblé sousbuild/corpus/accord, pas présentefiche de risque seule."
+      },
+      {
+        "id": "NAV-R04",
+        "source_exacte": {
+          "id_propose": "NAV-R04",
+          "risque": "Lien Studio invalide ou refusé redirigé silencieusement",
+          "origine": "Ajout Claude (REP-02)",
+          "preuves": [
+            "REP-02"
+          ],
+          "recette": "NAV-004",
+          "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+        },
+        "priorite_qualitative_proposee": "Priorité pilote immédiate I/A.1 proposée",
+        "motif": "Isolationcontexte/droits, unwriter, identitéhistorique etnavigationautonome conditionnentpremierI/A.1.",
+        "probabilite": "Inconnue, nonchiffrée",
+        "decision": "Proposition à A0/A1/A5 etautorité ; nonconfirmée",
+        "preuve_a_obtenir": "Revuecontrat puis oracleciblé sousbuild/corpus/accord, pas présentefiche de risque seule."
+      },
+      {
+        "id": "NAV-R05",
+        "source_exacte": {
+          "id_propose": "NAV-R05",
+          "risque": "Échec de chargement d’un morceau Studio bloquant la navigation",
+          "origine": "Ajout Claude (REP-02)",
+          "preuves": [
+            "REP-02"
+          ],
+          "recette": "NAV-008",
+          "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+        },
+        "priorite_qualitative_proposee": "Priorité pilote immédiate I/A.1 proposée",
+        "motif": "Isolationcontexte/droits, unwriter, identitéhistorique etnavigationautonome conditionnentpremierI/A.1.",
+        "probabilite": "Inconnue, nonchiffrée",
+        "decision": "Proposition à A0/A1/A5 etautorité ; nonconfirmée",
+        "preuve_a_obtenir": "Revuecontrat puis oracleciblé sousbuild/corpus/accord, pas présentefiche de risque seule."
+      },
+      {
+        "id": "NAV-R06",
+        "source_exacte": {
+          "id_propose": "NAV-R06",
+          "risque": "Accès historiques Atelier cassés par le lot I",
+          "origine": "Ajout Claude (COEX-02)",
+          "preuves": [
+            "COEX-02"
+          ],
+          "recette": "NAV-009",
+          "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+        },
+        "priorite_qualitative_proposee": "Priorité pilote immédiate I/A.1 proposée",
+        "motif": "Isolationcontexte/droits, unwriter, identitéhistorique etnavigationautonome conditionnentpremierI/A.1.",
+        "probabilite": "Inconnue, nonchiffrée",
+        "decision": "Proposition à A0/A1/A5 etautorité ; nonconfirmée",
+        "preuve_a_obtenir": "Revuecontrat puis oracleciblé sousbuild/corpus/accord, pas présentefiche de risque seule."
+      },
+      {
+        "id": "NAV-R07",
+        "source_exacte": {
+          "id_propose": "NAV-R07",
+          "risque": "Frontière Studio ↔ Atelier non contrôlée par la CI",
+          "origine": "Ajout Claude (REP-07)",
+          "preuves": [
+            "REP-07 E3/E7"
+          ],
+          "recette": "règles check-module-deps",
+          "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+        },
+        "priorite_qualitative_proposee": "Priorité pilote immédiate I/A.1 proposée",
+        "motif": "Isolationcontexte/droits, unwriter, identitéhistorique etnavigationautonome conditionnentpremierI/A.1.",
+        "probabilite": "Inconnue, nonchiffrée",
+        "decision": "Proposition à A0/A1/A5 etautorité ; nonconfirmée",
+        "preuve_a_obtenir": "Revuecontrat puis oracleciblé sousbuild/corpus/accord, pas présentefiche de risque seule."
+      }
+    ]
+  },
+  "limites": [
+    "Aucun re-audit/extraction globale/registrecoches/code/test/moteur/DB/service/admin effectué.",
+    "NomsC-* candidats, jamais nouvelleAPI normative ; qualificationClaude etquestionsexistantes nonadoptées.",
+    "G0 cadragedoc accepté seulement ; G1/G2/G3 ouverts. Pas choixphysique, optionexclue seulement livraisoninitiale sanssuppressionexigence.",
+    "Quatre remises finies ; aucune expansion spéculative après celles-ci."
+  ]
+}

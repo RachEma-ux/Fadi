@@ -1,0 +1,338 @@
+{
+  "objet": "Revue architecturale A2 des seules sept lignes ClaudeCOEX/ADR ; aucune décision normative adoptée",
+  "remise_commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+  "code_reference": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "inputs": [
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/ADR-04-REGISTRE-RISQUES.json",
+      "commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "blob": "1f7a15d24f9a003f2adcb66ed24ec88ee122efb0",
+      "sha256": "bd8da03b9cdc6b7d671261ae1d65e393c010dd0c331b61cdc42c1b94567175b4"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/ADR-04-REGISTRE-RISQUES.md",
+      "commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "blob": "3d3f586bffbcc00cdbfabedd0a818710d39fcd88",
+      "sha256": "46dd592f20c45a6e3a4b27ef73d712973dd809009bf4b5d4dd93f9ae6e1d7501"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/COEX-01-QUALIFICATION.json",
+      "commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "blob": "c5932d3c90ee2f644c553721dcd4ca0cc858e4ea",
+      "sha256": "3801912ae414f1f07d1b5cbd5904f20f928b36470e1b04ee09395996bbcdbdae"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/COEX-01-QUALIFICATION.md",
+      "commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "blob": "51099f2210f61fc29cd443eba37e0b5db7feba9c",
+      "sha256": "c3aa0012bf8b3a47579f37efebaee83670397c563fb60cfe82a28ccfe1081547"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "blob": "1745c055866378b35cf6a2f831e17e726572258a",
+      "sha256": "1f2a520254eca039a43dfa6cc892c1efcd42b7fec4d01ae820332d22bc0a72a1"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/DELTA-REGISTRE-PROPOSE.json",
+      "commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "blob": "2820dcad6d33b5fd2f17b03d971c598a274b9040",
+      "sha256": "5bab2816ea74caa41d229c0d09bcf1ef4e77c979c8bdf25966c72e7895d4f1c6"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/README.md",
+      "commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "blob": "3a7865f6b843752d63daa91c2f6ec3d77e935d5e",
+      "sha256": "8f990bcc4e495e574253fed61c3d13e12c4006e35c8af55cda1cf7d9e6c7ec04"
+    }
+  ],
+  "sources_exactes_regles": [
+    {
+      "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob": "db5588eca8980efcd7276c1cc2182b9070c6eb38",
+      "sha256": "4976191179bafa59cbc3a24fef9c28c9f50dcc7fa9a0bd8573dc075586659ce3",
+      "citations": [
+        {
+          "line": 121,
+          "exact_line": "La bascule des données définit un seul propriétaire d’écriture par jeu de données. Pour une étude migrée, l’ancien accès peut devenir une redirection contrôlée ou une consultation en lecture seule ; le choix est à valider. Aucune synchronisation bidirectionnelle artisanale entre deux bases concurrentes n’est introduite. Aucun retrait définitif n’intervient avant comparaison avant/après, restauration testée et acceptation."
+        },
+        {
+          "line": 297,
+          "exact_line": "Le transfert d’autorité d’écriture d’Atelier vers Studio est une décision par périmètre. Ne pas autoriser deux chaînes d’écriture incompatibles sur la même étude. Conserver l’accès de consultation historique nécessaire. La suppression d’anciens écrans, routes ou stockages est un lot ultérieur explicitement autorisé, pas un effet secondaire du lot I."
+        },
+        {
+          "line": 301,
+          "exact_line": "Conserver le build, les migrations, les versions de schéma et la sauvegarde de référence. Définir les déclencheurs de retour arrière, le responsable et le traitement des nouvelles écritures. Prévoir le refus des anciennes versions clientes incompatibles et la protection des files locales lors du changement de service worker."
+        }
+      ]
+    },
+    {
+      "path": "docs/atelier-cahier-des-charges.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob": "7ed0f9ad9409c0e9088f5a1c7504ceaa236a494b",
+      "sha256": "65c36a53a35fc732a8ef2d7f29316689ad1539bb562ddc7b381b7043d97c7584",
+      "citations": [
+        {
+          "line": 118,
+          "exact_line": "| R9 | Toute modification du modèle passe par une commande typée, idempotente (`requestId`), validée par le serveur, journalisée, inversible. Pas d'écriture directe en base depuis une route hors du service de commandes. Les scripts et l'assistant utilisent les mêmes commandes. | §6 Architecture V4, T06, T19 |"
+        }
+      ]
+    }
+  ],
+  "controle_RISK_source": {
+    "blob_DOCX": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+    "methode": "Comparaison des seuls dix tableaux RISK à JSONremise ; w:tr index1-based global duXML, cellulesconcaténées w:t. Pas nouvelle extraction141.",
+    "checks": [
+      {
+        "id": "RISK-01",
+        "table_row_XML_1based": 317,
+        "cells_exact": [
+          "RISK-01 — Double autorité 2D/3D",
+          "Critique",
+          "Protocole d’associations, objets canoniques, tests 001–010."
+        ],
+        "exactement_identique_JSON": true
+      },
+      {
+        "id": "RISK-02",
+        "table_row_XML_1based": 318,
+        "cells_exact": [
+          "RISK-02 — Snapping différent après indexation",
+          "Critique",
+          "Oracle de géométrie + tests densité et ambiguïtés."
+        ],
+        "exactement_identique_JSON": true
+      },
+      {
+        "id": "RISK-03",
+        "table_row_XML_1based": 319,
+        "cells_exact": [
+          "RISK-03 — Commande rejouée ou conflit perdu",
+          "Critique",
+          "Idempotence, transaction et E2E concurrent."
+        ],
+        "exactement_identique_JSON": true
+      },
+      {
+        "id": "RISK-04",
+        "table_row_XML_1based": 320,
+        "cells_exact": [
+          "RISK-04 — Publication sur mauvais contenu",
+          "Critique",
+          "Manifeste immuable, empreintes, garde d’approbation."
+        ],
+        "exactement_identique_JSON": true
+      },
+      {
+        "id": "RISK-05",
+        "table_row_XML_1based": 321,
+        "cells_exact": [
+          "RISK-05 — Profil personnalisable mais tous moteurs chargés",
+          "Élevée",
+          "Contrôle bundles/service worker et mesure cache froid."
+        ],
+        "exactement_identique_JSON": true
+      },
+      {
+        "id": "RISK-06",
+        "table_row_XML_1based": 322,
+        "cells_exact": [
+          "RISK-06 — Memory leak OCCT/Three",
+          "Élevée",
+          "Bench fermeture/réouverture + limites/concurrence."
+        ],
+        "exactement_identique_JSON": true
+      },
+      {
+        "id": "RISK-07",
+        "table_row_XML_1based": 323,
+        "cells_exact": [
+          "RISK-07 — Extension/MCP contournant les droits",
+          "Critique",
+          "Même bus de commandes et validation serveur."
+        ],
+        "exactement_identique_JSON": true
+      },
+      {
+        "id": "RISK-08",
+        "table_row_XML_1based": 324,
+        "cells_exact": [
+          "RISK-08 — Migration détruisant références et historique",
+          "Critique",
+          "Corpus historique, dry-run, sauvegarde restaurable, rollback."
+        ],
+        "exactement_identique_JSON": true
+      },
+      {
+        "id": "RISK-09",
+        "table_row_XML_1based": 325,
+        "cells_exact": [
+          "RISK-09 — Mesures GPU non transférables",
+          "Moyenne/élevée",
+          "Profils appareils réels + séparation CPU/GPU."
+        ],
+        "exactement_identique_JSON": true
+      },
+      {
+        "id": "RISK-10",
+        "table_row_XML_1based": 326,
+        "cells_exact": [
+          "RISK-10 — Formats annoncés au-delà de la couverture",
+          "Élevée",
+          "Matrice par entité/sens, rapports de perte et tests aller-retour."
+        ],
+        "exactement_identique_JSON": true
+      }
+    ]
+  },
+  "controle_delta": {
+    "domain_exact_7": true,
+    "ecarts": [],
+    "compteurs_proposes": {
+      "Vérifié": 2,
+      "En cours": 5
+    },
+    "deux_Accepte_G0_a_preserver": [
+      "CAD-DEC-01",
+      "G0-03"
+    ],
+    "aucun_registre_modifie": true
+  },
+  "items": [
+    {
+      "id": "ADR-04",
+      "statut_delta_propose": "Vérifié",
+      "avis_A2": "Recevable pour Vérifié documentaire proposé",
+      "justification_nature": "DixRISK conservés exactement, gravités non modifiées, correspondance Plan et septrisques NAV supplémentaires distingués.",
+      "limite_ou_reserve": "ADR05 priorités et adoption noms NAV-R restent ouverts ; rattachement risquePartiel ≠ équivalence normative.",
+      "acceptation_normative": false,
+      "statut_applique": false,
+      "proprietaire": "A2"
+    },
+    {
+      "id": "COEX-02",
+      "statut_delta_propose": "Vérifié",
+      "avis_A2": "Recevable pour Vérifié documentaire proposé",
+      "justification_nature": "La tâche demande de prévoir :14catégories d’accès et contrat explicite de non-suppression lotI répondent à cette portée.",
+      "limite_ou_reserve": "14catégories ne sont pas14routes uniques ni preuve d’inventaire universel. NAV009 non exécuté, lotI non réalisé ; droits restent obligatoires.",
+      "acceptation_normative": false,
+      "statut_applique": false,
+      "proprietaire": "A2"
+    },
+    {
+      "id": "COEX-01",
+      "statut_delta_propose": "En cours",
+      "avis_A2": "Recevable En cours proposé",
+      "justification_nature": "22groupes principaux qualifiés en proposition ;12conserver/4compléter/2corriger/4isoler/0remplacer/0retirer ; décision non prise.",
+      "limite_ou_reserve": "Pas qualification exhaustive de chaque fonction ; interfaces publiques, coût, corpus et allocation physique restent à instruire. Conserver ne signifie pas intégration prête.",
+      "acceptation_normative": false,
+      "statut_applique": false,
+      "proprietaire": "A2"
+    },
+    {
+      "id": "COEX-03",
+      "statut_delta_propose": "En cours",
+      "avis_A2": "Recevable En cours proposé, sous réserves de décision",
+      "justification_nature": "Écrivains actuels et options exposés, principe sourceunique préservé.",
+      "limite_ou_reserve": "Autorité serveur unique ≠ clientUI unique. Même service de validation peut recevoir plusieurs clients compatibles ; optionB ne devient pas intrinsèquement contraire auPlan par cette seule pluralité.",
+      "acceptation_normative": false,
+      "statut_applique": false,
+      "proprietaire": "A2"
+    },
+    {
+      "id": "COEX-04",
+      "statut_delta_propose": "En cours",
+      "avis_A2": "Recevable En cours proposé, sous réserves de décision",
+      "justification_nature": "Mapping ancien projet-fork vs VarianteStudio identifié ; lecture seule/redirection proposées par périmètre.",
+      "limite_ou_reserve": "readOnly/protectedReference existants sont indices UI, pas preuve refus serveur après transfert. OptionA et exclusionC ne sont pas décisions acquises ; droits et mapping restent à démontrer.",
+      "acceptation_normative": false,
+      "statut_applique": false,
+      "proprietaire": "A2"
+    },
+    {
+      "id": "COEX-05",
+      "statut_delta_propose": "En cours",
+      "avis_A2": "Recevable En cours proposé, sous réserves de périmètre",
+      "justification_nature": "Rejeu/import et interdiction de base métier concurrente documentés ; invariant non réouvert.",
+      "limite_ou_reserve": "« Aucune donnée métier recopiée dans les deux sens » et liste limitative de deux transferts vont au-delà de la prohibition source ciblant synchronisation bidirectionnelle artisanale entre bases concurrentes ; restent propositions.",
+      "acceptation_normative": false,
+      "statut_applique": false,
+      "proprietaire": "A2"
+    },
+    {
+      "id": "COEX-06",
+      "statut_delta_propose": "En cours",
+      "avis_A2": "Recevable En cours proposé",
+      "justification_nature": "Porte cumulative comparaison/restauration/acceptation proposée et retrait explicitement distinct.",
+      "limite_ou_reserve": "Restauration attestée/rollback avec nouvelles écritures non exécutés ; PR169 garde sans issuer ne suffit pas à autoriser cible ni DB3. Le précédent lot4 n’autorise aucune destructionStudio.",
+      "acceptation_normative": false,
+      "statut_applique": false,
+      "proprietaire": "A2"
+    }
+  ],
+  "reserves_architecturales_pour_arbitrages_existants": [
+    {
+      "id": "A2-COEX-AUTORITE",
+      "scope": [
+        "COEX-01:C01/C17",
+        "COEX-03",
+        "COEX-04"
+      ],
+      "regle": "Conserver autorité canonique unique et protocole contrôlé ; ne pas confondre nombre de clients avec nombre d’autorités ni imposer import desinternes busAtelier.",
+      "critere": "Chaque jeu porte propriétaire logique/physique/époque/version, clients autorisés et refus serveur ; contrat public nécessaire. Allocation retenue par décision explicite."
+    },
+    {
+      "id": "A2-COEX-TRANSFERT",
+      "scope": [
+        "COEX-05"
+      ],
+      "regle": "Pas seconde base métier concurrente ni synchronisation artisanale. Les restrictions supplémentaires de mécanisme ne sont pas encore norme.",
+      "critere": "Arbitrer portée de la règle dans questionexistante, distinguer vues/projections/références/copies indépendantes de doubleautorité ; ne pas exclure implicitement relationassociée."
+    },
+    {
+      "id": "A2-COEX-RETOUR",
+      "scope": [
+        "COEX-04",
+        "COEX-06"
+      ],
+      "regle": "Lectureseule visuelle ne constitue pas garde serveur ; restauration doit traiter nouvellesécritures.",
+      "critere": "Refus côtéserveur après transfert, mapping historique exact, logs et corpusavant/après ; autorisation distincte de restauration/retrait."
+    }
+  ],
+  "questions_existantes_pas_dupliquees": [
+    {
+      "id": "Q-CLAUDE-COEX-01",
+      "commentaire": 6250995231,
+      "url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250995231"
+    },
+    {
+      "id": "Q-CLAUDE-COEX-03",
+      "commentaire": 6250996328,
+      "url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250996328"
+    },
+    {
+      "id": "Q-CLAUDE-COEX-04",
+      "commentaire": 6250997313,
+      "url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250997313"
+    },
+    {
+      "id": "Q-CLAUDE-COEX-05-06",
+      "commentaire": 6250998834,
+      "url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250998834"
+    }
+  ],
+  "prochaine_tache_reellement_prete": {
+    "id": "COEX-03",
+    "action": "Compléter documentairement la matrice jeu de données → autorité serveur → clients autorisés → version/époque → transfert/refus serveur, à partir C-STUDY/C-COMMAND et options déjà publiées ; annoter inconnus sans choisir option physique ni écrire de code.",
+    "dependance": "Aucune nouvelle exécution ni gate nécessaire pour ce complément documentaire ; adoption attend réponse à question6250996328."
+  },
+  "P630": "Deux conditions documentaires supplémentaires seulement candidates aprèsA5/intégration/checkpointA0 :42→44si8REPdéjà reçus. Composition44=42VérifiéDoc+2AcceptéG0 ; pas44fonctionnalités ; PDEV N/D.",
+  "verdict": "Favorable aux deux vérifications documentaires ADR04/COEX02 et aux cinqEn cours proposés, avec réserves de portée pour leurs arbitrages ; aucune acceptation d’option ou contrat physique.",
+  "limites": [
+    "Aucun helper, registre, STATUS/HANDOFF, code, workflow modifié ; aucun test/service/DB/import applicatif exécuté.",
+    "Les12testshelper/contrôles et83liens déclarés sont attribuésClaude ; non réexécutésA2. RevuehelperA3 et revuepreuveA5 restent distinctes.",
+    "Questionsexistantes seulement référencées depuis instructionA0 ; aucun nouveau commentaire ou questionGitHub émis.",
+    "COEX/ADRgroupes ne ferment pas DEC18, G1–G4, M12fonctionparfonction, migrations, déploiement ou retrait."
+  ]
+}

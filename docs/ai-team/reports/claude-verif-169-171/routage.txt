@@ -1,0 +1,24 @@
+== ci-resolu-169-171.yml
+PR docs/156-codex-missions-completes          -> mission-docs-pure
+PR fix/156-classification-no-ifc-inference    -> classification-pure
+PR fix/157-test-database-guard                -> db-guard-pure
+PR autre branche                              -> validate, e2e, image
+PR fork même nom (classif)                    -> validate, e2e, image
+PR classif vers autre base                    -> validate, e2e, image
+push main                                     -> validate, e2e, image
+== ci-resolu-169.yml
+PR docs/156-codex-missions-completes          -> mission-docs-pure
+PR fix/156-classification-no-ifc-inference    -> validate, e2e, image
+PR fix/157-test-database-guard                -> db-guard-pure
+PR autre branche                              -> validate, e2e, image
+PR fork même nom (classif)                    -> validate, e2e, image
+PR classif vers autre base                    -> validate, e2e, image
+push main                                     -> validate, e2e, image
+== ci-resolu-171.yml
+PR docs/156-codex-missions-completes          -> mission-docs-pure
+PR fix/156-classification-no-ifc-inference    -> classification-pure
+PR fix/157-test-database-guard                -> validate, e2e, image
+PR autre branche                              -> validate, e2e, image
+PR fork même nom (classif)                    -> validate, e2e, image
+PR classif vers autre base                    -> validate, e2e, image
+push main                                     -> validate, e2e, image

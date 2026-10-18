@@ -2,11 +2,12 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../app.js";
+import { resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { pool } from "../db/client.js";
 import type { HistoryEvent } from "../lib/history.js";
 
 const app = createApp();
-beforeEach(async () => { await pool.query("TRUNCATE projects, sessions, users CASCADE"); });
+beforeEach(async () => { await resetTestDatabase(pool, ["projects", "sessions", "users"]); });
 afterAll(async () => { await pool.end(); });
 
 async function account(email: string) {

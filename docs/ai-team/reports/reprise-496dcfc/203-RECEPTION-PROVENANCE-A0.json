@@ -1,0 +1,137 @@
+{
+  "date_UTC": "2026-10-18",
+  "copies": [
+    {
+      "path": "docs/ai-team/reports/qualification-203/DEFINITIONS-203.md",
+      "source_commit": "6b6139007c532d06a54ca99578967c7a451c321b",
+      "sha256": "8cfadb908cef983c3ddb4b012479366865b672b19c463bb9981caad82872ea76",
+      "bytes": 146200,
+      "verification": "Contenu source conservé ; seule la ligne vide surnuméraire en fin de fichier est normalisée pour git diff --check. Source originale accessible au commit6b61390.",
+      "source_original_sha256": "340265a58097df987445f938d208ae8567774b060a3b05c27c719a5fe1f6cb85",
+      "transformations": [
+        "Une seule fin de ligne terminale ; aucun texte/ID modifié."
+      ]
+    },
+    {
+      "path": "docs/ai-team/reports/qualification-203/MANUEL-CODEX.md",
+      "source_commit": "6b6139007c532d06a54ca99578967c7a451c321b",
+      "sha256": "6e7ec3977ec0357a0d51cb5db5b4979c378bdda6756432c1205cfecfc050ce5b",
+      "bytes": 4655,
+      "verification": "Copie à octets identiques à la source Git immuable ; proposition revue, pas décision implicite."
+    },
+    {
+      "path": "docs/ai-team/reports/qualification-203/definitions-203.json",
+      "source_commit": "6b6139007c532d06a54ca99578967c7a451c321b",
+      "sha256": "77eb1509451017773e02d767cd1b56e45ccc6dd97f8de28ca9ad00716bfa9038",
+      "bytes": 595031,
+      "verification": "Copie à octets identiques à la source Git immuable ; proposition revue, pas décision implicite."
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-rep/DELTA-REGISTRE-PROPOSE.json",
+      "source_commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1",
+      "sha256": "53a5d735e9d1b29e79412fcfd6d67db44e888832e85af61286969a47a3a49c51",
+      "bytes": 14893,
+      "verification": "Copie à octets identiques à la source Git immuable ; proposition revue, pas décision implicite."
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-rep/README.md",
+      "source_commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1",
+      "sha256": "46b6320439de7e35f206741b419351b9a01a116fe164adf5bc2b0933cb62e6cd",
+      "bytes": 7997,
+      "verification": "Contenu source conservé ; deux liens relatifs vers helper/test exclus de la publication normalisés vers leur commitGit source exact. Original accessible au commit32267bf ; aucun outil installé.",
+      "source_original_sha256": "b7c02b7b35ce835f55cb3f5ebef13348eba5da0577c1af33d802bcd4928afa12",
+      "transformations": [
+        "../../tableau_registre.py → URL Git immuable32267bf",
+        "../../test_tableau_registre.py → URL Git immuable32267bf"
+      ]
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md",
+      "source_commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1",
+      "sha256": "45847df90a26b94df5eaaa314e0dcbeadf1622751f729dd3b2049fe54b7225c8",
+      "bytes": 25571,
+      "verification": "Copie à octets identiques à la source Git immuable ; proposition revue, pas décision implicite."
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-rep/REP-07-ESSAIS.json",
+      "source_commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1",
+      "sha256": "45dbf15dd7092f22c42655c2853ffa42fcae0c05fcd8c5295a2bd524a54a31a8",
+      "bytes": 4364,
+      "verification": "Copie à octets identiques à la source Git immuable ; proposition revue, pas décision implicite."
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-rep/REP-09-REQUALIFICATION.json",
+      "source_commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1",
+      "sha256": "a47c5bfcb91332d7c7dc5b79864f0372491de23df16e6ca25720323f6e378184",
+      "bytes": 38004,
+      "verification": "Copie à octets identiques à la source Git immuable ; proposition revue, pas décision implicite."
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-rep/REP-09-REQUALIFICATION.md",
+      "source_commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1",
+      "sha256": "96b172ede321cfea76185526d144d07378a9ec23989690f51072cf00af29a4ed",
+      "bytes": 6390,
+      "verification": "Copie à octets identiques à la source Git immuable ; proposition revue, pas décision implicite."
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/ADR-04-REGISTRE-RISQUES.json",
+      "source_commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "sha256": "bd8da03b9cdc6b7d671261ae1d65e393c010dd0c331b61cdc42c1b94567175b4",
+      "bytes": 5437,
+      "verification": "Copie à octets identiques à la source Git immuable ; proposition revue, pas décision implicite."
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/ADR-04-REGISTRE-RISQUES.md",
+      "source_commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "sha256": "46dd592f20c45a6e3a4b27ef73d712973dd809009bf4b5d4dd93f9ae6e1d7501",
+      "bytes": 6806,
+      "verification": "Copie à octets identiques à la source Git immuable ; proposition revue, pas décision implicite."
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/COEX-01-QUALIFICATION.json",
+      "source_commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "sha256": "3801912ae414f1f07d1b5cbd5904f20f928b36470e1b04ee09395996bbcdbdae",
+      "bytes": 12103,
+      "verification": "Copie à octets identiques à la source Git immuable ; proposition revue, pas décision implicite."
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/COEX-01-QUALIFICATION.md",
+      "source_commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "sha256": "c3aa0012bf8b3a47579f37efebaee83670397c563fb60cfe82a28ccfe1081547",
+      "bytes": 10283,
+      "verification": "Copie à octets identiques à la source Git immuable ; proposition revue, pas décision implicite."
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "source_commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "sha256": "1f2a520254eca039a43dfa6cc892c1efcd42b7fec4d01ae820332d22bc0a72a1",
+      "bytes": 15958,
+      "verification": "Copie à octets identiques à la source Git immuable ; proposition revue, pas décision implicite."
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/DELTA-REGISTRE-PROPOSE.json",
+      "source_commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "sha256": "5bab2816ea74caa41d229c0d09bcf1ef4e77c979c8bdf25966c72e7895d4f1c6",
+      "bytes": 12329,
+      "verification": "Copie à octets identiques à la source Git immuable ; proposition revue, pas décision implicite."
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/README.md",
+      "source_commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "sha256": "8f990bcc4e495e574253fed61c3d13e12c4006e35c8af55cda1cf7d9e6c7ec04",
+      "bytes": 5857,
+      "verification": "Copie à octets identiques à la source Git immuable ; proposition revue, pas décision implicite."
+    }
+  ],
+  "helper_importe": false,
+  "integrations": [
+    "203-INTEGRATION-A0.json",
+    "COEX-INTEGRATION-A0.json"
+  ],
+  "note": "Les propositions upstream conservent leurs chiffres historiques. État courant dans le registre unique ; aucune application automatique des deltas ou de tableau_registre.py.",
+  "etapes_integration": [
+    "203-INTEGRATION-A0.json : qualification203 et REP8, registre intermédiaire283a, P63042",
+    "COEX-INTEGRATION-A0.json : deux vérifications documentaires, registre intermédiairecab841, P63044",
+    "RESIDUELS-CONSOLIDATION-A0.json : ajout preuves20obligations et2rapprochements, registre finald60edc, P63044 inchangé"
+  ]
+}

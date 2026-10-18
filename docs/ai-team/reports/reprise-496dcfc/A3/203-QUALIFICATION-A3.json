@@ -1,0 +1,1542 @@
+{
+  "report": "203-QUALIFICATION-A3",
+  "agent": "A3",
+  "created_utc": "2026-10-18T14:17:41.858023+00:00",
+  "mode": "PREPARATIONS_DOCUMENTAIRES_SANS_CODE_NI_TEST_NI_REGISTRE_MODIFIE",
+  "reference_main": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "remise_definitions": "6b6139007c532d06a54ca99578967c7a451c321b",
+  "register_blob": "a460fb315f6c74f6c60797fc2d5e9d7b2d1fbcae",
+  "register_snapshot_sha256": "7c5da578b34f775329e40827d8b99b6b7796d2055f9a1151725140c0013e686b",
+  "local_doc_head_observe": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+  "local_doc_register_sha256": "01e6e4a794653d9bca770b9152d3c7cca9159e893b7e56b4d16551da0a1e578f",
+  "delta_reference_courante": "Seul active_preparations diffère au HEAD2076 ; les630 objets tâches y compris20affectés et leurs preuves sont identiques au snapshot817. Ce HEADlocal n’est pas une attestationde main distant ouCIactuelle.",
+  "assignments_reference": "6b6139007c532d06a54ca99578967c7a451c321b",
+  "assigned_ids_exact_order": [
+    "A.2-01",
+    "A.3-01",
+    "PR-05",
+    "PR-06",
+    "PR-07",
+    "PR-08",
+    "PR-09",
+    "RESP-01",
+    "RESP-02",
+    "RESP-03",
+    "RESP-04",
+    "RESP-05",
+    "PASS-01",
+    "PASS-02",
+    "PASS-03",
+    "PASS-04",
+    "PASS-05",
+    "PASS-06",
+    "PASS-07",
+    "FIN-01"
+  ],
+  "owners": {
+    "A3": 2,
+    "A0": 18
+  },
+  "counts": {
+    "assigned": 20,
+    "individually_qualified": 20,
+    "proposed_states": {
+      "En cours": 15,
+      "À définir": 5
+    },
+    "completed_source_tasks": 0,
+    "source_boxes_checked": 0,
+    "studio_tests_executed": 0,
+    "register_writes": 0
+  },
+  "source_integrity": {
+    "definitions_total": 203,
+    "undefined_ids_baseline": 203,
+    "same_exact_203_ids": true,
+    "assigned_descriptions_owners_source_lines_exact": true,
+    "same20rows_baseline_localhead": true,
+    "source_order_and_ids_not_renumbered": true
+  },
+  "historical_acceptance_preserved": {
+    "ids": [
+      "CAD-DEC-01",
+      "G0-03"
+    ],
+    "scope": "Cadrage documentaireG0 seulement, acte6250109830/dossier7b0cca4 ; G1–G4 non acceptés",
+    "p630_baseline": "34/630,32Vérifié+2Accepté,conditionexacte ; inchangé parA3",
+    "PDEV": "N/D"
+  },
+  "sources": [
+    {
+      "path": "AGENTS.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "git_blob": "144f928cfcc7736f06c143a92fa7549d27c4c20f",
+      "sha256": "f7a152961a269bc041b0417ab108f8f39bacfb7bc1afd6d4ea3f04e02b0ec237"
+    },
+    {
+      "path": "docs/continuity/README.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "git_blob": "dae46c4fd63a675da18e3573aadfc9f39ca24c5a",
+      "sha256": "e506f45775f5580641aec2a970bcdb5e5edeff20861c79927152ee5830a70704"
+    },
+    {
+      "path": "docs/workstreams/studio/task-register.json",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "git_blob": "a460fb315f6c74f6c60797fc2d5e9d7b2d1fbcae",
+      "sha256": "7c5da578b34f775329e40827d8b99b6b7796d2055f9a1151725140c0013e686b"
+    },
+    {
+      "path": "docs/workstreams/studio/HANDOFF.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "git_blob": "f0a8210dce8acec0eef9f276c38174bcb7b21941",
+      "sha256": "430a903f16623dd300ba499dabacea2202afb0667921f234a5abe3cae6a9b8cc"
+    },
+    {
+      "path": "docs/workstreams/ai-team/HANDOFF.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "git_blob": "ae1be3e286b17538a311f3d80c69fd845759d6a4",
+      "sha256": "2131e544cfee093aa00b3d5f372d51fb616569e4d91f0e5762e3041f6c50a612"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "git_blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+      "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.2.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "git_blob": "bfb2f8309b8e27d0e385decccd882867e8751e8d",
+      "sha256": "f07be9bd6b449b0bed65bc81942055b2212a1ef326f5ae6dacc0a544e35ea4b0"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.3.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "git_blob": "027e0f1f16f7c5d37d2a3221694eeb5eb14ad3a0",
+      "sha256": "44a46d3a0b15d752b22ef5ef4d7fca5c737e1262ef58cbabf3717176d6db921b"
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "git_blob": "f3a119c502078fffe9b08a689015f59e9dc35081",
+      "sha256": "a5dec6aa0afbbe56f7f5bdebb9a3397b70a991bae352d4c93d6ef45d9719adba"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "git_blob": "d78f71f381ab4cd9758d61ff58a651ca8b980ae7",
+      "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa"
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "git_blob": "c6fd3c15d1c37a131846badade4d77842a98fda7",
+      "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813"
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "git_blob": "7bb94b9732f9799def8942d4c76a6ccf0a26f7b3",
+      "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073"
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A3/DEC18-MOTEURS-PUBLICS-CANDIDATS.json",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "git_blob": "03df267b09e03c399b5ece5c12030671af6df22a",
+      "sha256": "24de7c5169d0d1bb5d3f1be2119c5186065ae9f2c5fc45277c6a5318b7164c8b"
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/M08-INDEX-A0.json",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "git_blob": "293f0e693ddef2c19998d3f9a2c6be4c9ca45404",
+      "sha256": "9ae3f162c3d7f50a2f02f3ab9ddf2b25610482829914951abb04d6c7084f4bad"
+    },
+    {
+      "path": "docs/ai-team/reports/qualification-203/MANUEL-CODEX.md",
+      "commit": "6b6139007c532d06a54ca99578967c7a451c321b",
+      "sha256": "6e7ec3977ec0357a0d51cb5db5b4979c378bdda6756432c1205cfecfc050ce5b",
+      "provenance": "incoming identique à remise6b6139"
+    },
+    {
+      "path": "docs/ai-team/reports/qualification-203/definitions-203.json",
+      "commit": "6b6139007c532d06a54ca99578967c7a451c321b",
+      "sha256": "77eb1509451017773e02d767cd1b56e45ccc6dd97f8de28ca9ad00716bfa9038",
+      "provenance": "incoming identique à remise6b6139"
+    },
+    {
+      "path": "docs/ai-team/reports/qualification-203/DEFINITIONS-203.md",
+      "commit": "6b6139007c532d06a54ca99578967c7a451c321b",
+      "sha256": "340265a58097df987445f938d208ae8567774b060a3b05c27c719a5fe1f6cb85",
+      "provenance": "incoming identique à remise6b6139"
+    }
+  ],
+  "entries": [
+    {
+      "id": "A.2-01",
+      "mission": "M18",
+      "agent_proprietaire_conserve": "A3",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Délimiter le sous-ensemble d’outils 2D retenu et ses contrats de fonctionnement.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 333,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L333"
+      },
+      "citation_checklist_exacte": "- [ ] **A.2-01** — Délimiter le sous-ensemble d’outils 2D retenu et ses contrats de fonctionnement.",
+      "definition_input_sha256": "4b8e8bd70da25d0e7f21b34fae2392ba7244117f9ad1ba2202044e138668583d",
+      "registre_ligne_reference_sha256": "980285155f252a42d6cb81787dd9fd4cf79394474d4a0f5ada54a5052234b0e2",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "En cours",
+      "nature_statut": "Préparation documentaire effective",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Sous-ensemble pilote2D proposé, sans fermer DEC physiques",
+      "preparation_realisee": [
+        "Garder le minimum déjà cadré àG0 : ligne et contour fermé indépendant, sélection/modification/déplacement, calques, cote et annotation ; entrée numérique, prévisualisation révocable, annulation et sauvegarde/réouverture identifiée. Vue/feuille/publication est dépendanceE, pas un bouton suffisant.",
+        "Contrat par opération : contexte Projet/Étude/Variante/Révision autorisé, documentId/primitiveId/calqueId stables, unité/repère explicites, baseRevision/contractVersion/requestId/writer unique ; résultat accepté/refus/conflit avec identités touchées et nouvel historique, aucune écriture moteur directe.",
+        "Réemploi candidat MTR02 géométrie et MTR08 commandes/MTR09 versions, MTR10 sorties2D ; renderer/snapping internesUI ne deviennent pas imports profonds. APIpublique à qualifier avant adaptation. Aucun modèle3D substitut.",
+        "Ne pas supprimer EX055 (arcs/splines/cercles/hachures/symboles/etc.) : exigences conservées, sous-ensemble minimal n’est pas déclaration de conformité du lot entier. Ajouter toute omission au registre de périmètre plutôt que la convertir en non applicable."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "TEST001 futur : créer→modifier→coter/annoter→sauver→fermer→rouvrir→publier sans modèle3D requis ; TEST004–007 pour référence/copie/associé,011/022/027 applicables.",
+        "Oracles proposés : rectangle synthétique6×2 puis7×2,12 puis14m² ; translation conserve aire et identités ; refus non-finitude/mauvaiscalque/contexte/droit/révision sans mutation profonde ; cote sur cible supprimée conservée àrésoudre. Ce sont des cas, pas une tolérance normative.",
+        "Fixer et revoir précision/unité/snapping/versions/persistance/coûts avant G1 du sous-lot ; DEC01 orientation acquise, physique/coûts et DEC02/08/12/18 restent ouverts. Aucun test/POC/G3 acquis."
+      ],
+      "dependances_source": [
+        "M17:modèle document 2D",
+        "M14:G3 du sous-lot",
+        "M15:corpus 2D"
+      ],
+      "responsables_prochaine_action": [
+        "A2 contrat/document2D M17",
+        "A4 interactions et NAV",
+        "A5 corpus S1/S2+oracles",
+        "A0 décision du sous-ensemble"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/LOT-A.2.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A3/DEC18-MOTEURS-PUBLICS-CANDIDATS.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Revue du dossier et preuves/contrats/autorisation correspondant à la nature exacte de cetID encore à obtenir",
+        "responsable": "A3",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "Fixer et revoir précision/unité/snapping/versions/persistance/coûts avant G1 du sous-lot ; DEC01 orientation acquise, physique/coûts et DEC02/08/12/18 restent ouverts. Aucun test/POC/G3 acquis."
+      },
+      "suite_exacte": "A0 fait revoir cette fiche par les propriétaires/reviewers indiqués et intègre seulement un delta documentaire rebased après comparaison au registre courant ; garderID ouvert",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "A.3-01",
+      "mission": "M19",
+      "agent_proprietaire_conserve": "A3",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Délimiter le sous-ensemble contractuel de géométrie 3D libre retenu pour le pilote.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 347,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L347"
+      },
+      "citation_checklist_exacte": "- [ ] **A.3-01** — Délimiter le sous-ensemble contractuel de géométrie 3D libre retenu pour le pilote.",
+      "definition_input_sha256": "d0471bfe6d895c4ba5144b43495880bbb77b6ce3dde75f766cff7f8dd053d8c4",
+      "registre_ligne_reference_sha256": "3c04db66d3d1045f5bcdc73f5c8eb4811ab58b0eb09b705d5924573567112b27",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "En cours",
+      "nature_statut": "Préparation documentaire effective",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Sous-ensemble pilote3D libre proposé, distinct BIM/Atelier",
+      "preparation_realisee": [
+        "Garder le parcoursB cadré àG0 : création spatiale directe sans esquisse2D obligatoire, sélection/édition de face et transformation de volume, groupe selon besoin, navigation, sauvegarde/réouverture et vue ou coupe dérivée.",
+        "Contrat C-MODEL3D candidat : modelId et objet/topologie stables dans variante/révision, unité/repère/provenance, sélection rendue→ID canonique et sourceRevision ; geste/preview n’écrit pas, commande validée fait un seul engagement. Pas d’objet BIM déduit de sa forme.",
+        "Réemploi MTR03 Planchetopologie/maillage et MTR02 géométrie ; MTR06 OCCT par façade publique pour opérations qui exigent l’exact, MTR07 adaptateurbooléen actuellement privéUI à rendre contractuel avant réemploi. Aucun nouveau moteur décidé, mesh n’est pas BRep/certification.",
+        "Nouvelle topologie doit mapper les références ou les garder àrésoudre ; vue/coupe et caches reconstruisibles, jamais second writer. Annulation validée ou snapshot compatible, aucun résultat worker ancien engagé sur tête courante."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "TEST002 futur complet : entrée numérique spatiale→création→éditionface→transformation→sauver/fermer/rouvrir→vue/coupe identifiée, sans esquisse2D ou sémantique BIM implicite.",
+        "TEST004/007/011/014/023–026 applicables : conservation source/copielibre, pickingIDs, unités, refus géométrie invalide/autorité/révision/workerpérimé avant effet ; identité historique et correspondances ou statutdirty expliqués.",
+        "Définir opérations exactes du pilote, bornes/coûts/tolérances et dépendancesD minimales avant outil lourd. DEC02/08/10/11/12/18 ouverts selon opération ; aucune missionD ouG3 globale artificiellement exigée pour la simple préparation."
+      ],
+      "dependances_source": [
+        "M17:modèle spatial",
+        "M14:G3 du sous-lot",
+        "M15:corpus 3D"
+      ],
+      "responsables_prochaine_action": [
+        "A2 contrat spatialM17",
+        "A4 geste/picking",
+        "A5 corpus S5",
+        "A6 licences/ressources",
+        "A0 autorisation bornée"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/LOT-A.3.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A3/DEC18-MOTEURS-PUBLICS-CANDIDATS.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Revue du dossier et preuves/contrats/autorisation correspondant à la nature exacte de cetID encore à obtenir",
+        "responsable": "A3",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "Définir opérations exactes du pilote, bornes/coûts/tolérances et dépendancesD minimales avant outil lourd. DEC02/08/10/11/12/18 ouverts selon opération ; aucune missionD ouG3 globale artificiellement exigée pour la simple préparation."
+      },
+      "suite_exacte": "A0 fait revoir cette fiche par les propriétaires/reviewers indiqués et intègre seulement un delta documentaire rebased après comparaison au registre courant ; garderID ouvert",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "PR-05",
+      "mission": "M29",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Utiliser une branche courte conforme au protocole, puis une PR assortie des preuves.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 893,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L893"
+      },
+      "citation_checklist_exacte": "- [ ] **PR-05** — Utiliser une branche courte conforme au protocole, puis une PR assortie des preuves.",
+      "definition_input_sha256": "8607b8328fedcc2c7137da8d0a586af67828dbec7cd530d1c54e71828ab5b86a",
+      "registre_ligne_reference_sha256": "d51805b3e82363e303eb016562aa3ae9ea5b86485570eb45967c6a02c55a4fe8",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "En cours",
+      "nature_statut": "Préparation documentaire effective",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Fiche de livraison courte, rattachée à #156",
+      "preparation_realisee": [
+        "Champs prêts : Issue/lot existant, source/décision, branche courte par changement cohérent, base/headSHA, périmètre de fichiers, diff, tests auSHA, revue, risques/rollback et checkpointSTATUS/HANDOFF ensemble.",
+        "Réutiliser #156/#160 et les PR pertinentes ; #165 est fusionnée selon main817/remise6b, ne pas la présenter ouverte au présent depuis un ancien HANDOFF. Les PR169/171 ont leurs propres preuves historiques ; leur état distant courant n’est pas interrogé par A3.",
+        "A0 seul choisit/pousse la branche documentaire courte et ouvre la PR compatible CI sûre. Aucun nom permanent par agent/module ; ne pas renommer automatiquement la branche locale historique."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "PR au bon base/head, diff documentaire exact, lienSHA des preuves, contrôles documentaires sûrs au SHA propre et revue ; aucun commit/PR/fusion créé par cette fiche."
+      ],
+      "dependances_source": [
+        "M00:protocole commun",
+        "M11:sources du chantier"
+      ],
+      "responsables_prochaine_action": [
+        "A0 GitHub et CI auSHA courant"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/continuity/README.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Revue du dossier et preuves/contrats/autorisation correspondant à la nature exacte de cetID encore à obtenir",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "PR au bon base/head, diff documentaire exact, lienSHA des preuves, contrôles documentaires sûrs au SHA propre et revue ; aucun commit/PR/fusion créé par cette fiche."
+      },
+      "suite_exacte": "A0 fait revoir cette fiche par les propriétaires/reviewers indiqués et intègre seulement un delta documentaire rebased après comparaison au registre courant ; garderID ouvert",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "PR-06",
+      "mission": "M29",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Distinguer dans la PR ce qui est codé, testé, déployé et accepté ; ne pas utiliser une capture de bouton comme preuve métier.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 894,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L894"
+      },
+      "citation_checklist_exacte": "- [ ] **PR-06** — Distinguer dans la PR ce qui est codé, testé, déployé et accepté ; ne pas utiliser une capture de bouton comme preuve métier.",
+      "definition_input_sha256": "8160870feeea85944ca9bc65a878be876c66e89d187cac28934aaf72f305ebd5",
+      "registre_ligne_reference_sha256": "525d92747747b5b33b521f047b33630338f4b0aa654331f18c92cab4e0d93760",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "En cours",
+      "nature_statut": "Préparation documentaire effective",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Quatre colonnes de preuve indépendantes",
+      "preparation_realisee": [
+        "Tableau modèle par lot : code = diff+SHA exact ; tests = commande/env/corpus/exécutant/date/résultat auSHA ; déployé = acte/destination/build si autorisé ; accepté = autorité/portée/preuve/acte. Toute colonne non démontrée reste explicitement inconnue/non exécutée/non accordée.",
+        "Réemploi : CLASSIF1 code5e et492tests historiques purs ne prouvent aucun codeStudio ; DB1/2a15 et129tests simulés ne prouvent pas DB3. Les documentsStudio/G1/G2 ne sont ni code intégré ni recette. Aucun déploiement opéré par A3 et production non observée.",
+        "Captures/boutons/CIverte ne remplacent pas scénario métier terminé et acte d’acceptation."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "Chaque affirmation de PR doit être attachée à sa colonne/sourceSHA et limite ; refuser transfert de test historique sur nouveaucommit."
+      ],
+      "dependances_source": [
+        "M00:protocole commun",
+        "M11:sources du chantier"
+      ],
+      "responsables_prochaine_action": [
+        "A0 collecte preuvesCI/revue",
+        "A5 qualification des scénarios"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/continuity/README.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Revue du dossier et preuves/contrats/autorisation correspondant à la nature exacte de cetID encore à obtenir",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "Chaque affirmation de PR doit être attachée à sa colonne/sourceSHA et limite ; refuser transfert de test historique sur nouveaucommit."
+      },
+      "suite_exacte": "A0 fait revoir cette fiche par les propriétaires/reviewers indiqués et intègre seulement un delta documentaire rebased après comparaison au registre courant ; garderID ouvert",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "PR-07",
+      "mission": "M29",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Maintenir les états À définir, À faire, En cours, Implémenté, Vérifié, Bloqué et Accepté.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 895,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L895"
+      },
+      "citation_checklist_exacte": "- [ ] **PR-07** — Maintenir les états À définir, À faire, En cours, Implémenté, Vérifié, Bloqué et Accepté.",
+      "definition_input_sha256": "1737ca9cc3e469692450f1be91e1f53f76e6c245360cd74e517ac3990316783d",
+      "registre_ligne_reference_sha256": "985ebe7f544fde9dcb85e3499443a0b35bce8e9cb4658336eb960b5a6021b01b",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "En cours",
+      "nature_statut": "Préparation documentaire effective",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Vocabulaire sept états et transitions non implicites",
+      "preparation_realisee": [
+        "À définir = choix/contrat non fixé ; À faire = contrat de travail précis mais non commencé ; En cours = travail effectif commencé ; Implémenté = livrable concret disponible dans son périmètre ; Vérifié = condition ciblée vérifiée par preuve ; Bloqué = cause/owner/essais/déblocage ; Accepté = acte habilité et portée exacte.",
+        "Aucun état ne remplace les axes conformité/tests/acceptation/déploiement. Une préparation documentaire peut être En cours sans capacitéStudio implémentée ; une orientation acceptée n’est pas une DEC physique fermée.",
+        "Delta requis : tableau_registre ne reconnaît actuellement que5états ; préserver À faire/Implémenté dans la spécification au lieu de les remapper artificiellement. Conserver les2 acceptationsG0 et leurs actes."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "Afficher/contrôler les7états et toutes les transitions par condition, owner et preuve ; aucune case/acceptation automatique. Revue de l’outil jointe, non appliquée."
+      ],
+      "dependances_source": [
+        "M00:protocole commun",
+        "M11:sources du chantier"
+      ],
+      "responsables_prochaine_action": [
+        "A0 schéma et registre",
+        "A5 revue des états",
+        "lot outil à décider"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/continuity/README.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Revue du dossier et preuves/contrats/autorisation correspondant à la nature exacte de cetID encore à obtenir",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "Afficher/contrôler les7états et toutes les transitions par condition, owner et preuve ; aucune case/acceptation automatique. Revue de l’outil jointe, non appliquée."
+      },
+      "suite_exacte": "A0 fait revoir cette fiche par les propriétaires/reviewers indiqués et intègre seulement un delta documentaire rebased après comparaison au registre courant ; garderID ouvert",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "PR-08",
+      "mission": "M29",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Conserver séparément verdict de conformité, état d’exécution des tests et avancement du travail.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 896,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L896"
+      },
+      "citation_checklist_exacte": "- [ ] **PR-08** — Conserver séparément verdict de conformité, état d’exécution des tests et avancement du travail.",
+      "definition_input_sha256": "eea1d33d0d6c23dd65a942e6eb54fe516faaef5ecbc806572ae811b62d96aa74",
+      "registre_ligne_reference_sha256": "438e6c4edc1f79e62e40dc8035206f58e5c4a3b685c65dd7b9d3d6d1a9bc8738",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "En cours",
+      "nature_statut": "Préparation documentaire effective",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Axes de traçabilité séparés",
+      "preparation_realisee": [
+        "Fiche parID : avancement du travail ; verdictconformité avec périmètre ; tests et état réel ; preuves immuables ; décision d’acceptation ; étatdéploiement. Ne pas convertir un contrôleJSON en conformitéproduit.",
+        "Format de preuve proposé : type/sourceVersion/SHA/fichier-ou-run/date/exécutant/critère/limite. Miseàjour additive des preuves, comparaison des valeurs actuelles avant remplacer suite/tests/conformité ; aucune preuve plus récente effacée.",
+        "Les sources630/203 restent identiques, texte/mission/agent originaux inchangés. Aucun calculPDEV sans DEV_SCOPE/baseline ; P630 conserve condition exacte et nature documentaireG0."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "Le mêmeID peut avoir préparationEnCours, testsNonExécutés et conformitéNonÉvaluée sans incohérence ; le rendu doit l’exposer explicitement. RevueA0/A5 requise."
+      ],
+      "dependances_source": [
+        "M00:protocole commun",
+        "M11:sources du chantier"
+      ],
+      "responsables_prochaine_action": [
+        "A0 registre",
+        "A5 preuves"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/continuity/README.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Revue du dossier et preuves/contrats/autorisation correspondant à la nature exacte de cetID encore à obtenir",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "Le mêmeID peut avoir préparationEnCours, testsNonExécutés et conformitéNonÉvaluée sans incohérence ; le rendu doit l’exposer explicitement. RevueA0/A5 requise."
+      },
+      "suite_exacte": "A0 fait revoir cette fiche par les propriétaires/reviewers indiqués et intègre seulement un delta documentaire rebased après comparaison au registre courant ; garderID ouvert",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "PR-09",
+      "mission": "M29",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Revalider HEAD, CI et faits après chaque reprise de session avant la prochaine action autorisée.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 897,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L897"
+      },
+      "citation_checklist_exacte": "- [ ] **PR-09** — Revalider HEAD, CI et faits après chaque reprise de session avant la prochaine action autorisée.",
+      "definition_input_sha256": "531dac2552ff2773aec3dcfbb92f3bc872593982cd18b0bfcf68e1b214a28edb",
+      "registre_ligne_reference_sha256": "8cbe678b82f112ffe33189697bbb37e34a7018fd3f7613af9feb7b74a75f96d2",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "En cours",
+      "nature_statut": "Préparation documentaire effective",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Checklist de reprise et péremption",
+      "preparation_realisee": [
+        "Avant prochaine action : timestampUTC, SHA/branche locaux et étatdiff, main distant observé, base/head desPR ciblées, réponses#166 attribuées, autorisation du sous-lot et propriétaire des fichiers ; CIparSHA avec run/jobID et conclusion exacte.",
+        "Ce rapport vérifie les objets Git817/6b et HEADlocal2076, pas main distant ni nouvelleCI. HEAD2076registre ne change que active_preparations ; ne pas exiger le hash817 pour une écriture suivante et ne pas omettreCAS.",
+        "Les HANDOFF de main817 mentionnent encore165ouverte/maina4/87revues : snapshots historiquement valides mais périmés au présent sur ces points. Ajouter checkpoint actuel plutôt que réécrire la preuve datée ou transférer CI39129967610 au nouveauSHA."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "A0 remplit les observations distantes et CIactuelle auSHA avant publication ; inconnus restent tels, aucuneCIverte présumée."
+      ],
+      "dependances_source": [
+        "M00:protocole commun",
+        "M11:sources du chantier"
+      ],
+      "responsables_prochaine_action": [
+        "A0 revalidationGitHub/CI",
+        "A6 runtime/CI si utile"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/continuity/README.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/workstreams/studio/HANDOFF.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Revue du dossier et preuves/contrats/autorisation correspondant à la nature exacte de cetID encore à obtenir",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "A0 remplit les observations distantes et CIactuelle auSHA avant publication ; inconnus restent tels, aucuneCIverte présumée."
+      },
+      "suite_exacte": "A0 fait revoir cette fiche par les propriétaires/reviewers indiqués et intègre seulement un delta documentaire rebased après comparaison au registre courant ; garderID ouvert",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "RESP-01",
+      "mission": "M29",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Attribuer au produit la validation du périmètre métier, de la navigation et de la recette.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 903,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L903"
+      },
+      "citation_checklist_exacte": "- [ ] **RESP-01** — Attribuer au produit la validation du périmètre métier, de la navigation et de la recette.",
+      "definition_input_sha256": "8ef781e9768421805516c22bb7d28b4d7644d44649ac19b1ffd3517b5bcfaa23",
+      "registre_ligne_reference_sha256": "f9c387ae5c0ae723e580eba472a3a43a93066ddafb8cf99b22a0abc07b65f2fe",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "À définir",
+      "nature_statut": "Attribution humaine non définie ; préparationRACI seulement effectuée",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Attribution produit humaine encore à nommer",
+      "preparation_realisee": [
+        "RACI préparatoire : A1 instruit périmètre métier/pilote/exigences ; A4 prépare navigation/ergonomie ; A5 apporte preuves de recette ; A0 coordonne et recueille l’acte de validation.",
+        "Personne habilitée produit, compte/mandat, disponibilité et périmètre de validation non fournis : champs laissés null/inconnus. Aucun agent fictif ne remplace une nomination ; délégationChatGPT existante reste dans sa portée."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "Acte réel nommant le responsableproduit et ses droits/portée/disponibilité/cumul éventuel ; validation métier, navigation et recette distinctes des préparationsA1/A4."
+      ],
+      "dependances_source": [
+        "M00:protocole commun",
+        "M11:sources du chantier"
+      ],
+      "responsables_prochaine_action": [
+        "Utilisateur/autorité habilitante viaA0",
+        "CAD-DEC-03"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Nomination/personnes/disponibilités inconnues conservées àG0 ; aucune personne fictive",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "Acte de nomination réel viaA0/utilisateur ; continuer les préparations techniques indépendantes"
+      },
+      "suite_exacte": "A0 soumet la matriceRACI sans noms inventés, conserve CAD-DEC-03 ouvert et fait constater la personne/mandat/disponibilité avant clôture",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "RESP-02",
+      "mission": "M29",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Attribuer à l’architecture l’instruction des DEC et des frontières de composants.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 904,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L904"
+      },
+      "citation_checklist_exacte": "- [ ] **RESP-02** — Attribuer à l’architecture l’instruction des DEC et des frontières de composants.",
+      "definition_input_sha256": "7ec0b319c0c9c2368f29e5c04dc1dde14c357e33a8c94dc45d85954979345efa",
+      "registre_ligne_reference_sha256": "59544482ee025bf8628c7b7fb86dd7488bb89a2616ed84fc6b2ac282a3340fa5",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "À définir",
+      "nature_statut": "Attribution humaine non définie ; préparationRACI seulement effectuée",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Attribution architecture et délégation distinguées",
+      "preparation_realisee": [
+        "RACI préparatoire : A2 instruit DEC/frontières/contrats, A1 vérifie finalité, A5 sûreté et A6 licence/exploitation ; A0 consolide les arbitrages publiés.",
+        "Ne pas reposer la délégationtechniqueChatGPT déjà donnée. Personne/mandat d’architecture humain et disponibilité restent inconnus ; choix physiquesDEC encore ouverts traités dans leurs dossiers, pas par nomination imaginaire."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "Acte et propriétaire réel de revue des frontières/DEC, dossier de compétence et portée ; chaque décision structurante conserve ID/source/revue sans réécrire l’historique."
+      ],
+      "dependances_source": [
+        "M00:protocole commun",
+        "M11:sources du chantier"
+      ],
+      "responsables_prochaine_action": [
+        "Autorité habilitanteA0/utilisateur",
+        "A2 prépareDEC",
+        "CAD-DEC-03"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Nomination/personnes/disponibilités inconnues conservées àG0 ; aucune personne fictive",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "Acte de nomination réel viaA0/utilisateur ; continuer les préparations techniques indépendantes"
+      },
+      "suite_exacte": "A0 soumet la matriceRACI sans noms inventés, conserve CAD-DEC-03 ouvert et fait constater la personne/mandat/disponibilité avant clôture",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "RESP-03",
+      "mission": "M29",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Attribuer les sous-lots aux responsables CAO, backend, frontend et BIM/documentation.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 905,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L905"
+      },
+      "citation_checklist_exacte": "- [ ] **RESP-03** — Attribuer les sous-lots aux responsables CAO, backend, frontend et BIM/documentation.",
+      "definition_input_sha256": "f781bcc4827783187284fe6d77c11a2ebf7c5b3ed0036f79027fc932f4b5b368",
+      "registre_ligne_reference_sha256": "3576851a6992e90d46ac3aa258eab4ddcc05e929981a152227895c23322a3846",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "À définir",
+      "nature_statut": "Attribution humaine non définie ; préparationRACI seulement effectuée",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Affectation des sous-lots par livrable et fichier",
+      "preparation_realisee": [
+        "RACI préparatoire : A3 exécute les futurs lots de code explicitement autorisés ; A2 porte schémas/contrats en préparation ; A4 spécifie frontend/routes/navigation ; A5 teste ; A6 workflow/environnement ; A0 reste seul writer registre/STATUS/HANDOFF.",
+        "Table de réservation prête : CAO2D/3D, backendstockage/commandes, frontendroutes/traductions/styles, BIM/doc/publication. Pour chaque case : lot, fichier, writerunique, reviewer, période, autorisation et dépendance. Aucun accès de codeStudio ou branche permanente créé.",
+        "Noms/disponibilités des responsablesCAO/backend/frontend/BIM non fournis ; pas d’affirmation que A3 a réalisé Studio."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "Propriétaires nommés/habilités pour chaque sous-lot et fenêtre sans conflits ; contrat stable et autorisation applicables avantcode, cumul explicite consigné."
+      ],
+      "dependances_source": [
+        "M00:protocole commun",
+        "M11:sources du chantier"
+      ],
+      "responsables_prochaine_action": [
+        "A0 coordination",
+        "Utilisateur/personnesCAD-DEC-03"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/continuity/README.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Nomination/personnes/disponibilités inconnues conservées àG0 ; aucune personne fictive",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "Acte de nomination réel viaA0/utilisateur ; continuer les préparations techniques indépendantes"
+      },
+      "suite_exacte": "A0 soumet la matriceRACI sans noms inventés, conserve CAD-DEC-03 ouvert et fait constater la personne/mandat/disponibilité avant clôture",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "RESP-04",
+      "mission": "M29",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Attribuer à qualité/sécurité les tests adverses, corpus et preuves.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 906,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L906"
+      },
+      "citation_checklist_exacte": "- [ ] **RESP-04** — Attribuer à qualité/sécurité les tests adverses, corpus et preuves.",
+      "definition_input_sha256": "5a0a73a846d80409e76c2eb2ac11af15224bc8831b822181a6a87c7109224f81",
+      "registre_ligne_reference_sha256": "7b1c4ac5ea47e02c5c00019356c225dead94996c76f3719e0f72c89ff9e60e96",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "À définir",
+      "nature_statut": "Attribution humaine non définie ; préparationRACI seulement effectuée",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Attribution qualité/sécurité humaine et exécution réelle",
+      "preparation_realisee": [
+        "RACI préparatoire : A5 corpus/oracles/testsadverses/preuves, A2 modèle/contrats, A1 résultats métier et A6 cible/environnement ; revue indépendante attribuée à celui qui l’a réellement faite.",
+        "Personne habilitée qualité/sécurité, mandat, disponibilité et critères de signature non fournis. TestsDBdestructifs non autorisés ; préparation/testpursimulé ne devient pas recette réelle."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "Acte réel et matrice qui prépare/exécute/revoit/accepte les preuves ; compétence/indépendance et limite de chaque revue renseignées, personnes inconnues non fabriquées."
+      ],
+      "dependances_source": [
+        "M00:protocole commun",
+        "M11:sources du chantier"
+      ],
+      "responsables_prochaine_action": [
+        "Autorité humaine viaA0",
+        "A5 qualité",
+        "A6 environnement"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/continuity/README.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Nomination/personnes/disponibilités inconnues conservées àG0 ; aucune personne fictive",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "Acte de nomination réel viaA0/utilisateur ; continuer les préparations techniques indépendantes"
+      },
+      "suite_exacte": "A0 soumet la matriceRACI sans noms inventés, conserve CAD-DEC-03 ouvert et fait constater la personne/mandat/disponibilité avant clôture",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "RESP-05",
+      "mission": "M29",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Attribuer à exploitation migration, sauvegarde et retour arrière.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 907,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L907"
+      },
+      "citation_checklist_exacte": "- [ ] **RESP-05** — Attribuer à exploitation migration, sauvegarde et retour arrière.",
+      "definition_input_sha256": "70ec3c89757c1b0ba705cf1df05a9248bc1c59201f42d363f5971016debb09ce",
+      "registre_ligne_reference_sha256": "c477e1eab04e009ed355d851a5e64ed01be368719221ea338eb1420c85f16cd0",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "À définir",
+      "nature_statut": "Attribution humaine non définie ; préparationRACI seulement effectuée",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Attribution exploitation et accords sensibles distincts",
+      "preparation_realisee": [
+        "RACI préparatoire : A6 prépare migration/sauvegarde/restauration/retourarrière et preuve de sécurité ; A0 coordonne ; A5 vérifie corpus/recette et A2 compatibilité.",
+        "Nom/disponibilité de l’exploitant humain inconnus. Aucun droit d’adminGitHub/prod/donnéesréelles/migration/rétention/déploiement n’est créé par rôleA6 ou délégationtechnique."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "Nomination réelle, portée et droits explicitement bornés, accords spécifiques pour opération sensible et critères de retourarrière/restauration ; pas essai de restauration depuis cette fiche."
+      ],
+      "dependances_source": [
+        "M00:protocole commun",
+        "M11:sources du chantier"
+      ],
+      "responsables_prochaine_action": [
+        "Utilisateur/autorité d’exploitation",
+        "A0/A6",
+        "CAD-DEC-03"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/continuity/README.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Nomination/personnes/disponibilités inconnues conservées àG0 ; aucune personne fictive",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "Acte de nomination réel viaA0/utilisateur ; continuer les préparations techniques indépendantes"
+      },
+      "suite_exacte": "A0 soumet la matriceRACI sans noms inventés, conserve CAD-DEC-03 ouvert et fait constater la personne/mandat/disponibilité avant clôture",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "PASS-01",
+      "mission": "M30",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Vérifier que DEM-01, les sources exactes et la traçabilité sont fixés avant le premier engagement.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 954,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L954"
+      },
+      "citation_checklist_exacte": "- [ ] **PASS-01** — Vérifier que DEM-01, les sources exactes et la traçabilité sont fixés avant le premier engagement.",
+      "definition_input_sha256": "1e35245168a5b6a1750156e293ecc0286df4347a18927621efd79275825c5e32",
+      "registre_ligne_reference_sha256": "daa30151fbfb9deb384ef0e0ec921209fdc15542a49230e3cb34acc0e6417a8a",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "En cours",
+      "nature_statut": "Préparation documentaire effective",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Porte de cadrage : réemploi acteG0 exact",
+      "preparation_realisee": [
+        "Réutiliser acteG0 décision6250109830 sur dossier7b0cca4 : sourcesCharte/RT/Plan/checklist verrouillées, premierusage synthétiqueA/B/C et critères cadrés ; pièces/revuesA2/A4/A5 référencées.",
+        "Préparer le paquet d’entrée du prochain sous-lot : DEM-01 via définition/dossierG0, versionssources et liens141/630, contradictions, options/report et owner. Ne pas déduire personnes/autorités physiques deG0 : CAD-DEC-03 demeure ouvert."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "Vérifier que le sous-ensemble engagé correspond exactement à ce cadrage et aux sources citées ; acteG0 conservé, aucun nouveau passage ou premierengagementcode déclaré par A3."
+      ],
+      "dependances_source": [
+        "M11:pilote pour planifier",
+        "M14:autorisations par sous-ensemble",
+        "M16–M28:preuves du jalon concerné"
+      ],
+      "responsables_prochaine_action": [
+        "A0 dossier sous-lot",
+        "A1 sources/pilote"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Revue du dossier et preuves/contrats/autorisation correspondant à la nature exacte de cetID encore à obtenir",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "Vérifier que le sous-ensemble engagé correspond exactement à ce cadrage et aux sources citées ; acteG0 conservé, aucun nouveau passage ou premierengagementcode déclaré par A3."
+      },
+      "suite_exacte": "A0 fait revoir cette fiche par les propriétaires/reviewers indiqués et intègre seulement un delta documentaire rebased après comparaison au registre courant ; garderID ouvert",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "PASS-02",
+      "mission": "M30",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Vérifier que la décision de navigation, le modèle d’étude et les trois parcours sont spécifiés.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 955,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L955"
+      },
+      "citation_checklist_exacte": "- [ ] **PASS-02** — Vérifier que la décision de navigation, le modèle d’étude et les trois parcours sont spécifiés.",
+      "definition_input_sha256": "8769a8c70380ddbd37d60fd4019bfae1fff8bf2490082b68d29413bdd7cc1760",
+      "registre_ligne_reference_sha256": "f747c1921e30662bc5a12793b0129beb9a76a2804263c97d065e76069543f383",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "En cours",
+      "nature_statut": "Préparation documentaire effective",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Matrice navigation/modèle/ABC pour instructionG1",
+      "preparation_realisee": [
+        "Navigation : entréeStudio autonome aprèsProjets orientationD07, sans dépendanceParcours et sans raccourciAtelier ; détailsroutes/contextes/FR-EN/clavier/accessibilité dans NAV parA4.",
+        "Modèle : DEC01 document2D autonome et DEC03 Étude/Variante/Révision retenus pour spécificationsG1 ; physique/stockage/IDs/droits/restauration ouverts.",
+        "Parcours : A sans3D jusqu’àpublication ; B sansesquisse jusqu’àvue/coupe ; C objetscommuns/contraintes/métrés/observations/approbation/publication. Matrice sourcecontrat/refus/oracle à compléter par rôle."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "RevueA1/A2/A4/A5 des fonctions du sous-lot et pointsnonconclus ; documents présents n’acceptent pasG1 et n’implémentent aucun parcours."
+      ],
+      "dependances_source": [
+        "M11:pilote pour planifier",
+        "M14:autorisations par sous-ensemble",
+        "M16–M28:preuves du jalon concerné"
+      ],
+      "responsables_prochaine_action": [
+        "A2 M17",
+        "A4 NAV",
+        "A1/A5 G1"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Revue du dossier et preuves/contrats/autorisation correspondant à la nature exacte de cetID encore à obtenir",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "RevueA1/A2/A4/A5 des fonctions du sous-lot et pointsnonconclus ; documents présents n’acceptent pasG1 et n’implémentent aucun parcours."
+      },
+      "suite_exacte": "A0 fait revoir cette fiche par les propriétaires/reviewers indiqués et intègre seulement un delta documentaire rebased après comparaison au registre courant ; garderID ouvert",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "PASS-03",
+      "mission": "M30",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Vérifier la requalification des composants, les preuves des risques critiques et l’autorisation G3 du premier sous-ensemble.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 956,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L956"
+      },
+      "citation_checklist_exacte": "- [ ] **PASS-03** — Vérifier la requalification des composants, les preuves des risques critiques et l’autorisation G3 du premier sous-ensemble.",
+      "definition_input_sha256": "fe4d99210822b8ae949d1289c11bdeb2cc17872780c9e8e619f1ce58db3b4eda",
+      "registre_ligne_reference_sha256": "75990eecb691707bf0b6549fe23fcbd138818ed4fd0fd90512fcaea0bd1f3009",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "En cours",
+      "nature_statut": "Préparation documentaire effective",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Requalification, risques et autorisationG3 distincts",
+      "preparation_realisee": [
+        "Réemploi DEC18 :12groupes avec APIpublique/privée/licences/limites ; A2 graphe précis polygonArea et A3/A6 faisabilitéharness restent des études, aucunPOCexécuté.",
+        "Réemploi M08 au snapshot817 :125analyses/87revues ycompris8historiques ; les remises postérieures ne sont pas transférées sans index/commit actuel. Audit général non refait, D174 historique conservée.",
+        "DossierG3 proposé : opérationsexactes/sources/contrats/décisionsapplicables, corpus/oracles/risquescritiques, preuveG2 nécessaire et autorisation écrite par sous-lot ; une annexeharness ne remplace pas cet acte."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "G3 du premier sous-ensemble explicitement accordé après préconditions applicables ; aucunG1/G2/G3supposé depuis ce rapport. Absenceacte bloque seulementcodeconcerné."
+      ],
+      "dependances_source": [
+        "M11:pilote pour planifier",
+        "M14:autorisations par sous-ensemble",
+        "M16–M28:preuves du jalon concerné"
+      ],
+      "responsables_prochaine_action": [
+        "A0 acteG3",
+        "A2/A5 risques",
+        "A6 environnement"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A3/DEC18-MOTEURS-PUBLICS-CANDIDATS.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/M08-INDEX-A0.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Revue du dossier et preuves/contrats/autorisation correspondant à la nature exacte de cetID encore à obtenir",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "G3 du premier sous-ensemble explicitement accordé après préconditions applicables ; aucunG1/G2/G3supposé depuis ce rapport. Absenceacte bloque seulementcodeconcerné."
+      },
+      "suite_exacte": "A0 fait revoir cette fiche par les propriétaires/reviewers indiqués et intègre seulement un delta documentaire rebased après comparaison au registre courant ; garderID ouvert",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "PASS-04",
+      "mission": "M30",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Vérifier la cohérence des livraisons I/X/A.1, puis A.2/A.3/B sur des contrats stabilisés.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 957,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L957"
+      },
+      "citation_checklist_exacte": "- [ ] **PASS-04** — Vérifier la cohérence des livraisons I/X/A.1, puis A.2/A.3/B sur des contrats stabilisés.",
+      "definition_input_sha256": "95265e31e601015ae1473c7dfbdbe8b722e1a39cbb3ee42b71521d5720cacfcb",
+      "registre_ligne_reference_sha256": "9d675f485317253021fbe2bca8c3478db5c09a0c027f3bd08afc06c278766861",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "En cours",
+      "nature_statut": "Préparation documentaire effective",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Contrôles de raccordement I/X/A1 puis A2/A3/B",
+      "preparation_realisee": [
+        "PaquetI/X/A1 : mêmecontexte Projet/Étude/Variante/Révision, droits/authentificationserveur, writercanonique unique, commandes/historique/sauvegarde et corpus ; routes ne créent pas de données parGET.",
+        "PaquetA2/A3/B : ToolRegistry décrit capacité/permission/contrat/version/chargement sans remplacer sourceautoritaire ; les deux planches partagentservices sans devenir deuxcopies du mêmeobjetassocié.",
+        "Matrice prête : interface, owner, producteur/consommateur, version, refus, corpus, SHA,preuve et statut. Manque actuel : livraisonsStudio réelles et contrats physiques autorisés ; une boîteUI oucontrat illustratif ne suffit pas."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "Vérifier surlivraisons auSHAexact isolation et raccordement des fonctions retenues, sans exiger la clôture de touslots transverses pour continuer leurs études."
+      ],
+      "dependances_source": [
+        "M11:pilote pour planifier",
+        "M14:autorisations par sous-ensemble",
+        "M16–M28:preuves du jalon concerné"
+      ],
+      "responsables_prochaine_action": [
+        "I/X/A1 contratslivrés",
+        "A2/A3/B interfacesrevues",
+        "A0/A2/A5 revue"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A3/DEC18-MOTEURS-PUBLICS-CANDIDATS.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Revue du dossier et preuves/contrats/autorisation correspondant à la nature exacte de cetID encore à obtenir",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "Vérifier surlivraisons auSHAexact isolation et raccordement des fonctions retenues, sans exiger la clôture de touslots transverses pour continuer leurs études."
+      },
+      "suite_exacte": "A0 fait revoir cette fiche par les propriétaires/reviewers indiqués et intègre seulement un delta documentaire rebased après comparaison au registre courant ; garderID ouvert",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "PASS-05",
+      "mission": "M30",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Exiger la démonstration A.4/A.5 avant toute déclaration de conception associée.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 958,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L958"
+      },
+      "citation_checklist_exacte": "- [ ] **PASS-05** — Exiger la démonstration A.4/A.5 avant toute déclaration de conception associée.",
+      "definition_input_sha256": "13f69c16cca13d07604aff694e130c211c6bad756c267739cae7cb2585c9afd2",
+      "registre_ligne_reference_sha256": "c6444eb87bd1ed9af2df49f8e7f5feefba4f1a3d1bb4fb2a5992b215d487f02b",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "En cours",
+      "nature_statut": "Préparation documentaire effective",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Condition de conception associée A4/A5",
+      "preparation_realisee": [
+        "Dossier futurC : mêmeobjectId mur/hôte depuis2D/3D, relations etsourcecanonique unique, contraintes/quantités identifiées, commande/inverse/historique et invalidation limitée des projections.",
+        "Réemploi oracleRT synthétique6×3×0,2m : brut3,600, ouverture1×2,1→net3,180 ; ouverture1,2→net3,096 ; ne pas ajouter autresdéductions ou en faire règlement universel.",
+        "Ajouter conflitsdeuxsessions/rejeu/copieindépendante/observation/correction/recontrôle/approbation/publication avec droits et révisions exacts ; aucun importIFCproxy ne démontre le paramétrique."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "TEST003–014/027/029–031/038 et droits018/035 selon périmètre réellement exécutés aprèsautorisation ; ne pas annoncer C avant ces preuves et acteapplicable."
+      ],
+      "dependances_source": [
+        "M11:pilote pour planifier",
+        "M14:autorisations par sous-ensemble",
+        "M16–M28:preuves du jalon concerné"
+      ],
+      "responsables_prochaine_action": [
+        "A4/A5 lotsassociés",
+        "DEC02/12",
+        "A5 corpus",
+        "E approbationpublication"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Revue du dossier et preuves/contrats/autorisation correspondant à la nature exacte de cetID encore à obtenir",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "TEST003–014/027/029–031/038 et droits018/035 selon périmètre réellement exécutés aprèsautorisation ; ne pas annoncer C avant ces preuves et acteapplicable."
+      },
+      "suite_exacte": "A0 fait revoir cette fiche par les propriétaires/reviewers indiqués et intègre seulement un delta documentaire rebased après comparaison au registre courant ; garderID ouvert",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "PASS-06",
+      "mission": "M30",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Exiger l’achèvement de E et des parcours de bout en bout avant de présenter le pilote comme version métier utilisable.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 959,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L959"
+      },
+      "citation_checklist_exacte": "- [ ] **PASS-06** — Exiger l’achèvement de E et des parcours de bout en bout avant de présenter le pilote comme version métier utilisable.",
+      "definition_input_sha256": "66c583b6faefbf909a3901cb0df001e471cacaf1d10c90155cec68c997737f31",
+      "registre_ligne_reference_sha256": "6dc6ac662ee690a2864d5656634c40ff27f82452fd2d68819882050df9cc0fb9",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "En cours",
+      "nature_statut": "Préparation documentaire effective",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Condition de version métier utile aprèsE",
+      "preparation_realisee": [
+        "Chaîne de finA/B/C : donnéesdurables/sauvegarde/réouverture, contrôlesexigences/observations, vues/feuilles/dossier, manifestesempreintés, approbationetpublication distinctes surensembleexact.",
+        "Le piloteA exige publication indépendante sans3D, B vue/coupe sansesquisse, C dossierconceptionassociée ; E n’est pas une conversion automatique en certificationBIM. IFCparversion/sens/entité/pertes explicités.",
+        "Plan de preuves : parcoursutilisateur terminé, fichiers/révisions/pubIDs/sourceRevisionId, acteursautorisés et négatifsrefus ; testshistoriques ouCIverte seuls insuffisants."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "LotsE utiles et scénariosbout-en-bout du pilote satisfaits et acceptés dans périmètrefixé ; corpusautorisé, aucuneprod/déploiementimplicite."
+      ],
+      "dependances_source": [
+        "M11:pilote pour planifier",
+        "M14:autorisations par sous-ensemble",
+        "M16–M28:preuves du jalon concerné"
+      ],
+      "responsables_prochaine_action": [
+        "E documentaire/BIM/coordination",
+        "A1/A5 recette",
+        "A0 acte"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Revue du dossier et preuves/contrats/autorisation correspondant à la nature exacte de cetID encore à obtenir",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "LotsE utiles et scénariosbout-en-bout du pilote satisfaits et acceptés dans périmètrefixé ; corpusautorisé, aucuneprod/déploiementimplicite."
+      },
+      "suite_exacte": "A0 fait revoir cette fiche par les propriétaires/reviewers indiqués et intègre seulement un delta documentaire rebased après comparaison au registre courant ; garderID ouvert",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "PASS-07",
+      "mission": "M30",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Exiger R avant généralisation et les preuves propres à F avant ses extensions.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 960,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L960"
+      },
+      "citation_checklist_exacte": "- [ ] **PASS-07** — Exiger R avant généralisation et les preuves propres à F avant ses extensions.",
+      "definition_input_sha256": "dd9722eff4280ca18380c15a02e3a64c4c2ca1ed3ea1ba90a68ee6d6f7bf6aa1",
+      "registre_ligne_reference_sha256": "341da381c665d4790612abd125b7820281f4e33f247d4869866904ea70c2f8b2",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "En cours",
+      "nature_statut": "Préparation documentaire effective",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Condition R et optionsF conservées",
+      "preparation_realisee": [
+        "R avantgénéralisation : build/périmètrefigé, compatibilité/recette/retourarrière/restauration et décisionG4 ; migrations, sauvegardes/rétention et déploiement ont accordsdistincts.",
+        "F : IA/MCP/extensions tierces/immersionavancée reportéesduMVP selonD02, pas supprimées ni cochées ; fonctionsnormalesD3Visualisation restent danspérimètre. Chaqueextension ultérieure exige sescontrats, preuves et acte.",
+        "Préparer séparément matricebuild→corpus→recette→rollback→autorité et registreoption→statut/report/décision/critèreréouverture ; aucune reprise/migration/serviceexecuté."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "G4etautorisationdegénéralisation réels, preuvesR vérifiées, chaqueF retenue dispose de preuve propre ; aucunepasseglobale depuis checkbox ouplan."
+      ],
+      "dependances_source": [
+        "M11:pilote pour planifier",
+        "M14:autorisations par sous-ensemble",
+        "M16–M28:preuves du jalon concerné"
+      ],
+      "responsables_prochaine_action": [
+        "A6 R/exploitation",
+        "A1 options/pilote",
+        "A0 acteG4/autorisation"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/continuity/README.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Revue du dossier et preuves/contrats/autorisation correspondant à la nature exacte de cetID encore à obtenir",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "G4etautorisationdegénéralisation réels, preuvesR vérifiées, chaqueF retenue dispose de preuve propre ; aucunepasseglobale depuis checkbox ouplan."
+      },
+      "suite_exacte": "A0 fait revoir cette fiche par les propriétaires/reviewers indiqués et intègre seulement un delta documentaire rebased après comparaison au registre courant ; garderID ouvert",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    },
+    {
+      "id": "FIN-01",
+      "mission": "M30",
+      "agent_proprietaire_conserve": "A0",
+      "agent_preparateur": "A3 sur mandat A0 ; propriétaire original inchangé",
+      "description_source_exacte": "Vérifier que Studio est un espace autonome réellement utilisé depuis la barre verticale, avec données durables, outils activés selon le besoin et dossier de conception traçable, approuvé et publiable.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 966,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L966"
+      },
+      "citation_checklist_exacte": "- [ ] **FIN-01** — Vérifier que Studio est un espace autonome réellement utilisé depuis la barre verticale, avec données durables, outils activés selon le besoin et dossier de conception traçable, approuvé et publiable.",
+      "definition_input_sha256": "1ab4e82dbba4c1a515ce4b4f7b7b2aa3a01628a3292ea94c79fcfa5080dc88ba",
+      "registre_ligne_reference_sha256": "379e63b8c59eec6164dc432410f8b86191a7474c08fbd572dbdb1afadadf59d0",
+      "registre_statut_actuel": "À définir",
+      "statut_propose": "En cours",
+      "nature_statut": "Préparation documentaire effective",
+      "statut_preparation_documentaire": "En cours",
+      "statut_realisation_produit": "Non démontré",
+      "conformite_produit": "Non évaluée",
+      "tests": {
+        "etat": "Non exécuté",
+        "limite": "Aucun testStudio/outilregistre exécuté ; sources et preuves documentaires réemployées avec leur SHA propre"
+      },
+      "intitule_concret": "Dossier de clôture préparé, zéro clôture produit",
+      "preparation_realisee": [
+        "Sommaire prêt :1autonomieentréeverticale,2quatre domaines/deuxplanches,3donnéesProjetÉtudeVarianteRévisiondurables,4outilsactifs/chargés selonbesoin,5commandes/historique/provenance,6contrôles/observations/approbation/publication,7sécurité/exploitation/restauration,8recetteA/B/C+usage et décisionsrésiduelles.",
+        "Chaquechapitre exige source/version/SHA/corpus/exécutant/résultat et acte d’autorité ; J0–J8 etG4 sont des conditions réelles futures, pas cases àcocher àla réceptiond’unrapport.",
+        "Le dossier final conservera toutesles630obligations et optionsreportées/exclues motivées, statuts/blocagesowners/suites ; aucunprogrammeparallèle ou nouvelle numérotation."
+      ],
+      "conditions_de_cloture_a_verifier": [
+        "Étuderéellementterminée depuisStudioautonome jusqu’àdossiertraçableapprouvable/publiable, preuvesetactes descritères applicables, aucuneobligation perdue. Ce rapportne démontreaucunusageStudio/G4 etPDEV resteN/D."
+      ],
+      "dependances_source": [
+        "M11:pilote pour planifier",
+        "M14:autorisations par sous-ensemble",
+        "M16–M28:preuves du jalon concerné"
+      ],
+      "responsables_prochaine_action": [
+        "A0 consolidation",
+        "A1 produit",
+        "A2 architecture",
+        "A4UX",
+        "A5recette",
+        "A6exploitation",
+        "J0–J8/G4"
+      ],
+      "preuves_reutilisees": [
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/continuity/README.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Preuve documentaire de préparation/cadrage dans portée exacte ; pas code/recette/acceptationStudio"
+        }
+      ],
+      "blocage": {
+        "cause": "Revue du dossier et preuves/contrats/autorisation correspondant à la nature exacte de cetID encore à obtenir",
+        "responsable": "A0",
+        "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
+        "deblocage": "Étuderéellementterminée depuisStudioautonome jusqu’àdossiertraçableapprouvable/publiable, preuvesetactes descritères applicables, aucuneobligation perdue. Ce rapportne démontreaucunusageStudio/G4 etPDEV resteN/D."
+      },
+      "suite_exacte": "A0 fait revoir cette fiche par les propriétaires/reviewers indiqués et intègre seulement un delta documentaire rebased après comparaison au registre courant ; garderID ouvert",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "registre_modifie_par_A3": false
+    }
+  ],
+  "additional_deltas_proposed": [
+    "Les fiches A.2-01/A.3-01 complètent LOT-A.2/A.3 et G1v2 sans créer nouveau contrat concurrent ; listesopérations restent propositions, pas sous-ensemble retenu par défaut.",
+    "Les5RESP distinguent rôleagent déjà connu et personnehabilitée inconnue ; conserver À définir/Bloqué si choix humain nonréel, pas En cours fictif d’attribution.",
+    "PR07 exige7états ; outil actuel5états doit être corrigé avant toute utilisation de À faire/Implémenté, aucun remapping silencieux.",
+    "PR09 relève péremption des passages165ouverte/maina4/87revuesdans HANDOFF817 : A0 ajoute état actuel prouvé au prochaincheckpoint, conserve historique daté.",
+    "PASS03/M08 réemploi de87revuesauSHA817 ; les revuesultérieures déjà réalisées restent dans leurs rapports/SHAs, sans addition au snapshot historique.",
+    "A0 vérifie preuve plus récente et refaitdiff exact au futurSHA avant intégrer : aucundelta v1 exécutable généré parA3."
+  ],
+  "tool_review": "REVUE-OUTIL-REGISTRE-A3.json/.md : lecturestatique, tests synthétiques autorisablesaprèsrevue ; écriturecanonique déconseillée dansétatactuel",
+  "limits": [
+    "Aucune revalidation GitHub distante/CI par A3 ; main817 est référence fournie/objetsGit lus.",
+    "Aucun test du module tableau_registre,aucun importexécuté,nouveaucodeStudio,POC/service/DB/migration/admin/fusion oudéploiement.",
+    "Les20propositions ne sont ni20tâchesterminées niacceptationsmétier. Toutes les203fiches et630IDs restent conservés.",
+    "Toutcontratphysique/nominationencoreouverts reste explicitementtel ; aucune fermetureDEC ougate depuis cedossier."
+  ],
+  "next_action": "A0 confronte ces20fiches aux autresremises puis revue indépendante ; intègre lui-même preuveadditive/régistre/checkpointsrebased àSHAexact via contrôle documentaire sûr, sans utiliser --ecrire non sécurisé."
+}

@@ -1,0 +1,25 @@
+{
+  "programme": 156,
+  "source": "A1/M00-READY-M00-M30-A1.json",
+  "nature": "File finie de préparation de cette reprise, pas clôture du programme",
+  "missions": {"total": 31, "En cours": 25, "Bloqué": 6, "cloturees": 0},
+  "actions": [
+    {"id": "R1", "objet": "125 analyses et revues M08, deltas et limites", "statut": "Vérifié", "nature": "documentaire", "preuve": "M08-CONSOLIDATION-A0.json"},
+    {"id": "R2", "objet": "Index G1 confronté aux quatre conditions officielles", "statut": "Vérifié", "nature": "revue documentaire, G1 non accepté", "preuve": "A4/G1-INDEX-REVUE-CIBLEE-A4.json"},
+    {"id": "R3", "objet": "Dix choix de compatibilité et graphe public", "statut": "Vérifié", "nature": "préparation statique, choix physiques ouverts", "preuve": "A2/M05-M17-CHOIX-RESIDUELS-A2.json"},
+    {"id": "R4", "objet": "CSP/KML et observabilité sécurité", "statut": "Vérifié", "nature": "rapprochement documentaire, aucun scan ou enforcement", "preuve": "A5/R4-M09-RAPPROCHEMENT-A5.json"},
+    {"id": "R5", "objet": "Lacunes S1–S7 reliées aux oracles existants", "statut": "Vérifié", "nature": "qualification documentaire, corpus partiels", "preuve": "A5/R5-M15-M26-LACUNES-CORPUS-A5.json"},
+    {"id": "R6", "objet": "Checkpoints jumelés, registre et publications", "statut": "En cours", "nature": "A0 publication et observation CI au SHA exact", "preuve": "README.md"},
+    {"id": "R7", "objet": "Delta checks requis et réconciliation de workflows", "statut": "Vérifié", "nature": "préparation seulement, aucun réglage administratif", "preuve": "A6/M03-DELTA-CHECKS-PURS-AVANT-FUSION.json"},
+    {"id": "R8", "objet": "Faisabilité du harness G2 et six sources proposées", "statut": "Vérifié", "nature": "étude statique et revue, aucun POC autorisé/exécuté", "preuve": "A6/REVUE-G2-FINALE-A6.json"},
+    {"id": "R9", "objet": "Onze fonctions et traçabilité v2 après six corrections", "statut": "Vérifié", "nature": "53/88, catalogue38 et27candidats ; pas couverture ou gate", "preuve": "A2/G1-ONZE-FONCTIONS-REVUE-A2-v2.json"},
+    {"id": "R10", "objet": "Annotations des trois contradictions dans les fiches", "statut": "Vérifié", "nature": "ajouts documentaires seuls, anomalies encore ouvertes", "preuve": "A5/M08-REVUE-ANNOTATIONS-A5.json"}
+  ],
+  "prochaines_dependances": [
+    {"id": "Q-P156-G1-EXPERIMENTAL", "responsable": "Autorité technique déléguée dans166", "action": "Qualifier G1 du périmètre explicitement limité, sans accepter réalisation générale"},
+    {"id": "Q-P156-G2-HARNESS", "responsable": "Autorité technique déléguée dans166 puis A6/A3/A5", "action": "Décider le lot expérimental exact ; exécution interdite tant que préconditions non attestées"},
+    {"id": "Q-P156-M08-DOC-SCOPE", "responsable": "Autorité technique déléguée dans166", "action": "Clarifier rédaction des trois écarts, sans nouveau vote des décisions acquises"}
+  ],
+  "avancement": {"P630": "34/630=5,4% documentaire/cadrage", "PDEV": null, "coches_source_HTML": 0, "nouveaux_statuts630": 0},
+  "limite": "Une proposition reçue/revue n'est ni implémentée ni acceptée. Aucun travail de code Studio, DB réelle, service, migration, admin, fusion ou production autorisé par ce fichier."
+}
