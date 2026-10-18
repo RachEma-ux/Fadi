@@ -97,6 +97,12 @@ async function releve(nom) {
   return r.length;
 }
 
+// Studio : une étude et une seconde variante pour relever leurs écrans (leurs noms sont des données du projet).
+const etudeEn = (await api("post", `/projects/${pid}/studio/studies`, { name: "Étude EN" })).body;
+const varianteEn = (await api("post", `/projects/${pid}/studio/studies/${etudeEn.study.id}/variants`, { name: "Variante EN" })).body;
+recolter(["Étude EN", "Variante EN"]);
+const cheminEtudeEn = `/studio/projets/${pid}/etudes/${etudeEn.study.id}`;
+
 const ecrans = [
   ["accueil", "/accueil"],
   ["accueil-projet", `/projets/${pid}`],
@@ -111,6 +117,12 @@ const ecrans = [
   ["analyses", `/projets/${pid}?module=analyses`],
   ["documents", `/projets/${pid}?module=documents`],
   ["collaboration", `/projets/${pid}?module=collaboration`],
+  ["studio", "/studio"],
+  ["studio-projet", `/studio/projets/${pid}`],
+  ["studio-etude", cheminEtudeEn],
+  ["studio-variante", `${cheminEtudeEn}/variantes/${varianteEn.variant.id}`],
+  ["studio-revision", `${cheminEtudeEn}/variantes/${etudeEn.variant.id}?revision=${encodeURIComponent(etudeEn.revision.id)}`],
+  ["studio-inconnue", "/studio/adresse-inconnue"],
   ["atelier", `/projets/${pid}?module=atelier`],
 ];
 for (const [nom, url] of ecrans) {
