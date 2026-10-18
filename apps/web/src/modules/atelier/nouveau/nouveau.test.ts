@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CONTRAT_COMMANDES, appliquerLot, distance, m, modeleVide, pt, type Commande, type ModeleAtelier, type Occurrence } from "@parcours/atelier-model";
 import { actionImmediate, lotSuppression } from "./actions";
 import { etatUi, type EtatUi } from "./etat-ui";
-import { OUTILS, rechercherOutils } from "./outils";
+import { OUTILS, OUTILS_PAR_ID, rechercherOutils } from "./outils";
 import { accrocher, objetSousPointeur, pointsTangence, segmentsDuNiveau } from "./plan2d/accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, saisie, terminer } from "./plan2d/outils-2d";
 import { cadrer, projecteur } from "./plan2d/projecteur";
@@ -390,6 +390,21 @@ describe("palette et projection", () => {
     expect(rechercherOutils("cloison")[0]?.id).toBe("mur");
     expect(rechercherOutils("fenetre")[0]?.id).toBe("fenetre");
     expect(rechercherOutils("")).toHaveLength(OUTILS.length);
+  });
+
+  it("chaque identifiant d'outil est unique (#173 : collision « echelle » entre échelle d'accès et mise à l'échelle)", () => {
+    const ids = OUTILS.map((o) => o.id);
+    expect(ids.filter((id, i) => ids.indexOf(id) !== i)).toEqual([]);
+    expect(Object.keys(OUTILS_PAR_ID)).toHaveLength(OUTILS.length);
+  });
+
+  it("échelle d'accès et mise à l'échelle sont deux outils distincts ; la recherche « échelle » propose d'abord la mise à l'échelle", () => {
+    expect(OUTILS_PAR_ID["echelle-acces"]).toMatchObject({ libelle: "Échelle d'accès", famille: "creer", panneau: true });
+    expect(OUTILS_PAR_ID["echelle"]).toMatchObject({ libelle: "Échelle", famille: "modifier", condition: "selection" });
+    const ids = rechercherOutils("échelle").map((o) => o.id);
+    expect(ids[0]).toBe("echelle");
+    expect(ids).toContain("echelle-acces");
+    expect(rechercherOutils("ladder")[0]?.id).toBe("echelle-acces");
   });
 
   it("chaque raccourci clavier désigne un seul outil", () => {
