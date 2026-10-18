@@ -6,6 +6,7 @@ import { pool } from "./db/client.js";
 import { basculerAncienMoteur } from "./db/bascule.js";
 
 const port = Number(process.env["PORT"] ?? 3001);
+const host = process.env["HOST"];
 
 /**
  * `MIGRATE_ON_START=1` (conteneur, hébergement durable) : le schéma idempotent (`db/init.sql`, CREATE … IF NOT EXISTS /
@@ -26,7 +27,7 @@ async function migrateOnStart(): Promise<void> {
 migrateOnStart()
   .then(() => {
     const app = createApp();
-    const server = app.listen(port, () => {
+    const server = app.listen(host ? { port, host } : { port }, () => {
       // eslint-disable-next-line no-console
       console.log(`Fadi API listening on :${port}${process.env["WEB_DIST"] ? " (sert aussi l'application)" : ""}`);
     });
