@@ -1,6 +1,6 @@
 # Qualification opérationnelle — 203 tâches Studio « À définir »
 
-Source immuable : registre `docs/workstreams/studio/task-register.json` **blob `a460fb315f6c74f6c60797fc2d5e9d7b2d1fbcae`**, `main@817bd36e7d4b1ab60ab9c00309509c7cdfed0798`, 18 octobre 2026. La PR #165 est maintenant fusionnée ; le **nouveau dossier n'est pas dans main tant que sa PR n'est pas fusionnée**.
+Source immuable : registre `docs/workstreams/studio/task-register.json` **blob `a460fb315f6c74f6c60797fc2d5e9d7b2d1fbcae`**, `main@817bd36e7d4b1ab60ab9c00309509c7cdfed0798`, 18 octobre 2026. La PR #165 est maintenant fusionnée ; le **nouveau dossier est sur une branche documentaire courte, sans PR ni fusion pour le moment** ; Codex devra l'intégrer au suivi après vérification du chemin CI documentaire sûr.
 
 **203/203 IDs identifiés et qualifiés individuellement**, sans modifier leur statut d'exécution dans le registre canonique. Le terme « défini » désigne ici un **contrat de travail proposé pour instruction**, pas une validation de réalisation, de décision humaine, ni de gate G1–G4. Chaque fiche contient le libellé exact de la checklist, l'agent A0–A6, la dépendance source, le livrable, la méthode, les critères de preuve, le gate et la prochaine action.
 
