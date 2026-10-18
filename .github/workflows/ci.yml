@@ -30,6 +30,8 @@ jobs:
         with:
           node-version: 22
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Refuser les endpoints de validation étrangers sans connexion
+        run: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/validation -p 'test_studio_profile_guard.py' -v
       - run: npm run typecheck
       - name: Régression des paquets purs et du web sans setup DB historique
         run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
