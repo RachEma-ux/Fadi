@@ -84,6 +84,7 @@ def parse_data(payload, ids, now):
     hourly = []
     questions = {}
     answers = {}
+    delegated = {}
     owner_pending = {}
     acknowledgements = 0
     signals = {}
@@ -99,7 +100,9 @@ def parse_data(payload, ids, now):
             hourly.append((created, body, url))
         for qid in re.findall(r"\[CODEX-QUESTION\]\[(Q-[a-zA-Z0-9_-]+)\]\[OPEN\]", body):
             questions[qid] = {"url": url, "created_at": created}
-        answered_ids = re.findall(r"\[CHATGPT-ANSWER\]\[(Q-[a-zA-Z0-9_-]+)\]", body)
+        answered_ids = re.findall(r"\[(?:CHATGPT-ANSWER|CHATGPT-DECISION)\]\[(Q-[a-zA-Z0-9_-]+)\]", body)
+        for qid in re.findall(r"\[CHATGPT-DECISION\]\[(Q-[a-zA-Z0-9_-]+)\]", body):
+            delegated[qid] = url
         for qid in answered_ids:
             answers[qid] = url
         for qid in re.findall(r"\[NEEDS-USER-DECISION\]\[(Q-[a-zA-Z0-9_-]+)\]", body):
@@ -158,6 +161,8 @@ def parse_data(payload, ids, now):
         "questions": {"total": len(questions), "unanswered": unanswered,
                       "unanswered_count": len(unanswered),
                       "answered_count": len([q for q in questions if q in answers]),
+                      "delegated_decision_count": len([q for q in questions if q in delegated]),
+                      "delegated_decision_ids": sorted(q for q in questions if q in delegated),
                       "owner_decision_pending": sorted(q for q in owner_pending if q in questions),
                       "owner_decision_pending_count": len([q for q in owner_pending if q in questions])},
         "task_signals": sorted(signals.values(), key=lambda v:(v["id"],v["stage"])),
