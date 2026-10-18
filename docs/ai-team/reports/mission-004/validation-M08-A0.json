@@ -1,0 +1,9 @@
+{
+  "reference": "a4caaab0e6665480f09febe3914c960b424b6b47",
+  "missing_reference_entries_exact": 125,
+  "fiches": 69,
+  "unique_missing_paths": 33,
+  "candidate_relationships": 185,
+  "candidate_exact_line_evidence": 305,
+  "verdict": "Rapprochement documentaire vérifié, aucune équivalence fonctionnelle ni exécution du test candidat déduite."
+}

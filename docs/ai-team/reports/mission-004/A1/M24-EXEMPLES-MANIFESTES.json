@@ -1,0 +1,4060 @@
+{
+  "schema_note": "Exemples logiques documentaires A1, pas schéma/API/permission applicative Fadi",
+  "mission": "004/M24",
+  "status": "Spécification candidate, aucun scénario produit exécuté",
+  "hash_method_for_examples_only": "SHA-256 sur JSON ensure_ascii=False, clés triées, séparateurs compacts ; démonstration interne, choix production DEC16 non arrêté",
+  "positive_examples": [
+    {
+      "exampleId": "M24-POS-A",
+      "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+      "route": "A",
+      "authorizedResourceContextFixture": {
+        "projectId": "fixture-project-001",
+        "studyId": "fixture-study-001",
+        "variantId": "fixture-variant-A",
+        "revisionId": "fixture-revision-A-001"
+      },
+      "preconditions_assumed_for_example": [
+        "Même contexte autorisé et coupe logique atomique par version immuable",
+        "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+        "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+        "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+        "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+      ],
+      "canonicalBody": {
+        "schemaVersion": "illustrative-1",
+        "context": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-A",
+          "revisionId": "fixture-revision-A-001"
+        },
+        "authority": "drawing2d",
+        "writerAuthority": "drawing2d",
+        "documentId": "fixture-drawing-A",
+        "coordinateFrame": {
+          "id": "fixture-plane-A",
+          "kind": "document2d",
+          "unit": "m"
+        },
+        "entities": [
+          {
+            "id": "fixture-line-A",
+            "kind": "line",
+            "from": [
+              0,
+              0
+            ],
+            "to": [
+              6,
+              0
+            ],
+            "layerId": "fixture-layer-A"
+          },
+          {
+            "id": "fixture-dim-A",
+            "kind": "dimension",
+            "references": [
+              "fixture-line-A"
+            ],
+            "value": 6,
+            "unit": "m"
+          },
+          {
+            "id": "fixture-text-A",
+            "kind": "text",
+            "value": "Détail synthétique A"
+          }
+        ],
+        "layers": [
+          {
+            "id": "fixture-layer-A",
+            "name": "Dessin synthétique"
+          }
+        ],
+        "associations": []
+      },
+      "canonicalSource": {
+        "contentId": "fixture-canonical-A",
+        "schemaVersion": "illustrative-1",
+        "authority": "drawing2d",
+        "context": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-A",
+          "revisionId": "fixture-revision-A-001"
+        },
+        "contentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+        "units": "m",
+        "coordinateFrameId": "fixture-plane-A",
+        "provenance": {
+          "origin": "Données synthétiques documentaires A1",
+          "sourceVersion": "M24-example-v1",
+          "rights": "Aucune donnée client ni production"
+        }
+      },
+      "documents": [
+        {
+          "documentId": "fixture-document-A",
+          "documentVersion": "1",
+          "contentHash": "f37ec68861c0ddffba6cce7573f0fb1343187ec11fb71841d543d24604e0f78f",
+          "sourceRevisionSet": [
+            "fixture-revision-A-001"
+          ],
+          "sourceContentHashes": [
+            "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299"
+          ],
+          "methodVersion": "illustrative-document-method-1",
+          "format": "application/json-example-only",
+          "freshnessStatus": "current-for-source",
+          "availability": "present-in-example-bundle",
+          "body": {
+            "artifact": "Document synthétique de démonstration de manifeste, pas export PDF/IFC exécuté",
+            "kind": "drawing-sheet",
+            "sourceContentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+            "sourceRevisionId": "fixture-revision-A-001",
+            "title": "Pièce documentaire synthétique A"
+          }
+        }
+      ],
+      "manifest": {
+        "manifestId": "fixture-manifest-A",
+        "manifestVersion": "1",
+        "schemaVersion": "illustrative-1",
+        "context": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-A",
+          "revisionId": "fixture-revision-A-001"
+        },
+        "usage": "Exemple synthétique de dossier de conception A",
+        "createdAt": "2026-10-18T12:00:00Z",
+        "authorId": "fixture-designer",
+        "orderedDocuments": [
+          {
+            "documentId": "fixture-document-A",
+            "documentVersion": "1",
+            "contentHash": "f37ec68861c0ddffba6cce7573f0fb1343187ec11fb71841d543d24604e0f78f"
+          }
+        ],
+        "sourceRevisionSet": [
+          "fixture-revision-A-001"
+        ],
+        "canonicalSources": [
+          {
+            "contentId": "fixture-canonical-A",
+            "schemaVersion": "illustrative-1",
+            "authority": "drawing2d",
+            "context": {
+              "projectId": "fixture-project-001",
+              "studyId": "fixture-study-001",
+              "variantId": "fixture-variant-A",
+              "revisionId": "fixture-revision-A-001"
+            },
+            "contentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+            "units": "m",
+            "coordinateFrameId": "fixture-plane-A",
+            "provenance": {
+              "origin": "Données synthétiques documentaires A1",
+              "sourceVersion": "M24-example-v1",
+              "rights": "Aucune donnée client ni production"
+            }
+          }
+        ],
+        "rules": [
+          {
+            "ruleId": "fixture-required-review",
+            "ruleVersion": "1"
+          }
+        ],
+        "controls": [
+          {
+            "checkId": "fixture-check-A",
+            "ruleId": "fixture-required-review",
+            "ruleVersion": "1",
+            "sourceRevisionSet": [
+              "fixture-revision-A-001"
+            ],
+            "sourceContentHashes": [
+              "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299"
+            ],
+            "executionState": "expected-completed-only-in-fixture",
+            "conclusion": "expected-conforme-only-in-fixture",
+            "evidenceKind": "documentary-example-not-executed"
+          }
+        ],
+        "observations": [],
+        "approvalState": "expected-approved-in-fixture",
+        "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+      },
+      "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+      "approval": {
+        "approvalId": "fixture-approval-A",
+        "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+        "approvedManifestId": "fixture-manifest-A",
+        "approvedAt": "2026-10-18T12:01:00Z",
+        "actorId": "fixture-approver",
+        "action": "approve",
+        "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+      },
+      "publication": {
+        "publicationId": "fixture-publication-A",
+        "manifestId": "fixture-manifest-A",
+        "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+        "approvalId": "fixture-approval-A",
+        "actorId": "fixture-publisher",
+        "publishedAt": "2026-10-18T12:02:00Z",
+        "eventId": "fixture-event-A",
+        "evidenceKind": "synthetic-expected-record-not-a-real-publication",
+        "distributionState": "expected-published-in-fixture"
+      },
+      "reopenIntent": {
+        "source": "publication",
+        "publicationId": "fixture-publication-A",
+        "expectedManifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+        "mode": "read-identified-immutable",
+        "fallbackToLatest": false
+      },
+      "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique"
+    },
+    {
+      "exampleId": "M24-POS-B",
+      "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+      "route": "B",
+      "authorizedResourceContextFixture": {
+        "projectId": "fixture-project-001",
+        "studyId": "fixture-study-001",
+        "variantId": "fixture-variant-B",
+        "revisionId": "fixture-revision-B-001"
+      },
+      "preconditions_assumed_for_example": [
+        "Même contexte autorisé et coupe logique atomique par version immuable",
+        "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+        "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+        "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+        "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+      ],
+      "canonicalBody": {
+        "schemaVersion": "illustrative-1",
+        "context": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-B",
+          "revisionId": "fixture-revision-B-001"
+        },
+        "authority": "model3d",
+        "writerAuthority": "model3d",
+        "modelId": "fixture-model-B",
+        "coordinateFrame": {
+          "id": "fixture-local-B",
+          "kind": "local3d",
+          "unit": "m"
+        },
+        "objects": [
+          {
+            "id": "fixture-volume-B",
+            "representation": "free-spatial-box-illustrative",
+            "size": [
+              2,
+              3,
+              4
+            ],
+            "sourceSketchId": null,
+            "semanticBimClass": null
+          }
+        ],
+        "associations": []
+      },
+      "canonicalSource": {
+        "contentId": "fixture-canonical-B",
+        "schemaVersion": "illustrative-1",
+        "authority": "model3d",
+        "context": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-B",
+          "revisionId": "fixture-revision-B-001"
+        },
+        "contentHash": "43236aebed218788e21de1a12a68d08e6f582bd5a956e5a9fc2dc40adc2f355e",
+        "units": "m",
+        "coordinateFrameId": "fixture-local-B",
+        "provenance": {
+          "origin": "Données synthétiques documentaires A1",
+          "sourceVersion": "M24-example-v1",
+          "rights": "Aucune donnée client ni production"
+        }
+      },
+      "documents": [
+        {
+          "documentId": "fixture-document-B",
+          "documentVersion": "1",
+          "contentHash": "3e60caeff585c06c4ca1bb725133908f5c7efa676805e71391006fb399bd8b80",
+          "sourceRevisionSet": [
+            "fixture-revision-B-001"
+          ],
+          "sourceContentHashes": [
+            "43236aebed218788e21de1a12a68d08e6f582bd5a956e5a9fc2dc40adc2f355e"
+          ],
+          "methodVersion": "illustrative-document-method-1",
+          "format": "application/json-example-only",
+          "freshnessStatus": "current-for-source",
+          "availability": "present-in-example-bundle",
+          "body": {
+            "artifact": "Document synthétique de démonstration de manifeste, pas export PDF/IFC exécuté",
+            "kind": "derived-section",
+            "sourceContentHash": "43236aebed218788e21de1a12a68d08e6f582bd5a956e5a9fc2dc40adc2f355e",
+            "sourceRevisionId": "fixture-revision-B-001",
+            "title": "Pièce documentaire synthétique B"
+          }
+        }
+      ],
+      "manifest": {
+        "manifestId": "fixture-manifest-B",
+        "manifestVersion": "1",
+        "schemaVersion": "illustrative-1",
+        "context": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-B",
+          "revisionId": "fixture-revision-B-001"
+        },
+        "usage": "Exemple synthétique de dossier de conception B",
+        "createdAt": "2026-10-18T12:00:00Z",
+        "authorId": "fixture-designer",
+        "orderedDocuments": [
+          {
+            "documentId": "fixture-document-B",
+            "documentVersion": "1",
+            "contentHash": "3e60caeff585c06c4ca1bb725133908f5c7efa676805e71391006fb399bd8b80"
+          }
+        ],
+        "sourceRevisionSet": [
+          "fixture-revision-B-001"
+        ],
+        "canonicalSources": [
+          {
+            "contentId": "fixture-canonical-B",
+            "schemaVersion": "illustrative-1",
+            "authority": "model3d",
+            "context": {
+              "projectId": "fixture-project-001",
+              "studyId": "fixture-study-001",
+              "variantId": "fixture-variant-B",
+              "revisionId": "fixture-revision-B-001"
+            },
+            "contentHash": "43236aebed218788e21de1a12a68d08e6f582bd5a956e5a9fc2dc40adc2f355e",
+            "units": "m",
+            "coordinateFrameId": "fixture-local-B",
+            "provenance": {
+              "origin": "Données synthétiques documentaires A1",
+              "sourceVersion": "M24-example-v1",
+              "rights": "Aucune donnée client ni production"
+            }
+          }
+        ],
+        "rules": [
+          {
+            "ruleId": "fixture-required-review",
+            "ruleVersion": "1"
+          }
+        ],
+        "controls": [
+          {
+            "checkId": "fixture-check-B",
+            "ruleId": "fixture-required-review",
+            "ruleVersion": "1",
+            "sourceRevisionSet": [
+              "fixture-revision-B-001"
+            ],
+            "sourceContentHashes": [
+              "43236aebed218788e21de1a12a68d08e6f582bd5a956e5a9fc2dc40adc2f355e"
+            ],
+            "executionState": "expected-completed-only-in-fixture",
+            "conclusion": "expected-conforme-only-in-fixture",
+            "evidenceKind": "documentary-example-not-executed"
+          }
+        ],
+        "observations": [],
+        "approvalState": "expected-approved-in-fixture",
+        "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+      },
+      "manifestHash": "2e58cab655807e1f199a99955b9876947efedce66f49e052197dc62f60a22d98",
+      "approval": {
+        "approvalId": "fixture-approval-B",
+        "manifestHash": "2e58cab655807e1f199a99955b9876947efedce66f49e052197dc62f60a22d98",
+        "approvedManifestId": "fixture-manifest-B",
+        "approvedAt": "2026-10-18T12:01:00Z",
+        "actorId": "fixture-approver",
+        "action": "approve",
+        "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+      },
+      "publication": {
+        "publicationId": "fixture-publication-B",
+        "manifestId": "fixture-manifest-B",
+        "manifestHash": "2e58cab655807e1f199a99955b9876947efedce66f49e052197dc62f60a22d98",
+        "approvalId": "fixture-approval-B",
+        "actorId": "fixture-publisher",
+        "publishedAt": "2026-10-18T12:02:00Z",
+        "eventId": "fixture-event-B",
+        "evidenceKind": "synthetic-expected-record-not-a-real-publication",
+        "distributionState": "expected-published-in-fixture"
+      },
+      "reopenIntent": {
+        "source": "publication",
+        "publicationId": "fixture-publication-B",
+        "expectedManifestHash": "2e58cab655807e1f199a99955b9876947efedce66f49e052197dc62f60a22d98",
+        "mode": "read-identified-immutable",
+        "fallbackToLatest": false
+      },
+      "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique"
+    },
+    {
+      "exampleId": "M24-POS-C",
+      "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+      "route": "C",
+      "authorizedResourceContextFixture": {
+        "projectId": "fixture-project-001",
+        "studyId": "fixture-study-001",
+        "variantId": "fixture-variant-C",
+        "revisionId": "fixture-revision-C-001"
+      },
+      "preconditions_assumed_for_example": [
+        "Même contexte autorisé et coupe logique atomique par version immuable",
+        "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+        "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+        "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+        "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+      ],
+      "canonicalBody": {
+        "schemaVersion": "illustrative-1",
+        "context": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-C",
+          "revisionId": "fixture-revision-C-001"
+        },
+        "authority": "associated",
+        "writerAuthority": "associated",
+        "modelId": "fixture-model-C",
+        "coordinateFrame": {
+          "id": "fixture-local-C",
+          "kind": "local3d",
+          "unit": "m"
+        },
+        "objects": [
+          {
+            "id": "fixture-wall-C",
+            "kind": "wall",
+            "length": 6,
+            "height": 3,
+            "thickness": 0.2
+          },
+          {
+            "id": "fixture-opening-C",
+            "kind": "opening",
+            "hostId": "fixture-wall-C",
+            "width": 1,
+            "height": 2.1
+          }
+        ],
+        "associations": [
+          {
+            "id": "fixture-association-C",
+            "kind": "associated",
+            "canonicalObjectId": "fixture-wall-C",
+            "views": [
+              "fixture-view-C-2d",
+              "fixture-view-C-3d"
+            ]
+          }
+        ],
+        "quantities": [
+          {
+            "quantityId": "fixture-quantity-C",
+            "ruleId": "fixture-RT-wall-simplified",
+            "ruleVersion": "1",
+            "sourceObjectIds": [
+              "fixture-wall-C",
+              "fixture-opening-C"
+            ],
+            "sourceRevisionSet": [
+              "fixture-revision-C-001"
+            ],
+            "unit": "m3",
+            "rawValue": 3.6,
+            "deductions": [
+              {
+                "sourceObjectId": "fixture-opening-C",
+                "value": 0.42
+              }
+            ],
+            "netValue": 3.18,
+            "displayValue": "3,180 m³",
+            "freshnessStatus": "current-for-source"
+          }
+        ]
+      },
+      "canonicalSource": {
+        "contentId": "fixture-canonical-C",
+        "schemaVersion": "illustrative-1",
+        "authority": "associated",
+        "context": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-C",
+          "revisionId": "fixture-revision-C-001"
+        },
+        "contentHash": "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788",
+        "units": "m",
+        "coordinateFrameId": "fixture-local-C",
+        "provenance": {
+          "origin": "Données synthétiques documentaires A1",
+          "sourceVersion": "M24-example-v1",
+          "rights": "Aucune donnée client ni production"
+        }
+      },
+      "documents": [
+        {
+          "documentId": "fixture-document-C",
+          "documentVersion": "1",
+          "contentHash": "bcfee0de3ba5dd8d7f983e98506e1f8cc6003ba11ab5fe5712ceb4f3af9eafa2",
+          "sourceRevisionSet": [
+            "fixture-revision-C-001"
+          ],
+          "sourceContentHashes": [
+            "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788"
+          ],
+          "methodVersion": "illustrative-document-method-1",
+          "format": "application/json-example-only",
+          "freshnessStatus": "current-for-source",
+          "availability": "present-in-example-bundle",
+          "body": {
+            "artifact": "Document synthétique de démonstration de manifeste, pas export PDF/IFC exécuté",
+            "kind": "associated-sheet-and-quantities",
+            "sourceContentHash": "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788",
+            "sourceRevisionId": "fixture-revision-C-001",
+            "title": "Pièce documentaire synthétique C"
+          }
+        }
+      ],
+      "manifest": {
+        "manifestId": "fixture-manifest-C",
+        "manifestVersion": "1",
+        "schemaVersion": "illustrative-1",
+        "context": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-C",
+          "revisionId": "fixture-revision-C-001"
+        },
+        "usage": "Exemple synthétique de dossier de conception C",
+        "createdAt": "2026-10-18T12:00:00Z",
+        "authorId": "fixture-designer",
+        "orderedDocuments": [
+          {
+            "documentId": "fixture-document-C",
+            "documentVersion": "1",
+            "contentHash": "bcfee0de3ba5dd8d7f983e98506e1f8cc6003ba11ab5fe5712ceb4f3af9eafa2"
+          }
+        ],
+        "sourceRevisionSet": [
+          "fixture-revision-C-001"
+        ],
+        "canonicalSources": [
+          {
+            "contentId": "fixture-canonical-C",
+            "schemaVersion": "illustrative-1",
+            "authority": "associated",
+            "context": {
+              "projectId": "fixture-project-001",
+              "studyId": "fixture-study-001",
+              "variantId": "fixture-variant-C",
+              "revisionId": "fixture-revision-C-001"
+            },
+            "contentHash": "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788",
+            "units": "m",
+            "coordinateFrameId": "fixture-local-C",
+            "provenance": {
+              "origin": "Données synthétiques documentaires A1",
+              "sourceVersion": "M24-example-v1",
+              "rights": "Aucune donnée client ni production"
+            }
+          }
+        ],
+        "rules": [
+          {
+            "ruleId": "fixture-required-review",
+            "ruleVersion": "1"
+          }
+        ],
+        "controls": [
+          {
+            "checkId": "fixture-check-C",
+            "ruleId": "fixture-required-review",
+            "ruleVersion": "1",
+            "sourceRevisionSet": [
+              "fixture-revision-C-001"
+            ],
+            "sourceContentHashes": [
+              "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788"
+            ],
+            "executionState": "expected-completed-only-in-fixture",
+            "conclusion": "expected-conforme-only-in-fixture",
+            "evidenceKind": "documentary-example-not-executed"
+          }
+        ],
+        "observations": [],
+        "approvalState": "expected-approved-in-fixture",
+        "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+      },
+      "manifestHash": "736629912e156c6317636fc9867fd2ef7863b5f45035dc282e99413686cecb34",
+      "approval": {
+        "approvalId": "fixture-approval-C",
+        "manifestHash": "736629912e156c6317636fc9867fd2ef7863b5f45035dc282e99413686cecb34",
+        "approvedManifestId": "fixture-manifest-C",
+        "approvedAt": "2026-10-18T12:01:00Z",
+        "actorId": "fixture-approver",
+        "action": "approve",
+        "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+      },
+      "publication": {
+        "publicationId": "fixture-publication-C",
+        "manifestId": "fixture-manifest-C",
+        "manifestHash": "736629912e156c6317636fc9867fd2ef7863b5f45035dc282e99413686cecb34",
+        "approvalId": "fixture-approval-C",
+        "actorId": "fixture-publisher",
+        "publishedAt": "2026-10-18T12:02:00Z",
+        "eventId": "fixture-event-C",
+        "evidenceKind": "synthetic-expected-record-not-a-real-publication",
+        "distributionState": "expected-published-in-fixture"
+      },
+      "reopenIntent": {
+        "source": "publication",
+        "publicationId": "fixture-publication-C",
+        "expectedManifestHash": "736629912e156c6317636fc9867fd2ef7863b5f45035dc282e99413686cecb34",
+        "mode": "read-identified-immutable",
+        "fallbackToLatest": false
+      },
+      "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique"
+    }
+  ],
+  "negative_examples": [
+    {
+      "exampleId": "M24-NEG-PARENT",
+      "classification": "JSON syntaxiquement valide mais sémantiquement invalide ou précondition refusée",
+      "reason": "Révision ou variante appartient à autre étude",
+      "expected_refusal_candidate": "CONTEXT_PARENT_MISMATCH",
+      "expected_effect": "Zéro mutation canonique/publication ; historique conservé ; trace de refus non sensible",
+      "payload": {
+        "exampleId": "M24-POS-A",
+        "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+        "route": "A",
+        "authorizedResourceContextFixture": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-A",
+          "revisionId": "fixture-revision-A-001"
+        },
+        "preconditions_assumed_for_example": [
+          "Même contexte autorisé et coupe logique atomique par version immuable",
+          "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+          "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+          "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+          "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+        ],
+        "canonicalBody": {
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-foreign-study",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "authority": "drawing2d",
+          "writerAuthority": "drawing2d",
+          "documentId": "fixture-drawing-A",
+          "coordinateFrame": {
+            "id": "fixture-plane-A",
+            "kind": "document2d",
+            "unit": "m"
+          },
+          "entities": [
+            {
+              "id": "fixture-line-A",
+              "kind": "line",
+              "from": [
+                0,
+                0
+              ],
+              "to": [
+                6,
+                0
+              ],
+              "layerId": "fixture-layer-A"
+            },
+            {
+              "id": "fixture-dim-A",
+              "kind": "dimension",
+              "references": [
+                "fixture-line-A"
+              ],
+              "value": 6,
+              "unit": "m"
+            },
+            {
+              "id": "fixture-text-A",
+              "kind": "text",
+              "value": "Détail synthétique A"
+            }
+          ],
+          "layers": [
+            {
+              "id": "fixture-layer-A",
+              "name": "Dessin synthétique"
+            }
+          ],
+          "associations": []
+        },
+        "canonicalSource": {
+          "contentId": "fixture-canonical-A",
+          "schemaVersion": "illustrative-1",
+          "authority": "drawing2d",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-foreign-study",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "contentHash": "3e7018033faf9748937737befe8fd50bb2c3b193c3f3e184b5bdedc73296e729",
+          "units": "m",
+          "coordinateFrameId": "fixture-plane-A",
+          "provenance": {
+            "origin": "Données synthétiques documentaires A1",
+            "sourceVersion": "M24-example-v1",
+            "rights": "Aucune donnée client ni production"
+          }
+        },
+        "documents": [
+          {
+            "documentId": "fixture-document-A",
+            "documentVersion": "1",
+            "contentHash": "2469408c6cab0ea39f99d5d0e83c25cd89a6be24afa40d44819a4f038f0fd928",
+            "sourceRevisionSet": [
+              "fixture-revision-A-001"
+            ],
+            "sourceContentHashes": [
+              "3e7018033faf9748937737befe8fd50bb2c3b193c3f3e184b5bdedc73296e729"
+            ],
+            "methodVersion": "illustrative-document-method-1",
+            "format": "application/json-example-only",
+            "freshnessStatus": "current-for-source",
+            "availability": "present-in-example-bundle",
+            "body": {
+              "artifact": "Document synthétique de démonstration de manifeste, pas export PDF/IFC exécuté",
+              "kind": "drawing-sheet",
+              "sourceContentHash": "3e7018033faf9748937737befe8fd50bb2c3b193c3f3e184b5bdedc73296e729",
+              "sourceRevisionId": "fixture-revision-A-001",
+              "title": "Pièce documentaire synthétique A"
+            }
+          }
+        ],
+        "manifest": {
+          "manifestId": "fixture-manifest-A",
+          "manifestVersion": "1",
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-foreign-study",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "usage": "Exemple synthétique de dossier de conception A",
+          "createdAt": "2026-10-18T12:00:00Z",
+          "authorId": "fixture-designer",
+          "orderedDocuments": [
+            {
+              "documentId": "fixture-document-A",
+              "documentVersion": "1",
+              "contentHash": "2469408c6cab0ea39f99d5d0e83c25cd89a6be24afa40d44819a4f038f0fd928"
+            }
+          ],
+          "sourceRevisionSet": [
+            "fixture-revision-A-001"
+          ],
+          "canonicalSources": [
+            {
+              "contentId": "fixture-canonical-A",
+              "schemaVersion": "illustrative-1",
+              "authority": "drawing2d",
+              "context": {
+                "projectId": "fixture-project-001",
+                "studyId": "fixture-foreign-study",
+                "variantId": "fixture-variant-A",
+                "revisionId": "fixture-revision-A-001"
+              },
+              "contentHash": "3e7018033faf9748937737befe8fd50bb2c3b193c3f3e184b5bdedc73296e729",
+              "units": "m",
+              "coordinateFrameId": "fixture-plane-A",
+              "provenance": {
+                "origin": "Données synthétiques documentaires A1",
+                "sourceVersion": "M24-example-v1",
+                "rights": "Aucune donnée client ni production"
+              }
+            }
+          ],
+          "rules": [
+            {
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1"
+            }
+          ],
+          "controls": [
+            {
+              "checkId": "fixture-check-A",
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1",
+              "sourceRevisionSet": [
+                "fixture-revision-A-001"
+              ],
+              "sourceContentHashes": [
+                "3e7018033faf9748937737befe8fd50bb2c3b193c3f3e184b5bdedc73296e729"
+              ],
+              "executionState": "expected-completed-only-in-fixture",
+              "conclusion": "expected-conforme-only-in-fixture",
+              "evidenceKind": "documentary-example-not-executed"
+            }
+          ],
+          "observations": [],
+          "approvalState": "expected-approved-in-fixture",
+          "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+        },
+        "manifestHash": "ce37e47fd320cf00348de98c4d74b6a81a1db018f6777672febee2a2a47bbbe9",
+        "approval": {
+          "approvalId": "fixture-approval-A",
+          "manifestHash": "ce37e47fd320cf00348de98c4d74b6a81a1db018f6777672febee2a2a47bbbe9",
+          "approvedManifestId": "fixture-manifest-A",
+          "approvedAt": "2026-10-18T12:01:00Z",
+          "actorId": "fixture-approver",
+          "action": "approve",
+          "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+        },
+        "publication": {
+          "publicationId": "fixture-publication-A",
+          "manifestId": "fixture-manifest-A",
+          "manifestHash": "ce37e47fd320cf00348de98c4d74b6a81a1db018f6777672febee2a2a47bbbe9",
+          "approvalId": "fixture-approval-A",
+          "actorId": "fixture-publisher",
+          "publishedAt": "2026-10-18T12:02:00Z",
+          "eventId": "fixture-event-A",
+          "evidenceKind": "synthetic-expected-record-not-a-real-publication",
+          "distributionState": "expected-published-in-fixture"
+        },
+        "reopenIntent": {
+          "source": "publication",
+          "publicationId": "fixture-publication-A",
+          "expectedManifestHash": "ce37e47fd320cf00348de98c4d74b6a81a1db018f6777672febee2a2a47bbbe9",
+          "mode": "read-identified-immutable",
+          "fallbackToLatest": false
+        },
+        "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique"
+      },
+      "execution": "Non exécuté ; cas documentaire proposé",
+      "validation_order_note": "Codes candidats indicatifs ; ordre réel des contrôles à fixer. Cas modifiant contenu approuvé gardent intentionnellement une empreinte incohérente ; aucune implémentation testée."
+    },
+    {
+      "exampleId": "M24-NEG-CHANGED-DOCUMENT",
+      "classification": "JSON syntaxiquement valide mais sémantiquement invalide ou précondition refusée",
+      "reason": "Pièce changée après approbation sans nouveau manifeste/approbation",
+      "expected_refusal_candidate": "APPROVAL_MISMATCH",
+      "expected_effect": "Zéro mutation canonique/publication ; historique conservé ; trace de refus non sensible",
+      "payload": {
+        "exampleId": "M24-POS-A",
+        "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+        "route": "A",
+        "authorizedResourceContextFixture": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-A",
+          "revisionId": "fixture-revision-A-001"
+        },
+        "preconditions_assumed_for_example": [
+          "Même contexte autorisé et coupe logique atomique par version immuable",
+          "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+          "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+          "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+          "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+        ],
+        "canonicalBody": {
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "authority": "drawing2d",
+          "writerAuthority": "drawing2d",
+          "documentId": "fixture-drawing-A",
+          "coordinateFrame": {
+            "id": "fixture-plane-A",
+            "kind": "document2d",
+            "unit": "m"
+          },
+          "entities": [
+            {
+              "id": "fixture-line-A",
+              "kind": "line",
+              "from": [
+                0,
+                0
+              ],
+              "to": [
+                6,
+                0
+              ],
+              "layerId": "fixture-layer-A"
+            },
+            {
+              "id": "fixture-dim-A",
+              "kind": "dimension",
+              "references": [
+                "fixture-line-A"
+              ],
+              "value": 6,
+              "unit": "m"
+            },
+            {
+              "id": "fixture-text-A",
+              "kind": "text",
+              "value": "Détail synthétique A"
+            }
+          ],
+          "layers": [
+            {
+              "id": "fixture-layer-A",
+              "name": "Dessin synthétique"
+            }
+          ],
+          "associations": []
+        },
+        "canonicalSource": {
+          "contentId": "fixture-canonical-A",
+          "schemaVersion": "illustrative-1",
+          "authority": "drawing2d",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "contentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+          "units": "m",
+          "coordinateFrameId": "fixture-plane-A",
+          "provenance": {
+            "origin": "Données synthétiques documentaires A1",
+            "sourceVersion": "M24-example-v1",
+            "rights": "Aucune donnée client ni production"
+          }
+        },
+        "documents": [
+          {
+            "documentId": "fixture-document-A",
+            "documentVersion": "1",
+            "contentHash": "f37ec68861c0ddffba6cce7573f0fb1343187ec11fb71841d543d24604e0f78f",
+            "sourceRevisionSet": [
+              "fixture-revision-A-001"
+            ],
+            "sourceContentHashes": [
+              "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299"
+            ],
+            "methodVersion": "illustrative-document-method-1",
+            "format": "application/json-example-only",
+            "freshnessStatus": "current-for-source",
+            "availability": "present-in-example-bundle",
+            "body": {
+              "artifact": "Document synthétique de démonstration de manifeste, pas export PDF/IFC exécuté",
+              "kind": "drawing-sheet",
+              "sourceContentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+              "sourceRevisionId": "fixture-revision-A-001",
+              "title": "Pièce modifiée après approbation"
+            }
+          }
+        ],
+        "manifest": {
+          "manifestId": "fixture-manifest-A",
+          "manifestVersion": "1",
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "usage": "Exemple synthétique de dossier de conception A",
+          "createdAt": "2026-10-18T12:00:00Z",
+          "authorId": "fixture-designer",
+          "orderedDocuments": [
+            {
+              "documentId": "fixture-document-A",
+              "documentVersion": "1",
+              "contentHash": "f37ec68861c0ddffba6cce7573f0fb1343187ec11fb71841d543d24604e0f78f"
+            }
+          ],
+          "sourceRevisionSet": [
+            "fixture-revision-A-001"
+          ],
+          "canonicalSources": [
+            {
+              "contentId": "fixture-canonical-A",
+              "schemaVersion": "illustrative-1",
+              "authority": "drawing2d",
+              "context": {
+                "projectId": "fixture-project-001",
+                "studyId": "fixture-study-001",
+                "variantId": "fixture-variant-A",
+                "revisionId": "fixture-revision-A-001"
+              },
+              "contentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+              "units": "m",
+              "coordinateFrameId": "fixture-plane-A",
+              "provenance": {
+                "origin": "Données synthétiques documentaires A1",
+                "sourceVersion": "M24-example-v1",
+                "rights": "Aucune donnée client ni production"
+              }
+            }
+          ],
+          "rules": [
+            {
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1"
+            }
+          ],
+          "controls": [
+            {
+              "checkId": "fixture-check-A",
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1",
+              "sourceRevisionSet": [
+                "fixture-revision-A-001"
+              ],
+              "sourceContentHashes": [
+                "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299"
+              ],
+              "executionState": "expected-completed-only-in-fixture",
+              "conclusion": "expected-conforme-only-in-fixture",
+              "evidenceKind": "documentary-example-not-executed"
+            }
+          ],
+          "observations": [],
+          "approvalState": "expected-approved-in-fixture",
+          "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+        },
+        "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+        "approval": {
+          "approvalId": "fixture-approval-A",
+          "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "approvedManifestId": "fixture-manifest-A",
+          "approvedAt": "2026-10-18T12:01:00Z",
+          "actorId": "fixture-approver",
+          "action": "approve",
+          "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+        },
+        "publication": {
+          "publicationId": "fixture-publication-A",
+          "manifestId": "fixture-manifest-A",
+          "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "approvalId": "fixture-approval-A",
+          "actorId": "fixture-publisher",
+          "publishedAt": "2026-10-18T12:02:00Z",
+          "eventId": "fixture-event-A",
+          "evidenceKind": "synthetic-expected-record-not-a-real-publication",
+          "distributionState": "expected-published-in-fixture"
+        },
+        "reopenIntent": {
+          "source": "publication",
+          "publicationId": "fixture-publication-A",
+          "expectedManifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "mode": "read-identified-immutable",
+          "fallbackToLatest": false
+        },
+        "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique"
+      },
+      "execution": "Non exécuté ; cas documentaire proposé",
+      "validation_order_note": "Codes candidats indicatifs ; ordre réel des contrôles à fixer. Cas modifiant contenu approuvé gardent intentionnellement une empreinte incohérente ; aucune implémentation testée."
+    },
+    {
+      "exampleId": "M24-NEG-MISSING-PIECE",
+      "classification": "JSON syntaxiquement valide mais sémantiquement invalide ou précondition refusée",
+      "reason": "Référence de pièce sans contenu récupérable",
+      "expected_refusal_candidate": "PUBLICATION_INCOMPLETE",
+      "expected_effect": "Zéro mutation canonique/publication ; historique conservé ; trace de refus non sensible",
+      "payload": {
+        "exampleId": "M24-POS-A",
+        "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+        "route": "A",
+        "authorizedResourceContextFixture": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-A",
+          "revisionId": "fixture-revision-A-001"
+        },
+        "preconditions_assumed_for_example": [
+          "Même contexte autorisé et coupe logique atomique par version immuable",
+          "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+          "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+          "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+          "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+        ],
+        "canonicalBody": {
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "authority": "drawing2d",
+          "writerAuthority": "drawing2d",
+          "documentId": "fixture-drawing-A",
+          "coordinateFrame": {
+            "id": "fixture-plane-A",
+            "kind": "document2d",
+            "unit": "m"
+          },
+          "entities": [
+            {
+              "id": "fixture-line-A",
+              "kind": "line",
+              "from": [
+                0,
+                0
+              ],
+              "to": [
+                6,
+                0
+              ],
+              "layerId": "fixture-layer-A"
+            },
+            {
+              "id": "fixture-dim-A",
+              "kind": "dimension",
+              "references": [
+                "fixture-line-A"
+              ],
+              "value": 6,
+              "unit": "m"
+            },
+            {
+              "id": "fixture-text-A",
+              "kind": "text",
+              "value": "Détail synthétique A"
+            }
+          ],
+          "layers": [
+            {
+              "id": "fixture-layer-A",
+              "name": "Dessin synthétique"
+            }
+          ],
+          "associations": []
+        },
+        "canonicalSource": {
+          "contentId": "fixture-canonical-A",
+          "schemaVersion": "illustrative-1",
+          "authority": "drawing2d",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "contentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+          "units": "m",
+          "coordinateFrameId": "fixture-plane-A",
+          "provenance": {
+            "origin": "Données synthétiques documentaires A1",
+            "sourceVersion": "M24-example-v1",
+            "rights": "Aucune donnée client ni production"
+          }
+        },
+        "documents": [],
+        "manifest": {
+          "manifestId": "fixture-manifest-A",
+          "manifestVersion": "1",
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "usage": "Exemple synthétique de dossier de conception A",
+          "createdAt": "2026-10-18T12:00:00Z",
+          "authorId": "fixture-designer",
+          "orderedDocuments": [
+            {
+              "documentId": "fixture-document-A",
+              "documentVersion": "1",
+              "contentHash": "f37ec68861c0ddffba6cce7573f0fb1343187ec11fb71841d543d24604e0f78f"
+            }
+          ],
+          "sourceRevisionSet": [
+            "fixture-revision-A-001"
+          ],
+          "canonicalSources": [
+            {
+              "contentId": "fixture-canonical-A",
+              "schemaVersion": "illustrative-1",
+              "authority": "drawing2d",
+              "context": {
+                "projectId": "fixture-project-001",
+                "studyId": "fixture-study-001",
+                "variantId": "fixture-variant-A",
+                "revisionId": "fixture-revision-A-001"
+              },
+              "contentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+              "units": "m",
+              "coordinateFrameId": "fixture-plane-A",
+              "provenance": {
+                "origin": "Données synthétiques documentaires A1",
+                "sourceVersion": "M24-example-v1",
+                "rights": "Aucune donnée client ni production"
+              }
+            }
+          ],
+          "rules": [
+            {
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1"
+            }
+          ],
+          "controls": [
+            {
+              "checkId": "fixture-check-A",
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1",
+              "sourceRevisionSet": [
+                "fixture-revision-A-001"
+              ],
+              "sourceContentHashes": [
+                "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299"
+              ],
+              "executionState": "expected-completed-only-in-fixture",
+              "conclusion": "expected-conforme-only-in-fixture",
+              "evidenceKind": "documentary-example-not-executed"
+            }
+          ],
+          "observations": [],
+          "approvalState": "expected-approved-in-fixture",
+          "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+        },
+        "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+        "approval": {
+          "approvalId": "fixture-approval-A",
+          "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "approvedManifestId": "fixture-manifest-A",
+          "approvedAt": "2026-10-18T12:01:00Z",
+          "actorId": "fixture-approver",
+          "action": "approve",
+          "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+        },
+        "publication": {
+          "publicationId": "fixture-publication-A",
+          "manifestId": "fixture-manifest-A",
+          "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "approvalId": "fixture-approval-A",
+          "actorId": "fixture-publisher",
+          "publishedAt": "2026-10-18T12:02:00Z",
+          "eventId": "fixture-event-A",
+          "evidenceKind": "synthetic-expected-record-not-a-real-publication",
+          "distributionState": "expected-published-in-fixture"
+        },
+        "reopenIntent": {
+          "source": "publication",
+          "publicationId": "fixture-publication-A",
+          "expectedManifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "mode": "read-identified-immutable",
+          "fallbackToLatest": false
+        },
+        "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique"
+      },
+      "execution": "Non exécuté ; cas documentaire proposé",
+      "validation_order_note": "Codes candidats indicatifs ; ordre réel des contrôles à fixer. Cas modifiant contenu approuvé gardent intentionnellement une empreinte incohérente ; aucune implémentation testée."
+    },
+    {
+      "exampleId": "M24-NEG-OLD-RESULT",
+      "classification": "JSON syntaxiquement valide mais sémantiquement invalide ou précondition refusée",
+      "reason": "Quantité calculée sur ancienne révision affichée courante",
+      "expected_refusal_candidate": "SOURCE_REVISION_MISMATCH",
+      "expected_effect": "Zéro mutation canonique/publication ; historique conservé ; trace de refus non sensible",
+      "payload": {
+        "exampleId": "M24-POS-C",
+        "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+        "route": "C",
+        "authorizedResourceContextFixture": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-C",
+          "revisionId": "fixture-revision-C-001"
+        },
+        "preconditions_assumed_for_example": [
+          "Même contexte autorisé et coupe logique atomique par version immuable",
+          "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+          "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+          "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+          "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+        ],
+        "canonicalBody": {
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "authority": "associated",
+          "writerAuthority": "associated",
+          "modelId": "fixture-model-C",
+          "coordinateFrame": {
+            "id": "fixture-local-C",
+            "kind": "local3d",
+            "unit": "m"
+          },
+          "objects": [
+            {
+              "id": "fixture-wall-C",
+              "kind": "wall",
+              "length": 6,
+              "height": 3,
+              "thickness": 0.2
+            },
+            {
+              "id": "fixture-opening-C",
+              "kind": "opening",
+              "hostId": "fixture-wall-C",
+              "width": 1,
+              "height": 2.1
+            }
+          ],
+          "associations": [
+            {
+              "id": "fixture-association-C",
+              "kind": "associated",
+              "canonicalObjectId": "fixture-wall-C",
+              "views": [
+                "fixture-view-C-2d",
+                "fixture-view-C-3d"
+              ]
+            }
+          ],
+          "quantities": [
+            {
+              "quantityId": "fixture-quantity-C",
+              "ruleId": "fixture-RT-wall-simplified",
+              "ruleVersion": "1",
+              "sourceObjectIds": [
+                "fixture-wall-C",
+                "fixture-opening-C"
+              ],
+              "sourceRevisionSet": [
+                "fixture-old-revision"
+              ],
+              "unit": "m3",
+              "rawValue": 3.6,
+              "deductions": [
+                {
+                  "sourceObjectId": "fixture-opening-C",
+                  "value": 0.42
+                }
+              ],
+              "netValue": 3.18,
+              "displayValue": "3,180 m³",
+              "freshnessStatus": "current-for-source"
+            }
+          ]
+        },
+        "canonicalSource": {
+          "contentId": "fixture-canonical-C",
+          "schemaVersion": "illustrative-1",
+          "authority": "associated",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "contentHash": "1e833c7128cb21be79388448053d7ad3f0e66cacb674e1b8d2eff247567bf0be",
+          "units": "m",
+          "coordinateFrameId": "fixture-local-C",
+          "provenance": {
+            "origin": "Données synthétiques documentaires A1",
+            "sourceVersion": "M24-example-v1",
+            "rights": "Aucune donnée client ni production"
+          }
+        },
+        "documents": [
+          {
+            "documentId": "fixture-document-C",
+            "documentVersion": "1",
+            "contentHash": "b2872708218c9fecb8d1148e0692498b260e0060be3d6add69b865abd2aef2f0",
+            "sourceRevisionSet": [
+              "fixture-revision-C-001"
+            ],
+            "sourceContentHashes": [
+              "1e833c7128cb21be79388448053d7ad3f0e66cacb674e1b8d2eff247567bf0be"
+            ],
+            "methodVersion": "illustrative-document-method-1",
+            "format": "application/json-example-only",
+            "freshnessStatus": "current-for-source",
+            "availability": "present-in-example-bundle",
+            "body": {
+              "artifact": "Document synthétique de démonstration de manifeste, pas export PDF/IFC exécuté",
+              "kind": "associated-sheet-and-quantities",
+              "sourceContentHash": "1e833c7128cb21be79388448053d7ad3f0e66cacb674e1b8d2eff247567bf0be",
+              "sourceRevisionId": "fixture-revision-C-001",
+              "title": "Pièce documentaire synthétique C"
+            }
+          }
+        ],
+        "manifest": {
+          "manifestId": "fixture-manifest-C",
+          "manifestVersion": "1",
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "usage": "Exemple synthétique de dossier de conception C",
+          "createdAt": "2026-10-18T12:00:00Z",
+          "authorId": "fixture-designer",
+          "orderedDocuments": [
+            {
+              "documentId": "fixture-document-C",
+              "documentVersion": "1",
+              "contentHash": "b2872708218c9fecb8d1148e0692498b260e0060be3d6add69b865abd2aef2f0"
+            }
+          ],
+          "sourceRevisionSet": [
+            "fixture-revision-C-001"
+          ],
+          "canonicalSources": [
+            {
+              "contentId": "fixture-canonical-C",
+              "schemaVersion": "illustrative-1",
+              "authority": "associated",
+              "context": {
+                "projectId": "fixture-project-001",
+                "studyId": "fixture-study-001",
+                "variantId": "fixture-variant-C",
+                "revisionId": "fixture-revision-C-001"
+              },
+              "contentHash": "1e833c7128cb21be79388448053d7ad3f0e66cacb674e1b8d2eff247567bf0be",
+              "units": "m",
+              "coordinateFrameId": "fixture-local-C",
+              "provenance": {
+                "origin": "Données synthétiques documentaires A1",
+                "sourceVersion": "M24-example-v1",
+                "rights": "Aucune donnée client ni production"
+              }
+            }
+          ],
+          "rules": [
+            {
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1"
+            }
+          ],
+          "controls": [
+            {
+              "checkId": "fixture-check-C",
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1",
+              "sourceRevisionSet": [
+                "fixture-revision-C-001"
+              ],
+              "sourceContentHashes": [
+                "1e833c7128cb21be79388448053d7ad3f0e66cacb674e1b8d2eff247567bf0be"
+              ],
+              "executionState": "expected-completed-only-in-fixture",
+              "conclusion": "expected-conforme-only-in-fixture",
+              "evidenceKind": "documentary-example-not-executed"
+            }
+          ],
+          "observations": [],
+          "approvalState": "expected-approved-in-fixture",
+          "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+        },
+        "manifestHash": "97ae779e0fb953a4b810fb05e8e6e6455cfda59f3d69828dcf57ab3f3ea160c3",
+        "approval": {
+          "approvalId": "fixture-approval-C",
+          "manifestHash": "97ae779e0fb953a4b810fb05e8e6e6455cfda59f3d69828dcf57ab3f3ea160c3",
+          "approvedManifestId": "fixture-manifest-C",
+          "approvedAt": "2026-10-18T12:01:00Z",
+          "actorId": "fixture-approver",
+          "action": "approve",
+          "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+        },
+        "publication": {
+          "publicationId": "fixture-publication-C",
+          "manifestId": "fixture-manifest-C",
+          "manifestHash": "97ae779e0fb953a4b810fb05e8e6e6455cfda59f3d69828dcf57ab3f3ea160c3",
+          "approvalId": "fixture-approval-C",
+          "actorId": "fixture-publisher",
+          "publishedAt": "2026-10-18T12:02:00Z",
+          "eventId": "fixture-event-C",
+          "evidenceKind": "synthetic-expected-record-not-a-real-publication",
+          "distributionState": "expected-published-in-fixture"
+        },
+        "reopenIntent": {
+          "source": "publication",
+          "publicationId": "fixture-publication-C",
+          "expectedManifestHash": "97ae779e0fb953a4b810fb05e8e6e6455cfda59f3d69828dcf57ab3f3ea160c3",
+          "mode": "read-identified-immutable",
+          "fallbackToLatest": false
+        },
+        "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique"
+      },
+      "execution": "Non exécuté ; cas documentaire proposé",
+      "validation_order_note": "Codes candidats indicatifs ; ordre réel des contrôles à fixer. Cas modifiant contenu approuvé gardent intentionnellement une empreinte incohérente ; aucune implémentation testée."
+    },
+    {
+      "exampleId": "M24-NEG-UNIT",
+      "classification": "JSON syntaxiquement valide mais sémantiquement invalide ou précondition refusée",
+      "reason": "Quantité volumique marquée m² malgré règle volume",
+      "expected_refusal_candidate": "UNIT_MISMATCH",
+      "expected_effect": "Zéro mutation canonique/publication ; historique conservé ; trace de refus non sensible",
+      "payload": {
+        "exampleId": "M24-POS-C",
+        "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+        "route": "C",
+        "authorizedResourceContextFixture": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-C",
+          "revisionId": "fixture-revision-C-001"
+        },
+        "preconditions_assumed_for_example": [
+          "Même contexte autorisé et coupe logique atomique par version immuable",
+          "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+          "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+          "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+          "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+        ],
+        "canonicalBody": {
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "authority": "associated",
+          "writerAuthority": "associated",
+          "modelId": "fixture-model-C",
+          "coordinateFrame": {
+            "id": "fixture-local-C",
+            "kind": "local3d",
+            "unit": "m"
+          },
+          "objects": [
+            {
+              "id": "fixture-wall-C",
+              "kind": "wall",
+              "length": 6,
+              "height": 3,
+              "thickness": 0.2
+            },
+            {
+              "id": "fixture-opening-C",
+              "kind": "opening",
+              "hostId": "fixture-wall-C",
+              "width": 1,
+              "height": 2.1
+            }
+          ],
+          "associations": [
+            {
+              "id": "fixture-association-C",
+              "kind": "associated",
+              "canonicalObjectId": "fixture-wall-C",
+              "views": [
+                "fixture-view-C-2d",
+                "fixture-view-C-3d"
+              ]
+            }
+          ],
+          "quantities": [
+            {
+              "quantityId": "fixture-quantity-C",
+              "ruleId": "fixture-RT-wall-simplified",
+              "ruleVersion": "1",
+              "sourceObjectIds": [
+                "fixture-wall-C",
+                "fixture-opening-C"
+              ],
+              "sourceRevisionSet": [
+                "fixture-revision-C-001"
+              ],
+              "unit": "m2",
+              "rawValue": 3.6,
+              "deductions": [
+                {
+                  "sourceObjectId": "fixture-opening-C",
+                  "value": 0.42
+                }
+              ],
+              "netValue": 3.18,
+              "displayValue": "3,180 m³",
+              "freshnessStatus": "current-for-source"
+            }
+          ]
+        },
+        "canonicalSource": {
+          "contentId": "fixture-canonical-C",
+          "schemaVersion": "illustrative-1",
+          "authority": "associated",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "contentHash": "2d50770d5c11cf7588de9586b246e52000dce896b54643a1d55825bf2d31a54a",
+          "units": "m",
+          "coordinateFrameId": "fixture-local-C",
+          "provenance": {
+            "origin": "Données synthétiques documentaires A1",
+            "sourceVersion": "M24-example-v1",
+            "rights": "Aucune donnée client ni production"
+          }
+        },
+        "documents": [
+          {
+            "documentId": "fixture-document-C",
+            "documentVersion": "1",
+            "contentHash": "28b546c58d1f8e59258236cdef7ab3bedfccc65ee1716650768006509d24c985",
+            "sourceRevisionSet": [
+              "fixture-revision-C-001"
+            ],
+            "sourceContentHashes": [
+              "2d50770d5c11cf7588de9586b246e52000dce896b54643a1d55825bf2d31a54a"
+            ],
+            "methodVersion": "illustrative-document-method-1",
+            "format": "application/json-example-only",
+            "freshnessStatus": "current-for-source",
+            "availability": "present-in-example-bundle",
+            "body": {
+              "artifact": "Document synthétique de démonstration de manifeste, pas export PDF/IFC exécuté",
+              "kind": "associated-sheet-and-quantities",
+              "sourceContentHash": "2d50770d5c11cf7588de9586b246e52000dce896b54643a1d55825bf2d31a54a",
+              "sourceRevisionId": "fixture-revision-C-001",
+              "title": "Pièce documentaire synthétique C"
+            }
+          }
+        ],
+        "manifest": {
+          "manifestId": "fixture-manifest-C",
+          "manifestVersion": "1",
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "usage": "Exemple synthétique de dossier de conception C",
+          "createdAt": "2026-10-18T12:00:00Z",
+          "authorId": "fixture-designer",
+          "orderedDocuments": [
+            {
+              "documentId": "fixture-document-C",
+              "documentVersion": "1",
+              "contentHash": "28b546c58d1f8e59258236cdef7ab3bedfccc65ee1716650768006509d24c985"
+            }
+          ],
+          "sourceRevisionSet": [
+            "fixture-revision-C-001"
+          ],
+          "canonicalSources": [
+            {
+              "contentId": "fixture-canonical-C",
+              "schemaVersion": "illustrative-1",
+              "authority": "associated",
+              "context": {
+                "projectId": "fixture-project-001",
+                "studyId": "fixture-study-001",
+                "variantId": "fixture-variant-C",
+                "revisionId": "fixture-revision-C-001"
+              },
+              "contentHash": "2d50770d5c11cf7588de9586b246e52000dce896b54643a1d55825bf2d31a54a",
+              "units": "m",
+              "coordinateFrameId": "fixture-local-C",
+              "provenance": {
+                "origin": "Données synthétiques documentaires A1",
+                "sourceVersion": "M24-example-v1",
+                "rights": "Aucune donnée client ni production"
+              }
+            }
+          ],
+          "rules": [
+            {
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1"
+            }
+          ],
+          "controls": [
+            {
+              "checkId": "fixture-check-C",
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1",
+              "sourceRevisionSet": [
+                "fixture-revision-C-001"
+              ],
+              "sourceContentHashes": [
+                "2d50770d5c11cf7588de9586b246e52000dce896b54643a1d55825bf2d31a54a"
+              ],
+              "executionState": "expected-completed-only-in-fixture",
+              "conclusion": "expected-conforme-only-in-fixture",
+              "evidenceKind": "documentary-example-not-executed"
+            }
+          ],
+          "observations": [],
+          "approvalState": "expected-approved-in-fixture",
+          "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+        },
+        "manifestHash": "6276a578817168aadadc7ab72300cd4dfce137c7023906809330a2e44d92fa93",
+        "approval": {
+          "approvalId": "fixture-approval-C",
+          "manifestHash": "6276a578817168aadadc7ab72300cd4dfce137c7023906809330a2e44d92fa93",
+          "approvedManifestId": "fixture-manifest-C",
+          "approvedAt": "2026-10-18T12:01:00Z",
+          "actorId": "fixture-approver",
+          "action": "approve",
+          "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+        },
+        "publication": {
+          "publicationId": "fixture-publication-C",
+          "manifestId": "fixture-manifest-C",
+          "manifestHash": "6276a578817168aadadc7ab72300cd4dfce137c7023906809330a2e44d92fa93",
+          "approvalId": "fixture-approval-C",
+          "actorId": "fixture-publisher",
+          "publishedAt": "2026-10-18T12:02:00Z",
+          "eventId": "fixture-event-C",
+          "evidenceKind": "synthetic-expected-record-not-a-real-publication",
+          "distributionState": "expected-published-in-fixture"
+        },
+        "reopenIntent": {
+          "source": "publication",
+          "publicationId": "fixture-publication-C",
+          "expectedManifestHash": "6276a578817168aadadc7ab72300cd4dfce137c7023906809330a2e44d92fa93",
+          "mode": "read-identified-immutable",
+          "fallbackToLatest": false
+        },
+        "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique"
+      },
+      "execution": "Non exécuté ; cas documentaire proposé",
+      "validation_order_note": "Codes candidats indicatifs ; ordre réel des contrôles à fixer. Cas modifiant contenu approuvé gardent intentionnellement une empreinte incohérente ; aucune implémentation testée."
+    },
+    {
+      "exampleId": "M24-NEG-UNKNOWN-SCHEMA",
+      "classification": "JSON syntaxiquement valide mais sémantiquement invalide ou précondition refusée",
+      "reason": "Schéma sans lecteur compatible ni migration autorisée",
+      "expected_refusal_candidate": "SCHEMA_UNSUPPORTED",
+      "expected_effect": "Zéro mutation canonique/publication ; historique conservé ; trace de refus non sensible",
+      "payload": {
+        "exampleId": "M24-POS-A",
+        "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+        "route": "A",
+        "authorizedResourceContextFixture": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-A",
+          "revisionId": "fixture-revision-A-001"
+        },
+        "preconditions_assumed_for_example": [
+          "Même contexte autorisé et coupe logique atomique par version immuable",
+          "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+          "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+          "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+          "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+        ],
+        "canonicalBody": {
+          "schemaVersion": "unknown-future-999",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "authority": "drawing2d",
+          "writerAuthority": "drawing2d",
+          "documentId": "fixture-drawing-A",
+          "coordinateFrame": {
+            "id": "fixture-plane-A",
+            "kind": "document2d",
+            "unit": "m"
+          },
+          "entities": [
+            {
+              "id": "fixture-line-A",
+              "kind": "line",
+              "from": [
+                0,
+                0
+              ],
+              "to": [
+                6,
+                0
+              ],
+              "layerId": "fixture-layer-A"
+            },
+            {
+              "id": "fixture-dim-A",
+              "kind": "dimension",
+              "references": [
+                "fixture-line-A"
+              ],
+              "value": 6,
+              "unit": "m"
+            },
+            {
+              "id": "fixture-text-A",
+              "kind": "text",
+              "value": "Détail synthétique A"
+            }
+          ],
+          "layers": [
+            {
+              "id": "fixture-layer-A",
+              "name": "Dessin synthétique"
+            }
+          ],
+          "associations": []
+        },
+        "canonicalSource": {
+          "contentId": "fixture-canonical-A",
+          "schemaVersion": "illustrative-1",
+          "authority": "drawing2d",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "contentHash": "fa9fce1e0e07221f229e2c5581c0f7f2b72470124489d5ac0d19046a8ac7e8ff",
+          "units": "m",
+          "coordinateFrameId": "fixture-plane-A",
+          "provenance": {
+            "origin": "Données synthétiques documentaires A1",
+            "sourceVersion": "M24-example-v1",
+            "rights": "Aucune donnée client ni production"
+          }
+        },
+        "documents": [
+          {
+            "documentId": "fixture-document-A",
+            "documentVersion": "1",
+            "contentHash": "d8e8a8dc03924193fe2691363f26dd96a9cb4ff2b2bc2d43c0710bdb17060447",
+            "sourceRevisionSet": [
+              "fixture-revision-A-001"
+            ],
+            "sourceContentHashes": [
+              "fa9fce1e0e07221f229e2c5581c0f7f2b72470124489d5ac0d19046a8ac7e8ff"
+            ],
+            "methodVersion": "illustrative-document-method-1",
+            "format": "application/json-example-only",
+            "freshnessStatus": "current-for-source",
+            "availability": "present-in-example-bundle",
+            "body": {
+              "artifact": "Document synthétique de démonstration de manifeste, pas export PDF/IFC exécuté",
+              "kind": "drawing-sheet",
+              "sourceContentHash": "fa9fce1e0e07221f229e2c5581c0f7f2b72470124489d5ac0d19046a8ac7e8ff",
+              "sourceRevisionId": "fixture-revision-A-001",
+              "title": "Pièce documentaire synthétique A"
+            }
+          }
+        ],
+        "manifest": {
+          "manifestId": "fixture-manifest-A",
+          "manifestVersion": "1",
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "usage": "Exemple synthétique de dossier de conception A",
+          "createdAt": "2026-10-18T12:00:00Z",
+          "authorId": "fixture-designer",
+          "orderedDocuments": [
+            {
+              "documentId": "fixture-document-A",
+              "documentVersion": "1",
+              "contentHash": "d8e8a8dc03924193fe2691363f26dd96a9cb4ff2b2bc2d43c0710bdb17060447"
+            }
+          ],
+          "sourceRevisionSet": [
+            "fixture-revision-A-001"
+          ],
+          "canonicalSources": [
+            {
+              "contentId": "fixture-canonical-A",
+              "schemaVersion": "illustrative-1",
+              "authority": "drawing2d",
+              "context": {
+                "projectId": "fixture-project-001",
+                "studyId": "fixture-study-001",
+                "variantId": "fixture-variant-A",
+                "revisionId": "fixture-revision-A-001"
+              },
+              "contentHash": "fa9fce1e0e07221f229e2c5581c0f7f2b72470124489d5ac0d19046a8ac7e8ff",
+              "units": "m",
+              "coordinateFrameId": "fixture-plane-A",
+              "provenance": {
+                "origin": "Données synthétiques documentaires A1",
+                "sourceVersion": "M24-example-v1",
+                "rights": "Aucune donnée client ni production"
+              }
+            }
+          ],
+          "rules": [
+            {
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1"
+            }
+          ],
+          "controls": [
+            {
+              "checkId": "fixture-check-A",
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1",
+              "sourceRevisionSet": [
+                "fixture-revision-A-001"
+              ],
+              "sourceContentHashes": [
+                "fa9fce1e0e07221f229e2c5581c0f7f2b72470124489d5ac0d19046a8ac7e8ff"
+              ],
+              "executionState": "expected-completed-only-in-fixture",
+              "conclusion": "expected-conforme-only-in-fixture",
+              "evidenceKind": "documentary-example-not-executed"
+            }
+          ],
+          "observations": [],
+          "approvalState": "expected-approved-in-fixture",
+          "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+        },
+        "manifestHash": "72233c4753f969dadcc7b5058f6dc6939d7828f54cae4ad6c0a462801c8a6323",
+        "approval": {
+          "approvalId": "fixture-approval-A",
+          "manifestHash": "72233c4753f969dadcc7b5058f6dc6939d7828f54cae4ad6c0a462801c8a6323",
+          "approvedManifestId": "fixture-manifest-A",
+          "approvedAt": "2026-10-18T12:01:00Z",
+          "actorId": "fixture-approver",
+          "action": "approve",
+          "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+        },
+        "publication": {
+          "publicationId": "fixture-publication-A",
+          "manifestId": "fixture-manifest-A",
+          "manifestHash": "72233c4753f969dadcc7b5058f6dc6939d7828f54cae4ad6c0a462801c8a6323",
+          "approvalId": "fixture-approval-A",
+          "actorId": "fixture-publisher",
+          "publishedAt": "2026-10-18T12:02:00Z",
+          "eventId": "fixture-event-A",
+          "evidenceKind": "synthetic-expected-record-not-a-real-publication",
+          "distributionState": "expected-published-in-fixture"
+        },
+        "reopenIntent": {
+          "source": "publication",
+          "publicationId": "fixture-publication-A",
+          "expectedManifestHash": "72233c4753f969dadcc7b5058f6dc6939d7828f54cae4ad6c0a462801c8a6323",
+          "mode": "read-identified-immutable",
+          "fallbackToLatest": false
+        },
+        "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique"
+      },
+      "execution": "Non exécuté ; cas documentaire proposé",
+      "validation_order_note": "Codes candidats indicatifs ; ordre réel des contrôles à fixer. Cas modifiant contenu approuvé gardent intentionnellement une empreinte incohérente ; aucune implémentation testée."
+    },
+    {
+      "exampleId": "M24-NEG-FALSE-CONTROL",
+      "classification": "JSON syntaxiquement valide mais sémantiquement invalide ou précondition refusée",
+      "reason": "Échec technique présenté conforme",
+      "expected_refusal_candidate": "CHECK_NOT_CONFORMANT",
+      "expected_effect": "Zéro mutation canonique/publication ; historique conservé ; trace de refus non sensible",
+      "payload": {
+        "exampleId": "M24-POS-C",
+        "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+        "route": "C",
+        "authorizedResourceContextFixture": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-C",
+          "revisionId": "fixture-revision-C-001"
+        },
+        "preconditions_assumed_for_example": [
+          "Même contexte autorisé et coupe logique atomique par version immuable",
+          "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+          "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+          "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+          "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+        ],
+        "canonicalBody": {
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "authority": "associated",
+          "writerAuthority": "associated",
+          "modelId": "fixture-model-C",
+          "coordinateFrame": {
+            "id": "fixture-local-C",
+            "kind": "local3d",
+            "unit": "m"
+          },
+          "objects": [
+            {
+              "id": "fixture-wall-C",
+              "kind": "wall",
+              "length": 6,
+              "height": 3,
+              "thickness": 0.2
+            },
+            {
+              "id": "fixture-opening-C",
+              "kind": "opening",
+              "hostId": "fixture-wall-C",
+              "width": 1,
+              "height": 2.1
+            }
+          ],
+          "associations": [
+            {
+              "id": "fixture-association-C",
+              "kind": "associated",
+              "canonicalObjectId": "fixture-wall-C",
+              "views": [
+                "fixture-view-C-2d",
+                "fixture-view-C-3d"
+              ]
+            }
+          ],
+          "quantities": [
+            {
+              "quantityId": "fixture-quantity-C",
+              "ruleId": "fixture-RT-wall-simplified",
+              "ruleVersion": "1",
+              "sourceObjectIds": [
+                "fixture-wall-C",
+                "fixture-opening-C"
+              ],
+              "sourceRevisionSet": [
+                "fixture-revision-C-001"
+              ],
+              "unit": "m3",
+              "rawValue": 3.6,
+              "deductions": [
+                {
+                  "sourceObjectId": "fixture-opening-C",
+                  "value": 0.42
+                }
+              ],
+              "netValue": 3.18,
+              "displayValue": "3,180 m³",
+              "freshnessStatus": "current-for-source"
+            }
+          ]
+        },
+        "canonicalSource": {
+          "contentId": "fixture-canonical-C",
+          "schemaVersion": "illustrative-1",
+          "authority": "associated",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "contentHash": "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788",
+          "units": "m",
+          "coordinateFrameId": "fixture-local-C",
+          "provenance": {
+            "origin": "Données synthétiques documentaires A1",
+            "sourceVersion": "M24-example-v1",
+            "rights": "Aucune donnée client ni production"
+          }
+        },
+        "documents": [
+          {
+            "documentId": "fixture-document-C",
+            "documentVersion": "1",
+            "contentHash": "bcfee0de3ba5dd8d7f983e98506e1f8cc6003ba11ab5fe5712ceb4f3af9eafa2",
+            "sourceRevisionSet": [
+              "fixture-revision-C-001"
+            ],
+            "sourceContentHashes": [
+              "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788"
+            ],
+            "methodVersion": "illustrative-document-method-1",
+            "format": "application/json-example-only",
+            "freshnessStatus": "current-for-source",
+            "availability": "present-in-example-bundle",
+            "body": {
+              "artifact": "Document synthétique de démonstration de manifeste, pas export PDF/IFC exécuté",
+              "kind": "associated-sheet-and-quantities",
+              "sourceContentHash": "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788",
+              "sourceRevisionId": "fixture-revision-C-001",
+              "title": "Pièce documentaire synthétique C"
+            }
+          }
+        ],
+        "manifest": {
+          "manifestId": "fixture-manifest-C",
+          "manifestVersion": "1",
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "usage": "Exemple synthétique de dossier de conception C",
+          "createdAt": "2026-10-18T12:00:00Z",
+          "authorId": "fixture-designer",
+          "orderedDocuments": [
+            {
+              "documentId": "fixture-document-C",
+              "documentVersion": "1",
+              "contentHash": "bcfee0de3ba5dd8d7f983e98506e1f8cc6003ba11ab5fe5712ceb4f3af9eafa2"
+            }
+          ],
+          "sourceRevisionSet": [
+            "fixture-revision-C-001"
+          ],
+          "canonicalSources": [
+            {
+              "contentId": "fixture-canonical-C",
+              "schemaVersion": "illustrative-1",
+              "authority": "associated",
+              "context": {
+                "projectId": "fixture-project-001",
+                "studyId": "fixture-study-001",
+                "variantId": "fixture-variant-C",
+                "revisionId": "fixture-revision-C-001"
+              },
+              "contentHash": "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788",
+              "units": "m",
+              "coordinateFrameId": "fixture-local-C",
+              "provenance": {
+                "origin": "Données synthétiques documentaires A1",
+                "sourceVersion": "M24-example-v1",
+                "rights": "Aucune donnée client ni production"
+              }
+            }
+          ],
+          "rules": [
+            {
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1"
+            }
+          ],
+          "controls": [
+            {
+              "checkId": "fixture-check-C",
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1",
+              "sourceRevisionSet": [
+                "fixture-revision-C-001"
+              ],
+              "sourceContentHashes": [
+                "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788"
+              ],
+              "executionState": "failed",
+              "conclusion": "conforme",
+              "evidenceKind": "documentary-example-not-executed"
+            }
+          ],
+          "observations": [],
+          "approvalState": "expected-approved-in-fixture",
+          "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+        },
+        "manifestHash": "4495c3e117a92eead675b085be5d541180cbb39341b015583a24d11b03229b99",
+        "approval": {
+          "approvalId": "fixture-approval-C",
+          "manifestHash": "4495c3e117a92eead675b085be5d541180cbb39341b015583a24d11b03229b99",
+          "approvedManifestId": "fixture-manifest-C",
+          "approvedAt": "2026-10-18T12:01:00Z",
+          "actorId": "fixture-approver",
+          "action": "approve",
+          "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+        },
+        "publication": {
+          "publicationId": "fixture-publication-C",
+          "manifestId": "fixture-manifest-C",
+          "manifestHash": "4495c3e117a92eead675b085be5d541180cbb39341b015583a24d11b03229b99",
+          "approvalId": "fixture-approval-C",
+          "actorId": "fixture-publisher",
+          "publishedAt": "2026-10-18T12:02:00Z",
+          "eventId": "fixture-event-C",
+          "evidenceKind": "synthetic-expected-record-not-a-real-publication",
+          "distributionState": "expected-published-in-fixture"
+        },
+        "reopenIntent": {
+          "source": "publication",
+          "publicationId": "fixture-publication-C",
+          "expectedManifestHash": "4495c3e117a92eead675b085be5d541180cbb39341b015583a24d11b03229b99",
+          "mode": "read-identified-immutable",
+          "fallbackToLatest": false
+        },
+        "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique"
+      },
+      "execution": "Non exécuté ; cas documentaire proposé",
+      "validation_order_note": "Codes candidats indicatifs ; ordre réel des contrôles à fixer. Cas modifiant contenu approuvé gardent intentionnellement une empreinte incohérente ; aucune implémentation testée."
+    },
+    {
+      "exampleId": "M24-NEG-OPEN-OBSERVATION",
+      "classification": "JSON syntaxiquement valide mais sémantiquement invalide ou précondition refusée",
+      "reason": "Observation bloquante sans résolution/recontrôle/dérogation autorisée",
+      "expected_refusal_candidate": "UNRESOLVED_OBSERVATION",
+      "expected_effect": "Zéro mutation canonique/publication ; historique conservé ; trace de refus non sensible",
+      "payload": {
+        "exampleId": "M24-POS-C",
+        "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+        "route": "C",
+        "authorizedResourceContextFixture": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-C",
+          "revisionId": "fixture-revision-C-001"
+        },
+        "preconditions_assumed_for_example": [
+          "Même contexte autorisé et coupe logique atomique par version immuable",
+          "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+          "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+          "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+          "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+        ],
+        "canonicalBody": {
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "authority": "associated",
+          "writerAuthority": "associated",
+          "modelId": "fixture-model-C",
+          "coordinateFrame": {
+            "id": "fixture-local-C",
+            "kind": "local3d",
+            "unit": "m"
+          },
+          "objects": [
+            {
+              "id": "fixture-wall-C",
+              "kind": "wall",
+              "length": 6,
+              "height": 3,
+              "thickness": 0.2
+            },
+            {
+              "id": "fixture-opening-C",
+              "kind": "opening",
+              "hostId": "fixture-wall-C",
+              "width": 1,
+              "height": 2.1
+            }
+          ],
+          "associations": [
+            {
+              "id": "fixture-association-C",
+              "kind": "associated",
+              "canonicalObjectId": "fixture-wall-C",
+              "views": [
+                "fixture-view-C-2d",
+                "fixture-view-C-3d"
+              ]
+            }
+          ],
+          "quantities": [
+            {
+              "quantityId": "fixture-quantity-C",
+              "ruleId": "fixture-RT-wall-simplified",
+              "ruleVersion": "1",
+              "sourceObjectIds": [
+                "fixture-wall-C",
+                "fixture-opening-C"
+              ],
+              "sourceRevisionSet": [
+                "fixture-revision-C-001"
+              ],
+              "unit": "m3",
+              "rawValue": 3.6,
+              "deductions": [
+                {
+                  "sourceObjectId": "fixture-opening-C",
+                  "value": 0.42
+                }
+              ],
+              "netValue": 3.18,
+              "displayValue": "3,180 m³",
+              "freshnessStatus": "current-for-source"
+            }
+          ]
+        },
+        "canonicalSource": {
+          "contentId": "fixture-canonical-C",
+          "schemaVersion": "illustrative-1",
+          "authority": "associated",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "contentHash": "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788",
+          "units": "m",
+          "coordinateFrameId": "fixture-local-C",
+          "provenance": {
+            "origin": "Données synthétiques documentaires A1",
+            "sourceVersion": "M24-example-v1",
+            "rights": "Aucune donnée client ni production"
+          }
+        },
+        "documents": [
+          {
+            "documentId": "fixture-document-C",
+            "documentVersion": "1",
+            "contentHash": "bcfee0de3ba5dd8d7f983e98506e1f8cc6003ba11ab5fe5712ceb4f3af9eafa2",
+            "sourceRevisionSet": [
+              "fixture-revision-C-001"
+            ],
+            "sourceContentHashes": [
+              "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788"
+            ],
+            "methodVersion": "illustrative-document-method-1",
+            "format": "application/json-example-only",
+            "freshnessStatus": "current-for-source",
+            "availability": "present-in-example-bundle",
+            "body": {
+              "artifact": "Document synthétique de démonstration de manifeste, pas export PDF/IFC exécuté",
+              "kind": "associated-sheet-and-quantities",
+              "sourceContentHash": "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788",
+              "sourceRevisionId": "fixture-revision-C-001",
+              "title": "Pièce documentaire synthétique C"
+            }
+          }
+        ],
+        "manifest": {
+          "manifestId": "fixture-manifest-C",
+          "manifestVersion": "1",
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "usage": "Exemple synthétique de dossier de conception C",
+          "createdAt": "2026-10-18T12:00:00Z",
+          "authorId": "fixture-designer",
+          "orderedDocuments": [
+            {
+              "documentId": "fixture-document-C",
+              "documentVersion": "1",
+              "contentHash": "bcfee0de3ba5dd8d7f983e98506e1f8cc6003ba11ab5fe5712ceb4f3af9eafa2"
+            }
+          ],
+          "sourceRevisionSet": [
+            "fixture-revision-C-001"
+          ],
+          "canonicalSources": [
+            {
+              "contentId": "fixture-canonical-C",
+              "schemaVersion": "illustrative-1",
+              "authority": "associated",
+              "context": {
+                "projectId": "fixture-project-001",
+                "studyId": "fixture-study-001",
+                "variantId": "fixture-variant-C",
+                "revisionId": "fixture-revision-C-001"
+              },
+              "contentHash": "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788",
+              "units": "m",
+              "coordinateFrameId": "fixture-local-C",
+              "provenance": {
+                "origin": "Données synthétiques documentaires A1",
+                "sourceVersion": "M24-example-v1",
+                "rights": "Aucune donnée client ni production"
+              }
+            }
+          ],
+          "rules": [
+            {
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1"
+            }
+          ],
+          "controls": [
+            {
+              "checkId": "fixture-check-C",
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1",
+              "sourceRevisionSet": [
+                "fixture-revision-C-001"
+              ],
+              "sourceContentHashes": [
+                "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788"
+              ],
+              "executionState": "expected-completed-only-in-fixture",
+              "conclusion": "expected-conforme-only-in-fixture",
+              "evidenceKind": "documentary-example-not-executed"
+            }
+          ],
+          "observations": [
+            {
+              "issueId": "fixture-blocking-issue",
+              "status": "open",
+              "blocking": true,
+              "resolutionDecisionId": null
+            }
+          ],
+          "approvalState": "expected-approved-in-fixture",
+          "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+        },
+        "manifestHash": "ead1dc939374cab0afaba0718e877a72a73f303114288e9c012841a8fe50ac2e",
+        "approval": {
+          "approvalId": "fixture-approval-C",
+          "manifestHash": "ead1dc939374cab0afaba0718e877a72a73f303114288e9c012841a8fe50ac2e",
+          "approvedManifestId": "fixture-manifest-C",
+          "approvedAt": "2026-10-18T12:01:00Z",
+          "actorId": "fixture-approver",
+          "action": "approve",
+          "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+        },
+        "publication": {
+          "publicationId": "fixture-publication-C",
+          "manifestId": "fixture-manifest-C",
+          "manifestHash": "ead1dc939374cab0afaba0718e877a72a73f303114288e9c012841a8fe50ac2e",
+          "approvalId": "fixture-approval-C",
+          "actorId": "fixture-publisher",
+          "publishedAt": "2026-10-18T12:02:00Z",
+          "eventId": "fixture-event-C",
+          "evidenceKind": "synthetic-expected-record-not-a-real-publication",
+          "distributionState": "expected-published-in-fixture"
+        },
+        "reopenIntent": {
+          "source": "publication",
+          "publicationId": "fixture-publication-C",
+          "expectedManifestHash": "ead1dc939374cab0afaba0718e877a72a73f303114288e9c012841a8fe50ac2e",
+          "mode": "read-identified-immutable",
+          "fallbackToLatest": false
+        },
+        "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique"
+      },
+      "execution": "Non exécuté ; cas documentaire proposé",
+      "validation_order_note": "Codes candidats indicatifs ; ordre réel des contrôles à fixer. Cas modifiant contenu approuvé gardent intentionnellement une empreinte incohérente ; aucune implémentation testée."
+    },
+    {
+      "exampleId": "M24-NEG-APPROVE-WITHOUT-RIGHT",
+      "classification": "JSON syntaxiquement valide mais sémantiquement invalide ou précondition refusée",
+      "reason": "Compte concepteur sans permission approve demande approbation",
+      "expected_refusal_candidate": "FORBIDDEN_SCOPE",
+      "expected_effect": "Zéro mutation canonique/publication ; historique conservé ; trace de refus non sensible",
+      "payload": {
+        "exampleId": "M24-POS-A",
+        "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+        "route": "A",
+        "authorizedResourceContextFixture": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-A",
+          "revisionId": "fixture-revision-A-001"
+        },
+        "preconditions_assumed_for_example": [
+          "Même contexte autorisé et coupe logique atomique par version immuable",
+          "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+          "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+          "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+          "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+        ],
+        "canonicalBody": {
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "authority": "drawing2d",
+          "writerAuthority": "drawing2d",
+          "documentId": "fixture-drawing-A",
+          "coordinateFrame": {
+            "id": "fixture-plane-A",
+            "kind": "document2d",
+            "unit": "m"
+          },
+          "entities": [
+            {
+              "id": "fixture-line-A",
+              "kind": "line",
+              "from": [
+                0,
+                0
+              ],
+              "to": [
+                6,
+                0
+              ],
+              "layerId": "fixture-layer-A"
+            },
+            {
+              "id": "fixture-dim-A",
+              "kind": "dimension",
+              "references": [
+                "fixture-line-A"
+              ],
+              "value": 6,
+              "unit": "m"
+            },
+            {
+              "id": "fixture-text-A",
+              "kind": "text",
+              "value": "Détail synthétique A"
+            }
+          ],
+          "layers": [
+            {
+              "id": "fixture-layer-A",
+              "name": "Dessin synthétique"
+            }
+          ],
+          "associations": []
+        },
+        "canonicalSource": {
+          "contentId": "fixture-canonical-A",
+          "schemaVersion": "illustrative-1",
+          "authority": "drawing2d",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "contentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+          "units": "m",
+          "coordinateFrameId": "fixture-plane-A",
+          "provenance": {
+            "origin": "Données synthétiques documentaires A1",
+            "sourceVersion": "M24-example-v1",
+            "rights": "Aucune donnée client ni production"
+          }
+        },
+        "documents": [
+          {
+            "documentId": "fixture-document-A",
+            "documentVersion": "1",
+            "contentHash": "f37ec68861c0ddffba6cce7573f0fb1343187ec11fb71841d543d24604e0f78f",
+            "sourceRevisionSet": [
+              "fixture-revision-A-001"
+            ],
+            "sourceContentHashes": [
+              "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299"
+            ],
+            "methodVersion": "illustrative-document-method-1",
+            "format": "application/json-example-only",
+            "freshnessStatus": "current-for-source",
+            "availability": "present-in-example-bundle",
+            "body": {
+              "artifact": "Document synthétique de démonstration de manifeste, pas export PDF/IFC exécuté",
+              "kind": "drawing-sheet",
+              "sourceContentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+              "sourceRevisionId": "fixture-revision-A-001",
+              "title": "Pièce documentaire synthétique A"
+            }
+          }
+        ],
+        "manifest": {
+          "manifestId": "fixture-manifest-A",
+          "manifestVersion": "1",
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "usage": "Exemple synthétique de dossier de conception A",
+          "createdAt": "2026-10-18T12:00:00Z",
+          "authorId": "fixture-designer",
+          "orderedDocuments": [
+            {
+              "documentId": "fixture-document-A",
+              "documentVersion": "1",
+              "contentHash": "f37ec68861c0ddffba6cce7573f0fb1343187ec11fb71841d543d24604e0f78f"
+            }
+          ],
+          "sourceRevisionSet": [
+            "fixture-revision-A-001"
+          ],
+          "canonicalSources": [
+            {
+              "contentId": "fixture-canonical-A",
+              "schemaVersion": "illustrative-1",
+              "authority": "drawing2d",
+              "context": {
+                "projectId": "fixture-project-001",
+                "studyId": "fixture-study-001",
+                "variantId": "fixture-variant-A",
+                "revisionId": "fixture-revision-A-001"
+              },
+              "contentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+              "units": "m",
+              "coordinateFrameId": "fixture-plane-A",
+              "provenance": {
+                "origin": "Données synthétiques documentaires A1",
+                "sourceVersion": "M24-example-v1",
+                "rights": "Aucune donnée client ni production"
+              }
+            }
+          ],
+          "rules": [
+            {
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1"
+            }
+          ],
+          "controls": [
+            {
+              "checkId": "fixture-check-A",
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1",
+              "sourceRevisionSet": [
+                "fixture-revision-A-001"
+              ],
+              "sourceContentHashes": [
+                "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299"
+              ],
+              "executionState": "expected-completed-only-in-fixture",
+              "conclusion": "expected-conforme-only-in-fixture",
+              "evidenceKind": "documentary-example-not-executed"
+            }
+          ],
+          "observations": [],
+          "approvalState": "expected-approved-in-fixture",
+          "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+        },
+        "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+        "approval": {
+          "approvalId": "fixture-approval-A",
+          "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "approvedManifestId": "fixture-manifest-A",
+          "approvedAt": "2026-10-18T12:01:00Z",
+          "actorId": "fixture-approver",
+          "action": "approve",
+          "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+        },
+        "publication": {
+          "publicationId": "fixture-publication-A",
+          "manifestId": "fixture-manifest-A",
+          "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "approvalId": "fixture-approval-A",
+          "actorId": "fixture-publisher",
+          "publishedAt": "2026-10-18T12:02:00Z",
+          "eventId": "fixture-event-A",
+          "evidenceKind": "synthetic-expected-record-not-a-real-publication",
+          "distributionState": "expected-published-in-fixture"
+        },
+        "reopenIntent": {
+          "source": "publication",
+          "publicationId": "fixture-publication-A",
+          "expectedManifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "mode": "read-identified-immutable",
+          "fallbackToLatest": false
+        },
+        "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique",
+        "requestedAction": {
+          "action": "approve",
+          "authenticatedActorFixture": "fixture-designer",
+          "effectivePermissionsFixture": [
+            "edit"
+          ]
+        }
+      },
+      "execution": "Non exécuté ; cas documentaire proposé",
+      "validation_order_note": "Codes candidats indicatifs ; ordre réel des contrôles à fixer. Cas modifiant contenu approuvé gardent intentionnellement une empreinte incohérente ; aucune implémentation testée."
+    },
+    {
+      "exampleId": "M24-NEG-PUBLISH-WITHOUT-RIGHT",
+      "classification": "JSON syntaxiquement valide mais sémantiquement invalide ou précondition refusée",
+      "reason": "Approbateur sans permission publish demande diffusion",
+      "expected_refusal_candidate": "FORBIDDEN_SCOPE",
+      "expected_effect": "Zéro mutation canonique/publication ; historique conservé ; trace de refus non sensible",
+      "payload": {
+        "exampleId": "M24-POS-A",
+        "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+        "route": "A",
+        "authorizedResourceContextFixture": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-A",
+          "revisionId": "fixture-revision-A-001"
+        },
+        "preconditions_assumed_for_example": [
+          "Même contexte autorisé et coupe logique atomique par version immuable",
+          "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+          "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+          "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+          "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+        ],
+        "canonicalBody": {
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "authority": "drawing2d",
+          "writerAuthority": "drawing2d",
+          "documentId": "fixture-drawing-A",
+          "coordinateFrame": {
+            "id": "fixture-plane-A",
+            "kind": "document2d",
+            "unit": "m"
+          },
+          "entities": [
+            {
+              "id": "fixture-line-A",
+              "kind": "line",
+              "from": [
+                0,
+                0
+              ],
+              "to": [
+                6,
+                0
+              ],
+              "layerId": "fixture-layer-A"
+            },
+            {
+              "id": "fixture-dim-A",
+              "kind": "dimension",
+              "references": [
+                "fixture-line-A"
+              ],
+              "value": 6,
+              "unit": "m"
+            },
+            {
+              "id": "fixture-text-A",
+              "kind": "text",
+              "value": "Détail synthétique A"
+            }
+          ],
+          "layers": [
+            {
+              "id": "fixture-layer-A",
+              "name": "Dessin synthétique"
+            }
+          ],
+          "associations": []
+        },
+        "canonicalSource": {
+          "contentId": "fixture-canonical-A",
+          "schemaVersion": "illustrative-1",
+          "authority": "drawing2d",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "contentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+          "units": "m",
+          "coordinateFrameId": "fixture-plane-A",
+          "provenance": {
+            "origin": "Données synthétiques documentaires A1",
+            "sourceVersion": "M24-example-v1",
+            "rights": "Aucune donnée client ni production"
+          }
+        },
+        "documents": [
+          {
+            "documentId": "fixture-document-A",
+            "documentVersion": "1",
+            "contentHash": "f37ec68861c0ddffba6cce7573f0fb1343187ec11fb71841d543d24604e0f78f",
+            "sourceRevisionSet": [
+              "fixture-revision-A-001"
+            ],
+            "sourceContentHashes": [
+              "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299"
+            ],
+            "methodVersion": "illustrative-document-method-1",
+            "format": "application/json-example-only",
+            "freshnessStatus": "current-for-source",
+            "availability": "present-in-example-bundle",
+            "body": {
+              "artifact": "Document synthétique de démonstration de manifeste, pas export PDF/IFC exécuté",
+              "kind": "drawing-sheet",
+              "sourceContentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+              "sourceRevisionId": "fixture-revision-A-001",
+              "title": "Pièce documentaire synthétique A"
+            }
+          }
+        ],
+        "manifest": {
+          "manifestId": "fixture-manifest-A",
+          "manifestVersion": "1",
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "usage": "Exemple synthétique de dossier de conception A",
+          "createdAt": "2026-10-18T12:00:00Z",
+          "authorId": "fixture-designer",
+          "orderedDocuments": [
+            {
+              "documentId": "fixture-document-A",
+              "documentVersion": "1",
+              "contentHash": "f37ec68861c0ddffba6cce7573f0fb1343187ec11fb71841d543d24604e0f78f"
+            }
+          ],
+          "sourceRevisionSet": [
+            "fixture-revision-A-001"
+          ],
+          "canonicalSources": [
+            {
+              "contentId": "fixture-canonical-A",
+              "schemaVersion": "illustrative-1",
+              "authority": "drawing2d",
+              "context": {
+                "projectId": "fixture-project-001",
+                "studyId": "fixture-study-001",
+                "variantId": "fixture-variant-A",
+                "revisionId": "fixture-revision-A-001"
+              },
+              "contentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+              "units": "m",
+              "coordinateFrameId": "fixture-plane-A",
+              "provenance": {
+                "origin": "Données synthétiques documentaires A1",
+                "sourceVersion": "M24-example-v1",
+                "rights": "Aucune donnée client ni production"
+              }
+            }
+          ],
+          "rules": [
+            {
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1"
+            }
+          ],
+          "controls": [
+            {
+              "checkId": "fixture-check-A",
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1",
+              "sourceRevisionSet": [
+                "fixture-revision-A-001"
+              ],
+              "sourceContentHashes": [
+                "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299"
+              ],
+              "executionState": "expected-completed-only-in-fixture",
+              "conclusion": "expected-conforme-only-in-fixture",
+              "evidenceKind": "documentary-example-not-executed"
+            }
+          ],
+          "observations": [],
+          "approvalState": "expected-approved-in-fixture",
+          "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+        },
+        "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+        "approval": {
+          "approvalId": "fixture-approval-A",
+          "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "approvedManifestId": "fixture-manifest-A",
+          "approvedAt": "2026-10-18T12:01:00Z",
+          "actorId": "fixture-approver",
+          "action": "approve",
+          "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+        },
+        "publication": {
+          "publicationId": "fixture-publication-A",
+          "manifestId": "fixture-manifest-A",
+          "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "approvalId": "fixture-approval-A",
+          "actorId": "fixture-publisher",
+          "publishedAt": "2026-10-18T12:02:00Z",
+          "eventId": "fixture-event-A",
+          "evidenceKind": "synthetic-expected-record-not-a-real-publication",
+          "distributionState": "expected-published-in-fixture"
+        },
+        "reopenIntent": {
+          "source": "publication",
+          "publicationId": "fixture-publication-A",
+          "expectedManifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "mode": "read-identified-immutable",
+          "fallbackToLatest": false
+        },
+        "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique",
+        "requestedAction": {
+          "action": "publish",
+          "authenticatedActorFixture": "fixture-approver",
+          "effectivePermissionsFixture": [
+            "approve"
+          ]
+        }
+      },
+      "execution": "Non exécuté ; cas documentaire proposé",
+      "validation_order_note": "Codes candidats indicatifs ; ordre réel des contrôles à fixer. Cas modifiant contenu approuvé gardent intentionnellement une empreinte incohérente ; aucune implémentation testée."
+    },
+    {
+      "exampleId": "M24-NEG-OFFLINE",
+      "classification": "JSON syntaxiquement valide mais sémantiquement invalide ou précondition refusée",
+      "reason": "État local non confirmé présenté comme publication centrale",
+      "expected_refusal_candidate": "CENTRAL_COMMIT_REQUIRED",
+      "expected_effect": "Zéro mutation canonique/publication ; historique conservé ; trace de refus non sensible",
+      "payload": {
+        "exampleId": "M24-POS-A",
+        "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+        "route": "A",
+        "authorizedResourceContextFixture": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-A",
+          "revisionId": "fixture-revision-A-001"
+        },
+        "preconditions_assumed_for_example": [
+          "Même contexte autorisé et coupe logique atomique par version immuable",
+          "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+          "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+          "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+          "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+        ],
+        "canonicalBody": {
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "authority": "drawing2d",
+          "writerAuthority": "drawing2d",
+          "documentId": "fixture-drawing-A",
+          "coordinateFrame": {
+            "id": "fixture-plane-A",
+            "kind": "document2d",
+            "unit": "m"
+          },
+          "entities": [
+            {
+              "id": "fixture-line-A",
+              "kind": "line",
+              "from": [
+                0,
+                0
+              ],
+              "to": [
+                6,
+                0
+              ],
+              "layerId": "fixture-layer-A"
+            },
+            {
+              "id": "fixture-dim-A",
+              "kind": "dimension",
+              "references": [
+                "fixture-line-A"
+              ],
+              "value": 6,
+              "unit": "m"
+            },
+            {
+              "id": "fixture-text-A",
+              "kind": "text",
+              "value": "Détail synthétique A"
+            }
+          ],
+          "layers": [
+            {
+              "id": "fixture-layer-A",
+              "name": "Dessin synthétique"
+            }
+          ],
+          "associations": []
+        },
+        "canonicalSource": {
+          "contentId": "fixture-canonical-A",
+          "schemaVersion": "illustrative-1",
+          "authority": "drawing2d",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "contentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+          "units": "m",
+          "coordinateFrameId": "fixture-plane-A",
+          "provenance": {
+            "origin": "Données synthétiques documentaires A1",
+            "sourceVersion": "M24-example-v1",
+            "rights": "Aucune donnée client ni production"
+          }
+        },
+        "documents": [
+          {
+            "documentId": "fixture-document-A",
+            "documentVersion": "1",
+            "contentHash": "f37ec68861c0ddffba6cce7573f0fb1343187ec11fb71841d543d24604e0f78f",
+            "sourceRevisionSet": [
+              "fixture-revision-A-001"
+            ],
+            "sourceContentHashes": [
+              "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299"
+            ],
+            "methodVersion": "illustrative-document-method-1",
+            "format": "application/json-example-only",
+            "freshnessStatus": "current-for-source",
+            "availability": "present-in-example-bundle",
+            "body": {
+              "artifact": "Document synthétique de démonstration de manifeste, pas export PDF/IFC exécuté",
+              "kind": "drawing-sheet",
+              "sourceContentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+              "sourceRevisionId": "fixture-revision-A-001",
+              "title": "Pièce documentaire synthétique A"
+            }
+          }
+        ],
+        "manifest": {
+          "manifestId": "fixture-manifest-A",
+          "manifestVersion": "1",
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "usage": "Exemple synthétique de dossier de conception A",
+          "createdAt": "2026-10-18T12:00:00Z",
+          "authorId": "fixture-designer",
+          "orderedDocuments": [
+            {
+              "documentId": "fixture-document-A",
+              "documentVersion": "1",
+              "contentHash": "f37ec68861c0ddffba6cce7573f0fb1343187ec11fb71841d543d24604e0f78f"
+            }
+          ],
+          "sourceRevisionSet": [
+            "fixture-revision-A-001"
+          ],
+          "canonicalSources": [
+            {
+              "contentId": "fixture-canonical-A",
+              "schemaVersion": "illustrative-1",
+              "authority": "drawing2d",
+              "context": {
+                "projectId": "fixture-project-001",
+                "studyId": "fixture-study-001",
+                "variantId": "fixture-variant-A",
+                "revisionId": "fixture-revision-A-001"
+              },
+              "contentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+              "units": "m",
+              "coordinateFrameId": "fixture-plane-A",
+              "provenance": {
+                "origin": "Données synthétiques documentaires A1",
+                "sourceVersion": "M24-example-v1",
+                "rights": "Aucune donnée client ni production"
+              }
+            }
+          ],
+          "rules": [
+            {
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1"
+            }
+          ],
+          "controls": [
+            {
+              "checkId": "fixture-check-A",
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1",
+              "sourceRevisionSet": [
+                "fixture-revision-A-001"
+              ],
+              "sourceContentHashes": [
+                "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299"
+              ],
+              "executionState": "expected-completed-only-in-fixture",
+              "conclusion": "expected-conforme-only-in-fixture",
+              "evidenceKind": "documentary-example-not-executed"
+            }
+          ],
+          "observations": [],
+          "approvalState": "expected-approved-in-fixture",
+          "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+        },
+        "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+        "approval": {
+          "approvalId": "fixture-approval-A",
+          "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "approvedManifestId": "fixture-manifest-A",
+          "approvedAt": "2026-10-18T12:01:00Z",
+          "actorId": "fixture-approver",
+          "action": "approve",
+          "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+        },
+        "publication": {
+          "publicationId": "fixture-publication-A",
+          "manifestId": "fixture-manifest-A",
+          "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "approvalId": "fixture-approval-A",
+          "actorId": "fixture-publisher",
+          "publishedAt": "2026-10-18T12:02:00Z",
+          "eventId": "fixture-event-A",
+          "evidenceKind": "local-pending-without-server-commit",
+          "distributionState": "published"
+        },
+        "reopenIntent": {
+          "source": "publication",
+          "publicationId": "fixture-publication-A",
+          "expectedManifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "mode": "read-identified-immutable",
+          "fallbackToLatest": false
+        },
+        "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique"
+      },
+      "execution": "Non exécuté ; cas documentaire proposé",
+      "validation_order_note": "Codes candidats indicatifs ; ordre réel des contrôles à fixer. Cas modifiant contenu approuvé gardent intentionnellement une empreinte incohérente ; aucune implémentation testée."
+    },
+    {
+      "exampleId": "M24-NEG-WRITER",
+      "classification": "JSON syntaxiquement valide mais sémantiquement invalide ou précondition refusée",
+      "reason": "Deux autorités concurrentes pour même mur",
+      "expected_refusal_candidate": "WRITER_MISMATCH",
+      "expected_effect": "Zéro mutation canonique/publication ; historique conservé ; trace de refus non sensible",
+      "payload": {
+        "exampleId": "M24-POS-C",
+        "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+        "route": "C",
+        "authorizedResourceContextFixture": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-C",
+          "revisionId": "fixture-revision-C-001"
+        },
+        "preconditions_assumed_for_example": [
+          "Même contexte autorisé et coupe logique atomique par version immuable",
+          "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+          "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+          "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+          "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+        ],
+        "canonicalBody": {
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "authority": "associated",
+          "writerAuthority": "associated",
+          "modelId": "fixture-model-C",
+          "coordinateFrame": {
+            "id": "fixture-local-C",
+            "kind": "local3d",
+            "unit": "m"
+          },
+          "objects": [
+            {
+              "id": "fixture-wall-C",
+              "kind": "wall",
+              "length": 6,
+              "height": 3,
+              "thickness": 0.2
+            },
+            {
+              "id": "fixture-opening-C",
+              "kind": "opening",
+              "hostId": "fixture-wall-C",
+              "width": 1,
+              "height": 2.1
+            }
+          ],
+          "associations": [
+            {
+              "id": "fixture-association-C",
+              "kind": "associated",
+              "canonicalObjectId": "fixture-wall-C",
+              "views": [
+                "fixture-view-C-2d",
+                "fixture-view-C-3d"
+              ]
+            }
+          ],
+          "quantities": [
+            {
+              "quantityId": "fixture-quantity-C",
+              "ruleId": "fixture-RT-wall-simplified",
+              "ruleVersion": "1",
+              "sourceObjectIds": [
+                "fixture-wall-C",
+                "fixture-opening-C"
+              ],
+              "sourceRevisionSet": [
+                "fixture-revision-C-001"
+              ],
+              "unit": "m3",
+              "rawValue": 3.6,
+              "deductions": [
+                {
+                  "sourceObjectId": "fixture-opening-C",
+                  "value": 0.42
+                }
+              ],
+              "netValue": 3.18,
+              "displayValue": "3,180 m³",
+              "freshnessStatus": "current-for-source"
+            }
+          ],
+          "writerAuthorities": [
+            "fixture-associated-writer",
+            "fixture-independent-copy-writer"
+          ]
+        },
+        "canonicalSource": {
+          "contentId": "fixture-canonical-C",
+          "schemaVersion": "illustrative-1",
+          "authority": "associated",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "contentHash": "3f187d39d61c4beb79a2f0e87eb48f2b8ba24b6e96d4c8722a3a89d9d67293b0",
+          "units": "m",
+          "coordinateFrameId": "fixture-local-C",
+          "provenance": {
+            "origin": "Données synthétiques documentaires A1",
+            "sourceVersion": "M24-example-v1",
+            "rights": "Aucune donnée client ni production"
+          }
+        },
+        "documents": [
+          {
+            "documentId": "fixture-document-C",
+            "documentVersion": "1",
+            "contentHash": "b5e9d4af5d46ba982a9b8df5b49f2814bcd4d3d36206cd9c44fd0ccbdcad5103",
+            "sourceRevisionSet": [
+              "fixture-revision-C-001"
+            ],
+            "sourceContentHashes": [
+              "3f187d39d61c4beb79a2f0e87eb48f2b8ba24b6e96d4c8722a3a89d9d67293b0"
+            ],
+            "methodVersion": "illustrative-document-method-1",
+            "format": "application/json-example-only",
+            "freshnessStatus": "current-for-source",
+            "availability": "present-in-example-bundle",
+            "body": {
+              "artifact": "Document synthétique de démonstration de manifeste, pas export PDF/IFC exécuté",
+              "kind": "associated-sheet-and-quantities",
+              "sourceContentHash": "3f187d39d61c4beb79a2f0e87eb48f2b8ba24b6e96d4c8722a3a89d9d67293b0",
+              "sourceRevisionId": "fixture-revision-C-001",
+              "title": "Pièce documentaire synthétique C"
+            }
+          }
+        ],
+        "manifest": {
+          "manifestId": "fixture-manifest-C",
+          "manifestVersion": "1",
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "usage": "Exemple synthétique de dossier de conception C",
+          "createdAt": "2026-10-18T12:00:00Z",
+          "authorId": "fixture-designer",
+          "orderedDocuments": [
+            {
+              "documentId": "fixture-document-C",
+              "documentVersion": "1",
+              "contentHash": "b5e9d4af5d46ba982a9b8df5b49f2814bcd4d3d36206cd9c44fd0ccbdcad5103"
+            }
+          ],
+          "sourceRevisionSet": [
+            "fixture-revision-C-001"
+          ],
+          "canonicalSources": [
+            {
+              "contentId": "fixture-canonical-C",
+              "schemaVersion": "illustrative-1",
+              "authority": "associated",
+              "context": {
+                "projectId": "fixture-project-001",
+                "studyId": "fixture-study-001",
+                "variantId": "fixture-variant-C",
+                "revisionId": "fixture-revision-C-001"
+              },
+              "contentHash": "3f187d39d61c4beb79a2f0e87eb48f2b8ba24b6e96d4c8722a3a89d9d67293b0",
+              "units": "m",
+              "coordinateFrameId": "fixture-local-C",
+              "provenance": {
+                "origin": "Données synthétiques documentaires A1",
+                "sourceVersion": "M24-example-v1",
+                "rights": "Aucune donnée client ni production"
+              }
+            }
+          ],
+          "rules": [
+            {
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1"
+            }
+          ],
+          "controls": [
+            {
+              "checkId": "fixture-check-C",
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1",
+              "sourceRevisionSet": [
+                "fixture-revision-C-001"
+              ],
+              "sourceContentHashes": [
+                "3f187d39d61c4beb79a2f0e87eb48f2b8ba24b6e96d4c8722a3a89d9d67293b0"
+              ],
+              "executionState": "expected-completed-only-in-fixture",
+              "conclusion": "expected-conforme-only-in-fixture",
+              "evidenceKind": "documentary-example-not-executed"
+            }
+          ],
+          "observations": [],
+          "approvalState": "expected-approved-in-fixture",
+          "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+        },
+        "manifestHash": "9017d7c4ed1791416b83b3bcfb7c83b952ee5bb6a294d56db2ca90cd4bef9c2b",
+        "approval": {
+          "approvalId": "fixture-approval-C",
+          "manifestHash": "9017d7c4ed1791416b83b3bcfb7c83b952ee5bb6a294d56db2ca90cd4bef9c2b",
+          "approvedManifestId": "fixture-manifest-C",
+          "approvedAt": "2026-10-18T12:01:00Z",
+          "actorId": "fixture-approver",
+          "action": "approve",
+          "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+        },
+        "publication": {
+          "publicationId": "fixture-publication-C",
+          "manifestId": "fixture-manifest-C",
+          "manifestHash": "9017d7c4ed1791416b83b3bcfb7c83b952ee5bb6a294d56db2ca90cd4bef9c2b",
+          "approvalId": "fixture-approval-C",
+          "actorId": "fixture-publisher",
+          "publishedAt": "2026-10-18T12:02:00Z",
+          "eventId": "fixture-event-C",
+          "evidenceKind": "synthetic-expected-record-not-a-real-publication",
+          "distributionState": "expected-published-in-fixture"
+        },
+        "reopenIntent": {
+          "source": "publication",
+          "publicationId": "fixture-publication-C",
+          "expectedManifestHash": "9017d7c4ed1791416b83b3bcfb7c83b952ee5bb6a294d56db2ca90cd4bef9c2b",
+          "mode": "read-identified-immutable",
+          "fallbackToLatest": false
+        },
+        "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique"
+      },
+      "execution": "Non exécuté ; cas documentaire proposé",
+      "validation_order_note": "Codes candidats indicatifs ; ordre réel des contrôles à fixer. Cas modifiant contenu approuvé gardent intentionnellement une empreinte incohérente ; aucune implémentation testée."
+    },
+    {
+      "exampleId": "M24-NEG-FALLBACK-LATEST",
+      "classification": "JSON syntaxiquement valide mais sémantiquement invalide ou précondition refusée",
+      "reason": "Réouverture historique substitue tête courante",
+      "expected_refusal_candidate": "IMMUTABLE_REVISION",
+      "expected_effect": "Zéro mutation canonique/publication ; historique conservé ; trace de refus non sensible",
+      "payload": {
+        "exampleId": "M24-POS-B",
+        "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+        "route": "B",
+        "authorizedResourceContextFixture": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-B",
+          "revisionId": "fixture-revision-B-001"
+        },
+        "preconditions_assumed_for_example": [
+          "Même contexte autorisé et coupe logique atomique par version immuable",
+          "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+          "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+          "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+          "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+        ],
+        "canonicalBody": {
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-B",
+            "revisionId": "fixture-revision-B-001"
+          },
+          "authority": "model3d",
+          "writerAuthority": "model3d",
+          "modelId": "fixture-model-B",
+          "coordinateFrame": {
+            "id": "fixture-local-B",
+            "kind": "local3d",
+            "unit": "m"
+          },
+          "objects": [
+            {
+              "id": "fixture-volume-B",
+              "representation": "free-spatial-box-illustrative",
+              "size": [
+                2,
+                3,
+                4
+              ],
+              "sourceSketchId": null,
+              "semanticBimClass": null
+            }
+          ],
+          "associations": []
+        },
+        "canonicalSource": {
+          "contentId": "fixture-canonical-B",
+          "schemaVersion": "illustrative-1",
+          "authority": "model3d",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-B",
+            "revisionId": "fixture-revision-B-001"
+          },
+          "contentHash": "43236aebed218788e21de1a12a68d08e6f582bd5a956e5a9fc2dc40adc2f355e",
+          "units": "m",
+          "coordinateFrameId": "fixture-local-B",
+          "provenance": {
+            "origin": "Données synthétiques documentaires A1",
+            "sourceVersion": "M24-example-v1",
+            "rights": "Aucune donnée client ni production"
+          }
+        },
+        "documents": [
+          {
+            "documentId": "fixture-document-B",
+            "documentVersion": "1",
+            "contentHash": "3e60caeff585c06c4ca1bb725133908f5c7efa676805e71391006fb399bd8b80",
+            "sourceRevisionSet": [
+              "fixture-revision-B-001"
+            ],
+            "sourceContentHashes": [
+              "43236aebed218788e21de1a12a68d08e6f582bd5a956e5a9fc2dc40adc2f355e"
+            ],
+            "methodVersion": "illustrative-document-method-1",
+            "format": "application/json-example-only",
+            "freshnessStatus": "current-for-source",
+            "availability": "present-in-example-bundle",
+            "body": {
+              "artifact": "Document synthétique de démonstration de manifeste, pas export PDF/IFC exécuté",
+              "kind": "derived-section",
+              "sourceContentHash": "43236aebed218788e21de1a12a68d08e6f582bd5a956e5a9fc2dc40adc2f355e",
+              "sourceRevisionId": "fixture-revision-B-001",
+              "title": "Pièce documentaire synthétique B"
+            }
+          }
+        ],
+        "manifest": {
+          "manifestId": "fixture-manifest-B",
+          "manifestVersion": "1",
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-B",
+            "revisionId": "fixture-revision-B-001"
+          },
+          "usage": "Exemple synthétique de dossier de conception B",
+          "createdAt": "2026-10-18T12:00:00Z",
+          "authorId": "fixture-designer",
+          "orderedDocuments": [
+            {
+              "documentId": "fixture-document-B",
+              "documentVersion": "1",
+              "contentHash": "3e60caeff585c06c4ca1bb725133908f5c7efa676805e71391006fb399bd8b80"
+            }
+          ],
+          "sourceRevisionSet": [
+            "fixture-revision-B-001"
+          ],
+          "canonicalSources": [
+            {
+              "contentId": "fixture-canonical-B",
+              "schemaVersion": "illustrative-1",
+              "authority": "model3d",
+              "context": {
+                "projectId": "fixture-project-001",
+                "studyId": "fixture-study-001",
+                "variantId": "fixture-variant-B",
+                "revisionId": "fixture-revision-B-001"
+              },
+              "contentHash": "43236aebed218788e21de1a12a68d08e6f582bd5a956e5a9fc2dc40adc2f355e",
+              "units": "m",
+              "coordinateFrameId": "fixture-local-B",
+              "provenance": {
+                "origin": "Données synthétiques documentaires A1",
+                "sourceVersion": "M24-example-v1",
+                "rights": "Aucune donnée client ni production"
+              }
+            }
+          ],
+          "rules": [
+            {
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1"
+            }
+          ],
+          "controls": [
+            {
+              "checkId": "fixture-check-B",
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1",
+              "sourceRevisionSet": [
+                "fixture-revision-B-001"
+              ],
+              "sourceContentHashes": [
+                "43236aebed218788e21de1a12a68d08e6f582bd5a956e5a9fc2dc40adc2f355e"
+              ],
+              "executionState": "expected-completed-only-in-fixture",
+              "conclusion": "expected-conforme-only-in-fixture",
+              "evidenceKind": "documentary-example-not-executed"
+            }
+          ],
+          "observations": [],
+          "approvalState": "expected-approved-in-fixture",
+          "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+        },
+        "manifestHash": "2e58cab655807e1f199a99955b9876947efedce66f49e052197dc62f60a22d98",
+        "approval": {
+          "approvalId": "fixture-approval-B",
+          "manifestHash": "2e58cab655807e1f199a99955b9876947efedce66f49e052197dc62f60a22d98",
+          "approvedManifestId": "fixture-manifest-B",
+          "approvedAt": "2026-10-18T12:01:00Z",
+          "actorId": "fixture-approver",
+          "action": "approve",
+          "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+        },
+        "publication": {
+          "publicationId": "fixture-publication-B",
+          "manifestId": "fixture-manifest-B",
+          "manifestHash": "2e58cab655807e1f199a99955b9876947efedce66f49e052197dc62f60a22d98",
+          "approvalId": "fixture-approval-B",
+          "actorId": "fixture-publisher",
+          "publishedAt": "2026-10-18T12:02:00Z",
+          "eventId": "fixture-event-B",
+          "evidenceKind": "synthetic-expected-record-not-a-real-publication",
+          "distributionState": "expected-published-in-fixture"
+        },
+        "reopenIntent": {
+          "source": "publication",
+          "publicationId": "fixture-publication-B",
+          "expectedManifestHash": "2e58cab655807e1f199a99955b9876947efedce66f49e052197dc62f60a22d98",
+          "mode": "read-identified-immutable",
+          "fallbackToLatest": true
+        },
+        "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique"
+      },
+      "execution": "Non exécuté ; cas documentaire proposé",
+      "validation_order_note": "Codes candidats indicatifs ; ordre réel des contrôles à fixer. Cas modifiant contenu approuvé gardent intentionnellement une empreinte incohérente ; aucune implémentation testée."
+    },
+    {
+      "exampleId": "M24-NEG-ORDER",
+      "classification": "JSON syntaxiquement valide mais sémantiquement invalide ou précondition refusée",
+      "reason": "Liste pièces approuvée modifiée sans recomposer empreinte manifeste",
+      "expected_refusal_candidate": "APPROVAL_MISMATCH",
+      "expected_effect": "Zéro mutation canonique/publication ; historique conservé ; trace de refus non sensible",
+      "payload": {
+        "exampleId": "M24-POS-A",
+        "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+        "route": "A",
+        "authorizedResourceContextFixture": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-A",
+          "revisionId": "fixture-revision-A-001"
+        },
+        "preconditions_assumed_for_example": [
+          "Même contexte autorisé et coupe logique atomique par version immuable",
+          "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+          "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+          "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+          "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+        ],
+        "canonicalBody": {
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "authority": "drawing2d",
+          "writerAuthority": "drawing2d",
+          "documentId": "fixture-drawing-A",
+          "coordinateFrame": {
+            "id": "fixture-plane-A",
+            "kind": "document2d",
+            "unit": "m"
+          },
+          "entities": [
+            {
+              "id": "fixture-line-A",
+              "kind": "line",
+              "from": [
+                0,
+                0
+              ],
+              "to": [
+                6,
+                0
+              ],
+              "layerId": "fixture-layer-A"
+            },
+            {
+              "id": "fixture-dim-A",
+              "kind": "dimension",
+              "references": [
+                "fixture-line-A"
+              ],
+              "value": 6,
+              "unit": "m"
+            },
+            {
+              "id": "fixture-text-A",
+              "kind": "text",
+              "value": "Détail synthétique A"
+            }
+          ],
+          "layers": [
+            {
+              "id": "fixture-layer-A",
+              "name": "Dessin synthétique"
+            }
+          ],
+          "associations": []
+        },
+        "canonicalSource": {
+          "contentId": "fixture-canonical-A",
+          "schemaVersion": "illustrative-1",
+          "authority": "drawing2d",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "contentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+          "units": "m",
+          "coordinateFrameId": "fixture-plane-A",
+          "provenance": {
+            "origin": "Données synthétiques documentaires A1",
+            "sourceVersion": "M24-example-v1",
+            "rights": "Aucune donnée client ni production"
+          }
+        },
+        "documents": [
+          {
+            "documentId": "fixture-document-A",
+            "documentVersion": "1",
+            "contentHash": "f37ec68861c0ddffba6cce7573f0fb1343187ec11fb71841d543d24604e0f78f",
+            "sourceRevisionSet": [
+              "fixture-revision-A-001"
+            ],
+            "sourceContentHashes": [
+              "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299"
+            ],
+            "methodVersion": "illustrative-document-method-1",
+            "format": "application/json-example-only",
+            "freshnessStatus": "current-for-source",
+            "availability": "present-in-example-bundle",
+            "body": {
+              "artifact": "Document synthétique de démonstration de manifeste, pas export PDF/IFC exécuté",
+              "kind": "drawing-sheet",
+              "sourceContentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+              "sourceRevisionId": "fixture-revision-A-001",
+              "title": "Pièce documentaire synthétique A"
+            }
+          }
+        ],
+        "manifest": {
+          "manifestId": "fixture-manifest-A",
+          "manifestVersion": "1",
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-A",
+            "revisionId": "fixture-revision-A-001"
+          },
+          "usage": "Exemple synthétique de dossier de conception A",
+          "createdAt": "2026-10-18T12:00:00Z",
+          "authorId": "fixture-designer",
+          "orderedDocuments": [
+            {
+              "documentId": "fixture-document-A",
+              "documentVersion": "1",
+              "contentHash": "f37ec68861c0ddffba6cce7573f0fb1343187ec11fb71841d543d24604e0f78f"
+            },
+            {
+              "documentId": "fixture-unapproved-extra",
+              "documentVersion": "1",
+              "contentHash": "0000000000000000000000000000000000000000000000000000000000000000"
+            }
+          ],
+          "sourceRevisionSet": [
+            "fixture-revision-A-001"
+          ],
+          "canonicalSources": [
+            {
+              "contentId": "fixture-canonical-A",
+              "schemaVersion": "illustrative-1",
+              "authority": "drawing2d",
+              "context": {
+                "projectId": "fixture-project-001",
+                "studyId": "fixture-study-001",
+                "variantId": "fixture-variant-A",
+                "revisionId": "fixture-revision-A-001"
+              },
+              "contentHash": "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299",
+              "units": "m",
+              "coordinateFrameId": "fixture-plane-A",
+              "provenance": {
+                "origin": "Données synthétiques documentaires A1",
+                "sourceVersion": "M24-example-v1",
+                "rights": "Aucune donnée client ni production"
+              }
+            }
+          ],
+          "rules": [
+            {
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1"
+            }
+          ],
+          "controls": [
+            {
+              "checkId": "fixture-check-A",
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1",
+              "sourceRevisionSet": [
+                "fixture-revision-A-001"
+              ],
+              "sourceContentHashes": [
+                "043136351a136dc776351eca629ef11538bfd4022e5edc944e7da189346cb299"
+              ],
+              "executionState": "expected-completed-only-in-fixture",
+              "conclusion": "expected-conforme-only-in-fixture",
+              "evidenceKind": "documentary-example-not-executed"
+            }
+          ],
+          "observations": [],
+          "approvalState": "expected-approved-in-fixture",
+          "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+        },
+        "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+        "approval": {
+          "approvalId": "fixture-approval-A",
+          "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "approvedManifestId": "fixture-manifest-A",
+          "approvedAt": "2026-10-18T12:01:00Z",
+          "actorId": "fixture-approver",
+          "action": "approve",
+          "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+        },
+        "publication": {
+          "publicationId": "fixture-publication-A",
+          "manifestId": "fixture-manifest-A",
+          "manifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "approvalId": "fixture-approval-A",
+          "actorId": "fixture-publisher",
+          "publishedAt": "2026-10-18T12:02:00Z",
+          "eventId": "fixture-event-A",
+          "evidenceKind": "synthetic-expected-record-not-a-real-publication",
+          "distributionState": "expected-published-in-fixture"
+        },
+        "reopenIntent": {
+          "source": "publication",
+          "publicationId": "fixture-publication-A",
+          "expectedManifestHash": "f2c6b4d9920b1bfa4a1c545a3a44ed98eedd0b304bfb77c8bd76b52b14ca62f2",
+          "mode": "read-identified-immutable",
+          "fallbackToLatest": false
+        },
+        "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique"
+      },
+      "execution": "Non exécuté ; cas documentaire proposé",
+      "validation_order_note": "Codes candidats indicatifs ; ordre réel des contrôles à fixer. Cas modifiant contenu approuvé gardent intentionnellement une empreinte incohérente ; aucune implémentation testée."
+    },
+    {
+      "exampleId": "M24-NEG-IFC-CLAIM",
+      "classification": "JSON syntaxiquement valide mais sémantiquement invalide ou précondition refusée",
+      "reason": "Proxys importés présentés comme natifs paramétriques certifiés",
+      "expected_refusal_candidate": "UNSUPPORTED_CAPABILITY_CLAIM",
+      "expected_effect": "Zéro mutation canonique/publication ; historique conservé ; trace de refus non sensible",
+      "payload": {
+        "exampleId": "M24-POS-C",
+        "classification": "JSON documentaire cohérent, comportement attendu non exécuté",
+        "route": "C",
+        "authorizedResourceContextFixture": {
+          "projectId": "fixture-project-001",
+          "studyId": "fixture-study-001",
+          "variantId": "fixture-variant-C",
+          "revisionId": "fixture-revision-C-001"
+        },
+        "preconditions_assumed_for_example": [
+          "Même contexte autorisé et coupe logique atomique par version immuable",
+          "Identités/révisions/pièces/règles vérifiées par futur service autoritaire",
+          "Permissions approve et publish distinctes revalidées serveur au moment de chaque acte",
+          "Contrôles requis réellement exécutés et conformes dans future recette ; champs expected ne sont pas preuves réelles",
+          "SchemaVersion et méthode de canonicalisation finale à décider DEC16/03 ; ici hashes internes calculés seulement pour l’exemple"
+        ],
+        "canonicalBody": {
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "authority": "associated",
+          "writerAuthority": "associated",
+          "modelId": "fixture-model-C",
+          "coordinateFrame": {
+            "id": "fixture-local-C",
+            "kind": "local3d",
+            "unit": "m"
+          },
+          "objects": [
+            {
+              "id": "fixture-wall-C",
+              "kind": "wall",
+              "length": 6,
+              "height": 3,
+              "thickness": 0.2
+            },
+            {
+              "id": "fixture-opening-C",
+              "kind": "opening",
+              "hostId": "fixture-wall-C",
+              "width": 1,
+              "height": 2.1
+            }
+          ],
+          "associations": [
+            {
+              "id": "fixture-association-C",
+              "kind": "associated",
+              "canonicalObjectId": "fixture-wall-C",
+              "views": [
+                "fixture-view-C-2d",
+                "fixture-view-C-3d"
+              ]
+            }
+          ],
+          "quantities": [
+            {
+              "quantityId": "fixture-quantity-C",
+              "ruleId": "fixture-RT-wall-simplified",
+              "ruleVersion": "1",
+              "sourceObjectIds": [
+                "fixture-wall-C",
+                "fixture-opening-C"
+              ],
+              "sourceRevisionSet": [
+                "fixture-revision-C-001"
+              ],
+              "unit": "m3",
+              "rawValue": 3.6,
+              "deductions": [
+                {
+                  "sourceObjectId": "fixture-opening-C",
+                  "value": 0.42
+                }
+              ],
+              "netValue": 3.18,
+              "displayValue": "3,180 m³",
+              "freshnessStatus": "current-for-source"
+            }
+          ]
+        },
+        "canonicalSource": {
+          "contentId": "fixture-canonical-C",
+          "schemaVersion": "illustrative-1",
+          "authority": "associated",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "contentHash": "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788",
+          "units": "m",
+          "coordinateFrameId": "fixture-local-C",
+          "provenance": {
+            "origin": "Données synthétiques documentaires A1",
+            "sourceVersion": "M24-example-v1",
+            "rights": "Aucune donnée client ni production"
+          }
+        },
+        "documents": [
+          {
+            "documentId": "fixture-document-C",
+            "documentVersion": "1",
+            "contentHash": "bcfee0de3ba5dd8d7f983e98506e1f8cc6003ba11ab5fe5712ceb4f3af9eafa2",
+            "sourceRevisionSet": [
+              "fixture-revision-C-001"
+            ],
+            "sourceContentHashes": [
+              "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788"
+            ],
+            "methodVersion": "illustrative-document-method-1",
+            "format": "application/json-example-only",
+            "freshnessStatus": "current-for-source",
+            "availability": "present-in-example-bundle",
+            "body": {
+              "artifact": "Document synthétique de démonstration de manifeste, pas export PDF/IFC exécuté",
+              "kind": "associated-sheet-and-quantities",
+              "sourceContentHash": "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788",
+              "sourceRevisionId": "fixture-revision-C-001",
+              "title": "Pièce documentaire synthétique C"
+            }
+          }
+        ],
+        "manifest": {
+          "manifestId": "fixture-manifest-C",
+          "manifestVersion": "1",
+          "schemaVersion": "illustrative-1",
+          "context": {
+            "projectId": "fixture-project-001",
+            "studyId": "fixture-study-001",
+            "variantId": "fixture-variant-C",
+            "revisionId": "fixture-revision-C-001"
+          },
+          "usage": "Exemple synthétique de dossier de conception C",
+          "createdAt": "2026-10-18T12:00:00Z",
+          "authorId": "fixture-designer",
+          "orderedDocuments": [
+            {
+              "documentId": "fixture-document-C",
+              "documentVersion": "1",
+              "contentHash": "bcfee0de3ba5dd8d7f983e98506e1f8cc6003ba11ab5fe5712ceb4f3af9eafa2"
+            }
+          ],
+          "sourceRevisionSet": [
+            "fixture-revision-C-001"
+          ],
+          "canonicalSources": [
+            {
+              "contentId": "fixture-canonical-C",
+              "schemaVersion": "illustrative-1",
+              "authority": "associated",
+              "context": {
+                "projectId": "fixture-project-001",
+                "studyId": "fixture-study-001",
+                "variantId": "fixture-variant-C",
+                "revisionId": "fixture-revision-C-001"
+              },
+              "contentHash": "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788",
+              "units": "m",
+              "coordinateFrameId": "fixture-local-C",
+              "provenance": {
+                "origin": "Données synthétiques documentaires A1",
+                "sourceVersion": "M24-example-v1",
+                "rights": "Aucune donnée client ni production"
+              }
+            }
+          ],
+          "rules": [
+            {
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1"
+            }
+          ],
+          "controls": [
+            {
+              "checkId": "fixture-check-C",
+              "ruleId": "fixture-required-review",
+              "ruleVersion": "1",
+              "sourceRevisionSet": [
+                "fixture-revision-C-001"
+              ],
+              "sourceContentHashes": [
+                "27c0502a467a1dd92da9875e6bab70d9eadad4a8d0fbc3409464a121cfe1b788"
+              ],
+              "executionState": "expected-completed-only-in-fixture",
+              "conclusion": "expected-conforme-only-in-fixture",
+              "evidenceKind": "documentary-example-not-executed"
+            }
+          ],
+          "observations": [],
+          "approvalState": "expected-approved-in-fixture",
+          "scope": "Corpus synthétique documentaire ; aucune diffusion effective"
+        },
+        "manifestHash": "736629912e156c6317636fc9867fd2ef7863b5f45035dc282e99413686cecb34",
+        "approval": {
+          "approvalId": "fixture-approval-C",
+          "manifestHash": "736629912e156c6317636fc9867fd2ef7863b5f45035dc282e99413686cecb34",
+          "approvedManifestId": "fixture-manifest-C",
+          "approvedAt": "2026-10-18T12:01:00Z",
+          "actorId": "fixture-approver",
+          "action": "approve",
+          "evidenceKind": "synthetic-expected-record-not-a-real-approval"
+        },
+        "publication": {
+          "publicationId": "fixture-publication-C",
+          "manifestId": "fixture-manifest-C",
+          "manifestHash": "736629912e156c6317636fc9867fd2ef7863b5f45035dc282e99413686cecb34",
+          "approvalId": "fixture-approval-C",
+          "actorId": "fixture-publisher",
+          "publishedAt": "2026-10-18T12:02:00Z",
+          "eventId": "fixture-event-C",
+          "evidenceKind": "synthetic-expected-record-not-a-real-publication",
+          "distributionState": "expected-published-in-fixture"
+        },
+        "reopenIntent": {
+          "source": "publication",
+          "publicationId": "fixture-publication-C",
+          "expectedManifestHash": "736629912e156c6317636fc9867fd2ef7863b5f45035dc282e99413686cecb34",
+          "mode": "read-identified-immutable",
+          "fallbackToLatest": false
+        },
+        "expected_reopen": "Retrouver exactement sources/pièces/révisions/identités citées ; cache/projection reconstruisible, pas de mutation historique",
+        "exchangeClaim": {
+          "format": "IFC",
+          "importMode": "representations-proxies",
+          "claim": "certified-native-parametric-roundtrip",
+          "evidence": null
+        }
+      },
+      "execution": "Non exécuté ; cas documentaire proposé",
+      "validation_order_note": "Codes candidats indicatifs ; ordre réel des contrôles à fixer. Cas modifiant contenu approuvé gardent intentionnellement une empreinte incohérente ; aucune implémentation testée."
+    }
+  ]
+}

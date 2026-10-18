@@ -24,10 +24,6 @@ La disponibilité de sous-agents, la révision Cloud, les autorisations des lots
 
 Mission 003 conserve les originaux Mission 002 sous docs/ai-team/reports/mission-002-originals/, avec manifeste et limites. Le registre actif est docs/workstreams/studio/task-register.json ; missions.json reste l’autorité des affectations, les sources Studio l’autorité des textes. Aucun second programme créé.
 
-## Point Mission003 — suivi existant enrichi
+## Autorisations et reprise Mission 004
 
-Les originaux sont versés (14 pièces,19 inventoriées), les nouvelles préparations141/18DEC/9NAV/38oracles et12lots sont liées depuis [le rapport A0](../../ai-team/reports/mission-003/README.md). Le registre unique [630 tâches](../studio/task-register.json) distingue avancement/conformité/tests/preuves/blocage/suite ; les31 missions gardent leurs affectations canoniques dans missions.json. Aucun second programme ni branche permanente par agent.
-
-Priorités : M00/M29 checkpoint et #166 ; M06 cohérence documentaire ; M08 prochaine cohorte de revue ; M02 et M01 attendent accords bornés ; M03 accord administratif. Questions stables **Q-M003-D01 à Q-M003-D07**, dossiers M002-D01 à D07 et propriétaires/actions dans STATUS/HANDOFF ; D08 documentaire déjà acquis. Les options F restent visibles ; G0/G1 en instruction, G2/G3 bloqués, G4 futur. Aucun lot applicatif ouvert.
-
-Pour les fichiers partagés : A0 seul intégrateur documentaire ; futurs routes/traductions/styles A4, schémas/manifestes/commandes A2 pour contrat puis un A3 désigné, setup/client DB un A3 après accord avec revue A5/A6, workflows A6. Relire #142/#152/#154 avant recouvrement. Les formulations anciennes de réception ci-dessus restent historiques ; les faits actuels sont dans STATUS/HANDOFF actualisés ensemble.
+D01–D07 délégués dans166, DB1/2 explicitement autorisé et PR #169 ouverte sansfusion. Dernier mandat interdit touteconnexionDBréelle, service, migration ou production ; il prime toute instruction plus large de repriseCloud. Studio reste en préparation, D07 place entréeaprèsProjets pourspécification ; routes et modèles physiques ne sont pas adoptés par ce choix. [État courant et preuves](STATUS.md), [reprise exacte](HANDOFF.md). A0 est seul intégrateur des fichierspartagés ; septagents réellementmobilisés.

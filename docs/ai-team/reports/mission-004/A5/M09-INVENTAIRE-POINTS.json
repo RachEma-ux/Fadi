@@ -1,0 +1,352 @@
+{
+  "reviewer": "A5",
+  "scope": "Lecture sources locales versionnées sans scan externe ni réseauDB",
+  "baseline": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "head_guard_note": "Checkout contient PR169 codegarde ; app/CSP inchangés par cegarde. Voir hashes, pas transfert automatique àmainfutur",
+  "files": [
+    {
+      "path": "apps/api/src/app.ts",
+      "sha256": "1eac74dcb76a60f071d09ada63d9d9d6450f6d5906f3882dd5022f1c465c41a7"
+    },
+    {
+      "path": "apps/web/index.html",
+      "sha256": "f0f107dc28f991cbba87c3db2181d6b755de684059be8b21bec2753fb53a014d"
+    },
+    {
+      "path": "apps/web/vite.config.ts",
+      "sha256": "97be880a8370cf083ecc7d5acf25600d6d541586f65e62103f6e15bbd506a991"
+    },
+    {
+      "path": "apps/web/public/sw.js",
+      "sha256": "b854c126fa9beb391614bcfc06235e01946227e0eecaabeea3bebe4ba3830482"
+    },
+    {
+      "path": "apps/web/public/parcelle/index.html",
+      "sha256": "4f6e445eba8cbce2002fd79b96948f1f7b9afa0e88da448a86ab0b7cc8e4982f"
+    },
+    {
+      "path": "apps/web/public/parcelle/parcelle-bridge.js",
+      "sha256": "4fa4b55e1cb0c2b6cf2cc0e6c1650448603012f3c73a9095c573fb9d5c822ec2"
+    },
+    {
+      "path": "apps/web/public/parcelle/README.md",
+      "sha256": "2fa75e3253559d88f85b4f4a8303b0e221a5f3875954724c23d9747421fcbbaf"
+    },
+    {
+      "path": "apps/web/src/modules/projets-sources/ParcelleTool.tsx",
+      "sha256": "cc392d133f53fff0df1c32efc344135b9b64e13dde9bdf3bbb3056eb21a96393"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts",
+      "sha256": "ff535450de7f84ad37bbaab160affe2e67711b161afcf24a038ce20e67402958"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts",
+      "sha256": "d3947984643b9d6a8881c52a5b940f2dc60c9aa1f068fcb08f8c4dcba440c8bf"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/documents/generation-client.ts",
+      "sha256": "90d5812c373dd0370183c341f9e6aec617e4ea3689312488d03bc0dfa3596bb3"
+    },
+    {
+      "path": "apps/web/src/lib/maptiler.ts",
+      "sha256": "65d6162e9be5e9375e1bb170e042ca95f9dd530ba6207407f4450d5fbcf45f85"
+    },
+    {
+      "path": "packages/geometry-exact/src/index.ts",
+      "sha256": "069b5e477417396eea81ac2546375343916d32ee2b4dcebd95a9c674d1dba034"
+    },
+    {
+      "path": "packages/geometry-exact/package.json",
+      "sha256": "544697f26c4513fda9527546ea4df7bf10b646546827701a5b56be6110178e75"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "7506e0ae6075d622a1d8ee6835bc2411316c8915f279c4aea06c12b1144df6f3"
+    },
+    {
+      "path": "Dockerfile",
+      "sha256": "6faaf215b870892a88c6b1469284376fc62d7a6379c3260611325ddce96b47c8"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "dca3828656e941b090ad8f971e857f499a3ef31397d307ee4350d0b6f45070da"
+    }
+  ],
+  "parcelle_html": {
+    "script_tag_count": 26,
+    "script_types": {
+      "text/javascript": 24,
+      "text/plain": 2
+    },
+    "style_tag_count": 9,
+    "inline_style_attribute_count": 3,
+    "inline_event_handler_count": 0,
+    "inline_scripts": [
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "vendor/leaflet.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "vendor/proj4.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "geometry.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "satellite.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "vendor/jszip.min.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "google-earth.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "design-parcel.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "file-data.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "project-files.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "map-format.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "parcel-annotations.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "earth-layer.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "vendor/roads-mvt.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "roads.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "roads-view.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "road-width.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "frontage.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": "./parcelle-bridge.js",
+        "data-source": null
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "dossier-panels.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "parcel-list.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "panel-folds.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "design-panel.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "atelier-export.js"
+      },
+      {
+        "type": "text/javascript",
+        "src": null,
+        "data-source": "app.js"
+      },
+      {
+        "type": "text/plain",
+        "src": null,
+        "data-source": null
+      },
+      {
+        "type": "text/plain",
+        "src": null,
+        "data-source": null
+      }
+    ],
+    "limits": "Inventaire statique tags seulement ; ressources créées dynamiquement/CSS/JSdéclarations àqualifier, pas traficobservé"
+  },
+  "dependency_metadata_selected": [
+    {
+      "package": "@node-rs/argon2",
+      "lock_path": "node_modules/@node-rs/argon2",
+      "version": "2.0.2",
+      "license_declared": "MIT",
+      "runtime_vs_dev_declared": "runtime-or-mixed",
+      "integrity_present": true,
+      "source_of_license": "Métadonnée lock seulement, pas avis juridique ni licence complète binaires/vendors"
+    },
+    {
+      "package": "@tanstack/react-query",
+      "lock_path": "node_modules/@tanstack/react-query",
+      "version": "5.104.1",
+      "license_declared": "MIT",
+      "runtime_vs_dev_declared": "runtime-or-mixed",
+      "integrity_present": true,
+      "source_of_license": "Métadonnée lock seulement, pas avis juridique ni licence complète binaires/vendors"
+    },
+    {
+      "package": "dexie",
+      "lock_path": "node_modules/dexie",
+      "version": "4.4.6",
+      "license_declared": "Apache-2.0",
+      "runtime_vs_dev_declared": "runtime-or-mixed",
+      "integrity_present": true,
+      "source_of_license": "Métadonnée lock seulement, pas avis juridique ni licence complète binaires/vendors"
+    },
+    {
+      "package": "express",
+      "lock_path": "node_modules/express",
+      "version": "5.1.0",
+      "license_declared": "MIT",
+      "runtime_vs_dev_declared": "runtime-or-mixed",
+      "integrity_present": true,
+      "source_of_license": "Métadonnée lock seulement, pas avis juridique ni licence complète binaires/vendors"
+    },
+    {
+      "package": "helmet",
+      "lock_path": "node_modules/helmet",
+      "version": "8.1.0",
+      "license_declared": "MIT",
+      "runtime_vs_dev_declared": "runtime-or-mixed",
+      "integrity_present": true,
+      "source_of_license": "Métadonnée lock seulement, pas avis juridique ni licence complète binaires/vendors"
+    },
+    {
+      "package": "manifold-3d",
+      "lock_path": "node_modules/manifold-3d",
+      "version": "3.5.4",
+      "license_declared": "Apache-2.0",
+      "runtime_vs_dev_declared": "runtime-or-mixed",
+      "integrity_present": true,
+      "source_of_license": "Métadonnée lock seulement, pas avis juridique ni licence complète binaires/vendors"
+    },
+    {
+      "package": "occt-wasm",
+      "lock_path": "node_modules/occt-wasm",
+      "version": "5.6.1",
+      "license_declared": "MIT OR Apache-2.0",
+      "runtime_vs_dev_declared": "runtime-or-mixed",
+      "integrity_present": true,
+      "source_of_license": "Métadonnée lock seulement, pas avis juridique ni licence complète binaires/vendors"
+    },
+    {
+      "package": "playwright",
+      "lock_path": "node_modules/playwright",
+      "version": "1.56.0",
+      "license_declared": "Apache-2.0",
+      "runtime_vs_dev_declared": "dev",
+      "integrity_present": true,
+      "source_of_license": "Métadonnée lock seulement, pas avis juridique ni licence complète binaires/vendors"
+    },
+    {
+      "package": "proj4",
+      "lock_path": "node_modules/proj4",
+      "version": "2.22.0",
+      "license_declared": "MIT",
+      "runtime_vs_dev_declared": "runtime-or-mixed",
+      "integrity_present": true,
+      "source_of_license": "Métadonnée lock seulement, pas avis juridique ni licence complète binaires/vendors"
+    },
+    {
+      "package": "react",
+      "lock_path": "node_modules/react",
+      "version": "19.1.9",
+      "license_declared": "MIT",
+      "runtime_vs_dev_declared": "runtime-or-mixed",
+      "integrity_present": true,
+      "source_of_license": "Métadonnée lock seulement, pas avis juridique ni licence complète binaires/vendors"
+    },
+    {
+      "package": "three",
+      "lock_path": "node_modules/three",
+      "version": "0.186.1",
+      "license_declared": "MIT",
+      "runtime_vs_dev_declared": "runtime-or-mixed",
+      "integrity_present": true,
+      "source_of_license": "Métadonnée lock seulement, pas avis juridique ni licence complète binaires/vendors"
+    },
+    {
+      "package": "vite",
+      "lock_path": "node_modules/vite",
+      "version": "6.4.3",
+      "license_declared": "MIT",
+      "runtime_vs_dev_declared": "dev",
+      "integrity_present": true,
+      "source_of_license": "Métadonnée lock seulement, pas avis juridique ni licence complète binaires/vendors"
+    },
+    {
+      "package": "vitest",
+      "lock_path": "node_modules/vitest",
+      "version": "5.0.3",
+      "license_declared": "MIT",
+      "runtime_vs_dev_declared": "dev",
+      "integrity_present": true,
+      "source_of_license": "Métadonnée lock seulement, pas avis juridique ni licence complète binaires/vendors"
+    },
+    {
+      "package": "web-ifc",
+      "lock_path": "node_modules/web-ifc",
+      "version": "0.0.78",
+      "license_declared": "MPL-2.0",
+      "runtime_vs_dev_declared": "runtime-or-mixed",
+      "integrity_present": true,
+      "source_of_license": "Métadonnée lock seulement, pas avis juridique ni licence complète binaires/vendors"
+    }
+  ],
+  "dependency_inventory_limits": [
+    "Aucun avis CVE/GHSA consulté ; zéro résultat de scan de vulnérabilités revendiqué.",
+    "Licencelock peut différer de binaires OCCT/WebAssembly et polices/vendors incorporés.",
+    "npm/pip/images/actions distincts, dépendancesPythonpytest nonverrouillées actuellement dans workflow."
+  ]
+}

@@ -2,34 +2,20 @@
 
 ## À faire
 
-M11 sources/G0 ; M12 141 fiches ; M13 navigation/architecture/G1 ; M14 DEC/POC/G2/G3 ; M15 X ; M16 I ; M17 A.1 ; M18 A.2 ; M19 A.3 ; M20 A.4/A.5 ; M21 B ; M22 C ; M23 D ; M24 E ; M25 F ; M26 recettes ; M27 migration ; M28 R/G4 ; M29 suivi ; M30 jalons/clôture. Critères et affectations exacts conservés dans MISSIONS.md, missions.json et la checklist.
-
-Priorité documentaire immédiate M29 : récupérer les livrables originaux de Mission 002, vérifier leurs 630 IDs et les rapprocher du suivi déjà présent dans #165. M12 : obtenir les 104 EX extraites puis vérifier/compléter les 15 INV, 11 IF, 11 AC et toutes les liaisons aux preuves ; pas d’exigence inventée depuis un résumé.
+Conserver31 missions M00–M30 et630 IDs canoniques. Prochaine préparation READY : relire croisée M17/M21/M24, compléter M09 et M08 selon contrats disponibles ; déposer questions techniques bornées dans166, puis prendre la suivante. Voir [missions.json](../../ai-team/missions.json) et [rapport courant](../../ai-team/reports/mission-004/README.md).
 
 ## En cours
 
-M11/M12/M13/M14/M15/M26 : préparation initiale annoncée par A1/A2/A4/A5/A6, réception documentée dans [MISSION-002-RECEPTION.md](../../ai-team/reports/MISSION-002-RECEPTION.md). Les originaux manquent encore au dépôt. M29 raccorde les propositions aux quatre fichiers existants ; ne pas créer un chantier concurrent.
+DB1/2 code vérifié en simulation PR #169, revue et suiteDB-3 ouvertes. Dossier G0,141 fiches v2,18DEC,9NAV,38oracles,7fixtures partielles et contrats durables/Registry/publication préparés. M08 rapproche125occurrences sans valider équivalence des oracles. A0 intègre/checkpoint ; A1 produit, A2 architecture, A3 seul code DB, A4 UX, A5 qualité, A6 CI/environnement ont réellement travaillé.
 
 ## Terminé
 
-L’affectation documentaire 630/630 et l’archivage de la synthèse ne cochent aucune case. Aucun parcours Studio, lot I/A/B/X/C/D/E/F/R ou gate n’est déclaré terminé. Le registre par groupe n’atteste pas l’audit fonctionnel individuel complet.
+Sous-tâches prouvées : DB1/2 implémenté+129tests purs/types/build au SHA a15d650, PRdraft169 sansfusion ;30 conditions documentaires individuelles vérifiées. ArchivesMission 002 déjàpubliées14/19 ;141textes normatifs exacts conservés. Aucune mission entière, fonctionnalitéStudio ou gate terminée.
 
 ## Bloqué
 
-Ratification des références/pilote, exclusions et contrat de navigation ; preuves G2 et autorisations G3 par sous-ensemble ; code/POC/tests mutateurs/admin/production sans accord. Continuer les fiches et oracles indépendants. Les variantes existantes par projets bifurqués ne prouvent pas le modèle Étude/Variante/Révision ; collision echelle à reproduire et qualifier pour Registry, sans suppression silencieuse.
+Synchronisation165 attend décisionCI sansDB ; checkpointtemporaire sansPR possible. DB-3/services/admin/migrations/fusion/production nonautorisés. RéalisationStudio attend portes et accords de sous-lots. D01–D07 déjàdécidés dans leur portée, ne pas les reposer. Causes/responsables/essais/suites dans registre et STATUS/HANDOFF.
 
 ## Critères de sortie
 
-Chaque ID garde responsable, état de travail, verdict de conformité, état du test, décision, preuve, Issue/PR et prochaine action. Les trois parcours doivent aboutir à des résultats métier acceptés avec E ; R avant généralisation et F selon arbitrages. Conserver toutes les réserves et options ; actualiser STATUS/HANDOFF ensemble avant revue.
-
-## Avancement Mission 003 — transfert vérifié
-
-M00/M29 : récupération des cinq rapports, consolidation A0, registre 630 et 104 EX et propositions historiques effectuée avec empreintes. La préparation des 141 fiches et des contrats continue ; aucune mission applicative close. Voir rapport de récupération ; les mentions « originaux non versés » ci-dessus décrivent désormais le checkpoint de réception historique. Une nouvelle validation des documents/CI est requise sur chaque tête publiée.
-
-## Point Mission003 — suivi existant enrichi
-
-Les originaux sont versés (14 pièces,19 inventoriées), les nouvelles préparations141/18DEC/9NAV/38oracles et12lots sont liées depuis [le rapport A0](../../ai-team/reports/mission-003/README.md). Le registre unique [630 tâches](../studio/task-register.json) distingue avancement/conformité/tests/preuves/blocage/suite ; les31 missions gardent leurs affectations canoniques dans missions.json. Aucun second programme ni branche permanente par agent.
-
-Priorités : M00/M29 checkpoint et #166 ; M06 cohérence documentaire ; M08 prochaine cohorte de revue ; M02 et M01 attendent accords bornés ; M03 accord administratif. Questions stables **Q-M003-D01 à Q-M003-D07**, dossiers M002-D01 à D07 et propriétaires/actions dans STATUS/HANDOFF ; D08 documentaire déjà acquis. Les options F restent visibles ; G0/G1 en instruction, G2/G3 bloqués, G4 futur. Aucun lot applicatif ouvert.
-
-Pour les fichiers partagés : A0 seul intégrateur documentaire ; futurs routes/traductions/styles A4, schémas/manifestes/commandes A2 pour contrat puis un A3 désigné, setup/client DB un A3 après accord avec revue A5/A6, workflows A6. Relire #142/#152/#154 avant recouvrement. Les formulations anciennes de réception ci-dessus restent historiques ; les faits actuels sont dans STATUS/HANDOFF actualisés ensemble.
+Preuve de clôture par nature et ID, conformité/test/acceptation distinctes. Aucun cochage source/HTML par préparation ; options reportées conservées. Propriétaires uniques : A0 documentscommuns ; A3 setup/clientDB sousrevues A2/A5, A6workflow ; futurs schémas/manifestes A2contrat puisA3autorisé, routes/styles/traductions A4contrat puisA3désigné. Respecter PR142/152/154/168 avant recouvrement.

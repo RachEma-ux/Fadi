@@ -1,0 +1,39 @@
+{
+  "mission": "Mission004 validation documentaire A0",
+  "reference_reprise": "63e804be7b8e8935913514bd57937053c7402474",
+  "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
+  "controle": "Contrôle scratch lecture source/export/XML/registre/manifestes ; pas test applicatif ou recette métier",
+  "resultat": "Réussi",
+  "affectations_exactes": 630,
+  "missions_affectations_inchangees": 31,
+  "textes_normatifs_exacts": 141,
+  "repartition_normes": {
+    "EX": 104,
+    "INV": 15,
+    "IF": 11,
+    "AC": 11
+  },
+  "decisions_source_exactes": 18,
+  "oracles_non_executes": 38,
+  "corpus_decrits": 7,
+  "liens_TEST_candidats": 223,
+  "liens_NAV_candidats": 8,
+  "originaux_octets_identiques": 14,
+  "source_checked": 0,
+  "acceptations_metier": 0,
+  "etats_taches": {
+    "Vérifié": 30,
+    "À définir": 234,
+    "Bloqué": 207,
+    "En cours": 159
+  },
+  "etats_missions": {
+    "En cours": 23,
+    "Bloqué": 8
+  },
+  "reproduction": "Comparer export de check_missions.py --export aux champs id/mission/agent/description du registre ; lire les w:p du DOCX verrouillé (1-based) aux ancres source_paragraphs et source_complements_exacts ; vérifier SHA256 des manifestes. Les14 tests unitaires du validateur et la continuité sont exécutés séparément.",
+  "limites": [
+    "Pas de preuve d’implémentation Studio, ni contrat adopté, ni test métier exécuté.",
+    "Comparaisons de sources documentaires ; composants/tests candidats ne donnent aucune conformité produit."
+  ]
+}

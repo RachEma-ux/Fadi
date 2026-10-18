@@ -6,12 +6,12 @@
   "source_registry": "docs/ai-team/missions.json",
   "source_blob_sha": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
   "reference_programme": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
-  "code_reference": "27c0c5a35e2f116752a83a9c66459484488a1975",
+  "code_reference": "a4caaab0e6665480f09febe3914c960b424b6b47",
   "provenance_originale": {
     "path": "docs/ai-team/reports/mission-002-originals/A1-630-taches.csv",
     "sha256": "eb47f0c8b273718e537160a84eb00a626acf541fce690ef65c0a08cb3f2db894"
   },
-  "note": "630 qualifications initiales par groupe conservées ;141 fiches normatives et18 dossiers DEC individuels préparés ;9 NAV et38 TEST prescrits. Six contrôles de sources documentaires seulement sont vérifiés ; zéro tâche produit acceptée et aucune case source cochée.",
+  "note": "630 IDs/descriptions conservés.30 conditions documentaires vérifiées dont24 revues individuellement Mission004 ; zéro case source cochée, zéro fonctionnalité/gate/acceptation métier Studio.141 fiches v2 restent En cours.",
   "tasks": [
     {
       "id": "SRC-01",
@@ -263,11 +263,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -287,6 +287,22 @@
           "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            7,
+            7
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -295,18 +311,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Consigner DEM-01 : un module autonome intitulé exactement « Studio », accessible dans la barre latérale verticale de Fadi. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "DEM-01 formulé explicitement : titre Studio, autonomie et entrée verticale principale.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -321,12 +340,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
-        "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -342,11 +369,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -366,6 +393,42 @@
           "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lignes": [
+            19,
+            26
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lignes": [
+            30,
+            34
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
+          "sha256": "6b781c5e2b8e41a874fce28e98b11033cddd7b4e53a3324b479616dede54fba5",
+          "lignes": [
+            31,
+            31
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -374,18 +437,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Distinguer dans le dossier les principes de la charte, les contrats du référentiel, les propositions du plan et les observations historiques du dépôt. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Séparation explicite des principes charte, contrats RT, propositions plan et observations historiques.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -400,12 +466,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
-        "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -500,11 +574,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -524,6 +598,32 @@
           "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lignes": [
+            38,
+            46
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lignes": [
+            83,
+            89
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -532,18 +632,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Décrire le premier usage métier : petite étude réellement terminable, de l’entrée dans Studio à la publication. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Premier usage décrit depuis entrée Studio jusqu’à publication, trois résultats utiles réouvrables.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -558,12 +661,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
-        "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -579,11 +690,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -603,6 +714,52 @@
           "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lignes": [
+            38,
+            57
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lignes": [
+            61,
+            63
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lignes": [
+            79,
+            79
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lignes": [
+            93,
+            93
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -611,18 +768,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Délimiter le périmètre pilote, ses utilisateurs, ses données et les capacités incluses ou exclues. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Pilote, utilisateurs, données, capacités incluses et reportées explicités.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -637,12 +797,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
-        "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -658,11 +826,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -682,6 +850,32 @@
           "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lignes": [
+            54,
+            57
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lignes": [
+            85,
+            89
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -690,18 +884,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Inscrire les quatre domaines, les deux planches autonomes et le parcours associé dans les critères du pilote. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Quatre domaines, deux planches autonomes et conception associée inscrits dans les critères pilote.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -716,12 +913,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
-        "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -895,11 +1100,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -919,6 +1124,52 @@
           "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lignes": [
+            26,
+            26
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lignes": [
+            31,
+            31
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lignes": [
+            48,
+            48
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+          "sha256": "4976191179bafa59cbc3a24fef9c28c9f50dcc7fa9a0bd8573dc075586659ce3",
+          "lignes": [
+            34,
+            34
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -927,18 +1178,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Inscrire explicitement l’absence d’autorisation de suppression de l’Atelier, de modification des 21 étapes et de remplacement systématique des moteurs. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Absence d’autorisation de suppression Atelier, modification21étapes, remplacement systématique moteurs inscrite.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -953,12 +1207,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
-        "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -1290,11 +1552,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -1314,6 +1576,42 @@
           "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lignes": [
+            9,
+            13
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            9,
+            9
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            37,
+            37
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -1322,18 +1620,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Soumettre le placement du bouton « Studio » à décision ; conserver « après Projets » comme proposition, non comme choix déjà adopté. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Placement après Projets soumis avec distinction proposition/décision.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -1348,12 +1649,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
-        "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -2179,11 +2488,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -2203,6 +2512,32 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            7,
+            9
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            35,
+            37
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -2211,18 +2546,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Spécifier l’entrée « Studio » au même niveau de navigation qu’Accueil et Projets. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Entrée Studio au même niveau navigation Accueil/Projets.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -2237,12 +2575,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -2260,11 +2606,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -2284,6 +2630,22 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            37,
+            37
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -2292,18 +2654,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Spécifier le texte « Studio » dans la barre dépliée et son maintien dans l’état actif du module. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Texte Studio en rail déplié et état actif maintenu sur routes Studio.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -2318,12 +2683,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -2341,11 +2714,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -2365,6 +2738,22 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            37,
+            37
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -2373,18 +2762,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Spécifier le nom accessible et l’infobulle « Studio » pour l’icône en barre repliée. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Nom accessible et infobulle Studio en rail replié.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -2399,12 +2791,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -2422,11 +2822,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -2446,6 +2846,32 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            37,
+            37
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            48,
+            48
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -2454,18 +2880,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Spécifier l’accès à la même entrée depuis le menu vertical adaptatif sur mobile. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Même entrée depuis menu vertical adaptatif mobile.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -2480,12 +2909,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -2503,11 +2940,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -2527,6 +2964,22 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            50,
+            50
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -2535,18 +2988,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Spécifier le plein écran comme action explicite, avec sortie visible, sans masquage automatique de la navigation. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Plein écran explicite, sortie visible, sans masquage automatique.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -2561,12 +3017,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -2584,11 +3048,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -2608,6 +3072,32 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            15,
+            18
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            55,
+            57
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -2616,18 +3106,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Spécifier l’accueil : projets et études accessibles, sélection et création d’une étude. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Accueil avec projets/études autorisés, sélection et création étude.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -2642,12 +3135,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -2665,11 +3166,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -2689,6 +3190,32 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            21,
+            21
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            31,
+            33
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -2697,18 +3224,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Spécifier la reprise d’un contexte projet transmis uniquement lorsqu’il est valide et autorisé. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Reprise du contexte transmis seulement valide et autorisé.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -2723,12 +3253,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -2746,11 +3284,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -2770,6 +3308,42 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            15,
+            18
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            25,
+            25
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            39,
+            39
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -2778,18 +3352,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Spécifier le choix explicite du projet en l’absence de contexte, sans projet fictif ni géométrie orpheline. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Choix explicite projet en absence contexte, aucun projet fictif/objet orphelin.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -2804,12 +3381,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -2827,11 +3412,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -2851,6 +3436,22 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            21,
+            21
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -2859,18 +3460,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Limiter le dernier contexte personnel à une suggestion : il ne remplace ni une permission ni le contexte demandé dans l’URL. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Dernier contexte personnel = suggestion, jamais permission/substitution URL.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -2885,12 +3489,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -2908,11 +3520,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -2932,6 +3544,22 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            15,
+            15
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -2940,18 +3568,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Décrire dans la décision d’intégration l’option /studio pour l’accueil Studio. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Option /studio et préconditions accueil décrites.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -2966,12 +3597,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -2989,11 +3628,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -3013,6 +3652,22 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            16,
+            16
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -3021,18 +3676,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Décrire l’option /studio/projets/:projectId pour les études du projet autorisé. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Option /studio/projets/:projectId et droits étude décrits.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -3047,12 +3705,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -3070,11 +3736,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -3094,6 +3760,42 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            17,
+            17
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            121,
+            132
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/MAQUETTES-DOCUMENTAIRES.md",
+          "sha256": "911a0721ed0a72ecf48478c63b635efd5dbe9c112d1de08e18fdd8c56f06baab",
+          "lignes": [
+            108,
+            121
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -3102,18 +3804,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Décrire l’option /studio/projets/:projectId/etudes/:studyId pour le cadrage, les sources et les variantes. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Option /studio/projets/:projectId/etudes/:studyId et contexte cadrage définis.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -3128,12 +3833,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -3151,11 +3864,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -3175,6 +3888,22 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            18,
+            18
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -3183,18 +3912,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Décrire l’option /studio/projets/:projectId/etudes/:studyId/variantes/:variantId pour l’espace de conception. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Option espace /studio/projets/:projectId/etudes/:studyId/variantes/:variantId définie.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -3209,12 +3941,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -3232,11 +3972,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -3256,6 +3996,22 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            19,
+            21
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -3264,18 +4020,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Définir la route complète d’une révision dans la hiérarchie projet/étude/variante ; ne pas coder littéralement l’abréviation /studio/.../revisions/:revisionId. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Route révision complète sans abréviation littérale, consultation immuable et retour travail explicités.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -3290,12 +4049,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -3313,11 +4080,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -3337,6 +4104,22 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            23,
+            25
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -3345,18 +4128,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Définir la représentation du domaine et de la planche actifs dans le contrat d’URL. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Domaine/planche représentés dans URL avec valeurs et erreurs/absence définies.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -3371,12 +4157,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -3394,11 +4188,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -3418,6 +4212,32 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            27,
+            27
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            104,
+            110
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -3426,18 +4246,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Définir le comportement à l’ouverture directe, à l’actualisation, au partage du lien et avec précédent/suivant. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Ouverture directe/refresh/partage/précédent-suivant/historique spécifiés sans perte contexte.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -3452,12 +4275,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -3475,11 +4306,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À définir",
-      "conformite": "Non évaluée pour le produit Studio",
+      "statut": "Vérifié",
+      "conformite": "Condition documentaire satisfaite ; conformité fonctionnelle Studio non évaluée",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Lecture/revue de contenu et vérification empreintes/ancres ; aucun test métier Studio."
       },
       "preuves": [
         {
@@ -3499,6 +4330,42 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            21,
+            21
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            55,
+            66
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "contenu_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lignes": [
+            104,
+            114
+          ],
+          "portee": "Spécification documentaire complète ; comportement non exécuté."
+        },
+        {
+          "type": "revue_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+          "nature": "Revue par ID, pas simple existence du fichier."
         }
       ],
       "github": {
@@ -3507,18 +4374,21 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Contenu A1/A4 lu, revue indépendante A5 avec réserve ROUTE03 corrigée, empreintes et47 ancres vérifiées par A0.",
+        "deblocage": null
       },
-      "suite": "Définir les refus d’accès et la vérification serveur de l’appartenance projet/étude/variante/révision. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
+        "nature": "documentaire",
+        "condition": "Refus d’accès et vérification serveur appartenance hiérarchique définis.",
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": false,
+        "gates_acceptes": false
       },
       "historique": [
         {
@@ -3533,12 +4403,20 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 A1/A4, revue indépendante A5 et contrôle A0",
+          "ancien_statut": "À définir",
+          "statut": "Vérifié",
+          "nature": "Travail documentaire individuel seulement",
+          "preuve": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+          "acceptation_metier": false
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Condition documentaire individuelle vérifiée, distincte de réalisation/gate",
+        "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+        "prochaine_action": "Conserver preuve documentaire ; réaliser et vérifier les capacités/contrats seulement après décisions et autorisations du sous-lot, sans changer cette tâche de spécification en acceptation produit."
       }
     },
     {
@@ -39357,7 +40235,8 @@
         "cas_positif_prescrit": "Ouvrir /studio avec projet autorisé et créer une étude sans étape Parcours validée ; retrouver mêmes comptes et catalogue documentaire.",
         "cas_negatif_prescrit": "Projet interdit ou contexte Parcours absent : refus du premier, aucune obligation de valider une étape pour le second.",
         "decisions": "DEC-01,DEC-02,DEC-03"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-001"
     },
     {
       "id": "TR-EX-002",
@@ -39450,7 +40329,8 @@
         "cas_positif_prescrit": "Suivre une petite étude depuis dessin jusqu'au dossier de conception, avec quatre domaines.",
         "cas_negatif_prescrit": "Demande de comptabilité ou gestion RH : périmètre explicitement exclu, aucun module métier concurrent créé.",
         "decisions": "DEC-01,DEC-02,DEC-03"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-002"
     },
     {
       "id": "TR-EX-003",
@@ -39543,7 +40423,8 @@
         "cas_positif_prescrit": "Créer étude puis variante V1 et enregistrer géométrie avec projectId/studyId/variantId/baseRevisionId cohérents.",
         "cas_negatif_prescrit": "Soumettre objet sans variante ou variante d'une autre étude : rejet sans objet orphelin.",
         "decisions": "DEC-01,DEC-02,DEC-03"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-003"
     },
     {
       "id": "TR-EX-004",
@@ -39636,7 +40517,8 @@
         "cas_positif_prescrit": "Dessiner segment/arc, calque, cote et texte dans un document 2D puis publier sans modèle 3D.",
         "cas_negatif_prescrit": "Fermer/réouvrir sans modèle 3D ; aucun volume de substitution ne doit être requis ou créé.",
         "decisions": "DEC-01,DEC-02,DEC-03"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-004"
     },
     {
       "id": "TR-EX-005",
@@ -39729,7 +40611,8 @@
         "cas_positif_prescrit": "Créer volume directement dans l'espace, éditer face et groupe, sauver et produire une coupe.",
         "cas_negatif_prescrit": "Nouvelle étude sans dessin 2D : l'édition 3D reste possible ; une vue sans édition ne suffit pas.",
         "decisions": "DEC-01,DEC-02,DEC-03"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-005"
     },
     {
       "id": "TR-EX-006",
@@ -39822,7 +40705,8 @@
         "cas_positif_prescrit": "Modifier le même mur associé en 2D puis 3D et afficher clairement associé/référence/copie.",
         "cas_negatif_prescrit": "Modifier copie indépendante : source inchangée ; une relation non définie ne propage pas.",
         "decisions": "DEC-01,DEC-02,DEC-03"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-006"
     },
     {
       "id": "TR-EX-007",
@@ -39915,7 +40799,8 @@
         "cas_positif_prescrit": "Parcourir Cadrer→Explorer→Concevoir→Contrôler→Coordonner→Approuver→Publier sur une révision.",
         "cas_negatif_prescrit": "Créer une publication ne valide aucune des 21 étapes et ne crée pas de cinquième domaine.",
         "decisions": "DEC-01,DEC-02,DEC-03"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-007"
     },
     {
       "id": "TR-EX-008",
@@ -40008,7 +40893,8 @@
         "cas_positif_prescrit": "Geste confirmé produit intention, commande, mutation canonique puis scène invalidée dans cet ordre.",
         "cas_negatif_prescrit": "Modifier directement une coordonnée GPU : aucune mutation métier/sauvegarde issue de cette seule scène.",
         "decisions": "DEC-02,DEC-10,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-008"
     },
     {
       "id": "TR-EX-009",
@@ -40101,7 +40987,8 @@
         "cas_positif_prescrit": "Mur commun aux deux planches avec un seul propriétaire d'écriture défini ; changements observés des deux côtés.",
         "cas_negatif_prescrit": "Deux copies autoritaires divergentes du même mur : détecter le défaut, interdire l'engagement ambigu.",
         "decisions": "DEC-02,DEC-10,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-009"
     },
     {
       "id": "TR-EX-010",
@@ -40194,7 +41081,8 @@
         "cas_positif_prescrit": "Créer/modifier/supprimer objets et examiner effets : IDs, relations, dérivés, révision et origine cohérents.",
         "cas_negatif_prescrit": "Suppression d'hôte avec dépendants non décrits : pas d'acceptation silencieuse laissant des documents frais.",
         "decisions": "DEC-02,DEC-10,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-010"
     },
     {
       "id": "TR-EX-011",
@@ -40287,7 +41175,8 @@
         "cas_positif_prescrit": "Déplacer porte et comparer scène incrémentale à reconstruction complète ; repli conservateur correct permis.",
         "cas_negatif_prescrit": "Omettre invalidation du mur hôte : oracle révèle incohérence et bloque validation de l'optimisation.",
         "decisions": "DEC-02,DEC-10,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-011"
     },
     {
       "id": "TR-EX-012",
@@ -40380,7 +41269,8 @@
         "cas_positif_prescrit": "Capturer R12, produire R13 puis relire R12 et comparer empreinte/contenu inchangés.",
         "cas_negatif_prescrit": "Annulation ou nouvelle approbation tente de réécrire R12 : refuser ou créer nouvelle révision.",
         "decisions": "DEC-01,DEC-02,DEC-03,DEC-12"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-012"
     },
     {
       "id": "TR-EX-013",
@@ -40473,7 +41363,8 @@
         "cas_positif_prescrit": "Cloner variante avec nouvelles identités et provenance, modifier clone puis relire source inchangée.",
         "cas_negatif_prescrit": "Ancien identifiant réutilisé dans nouveau propriétaire ou propagation implicite : rejeter/détecter.",
         "decisions": "DEC-01,DEC-02,DEC-03,DEC-12"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-013"
     },
     {
       "id": "TR-EX-014",
@@ -40566,7 +41457,8 @@
         "cas_positif_prescrit": "Importer source avec unité m, repère local, transformation et provenance, puis exporter métadonnées.",
         "cas_negatif_prescrit": "Unité/repère inconnus : signaler inconnue et empêcher calcul silencieux en mètres supposés.",
         "decisions": "DEC-01,DEC-02,DEC-03,DEC-12"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-014"
     },
     {
       "id": "TR-EX-015",
@@ -40659,7 +41551,8 @@
         "cas_positif_prescrit": "Diviser face portant cote : correspondance topologique démontrée ou cote conservée à résoudre.",
         "cas_negatif_prescrit": "Deux faces voisines plausibles : aucun rattachement automatique par seule proximité.",
         "decisions": "DEC-01,DEC-02,DEC-03,DEC-12"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-015"
     },
     {
       "id": "TR-EX-016",
@@ -40752,7 +41645,8 @@
         "cas_positif_prescrit": "Changer source R12→R13 : vue devient à recalculer puis en calcul, à jour R13 ou échec explicite.",
         "cas_negatif_prescrit": "Ancienne image R12 présentée à jour R13 après échec : oracle doit rejeter ce statut.",
         "decisions": "DEC-01,DEC-02,DEC-03,DEC-12"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-016"
     },
     {
       "id": "TR-EX-017",
@@ -40845,7 +41739,8 @@
         "cas_positif_prescrit": "Appliquer lot mur/ouverture valide et constater engagement groupé durable.",
         "cas_negatif_prescrit": "Deuxième opération du lot invalide : aucune partie de la première ne persiste.",
         "decisions": "DEC-01,DEC-02,DEC-03,DEC-12"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-017"
     },
     {
       "id": "TR-EX-018",
@@ -40938,7 +41833,8 @@
         "cas_positif_prescrit": "Réémettre même requestId/périmètre après coupure : même résultat une seule révision/objet.",
         "cas_negatif_prescrit": "Même requestId avec paramètres/périmètre incompatibles : refus explicite, pas deuxième application.",
         "decisions": "DEC-01,DEC-02,DEC-03,DEC-12"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-018"
     },
     {
       "id": "TR-EX-019",
@@ -41031,7 +41927,8 @@
         "cas_positif_prescrit": "Lire document schéma ancien, appliquer transformation documentée et comparer identités/propriétés.",
         "cas_negatif_prescrit": "Champ inconnu ou migration impossible : conservation/rapport des pertes et récupération, jamais disparition muette.",
         "decisions": "DEC-01,DEC-02,DEC-03,DEC-12"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-019"
     },
     {
       "id": "TR-EX-020",
@@ -41124,7 +42021,8 @@
         "cas_positif_prescrit": "Sérialiser dessin 2D, restaurer et exporter sans charger ou reconstruire de modèle 3D.",
         "cas_negatif_prescrit": "Transfert/extrusion non confirmé : aucune création 3D ni dépendance implicite.",
         "decisions": "DEC-01,DEC-02,DEC-09"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-020"
     },
     {
       "id": "TR-EX-021",
@@ -41217,7 +42115,8 @@
         "cas_positif_prescrit": "Modifier mur en 2D puis en 3D et comparer objectId/relations/révision identiques.",
         "cas_negatif_prescrit": "Deux identités concurrentes créées selon planche : défaut éliminatoire signalé.",
         "decisions": "DEC-01,DEC-02,DEC-09"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-021"
     },
     {
       "id": "TR-EX-022",
@@ -41310,7 +42209,8 @@
         "cas_positif_prescrit": "Profil lié modifié recalcule extrusion selon relation ; copie indépendante reste inchangée.",
         "cas_negatif_prescrit": "Éditer segment d'une coupe dérivée ou cote sans commande dédiée : ne modifie pas universellement le volume.",
         "decisions": "DEC-01,DEC-02,DEC-09"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-022"
     },
     {
       "id": "TR-EX-023",
@@ -41403,7 +42303,8 @@
         "cas_positif_prescrit": "Convertir coordonnées document/local/projet avec transformation versionnée et comparer valeurs/unité.",
         "cas_negatif_prescrit": "Entrée pixels traitée comme mètres ou géographie mélangée au local : refus/erreur explicite.",
         "decisions": "DEC-01,DEC-02,DEC-09"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-023"
     },
     {
       "id": "TR-EX-024",
@@ -41496,7 +42397,8 @@
         "cas_positif_prescrit": "Dessiner aperçu, confirmer et contrôler commande/valeur dans tolérance contractuelle.",
         "cas_negatif_prescrit": "Échap sur aperçu puis relire modèle : aucune mutation canonique résiduelle.",
         "decisions": "DEC-01,DEC-02,DEC-09"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-024"
     },
     {
       "id": "TR-EX-025",
@@ -41589,7 +42491,8 @@
         "cas_positif_prescrit": "Exécuter snapping avant/après index sur extrémité/intersection ambiguë et comparer point/cible/priorité.",
         "cas_negatif_prescrit": "Réduire qualité graphique ou permuter candidats : aucun autre point choisi hors contrat.",
         "decisions": "DEC-01,DEC-02,DEC-09"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-025"
     },
     {
       "id": "TR-EX-026",
@@ -41682,7 +42585,8 @@
         "cas_positif_prescrit": "Rechercher toolId et dépendances depuis manifeste léger à cache froid puis hors ligne.",
         "cas_negatif_prescrit": "Consulter registre sans activer outil : aucun chargement/initialisation obligatoire OCCT ou machines lourdes.",
         "decisions": "DEC-05,DEC-07,DEC-15,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-026"
     },
     {
       "id": "TR-EX-027",
@@ -41775,7 +42679,8 @@
         "cas_positif_prescrit": "Valider manifeste contenant studio.transform.scale et studio.arch.ladder distincts ; alias ancien résolu.",
         "cas_negatif_prescrit": "Déclarer deux toolId identiques même si labels distincts : validation rejette sans écrasement de dictionnaire.",
         "decisions": "DEC-05,DEC-07,DEC-15,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-027"
     },
     {
       "id": "TR-EX-028",
@@ -41868,7 +42773,8 @@
         "cas_positif_prescrit": "Manifeste valide au build, invocation autorisée avec paramètres/révision/quotas valides réussit.",
         "cas_negatif_prescrit": "Modifier droits après build ou forger entrée/quota : contrôle runtime refuse malgré schéma statique valide.",
         "decisions": "DEC-05,DEC-07,DEC-15,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-028"
     },
     {
       "id": "TR-EX-029",
@@ -41961,7 +42867,8 @@
         "cas_positif_prescrit": "Chercher par nom, synonyme, famille, domaine, contexte et toolId et voir état fidèle.",
         "cas_negatif_prescrit": "Échec loader/interdit/offline : résultat reste découvrable avec état exact, pas faux prêt ni moteur lancé par recherche.",
         "decisions": "DEC-05,DEC-07,DEC-15,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-029"
     },
     {
       "id": "TR-EX-030",
@@ -42054,7 +42961,8 @@
         "cas_positif_prescrit": "Réouvrir document/profil ancien avec compatibilité/alias ou migration explicitement fournie.",
         "cas_negatif_prescrit": "Déprécier outil puis ouvrir un travail le nécessitant : pas d'objet perdu ou de commande locale effacée.",
         "decisions": "DEC-05,DEC-07,DEC-15,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-030"
     },
     {
       "id": "TR-EX-031",
@@ -42147,7 +43055,8 @@
         "cas_positif_prescrit": "Extension optionnelle inspectée avec provenance/version/confiance/permissions/mises à jour identifiées.",
         "cas_negatif_prescrit": "Manifeste propose script arbitraire non fiable : aucun chargement/écriture sur simple découverte.",
         "decisions": "DEC-05,DEC-07,DEC-15,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-031"
     },
     {
       "id": "TR-EX-032",
@@ -42240,7 +43149,8 @@
         "cas_positif_prescrit": "Activer outil via Manager, loader et machine puis commande commune ; moteur appelé via frontière dédiée.",
         "cas_negatif_prescrit": "Espionner Manager lors booléen : ne calcule pas lui-même géométrie ni ne contourne validation serveur.",
         "decisions": "DEC-04,DEC-06"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-032"
     },
     {
       "id": "TR-EX-033",
@@ -42333,7 +43243,8 @@
         "cas_positif_prescrit": "Changer standard→métier→personnel et masquer bouton : modèle/révision/droits inchangés et outil retrouvable.",
         "cas_negatif_prescrit": "Importer profil avec Publier sans droit : exécution refusée ; masquer outil ne supprime pas ses objets.",
         "decisions": "DEC-04,DEC-06"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-033"
     },
     {
       "id": "TR-EX-034",
@@ -42426,7 +43337,8 @@
         "cas_positif_prescrit": "Enregistrer profil avec profileId/propriétaire/version/ordre/raccourcis puis rouvrir sur autre session.",
         "cas_negatif_prescrit": "Importer deux raccourcis en conflit : conflit visible et configuration source préservée.",
         "decisions": "DEC-04,DEC-06"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-034"
     },
     {
       "id": "TR-EX-035",
@@ -42519,7 +43431,8 @@
         "cas_positif_prescrit": "Masquer outil favori puis le retrouver dans catalogue autorisé.",
         "cas_negatif_prescrit": "Chercher outil interdit/incompatible : descriptif consultable selon politique, pas d'action exécutable.",
         "decisions": "DEC-04,DEC-06"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-035"
     },
     {
       "id": "TR-EX-036",
@@ -42612,7 +43525,8 @@
         "cas_positif_prescrit": "Au clavier activer commande, voir focus 2D/3D et lire nom/état/erreur accessible.",
         "cas_negatif_prescrit": "Commande sans nom ou geste sans alternative prévue : échec recette, aucun succès déduit de l'icône.",
         "decisions": "DEC-04,DEC-06"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-036"
     },
     {
       "id": "TR-EX-037",
@@ -42705,7 +43619,8 @@
         "cas_positif_prescrit": "Saisir longueur numérique avec modificateur de contrainte pendant ouverture palette : geste conservé.",
         "cas_negatif_prescrit": "Changement palette/profil pendant geste : pas de perte silencieuse ni paramètre géométrique remplacé par préférence UI.",
         "decisions": "DEC-04,DEC-06"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-037"
     },
     {
       "id": "TR-EX-038",
@@ -42798,7 +43713,8 @@
         "cas_positif_prescrit": "Ouvrir Studio à froid et relever shell/profil/contexte/catalogue avant première action.",
         "cas_negatif_prescrit": "Espionner OCCT/renderer3D/worker rare sans planche ouverte : aucune initialisation systématique.",
         "decisions": "DEC-07,DEC-14"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-038"
     },
     {
       "id": "TR-EX-039",
@@ -42891,7 +43807,8 @@
         "cas_positif_prescrit": "Ouvrir seulement planche 2D puis 3D et attribuer chaque ressource à l'action nécessaire.",
         "cas_negatif_prescrit": "2D seule déclenche tous moteurs 3D spécialisés : tracer et refuser ce comportement non justifié.",
         "decisions": "DEC-07,DEC-14"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-039"
     },
     {
       "id": "TR-EX-040",
@@ -42984,7 +43901,8 @@
         "cas_positif_prescrit": "Activer outil exact pour la première fois, puis seconde fois et comparer instance/dépendances mutualisées.",
         "cas_negatif_prescrit": "Échec d'un module rare : état récupérable ; un autre outil compatible ne crée pas sans raison un second noyau.",
         "decisions": "DEC-07,DEC-14"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-040"
     },
     {
       "id": "TR-EX-041",
@@ -43077,7 +43995,8 @@
         "cas_positif_prescrit": "Activer deux outils partageant géométrie/noyau, mesurer un exemplaire compatible de dépendance.",
         "cas_negatif_prescrit": "Un chunk par bouton duplique le même noyau : détecter octets/instances sans imposer découpage arbitraire.",
         "decisions": "DEC-07,DEC-14"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-041"
     },
     {
       "id": "TR-EX-042",
@@ -43170,7 +44089,8 @@
         "cas_positif_prescrit": "Observer caches distincts shell/profil/modules/file et téléchargement facultatif au besoin.",
         "cas_negatif_prescrit": "Service worker précache tout le build : ne déclarer ce fait équivalent au chargement différé.",
         "decisions": "DEC-07,DEC-14"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-042"
     },
     {
       "id": "TR-EX-043",
@@ -43263,7 +44183,8 @@
         "cas_positif_prescrit": "Passer offline avec profil préparé et utiliser outil dont code/dépendances/données sont compatibles.",
         "cas_negatif_prescrit": "Outil absent du cache : indisponible explicite ; commande centrale préparée ne devient pas publiée/approuvée.",
         "decisions": "DEC-07,DEC-14"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-043"
     },
     {
       "id": "TR-EX-044",
@@ -43356,7 +44277,8 @@
         "cas_positif_prescrit": "Mettre à jour build avec file pendante et préserver relation build/contrat/schéma et données non synchronisées.",
         "cas_negatif_prescrit": "Ancien contrat incompatible ou quota atteint : résolution/migration explicite, aucune purge de file silencieuse.",
         "decisions": "DEC-07,DEC-14"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-044"
     },
     {
       "id": "TR-EX-045",
@@ -43449,7 +44371,8 @@
         "cas_positif_prescrit": "Exécuter preview de booléen liée à R12 puis confirmer sur base valide.",
         "cas_negatif_prescrit": "Annuler preview ou recevoir calcul R12 après R13 : aucun engagement permanent non confirmé.",
         "decisions": "DEC-12,DEC-11"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-045"
     },
     {
       "id": "TR-EX-046",
@@ -43542,7 +44465,8 @@
         "cas_positif_prescrit": "Accepter commande puis relire acteur cible horodatage base résultat et IDs touchés dans journal.",
         "cas_negatif_prescrit": "Commande refusée ou trace sensible : aucun faux engagement, pas de secret/géométrie client inutile dans logs.",
         "decisions": "DEC-12,DEC-11"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-046"
     },
     {
       "id": "TR-EX-047",
@@ -43635,7 +44559,8 @@
         "cas_positif_prescrit": "Choisir commande/inverse ou delta/snapshot justifié, annuler/rétablir et comparer état exact.",
         "cas_negatif_prescrit": "Historique volumineux/concurrent incompatible : refus explicite, pas promesse O(1) ni perte masquée.",
         "decisions": "DEC-12,DEC-11"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-047"
     },
     {
       "id": "TR-EX-048",
@@ -43728,7 +44653,8 @@
         "cas_positif_prescrit": "Annuler commande C1 après C2 compatible via nouvelle inverse validée sur révision actuelle.",
         "cas_negatif_prescrit": "C2 d'autre utilisateur incompatible : conflit, jamais suppression silencieuse du travail d'autrui.",
         "decisions": "DEC-12,DEC-11"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-048"
     },
     {
       "id": "TR-EX-049",
@@ -43821,7 +44747,8 @@
         "cas_positif_prescrit": "Réouvrir après coupure et distinguer confirmée/pendante/rejetée/conflit/preview abandonnée.",
         "cas_negatif_prescrit": "Réenvoyer file incompatible ou déjà confirmée : pas de doublon ni disparition sans état explicite.",
         "decisions": "DEC-12,DEC-11"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-049"
     },
     {
       "id": "TR-EX-050",
@@ -43914,7 +44841,8 @@
         "cas_positif_prescrit": "Détruire cache scène/index puis reconstruire depuis modèle et vérifier table triangle→objectId.",
         "cas_negatif_prescrit": "Batch de plusieurs objets ou objet supprimé : aucun triangle sélectionnable avec ID obsolète.",
         "decisions": "DEC-09,DEC-10,DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-050"
     },
     {
       "id": "TR-EX-051",
@@ -44007,7 +44935,8 @@
         "cas_positif_prescrit": "Après commande R13, scène affiche sourceRevisionId et données périmées puis se recalcule.",
         "cas_negatif_prescrit": "Résultat worker R12 arrive : ne remplace pas projection courante comme si source R13.",
         "decisions": "DEC-09,DEC-10,DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-051"
     },
     {
       "id": "TR-EX-052",
@@ -44100,7 +45029,8 @@
         "cas_positif_prescrit": "Sur S1 petite scène et S3 dense, mesurer filtrage emprise avant calcul précis et comparer cibles.",
         "cas_negatif_prescrit": "Objet hors candidats mais intersectant la vue : oracle révèle omission ; balayage correct reste repli autorisé.",
         "decisions": "DEC-09,DEC-10,DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-052"
     },
     {
       "id": "TR-EX-053",
@@ -44193,7 +45123,8 @@
         "cas_positif_prescrit": "Tester extrémité/milieu/intersection/centre/tangente/perpendiculaire/ortho/parallèle avec priorités.",
         "cas_negatif_prescrit": "Permutation index ou égalité de distances : même règle de départage/tolérance qu'oracle.",
         "decisions": "DEC-09,DEC-10,DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-053"
     },
     {
       "id": "TR-EX-054",
@@ -44286,7 +45217,8 @@
         "cas_positif_prescrit": "Insérer/modifier/supprimer objet et changer calque/référence puis comparer index à reconstruction.",
         "cas_negatif_prescrit": "Objet caché/interdit/supprimé encore indexé ou résultat d'index ancienne révision : ne pas publier comme courant.",
         "decisions": "DEC-09,DEC-10,DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-054"
     },
     {
       "id": "TR-EX-055",
@@ -44379,7 +45311,8 @@
         "cas_positif_prescrit": "Rendre scène avec ligne/arc/spline/hachure/cote/texte/calques puis comparer export et coordonnées.",
         "cas_negatif_prescrit": "Renderer alternatif omet texte/hachure ou modifie accrochage : non-régression échoue même si plus rapide.",
         "decisions": "DEC-08,DEC-10,DEC-17"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-055"
     },
     {
       "id": "TR-EX-056",
@@ -44472,7 +45405,8 @@
         "cas_positif_prescrit": "Qualifier rendu à la demande/batching/WebGL2/repli WebGPU existants sur corpus.",
         "cas_negatif_prescrit": "Remplacer moteur sans gain/conformité prouvés : décision bloquée, pas réécriture automatique.",
         "decisions": "DEC-08,DEC-10,DEC-17"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-056"
     },
     {
       "id": "TR-EX-057",
@@ -44565,7 +45499,8 @@
         "cas_positif_prescrit": "Sous charge réduire ombres/résolution et comparer coordonnées/cotes/snapping inchangés.",
         "cas_negatif_prescrit": "Dégradation désactive accrochage ou assouplit tolérance métier : défaut éliminatoire.",
         "decisions": "DEC-08,DEC-10,DEC-17"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-057"
     },
     {
       "id": "TR-EX-058",
@@ -44658,7 +45593,8 @@
         "cas_positif_prescrit": "Afficher preview approximative explicitement puis résultat exact validé dans tolérance.",
         "cas_negatif_prescrit": "Écart preview/exact supérieur au contrat : explication/refus, jamais sauvegarde approximative silencieuse.",
         "decisions": "DEC-08,DEC-10,DEC-17"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-058"
     },
     {
       "id": "TR-EX-059",
@@ -44751,7 +45687,8 @@
         "cas_positif_prescrit": "Soumettre booléen lourd avec mesures et observer interaction disponible via worker/serveur retenu.",
         "cas_negatif_prescrit": "Calcul coûteux bloque durablement UI : garder échec/performance visible et revoir placement après mesure.",
         "decisions": "DEC-11,DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-059"
     },
     {
       "id": "TR-EX-060",
@@ -44844,7 +45781,8 @@
         "cas_positif_prescrit": "Soumettre deux jobs avec identités/priorités/empreintes/révisions/quota et suivre états.",
         "cas_negatif_prescrit": "Saturation/concurrence excessive : quota/attente/erreur explicites, pas un worker par cœur imposé sans mesure.",
         "decisions": "DEC-11,DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-060"
     },
     {
       "id": "TR-EX-061",
@@ -44937,7 +45875,8 @@
         "cas_positif_prescrit": "Forcer crash worker puis résoudre pending, recréer et relancer sous contrôle sans doublons.",
         "cas_negatif_prescrit": "Worker disparaît en calcul : pas de promesse pending indéfinie ni modèle partiellement muté.",
         "decisions": "DEC-11,DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-061"
     },
     {
       "id": "TR-EX-062",
@@ -45030,7 +45969,8 @@
         "cas_positif_prescrit": "Ouvrir/fermer outil exact 50 fois, suivre transfert/allocations/résiduel avec instance justifiée.",
         "cas_negatif_prescrit": "Second OCCT simultané ou croissance mémoire : pas de conformité sans courbe/limite décidée.",
         "decisions": "DEC-11,DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-062"
     },
     {
       "id": "TR-EX-063",
@@ -45123,7 +46063,8 @@
         "cas_positif_prescrit": "Transférer buffer selon contrat de propriété puis valider message reçu.",
         "cas_negatif_prescrit": "Réutiliser tampon détaché ou message worker forgé : validation refuse, pas de corruption canonique.",
         "decisions": "DEC-11,DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-063"
     },
     {
       "id": "TR-EX-064",
@@ -45216,7 +46157,8 @@
         "cas_positif_prescrit": "Modifier couleur puis épaisseur et comparer catégories style/paramètre/composition séparées.",
         "cas_negatif_prescrit": "Style matériau apparent tente de changer composition technique : pas d'effet implicite.",
         "decisions": "DEC-02,DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-064"
     },
     {
       "id": "TR-EX-065",
@@ -45309,7 +46251,8 @@
         "cas_positif_prescrit": "Exigence 28m² et dessin 26m² : afficher écart -2m² et conserver exigence versionnée.",
         "cas_negatif_prescrit": "Modifier surface dessinée : ne réécrit pas cible à 26 ; commande exigence sans droit refusée.",
         "decisions": "DEC-02,DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-065"
     },
     {
       "id": "TR-EX-066",
@@ -45402,7 +46345,8 @@
         "cas_positif_prescrit": "Recevoir modèle partenaire version2, comparer/acceptation explicite et conserver publication version1.",
         "cas_negatif_prescrit": "Rafraîchissement externe non accepté : pas de remplacement silencieux d'une référence publiée.",
         "decisions": "DEC-02,DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-066"
     },
     {
       "id": "TR-EX-067",
@@ -45495,7 +46439,8 @@
         "cas_positif_prescrit": "Importer IFC de consultation et afficher statut représentation/rapport des pertes.",
         "cas_negatif_prescrit": "Proxy importé présenté paramétrique natif ou entité ignorée masquée : défaut de couverture déclaré.",
         "decisions": "DEC-02,DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-067"
     },
     {
       "id": "TR-EX-068",
@@ -45588,7 +46533,8 @@
         "cas_positif_prescrit": "Contrôle exécuté donne conforme/non conforme/non testé/non applicable motivé.",
         "cas_negatif_prescrit": "Timeout ou exécution en attente : ne devient jamais conforme.",
         "decisions": "DEC-02,DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-068"
     },
     {
       "id": "TR-EX-069",
@@ -45681,7 +46627,8 @@
         "cas_positif_prescrit": "Relancer contrôle même règle/objet sur nouvelle révision : observation rapprochée par identité.",
         "cas_negatif_prescrit": "Deux domaines créent systématiquement deux observations pour même constat : détecter doublon.",
         "decisions": "DEC-02,DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-069"
     },
     {
       "id": "TR-EX-070",
@@ -45774,7 +46721,8 @@
         "cas_positif_prescrit": "Correction suivie d'un recontrôle autorisé sur R13 permet clôture documentée.",
         "cas_negatif_prescrit": "Concepteur déclare corrigé ou supprime objet : pas de clôture automatique sans règle/contrôle.",
         "decisions": "DEC-02,DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-070"
     },
     {
       "id": "TR-EX-071",
@@ -45867,7 +46815,8 @@
         "cas_positif_prescrit": "Rendu conserve révision/caméra/auteur/date/provenance et IA optionnelle conserve fournisseur/sources/coûts.",
         "cas_negatif_prescrit": "Appel IA sans autorisation de transfert ou version fournisseur inconnue : refus ou inconnue déclarée, pas provenance inventée.",
         "decisions": "DEC-15,DEC-17"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-071"
     },
     {
       "id": "TR-EX-072",
@@ -45960,7 +46909,8 @@
         "cas_positif_prescrit": "Archiver image et paramètres en indiquant limites de reproductibilité fournisseur.",
         "cas_negatif_prescrit": "Réexécuter IA stochastique : ne promettre identité pixel ni fidélité géométrique non prouvées.",
         "decisions": "DEC-15,DEC-17"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-072"
     },
     {
       "id": "TR-EX-073",
@@ -46053,7 +47003,8 @@
         "cas_positif_prescrit": "Changer matériau visuel ou générer illustration puis recalculer métrés sur modèle source.",
         "cas_negatif_prescrit": "Mesure de surface extraite des pixels remplace quantité canonique : interdire ce chemin.",
         "decisions": "DEC-15,DEC-17"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-073"
     },
     {
       "id": "TR-EX-074",
@@ -46146,7 +47097,8 @@
         "cas_positif_prescrit": "Composer vue→feuille à échelle→dossier→publication en conservant rôles distincts.",
         "cas_negatif_prescrit": "Planche d'édition seule présentée comme feuille publiée : recette refuse livraison.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-074"
     },
     {
       "id": "TR-EX-075",
@@ -46239,7 +47191,8 @@
         "cas_positif_prescrit": "Créer coupe R12 avec cadrage/styles/annotations puis changer modèle R13 et marquer vue périmée.",
         "cas_negatif_prescrit": "Annotation de coupe modifiée : ne devient pas paramètre autoritaire du mur.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-075"
     },
     {
       "id": "TR-EX-076",
@@ -46332,7 +47285,8 @@
         "cas_positif_prescrit": "Publier détail 2D autonome et coupe de modèle ensemble avec sources distinctes.",
         "cas_negatif_prescrit": "Détail indépendant annoncé synchronisé avec maquette sans association : présentation refusée.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-076"
     },
     {
       "id": "TR-EX-077",
@@ -46425,7 +47379,8 @@
         "cas_positif_prescrit": "Retrouver règle/version/objets/unité/brut/déductions/date et ajustement attribué pour quantité mur.",
         "cas_negatif_prescrit": "Override manuel écrase rawValue sans auteur/motif : refuser ou conserver comme ajustement distinct.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-077"
     },
     {
       "id": "TR-EX-078",
@@ -46518,7 +47473,8 @@
         "cas_positif_prescrit": "Sommer quantités homogènes en distinguant brut/net/déduction/non testé/ajustement.",
         "cas_negatif_prescrit": "Mélanger m² et m³ ou règles/révisions incompatibles : signaler et ne produire aucun total trompeur.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-078"
     },
     {
       "id": "TR-EX-079",
@@ -46611,7 +47567,8 @@
         "cas_positif_prescrit": "Qualifier export IFC séparément de l'import/édition/round-trip dans matrice par entité/version.",
         "cas_negatif_prescrit": "Export syntaxiquement valide utilisé pour affirmer round-trip/certification : conclusion rejetée faute preuve.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-079"
     },
     {
       "id": "TR-EX-080",
@@ -46704,7 +47661,8 @@
         "cas_positif_prescrit": "Importer entité inconnue et exporter sous-ensemble ; produire rapport unités/repères/pertes/IDs.",
         "cas_negatif_prescrit": "Parser ignore entité sans rapport ou remplace unité inconnue : échec de couverture explicite.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-080"
     },
     {
       "id": "TR-EX-081",
@@ -46797,7 +47755,8 @@
         "cas_positif_prescrit": "Approuver manifeste coordonnant révisions différentes puis conserver contenu figé.",
         "cas_negatif_prescrit": "Document change après approbation : nouveau dossier recontrôlé, ancienne publication intacte.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-081"
     },
     {
       "id": "TR-EX-082",
@@ -46890,7 +47849,8 @@
         "cas_positif_prescrit": "Retirer/remplacer publication par événement journalisé en gardant ancienne identité/contenu selon politique.",
         "cas_negatif_prescrit": "Nouvelle diffusion écrase manifestes/fichiers historiques : refus et défaut éliminatoire.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-082"
     },
     {
       "id": "TR-EX-083",
@@ -46983,7 +47943,8 @@
         "cas_positif_prescrit": "Utilisateur approbateur approuve puis publieur autorisé publie ; cumul éventuel identifié.",
         "cas_negatif_prescrit": "Administrateur technique seul ou profil ajoutant Approuver : refus serveur si permission métier absente.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-083"
     },
     {
       "id": "TR-EX-084",
@@ -47076,7 +48037,8 @@
         "cas_positif_prescrit": "Créer note/observation/tâche/décision avec identités/rôles distincts et liens.",
         "cas_negatif_prescrit": "Commentaire présenté comme décision approuvée ou tâche clôturant observation : aucune transition implicite.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-084"
     },
     {
       "id": "TR-EX-085",
@@ -47169,7 +48131,8 @@
         "cas_positif_prescrit": "Délégation valide portée/période/délégant/délégué/motif permet action et trace.",
         "cas_negatif_prescrit": "Approbateur absent ou délégation expirée/hors portée : aucune approbation automatique.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-085"
     },
     {
       "id": "TR-EX-086",
@@ -47262,7 +48225,8 @@
         "cas_positif_prescrit": "Rapprocher constat de R12 avec contrôle de R13 par identité/source/règle et décider suivi.",
         "cas_negatif_prescrit": "Objet disparaît de R13 : garder observation ouverte ou résolution explicite, pas fermeture automatique.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-086"
     },
     {
       "id": "TR-EX-087",
@@ -47355,7 +48319,8 @@
         "cas_positif_prescrit": "Nouvel endpoint valide session/projet/schéma/révision/requestId/taille et journalise engagement.",
         "cas_negatif_prescrit": "ID d'autre projet, payload trop grand ou mauvaise version : refus atomique sans fuite.",
         "decisions": "DEC-03,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-087"
     },
     {
       "id": "TR-EX-088",
@@ -47448,7 +48413,8 @@
         "cas_positif_prescrit": "Lire document/profil/job/blob/export avec autorisation ressource cohérente.",
         "cas_negatif_prescrit": "Copier URL temporaire d'un autre projet/utilisateur : accès refusé sans contenu/métadonnées sensibles.",
         "decisions": "DEC-03,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-088"
     },
     {
       "id": "TR-EX-089",
@@ -47541,7 +48507,8 @@
         "cas_positif_prescrit": "Sauvegarder avec confirmation durable, relancer service sur copie jetable et retrouver modèle/associations/publications.",
         "cas_negatif_prescrit": "Échec DB avant commit : pas d'accusé de sauvegarde confirmé ; reprise n'invente pas opération.",
         "decisions": "DEC-03,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-089"
     },
     {
       "id": "TR-EX-090",
@@ -47634,7 +48601,8 @@
         "cas_positif_prescrit": "Restaurer canonique+pièces+manifestes+droits puis reconstruire index/GPU et comparer identités.",
         "cas_negatif_prescrit": "Backup n'inclut que caches ou manque pièce publiée : restauration déclarée incomplète, pas réussite globale.",
         "decisions": "DEC-03,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-090"
     },
     {
       "id": "TR-EX-091",
@@ -47727,7 +48695,8 @@
         "cas_positif_prescrit": "Simulation migration compare propriétés/cotes/associations/historique et correspondances d'IDs.",
         "cas_negatif_prescrit": "Objet non convertible : conserver+rapport+accord/récupération ; ne pas le supprimer pour améliorer taux.",
         "decisions": "DEC-03,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-091"
     },
     {
       "id": "TR-EX-092",
@@ -47820,7 +48789,8 @@
         "cas_positif_prescrit": "Lecture sensible/mutation passe session+autorisation+schéma côté serveur.",
         "cas_negatif_prescrit": "Contourner bouton ou modifier payload depuis client : refus serveur, pas confiance UI.",
         "decisions": "DEC-11,DEC-15,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-092"
     },
     {
       "id": "TR-EX-093",
@@ -47913,7 +48883,8 @@
         "cas_positif_prescrit": "Commande avec unités/types/hôte valides produit état cohérent vérifié serveur.",
         "cas_negatif_prescrit": "Coordonnée NaN, type invalide, hôte d'autrui ou épaisseur négative : zéro mutation canonique.",
         "decisions": "DEC-11,DEC-15,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-093"
     },
     {
       "id": "TR-EX-094",
@@ -48006,7 +48977,8 @@
         "cas_positif_prescrit": "Avant transfert externe vérifier politique, droit, source et provenance connue.",
         "cas_negatif_prescrit": "Source confidentielle envoyée sans contrat/consentement requis : blocage avant transmission.",
         "decisions": "DEC-11,DEC-15,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-094"
     },
     {
       "id": "TR-EX-095",
@@ -48099,7 +49071,8 @@
         "cas_positif_prescrit": "Corréler latence/mémoire/erreur par commandId/jobId non sensible.",
         "cas_negatif_prescrit": "Log contient secret ou géométrie privée sans nécessité : contrôle échoue et empêche publication du log.",
         "decisions": "DEC-11,DEC-15,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-095"
     },
     {
       "id": "TR-EX-096",
@@ -48192,7 +49165,8 @@
         "cas_positif_prescrit": "Inventorier version/licence/source et obligation LGPL de l'artefact WASM réellement distribué.",
         "cas_negatif_prescrit": "Licence package outillage utilisée pour déclarer WASM permissif : revue refuse et garde provenance correcte.",
         "decisions": "DEC-11,DEC-15,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-096"
     },
     {
       "id": "TR-EX-097",
@@ -48285,7 +49259,8 @@
         "cas_positif_prescrit": "Mesure cache froid/chaud sur appareil identifié avec build/GPU/réseau/répétitions/distribution.",
         "cas_negatif_prescrit": "Résultat SwiftShader ou renderer.render CPU annoncé GPU physique : conclusion refusée.",
         "decisions": "DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-097"
     },
     {
       "id": "TR-EX-098",
@@ -48378,7 +49353,8 @@
         "cas_positif_prescrit": "Comparer performance ET cibles/quantités/historique/export avant/après optimisation.",
         "cas_negatif_prescrit": "Gain p95 avec snapping ou volume différent hors tolérance : optimisation rejetée.",
         "decisions": "DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-098"
     },
     {
       "id": "TR-EX-099",
@@ -48471,7 +49447,8 @@
         "cas_positif_prescrit": "Adapter effets graphiques sur mesures/préférences et publier mêmes données canoniques.",
         "cas_negatif_prescrit": "Bas FPS conduit à dériver export simplifié non déclaré : échec invariants, pas concession admise.",
         "decisions": "DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-099"
     },
     {
       "id": "TR-EX-100",
@@ -48564,7 +49541,8 @@
         "cas_positif_prescrit": "Archiver résultat avec build/SHA/contrat/corpus empreinte/env/exécutant/date/verdict/log/lien.",
         "cas_negatif_prescrit": "Lien CI verte sans scénario présent ou preuve sans SHA : ne pas attribuer conformité.",
         "decisions": "DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-100"
     },
     {
       "id": "TR-EX-101",
@@ -48657,7 +49635,8 @@
         "cas_positif_prescrit": "Changement worker/Registry déclenche tests exactitude/historique/droits/persistance/profils concernés.",
         "cas_negatif_prescrit": "Skip des tests pertinents ou assertion affaiblie pour verdir CI : preuve insuffisante.",
         "decisions": "DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-101"
     },
     {
       "id": "TR-EX-102",
@@ -48750,7 +49729,8 @@
         "cas_positif_prescrit": "Depuis EX025 retrouver charte/contrat/composant/tests/preuve/DEC puis revenir depuis test vers exigence.",
         "cas_negatif_prescrit": "Lien composant sans source ou test sans exigence : fiche incomplète signalée.",
         "decisions": "DEC-01 à DEC-18 selon fonction"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-102"
     },
     {
       "id": "TR-EX-103",
@@ -48843,7 +49823,8 @@
         "cas_positif_prescrit": "Contrôle de fiche critique exige test/résultat/build/preuve/décision ; non-applicabilité motivée.",
         "cas_negatif_prescrit": "Champ preuve/décision applicable absent : ne jamais marquer conforme.",
         "decisions": "DEC-01 à DEC-18 selon fonction"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-103"
     },
     {
       "id": "TR-EX-104",
@@ -48936,7 +49917,8 @@
         "cas_positif_prescrit": "Partir défaut picking et remonter test→composant→EX→principe, puis couverture inverse.",
         "cas_negatif_prescrit": "Principe sans composant candidat ou défaut sans lien source : auditabilité déclarée incomplète.",
         "decisions": "DEC-01 à DEC-18 selon fonction"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#EX-104"
     },
     {
       "id": "TR-INV-001",
@@ -49030,7 +50012,8 @@
         "cas_positif_prescrit": "Approuver ensemble A/R12 et B/R7 puis relire décision avec empreintes exactes.",
         "cas_negatif_prescrit": "Modifier B après décision : publication sous ancienne approbation bloquée.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#INV-001"
     },
     {
       "id": "TR-INV-002",
@@ -49124,7 +50107,8 @@
         "cas_positif_prescrit": "Modifier mur en 2D puis en 3D et comparer objectId/relations/révision identiques.",
         "cas_negatif_prescrit": "Deux identités concurrentes créées selon planche : défaut éliminatoire signalé.",
         "decisions": "DEC-01,DEC-02,DEC-09"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#INV-002"
     },
     {
       "id": "TR-INV-003",
@@ -49218,7 +50202,8 @@
         "cas_positif_prescrit": "Cloner variante avec nouvelles identités et provenance, modifier clone puis relire source inchangée.",
         "cas_negatif_prescrit": "Ancien identifiant réutilisé dans nouveau propriétaire ou propagation implicite : rejeter/détecter.",
         "decisions": "DEC-01,DEC-02,DEC-03,DEC-12"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#INV-003"
     },
     {
       "id": "TR-INV-004",
@@ -49312,7 +50297,8 @@
         "cas_positif_prescrit": "Exigence 28m² et dessin 26m² : afficher écart -2m² et conserver exigence versionnée.",
         "cas_negatif_prescrit": "Modifier surface dessinée : ne réécrit pas cible à 26 ; commande exigence sans droit refusée.",
         "decisions": "DEC-02,DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#INV-004"
     },
     {
       "id": "TR-INV-005",
@@ -49406,7 +50392,8 @@
         "cas_positif_prescrit": "Appliquer lot mur/ouverture valide et constater engagement groupé durable.",
         "cas_negatif_prescrit": "Deuxième opération du lot invalide : aucune partie de la première ne persiste.",
         "decisions": "DEC-01,DEC-02,DEC-03,DEC-12"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#INV-005"
     },
     {
       "id": "TR-INV-006",
@@ -49500,7 +50487,8 @@
         "cas_positif_prescrit": "Après commande R13, scène affiche sourceRevisionId et données périmées puis se recalcule.",
         "cas_negatif_prescrit": "Résultat worker R12 arrive : ne remplace pas projection courante comme si source R13.",
         "decisions": "DEC-09,DEC-10,DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#INV-006"
     },
     {
       "id": "TR-INV-007",
@@ -49594,7 +50582,8 @@
         "cas_positif_prescrit": "Comparer performance ET cibles/quantités/historique/export avant/après optimisation.",
         "cas_negatif_prescrit": "Gain p95 avec snapping ou volume différent hors tolérance : optimisation rejetée.",
         "decisions": "DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#INV-007"
     },
     {
       "id": "TR-INV-008",
@@ -49688,7 +50677,8 @@
         "cas_positif_prescrit": "Détruire cache scène/index puis reconstruire depuis modèle et vérifier table triangle→objectId.",
         "cas_negatif_prescrit": "Batch de plusieurs objets ou objet supprimé : aucun triangle sélectionnable avec ID obsolète.",
         "decisions": "DEC-09,DEC-10,DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#INV-008"
     },
     {
       "id": "TR-INV-009",
@@ -49782,7 +50772,8 @@
         "cas_positif_prescrit": "Changer standard→métier→personnel et masquer bouton : modèle/révision/droits inchangés et outil retrouvable.",
         "cas_negatif_prescrit": "Importer profil avec Publier sans droit : exécution refusée ; masquer outil ne supprime pas ses objets.",
         "decisions": "DEC-04,DEC-06"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#INV-009"
     },
     {
       "id": "TR-INV-010",
@@ -49876,7 +50867,8 @@
         "cas_positif_prescrit": "Action humaine puis requête IA autorisée passent même schéma/droits/révision.",
         "cas_negatif_prescrit": "Adaptateur IA forge actorId ou appelle stockage directement : refus ; aucune mutation.",
         "decisions": "DEC-11,DEC-15,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#INV-010"
     },
     {
       "id": "TR-INV-011",
@@ -49970,7 +50962,8 @@
         "cas_positif_prescrit": "Annuler commande C1 après C2 compatible via nouvelle inverse validée sur révision actuelle.",
         "cas_negatif_prescrit": "C2 d'autre utilisateur incompatible : conflit, jamais suppression silencieuse du travail d'autrui.",
         "decisions": "DEC-12,DEC-11"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#INV-011"
     },
     {
       "id": "TR-INV-012",
@@ -50064,7 +51057,8 @@
         "cas_positif_prescrit": "Retirer/remplacer publication par événement journalisé en gardant ancienne identité/contenu selon politique.",
         "cas_negatif_prescrit": "Nouvelle diffusion écrase manifestes/fichiers historiques : refus et défaut éliminatoire.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#INV-012"
     },
     {
       "id": "TR-INV-013",
@@ -50158,7 +51152,8 @@
         "cas_positif_prescrit": "Diviser face portant cote : correspondance topologique démontrée ou cote conservée à résoudre.",
         "cas_negatif_prescrit": "Deux faces voisines plausibles : aucun rattachement automatique par seule proximité.",
         "decisions": "DEC-01,DEC-02,DEC-03,DEC-12"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#INV-013"
     },
     {
       "id": "TR-INV-014",
@@ -50252,7 +51247,8 @@
         "cas_positif_prescrit": "Passer offline avec profil préparé et utiliser outil dont code/dépendances/données sont compatibles.",
         "cas_negatif_prescrit": "Outil absent du cache : indisponible explicite ; commande centrale préparée ne devient pas publiée/approuvée.",
         "decisions": "DEC-07,DEC-14"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#INV-014"
     },
     {
       "id": "TR-INV-015",
@@ -50346,7 +51342,8 @@
         "cas_positif_prescrit": "Masquer outil favori puis le retrouver dans catalogue autorisé.",
         "cas_negatif_prescrit": "Chercher outil interdit/incompatible : descriptif consultable selon politique, pas d'action exécutable.",
         "decisions": "DEC-04,DEC-06"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#INV-015"
     },
     {
       "id": "TR-IF-001",
@@ -50439,7 +51436,8 @@
         "cas_positif_prescrit": "Rattacher étude à projet autorisé avec sources/version et obtenir identifiant stable.",
         "cas_negatif_prescrit": "Projet inaccessible/source indisponible/conflit : erreur explicite sans création partielle.",
         "decisions": "DEC-01,DEC-02,DEC-03"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#IF-001"
     },
     {
       "id": "TR-IF-002",
@@ -50532,7 +51530,8 @@
         "cas_positif_prescrit": "Dessiner aperçu, confirmer et contrôler commande/valeur dans tolérance contractuelle.",
         "cas_negatif_prescrit": "Échap sur aperçu puis relire modèle : aucune mutation canonique résiduelle.",
         "decisions": "DEC-01,DEC-02,DEC-09"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#IF-002"
     },
     {
       "id": "TR-IF-003",
@@ -50625,7 +51624,8 @@
         "cas_positif_prescrit": "Capturer R12, calcul booléen en worker, vérifier droits/contexte puis confirmer transaction et invalider scène.",
         "cas_negatif_prescrit": "Réponse calcul R12 après modification R13 ou droits révoqués : aucun engagement courant.",
         "decisions": "DEC-12,DEC-11"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#IF-003"
     },
     {
       "id": "TR-IF-004",
@@ -50718,7 +51718,8 @@
         "cas_positif_prescrit": "Commande base R12 avec objets/relations à jour est acceptée sur même contexte.",
         "cas_negatif_prescrit": "Deux sessions divergent : commande seconde rejetée avec courant/conflit, pas last-write-wins.",
         "decisions": "DEC-12,DEC-11"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#IF-004"
     },
     {
       "id": "TR-IF-005",
@@ -50811,7 +51812,8 @@
         "cas_positif_prescrit": "Tracer découverte→contrôle→dépendances→code→initialisation→prêt→actif→désactivation sans perte de geste.",
         "cas_negatif_prescrit": "Hors ligne/permission/loader/noyau en erreur : état distinct et geste rendu ou protégé, pas attente infinie.",
         "decisions": "DEC-07,DEC-14"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#IF-005"
     },
     {
       "id": "TR-IF-006",
@@ -50904,7 +51906,8 @@
         "cas_positif_prescrit": "Enveloppe requestId/toolId/contractVersion/scope/baseRevision/targets/opération/paramètres/mode est validée avec identité de session serveur.",
         "cas_negatif_prescrit": "actorId forgé, scope interprojet ou répétition incompatible : refus atomique, aucune permission créée.",
         "decisions": "DEC-03,DEC-18"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#IF-006"
     },
     {
       "id": "TR-IF-007",
@@ -50997,7 +52000,8 @@
         "cas_positif_prescrit": "Job parcourt queued/loading/running/completed avec source et suivi puis résultat validé.",
         "cas_negatif_prescrit": "cancel_requested suivi completion ou timeout/crash : résultat non engagé sans nouvelle vérification et pending résolu.",
         "decisions": "DEC-11,DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#IF-007"
     },
     {
       "id": "TR-IF-008",
@@ -51090,7 +52094,8 @@
         "cas_positif_prescrit": "Quantité mur retrouve sourceRevisionSet/ruleVersion/sourceObjectIds/unité/raw/deductions/display/freshness.",
         "cas_negatif_prescrit": "manualAdjustment sans motif/auteur ou unit incompatible : refus/signalement, rawValue conservé.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#IF-008"
     },
     {
       "id": "TR-IF-009",
@@ -51183,7 +52188,8 @@
         "cas_positif_prescrit": "Manifeste ordonné contient documentId/version/empreinte, modèles/règles/contrôles et décision de l’ensemble exact.",
         "cas_negatif_prescrit": "Pièce changée/manquante ou observation bloquante sans résolution/dérogation : publication refusée.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#IF-009"
     },
     {
       "id": "TR-IF-010",
@@ -51276,7 +52282,8 @@
         "cas_positif_prescrit": "Observation garde issueId/catégorie/règle/révisions/objets/vue/auteur/gravité/pièces/responsable/journal/recontrôles/clôture.",
         "cas_negatif_prescrit": "Même BCF-ID reçu dans autre contexte : ne pas écraser ID interne ni clore par disparition objet.",
         "decisions": "DEC-02,DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#IF-010"
     },
     {
       "id": "TR-IF-011",
@@ -51369,7 +52376,8 @@
         "cas_positif_prescrit": "Après engagement durable, événement garde eventId/transaction/auteur/étude/variante/base/issue/effets/date/job éventuel.",
         "cas_negatif_prescrit": "Notification reçue avant commit ou transaction échouée : aucune confirmation métier fausse.",
         "decisions": "DEC-12,DEC-11"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#IF-011"
     },
     {
       "id": "TR-AC-001",
@@ -51462,7 +52470,8 @@
         "cas_positif_prescrit": "Mur6×3×0,2 avec ouverture1×2,1 : objectId/hôte stables, net3,180 ; largeur1,2 : net3,096 ; undo/redo/réouverture et publication vérifiés.",
         "cas_negatif_prescrit": "Modifier depuis autre planche crée copie du mur ou perd hôte/cote/historique : échec critère, aucun succès partiel global.",
         "decisions": "DEC-01,DEC-02,DEC-09"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#AC-001"
     },
     {
       "id": "TR-AC-002",
@@ -51555,7 +52564,8 @@
         "cas_positif_prescrit": "Profil environ20 outils : comparer requêtes/octets/chunks exécutés/mémoire à froid et chaud, sans tous noyaux initialisés.",
         "cas_negatif_prescrit": "Barre réduite mais précache/init de tous moteurs rares : critère non acquis, aucun taux de réduction supposé.",
         "decisions": "DEC-07,DEC-14"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#AC-002"
     },
     {
       "id": "TR-AC-003",
@@ -51648,7 +52658,8 @@
         "cas_positif_prescrit": "Deux utilisateurs modifient mur avec résolution de conflit puis coupure/rejeu sans duplication.",
         "cas_negatif_prescrit": "Seconde sauvegarde écrase première implicitement ou rejoue commande deux fois : échec éliminatoire.",
         "decisions": "DEC-12,DEC-11"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#AC-003"
     },
     {
       "id": "TR-AC-004",
@@ -51741,7 +52752,8 @@
         "cas_positif_prescrit": "Corpus superposé/densités/intersections/références : mêmes cibles/points que référence dans tolérance avec traces ambiguïtés.",
         "cas_negatif_prescrit": "Index choisit cible différente après insertion/suppression : critère échoue malgré gain p95.",
         "decisions": "DEC-09,DEC-10,DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#AC-004"
     },
     {
       "id": "TR-AC-005",
@@ -51834,7 +52846,8 @@
         "cas_positif_prescrit": "Comparer sélection/orbite/zoom/pousser-tirer/matériau avant/après optimisation et séparer GPU réel de SwiftShader.",
         "cas_negatif_prescrit": "GPU CPU confondus ou géométrie modifiée pour gagner FPS : critère non vérifié/non conforme selon résultat.",
         "decisions": "DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#AC-005"
     },
     {
       "id": "TR-AC-006",
@@ -51927,7 +52940,8 @@
         "cas_positif_prescrit": "Forcer échec OCCT pendant opération puis relancer : attente résolue, erreur lisible et révision intacte sans doublon.",
         "cas_negatif_prescrit": "Crash laisse mutation partielle ou pending infini : échec critère.",
         "decisions": "DEC-11,DEC-13"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#AC-006"
     },
     {
       "id": "TR-AC-007",
@@ -52020,7 +53034,8 @@
         "cas_positif_prescrit": "Illustration optionnelle : hash/dimensions/propriétés/révision modèle restent identiques ; document indique source et statut vérification.",
         "cas_negatif_prescrit": "Illustration modifie BIM ou paraît métrique sans contrôle : refus de conformité/publication.",
         "decisions": "DEC-15,DEC-17"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#AC-007"
     },
     {
       "id": "TR-AC-008",
@@ -52113,7 +53128,8 @@
         "cas_positif_prescrit": "Retrouver sources/révisions/déductions0,420 puis0,504 et nets3,180 puis3,096 avec historique initial intact.",
         "cas_negatif_prescrit": "Arrondi/override efface déduction ou historique : échec, pas ajustement silencieux.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#AC-008"
     },
     {
       "id": "TR-AC-009",
@@ -52206,7 +53222,8 @@
         "cas_positif_prescrit": "Publier dossier inchangé approuvé avec comparaison des empreintes.",
         "cas_negatif_prescrit": "Changer document après approbation : blocage/nouvel examen explicite, pas publication sous ancienne décision.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#AC-009"
     },
     {
       "id": "TR-AC-010",
@@ -52299,7 +53316,8 @@
         "cas_positif_prescrit": "Concepteur découvre Approuver par recherche mais serveur refuse sans permission métier.",
         "cas_negatif_prescrit": "Importer profil ou acquérir rôle admin technique : toujours refus si droit métier absent.",
         "decisions": "DEC-16"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#AC-010"
     },
     {
       "id": "TR-AC-011",
@@ -52392,7 +53410,8 @@
         "cas_positif_prescrit": "Avant développement outil : vérifier entrées/sorties/préconditions/droits/effets/risques/mesures/jeux ; conformité après preuve sur version/profil identifié.",
         "cas_negatif_prescrit": "Fiche sans tests négatifs ou résultat sans build/profil : ni prêt à développer ni conforme par seule présence.",
         "decisions": "DEC-01 à DEC-18 selon fonction"
-      }
+      },
+      "fiche_active": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#AC-011"
     },
     {
       "id": "PROV-01",
@@ -52790,25 +53809,56 @@
       }
     }
   ],
-  "reference_instructions": "a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+  "reference_instructions": "63e804be7b8e8935913514bd57937053c7402474",
   "progress": {
     "PDEV": {
       "valeur": null,
       "raison": "DEV_SCOPE et baseline du périmètre accepté non établis ; ne pas inventer un dénominateur."
     },
     "P630": {
-      "V630": 6,
+      "V630": 30,
       "denominateur": 630,
-      "pourcentage": 1.0,
+      "pourcentage": 4.8,
       "IDs": [
         "SRC-01",
         "SRC-02",
         "SRC-03",
+        "SRC-04",
+        "SRC-05",
+        "CAD-01",
+        "CAD-02",
+        "CAD-03",
+        "CAD-06",
+        "CAD-DEC-04",
         "REP-01",
+        "UX-01",
+        "UX-02",
+        "UX-03",
+        "UX-04",
+        "UX-05",
+        "UX-06",
+        "UX-07",
+        "UX-08",
+        "UX-09",
+        "ROUTE-01",
+        "ROUTE-02",
+        "ROUTE-03",
+        "ROUTE-04",
+        "ROUTE-05",
+        "ROUTE-06",
+        "ROUTE-07",
+        "ROUTE-08",
         "PROV-01",
         "PROV-02"
       ],
-      "limite": "Six tâches de provenance documentaire vérifiées ; zéro réalisation/acceptation Studio. Ne pas utiliser comme pourcentage du code."
+      "limite": "30 tâches documentaires hétérogènes vérifiées ; zéro réalisation/acceptation Studio. Pas un taux de développement. Preuves portées par le commit de ce registre."
     }
+  },
+  "active_preparations": {
+    "fiches141": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json",
+    "decisions18": "docs/ai-team/reports/mission-004/A1/studio-18-decisions-v2.json",
+    "navigation9": "docs/ai-team/reports/mission-004/A4/NAV-M004.json",
+    "oracles38": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+    "historique": "docs/ai-team/reports/mission-003/README.md"
   }
 }

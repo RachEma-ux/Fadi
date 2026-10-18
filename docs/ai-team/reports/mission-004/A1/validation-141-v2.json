@@ -1,0 +1,22 @@
+{
+  "mission": "004",
+  "fiches": 141,
+  "EX": 104,
+  "INV": 15,
+  "IF": 11,
+  "AC": 11,
+  "patches_individuels": 141,
+  "textes_source_changes": 0,
+  "comparaisons_XML_exactes": 141,
+  "decisions_cadrage_retenues": [
+    "M002-D01",
+    "M002-D02",
+    "M002-D07"
+  ],
+  "tests_Studio_executes": 0,
+  "gates_acceptes": [],
+  "M12_cloture": false,
+  "repo_modifie": false,
+  "questions_DEC_exactes_XML": 18,
+  "preuves_DEC_exactes_XML": 18
+}
