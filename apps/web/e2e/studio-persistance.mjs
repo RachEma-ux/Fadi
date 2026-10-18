@@ -165,6 +165,41 @@ if (PHASE === 'reopen') {
   const after = await owner('GET', `${studyPath}/variants`);
   check('aucune variante créée par les requêtes refusées', after.body?.variants?.length === 3);
 
+  // Comparaison (lecture seule) : variante B dessinée différemment, comptes exacts, portée et droits.
+  const bId = variantB.body.variant.id;
+  const drawB = await owner('POST', `${studyPath}/variants/${bId}/commands`, {
+    contractVersion: 'studio-commands/1', requestId: `recette-${randomUUID()}`, baseRevisionId: commandOnB.body.revision.id,
+    commands: [
+      // Même identifiant que la ligne de la variante initiale, autre type : supprimé + ajouté.
+      { toolId: 'studio.dessin.rectangle', params: { id: 'ligne-1', type: 'rectangle', origin: { x: 0, y: 5 }, width: 1, height: 1 } },
+      // Même rectangle translaté de (1, 2) : modifié, déplacement détecté.
+      { toolId: 'studio.dessin.rectangle', params: { id: 'rect-1', type: 'rectangle', origin: { x: 2, y: 3 }, width: 3, height: 2 } },
+    ],
+  });
+  check('variante B : objets différents enregistrés', drawB.status === 200 && drawB.body.revision.document.objects.length === 3, JSON.stringify(drawB.body).slice(0, 200));
+  const compare = (who, from, to, path = studyPath) => who('GET', `${path}/compare?${new URLSearchParams({ from, to })}`);
+  const cmp = await compare(owner, s.variantId, bId);
+  const sum = cmp.body?.difference?.resume;
+  check('comparaison A → B : 200, côtés résolus à la tête', cmp.status === 200 && cmp.body.from.variantId === s.variantId && cmp.body.from.revisionId === moved.body.revision.id && cmp.body.to.variantId === bId && cmp.body.to.revisionId === drawB.body?.revision?.id, `${cmp.status} ${JSON.stringify(cmp.body).slice(0, 300)}`);
+  check('comparaison A → B : comptes exacts (2 ajoutés, 1 supprimé, 1 modifié dont 1 déplacé, 0 identique)', JSON.stringify(sum?.objets) === JSON.stringify({ ajoute: 2, supprime: 1, modifie: 1, identique: 0, deplace: 1 }) && sum?.calques?.ajoute === 0 && sum?.cotes?.ajoute === 0 && cmp.body.difference.identiques === false, JSON.stringify(sum));
+  check('comparaison A → B : identifiant réutilisé avec un autre type, déplacement (1, 2)', JSON.stringify(cmp.body?.difference?.objets?.map((o) => [o.id, o.etat])) === JSON.stringify([['ligne-1', 'supprime'], ['ligne-1', 'ajoute'], ['ligne-b', 'ajoute'], ['rect-1', 'modifie']]) && JSON.stringify(cmp.body.difference.objets[3].deplacement) === JSON.stringify({ dx: 1, dy: 2 }));
+  const cmpRev = await compare(owner, `${s.variantId}:${saved.body.revision.id}`, s.variantId);
+  check('comparaison révision → tête de la même variante : ligne déplacée de (1, 0), rectangle identique', cmpRev.status === 200 && cmpRev.body.from.revisionId === saved.body.revision.id && JSON.stringify(cmpRev.body.difference.resume.objets) === JSON.stringify({ ajoute: 0, supprime: 0, modifie: 1, identique: 1, deplace: 1 }) && JSON.stringify(cmpRev.body.difference.objets[0].deplacement) === JSON.stringify({ dx: 1, dy: 0 }), JSON.stringify(cmpRev.body).slice(0, 300));
+  const cmpSame = await compare(owner, s.variantId, `${s.variantId}:${moved.body.revision.id}`);
+  check('comparaison tête → même révision : identiques', cmpSame.status === 200 && cmpSame.body.difference.identiques === true && cmpSame.body.difference.resume.objets.identique === 2);
+  check('comparaison : la tête n\'est pas modifiée par la lecture', (await owner('GET', variantPath(s))).body?.revision?.id === moved.body.revision.id);
+  for (const [label, query] of [['from absent', `to=${bId}`], ['to absent', `from=${bId}`], ['trois segments', `from=a:b:c&to=${bId}`], ['segment vide', `from=${bId}:&to=${bId}`], ['caractère interdit', `from=a%20b&to=${bId}`], ['paramètre en trop', `from=${bId}&to=${bId}&x=1`], ['paramètre répété', `from=${bId}&from=${bId}&to=${bId}`]]) {
+    check(`comparaison : ${label} → 400`, (await owner('GET', `${studyPath}/compare?${query}`)).status === 400);
+  }
+  check('comparaison : variante inconnue 404', (await compare(owner, 'studio_variant_inconnue', bId)).status === 404);
+  check('comparaison : révision d\'une autre variante 404', (await compare(owner, `${s.variantId}:${drawB.body?.revision?.id}`, bId)).status === 404);
+  check('comparaison : révision inconnue 404', (await compare(owner, `${s.variantId}:studio_revision_inconnue`, bId)).status === 404);
+  check('comparaison : variante d\'une autre étude du même projet 404', (await compare(owner, s.variantId, study2.body.variant.id)).status === 404);
+  check('comparaison : étude d\'un autre projet 404', (await compare(owner, foreignStudy.body?.variant?.id, foreignStudy.body?.variant?.id, elsewhere)).status === 404);
+  check('comparaison : autre compte refusé (403/404)', [403, 404].includes((await compare(foreign, s.variantId, bId)).status));
+  check('comparaison : autre compte sur son étude avec une variante étrangère 404', (await compare(foreign, foreignStudy.body?.variant?.id, s.variantId, `/projects/${foreignProject.body?.id}/studio/studies/${foreignStudy.body?.study?.id}`)).status === 404);
+  check('comparaison : anonyme 401', (await compare(anonymous, s.variantId, bId)).status === 401);
+
   // Création idempotente (requestId facultatif) : rejeu du même auteur = réponse 201 d'origine, autre auteur = 409.
   const editor = client();
   const editorCredentials = credentials();
@@ -222,6 +257,7 @@ if (PHASE === 'reopen') {
   check('export : révision inconnue 404', (await owner('GET', `${exportPath}?format=svg&revision=studio_revision_inconnue`)).status === 404);
   check('export : révision d\'une autre variante 404', (await owner('GET', `${exportPath}?format=svg&revision=${created.body.revision.id}`)).status === 404);
   check('export : éditeur membre autorisé en lecture', (await editor('GET', `${exportPath}?format=dxf`)).status === 200);
+  check('comparaison : éditeur membre autorisé en lecture', (await editor('GET', `${studyPath}/compare?${new URLSearchParams({ from: s.variantId, to: variantB.body.variant.id })}`)).status === 200);
   check('export : autre compte refusé (403/404)', [403, 404].includes((await foreign('GET', `${exportPath}?format=svg`)).status));
   check('export : anonyme 401', (await anonymous('GET', `${exportPath}?format=svg`)).status === 401);
   check('export : étude d\'un autre projet 404', (await owner('GET', `${elsewhere}/variants/${foreignStudy.body?.variant?.id}/export?format=svg`)).status === 404);

@@ -2,7 +2,7 @@
 import { and, asc, desc, eq } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { applyStudioCommands, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, StudioValidationError, validateStudioDocument, type StudioEnvelope } from "@parcours/atelier-model";
+import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, StudioValidationError, validateStudioDocument, type StudioDifferenceDocuments, type StudioEnvelope } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { projectMembers, studioRevisions, studioStudies, studioVariants, type StudioContext } from "../db/schema.js";
 import { newId } from "./ids.js";
@@ -247,6 +247,35 @@ export async function exportStudioVariant(q: Querier, scope: StudioScope, actorI
     studioFileSegment(context.revision.id.slice(-8), "revision"),
   ].join("-") + `.${format}`;
   return { format, contentType: STUDIO_EXPORT_CONTENT_TYPES[format], filename, revisionId: context.revision.id, body };
+}
+
+/** Côté d'une comparaison : `variantId` seul (tête) ou `variantId:revisionId`. */
+export interface StudioCompareSide { variantId: string; revisionId?: string }
+const compareSegment = /^[A-Za-z0-9._-]{1,128}$/;
+/** Lit `variantId[:revisionId]` ; `null` si la valeur est mal formée (jamais corrigée). */
+export function parseStudioCompareSide(value: unknown): StudioCompareSide | null {
+  if (typeof value !== "string") return null;
+  const parts = value.split(":");
+  if (parts.length > 2 || !parts.every((part) => compareSegment.test(part))) return null;
+  return parts.length === 2 ? { variantId: parts[0]!, revisionId: parts[1]! } : { variantId: parts[0]! };
+}
+export interface StudioComparison {
+  from: { variantId: string; revisionId: string };
+  to: { variantId: string; revisionId: string };
+  difference: StudioDifferenceDocuments;
+}
+/**
+ * Comparaison en lecture seule de deux révisions d'une même étude (tête par défaut). Mêmes droits que la lecture :
+ * 401 / 403 selon le compte, 404 si l'étude n'est pas du projet ou si une variante ou une révision n'est pas de l'étude.
+ */
+export async function compareStudioRevisions(q: Querier, projectId: string, studyId: string, actorId: string, from: StudioCompareSide, to: StudioCompareSide): Promise<StudioComparison> {
+  const a = await readStudioContext(q, { projectId, studyId, variantId: from.variantId }, actorId, from.revisionId);
+  const b = await readStudioContext(q, { projectId, studyId, variantId: to.variantId }, actorId, to.revisionId);
+  return {
+    from: { variantId: a.variant.id, revisionId: a.revision.id },
+    to: { variantId: b.variant.id, revisionId: b.revision.id },
+    difference: comparerDocumentsStudio(a.revision.document, b.revision.document),
+  };
 }
 
 export async function submitStudioCommands(scope: StudioScope, actorId: string, input: unknown): Promise<StudioContext & { replayed: boolean }> {

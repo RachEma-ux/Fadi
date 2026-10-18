@@ -3,7 +3,7 @@ import { Router, json, type Request, type Response, type NextFunction } from "ex
 import { z } from "zod";
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
-import { createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, readStudioContext, readStudioStudy, STUDIO_EXPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
+import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioStudy, STUDIO_EXPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
 
 export const studioRouter = Router({ mergeParams: true });
 studioRouter.use(requireAuth);
@@ -41,6 +41,17 @@ studioRouter.post("/studies", endpoint(async (req, res) => {
 studioRouter.get("/studies/:studyId", endpoint(async (req, res) => {
   const s = scope(req);
   res.json(await readStudioStudy(db, s.projectId, s.studyId, req.user!.id));
+}));
+/** Comparaison lecture seule : `from` et `to` = `variantId[:revisionId]` de la même étude ; seuls ces deux paramètres. */
+studioRouter.get("/studies/:studyId/compare", endpoint(async (req, res) => {
+  const query = req.query as Record<string, unknown>;
+  const from = parseStudioCompareSide(query["from"]), to = parseStudioCompareSide(query["to"]);
+  if (!from || !to || Object.keys(query).some((key) => key !== "from" && key !== "to")) {
+    res.status(400).json({ error: "invalid_input", message: "Paramètres attendus : from et to = variantId[:revisionId]." }); return;
+  }
+  const s = scope(req);
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await compareStudioRevisions(db, s.projectId, s.studyId, req.user!.id, from, to));
 }));
 studioRouter.get("/studies/:studyId/variants", endpoint(async (req, res) => {
   const s = scope(req);

@@ -1,0 +1,18 @@
+.studio-comparaison{--cmp-avant:#9aa7ab;--cmp-ajoute:#1f8a4c;--cmp-supprime:#c0392b;--cmp-modifie:#d9822b;min-width:0}
+.studio-comparaison-cotes{display:flex;flex-wrap:wrap;gap:14px;margin:16px 0}
+.studio-comparaison-cote{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 10px;align-items:center;flex:1 1 280px;min-width:0;border:1px solid #d5e1e4;border-radius:10px;padding:12px 14px}
+.studio-comparaison-cote legend{font-weight:600;padding:0 4px}
+.studio-comparaison-cote select{min-width:0;max-width:100%}
+.studio-comparaison-resolu{font-size:13px;color:#577079;overflow-wrap:anywhere}
+.studio-comparaison-resume{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;margin:4px 0}
+.studio-comparaison-resume [data-etat=ajoute]{color:var(--cmp-ajoute)}.studio-comparaison-resume [data-etat=supprime]{color:var(--cmp-supprime)}.studio-comparaison-resume [data-etat=modifie]{color:var(--cmp-modifie)}
+.studio-comparaison-svg{display:block;width:100%;max-height:60vh;aspect-ratio:4/3;background:#fff;border:1px solid #d5e1e4;border-radius:10px;margin:14px 0}
+.studio-comparaison-trace{fill:none;stroke-width:2}
+.studio-comparaison-trace.is-avant{stroke:var(--cmp-avant)}.studio-comparaison-trace.is-ajoute{stroke:var(--cmp-ajoute)}.studio-comparaison-trace.is-supprime{stroke:var(--cmp-supprime);stroke-dasharray:6 4}.studio-comparaison-trace.is-modifie{stroke:var(--cmp-modifie)}
+.studio-comparaison-legende{display:flex;flex-wrap:wrap;gap:6px 16px;list-style:none;padding:0;margin:0 0 12px;font-size:12px}
+.studio-comparaison-legende span{display:inline-block;width:22px;height:0;border-top:3px solid var(--cmp-avant);vertical-align:middle;margin-right:6px}
+.studio-comparaison-legende .is-ajoute{border-color:var(--cmp-ajoute)}.studio-comparaison-legende .is-supprime{border-top-style:dashed;border-color:var(--cmp-supprime)}.studio-comparaison-legende .is-modifie{border-color:var(--cmp-modifie)}
+.studio-comparaison-liste{list-style:none;padding:0;margin:0 0 16px;display:flex;flex-direction:column;gap:6px}
+.studio-comparaison-liste li{display:flex;flex-wrap:wrap;gap:4px 10px;padding:8px 12px;border:1px solid #e3eaec;border-left-width:4px;border-radius:8px;font-size:13px;overflow-wrap:anywhere}
+.studio-comparaison-liste li[data-etat=ajoute]{border-left-color:var(--cmp-ajoute)}.studio-comparaison-liste li[data-etat=supprime]{border-left-color:var(--cmp-supprime)}.studio-comparaison-liste li[data-etat=modifie]{border-left-color:var(--cmp-modifie)}
+.studio-comparaison-proprietes{display:inline-flex;flex-wrap:wrap;gap:4px}.studio-comparaison-proprietes span{font-size:11px;border:1px solid #e0c9a8;background:#fbf3e8;border-radius:20px;padding:1px 8px}
