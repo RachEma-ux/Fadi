@@ -24,7 +24,10 @@ le registre.
 | #186 | Export SVG / DXF R12, création idempotente (`requestId`), zoom et défilement, sélection par cadre, glisser, Tool Manager et palette Ctrl+K. |
 | #189 | Job e2e réparti en 5 tranches parallèles, d'environ 38 min à environ 9 min. |
 | #190 | Extrusion déclarée par l'utilisateur, vue 3D (three.js, chargée à la demande), export IFC4X3_ADD2 validé par IfcOpenShell en CI. |
-| #171, #174–#177, #142, #152 | Correctifs Atelier et Planche, frontières Studio ↔ Atelier, garde-fous d'architecture, gabarit pleine largeur. Remis à jour et fusionnés par l'équipe 6. |
+| #191 | Feuille de présentation (ISO, échelle, cartouche sans donnée inventée, impression / SVG / PDF), comparaison de révisions et de variantes, commentaires de variante. |
+| #192 | Recettes intermittentes corrigées dans le produit : liste d'outils sur téléphone, commentaire d'étape publié pendant le premier chargement. |
+| #193 | Import DXF (unités explicites, entités non prises listées, envoi par lots chaînés), liens étude ↔ étapes du Parcours, notifications de commentaires Studio. |
+| #171, #174–#177, #142, #143, #152 | Correctifs Atelier et Planche, frontières Studio ↔ Atelier, garde-fous d'architecture, gabarit pleine largeur. Remis à jour et fusionnés par l'équipe 6. |
 
 PR fermées :
 - #178–#182 : la pile Studio concurrente, portée dans #185 ;
@@ -59,12 +62,11 @@ par motif (`pkill -f`), seulement par son PID.
 
 ## Prochaines actions
 
-1. Intégrer la feuille de présentation (équipe 1 : cartouche, échelle, impression / PDF, SVG de feuille) et la
-   comparaison de révisions ou de variantes (équipes 2 et 3), si elles ne sont pas encore fusionnées. Ensuite : revue,
-   CI, fusion.
+1. Vérifier que #193 est fusionnée ; sinon, mener sa CI au vert puis la fusionner.
 2. Pistes suivantes, dans l'ordre recommandé :
-   - rôles et collaboration dans Studio (membres en lecture seule, commentaires sur une variante) ;
-   - liaison Studio ↔ Parcours (une étude rattachée à une étape, sans toucher aux 21 étapes) ;
-   - import DXF vers Studio ;
-   - recette du profil A6 sur un hôte disposant de Docker.
-3. DB-3 reste fermé. Toute ouverture exige une demande explicite du propriétaire.
+   - outils de dessin supplémentaires (arc, cercle, polyligne, décalage), pour que l'import DXF reprenne aussi ARC et CIRCLE ;
+   - cotation angulaire ;
+   - Studio hors ligne (le service worker et Dexie existent déjà pour le Parcours) ;
+   - préférences de notification.
+3. DB-3 reste fermé. Il faut une demande explicite du propriétaire pour l'ouvrir.
+4. La recette du profil A6 (`scripts/validation/studio-v1-functional.py`) demande Docker. Elle n'a pas été rejouée depuis l'intégration du schéma dans `init.sql` ; à rejouer sur un hôte qui a Docker.
