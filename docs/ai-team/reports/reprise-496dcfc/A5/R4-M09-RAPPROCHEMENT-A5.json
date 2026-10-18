@@ -1,0 +1,154 @@
+{
+  "ready": "R4 M09 rapprochement borné, sans second audit",
+  "inputs": [
+    {
+      "path": "/workspace/work/resume496/agents/A4/CSP-KML-CORPUS-DOCUMENTAIRE.json",
+      "sha256": "63041d8f8c79ee781d1c81c713452ff35315ac77af80f114a9d322969dc8add1"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A4/CSP-KML-DELTA-DECISION.md",
+      "sha256": "2f32c0673d1ff490b09724f6996205656c2bfeca27a6352677471ee3f0fb5de9"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A6/M09-ETAT-CONTROLES-GITHUB.json",
+      "sha256": "cda0350928292d63dff24ade11d0c92c2665aa957ed49768f04e4323551d7098"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A6/M09-ETAT-CONTROLES-GITHUB.md",
+      "sha256": "6155c742716601340b3a3b5643b4019609c833e54b01d8408c5ab77ccd2b759b"
+    },
+    {
+      "path": "/workspace/work/mission004/agents/A5/M09-LOT-A3-CSP-SCAN-PRET-A-AUTORISER.md",
+      "sha256": "ef5c0cb3cc46e92617152db305083ab821435ec2561d593f0e10aa29f84f2c76"
+    }
+  ],
+  "decision": 6250111226,
+  "approved_real_kml_origins": [],
+  "identified_not_approved": [
+    {
+      "origin": "https://api.maptiler.com",
+      "evidence": [
+        "apps/web/public/parcelle/index.html:1083",
+        "apps/web/src/lib/maptiler.ts:20"
+      ],
+      "role": "servicecartographique identifiéstatiquement, pas fournisseurKMLapprouvé"
+    }
+  ],
+  "case_links": [
+    {
+      "case": "KML-A01",
+      "existing_oracles": [
+        "CSP05",
+        "CSP07"
+      ],
+      "future_oracle": "présentation complète, aucun accès réseau, géométrie inchangée",
+      "state": "Non exécuté"
+    },
+    {
+      "case": "KML-A02",
+      "existing_oracles": [
+        "CSP05",
+        "CSP07"
+      ],
+      "future_oracle": "interceptionlocale imageautorisée ; ancrage/rotation/couleur/échelle conservés",
+      "state": "Non exécuté"
+    },
+    {
+      "case": "KML-A03",
+      "existing_oracles": [
+        "CSP05",
+        "CSP07",
+        "CSP09"
+      ],
+      "future_oracle": "zérochargementautorisé, étatrefus etfallbackneutre accessibles ; référenceconservée",
+      "state": "Non exécuté"
+    },
+    {
+      "case": "KML-A04",
+      "existing_oracles": [
+        "CSP05",
+        "CSP07",
+        "CSP09"
+      ],
+      "future_oracle": "étatindisponible distinctrefus, retryborné, fallbackneutre etgéométrie inchangée",
+      "state": "Non exécuté"
+    },
+    {
+      "case": "KML-A05",
+      "existing_oracles": [
+        "CSP02",
+        "CSP05",
+        "CSP07"
+      ],
+      "future_oracle": "aucuncontournementallowlist/credential ; rapportexpurgé, pas scripts/importexécutés",
+      "state": "Non exécuté"
+    },
+    {
+      "case": "KML-A06",
+      "existing_oracles": [
+        "CSP09",
+        "CSP10"
+      ],
+      "future_oracle": "UIlectureseule et refusserveur seloncontrat, aucunefuite/élévationdroit parCSP",
+      "state": "Non exécuté"
+    },
+    {
+      "case": "KML-A07",
+      "existing_oracles": [
+        "CSP05",
+        "CSP09"
+      ],
+      "future_oracle": "CSScalculé/ciblestactiles/focusconformes malgréassetrefusé ; pasperteédition",
+      "state": "Non exécuté"
+    },
+    {
+      "case": "KML-A08",
+      "existing_oracles": [
+        "CSP08",
+        "CSP09"
+      ],
+      "future_oracle": "filelocalepréservée, messagesappropriés, paspublicationconfirmée horsserveur",
+      "state": "Non exécuté"
+    },
+    {
+      "case": "KML-A09",
+      "existing_oracles": [
+        "CSP01",
+        "CSP03",
+        "CSP04"
+      ],
+      "future_oracle": "policyworker etfetchcompilationprouvés futurs ; fallbackthread n’estpas workerOK",
+      "state": "Non exécuté"
+    }
+  ],
+  "security_observation": {
+    "alerts": "Inconnues/null, jamais zéro",
+    "connector": "HTTP400 INVALID_ARGUMENT du connecteur pour endpoints alertes, pas GitHub403 ; aucun contournement",
+    "workflows": "Cinq fichiers main lus par A6, absence scanner dédié identifié dans ce périmètre seulement",
+    "scan_state": "NOT_SCANNED",
+    "npm_no_audit": "Pas résultat sécurité"
+  },
+  "conditions": [
+    {
+      "owner": "A0/approbateur fournisseur",
+      "trigger": "Avant toute origine réelle ajoutée à configuration",
+      "required": "Origine HTTPS finie justifiée usage/licence/provenance/droits/redirections approuvée ; présence code ou KML ne vaut pas accord."
+    },
+    {
+      "owner": "A2/A6 puis A3 autorisé",
+      "trigger": "Avant pilote avec header",
+      "required": "Policy effective page/worker/WASM/OCCT, stylesdynamiques, SW/pending et stockage examinés ; RO puis ENF par accords séparés, build/SHA identiques."
+    },
+    {
+      "owner": "A4/A5",
+      "trigger": "Avant recette pilote autorisée",
+      "required": "Fixtures locales interceptées, FR/EN/mobile/clavier/états refus vs indisponible, aucune perte géométrie/IDs/unités/quantités/sourceversion ; zéro réel réseau pour préparation."
+    },
+    {
+      "owner": "Administrateur/A6",
+      "trigger": "Si preuve état alertes demandée",
+      "required": "Export existant expurgé horodaté portée/SHA ; ne pas lancer nouveau scan pour combler accès."
+    }
+  ],
+  "scope": "R4 prêt comme préparation ; aucun header/scan/admin/enforcement, origine réelle non approuvée, aucun test."
+}

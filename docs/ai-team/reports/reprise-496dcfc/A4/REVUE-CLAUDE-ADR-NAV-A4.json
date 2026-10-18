@@ -1,0 +1,476 @@
+{
+  "objet": "Revue indépendante UX de ADR-01/02 Claude publiée",
+  "date": "2026-10-18",
+  "sources": {
+    "ADR": {
+      "commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "path": "docs/continuity/decisions/ADR-STUDIO-NAV-01.md",
+      "sha256": "14b67cab74ada41f955221c1189c6689d17390670eb9c3a398112b00fa0b0745",
+      "blob": "a77459442afe266fad2b1016fe3eb445275d439c",
+      "citations": [
+        {
+          "line": 3,
+          "text": "Statut : **Proposé** (Proposé / Accepté / Remplacé)."
+        },
+        {
+          "line": 7,
+          "text": "Rédaction : Claude Code, hors équipe Codex. Les contenus repris citent leur auteur d'origine."
+        },
+        {
+          "line": 9,
+          "text": "> **Portée.** Cette ADR remplit **ADR-01** (ouvrir la décision d'intégration distincte, Plan §10) et **ADR-02** (y documenter routes, contexte, droits, mobile et plein écran, coexistence avec l'Atelier, tests NAV). Elle **ne remplace aucune DEC** (DEC-01 à DEC-18 de REF-02), aucune décision Atelier (`docs/atelier/decisions.md`) ni aucune décision déléguée de #166 : elle s'y réfère. **Son arbitrage relève d'ADR-03.** Tant qu'elle reste « Proposé », elle n'autorise **aucun code Studio**, aucune route, aucune migration ni aucune fusion."
+        },
+        {
+          "line": 13,
+          "text": "- Le Plan d'implémentation (§2 et §10) demande une entrée verticale « Studio » autonome. Studio ne doit être ni un raccourci vers l'Atelier, ni une iframe, ni un passage par le Parcours."
+        },
+        {
+          "line": 14,
+          "text": "- La décision déléguée **D07** ([CODEX-DELEGATED-DECISIONS.md, ligne 27](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/docs/ai-team/CODEX-DELEGATED-DECISIONS.md#L27)) a retenu, **pour les spécifications** : Studio placé après Projets ; URL complètes et contexte vérifié par le serveur ; plein écran explicite ; protection des gestes ; approbation et publication distinctes."
+        },
+        {
+          "line": 16,
+          "text": "- La relecture du code au `817bd36` ([REP-02 à REP-08](../../ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md)) montre que **rien de Studio n'existe** : aucune route, aucune entrée, aucun descripteur."
+        },
+        {
+          "line": 20,
+          "text": "Le contrat de référence est celui d'A4, [`CONTRAT-NAV-M004.md` v0.2](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md) (blob `d8d95c16`). Il couvre ROUTE-01 à ROUTE-08, déjà « Vérifié » documentairement au registre. Il n'est pas recopié ici ; ses règles retenues pour cette décision sont :"
+        },
+        {
+          "line": 24,
+          "text": "| `/studio` | Accueil Studio : projets et études autorisés. Aucune création par simple chargement. |"
+        },
+        {
+          "line": 26,
+          "text": "| `/studio/projets/:projectId/etudes/:studyId` | Cadrage, sources et variantes. Une étude sans variante est admise ; toute géométrie exige une variante. |"
+        },
+        {
+          "line": 28,
+          "text": "| `…/variantes/:variantId/revisions/:revisionId` (chemin complet, jamais l'abréviation) | Consultation d'une révision immuable |"
+        },
+        {
+          "line": 30,
+          "text": "Paramètres : `?domaine=dessin|bim|visualisation|documentation`, et `planche=2d|3d` en `dessin` seulement. Une valeur inconnue donne l'état « URL non reconnue », sans mutation."
+        },
+        {
+          "line": 34,
+          "text": "- **R-A.** Placer les routes sous `/studio`, et non sous `/projets`. Avec la règle `startsWith(\"/projets\")` d'`AppShell` ([#L90](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/web/src/routes/AppShell.tsx#L90)), l'entrée Projets ne s'allume ainsi pas à tort (NAV-006)."
+        },
+        {
+          "line": 35,
+          "text": "- **R-B.** Un lien Studio invalide ou refusé **ne doit pas** tomber dans le repli `*` → `/accueil`, qui ne donne aucun message ([App.tsx#L86-L87](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/web/src/App.tsx#L86-L87)). Il faut un écran de refus neutre (NAV-004, NAV-R04)."
+        },
+        {
+          "line": 36,
+          "text": "- **R-C.** Chaque morceau Studio chargé à la demande doit avoir sa limite d'erreur récupérable. `App.tsx` n'en a aucune aujourd'hui (NAV-008, NAV-R05)."
+        },
+        {
+          "line": 40,
+          "text": "La façade de contexte proposée par A4 ([`CONTRAT-NAV-M004.md`](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md), § « Façade de contexte ») contient `{ projectId, studyId?, variantId?, requestedRevisionId?, baseRevisionId?, effectivePermissions, accessState, freshness, writerAuthority, schemaVersion }`."
+        },
+        {
+          "line": 44,
+          "text": "- **C-A.** `StudioShell` ne dépend pas de `ProjectShell`. Celui-ci lit **toujours** les étapes du Parcours ([ProjectShell.tsx#L39](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/web/src/routes/ProjectShell.tsx#L39)). Les services dont Studio a besoin existent déjà hors de cette enveloppe : `useProjectAccess`, `SyncIndicator`, `EditingLockControl`, `ConflictPanel`, `rememberDossier` ([REP-04](../../ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md))."
+        },
+        {
+          "line": 45,
+          "text": "- **C-B.** `AppShell` ne déduit le contexte projet que de deux motifs `/projets` ([#L19-L21](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/web/src/routes/AppShell.tsx#L19-L21)). Le bandeau doit recevoir le contexte Studio sans déclencher la lecture des étapes faite par `HomeTopbar`."
+        },
+        {
+          "line": 46,
+          "text": "- **C-C.** Le dernier dossier personnel (`useLastDossier`) reste une **suggestion**, jamais une permission (UX-09)."
+        },
+        {
+          "line": 52,
+          "text": "- les droits logiques sont : lire, créer une étude, modifier une variante, contrôler, commenter, soumettre, approuver, publier ;"
+        },
+        {
+          "line": 53,
+          "text": "- **approbation et publication sont deux permissions distinctes**, et leur cumul doit être configuré explicitement et tracé ;"
+        },
+        {
+          "line": 54,
+          "text": "- aucun paramètre d'URL ne transmet une permission ;"
+        },
+        {
+          "line": 55,
+          "text": "- toute relation entre projet, étude, variante et révision est vérifiée par le serveur ;"
+        },
+        {
+          "line": 56,
+          "text": "- `RequireAuth` reste un garde côté client seulement ([RequireAuth.tsx#L14-L16](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/web/src/routes/RequireAuth.tsx#L14-L16)) et ne prouve aucun droit."
+        },
+        {
+          "line": 58,
+          "text": "Les commandes Studio passent par le **même service de commandes** que l'Atelier (R9, RISK-07)."
+        },
+        {
+          "line": 62,
+          "text": "- **E-A.** L'entrée « Studio » se place dans `<nav aria-label=\"Navigation principale\">`, après Projets (D07), avec `title`, `aria-label` et un libellé déplié identiques. Le menu mobile est la même barre repliée ; il n'y a pas de menu séparé ([REP-03](../../ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md))."
+        },
+        {
+          "line": 63,
+          "text": "- **E-B. Mécanisme de l'entrée : à arbitrer.** Ajouter `studio` à `MODULES` ferait passer Studio par `ProjectShell` ([REP-06](../../ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md)). Options :"
+        },
+        {
+          "line": 64,
+          "text": "  - (a) un descripteur global distinct, **recommandé** ;"
+        },
+        {
+          "line": 65,
+          "text": "  - (b) un champ `portee` ;"
+        },
+        {
+          "line": 66,
+          "text": "  - (c) un raccourci projet sous forme de lien."
+        },
+        {
+          "line": 68,
+          "text": "  La règle d'or de la Planche (icône propre, barre, raccourci) s'applique à toute commande Studio que cette entrée ouvre."
+        },
+        {
+          "line": 69,
+          "text": "- **E-C. Plein écran.** C'est une action explicite, avec un bouton de sortie visible, selon le contrat A4. Studio **ne réutilise pas** `atelier-immersive`, un drapeau global sans compteur qui masque la barre latérale ([REP-05](../../ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md)). La PR [#142](https://github.com/RachEma-ux/Fadi/pull/142), ouverte, modifie ce drapeau. Si elle est fusionnée, ce point est à relire sur sa tête."
+        },
+        {
+          "line": 70,
+          "text": "- **E-D. Langues.** Le texte source est en français, avec sa traduction dans `en.json` (AGENTS.md). Le nom « Studio » est identique dans les deux langues."
+        },
+        {
+          "line": 78,
+          "text": "| COEX-02 | Le lot I **ajoute** Studio et ne retire, ne renomme ni ne redirige aucun des 14 accès historiques à l'Atelier (H01 à H14). | Contrat documentaire préparé |"
+        },
+        {
+          "line": 79,
+          "text": "| COEX-03 | L'Atelier reste le seul client écrivain des jeux existants ; Studio, de ses nouveaux jeux. Les deux passent par le même service de commandes. Le transfert se fait par périmètre. | **À arbitrer** ([Q-CLAUDE-COEX-03](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250996328)) |"
+        },
+        {
+          "line": 80,
+          "text": "| COEX-04 | Pour une étude migrée, l'ancien accès passe en lecture seule (`readOnly` existe déjà). La redirection n'intervient qu'après transfert, avec un message. | **À arbitrer** ([Q-CLAUDE-COEX-04](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250997313)) |"
+        },
+        {
+          "line": 81,
+          "text": "| **COEX-05** | **Aucune synchronisation dans les deux sens entre l'Atelier et Studio.** Transferts admis : rejeu de commandes validées (R9), ou import à sens unique avec rapport (Plan §8.1). Ni seconde base métier, ni recopie périodique, ni écriture directe dans l'autre autorité. | **Règle accueillie ici, sous réserve de ratification** ([Q-CLAUDE-COEX-05-06](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250998834)) |"
+        },
+        {
+          "line": 82,
+          "text": "| **COEX-06** | **Porte de retrait** pour tout écran, route, table ou stockage de l'Atelier : R1 comparaison avant / après, R2 restauration testée sur cible jetable attestée, R3 acceptation explicite du propriétaire. Le retrait se fait toujours dans un lot distinct (MIG-COEX-07). | **Règle accueillie ici, sous réserve de ratification** (même question) ; R2 et R3 restent des accords du propriétaire |"
+        },
+        {
+          "line": 89,
+          "text": "Les critères **NAV-001 à NAV-009** (Plan §2.4) restent les critères d'acceptation. Leurs scénarios, avec oracles et cas négatifs, sont ceux d'A4 dans [`NAV-DELTA-G1-v2.md`](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/docs/ai-team/reports/reprise-496dcfc/A4/NAV-DELTA-G1-v2.md) (blob `5cc211bf`). Correspondance avec les règles de cette ADR :"
+        },
+        {
+          "line": 93,
+          "text": "| NAV-001 | E-A, E-B |"
+        },
+        {
+          "line": 94,
+          "text": "| NAV-002 | C-A, E-B (pas de `ProjectShell` ni de Parcours) |"
+        },
+        {
+          "line": 95,
+          "text": "| NAV-003 | §1 (étude sans variante, aucune géométrie orpheline) |"
+        },
+        {
+          "line": 96,
+          "text": "| NAV-004 | R-B, §3 |"
+        },
+        {
+          "line": 97,
+          "text": "| NAV-005 | §1 (paramètres domaine / planche) |"
+        },
+        {
+          "line": 98,
+          "text": "| NAV-006 | R-A, C-B |"
+        },
+        {
+          "line": 99,
+          "text": "| NAV-007 | Contrat de transition A4 (« pending ») |"
+        },
+        {
+          "line": 100,
+          "text": "| NAV-008 | R-C, E-C |"
+        },
+        {
+          "line": 101,
+          "text": "| NAV-009 | COEX-02 (14 accès H01 à H14) ; recettes existantes `parcours-scenario.mjs`, `accueils-design.mjs` |"
+        },
+        {
+          "line": 103,
+          "text": "**Aucun NAV n'est exécuté** : il n'existe aucune interface Studio."
+        },
+        {
+          "line": 123,
+          "text": "- **Option A (recommandée)** — adopter cette ADR telle quelle :"
+        },
+        {
+          "line": 128,
+          "text": "  - coexistence COEX-02 à COEX-06 selon les options recommandées."
+        },
+        {
+          "line": 134,
+          "text": "**Non décidé.** À compléter après arbitrage, au titre d'ADR-03 : décision déléguée dans #166 pour l'architecture, accord du propriétaire pour les points réservés (R2 et R3 de COEX-06, fusion, production). Jusque-là, le statut reste « Proposé »."
+        },
+        {
+          "line": 138,
+          "text": "Cette ADR rassemble en un seul document de décision des éléments aujourd'hui dispersés : D07, l'orientation DEC-03, le contrat A4 v0.2, NAV-DELTA-G1-v2 et les constats REP / COEX. Elle n'invente aucune règle sans source. Chaque ajout (R-A à R-C, C-A à C-C, E-A à E-C) cite le code au `817bd36` qui le motive."
+        },
+        {
+          "line": 143,
+          "text": "- Elle n'en dispense pas : il faut encore G1, G2 et G3, la stabilisation du contrat de contexte M17 et une autorisation de code distincte."
+        },
+        {
+          "line": 146,
+          "text": "- Les chemins de routes restent des propositions jusqu'à ROUTE-09."
+        },
+        {
+          "line": 153,
+          "text": "- Aucun test applicatif n'a été exécuté pour rédiger cette ADR."
+        }
+      ]
+    },
+    "CONTRAT_NAV": {
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "path": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+      "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a"
+    },
+    "NAV9": {
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "path": "docs/ai-team/reports/mission-004/A4/NAV-M004.json",
+      "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2"
+    },
+    "M21": {
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "path": "docs/ai-team/reports/mission-004/A4/M21-CONTRAT-MINIMAL.md",
+      "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625"
+    },
+    "NAV_DELTA": {
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "path": "docs/ai-team/reports/reprise-496dcfc/A4/NAV-DELTA-G1-v2.md",
+      "sha256": "6c38b5b5acc352bed51ee7eb7d68b9ebfdfb0f543b5737fd4d49aac8606b37b4"
+    },
+    "ADDENDUM": {
+      "path": "/workspace/work/resume496/agents/A4/RESIDUEL-PICKING-ADR-NAV-A4.json",
+      "sha256": "107e22d547abe2fd0dcf3c4127351e11aa444ebfb8923c47e6e6e1a99ff9ecfa"
+    },
+    "COEX_RESERVES": {
+      "path": "/workspace/work/resume496/agents/A2/COEX03-COMPLEMENT-A2.json",
+      "sha256": "eac9b7efbf7623db99ea0fbaef0daa416c53a533581e20dc0c17f615711ddd8a"
+    }
+  },
+  "verdict_obligations": [
+    {
+      "id": "ADR-01",
+      "avis": "Favorable au passage Vérifié documentaire de l’obligation ouvrir/proposer, sous intégration et contrôle A0 ; aucun statut canonique modifié par A4",
+      "preuve": "ADR existe à chemin distinct au commit indiqué, auteur Claude, statut Proposé et non-remplacement des DEC explicites (1,3,7,9).",
+      "limite": "Ne vaut ni Accepté de décision, ni ADR-03, ni adoption des options."
+    },
+    {
+      "id": "ADR-02",
+      "avis": "Favorable au passage Vérifié documentaire de l’obligation décrire six rubriques, avec réserves ci-dessous conservées",
+      "preuve": "Routes §1 ; contexte §2 ; droits §3 ; mobile/plein écran §4 ; coexistence §5 ; NAV §6 ; références sources exactes.",
+      "limite": "Fourniture documentaire seulement ; choix physiques/routes et arbitrages COEX ouverts. Aucun G1–G4 ni test produit accepté."
+    }
+  ],
+  "comparaison_NAV9": [
+    {
+      "id": "NAV-001",
+      "adr_lines": [
+        62,
+        63,
+        93
+      ],
+      "avis": "Présent documentairement par contenu et renvois ; non exécuté",
+      "portee": "Entrée après Projets accessible, mécanisme distinct de ProjectShell proposé.",
+      "limite": "Clavier/focus et tactile restent prescrits par NAV9 ; pas de preuve UI.",
+      "source_contrat": "NAV9#/nav/0"
+    },
+    {
+      "id": "NAV-002",
+      "adr_lines": [
+        13,
+        44,
+        94
+      ],
+      "avis": "Présent documentairement par contenu et renvois ; non exécuté",
+      "portee": "Autonomie sans ProjectShell/Parcours explicitement préservée.",
+      "limite": "Option E-B(c) ne peut devenir un simple raccourci projet obligatoire.",
+      "source_contrat": "NAV9#/nav/1"
+    },
+    {
+      "id": "NAV-003",
+      "adr_lines": [
+        24,
+        26,
+        95
+      ],
+      "avis": "Présent documentairement par contenu et renvois ; non exécuté",
+      "portee": "Étude sans variante admise, géométrie sous variante, aucune création au chargement.",
+      "limite": "Aucun refus serveur ni idempotence testé.",
+      "source_contrat": "NAV9#/nav/2"
+    },
+    {
+      "id": "NAV-004",
+      "adr_lines": [
+        28,
+        35,
+        54,
+        55,
+        96
+      ],
+      "avis": "Présent documentairement par contenu et renvois ; non exécuté",
+      "portee": "Historique immuable, chaîne serveur, refus neutre, URL sans permission.",
+      "limite": "Chemin historique abrégé dans tableau seulement ; expansion complète exigée. Refus/fuite et back-forward par renvoi NAV9.",
+      "source_contrat": "NAV9#/nav/3"
+    },
+    {
+      "id": "NAV-005",
+      "adr_lines": [
+        30,
+        97
+      ],
+      "avis": "Présent documentairement par contenu et renvois ; non exécuté",
+      "portee": "Quatre domaines et deux valeurs planche en dessin ; référence contrat A4.",
+      "limite": "Indépendance éditable 2D/3D et pas de coupe/visionneuse substituée portés par contrat NAV et NAV005, non prouvés par query.",
+      "source_contrat": "NAV9#/nav/4"
+    },
+    {
+      "id": "NAV-006",
+      "adr_lines": [
+        34,
+        40,
+        45,
+        98
+      ],
+      "avis": "Présent documentairement par contenu et renvois ; non exécuté",
+      "portee": "Studio seul actif et contexte bandeau explicite ; façade serveur conservée.",
+      "limite": "Réponses tardives/cache et P/S/V/R exacts restent oracles non exécutés.",
+      "source_contrat": "NAV9#/nav/5"
+    },
+    {
+      "id": "NAV-007",
+      "adr_lines": [
+        14,
+        99
+      ],
+      "avis": "Présent documentairement par contenu et renvois ; non exécuté",
+      "portee": "Protection des gestes et contrat pending repris par référence.",
+      "limite": "Local durable/pending/confirmé, conflit, changement langue et révocation ne doivent pas être réduits à simple confirmation quitter.",
+      "source_contrat": "NAV9#/nav/6"
+    },
+    {
+      "id": "NAV-008",
+      "adr_lines": [
+        36,
+        69,
+        100
+      ],
+      "avis": "Présent documentairement par contenu et renvois ; non exécuté",
+      "portee": "Erreur récupérable, entrée/sortie plein écran explicites et absence réutilisation drapeau Atelier.",
+      "limite": "API refusée, focus, bouton mobile visible, retry/worker/pending par NAV9 ; PR142 non revalidée en réseau.",
+      "source_contrat": "NAV9#/nav/7"
+    },
+    {
+      "id": "NAV-009",
+      "adr_lines": [
+        70,
+        78,
+        101
+      ],
+      "avis": "Présent documentairement par contenu et renvois ; non exécuté",
+      "portee": "FR/EN et coexistence accès historiques ; NAV009 et recettes existantes cités.",
+      "limite": "14 accès ne résument pas 21 étapes/menus/clavier/FR-EN ; aucune recette historique ne vaut résultat courant.",
+      "source_contrat": "NAV9#/nav/8"
+    }
+  ],
+  "revue_etats": {
+    "present_direct": [
+      "Aucun contexte/création implicite (24,26)",
+      "URL inconnue/refus neutre (30,35)",
+      "Historique immuable (28)",
+      "Chargement erreur récupérable (36)",
+      "Permissions distinctes et contrôle serveur (52–56)",
+      "Plein écran explicite (69)"
+    ],
+    "present_par_renvoi": [
+      "Sélection explicite domaine/planche sans création",
+      "Contexte loading/fraîcheur et réponse tardive",
+      "Lecture seule/verrou/refus",
+      "Preview/local durable/pending/central confirmé",
+      "Sauvegarde indéterminée/conflit/reprise/auth expirée",
+      "Retour clavier/focus, mobile/rotation, langue FR-EN sans perdre file"
+    ],
+    "source": "CONTRAT_NAV §§états/transitions ; NAV9 NAV003..009 ; NAV_DELTA ; M21 activation/permissions/chargement. Aucun état constaté en UI."
+  },
+  "reserves": [
+    {
+      "id": "UX-ADR-R1",
+      "lines": [
+        63,
+        66,
+        130
+      ],
+      "niveau": "Clarification avant arbitrage, non bloquante pour obligation de proposer",
+      "constat": "E-B(c) « raccourci projet » est ambigu face autonomie D07/§Contexte ; option C finale signifie reporter mécanisme, ce n’est pas identique à E-B(c).",
+      "attendu": "Distinguer option de lien global vers /studio d’un raccourci Atelier/projet ; exclure toute dépendance à ProjectShell/étape ou création implicite. Ne pas rouvrir D07."
+    },
+    {
+      "id": "UX-ADR-R2",
+      "lines": [
+        68,
+        138
+      ],
+      "niveau": "Extension candidate à expliciter",
+      "constat": "Règle Planche icône/barre/raccourci appliquée à toute commande Studio : portée plus large que règle historique Planche. « Aucune règle sans source » est trop absolu pour cette extension.",
+      "attendu": "Traiter extension UX comme proposition à arbitrer ; distinguer navigation globale, outils géométriques et actions métier approbation/publication. Ne pas imposer raccourci global conflictuel à chaque action."
+    },
+    {
+      "id": "UX-ADR-R3",
+      "lines": [
+        58,
+        79,
+        80,
+        81,
+        128
+      ],
+      "niveau": "Réserves architecture existantes préservées, pas de nouveau choix UX",
+      "constat": "Service commun n’implique pas client unique ; readOnly UI ne prouve pas refus serveur ; aucune synchronisation dans deux sens est plus large que interdiction de bases concurrentes.",
+      "attendu": "Maintenir R-AUTORITE/R-REFUS-SERVEUR/R-TRANSFERT de COEX_RESERVES et questions déjà publiées. Option A « telle quelle » n’est pas une ratification préalable."
+    },
+    {
+      "id": "UX-ADR-R4",
+      "lines": [
+        30,
+        62,
+        69,
+        70,
+        89,
+        99,
+        101
+      ],
+      "niveau": "Complétude par renvoi, pas preuve autonome",
+      "constat": "Mobile/clavier/FR-EN/focus, quatre domaines/deux planches indépendantes et états détaillés ne sont pas tous réécrits ; références NAV9/contrat/delta les portent.",
+      "attendu": "Conserver les renvois complets lors intégration ; ne pas réduire NAV005 à deux paramètres ou NAV009 à 14 accès. Aucun besoin de dupliquer les pages NAV."
+    },
+    {
+      "id": "UX-ADR-R5",
+      "lines": [
+        16,
+        69,
+        150
+      ],
+      "niveau": "Portée des constats historiques",
+      "constat": "« rien de Studio n’existe » doit se lire comme absence intégration applicative observée au SHA817, pas absence de contrats/documentation. PR142 ouverte est un constat de source, pas vérification GitHub actuelle par A4.",
+      "attendu": "Conserver SHA/code séparé et vérifier PR142 sur sa tête au moment de réconciliation ; ne pas annoncer CI verte ni absence globale de capacités réutilisables."
+    }
+  ],
+  "decision_D07": "Actée pour spécifications seulement ; après Projets, autonomie, quatre domaines/deux planches, permissions distinctes et plein écran explicite conservés. Mécanismes proposés ne rouvrent pas ces principes.",
+  "next_trigger": "A0 réconcilie avec revue A2, versement documentaire et réponse Claude ciblée aux ambiguïtés ; ADR03 reste une décision distincte, conditions physiques et gates non closes. Aucun nouvel ADR concurrent.",
+  "limites": [
+    "Lecture git show du commit publié et sources immuables ; aucun app/test/browser/API/DB/service/réseau exécuté.",
+    "Les citations de code REP dans ADR ne sont pas une nouvelle qualification de tout le code par A4.",
+    "Aucune modification des docs Claude, contrat NAV, registre630, workflow ou application.",
+    "Avis indépendant documentaire, pas adoption, autorisation de code, fusion ou mise en production."
+  ]
+}

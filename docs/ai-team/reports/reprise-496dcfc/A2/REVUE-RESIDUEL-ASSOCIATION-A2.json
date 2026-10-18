@@ -1,0 +1,387 @@
+{
+  "objet": "Revue indépendante A2 finale de préparation association/historique A3 seulement",
+  "inputs": [
+    {
+      "path": "/workspace/work/resume496/agents/A3/RESIDUEL-ASSOCIATION-HISTORIQUE-A3.json",
+      "sha256": "c44c067f379edc1063320cab66246c3bfee49de93ec9eb915a19963960af662e"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A3/RESIDUEL-ASSOCIATION-HISTORIQUE-A3.md",
+      "sha256": "7e35475be922ef342823c5c816d46f33f0d5500e0b475ef57bf32509dec94d52"
+    }
+  ],
+  "reference_documents_commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+  "controle": {
+    "exactement4IDs": [
+      "A.4-03",
+      "A.4-04",
+      "A.4-07",
+      "A.5-09"
+    ],
+    "sous_cas20": 20,
+    "sources10": 10,
+    "citations46": 46,
+    "empreintes_sources_et_citations_ecarts": [],
+    "deux_entrees_scratch_A2_inchangees": true
+  },
+  "avis_par_theme": [
+    {
+      "theme": "Rejeu confirmé vs nouvelle demande sur base périmée",
+      "verdict": "Correctement séparés : ACK perdu restitue résultat durable historique et ne modifie pas têteR2 ; nouvelle identité avec baseR0 subit conflit/résolution autorisée, pas même traitement.",
+      "conditions": "Identité/portée/empreinte, autorisation actuelle et rétention du résultat restent préconditions ; aucun succès après expiration promis."
+    },
+    {
+      "theme": "Source/cible/suivi et références épinglées",
+      "verdict": "Copie indépendante garde nouvelles identités sans propagation ; associé et primitives sources distingués ; référence liée reste sur version épinglée jusqu’à acceptation explicite.",
+      "conditions": "DEC02 senspropagation/mapping/rupture/fractionnement ouverts ; ne pas inférer suivi depuis seule extrusion native."
+    },
+    {
+      "theme": "Hôtes/contraintes et refus atomiques",
+      "verdict": "Absence de cascade arbitraire, de rattachement par proximité ou de correction silencieuse ; cas invalides/refus et rupture à résoudre séparés selon contrat à retenir.",
+      "conditions": "Politiquehôte/suppression/IDs non adoptée ; les diagnostics de refus ne sont pas des commits métier."
+    },
+    {
+      "theme": "Historique, publication et droits",
+      "verdict": "Undo opération nouvelle revalidée ; historique immuable ; approbation/pub séparées ; droit révoqué ne rétroannule pas engagement durable mais peut interdire lecture actuelle.",
+      "conditions": "M24/M27 restent sources uniques ; aucun stockage, endpoint, rôleréel ou autorisation de restauration attribué."
+    },
+    {
+      "theme": "Preuve native et synthétique",
+      "verdict": "InventaireDEC18 5e0285 statique distingué des docs2076 ;36m³ et métrésRT bornés aux hypothèses ; testsprésents/492CLASSIF ne prouvent pas20casStudio.",
+      "conditions": "Moteur public exact, licence, version, corpus, contexte et durabilité restent à prouver sous mandat autorisé."
+    }
+  ],
+  "avis20souscas": [
+    {
+      "case_key": "A.4-03/edition-croisee",
+      "MD_line": 21,
+      "MD_heading_exact": "### A.4-03/edition-croisee — Éditer depuis 2D puis 3D sans deuxième mur",
+      "propriete_lue": "L’autorité associée porte le mur et ses relations ; les surfaces 2D/3D portent des projections et intentions de commande.",
+      "source_refs": [
+        "AC-001-wp419",
+        "EX-021-wp364",
+        "M17-autorite",
+        "M17-preconditions",
+        "TEST-003-catalogue",
+        "TEST-009-catalogue",
+        "TEST-010-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "Les valeurs RT sont un oracle synthétique limité, pas une règle générale de métrés. Les identités/transactions sont logiques ; aucun stockage, endpoint ou objectId physique choisi."
+    },
+    {
+      "case_key": "A.4-03/projections-fraicheur",
+      "MD_line": 37,
+      "MD_heading_exact": "### A.4-03/projections-fraicheur — Séparer source courante et projection ancienne",
+      "propriete_lue": "Le contenu associé est canonique ; projection, vue et cache sont reconstruisibles et portent leur sourceRevision.",
+      "source_refs": [
+        "AC-001-wp419",
+        "EX-021-wp364",
+        "M17-commit",
+        "TEST-003-catalogue",
+        "TEST-014-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "Aucun délai de rafraîchissement ou budget FPS fixé ; le cas ne prouve ni renderer ni worker réels."
+    },
+    {
+      "case_key": "A.4-03/historique-reouverture",
+      "MD_line": 53,
+      "MD_heading_exact": "### A.4-03/historique-reouverture — Undo/redo et réouverture retrouvent l’objet associé",
+      "propriete_lue": "Historique immuable et C-COMMAND : annuler est une nouvelle opération contrôlée, pas une mutation de R0.",
+      "source_refs": [
+        "AC-001-wp419",
+        "AC-003-wp560",
+        "IF-004-wp330",
+        "M17-commit",
+        "M17-snapshot",
+        "TEST-011-catalogue",
+        "TEST-012-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "Le mécanisme hybride et la persistance ne sont pas sélectionnés ici ; aucun appel DB, coupure ou restauration exécuté."
+    },
+    {
+      "case_key": "A.4-03/publication-historique",
+      "MD_line": 69,
+      "MD_heading_exact": "### A.4-03/publication-historique — La publication conserve la version examinée",
+      "propriete_lue": "L’approbation/publication vise un ensemble figé ; le travail associé courant peut évoluer sans réécrire les pièces historiques.",
+      "source_refs": [
+        "AC-001-wp419",
+        "IF-011-wp868",
+        "M17-snapshot",
+        "TEST-010-catalogue",
+        "TEST-018-catalogue",
+        "TEST-038-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "Critère final dépendant d’E/M24, pas précondition artificielle pour commencer la spécification A.4. Aucun dossier réellement publié."
+    },
+    {
+      "case_key": "A.4-04/deplacement",
+      "MD_line": 91,
+      "MD_heading_exact": "### A.4-04/deplacement — Déplacement avec hôte et contraintes valides",
+      "propriete_lue": "La commande associée possède ensemble canonique mur/ouverture/contraintes ; la projection n’actualise pas séparément un hostId.",
+      "source_refs": [
+        "AC-001-wp419",
+        "EX-017-wp331",
+        "M17-autorite",
+        "M17-preconditions",
+        "TEST-008-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "La politique de résolution n’est pas choisie ici ; ne pas considérer toute position hors hôte automatiquement réparable."
+    },
+    {
+      "case_key": "A.4-04/suppression-hote",
+      "MD_line": 107,
+      "MD_heading_exact": "### A.4-04/suppression-hote — Suppression de l’hôte sans perte cachée des enfants",
+      "propriete_lue": "L’identité et le cycle de vie de W, O et leurs relations appartiennent au contrat associé, pas à une règle de cascade déduite du moteur.",
+      "source_refs": [
+        "AC-001-wp419",
+        "EX-015-wp301",
+        "EX-017-wp331",
+        "M17-commit",
+        "TEST-007-catalogue",
+        "TEST-008-catalogue",
+        "TEST-011-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "Extension proposée des oracles de référence/hôte : le catalogue ne prescrit pas à lui seul une politique de cascade ou de tombstone. Aucun choix physique fait."
+    },
+    {
+      "case_key": "A.4-04/fractionnement",
+      "MD_line": 123,
+      "MD_heading_exact": "### A.4-04/fractionnement — Fractionner sans choisir une référence par proximité",
+      "propriete_lue": "La topologie exige une correspondance démontrée ou un état à résoudre ; la politique d’identité des nouvelles parties reste DEC02.",
+      "source_refs": [
+        "AC-001-wp419",
+        "EX-015-wp301",
+        "IF-004-wp330",
+        "M17-commit",
+        "TEST-007-catalogue",
+        "TEST-011-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "TEST007 concerne une face cotée ; son extension au fractionnement d’un hôte architectural est proposée et reste à revoir. AC001 ne décide pas quel ID survivra à une création de plusieurs objets."
+    },
+    {
+      "case_key": "A.4-04/reference-invalide",
+      "MD_line": 139,
+      "MD_heading_exact": "### A.4-04/reference-invalide — Référence invalide ou périmée ne devient pas relation valide",
+      "propriete_lue": "Préconditions d’objet/relation et parenté sont vérifiées par le writer ; les références inconnues restent explicites.",
+      "source_refs": [
+        "EX-015-wp301",
+        "IF-004-wp330",
+        "M17-preconditions",
+        "M17-erreurs-candidates",
+        "TEST-007-catalogue",
+        "TEST-012-catalogue",
+        "TEST-035-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "Les codes d’erreur de M17 sont candidats ; aucun mapping HTTP ni politique de réparation nouvelle n’est annoncé."
+    },
+    {
+      "case_key": "A.4-07/independant",
+      "MD_line": 161,
+      "MD_heading_exact": "### A.4-07/independant — Extrusion indépendante explicite et dessin toujours autonome",
+      "propriete_lue": "Le dessin 2D conserve sa propre autorité ; la création 3D indépendante a sa propre identité/provenance, sans propagation cachée.",
+      "source_refs": [
+        "EX-020-wp363",
+        "EX-023-wp414",
+        "CONTRAT-ASSOCIATION",
+        "M17-autorite",
+        "TEST-004-catalogue",
+        "TEST-005-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "36 m³ est une valeur analytique synthétique nouvelle, pas un résultat moteur obtenu ni une règle normative. Les primitives géométriques et leur adaptateur restent à qualifier."
+    },
+    {
+      "case_key": "A.4-07/suivi-explicite",
+      "MD_line": 177,
+      "MD_heading_exact": "### A.4-07/suivi-explicite — Suivi versionné du profil, distinct d’une extrusion réussie",
+      "propriete_lue": "Le lien et la règle de propagation sont explicites ; profil source, cible 3D et même objet architectural vu dans deux planches ne sont pas des identités interchangeables.",
+      "source_refs": [
+        "EX-020-wp363",
+        "EX-022-wp383",
+        "IF-004-wp330",
+        "M17-autorite",
+        "M17-commit",
+        "TEST-005-catalogue",
+        "TEST-006-catalogue",
+        "TEST-007-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "Ni conservation d’un maillage ni fonction d’extrusion native ne prouvent cette relation Studio. Politique de propagation/réparation toujours ouverte."
+    },
+    {
+      "case_key": "A.4-07/entrees-refusees",
+      "MD_line": 193,
+      "MD_heading_exact": "### A.4-07/entrees-refusees — Paramètres d’extrusion incomplets ou incompatibles",
+      "propriete_lue": "Le writer valide source/version, unités et repères avant effet ; aucun défaut de hauteur ou de direction inventé.",
+      "source_refs": [
+        "EX-020-wp363",
+        "EX-023-wp414",
+        "IF-004-wp330",
+        "M17-preconditions",
+        "M17-erreurs-candidates",
+        "TEST-005-catalogue",
+        "TEST-012-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "TEST005 prescrit hauteur/direction absente ou non finie ; autres variantes sont rattachements candidats issus EX023/M17, pas déjà démontrées."
+    },
+    {
+      "case_key": "A.4-07/preuve-native-vs-studio",
+      "MD_line": 209,
+      "MD_heading_exact": "### A.4-07/preuve-native-vs-studio — Séparer preuves du noyau et preuve du contrat Studio",
+      "propriete_lue": "Un export public et un test existant sont des candidats de réemploi ; ils ne deviennent ni autorité Studio ni preuve de suivi.",
+      "source_refs": [
+        "EX-020-wp363",
+        "EX-023-wp414",
+        "CONTRAT-ASSOCIATION",
+        "TEST-005-catalogue",
+        "TEST-006-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "L’inventaire DEC18 est statique et daté ; aucun nouvel import de moteur, relecture source applicative, benchmark ou opération d’extrusion exécutée."
+    },
+    {
+      "case_key": "A.5-09/ack-perdu",
+      "MD_line": 231,
+      "MD_heading_exact": "### A.5-09/ack-perdu — Accusé perdu : résultat indéterminé, pas seconde application",
+      "propriete_lue": "Le serveur conserve résultat durable/requestId dans son périmètre ; le client n’invente ni commit ni annulation.",
+      "source_refs": [
+        "M17-dedup",
+        "M23-ACK-perdu",
+        "M27-reprise-contexte",
+        "M27-resultats-avant-rejeu",
+        "M27-etats-reprise",
+        "TEST-013-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "Aucun paquet réseau envoyé, aucune panne simulée. Le stockage de résultats et sa rétention restent à choisir ; le cas ne garantit pas la disponibilité après expiration."
+    },
+    {
+      "case_key": "A.5-09/requestId-divergent",
+      "MD_line": 247,
+      "MD_heading_exact": "### A.5-09/requestId-divergent — Même identité de demande avec contenu divergent",
+      "propriete_lue": "Une identité de demande n’est réutilisable que pour la même intention sémantique dans la même portée autorisée.",
+      "source_refs": [
+        "M17-dedup",
+        "M17-erreurs-candidates",
+        "M27-resultats-avant-rejeu",
+        "TEST-013-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "La canonicalisation/empreinte physique n’est pas définie ici ; aucune règle arbitraire de hash remplace l’équivalence sémantique à ratifier."
+    },
+    {
+      "case_key": "A.5-09/autre-compte",
+      "MD_line": 263,
+      "MD_heading_exact": "### A.5-09/autre-compte — La file d’un autre compte/contexte n’est pas réadressée",
+      "propriete_lue": "Une intention conserve son propriétaire et son contexte complet ; authentification et parenté précèdent toute lecture ou mutation.",
+      "source_refs": [
+        "M17-preconditions",
+        "M27-reprise-contexte",
+        "NAV-contexte",
+        "NAV-reconnexion",
+        "TEST-035-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "Le stockage local et son chiffrement/isolement restent des choix ouverts ; le scénario documentaire ne prouve pas leur réalisation."
+    },
+    {
+      "case_key": "A.5-09/droit-revoque",
+      "MD_line": 279,
+      "MD_heading_exact": "### A.5-09/droit-revoque — Droit révoqué pendant interruption",
+      "propriete_lue": "Les droits effectifs sont révalidés serveur ; un bouton ou une permission mise en cache ne fait pas autorité.",
+      "source_refs": [
+        "M17-preconditions",
+        "M27-reprise-contexte",
+        "NAV-expiration",
+        "NAV-reconnexion",
+        "TEST-018-catalogue",
+        "TEST-035-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "TEST018 porte directement publication ; extension à l’édition/reprise est candidate via M17/NAV. Aucun rôle réel ni permission physique attribué."
+    },
+    {
+      "case_key": "A.5-09/nouvelle-demande-base-perimee",
+      "MD_line": 295,
+      "MD_heading_exact": "### A.5-09/nouvelle-demande-base-perimee — Nouvelle demande sur base ancienne, distincte d’un duplicata",
+      "propriete_lue": "Une nouvelle intention doit satisfaire baseRevision/versions d’objets et de relations ; l’historique est immuable.",
+      "source_refs": [
+        "IF-004-wp330",
+        "M17-commit",
+        "M17-erreurs-candidates",
+        "NAV-contexte",
+        "TEST-012-catalogue",
+        "TEST-011-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "La stratégie de fusion/rebase physique n’est pas choisie ; absence de conflit dans un exemple JSON ne la démontre pas."
+    },
+    {
+      "case_key": "A.5-09/contrat-queue-incompatible",
+      "MD_line": 311,
+      "MD_heading_exact": "### A.5-09/contrat-queue-incompatible — Queue ou document d’une version non supportée",
+      "propriete_lue": "Compatibilité du contrat/schema/lecteur est explicite ; une intention ancienne n’est pas rejouée avec des paramètres réinterprétés.",
+      "source_refs": [
+        "M17-enveloppe",
+        "M17-preconditions",
+        "M17-erreurs-candidates",
+        "M27-etats-reprise",
+        "TEST-013-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "Extension proposée au TEST013 ; formats et politique de compatibilité sont des choix M05/M17/DEC12, pas un nouveau schéma dans ce delta."
+    },
+    {
+      "case_key": "A.5-09/fermeture-annulation",
+      "MD_line": 327,
+      "MD_heading_exact": "### A.5-09/fermeture-annulation — Fermeture UI ou annulation après commit ne réécrit pas l’histoire",
+      "propriete_lue": "La navigation et l’annulation d’affichage ne commandent pas implicitement l’annulation métier ; une compensation est une nouvelle commande.",
+      "source_refs": [
+        "M23-compensation",
+        "M17-commit",
+        "M27-etats-reprise",
+        "NAV-pending",
+        "NAV-annulation-affichage",
+        "TEST-011-catalogue",
+        "TEST-014-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "Aucune fermeture forcée, worker ou interruption réseau exécuté. Les timeouts et stratégies d’arrêt ne sont pas fixés par ce document."
+    },
+    {
+      "case_key": "A.5-09/coupe-notification",
+      "MD_line": 343,
+      "MD_heading_exact": "### A.5-09/coupe-notification — Reprise incohérente ou notification dupliquée",
+      "propriete_lue": "Une coupe cohérente de documents/révisions/journal/request-results/outbox fait autorité ; la notification n’est pas un second engagement.",
+      "source_refs": [
+        "M17-snapshot",
+        "M27-coupe-coherente",
+        "M27-notifications",
+        "IF-011-wp868",
+        "TEST-013-catalogue",
+        "TEST-014-catalogue",
+        "TEST-038-catalogue"
+      ],
+      "verdict": "Cohérent comme scénario documentaire candidat ; aucun résultat exécuté ni choix physique déduit.",
+      "limite_preservee": "Extension candidate de ces oracles et de M23/M27 ; aucune restauration réelle ou transaction multi-autorité démontrée, mécanisme physique encore ouvert."
+    }
+  ],
+  "verdict": "Favorable à réception de la préparation documentaire des quatre IDs ; aucune réserve bloquante nouvelle détectée.",
+  "statuts": "Préparation à revue uniquement ; aucune conditionVérifié, acceptationmétier, coche ou gate modifié.",
+  "limites": [
+    "Aucun code/test/import moteur/harness/API/DB/réseau/service exécuté.",
+    "Comparaison des citations et empreintes documentaire uniquement ; pas nouvel audit des moteurs ou tests natifs.",
+    "Liens TEST et extensions candidates ne sont pas20tests ni preuve de couverture ; vingt clés de cas non normatives.",
+    "Choix physiques, DEC02/12/18, canonicalisation, rétention et versions finales restent ouverts.",
+    "A0 conserve propriétaireA2 et intègre seules preuves nouvelles après autresrevues ; aucune écriturecanonique par ce rapport."
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "document": "B.3-12 — protocole proposé du profil vingt outils",
+  "status": "Préparation documentaire ; mesures non réalisées",
+  "profile": {
+    "required_tools": 20,
+    "selected_tools": null,
+    "selected_count": null,
+    "selection_owner": "A1/A4 avec revue A2/A5, pas une personne humaine inventée",
+    "manifest_version": null,
+    "manifest_sha256": null,
+    "selection_requirements": [
+      "20 toolId retenus distincts, contrats/modes/dépendances versionnés",
+      "scénario utilisateur et ordre découverte/activation explicites",
+      "ne pas multiplier les8exemples en20outils pour atteindre le compte"
+    ]
+  },
+  "preconditions": [
+    "Liste20 outils et versions approuvées",
+    "Banc/appareil/navigateur/build/SHA identifiés, corpus synthétique autorisé",
+    "Périmètre G2/G3/code/recette selon opération et permission distincte avant toute exécution",
+    "État initial caches/SW/IndexedDB isolé sur profil jetable ; jamais effacer données ou queues inconnues"
+  ],
+  "cache_arms": [
+    {
+      "arm": "froid",
+      "definition": "Profil navigateur jetable sans cache HTTP ni CacheStorage préparés pour ce build ; état SW et données locales déclarés. Création/vidage ultérieurs seulement sur cible autorisée."
+    },
+    {
+      "arm": "chaud",
+      "definition": "Même build/profil/corpus, après un parcours préparatoire exactement consigné ; versions/manifestes et caches réellement présents vérifiés. Ne pas supposer chaud parce qu’un bouton est masqué."
+    }
+  ],
+  "stages": [
+    "ouverture catalogue seul",
+    "ouverture de chaque planche concernée",
+    "activation explicite de chaque outil selon ordre défini",
+    "désactivation/activation partagée sans doubler noyau",
+    "réouverture même scénario avec mêmes données"
+  ],
+  "metrics": [
+    {
+      "name": "transfert",
+      "record": "encodedDataLength/octets réseau, octets décodés et origine cache séparés ; JS/WASM/assets par ressource et total, ne pas confondre tailles compressées/décompressées"
+    },
+    {
+      "name": "temps",
+      "record": "chargement, compilation/initialisation, worker/WASM, activation et disponibilité réelle séparés ; chronométrage navigateur défini avant mesure"
+    },
+    {
+      "name": "mémoire",
+      "record": "heap JS si disponible, mémoire WASM/worker identifiée, mesure globale navigateur seulement si API supportée ; unité/source/processus explicités, métriques non comparables non additionnées"
+    },
+    {
+      "name": "cache_et_stockage",
+      "record": "CacheStorage/SW/HTTP/IndexedDB par version, quantité et état ; aucune promesse offline par simple présence de métadonnées"
+    },
+    {
+      "name": "invariants",
+      "record": "mêmes identités/coordonnées/quantités/snapping/cotes/résultats dans tolérances du corpus ; erreurs et contenu manquant ne disparaissent pas dans une moyenne"
+    }
+  ],
+  "repetitions": {
+    "count_approved": null,
+    "warmup_policy": null,
+    "order_randomization": null,
+    "decision": "A5 fixe nombre, ordre et statistique avant exécution, selon appareil et risque ; aucune répétition réelle prétendue"
+  },
+  "raw_result_template": {
+    "sha": null,
+    "build": null,
+    "profile_manifest_hash": null,
+    "corpus_hash": null,
+    "device": null,
+    "os": null,
+    "browser_version": null,
+    "locale": null,
+    "cache_arm": null,
+    "iteration": null,
+    "transfers": null,
+    "timings": null,
+    "memory_supported": null,
+    "memory": null,
+    "geometry_oracles": null,
+    "errors_redacted": null
+  },
+  "comparison_rule": "Publier résultats bruts et distributions froid/chaud par phase à conditions égales ; documenter limites/support manquant et échecs individuels. Baseline et seuils doivent être ratifiés ; aucun gain arbitraire ou extrapolation mobile.",
+  "approved_thresholds": null,
+  "results": null,
+  "telemetry": "Aucune collecte envoyée ; pas de géométrie, noms/IDs privés, URL sensible ou secret dans rapport public.",
+  "source_reuse": [
+    {
+      "path": "docs/ai-team/reports/mission-004/A4/M21-CONTRAT-MINIMAL.md",
+      "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob_sha1": "c1b92a7d26705c89a2775e8d567244b7103ac8a6",
+      "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625",
+      "lines": [
+        53,
+        57
+      ],
+      "exact_excerpt": "### 5. Chargement et offline : contrat vérifiable futur\n\nCatalogue/profil léger au démarrage, ressources courantes à ouverture planche, noyau rare au premier usage. `resource` dans JSON est une classe descriptive et `loader=null` : aucun chemin/URL script exécutable. Un futur Registry validé doit employer loaders autorisés/littéraux et manifests versionnés revus A2/sécurité ; aucune URL libre importée d’un profil.\n\nMesurer transfert, initialisation, worker/WASM, mémoire froide/chaude et précache réel. Cacher un bouton ne prouve pas un chunk non téléchargé ; l’existence lazy ne prouve pas l’absence précache. Préparer profil offline par action explicite avec versions/dépendances/données/quota, vérifier cache compatible. Reconnexion revalide droits/contexte/version/commandes. SW incompatible ne vide pas file ; profils et géométrie restent séparés. Budgets et appareils attendent DEC-13, pas de seuil de performance inventé."
+    },
+    {
+      "path": "docs/ai-team/reports/mission-004/A4/M21-CONTRAT-MINIMAL.md",
+      "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob_sha1": "c1b92a7d26705c89a2775e8d567244b7103ac8a6",
+      "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625",
+      "lines": [
+        65,
+        75
+      ],
+      "exact_excerpt": "### 7. Télémétrie minimale sans contenu métier — proposition non instrumentée\n\nÉvénements candidats : discovery/activation/load/retry/failure/deactivation, resource_class, durée en intervalle agrégé, outcome_code stable, mode et build/contract_version. Aucun nom/ID privé de projet/étude/variante/document, géométrie, coordonnées, texte saisi, chemin/URL complète, email, token ou contenu de source. Identifiants de corrélation éphémères seulement si nécessité et politique de confidentialité démontrées ; la liste JSON n’en prévoit aucun par défaut.\n\nJournal métier et télémétrie sont séparés : l’audit autoritaire peut avoir IDs nécessaires à la traçabilité selon droits/rétention approuvés ; ils ne sont pas copiés dans métriques publiques. Quotas/rétention/destination/consentement/échantillonnage et accès restent à décider (EX-095), aucune collecte envoyée par ce document. Ne pas logger une exception brute contenant URL/paramètres ; classifier l’erreur et expurger avant stockage.\n\n### 8. Vérifications et limites\n\n`verify-m21-documentary.py` : Pythonstandard, lit uniquement catalogueJSON local, vérifie huit IDs uniques/icônes, quatre domaines, compatibilité des modes/planches/autorités, permissionsdistinctes, aliases scopés/deux sens échelle, absence loader/implémentation, ressources référencées, touches distinctes dans les contextes d’exemples et trois validations indépendantes. **Exécuté réellement sans réseau/DB/application**, résultat M21-VERIFICATION-JSON.json PASS documentaire. Ne vérifie pas collision OS/accessibilité/performance, licence, pertinence métier exhaustive ou implémentation.\n\nScénarios futurs : TEST-016 ressources réelles,017 recherche,018 profilPublier sans droit,019 profil sans effet géométrie/droits,020offline,021reconnexion,036SW ; NAV001/004/007/008/009. Cas propres : alias ambigu refuse, activationdouble mutualisée, permissionretirée, authA→B, résultat ancien, échec initialisation, aucun contenu métier en télémétrie. Validation de ces scénarios nécessite capacités et autorisations/cible sûre ; ils restent prescrits, non exécutés ici."
+    }
+  ]
+}

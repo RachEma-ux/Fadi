@@ -1,0 +1,1347 @@
+{
+  "objet": "Parcours readiness31 missions, proposition A1 pour arbitrage A0",
+  "source_missions_sha256": "5c9bd2d9ba8a3d209ba7ac2bbeeac6810e0a1f28c05820741f10292dbf2cfcfe",
+  "reference_documentaire_locale": "77e4644c81d227a2960883f92d160a84cbf7794c",
+  "lecture": "missions.json + TASKS/HANDOFF ai-team et studio ; réemploi des preuves liées et inventaire reprise496, sans réaudit ni appel GitHub. Existence/hash fichier atteste provenance seulement, jamais complétude.",
+  "reserves_fraicheur": [
+    "Suites source M08 009–015 et M24 finaliserIF009 périmées face aux remises ; M01 runtime40 face HANDOFF43. Conserver snapshots et actualiser prochain checkpoint A0, sans réauditer.",
+    "Comptes87/125 revues dans HANDOFF sont snapshot, pas compte final actuel ; A0 recalcule après cohortes stabilisées.",
+    "G0 accepté cadrage documentaire seulement ; décisions physiques/G1–G4/codeStudio non ratifiés. CADDEC03 humain ouvert."
+  ],
+  "missions": [
+    {
+      "mission": "M00",
+      "titre": "Coordination et registre complet",
+      "proprietaire": "A0",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "READY",
+      "action_bornee": "Consolider uniquement les nouvelles revues M08 et mettre à jour la file de session après remise stabilisée.",
+      "preparation_existante_a_ne_pas_doubler": "Coordination réelle des sept rôles ; reprise496, décisions reçues, PR171 pure vérifiée et nouvelles cohortes M08 consolidées.",
+      "dependance_locale": {
+        "responsable": "A0",
+        "cause_et_deblocage": "A0: octets agents stabilisés ; pas de mission entière à clôturer.",
+        "essais_ou_preparations_deja_constates": "Coordination des sept rôles réellement exécutée ; code DB et preuves documentaires consolidés, aucun programme clos.",
+        "prochaine_action": "Consolider uniquement les nouvelles revues M08 et mettre à jour la file de session après remise stabilisée."
+      },
+      "dependencies_source": [],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/README.md",
+          "exists": true,
+          "sha256": "78d04ea9986c20c655444675620b317290d54101cf41f17034f9d4e9d05fd0fe"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/README.md",
+          "exists": true,
+          "sha256": "a635eea2a4c3de2cf5c3ce3ff0e1f107e22ea15d15550e7bc3e90a67a9c6d375"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M01",
+      "titre": "Cloud, SHA et démarrage reproductible",
+      "proprietaire": "A6",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "ATTENTE_LOCALE",
+      "action_bornee": "Réutiliser dossier identité/cible/commande existant ; relever seulement une nouvelle preuve de publication Cloud si fournie.",
+      "preparation_existante_a_ne_pas_doubler": "Runtime40 courant/running observé par A6 après32 ; santé application non démontrée, aucune reprise de service.",
+      "dependance_locale": {
+        "responsable": "A6",
+        "cause_et_deblocage": "Responsable environnement : identité cible et autorisation de reprise de service nécessaires ; running ne prouve pas santé.",
+        "essais_ou_preparations_deja_constates": "Runtime40 courant/running observé par A6 après32 ; santé application non démontrée, aucune reprise de service.",
+        "prochaine_action": "Réutiliser dossier identité/cible/commande existant ; relever seulement une nouvelle preuve de publication Cloud si fournie."
+      },
+      "dependencies_source": [
+        "M00:référence et autorisations"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A6/RAPPORT-A6-M01-M03-M04-M10.md",
+          "exists": true,
+          "sha256": "bc323c573abcdd52157b6a91c81ac2da377bd68664daf0ed98e3f4295ec0c869"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M02",
+      "titre": "Sécurisation des bases de tests",
+      "proprietaire": "A5",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "ATTENTE_LOCALE",
+      "action_bornee": "Réutiliser conditions DB3 et garde DB1/2 ; préparer réception de la cible seulement lorsqu’elle est identifiée.",
+      "preparation_existante_a_ne_pas_doubler": "DB-1/2 implémenté et vérifié uniquement en simulation : PR169/a15d650,129tests/types/build/CI pure réussis ; DB3 non réalisé.",
+      "dependance_locale": {
+        "responsable": "A5",
+        "cause_et_deblocage": "A0/responsable : cible explicitement jetable + accord DB3 ; aucune connexion/provision/migration.",
+        "essais_ou_preparations_deja_constates": "DB-1/2 implémenté et vérifié uniquement en simulation : PR169/a15d650,129tests/types/build/CI pure réussis ; DB3 non réalisé.",
+        "prochaine_action": "Réutiliser conditions DB3 et garde DB1/2 ; préparer réception de la cible seulement lorsqu’elle est identifiée."
+      },
+      "dependencies_source": [
+        "M01:cible jetable identifiée avant essais",
+        "M00:autorisation du correctif avant code"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A5/A5-M02-M09-M15-M26.md",
+          "exists": true,
+          "sha256": "f3752a870e3c22432e8e194823e2d72a9d5605b0324343eb12ccb26316a6326e"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A3/RAPPORT-A3-DB-1-2.md",
+          "exists": true,
+          "sha256": "6b1179a0b6903651a49b3db8df6d6401cf83df55f6deabc6fb213cf4083c22e7"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A2/DB12-FINAL-STATIC-REVIEW.md",
+          "exists": true,
+          "sha256": "5ed10fc9fe9aef238c578fefdd2813bd974b41fde3a9f65e740e3a9da726afac"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A5/DB12-PREUVES-A5.json",
+          "exists": true,
+          "sha256": "03277c448dc1ed7891853a4c36a3009ff9f82becfafaaed6083bb59a47584a4c"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A5/DB3-CONDITIONS-DE-RECEPTION.md",
+          "exists": true,
+          "sha256": "fa74b659a0ffbb832094439c3a16465ca51f82294e3289f25acff5506f6a493c"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A6/CI-169-observation.json",
+          "exists": true,
+          "sha256": "268fa7267ce10f51c3685f15d05637a644bc56781405fa098f95af7399bcf15e"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M03",
+      "titre": "Protections administratives de main",
+      "proprietaire": "A6",
+      "statut_mission_source": "Bloqué",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "ATTENTE_LOCALE",
+      "action_bornee": "Soumettre configuration administrative existante avec noms de checks au SHA cible, sans la réécrire.",
+      "preparation_existante_a_ne_pas_doubler": "Profil solo D05 retenu pour conception et document canonique enrichi ; main protected=false ; activation non autorisée.",
+      "dependance_locale": {
+        "responsable": "A6",
+        "cause_et_deblocage": "Responsable dépôt : activation administrative distincte ; D05 ne vaut pas activation.",
+        "essais_ou_preparations_deja_constates": "Profil solo D05 retenu pour conception et document canonique enrichi ; main protected=false ; activation non autorisée.",
+        "prochaine_action": "Soumettre configuration administrative existante avec noms de checks au SHA cible, sans la réécrire."
+      },
+      "dependencies_source": [
+        "M00:référence GitHub",
+        "M04:noms réels des checks avant activation"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A6/RAPPORT-A6-M01-M03-M04-M10.md",
+          "exists": true,
+          "sha256": "bc323c573abcdd52157b6a91c81ac2da377bd68664daf0ed98e3f4295ec0c869"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A6/M03-M04-PROFIL-SOLO-VERSIONS.md",
+          "exists": true,
+          "sha256": "4b7cc06bcb226f16040ef7e5713c6d21939514fe36d210f61b4d53a5d2b6bef9"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M04",
+      "titre": "CI, reproductibilité et preuves courantes",
+      "proprietaire": "A5",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "READY_CONDITIONNEL",
+      "action_bornee": "Consigner conclusion et skips du prochain SHA documentaire publié, sans transfert du run b102360.",
+      "preparation_existante_a_ne_pas_doubler": "CI documentaire pure implémentée sous6250109536,11contextes/6diffs/5basesinvalides validés localement ; anciensjobs inchangés horsconditionciblée.",
+      "dependance_locale": {
+        "responsable": "A5",
+        "cause_et_deblocage": "A0 publication d’un nouveau SHA ; A6 lecture CI ensuite, aucune relance de suite applicative requise.",
+        "essais_ou_preparations_deja_constates": "CI169 pure réussie au SHA a15d650, jobsDB skipped ; échec CI154 historique conservé ; versions Node/Chromium qualifiées.",
+        "prochaine_action": "Consigner conclusion et skips du prochain SHA documentaire publié, sans transfert du run b102360."
+      },
+      "dependencies_source": [
+        "M01:environnement",
+        "M02:protection prouvée avant essais en base"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A6/RAPPORT-A6-M01-M03-M04-M10.md",
+          "exists": true,
+          "sha256": "bc323c573abcdd52157b6a91c81ac2da377bd68664daf0ed98e3f4295ec0c869"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-003/A6/CI-PR154-76e43d1.md",
+          "exists": true,
+          "sha256": "f2839d9947a1258b37fa92f6fae85ecb7e08dd85fb621a757246581f35abd604"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-003/A5/CI154-NON-REGRESSION.md",
+          "exists": true,
+          "sha256": "3430d3f4ce2b11b2dda6a7bcfb0b9a9b22f93abfc45847d84e6ee53fac18f4c1"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A6/CI-169-observation.json",
+          "exists": true,
+          "sha256": "268fa7267ce10f51c3685f15d05637a644bc56781405fa098f95af7399bcf15e"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A6/M03-M04-preuves.json",
+          "exists": true,
+          "sha256": "dcecacf94e7ed419c3b77483c46b99699316830001791cc8fbe72f6d4d9c6f72"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A6/CI-DOC-CONTEXT-PROOFS.json",
+          "exists": true,
+          "sha256": "8caf9417fd9521b367e218605d2a6ee38fe8148268a5735f5365fd192688443f"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/CI-REVUE-A0.json",
+          "exists": true,
+          "sha256": "17770e5019a6d16210c63d13bbfb305c29aa2a8809941e6ed9d2b9979e28e68f"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/README.md",
+          "exists": true,
+          "sha256": "a635eea2a4c3de2cf5c3ce3ff0e1f107e22ea15d15550e7bc3e90a67a9c6d375"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M05",
+      "titre": "Contrats Atelier et compatibilité",
+      "proprietaire": "A2",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "READY",
+      "action_bornee": "Extraire du contrat durable les seuls choix de compatibilité encore à arbitrer pour I/A.1, sans nouvelle API.",
+      "preparation_existante_a_ne_pas_doubler": "Contrats DB revus ; matrice manifeste2/commandes3/modèle1/archive1/lecteur publication documentée sans modification applicative.",
+      "dependance_locale": {
+        "responsable": "A2",
+        "cause_et_deblocage": "A2 fournit conditions/version/lecteur ; code seulement après accord sous-lot.",
+        "essais_ou_preparations_deja_constates": "Contrats DB revus ; matrice manifeste2/commandes3/modèle1/archive1/lecteur publication documentée sans modification applicative.",
+        "prochaine_action": "Extraire du contrat durable les seuls choix de compatibilité encore à arbitrer pour I/A.1, sans nouvelle API."
+      },
+      "dependencies_source": [
+        "M00:SHA et périmètre"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/M05-M07-M08-CONTRATS.md",
+          "exists": true,
+          "sha256": "925af4ac2c735fc3eaecb639e61e0bf18d2c451f86c848cdc0f439845cf7e35e"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/CI154-SNAPSHOT-CONTRAT.md",
+          "exists": true,
+          "sha256": "f04310a4d5cae1df6cc4629e82602cf35fe945b502585cbfa2bbef5f430d6b80"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M06",
+      "titre": "Documents, statuts et relais cohérents",
+      "proprietaire": "A0",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "READY",
+      "action_bornee": "Rapprocher les suites périmées M08/M24/M01 des remises nouvelles dans une liste de deltas pour A0.",
+      "preparation_existante_a_ne_pas_doubler": "D01–D07 relus comme décisions déléguées dans leur portée ; dernières instructions et checkpoints intégrés sans effacer historique.",
+      "dependance_locale": {
+        "responsable": "A0",
+        "cause_et_deblocage": "A0 seul modifie documents partagés ; ne pas effacer historique.",
+        "essais_ou_preparations_deja_constates": "D01–D07 relus comme décisions déléguées dans leur portée ; dernières instructions et checkpoints intégrés sans effacer historique.",
+        "prochaine_action": "Rapprocher les suites périmées M08/M24/M01 des remises nouvelles dans une liste de deltas pour A0."
+      },
+      "dependencies_source": [
+        "M00:états GitHub",
+        "M05:version contractuelle pour les textes concernés"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/M06-DOCUMENTATION.md",
+          "exists": true,
+          "sha256": "c559f1fd24a5162fc184228b4b352c339ecd9ef6b7d4b38f4cce370a5feaaa31"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M07",
+      "titre": "Frontières et dépendances natives",
+      "proprietaire": "A2",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "READY_CONDITIONNEL",
+      "action_bornee": "Relire uniquement delta de revue DEC18/contrat public et exceptions déjà inventoriées.",
+      "preparation_existante_a_ne_pas_doubler": "25 arêtes existantes réutilisées ; proposition de façades publiques et autorités uniques documentée, pas garde applicative supplémentaire.",
+      "dependance_locale": {
+        "responsable": "A2",
+        "cause_et_deblocage": "Revue A6 disponible ; aucune nouvelle cartographie25arêtes ni garde dupliquée.",
+        "essais_ou_preparations_deja_constates": "25 arêtes existantes réutilisées ; proposition de façades publiques et autorités uniques documentée, pas garde applicative supplémentaire.",
+        "prochaine_action": "Relire uniquement delta de revue DEC18/contrat public et exceptions déjà inventoriées."
+      },
+      "dependencies_source": [
+        "M00:relecture PR 152 avant modification"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/M05-M07-M08-CONTRATS.md",
+          "exists": true,
+          "sha256": "925af4ac2c735fc3eaecb639e61e0bf18d2c451f86c848cdc0f439845cf7e35e"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M08",
+      "titre": "Isolation technique et documentaire",
+      "proprietaire": "A2",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "READY",
+      "action_bornee": "Consolider les revues finales et réserves par attendu ; dédupliquer049/050, garantir attribution exacte des corrections.",
+      "preparation_existante_a_ne_pas_doubler": "125/125 analyses avec8 historiques ;87 revues avec historiques à cet instant, 0 analyses restantes ; revues restantes READY. Aucun oracle complet ou scénario runtime validé.",
+      "dependance_locale": {
+        "responsable": "A2",
+        "cause_et_deblocage": "A1/A3/A5/A2 : stabilisation des réponses ; aucune nouvelle analyse125 ni test.",
+        "essais_ou_preparations_deja_constates": "125 occurrences/69fiches/33chemins rapprochés ;185 relations candidates et305 citations exactes contrôlées, sans équivalence d’oracles.",
+        "prochaine_action": "Consolider les revues finales et réserves par attendu ; dédupliquer049/050, garantir attribution exacte des corrections."
+      },
+      "dependencies_source": [
+        "M00:inventaire et décision de conservation"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/isolation-nominal-review.json",
+          "exists": true,
+          "sha256": "fb503a137b4a88cdef9eeb86c8c2cba1ca5861b4abec75f150dbe6379d9ba1d9"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/isolation-extra-docs-review.json",
+          "exists": true,
+          "sha256": "e89af23b6ae578cd9b2b666187aea330cdea8ba4d63de4390a043dbca632af87"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/isolation-code-review.json",
+          "exists": true,
+          "sha256": "155d8d16d8be4319dec19651a3118fa0c75afcc70365f0173fe4f2624c4766aa"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/isolation-fiches-review.json",
+          "exists": true,
+          "sha256": "2375231769f967cc7de658617534332efca78cef4e64d70aba6b9a0a62f30607"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/isolation-nominal-supplement.json",
+          "exists": true,
+          "sha256": "e9ad75d2c17e9f1ac41bf7c4137dad2b9b4755956f36ee1dc44d54004d79ca07"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A2/M08-125-PATH-MAPPING.json",
+          "exists": true,
+          "sha256": "d8879b4ce71b82ea38352a61d7d2ae025350d8e65ef1b345241f85aa5e159348"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A5/M08-REVUE-ORACLES-A5.json",
+          "exists": true,
+          "sha256": "f040a703e8dede461638bd9470d54bca4d9f60ca3f98b8a8f08db3e65e0ae6c4"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/validation-M08-A0.json",
+          "exists": true,
+          "sha256": "ad8e53fe21b4bced77493501a9a9b2c5ad0d682ae9e79069ba9da9c5697635c1"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A2/M08-8-ORACLES-COMPARAISON.json",
+          "exists": true,
+          "sha256": "15f05e6719f99cf36a79375c43e818e266a52c8bca9ae6d10a77ca1bcc410c65"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A5/M08-8-REVUE-INDEPENDANTE-A5.json",
+          "exists": true,
+          "sha256": "add81a162b100d92d87d70b1a6068decd9ce650b062aab6a3885432d1a0235cd"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A2/M08-CLASSIFICATION-CONFLIT-STATIQUE.md",
+          "exists": true,
+          "sha256": "bda95812b87a7bad15df79063770dfb0509eebc14f70ba4f2ed57715ce663100"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A2/M08-PATH-001-007-COMPARAISON.json",
+          "exists": true,
+          "sha256": "7374fb3b4ff38899f4690971333ed1598920502af3fc387a41e4c29765598902"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A5/M08-001-007-CONFRONTATION-A2-A5.json",
+          "exists": true,
+          "sha256": "1942e09f76e023e0898522142c48286dc10acf02d58c1e690f988d587440d5d7"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/README.md",
+          "exists": true,
+          "sha256": "a635eea2a4c3de2cf5c3ce3ff0e1f107e22ea15d15550e7bc3e90a67a9c6d375"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M09",
+      "titre": "CSP et vulnérabilités des dépendances",
+      "proprietaire": "A5",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "READY",
+      "action_bornee": "Rapprocher corpus CSP/KML A4 et état d’observabilité A6 ; lister origines approuvées absentes et refus de lecture, sans scanner.",
+      "preparation_existante_a_ne_pas_doubler": "État GitHub partiellement observable : aucun scanner dédié identifié dans5 workflowsmain ; endpoints alertes refusés connecteur400, comptes inconnus. Aucun scan lancé.",
+      "dependance_locale": {
+        "responsable": "A5",
+        "cause_et_deblocage": "Responsable fournit droits de lecture/origines approuvées ; pas contourner400 ni traiter inconnu comme zéro.",
+        "essais_ou_preparations_deja_constates": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+        "prochaine_action": "Rapprocher corpus CSP/KML A4 et état d’observabilité A6 ; lister origines approuvées absentes et refus de lecture, sans scanner."
+      },
+      "dependencies_source": [
+        "M01:environnement pour essais",
+        "M02:garde avant tests avec données"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A5/A5-M02-M09-M15-M26.md",
+          "exists": true,
+          "sha256": "f3752a870e3c22432e8e194823e2d72a9d5605b0324343eb12ccb26316a6326e"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A5/M09-LOT-A3-CSP-SCAN-PRET-A-AUTORISER.md",
+          "exists": true,
+          "sha256": "ef5c0cb3cc46e92617152db305083ab821435ec2561d593f0e10aa29f84f2c76"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A5/M09-INVENTAIRE-POINTS.json",
+          "exists": true,
+          "sha256": "8b3bb9f5fa492fb010a90b70117b05a95787b554a775c137b7c5c6f7ab2d441e"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A5/M09-WORKFLOW-PUR-PROPOSE.md",
+          "exists": true,
+          "sha256": "97d3d667921b035eee226b2d585d243e54b27c2843ee7955d31c8515b8d27eff"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A4/CSP-KML-DELTA-DECISION.md",
+          "exists": true,
+          "sha256": "2f32c0673d1ff490b09724f6996205656c2bfeca27a6352677471ee3f0fb5de9"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/README.md",
+          "exists": true,
+          "sha256": "a635eea2a4c3de2cf5c3ce3ff0e1f107e22ea15d15550e7bc3e90a67a9c6d375"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M10",
+      "titre": "Jalons Fadi production et sauvegardes",
+      "proprietaire": "A6",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "ATTENTE_LOCALE",
+      "action_bornee": "Réutiliser preuves du jalon149 et sauvegarde déjà relues ; documenter seulement nouvelle pièce réellement reçue.",
+      "preparation_existante_a_ne_pas_doubler": "Preuves #149 et sauvegarde d2107ead relues ; aucun nouveau déploiement ni restauration.",
+      "dependance_locale": {
+        "responsable": "A6",
+        "cause_et_deblocage": "Responsable exploitation : preuve manquante spécifique/accord restauration ; aucun nouveau déploiement.",
+        "essais_ou_preparations_deja_constates": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+        "prochaine_action": "Réutiliser preuves du jalon149 et sauvegarde déjà relues ; documenter seulement nouvelle pièce réellement reçue."
+      },
+      "dependencies_source": [
+        "M08:preuves applicables de décontamination",
+        "M04:preuves du candidat avant déploiement"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A6/RAPPORT-A6-M01-M03-M04-M10.md",
+          "exists": true,
+          "sha256": "bc323c573abcdd52157b6a91c81ac2da377bd68664daf0ed98e3f4295ec0c869"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M11",
+      "titre": "Studio sources, périmètre et G0",
+      "proprietaire": "A1",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "PREPARATION_EXISTANTE",
+      "action_bornee": "Ne pas refaire G0 : acte6250109830 et delta4 existent ; conserver CADDEC03 personnes inconnues.",
+      "preparation_existante_a_ne_pas_doubler": "G0 accepté cadrage documentaire par6250109830 surdossier7b0cca4 ;4IDs bornés revusA4/intégrés, personnesCADDEC03 et toutesinconnuesaval maintenues.",
+      "dependance_locale": {
+        "responsable": "A1",
+        "cause_et_deblocage": "Responsable fournit noms/disponibilités humains, sans reposer D01/02/07.",
+        "essais_ou_preparations_deja_constates": "D01/D02 retenus ; dossierG0 finalisé et revu A2/A4/A5 ; conditions documentaires par ID vérifiées, pas gate passée.",
+        "prochaine_action": "Ne pas refaire G0 : acte6250109830 et delta4 existent ; conserver CADDEC03 personnes inconnues."
+      },
+      "dependencies_source": [
+        "M00:références identifiées"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
+          "exists": true,
+          "sha256": "6b781c5e2b8e41a874fce28e98b11033cddd7b4e53a3324b479616dede54fba5"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+          "exists": true,
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A2/G0-REVUE-A2.json",
+          "exists": true,
+          "sha256": "f2fcf0f7324671b0c127e5592d1feba68ca79f87c313df4ab2a7186c0ad33b7a"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A4/REVUE-G0-A1.json",
+          "exists": true,
+          "sha256": "e590e12a3f84251d64d08593454198de7bff62484e556228bc4f05d29a3a1508"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A5/G0-REVUE-A5.json",
+          "exists": true,
+          "sha256": "566e38b1ff8f6580d714102bd8b8ff2095c6e8d0ee59ae6a3d1a025d6281381a"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+          "exists": true,
+          "sha256": "a5dec6aa0afbbe56f7f5bdebb9a3397b70a991bae352d4c93d6ef45d9719adba"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/A4/REVUE-G0-ACTE-DELTA4.json",
+          "exists": true,
+          "sha256": "21bfe3ad4acac34985dd2c88e672d35098fa704a3507fba167cde2015aaf44c7"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/README.md",
+          "exists": true,
+          "sha256": "a635eea2a4c3de2cf5c3ce3ff0e1f107e22ea15d15550e7bc3e90a67a9c6d375"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M12",
+      "titre": "Studio qualification des 141 fiches",
+      "proprietaire": "A1",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "READY_CONDITIONNEL",
+      "action_bornee": "Rattacher un delta de contrat validé à ses seules fiches141 affectées, en conservant texte exact et En cours.",
+      "preparation_existante_a_ne_pas_doubler": "141 fiches v2 enrichies après décisions, textes104EX/15INV/11IF/11AC inchangés ; statuts tous En cours, conformité non testée.",
+      "dependance_locale": {
+        "responsable": "A1",
+        "cause_et_deblocage": "A2/A0 arbitrage G1 nouveau nécessaire pour lien nouveau ; pas réécrire141 à l’identique.",
+        "essais_ou_preparations_deja_constates": "141 fiches v2 enrichies après décisions, textes104EX/15INV/11IF/11AC inchangés ; statuts tous En cours, conformité non testée.",
+        "prochaine_action": "Rattacher un delta de contrat validé à ses seules fiches141 affectées, en conservant texte exact et En cours."
+      },
+      "dependencies_source": [
+        "M11:REF-01 et REF-02 accessibles"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A1/studio-141-fiches.json",
+          "exists": true,
+          "sha256": "a424643b7fefc4d4b995905146d6dbade66f98606b00aa395f29b811e07ec312"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json",
+          "exists": true,
+          "sha256": "48c8aa1093bec1fda771961d4d0fb7827ba7e4775f72ed9afe6cf29feada2df3"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M13",
+      "titre": "Studio navigation, architecture et G1",
+      "proprietaire": "A2",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "READY",
+      "action_bornee": "Revue ciblée index G1-01..04 contre NAV et premier I/A.1 ; distinguer arbitral documentaire et physique.",
+      "preparation_existante_a_ne_pas_doubler": "D07 retenu pour spécifications, NAV et maquettes desktop/mobile/états sources complétés ;24conditions documentaires revues, aucune route réalisée.",
+      "dependance_locale": {
+        "responsable": "A2",
+        "cause_et_deblocage": "A2/A4 revue index ; G1 non accepté par dépôt.",
+        "essais_ou_preparations_deja_constates": "D07 retenu pour spécifications, NAV et maquettes desktop/mobile/états sources complétés ;24conditions documentaires revues, aucune route réalisée.",
+        "prochaine_action": "Revue ciblée index G1-01..04 contre NAV et premier I/A.1 ; distinguer arbitral documentaire et physique."
+      },
+      "dependencies_source": [
+        "M11:cadrage G0",
+        "M12:exigences pertinentes",
+        "M07:carte actuelle des frontières"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
+          "exists": true,
+          "sha256": "2d6280fa99ac2ed4cdff7cd90f5baa32bb482554d898581229497272b7a29667"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "exists": true,
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A4/NAV-M004.json",
+          "exists": true,
+          "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M14",
+      "titre": "Studio décisions, POC G2 et G3",
+      "proprietaire": "A2",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "READY",
+      "action_bornee": "Assembler questions nouvelles G1/POC avec annexeA0 et revuesA6, coûts inconnus signalés ; proposer acte décisionnel borné.",
+      "preparation_existante_a_ne_pas_doubler": "G0 accepté cadrage documentaire sur décision6250109830 ; G1–G4 restent ouverts.",
+      "dependance_locale": {
+        "responsable": "A2",
+        "cause_et_deblocage": "Responsable délégué : décision explicite G1/POC après préconditions ; aucun POC exécuté.",
+        "essais_ou_preparations_deja_constates": "18 décisions physiques priorisées, exemples durables préparés ; DEC01/03/18 puis02/12 ; aucun POC/G2/G3 exécuté ou accepté.",
+        "prochaine_action": "Assembler questions nouvelles G1/POC avec annexeA0 et revuesA6, coûts inconnus signalés ; proposer acte décisionnel borné."
+      },
+      "dependencies_source": [
+        "M13:contrats du sous-ensemble",
+        "M15:corpus et protocole pour le POC",
+        "M00:autorisation spécifique du POC"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A1/studio-18-decisions.json",
+          "exists": true,
+          "sha256": "b83c6a3a17878b00998c8aa28d504b5b904164aade615c50bc0e3bb8e4deb130"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/README.md",
+          "exists": true,
+          "sha256": "a635eea2a4c3de2cf5c3ce3ff0e1f107e22ea15d15550e7bc3e90a67a9c6d375"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M15",
+      "titre": "Studio X, mesures et risques transversaux",
+      "proprietaire": "A5",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "READY",
+      "action_bornee": "Compléter un manifeste des lacunes corpus S1–S7 par exigence sans créer de corpus complet fictif ni budget numérique.",
+      "preparation_existante_a_ne_pas_doubler": "7fixtures synthétiques documentaires partielles constituées,8cohérences arithmétiques documentaires contrôlées ; corpusRT complets encore ouverts.",
+      "dependance_locale": {
+        "responsable": "A5",
+        "cause_et_deblocage": "A5 : DEC13 seuils à arbitrer ; corpus complets et mesures restent à produire.",
+        "essais_ou_preparations_deja_constates": "7fixtures synthétiques documentaires partielles constituées,8cohérences arithmétiques documentaires contrôlées ; corpusRT complets encore ouverts.",
+        "prochaine_action": "Compléter un manifeste des lacunes corpus S1–S7 par exigence sans créer de corpus complet fictif ni budget numérique."
+      },
+      "dependencies_source": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A5/corpus-S1-S7.csv",
+          "exists": true,
+          "sha256": "7806bf187a95021daa5b99174a2482dc9031824c0feaa37d27e272ae059ffbd9"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M16",
+      "titre": "Studio lot I intégration native",
+      "proprietaire": "A4",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "PREPARATION_EXISTANTE",
+      "action_bornee": "Réutiliser contrat NAV/maquettes9 ; intégrer seulement avis indexG1 si nouveau.",
+      "preparation_existante_a_ne_pas_doubler": "Préparation lotI poursuivie sous D07 : contrat et maquettes, pas intégration Studio dans application.",
+      "dependance_locale": {
+        "responsable": "A4",
+        "cause_et_deblocage": "A0 : contratsG1/preuvesG2/G3 et accord codeI requis ; pas routes/styles/traductions maintenant.",
+        "essais_ou_preparations_deja_constates": "Préparation lotI poursuivie sous D07 : contrat et maquettes, pas intégration Studio dans application.",
+        "prochaine_action": "Réutiliser contrat NAV/maquettes9 ; intégrer seulement avis indexG1 si nouveau."
+      },
+      "dependencies_source": [
+        "M13:contrat navigation approuvé",
+        "M14:G3 du lot I",
+        "M17:contrat de contexte stable"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/LOT-I.md",
+          "exists": true,
+          "sha256": "5cd3c86f26c90a495235c5d35b8c19d698549b285fd0b1c795556369d45eed54"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M17",
+      "titre": "Studio A.1 données durables",
+      "proprietaire": "A2",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "READY",
+      "action_bornee": "Relire contrat logique v2 sous DEC01/03 et décision18 ; lister choix physiques restant soumis dans indexG1 unique.",
+      "preparation_existante_a_ne_pas_doubler": "Compléments G1 v2 et inventaire DEC18 de12 familles moteurs proposés ; contrats physiques et droits non clos, pas codeStudio/POC.",
+      "dependance_locale": {
+        "responsable": "A2",
+        "cause_et_deblocage": "A2 : choix physique, version et persistance non ratifiés ; orientations acquises ne valent pas réalisation.",
+        "essais_ou_preparations_deja_constates": "Contrats logiques Projet/Étude/Variante/Révision, trois autorités, writer unique, commandes/snapshot/publication préparés ;21exemples non exécutables.",
+        "prochaine_action": "Relire contrat logique v2 sous DEC01/03 et décision18 ; lister choix physiques restant soumis dans indexG1 unique."
+      },
+      "dependencies_source": [
+        "M14:DEC-01/02/03/12/18 applicables et G3",
+        "M13:autorités de données"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/LOT-A.1.md",
+          "exists": true,
+          "sha256": "7b1e77bda632aa63d34596c5c9c98372adf8708065722497d32726f7ad60d30a"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+          "exists": true,
+          "sha256": "893d4917fe810867b589727e82d1789db56453f86c78fbfab56b294acedac84b"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/README.md",
+          "exists": true,
+          "sha256": "a635eea2a4c3de2cf5c3ce3ff0e1f107e22ea15d15550e7bc3e90a67a9c6d375"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M18",
+      "titre": "Studio A.2 planche 2D autonome",
+      "proprietaire": "A3",
+      "statut_mission_source": "Bloqué",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "ATTENTE_LOCALE",
+      "action_bornee": "Conserver A.2 déjà spécifiée ; ne pas construire planche2D ni nouveau dossier clone.",
+      "preparation_existante_a_ne_pas_doubler": "Planche2D autonome spécifiée ; code non autorisé.",
+      "dependance_locale": {
+        "responsable": "A3",
+        "cause_et_deblocage": "A.1/G1/G2/G3 applicables + accord précis A3 avant code.",
+        "essais_ou_preparations_deja_constates": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+        "prochaine_action": "Conserver A.2 déjà spécifiée ; ne pas construire planche2D ni nouveau dossier clone."
+      },
+      "dependencies_source": [
+        "M17:modèle document 2D",
+        "M14:G3 du sous-lot",
+        "M15:corpus 2D"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/LOT-A.2.md",
+          "exists": true,
+          "sha256": "f07be9bd6b449b0bed65bc81942055b2212a1ef326f5ae6dacc0a544e35ea4b0"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M19",
+      "titre": "Studio A.3 planche 3D autonome",
+      "proprietaire": "A3",
+      "statut_mission_source": "Bloqué",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "ATTENTE_LOCALE",
+      "action_bornee": "Conserver A.3 déjà spécifiée ; ne pas construire planche3D ni nouveau dossier clone.",
+      "preparation_existante_a_ne_pas_doubler": "Planche3D autonome spécifiée ; code non autorisé.",
+      "dependance_locale": {
+        "responsable": "A3",
+        "cause_et_deblocage": "A.1/G1/G2/G3 applicables + accord précis A3 avant code.",
+        "essais_ou_preparations_deja_constates": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+        "prochaine_action": "Conserver A.3 déjà spécifiée ; ne pas construire planche3D ni nouveau dossier clone."
+      },
+      "dependencies_source": [
+        "M17:modèle spatial",
+        "M14:G3 du sous-lot",
+        "M15:corpus 3D"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/LOT-A.3.md",
+          "exists": true,
+          "sha256": "44a46d3a0b15d752b22ef5ef4d7fca5c737e1262ef58cbabf3717176d6db921b"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M20",
+      "titre": "Studio A.4/A.5 association et commandes",
+      "proprietaire": "A2",
+      "statut_mission_source": "Bloqué",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "READY_CONDITIONNEL",
+      "action_bornee": "Revue du contrat association/historique existant seulement si delta des identités est adopté.",
+      "preparation_existante_a_ne_pas_doubler": "Association/commandes/historique spécifiés ; identités et preuves topologiques ouvertes.",
+      "dependance_locale": {
+        "responsable": "A2",
+        "cause_et_deblocage": "A2 : DEC02/12 et interfacesA.2/A.3 nécessaires à réalisation ; étude non bloquée globalement.",
+        "essais_ou_preparations_deja_constates": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+        "prochaine_action": "Revue du contrat association/historique existant seulement si delta des identités est adopté."
+      },
+      "dependencies_source": [
+        "M17:contrats durables",
+        "M18:édition 2D",
+        "M19:édition 3D",
+        "M14:G3 applicable",
+        "M24/M27:preuves aval pour les seuls critères finaux concernés"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
+          "exists": true,
+          "sha256": "0c8b061a17a635b6ebe9bb3c593d14706489c28f334e4ff45e87a9018f60575b"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M21",
+      "titre": "Studio B Registry, Manager et chargement",
+      "proprietaire": "A4",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "PREPARATION_EXISTANTE",
+      "action_bornee": "Réutiliser8exemples Registry/Manager, droits et alias ; aucun nouveau catalogue identique.",
+      "preparation_existante_a_ne_pas_doubler": "Registry/Manager préparés : catalogue de8exemples,4domaines/3modes/alias echelle/droits/chargement/accessibilité ; vérification JSON documentaire.",
+      "dependance_locale": {
+        "responsable": "A4",
+        "cause_et_deblocage": "A4/A2 : DEC04/05/06/07/14/18 et accord codeB/G3 pour réalisation.",
+        "essais_ou_preparations_deja_constates": "Registry/Manager préparés : catalogue de8exemples,4domaines/3modes/alias echelle/droits/chargement/accessibilité ; vérification JSON documentaire.",
+        "prochaine_action": "Réutiliser8exemples Registry/Manager, droits et alias ; aucun nouveau catalogue identique."
+      },
+      "dependencies_source": [
+        "M17:contrats d’outils stables",
+        "M14:DEC-04/05/06/07/14/18 applicables",
+        "M15:protocole cache et mémoire"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A4/M21-MANAGER-PREPARATION.md",
+          "exists": true,
+          "sha256": "b7386a0d0a96c5c58e2995dd76c58993c46fb8955e15fb7b58c7f1ce275ba378"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A4/M21-CONTRAT-MINIMAL.md",
+          "exists": true,
+          "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M22",
+      "titre": "Studio C indexation et rendu incrémental",
+      "proprietaire": "A2",
+      "statut_mission_source": "Bloqué",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "ATTENTE_LOCALE",
+      "action_bornee": "Conserver lotC ; préparer choix d’oracle seulement après contrat et charge identifiés.",
+      "preparation_existante_a_ne_pas_doubler": "Dossier indexation/rendu prêt à revue ; oracle et décisions ouverts.",
+      "dependance_locale": {
+        "responsable": "A2",
+        "cause_et_deblocage": "A2/A5 : DEC08/09/10/13/17, mesures réelles non inventées ; pas optimiser sans cible.",
+        "essais_ou_preparations_deja_constates": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+        "prochaine_action": "Conserver lotC ; préparer choix d’oracle seulement après contrat et charge identifiés."
+      },
+      "dependencies_source": [
+        "M17/M20:contrats géométrie et effets",
+        "M15:oracle et mesures",
+        "M14:DEC-08/09/10/13/17 applicables"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/LOT-C.md",
+          "exists": true,
+          "sha256": "415c97de50efc82801d397532dc98b405bf9a11424db7fafb401b2f04d5619d7"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M23",
+      "titre": "Studio D workers, mémoire et reprise",
+      "proprietaire": "A6",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "READY_CONDITIONNEL",
+      "action_bornee": "Réutiliser contrat jobs et manifeste illustratif ; enrichir delta epoch/coupe/commit après réponse G1.",
+      "preparation_existante_a_ne_pas_doubler": "Contrat documentaire jobs/reprise/restauration préparé, sixexemples et manifeste illustratif incomplet, revue A2 sans conflit documentaire bloquant ; aucun runtime/DB/restore.",
+      "dependance_locale": {
+        "responsable": "A6",
+        "cause_et_deblocage": "A6/A2 : DEC11/13 et protocole durable avant worker ; pas exécution/restauration.",
+        "essais_ou_preparations_deja_constates": "Contrat documentaire jobs/reprise/restauration préparé, sixexemples et manifeste illustratif incomplet, revue A2 sans conflit documentaire bloquant ; aucun runtime/DB/restore.",
+        "prochaine_action": "Réutiliser contrat jobs et manifeste illustratif ; enrichir delta epoch/coupe/commit après réponse G1."
+      },
+      "dependencies_source": [
+        "M17/M20:job et révision",
+        "M21:chargement",
+        "M15:instrumentation",
+        "M14:DEC-11/13 applicables"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/LOT-D.md",
+          "exists": true,
+          "sha256": "a7480f779449daa7c5376e0f9ef845da92000d93c02b935d81a61e6e2adc7355"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+          "exists": true,
+          "sha256": "45b5b77923079d12f9dc98a1050a32ed177f74de0243075b2efb041a1585eb3e"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A2/REVUE-M23-M27.json",
+          "exists": true,
+          "sha256": "4d5ed249beaab082e1696fca9f6f96744bcb22d54917fcbb6abe9c129d4c6c25"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M24",
+      "titre": "Studio E dossier métier et publication",
+      "proprietaire": "A1",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "PREPARATION_EXISTANTE",
+      "action_bornee": "Contrat IF009/publication/réouverture A/B/C déjà préparé et revu ; ne pas le refaire. Rattacher seulement nouveau choixG1.",
+      "preparation_existante_a_ne_pas_doubler": "Projet/Étude/Variante/Révision logique v2 et exemples documentaires préparés sous orientation DEC03A ; persistance physique/migration non décidées.",
+      "dependance_locale": {
+        "responsable": "A1",
+        "cause_et_deblocage": "A1/A2 : DEC16 et capacité exacte approuvée avant publication produit ; aucun IFC certifié déduit.",
+        "essais_ou_preparations_deja_constates": "Préparation manifeste publication A/B/C poursuivie indépendamment des capacités non réalisées.",
+        "prochaine_action": "Contrat IF009/publication/réouverture A/B/C déjà préparé et revu ; ne pas le refaire. Rattacher seulement nouveau choixG1."
+      },
+      "dependencies_source": [
+        "M17–M21:capacités A/B nécessaires",
+        "M14:DEC-16 et contrats applicables",
+        "M22/M23:sous-ensembles nécessaires à la charge"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/LOT-E.md",
+          "exists": true,
+          "sha256": "0053520c0aed65f9f42e47db05f648c4f895d206f90f1e95ae2e24fe1acdf5fc"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/README.md",
+          "exists": true,
+          "sha256": "a635eea2a4c3de2cf5c3ce3ff0e1f107e22ea15d15550e7bc3e90a67a9c6d375"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M25",
+      "titre": "Studio F capacités avancées conditionnelles",
+      "proprietaire": "A2",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "HORS_FILE_SESSION",
+      "action_bornee": "Conserver options F reportées D02 ; aucune nouvelle étude spéculative sans besoin explicite.",
+      "preparation_existante_a_ne_pas_doubler": "D02 reporte explicitement fonctions F avancées du MVP ; toutes exigences conservées sans coche ni suppression.",
+      "dependance_locale": {
+        "responsable": "A2",
+        "cause_et_deblocage": "Responsable produit : besoin/périmètre/décision propre par option ; pas bloquant MVP.",
+        "essais_ou_preparations_deja_constates": "D02 reporte explicitement fonctions F avancées du MVP ; toutes exigences conservées sans coche ni suppression.",
+        "prochaine_action": "Conserver options F reportées D02 ; aucune nouvelle étude spéculative sans besoin explicite."
+      },
+      "dependencies_source": [
+        "M11:périmètre d’option explicite",
+        "M14:DEC et accord propres à chaque option",
+        "M15:preuves propres"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/LOT-F.md",
+          "exists": true,
+          "sha256": "613cc957754c3800900fb99f4839157e61e6ef6c639e980a3e7f7c6ff41b7633"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M26",
+      "titre": "Studio scénarios et critères éliminatoires",
+      "proprietaire": "A5",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "READY",
+      "action_bornee": "Décliner les lacunes corpus retenues dans les38oracles existants, sans inventer39eTEST ni exécuter scénario.",
+      "preparation_existante_a_ne_pas_doubler": "38oracles requalifiés sans exécution ;7fixtures partielles et9liensNAV décrits ; aucun scénario Studio réussi.",
+      "dependance_locale": {
+        "responsable": "A5",
+        "cause_et_deblocage": "A5 : capacités/cibles autorisées et corpus complet avant essais ; préparation distincte des résultats.",
+        "essais_ou_preparations_deja_constates": "38oracles requalifiés sans exécution ;7fixtures partielles et9liensNAV décrits ; aucun scénario Studio réussi.",
+        "prochaine_action": "Décliner les lacunes corpus retenues dans les38oracles existants, sans inventer39eTEST ni exécuter scénario."
+      },
+      "dependencies_source": [
+        "M12:attendus pour préparer",
+        "M15:corpus",
+        "M02:base sûre",
+        "M16–M25:capacités du scénario à exécuter"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A5/studio-38-oracles.csv",
+          "exists": true,
+          "sha256": "13df7f31cf5af499c188af3d820353c24985681d6a1ebfe7a9a8fefad2940763"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+          "exists": true,
+          "sha256": "65f599e6645d6a927cc6f114a2d61ce371e814b4e097091120faba49aca89fe4"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A5/CORPUS-LIMITES-P630.md",
+          "exists": true,
+          "sha256": "9667051c2b6d0d6d215d299de3185ba8214881e219accf81ecd33d1f6b450da5"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M27",
+      "titre": "Studio migration et exploitation sans perte",
+      "proprietaire": "A6",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "ATTENTE_LOCALE",
+      "action_bornee": "Réutiliser contrat migration/restauration ; pointer choix physiques encore requis, aucun second mécanisme.",
+      "preparation_existante_a_ne_pas_doubler": "Contrat documentaire jobs/reprise/restauration préparé, sixexemples et manifeste illustratif incomplet, revue A2 sans conflit documentaire bloquant ; aucun runtime/DB/restore.",
+      "dependance_locale": {
+        "responsable": "A6",
+        "cause_et_deblocage": "A6/A2 : schémas ratifiés et accord simulation/restauration séparé ; pas SQL/DB.",
+        "essais_ou_preparations_deja_constates": "Contrat documentaire jobs/reprise/restauration préparé, sixexemples et manifeste illustratif incomplet, revue A2 sans conflit documentaire bloquant ; aucun runtime/DB/restore.",
+        "prochaine_action": "Réutiliser contrat migration/restauration ; pointer choix physiques encore requis, aucun second mécanisme."
+      },
+      "dependencies_source": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+          "exists": true,
+          "sha256": "0979da3165d0283357b8714272e55070d2699f07befcce506ed9cb5cda2b180d"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+          "exists": true,
+          "sha256": "45b5b77923079d12f9dc98a1050a32ed177f74de0243075b2efb041a1585eb3e"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/A2/REVUE-M23-M27.json",
+          "exists": true,
+          "sha256": "4d5ed249beaab082e1696fca9f6f96744bcb22d54917fcbb6abe9c129d4c6c25"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M28",
+      "titre": "Studio R, G4 et mise en service",
+      "proprietaire": "A6",
+      "statut_mission_source": "Bloqué",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "ATTENTE_LOCALE",
+      "action_bornee": "Conserver conditionsR/G4 ; pas nouveau plan de déploiement prétendu prêt sans candidat.",
+      "preparation_existante_a_ne_pas_doubler": "G4/mise en service non acceptés ; candidat Studio non livré.",
+      "dependance_locale": {
+        "responsable": "A6",
+        "cause_et_deblocage": "A0/responsable : preuvesM24/M26/M27, acceptationG4 et déploiement séparé.",
+        "essais_ou_preparations_deja_constates": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+        "prochaine_action": "Conserver conditionsR/G4 ; pas nouveau plan de déploiement prétendu prêt sans candidat."
+      },
+      "dependencies_source": [
+        "M24:dossier métier candidat",
+        "M26:recettes applicables",
+        "M27:restauration prouvée",
+        "M00:acceptation G4 et déploiement distinct"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+          "exists": true,
+          "sha256": "0979da3165d0283357b8714272e55070d2699f07befcce506ed9cb5cda2b180d"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M29",
+      "titre": "Studio pilotage GitHub et checkpoints",
+      "proprietaire": "A0",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "READY_CONDITIONNEL",
+      "action_bornee": "Checkpoint unique et provenance des nouvelles remises après revue ; aucun nouveau registre permanent.",
+      "preparation_existante_a_ne_pas_doubler": "Checkpoints496dcfc repris sanssecondprogramme, registre630unique, publicationcanonique165 préparée avec workflow sansDB autorisé.",
+      "dependance_locale": {
+        "responsable": "A0",
+        "cause_et_deblocage": "A0 seul intégration/GitHub selon mandat courant ; cette remise n’autorise aucune mutation.",
+        "essais_ou_preparations_deja_constates": "Checkpoints et registre uniques maintenus ;30conditions documentaires vérifiées, branche temporaire de sauvegarde si165CI incompatible.",
+        "prochaine_action": "Checkpoint unique et provenance des nouvelles remises après revue ; aucun nouveau registre permanent."
+      },
+      "dependencies_source": [
+        "M00:protocole commun",
+        "M11:sources du chantier"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/README.md",
+          "exists": true,
+          "sha256": "78d04ea9986c20c655444675620b317290d54101cf41f17034f9d4e9d05fd0fe"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        },
+        {
+          "path": "docs/ai-team/reports/reprise-496dcfc/README.md",
+          "exists": true,
+          "sha256": "a635eea2a4c3de2cf5c3ce3ff0e1f107e22ea15d15550e7bc3e90a67a9c6d375"
+        }
+      ],
+      "cloture_mission": false
+    },
+    {
+      "mission": "M30",
+      "titre": "Studio séquence, jalons et clôture",
+      "proprietaire": "A0",
+      "statut_mission_source": "En cours",
+      "nature": "Readiness documentaire proposée, pas nouveau statut de mission",
+      "readiness_sous_tache": "READY",
+      "action_bornee": "Choisir file finie ci-dessous, puis enregistrer la prochaine opération exacte et ses déclencheurs.",
+      "preparation_existante_a_ne_pas_doubler": "31missions et630IDs conservés ; file READY/WAITING explicite, zéro mission entière close.",
+      "dependance_locale": {
+        "responsable": "A0",
+        "cause_et_deblocage": "A0 choisit activation ; aucune mission close par ce parcours.",
+        "essais_ou_preparations_deja_constates": "31missions et630IDs conservés ; file READY/WAITING explicite, zéro mission entière close.",
+        "prochaine_action": "Choisir file finie ci-dessous, puis enregistrer la prochaine opération exacte et ses déclencheurs."
+      },
+      "dependencies_source": [
+        "M11:pilote pour planifier",
+        "M14:autorisations par sous-ensemble",
+        "M16–M28:preuves du jalon concerné"
+      ],
+      "preuves_existantes": [
+        {
+          "path": "docs/ai-team/reports/mission-003/DECISIONS-M002-D01-D08.md",
+          "exists": true,
+          "sha256": "d0aeed57b3f380100ea81fd7a570071bb4af9b628e94a67603d7c1d4aed76f1d"
+        },
+        {
+          "path": "docs/ai-team/reports/mission-004/README.md",
+          "exists": true,
+          "sha256": "d8549ffb5bb08424c87450d815aa13bea81ef11433a5b92c7bb737e9d9ad3d3f"
+        }
+      ],
+      "cloture_mission": false
+    }
+  ],
+  "file_finie_session": [
+    {
+      "ordre": "R1",
+      "missions": "M08",
+      "agent_propose": "A2/A1/A3/A5",
+      "declencheur": "Réponses aux réserves et cohorte finale stabilisée",
+      "fichier_nouveau_unique_par_agent": "REVUES-FINALES-M08-DELTA.json",
+      "critere_sortie": "Relecture delta seulement ;125IDs conservés et limites par attendu.",
+      "activation": "Proposée à A0, non lancée par ce document"
+    },
+    {
+      "ordre": "R2",
+      "missions": "M13/M17",
+      "agent_propose": "A2, réemploi du delta A4 existant",
+      "declencheur": "IndexG1v2 et NAV-DELTA-G1-v2 A4 déjà remis ; revue A2 ciblée seulement si non doublon",
+      "fichier_nouveau_unique_par_agent": "G1-INDEX-REVUE-CIBLEE.json",
+      "critere_sortie": "ConditionsG1-01..04 et contratsI/A.1 confrontés, aucun passage de porte.",
+      "activation": "Proposée à A0, non lancée par ce document"
+    },
+    {
+      "ordre": "R3",
+      "missions": "M07/M14",
+      "agent_propose": "A2/A6",
+      "declencheur": "RevueDEC18 et annexeG2 déjà disponibles",
+      "fichier_nouveau_unique_par_agent": "G1-G2-QUESTIONS-RESIDUELLES.json",
+      "critere_sortie": "Choix nouveaux seulement avec preuves, coûts inconnus, autorité et décision attendue.",
+      "activation": "Proposée à A0, non lancée par ce document"
+    },
+    {
+      "ordre": "R4",
+      "missions": "M09",
+      "agent_propose": "A5/A4",
+      "declencheur": "CorpusCSP et étatobservabilitéA6 disponibles",
+      "fichier_nouveau_unique_par_agent": "M09-DELTA-CSP-LECTURE.json",
+      "critere_sortie": "Origines approuvées séparées des manquantes ; état alertes inconnu conservé.",
+      "activation": "Proposée à A0, non lancée par ce document"
+    },
+    {
+      "ordre": "R5",
+      "missions": "M15/M26",
+      "agent_propose": "A5",
+      "declencheur": "38oracles et limitesS1–S7 disponibles",
+      "fichier_nouveau_unique_par_agent": "CORPUS-LACUNES-PRIORISEES.json",
+      "critere_sortie": "Liste finie des lacunes premierI/A.1, aucun corpus complet accepté par présence.",
+      "activation": "Proposée à A0, non lancée par ce document"
+    },
+    {
+      "ordre": "R6",
+      "missions": "M00/M06/M29/M30",
+      "agent_propose": "A0",
+      "declencheur": "R1–R5 remises ou blocages locaux explicitement enregistrés",
+      "fichier_nouveau_unique_par_agent": "CHECKPOINT-READY-A0.json",
+      "critere_sortie": "Intégration unique, suites périmées actualisées, nouvelleCI seulement au SHA publié.",
+      "activation": "Proposée à A0, non lancée par ce document"
+    }
+  ],
+  "fichiers_partages": "A0 seul écrivain registres/checkpoints ; chaque agent dépose dans scratch propre. Aucun nouveau registre parallèle.",
+  "condition_arret_file": "Après six livrables ou blocage local documenté, checkpointA0 avec prochaineREADY exacte ; ne pas générer nouvelles études spéculatives pour remplir session.",
+  "operations_effectuees": "Lecture et production de ce rapport uniquement ; aucun code/test/API/DB/service/registre modifié.",
+  "remises_nouvelles_pendant_preparation": [
+    {
+      "path": "/workspace/work/resume496/agents/A2/M08-094-124-DELTA-REVUE-A1-A2.json",
+      "effet": "R1 inverse094/site124 résolu par annexe ; autres revues et compte finalA0 restent à consolider."
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A4/NAV-DELTA-G1-v2.json",
+      "effet": "DeltaNAV déjà produit A4 ; ne pas le redemander enR2, revue indexG1 parA2 seulement si manquante."
+    }
+  ]
+}

@@ -13,8 +13,31 @@ import { EVENEMENT_COMMANDE_VALIDEE, enregistrerEvenement } from "./atelier-even
 import { chargerModele, creerModeleVide, persisterDifferentiel } from "./atelier-modele.js";
 import { controlerRattachements } from "./atelier-refexterne.js";
 import { revaliderSolidesExacts, TYPE_CREER_EXACT } from "./atelier-exact.js";
+import { lockProject } from "./step-rows.js";
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** Les moteurs restent distincts ; la séquence transactionnelle de validation est commune. */
+export type CommandExecutionScope =
+  | { kind: "atelier"; projectId: string }
+  | { kind: "studio"; projectId: string; studyId: string; variantId: string };
+
+export interface ScopedCommandHandler<Result> {
+  /** Droits actuels et verrous avant toute réponse de rejeu ou écriture. */
+  prepare(tx: Tx, scope: CommandExecutionScope): Promise<void>;
+  replay(tx: Tx, scope: CommandExecutionScope): Promise<Result | undefined>;
+  /** Base/version, réducteur natif, journal et avance du head dans la même transaction. */
+  execute(tx: Tx, scope: CommandExecutionScope): Promise<Result>;
+}
+
+/** R9 : point d'orchestration partagé ; aucun validateur Studio parallèle. */
+export async function orchestrerCommandesDansTransaction<Result>(tx: Tx, scope: CommandExecutionScope, handler: ScopedCommandHandler<Result>): Promise<Result> {
+  const capturedScope = Object.freeze({ ...scope });
+  await handler.prepare(tx, capturedScope);
+  const replayed = await handler.replay(tx, capturedScope);
+  if (replayed !== undefined) return replayed;
+  return handler.execute(tx, capturedScope);
+}
 
 /** Objets touchés par les entrées du journal postérieures à `baseRevision` qui recoupent les cibles du lot. */
 export async function conflitsDepuis(tx: Tx, projectId: string, baseRevision: number, cibles: string[], etat: ModeleAtelier) {
@@ -47,8 +70,18 @@ export class EchecLot extends Error {
 
 /** Valide un lot dans la transaction de l'appelant, qui a déjà verrouillé la ligne du projet. */
 export async function validerDansTransaction(tx: Tx, projectId: string, auteurId: string, enveloppe: Enveloppe, kind: JournalKind, inverseOf: string | null, label: string): Promise<ResultatValidation> {
-  const deja = (await tx.select().from(atelierCommands).where(and(eq(atelierCommands.projectId, projectId), eq(atelierCommands.requestId, enveloppe.requestId))).limit(1))[0];
-  if (deja) return { reponse: { ...deja.reponse, rejouee: true }, status: 200, revision: deja.resultRevision, journalId: deja.id };
+  return orchestrerCommandesDansTransaction<ResultatValidation>(tx, { kind: "atelier", projectId }, {
+    prepare: async (transaction) => { await lockProject(transaction, projectId); },
+    replay: async (transaction) => {
+      const deja = (await transaction.select().from(atelierCommands).where(and(eq(atelierCommands.projectId, projectId), eq(atelierCommands.requestId, enveloppe.requestId))).limit(1))[0];
+      return deja ? { reponse: { ...deja.reponse, rejouee: true }, status: 200, revision: deja.resultRevision, journalId: deja.id } : undefined;
+    },
+    execute: (transaction) => appliquerAtelierDansTransaction(transaction, projectId, auteurId, enveloppe, kind, inverseOf, label),
+  });
+}
+
+/** Handler Atelier historique : réducteurs, journal, outbox et réponses conservés. */
+async function appliquerAtelierDansTransaction(tx: Tx, projectId: string, auteurId: string, enveloppe: Enveloppe, kind: JournalKind, inverseOf: string | null, label: string): Promise<ResultatValidation> {
   const courant = (await tx.select({ modelRevision: projects.modelRevision }).from(projects).where(eq(projects.id, projectId)).limit(1))[0]!;
   const charge = (await chargerModele(tx, projectId)) ?? (await creerModeleVide(tx, projectId, `fadi-${projectId}`));
   if (enveloppe.baseRevision !== courant.modelRevision) {
