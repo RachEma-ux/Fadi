@@ -84,6 +84,7 @@ def parse_data(payload, ids, now):
     hourly = []
     questions = {}
     answers = {}
+    owner_pending = {}
     acknowledgements = 0
     signals = {}
     for comment in comments:
@@ -98,8 +99,14 @@ def parse_data(payload, ids, now):
             hourly.append((created, body, url))
         for qid in re.findall(r"\[CODEX-QUESTION\]\[(Q-[a-zA-Z0-9_-]+)\]\[OPEN\]", body):
             questions[qid] = {"url": url, "created_at": created}
-        for qid in re.findall(r"\[(?:CHATGPT-ANSWER|NEEDS-USER-DECISION)\]\[(Q-[a-zA-Z0-9_-]+)\]", body):
+        answered_ids = re.findall(r"\[CHATGPT-ANSWER\]\[(Q-[a-zA-Z0-9_-]+)\]", body)
+        for qid in answered_ids:
             answers[qid] = url
+        for qid in re.findall(r"\[NEEDS-USER-DECISION\]\[(Q-[a-zA-Z0-9_-]+)\]", body):
+            owner_pending[qid] = url
+        if "[NEEDS-USER-DECISION]" in body:
+            for qid in answered_ids:
+                owner_pending[qid] = url
         # Marqueurs structurés facultatifs publiés par Codex ; ils restent NON VALIDANTS.
         for line in body.splitlines():
             if not line.startswith("[STUDIO-TASK-STATUS] "):
@@ -149,7 +156,10 @@ def parse_data(payload, ids, now):
                    "last_at": latest_hourly[0] if latest_hourly else None,
                    "last_url": latest_hourly[2] if latest_hourly else None},
         "questions": {"total": len(questions), "unanswered": unanswered,
-                      "unanswered_count": len(unanswered)},
+                      "unanswered_count": len(unanswered),
+                      "answered_count": len([q for q in questions if q in answers]),
+                      "owner_decision_pending": sorted(q for q in owner_pending if q in questions),
+                      "owner_decision_pending_count": len([q for q in owner_pending if q in questions])},
         "task_signals": sorted(signals.values(), key=lambda v:(v["id"],v["stage"])),
         "task_signal_warning": "Statut signalé : ne coche aucune des validations locales Code, Review ChatGPT ou Review Admin."
     }
@@ -212,7 +222,8 @@ def build_block(data):
         ("Tâches Studio vérifiées", "N/D / 630 — preuves individuelles à rapprocher"),
         ("Avancement déclaré par Codex", reported),
         ("Accusés / rapports Codex", f'{codex["ack_count"]} / {codex["progress_count"]} — {code_state}'),
-        ("Questions sans réponse détectée", questions["unanswered_count"]),
+        ("Questions sans réponse technique", questions["unanswered_count"]),
+        ("Décisions utilisateur encore nécessaires", questions.get("owner_decision_pending_count", 0)),
         ("Dernier contrôle Codex", codex["last_progress_at"] or "Non disponible"),
         ("Dernier contrôle horaire ChatGPT", data["hourly"]["last_at"] or "Non disponible"),
         ("GitHub main / PR #165", (data["main_sha"] or "N/D")[:12]+" / "+(data["pr165_head_sha"] or "N/D")[:12])
