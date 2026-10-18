@@ -1,4 +1,4 @@
-import type { StudioDocument, StudioEnvelope } from "@parcours/atelier-model";
+import type { StudioDifferenceDocuments, StudioDocument, StudioEnvelope } from "@parcours/atelier-model";
 /**
  * Client HTTP minimal vers `apps/api`. Toujours `credentials: "include"`
  * (cookie de session httpOnly) ; jamais de jeton stocké en `localStorage`
@@ -735,6 +735,12 @@ export interface StudioStudyDetail {
 }
 /** Entête d'une révision (historique append-only, de la plus récente à la plus ancienne). */
 export interface StudioRevisionSummary { id: string; parentRevisionId: string | null; source: string; authorId: string; createdAt: string }
+/** Comparaison de deux révisions d'une étude : côtés résolus (tête explicite) et différence pure du modèle. */
+export interface StudioComparison {
+  from: { variantId: string; revisionId: string };
+  to: { variantId: string; revisionId: string };
+  difference: StudioDifferenceDocuments;
+}
 const studioRoot = (p: string) => `/projects/${encodeURIComponent(p)}/studio/studies`;
 const studioStudyPath = (p: string, s: string) => `${studioRoot(p)}/${encodeURIComponent(s)}`;
 const studioVariantPath = (p: string, s: string, v: string) => `${studioStudyPath(p, s)}/variants/${encodeURIComponent(v)}`;
@@ -756,6 +762,8 @@ export const api = {
   studioRevisions: (p: string, s: string, v: string) => request<{ revisions: StudioRevisionSummary[] }>(`${studioVariantPath(p, s, v)}/revisions`),
   /** Révision historique : toujours en lecture seule (`canWrite` faux côté serveur). */
   studioRevision: (p: string, s: string, v: string, r: string) => request<StudioContext>(`${studioVariantPath(p, s, v)}/revisions/${encodeURIComponent(r)}`),
+  /** Comparaison lecture seule de deux côtés de la même étude (`variantId` ou `variantId:revisionId`), calculée par le serveur. */
+  studioCompare: (p: string, s: string, from: string, to: string) => request<StudioComparison>(`${studioStudyPath(p, s)}/compare?${new URLSearchParams({ from, to })}`),
   studioCommands: (p: string, s: string, v: string, envelope: StudioEnvelope) => request<StudioContext & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/commands`, { method: "POST", body: JSON.stringify(envelope) }),
   register: (email: string, password: string) =>
     request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),

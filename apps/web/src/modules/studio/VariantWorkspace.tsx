@@ -23,7 +23,7 @@ import { Icon } from "../../components/Icon";
 import { api, ApiError, studioExportUrl, type StudioContext } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
 import { LANGUE, LOCALE } from "../../lib/i18n";
-import { cheminProjetStudio, cheminVarianteStudio } from "./routes-studio";
+import { cheminComparaisonStudio, cheminProjetStudio, cheminVarianteStudio } from "./routes-studio";
 import { StudioRefus } from "./studio-ecrans";
 import { BarreOutils } from "./planche2d/BarreOutils";
 import {
@@ -663,6 +663,7 @@ function RevisionsPanel({ projectId, studyId, variantId, headRevisionId, shownRe
         <span>{user && r.authorId === user.id ? "par vous" : "par un autre membre"}</span>
         {head && <strong className="studio-revision-tag">Version courante</strong>}
         {shown && !head && <strong className="studio-revision-tag">Affichée</strong>}
+        {!head && <Link to={cheminComparaisonStudio(projectId, studyId, { variantId, revisionId: r.id }, { variantId, revisionId: null })} data-studio-comparer-tete>Comparer avec la tête</Link>}
       </li>;
     })}</ol>}
   </section>;
