@@ -1,5 +1,6 @@
 {
-  "fichiers": 40,
-  "liens_locaux": 97,
-  "erreurs": []
+  "fichiers": 41,
+  "liens_locaux": 135,
+  "erreurs": [],
+  "limite": "Résolution des fichiers locaux des liens Markdown ; pas validation des ancrages ni des liens externes/historiques en inlinecode."
 }

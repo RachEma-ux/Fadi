@@ -260,6 +260,30 @@
       "agent": "A5",
       "bytes": 17333,
       "sha256": "d337c166bd69c153d0362a9858b1e5843fd0b3addb9b050aa17334339c542027"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/isolation-code-review.json",
+      "agent": "A2",
+      "bytes": 1160196,
+      "sha256": "155d8d16d8be4319dec19651a3118fa0c75afcc70365f0173fe4f2624c4766aa"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/isolation-fiches-review.json",
+      "agent": "A2",
+      "bytes": 2568312,
+      "sha256": "2375231769f967cc7de658617534332efca78cef4e64d70aba6b9a0a62f30607"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A4/review-checkpoint-M003.json",
+      "agent": "A4",
+      "bytes": 5226,
+      "sha256": "171d45b8e7d3095b101edc2a3d85aeb312bfdf7461964e4b998d0eafbb734e76"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/isolation-nominal-supplement.json",
+      "agent": "A2",
+      "bytes": 1211721,
+      "sha256": "e9ad75d2c17e9f1ac41bf7c4137dad2b9b4755956f36ee1dc44d54004d79ca07"
     }
   ],
   "reference_instructions_actualisee": "a3cc3c32cfcaa38d9d3117f63644499f9f061f4b"

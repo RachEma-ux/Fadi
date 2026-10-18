@@ -28,7 +28,7 @@ A0 a réellement coordonné A1/A2/A4/A5/A6. Livrables :141 fiches EX/INV/IF/AC a
 | M02 / M002-D03 | Garde DB non implémentée, code non autorisé | A5 puis A3 désigné |16 refus/2 positifs prescrits, aucune connexion/destruction | Accord DB-1/2 garde+tests purs d’abord ; DB-3 jetable après preuve de protection |
 | M03 / M002-D05 | main protected=false ; activation administrative non autorisée | A6/utilisateur | Noms réels de checks et candidat désactivé PR152 relus | Choix solo/équipe et autorisation administrative distincte |
 | M05/M21 | Versions v2/v3, alias `echelle`, contrats non résolus | A2/A4 | Lecture statique/25 arêtes web, contrat candidat | Décider compatibilité/alias et revue frontières avant correction autorisée |
-| M08 | Inventaire lexical incomplet sémantiquement | A2 |43 fichiers/133 occurrences relus (23 nominaux+20 documents/méta) ;445 autres fichiers restent ouverts | Qualifier176 fichiers code puis269 fiches historiques ; ne changer ni DrawAll ni décisions historiques |
+| M08 | Inventaire lexical incomplet sémantiquement | A2 |488 fichiers/1887 paires fichier-ligne couverts dans les cinq cohortes ;125 chemins absents/69 fiches à rapprocher et hors scanner ouverts | Rapprocher125 chemins selon leur rôle historique/prévu/courant ; DA-09-09 reste prospectif ; ne pas conclure hors scanner |
 | M09 | CSP/scan vulnérabilités non réalisés | A5 | Spécification et protocole de triage, pas scan effectif | Valider périmètre, puis lot de code/essais autorisé |
 | M11/M14 / D01/D02 | Référence technique/pilote/options nouvelles non ratifiés | A1/utilisateur | Sources/141fiches/18DEC/pilote proposés | Décider nouveaux choix sans rouvrir invariants ni D179 |
 | M13/M16 / D06/D07 | Navigation candidate et ordre PR non acceptés | A0/A2/A4/utilisateur | PR142/152/154 relues ; neuf NAV prescrits | Choisir contrat et ordre ; aucune fusion impliquée |
@@ -52,3 +52,11 @@ Les états antérieurs « originaux à récupérer » et «141 fiches à complé
 ## Préconditions de clôture
 
 Preuves propres à la nature de chaque ID, décision applicable et acceptation quand nécessaire. Aucun lot ou mission clos par la seule préparation. Les autorisations de code, POC, services, base réelle, administration, fusion et production restent distinctes.
+
+## Publication et contrôles du checkpoint intermédiaire
+
+Spécifications intégrées au commit `dcf29af87e9a3673c062cc95d44cec32fa8e2902` dans PR165 : couverture39117840428, continuité39117840416, isolation39117840432 et audit isolation39117840420 réussis ; CI39117840425 en cours au relevé10:08UTC. [Progrès authentique](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6248587777). Les questions D01–D07 sont réellement publiées et liées dans le dossier de décisions ; aucun accord reçu à ce relevé. Aucun résultat transféré au commit porteur suivant.
+
+## Poursuite M08 après dcf29af
+
+Cohortes code176/fiches269/supplément449 effectivement reçues ; réconciliation1887/1887 paires uniques sur488 fichiers, zéro doublon/manque du scan initial (preuve validation-M08-A0.json dans index A0). Qualification contextualisée assistée, aucune validation technique globale.125 chemins littéraux absents/69 fiches, un abrégé et DA-09-09 prospectif sont conservés ouverts. M06 ajoute note C1 FR/EN selon D-163, sans réécrire D-156. Les autres limites hors scanner/licences restent ouvertes ; aucun lot de code ni opération sensible engagé.

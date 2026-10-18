@@ -275,23 +275,26 @@
       "execution": {
         "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
         "statut": "En cours",
-        "constat": "43 fichiers/133 occurrences relus :23 nominaux et20 autres documents/méta ;445 fichiers restants non qualifiés sémantiquement.",
+        "constat": "488 fichiers/1887 paires fichier-ligne de la référence a09 couverts par cinq cohortes contextualisées ; pas autonomie exhaustive ni clôture.125 chemins littéraux absents/69 fiches à rapprocher,1 abrégé etDA-09-09 prospectif.",
         "responsable": "A2",
         "preuves": [
           "docs/ai-team/reports/mission-003/A2/isolation-nominal-review.json",
-          "docs/ai-team/reports/mission-003/A2/isolation-extra-docs-review.json"
+          "docs/ai-team/reports/mission-003/A2/isolation-extra-docs-review.json",
+          "docs/ai-team/reports/mission-003/A2/isolation-code-review.json",
+          "docs/ai-team/reports/mission-003/A2/isolation-fiches-review.json",
+          "docs/ai-team/reports/mission-003/A2/isolation-nominal-supplement.json"
         ],
         "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
         "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
         "cloturee": false,
         "acceptation_metier": false,
         "blocage": {
-          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "cause": "Traçabilité documentaire des125 chemins/69 fiches et limites hors scanner non résolues ; aucune recette fonctionnelle déduite.",
           "responsable": "A2",
           "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
-          "prochaine_action": "Qualifier les176 fichiers code puis269 fiches historiques avec leur rôle ; aucune purge automatique."
+          "prochaine_action": "Rapprocher les125 chemins absents selon validation prévue/historique/courante ; conserver DA-09-09 prospectif sans inventer de fiche, puis qualifier hors scanner/licences selon périmètre."
         },
-        "suite": "Qualifier les176 fichiers code puis269 fiches historiques avec leur rôle ; aucune purge automatique."
+        "suite": "Rapprocher les125 chemins absents selon validation prévue/historique/courante ; conserver DA-09-09 prospectif sans inventer de fiche, puis qualifier hors scanner/licences selon périmètre."
       }
     },
     {

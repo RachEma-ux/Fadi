@@ -1,7 +1,7 @@
 {
   "mission": "Mission003 contrôle publication A0",
   "date": "2026-10-18",
-  "scope": "Fichiers modifiés et nouveaux du checkpoint documentaire après a3cc3c3 ; rapport propre exclu pour éviter autoempreinte",
+  "scope": "Fichiers modifiés/nouveaux depuis a3cc3c3 et contributions M003 ; autofichier exclu. Lecture intégrale même au-delà limite du scanner isolation.",
   "familles": [
     "private_key",
     "github_token",
@@ -18,8 +18,8 @@
     },
     {
       "fichier": "docs/ai-team/missions.json",
-      "sha256": "04ff39e04d4910f3b6d3d3f96c55233d379b5966c56da8af6349c6e0fc42a447",
-      "octets": 47761
+      "sha256": "257e3a460a3b177e3304084985265b41c6c451afcdef1429dfbe3902afee8d3c",
+      "octets": 48340
     },
     {
       "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
@@ -122,14 +122,29 @@
       "octets": 11393
     },
     {
+      "fichier": "docs/ai-team/reports/mission-003/A2/isolation-code-review.json",
+      "sha256": "155d8d16d8be4319dec19651a3118fa0c75afcc70365f0173fe4f2624c4766aa",
+      "octets": 1160196
+    },
+    {
       "fichier": "docs/ai-team/reports/mission-003/A2/isolation-extra-docs-review.json",
       "sha256": "e89af23b6ae578cd9b2b666187aea330cdea8ba4d63de4390a043dbca632af87",
       "octets": 82524
     },
     {
+      "fichier": "docs/ai-team/reports/mission-003/A2/isolation-fiches-review.json",
+      "sha256": "2375231769f967cc7de658617534332efca78cef4e64d70aba6b9a0a62f30607",
+      "octets": 2568312
+    },
+    {
       "fichier": "docs/ai-team/reports/mission-003/A2/isolation-nominal-review.json",
       "sha256": "fb503a137b4a88cdef9eeb86c8c2cba1ca5861b4abec75f150dbe6379d9ba1d9",
       "octets": 99529
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-003/A2/isolation-nominal-supplement.json",
+      "sha256": "e9ad75d2c17e9f1ac41bf7c4137dad2b9b4755956f36ee1dc44d54004d79ca07",
+      "octets": 1211721
     },
     {
       "fichier": "docs/ai-team/reports/mission-003/A2/isolation-triage.json",
@@ -180,6 +195,11 @@
       "fichier": "docs/ai-team/reports/mission-003/A4/REVUE-CROISEE-141-FICHES.md",
       "sha256": "015e9433984565f159a2c2c875462fd1e0a3cc432476721a2301adfc4e60b792",
       "octets": 4282
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-003/A4/review-checkpoint-M003.json",
+      "sha256": "171d45b8e7d3095b101edc2a3d85aeb312bfdf7461964e4b998d0eafbb734e76",
+      "octets": 5226
     },
     {
       "fichier": "docs/ai-team/reports/mission-003/A5/A5-M02-M09-M15-M26.md",
@@ -237,29 +257,54 @@
       "octets": 5290
     },
     {
+      "fichier": "docs/ai-team/reports/mission-003/CI-dcf29af-jobs.json",
+      "sha256": "976a974eff8ddc1f976e297dac507e58a86fdd89e5c5b4eb10bc8d1c8d6428dc",
+      "octets": 887
+    },
+    {
       "fichier": "docs/ai-team/reports/mission-003/DECISIONS-M002-D01-D08.md",
-      "sha256": "f4ea5a1aed476497c10c1681f47a4e0bced99d478f8ba6f886a81f200bc84696",
-      "octets": 8715
+      "sha256": "b5c8befe57fc9aa626e95a62e4785f843780848355c5d42e9077fe000da48a1e",
+      "octets": 9966
     },
     {
       "fichier": "docs/ai-team/reports/mission-003/M06-DOCUMENTATION.md",
-      "sha256": "bc1dd40494f04769dc41291e8bd050fb82e1cee7345b4c030408f8fcd58cac4f",
-      "octets": 3380
+      "sha256": "72b84fd0520a4017699416c7e1b853ab57b469170e6631d7fbe32a13789341e3",
+      "octets": 3819
     },
     {
       "fichier": "docs/ai-team/reports/mission-003/README.md",
-      "sha256": "fa1b50f91633843f8251bdc320a9733ae731dcc299d7f935689ae29223818ffe",
-      "octets": 8575
+      "sha256": "e17155350c896a28058c392d3fd2bd0f8bbce6a69d9ff0ed80f0d7daa0f7008e",
+      "octets": 18662
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-003/github-checkpoint.json",
+      "sha256": "3210e3545f48dc87ad04cff77cd0d9626b86b31549e777e806259b53905c80a2",
+      "octets": 2458
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-003/isolation-current-summary.json",
+      "sha256": "222fc78559ddcb955160e46841b091e36b24bc45d7c3c3f43744acd593c9a9c0",
+      "octets": 1536
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-003/link-review-A0.json",
+      "sha256": "46bc7cabb497d6ac926e7bb599ecae48abc3915e6da363c2683d47850800b2f0",
+      "octets": 206
     },
     {
       "fichier": "docs/ai-team/reports/mission-003/manifest.json",
-      "sha256": "f32be2de1ae17b682cac6c7247fa973346e4a11030b394cbc72d0afa284c81e4",
-      "octets": 9442
+      "sha256": "92515c2074df8992f440a62d34120a17ef7e6b89fdf38f9548279ba85c06f76b",
+      "octets": 10333
     },
     {
       "fichier": "docs/ai-team/reports/mission-003/validation-A0.json",
       "sha256": "e8b98c6c994d5e29a76c8352d08c6a5929594b47d245df0021357fab673ce4ff",
       "octets": 1529
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-003/validation-M08-A0.json",
+      "sha256": "b9f837add34029a6d67409192d1c5c98410a02e9c328ad020c2bf1aa01d249c0",
+      "octets": 472
     },
     {
       "fichier": "docs/architecture.md",
@@ -282,19 +327,24 @@
       "octets": 6260
     },
     {
+      "fichier": "docs/planche/cahier-planche.md",
+      "sha256": "f6c2d0b4e6f3082ad32f60d166bc8c33575168f6ae5fad8ed69c435f012fd584",
+      "octets": 136874
+    },
+    {
       "fichier": "docs/workstreams/ai-team/CONTEXT.md",
       "sha256": "6cdac7ddf68d79a49306958587443dee6a56bfa3f5383bc9edb397f0e6bf4bc1",
       "octets": 2993
     },
     {
       "fichier": "docs/workstreams/ai-team/HANDOFF.md",
-      "sha256": "81625c36b4acef7d2308794ea0253f9a1106ec6e43fea449c3ec9de64fa32c43",
-      "octets": 8185
+      "sha256": "0f6489e253964e95941e537bc15cc0ee804da04b0523706972832ec7610c26b1",
+      "octets": 9415
     },
     {
       "fichier": "docs/workstreams/ai-team/STATUS.md",
-      "sha256": "5fde345aa9eddf39f00ca59e20782289ecb93753cca3062c0876f1ea51589131",
-      "octets": 8009
+      "sha256": "42fc133d14b859a666260eb17b838c984c5f962c6147763e6950fc14eb54a28c",
+      "octets": 9239
     },
     {
       "fichier": "docs/workstreams/ai-team/TASKS.md",
@@ -303,13 +353,13 @@
     },
     {
       "fichier": "docs/workstreams/purge-drawall/HANDOFF.md",
-      "sha256": "fafa20bf16cb0f6d112e88d95f9196e904bb74f3f62cd29455d36319455786e9",
-      "octets": 5466
+      "sha256": "716e8e7a219612d1c562f236261b1c593a1865b78024237eddbaf18b072bf86f",
+      "octets": 6137
     },
     {
       "fichier": "docs/workstreams/purge-drawall/STATUS.md",
-      "sha256": "92d52901167c2c6db8943ad75aa16f755518e774ac7b9e1ad47325a1dbf48809",
-      "octets": 7425
+      "sha256": "62107146c24d62325e1f0572d539a0ca9eff6ddc8b6bcee6595f63ed4bb3a60d",
+      "octets": 8096
     },
     {
       "fichier": "docs/workstreams/purge-drawall/TASKS.md",
@@ -323,13 +373,13 @@
     },
     {
       "fichier": "docs/workstreams/studio/HANDOFF.md",
-      "sha256": "b59d5dd2e7a5ecef685556946024ae85278b7bd691cc9e01a8e0eef38d1faf9b",
-      "octets": 8173
+      "sha256": "580affb0ff6db5754da040b546c4e29b42cffc0c7b33dd51aecb7c71cf96b983",
+      "octets": 9403
     },
     {
       "fichier": "docs/workstreams/studio/STATUS.md",
-      "sha256": "a6885ff3156fef1247101630dc5c1b054eae9d3e10ec1e38406da8df24e14b66",
-      "octets": 7997
+      "sha256": "5950620baf1134079308e7c7ed8668d8a14cd947178790a43b1d41b8da21b7a5",
+      "octets": 9227
     },
     {
       "fichier": "docs/workstreams/studio/TASKS.md",
@@ -344,7 +394,7 @@
   ],
   "findings": [],
   "limitations": [
-    "Détection de signatures, pas garantie absolue contre tout secret ; lecture humaine du contenu et exclusions logs bruts/helpers complètent le contrôle.",
-    "Les rapports A5 ont leur propre instant et liste d’empreintes ; ce scan A0 couvre les versions consolidées avant publication."
+    "Détection de signatures, pas garantie absolue contre tout secret ; lecture humaine et exclusions logs bruts/helpers complètent le contrôle.",
+    "Les rapports A5 et A0 correspondent à leurs listes d’empreintes respectives ; aucune donnée client ni production requise."
   ]
 }

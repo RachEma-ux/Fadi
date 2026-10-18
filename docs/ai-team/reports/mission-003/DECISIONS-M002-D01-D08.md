@@ -53,3 +53,17 @@ Cette autorisation est déjà acquise : ne pas la redemander pour poursuivre ces
 ## Portes G0–G4 et demandes par sous-lot
 
 Le dossier A1 décrit les entrées/sorties et le pilote ; les douze [dossiers de lots](README.md) précisent contrats, tests, risques et retour arrière. G0/G1 restent en instruction ; les preuves G2 et autorisations G3 restent absentes pour le code, G4 dépend des parcours réellement livrés. Les décisions facultatives ne créent pas de verrou global circulaire. Toute réponse humaine future doit conserver auteur habilité, date, sous-lot, opérations admises/exclues et preuve dans le suivi canonique.
+
+## Questions effectivement publiées
+
+Canal unique #166 :
+
+- [Q-M003-D01](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6248565958) : dossier M002-D01, ouvert sans autorisation implicite.
+- [Q-M003-D02](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6248566657) : dossier M002-D02, ouvert sans autorisation implicite.
+- [Q-M003-D03](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6248567348) : dossier M002-D03, ouvert sans autorisation implicite.
+- [Q-M003-D04](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6248568074) : dossier M002-D04, ouvert sans autorisation implicite.
+- [Q-M003-D05](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6248568807) : dossier M002-D05, ouvert sans autorisation implicite.
+- [Q-M003-D06](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6248569515) : dossier M002-D06, ouvert sans autorisation implicite.
+- [Q-M003-D07](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6248570129) : dossier M002-D07, ouvert sans autorisation implicite.
+
+D08 documentaire est déjà autorisé ; aucune question supplémentaire. Les réponses sont à relire et attribuer avant résolution ; aucun accord produit/sensible reçu au relevé du18/10/2026.

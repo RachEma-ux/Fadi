@@ -43,5 +43,42 @@
     "base": "27c0c5a35e2f116752a83a9c66459484488a1975",
     "head_ref": "docs/156-codex-missions-completes",
     "mergeable": true
+  },
+  "checkpoint_publie": "dcf29af87e9a3673c062cc95d44cec32fa8e2902",
+  "dcf_runs": [
+    {
+      "name": "couverture",
+      "run_id": 39117840428,
+      "sha": "dcf29af87e9a3673c062cc95d44cec32fa8e2902",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "continuité",
+      "run_id": 39117840416,
+      "sha": "dcf29af87e9a3673c062cc95d44cec32fa8e2902",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "isolation",
+      "run_id": 39117840432,
+      "sha": "dcf29af87e9a3673c062cc95d44cec32fa8e2902",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "inventaire isolation",
+      "run_id": 39117840420,
+      "sha": "dcf29af87e9a3673c062cc95d44cec32fa8e2902",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "dcf_ci": {
+    "run_id": 39117840425,
+    "status": "in_progress",
+    "conclusion": null,
+    "note": "validate/image réussis, e2e en cours au relevé ; ne pas transférer au prochain commit."
   }
 }

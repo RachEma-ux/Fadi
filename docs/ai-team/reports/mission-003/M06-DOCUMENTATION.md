@@ -19,3 +19,7 @@ Au relevé GitHub après correction : PR154 ouverte/mergeable, tête76e43d1 ; co
 Restent ouverts : documentation exhaustive des488 fichiers touchés, qualifications de capacités réellement implémentées, métadonnées applicatives du registre, contrats v2/v3, alias `echelle`, intégration et ordre des PR. La cohorte suivante a été effectivement relue par A2 : [20 autres documents/méta](A2/isolation-extra-docs-review.json),43 occurrences,19 à conserver et une réserve de recette OCCT déjà corrigée ici. Restent176 fichiers code et269 fiches historiques non qualifiés sémantiquement. Les269 fiches historiques restent archivées avec leur rôle ; leur texte n’est pas une dépendance opérationnelle démontrée.
 
 Retour arrière documentaire : rétablir les versions antérieures par commit ciblé sur branche après revue si un fait est inexact ; ne pas réécrire les décisions. Aucun fichier source applicatif, workflow, SQL, lockfile ou secret modifié par M06.
+
+## Complément après revue M08
+
+`docs/planche/cahier-planche.md` reçoit une note applicable FR/EN (D-163/AGENTS) au-dessus de C1 ; traitement D-156 historique conservé. Aucun changement de traduction/interface, aucun test bilingue exécuté. Les20 documents,176 fichiers code,269 fiches et449 lignes restantes sont désormais contextualisés dans les rapports A2, avec les limites/125 chemins à rapprocher conservés ; voir index A0.
