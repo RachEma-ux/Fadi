@@ -88,6 +88,15 @@ class RegistreTests(unittest.TestCase):
         self.assertTrue(tr.valider_delta(self.registre, self.delta(preuves_ajoutees=[{'type': 'x', 'fichier': 'r.md'}]), b''))
         self.assertTrue(tr.valider_delta(self.registre, self.delta(preuves_ajoutees=[]), b''))
 
+    def test_deux_deltas_disjoints_enchaines(self):
+        d1, d2 = self.delta(), self.delta(id='T-004')
+        r = copy.deepcopy(self.registre)
+        for d in (d1, d2):
+            self.assertEqual(tr.valider_delta(r, d, b''), [])
+            tr.appliquer_delta(r, d)
+        self.assertEqual(r['progress']['P630']['V630'], 4)
+        self.assertTrue(tr.valider_delta(r, self.delta(), b''))  # même ID rejoué : statut_avant périmé
+
     def test_index_m08(self):
         dossier = self.racine / Path(tr.INDEX_M08).parent
         dossier.mkdir(parents=True)

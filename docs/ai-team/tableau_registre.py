@@ -12,6 +12,7 @@ Usages :
   python3 docs/ai-team/tableau_registre.py --candidats      # tâches ouvertes à intitulé de lecture/consignation
   python3 docs/ai-team/tableau_registre.py --delta D.json   # valider un delta proposé (aucune écriture)
   python3 docs/ai-team/tableau_registre.py --delta D.json --ecrire   # l'intégrer au registre (A0 seulement)
+  python3 docs/ai-team/tableau_registre.py --delta D1.json --delta D2.json --ecrire   # plusieurs deltas préparés sur le même registre
 """
 from __future__ import annotations
 import argparse
@@ -196,7 +197,7 @@ def main() -> int:
     parser.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[2])
     parser.add_argument('--controle', action='store_true')
     parser.add_argument('--candidats', action='store_true')
-    parser.add_argument('--delta', type=Path)
+    parser.add_argument('--delta', type=Path, action='append', help='répétable : deltas appliqués dans l’ordre, tous préparés sur le registre actuel')
     parser.add_argument('--ecrire', action='store_true', help='avec --delta : écrire le registre (propriétaire A0)')
     args = parser.parse_args()
     chemin = args.root / REGISTRE
@@ -204,16 +205,19 @@ def main() -> int:
         contenu = chemin.read_bytes()
         registre = json.loads(contenu.decode('utf-8'))
         if args.delta:
-            delta = json.loads(args.delta.read_text(encoding='utf-8'))
-            erreurs = valider_delta(registre, delta, contenu)
-            if erreurs:
-                print('DELTA_REFUSE :\n- ' + '\n- '.join(erreurs), file=sys.stderr)
-                return 1
-            n = len(delta['changements'])
+            n = 0
+            for fichier in args.delta:
+                delta = json.loads(fichier.read_text(encoding='utf-8'))
+                # Chaque delta est validé sur l'état issu des précédents ; l'empreinte reste celle du registre lu.
+                erreurs = valider_delta(registre, delta, contenu)
+                if erreurs:
+                    print(f'DELTA_REFUSE ({fichier}) :\n- ' + '\n- '.join(erreurs), file=sys.stderr)
+                    return 1
+                appliquer_delta(registre, delta)
+                n += len(delta['changements'])
             if not args.ecrire:
-                print(f'DELTA_VALIDE : {n} changement(s) applicables ; rien écrit (ajouter --ecrire).')
+                print(f'DELTA_VALIDE : {len(args.delta)} delta(s), {n} changement(s) applicables ; rien écrit (ajouter --ecrire).')
                 return 0
-            appliquer_delta(registre, delta)
             chemin.write_text(json.dumps(registre, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
             print(f'DELTA_APPLIQUE : {n} changement(s). Actualiser `note`, STATUS et HANDOFF puis relancer --controle.')
             print(resume(registre))

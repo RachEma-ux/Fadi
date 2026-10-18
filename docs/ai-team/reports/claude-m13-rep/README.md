@@ -50,6 +50,8 @@ python3 docs/ai-team/tableau_registre.py --delta docs/ai-team/reports/claude-m13
 python3 docs/ai-team/tableau_registre.py --controle   # signale les phrases de compteurs STATUS/HANDOFF à actualiser
 ```
 
+**Mise à jour du 18/10 :** une seconde remise ([`claude-m13-coex`](../claude-m13-coex/README.md)) est préparée sur le même registre. Les deux s'intègrent en une seule commande, `--delta <rep> --delta <coex>`, car `--delta` est répétable.
+
 L'intégration refuse le delta si :
 
 - le registre a changé depuis sa préparation (empreinte `base_register_sha256`) ;
