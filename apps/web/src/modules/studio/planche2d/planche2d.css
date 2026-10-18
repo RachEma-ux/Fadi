@@ -158,3 +158,34 @@
     height: 60vh;
   }
 }
+/* Lot CAD-1 : rectangle, aperçus (rectangle en cours, déplacement à blanc), liste des éléments au clavier. */
+.studio-2d-rectangle {
+  fill: none;
+}
+.studio-2d-apercu rect:not(.studio-2d-accroche):not(.studio-2d-accroche-milieu) {
+  fill: none;
+  stroke: #c06000;
+  stroke-dasharray: 5 4;
+}
+.studio-2d-fantome line,
+.studio-2d-fantome rect,
+.studio-2d-fantome circle {
+  fill: none;
+  stroke: #c06000;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+.studio-2d-elements ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.studio-2d-elements button {
+  min-height: 32px;
+  text-align: left;
+}
+.studio-2d-elements button[aria-pressed="true"] {
+  font-weight: 600;
+}

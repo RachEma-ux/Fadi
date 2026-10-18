@@ -3,7 +3,8 @@
  * Recette de Studio (ADR-STUDIO-NAV-01, NAV-001 à NAV-004, NAV-006, NAV-008, NAV-009) : entrée de la barre verticale,
  * routes propres sous /studio, aucun passage par le Parcours ni l'Atelier, refus sans divulgation, adresse inconnue
  * explicite, barre jamais masquée ; études et variantes créées par l'interface, droits relus par le serveur ; Planche 2D :
- * dessin, cote associée, révisions immuables, réouverture, conflit et lecture seule. API et application construites, même origine, base CI dédiée.
+ * dessin, cote associée, révisions immuables, réouverture, conflit et lecture seule ; lot CAD-1 : rectangle, déplacer,
+ * liste des éléments au clavier, garde de sortie, rejeu après réponse perdue. API et application construites, même origine, base CI dédiée.
  *
  * BASE_URL=http://localhost:3001 OUT=atelier-captures/studio node apps/web/e2e/studio-navigation.mjs
  */
@@ -282,6 +283,11 @@ try {
   await autre.locator('[data-studio-2d-entree="ligne"]').click();
   await cliquer(autre, 100, 200);
   await cliquer(autre, 200, 260);
+  await autre.locator("body").press("Escape");
+  // Relecture de fond de la liste (retour sur l'onglet) : l'éditeur n'est ni remonté ni remplacé, un avis non bloquant s'affiche.
+  await autre.evaluate(() => window.dispatchEvent(new Event("visibilitychange")));
+  await autre.locator('[data-studio-2d-plus-recente="3"]').waitFor();
+  check("Planche 2D : une relecture de fond signale la révision plus récente sans perdre le dessin non enregistré", (await autre.locator('[data-type="ligne"]').count()) === 3 && (await etat2d(autre)) === "Modifications non enregistrées");
   await autre.locator('[data-studio-2d-entree="enregistrer"]').click();
   await autre.locator("[data-studio-2d-conflit]").waitFor();
   check("Planche 2D : base dépassée → conflit, aucune révision écrasée", (await a.api("get", revisionsApi)).length === 3);
@@ -299,6 +305,140 @@ try {
   await b.page.goto(url2d);
   await b.page.locator("[data-studio-2d-lecteur]").waitFor();
   check("Planche 2D : un lecteur consulte sans pouvoir dessiner ni enregistrer", (await b.page.locator('[data-studio-2d-entree="ligne"]').isDisabled()) && (await b.page.locator('[data-studio-2d-entree="enregistrer"]').isDisabled()) && (await b.page.locator('[data-type="cote"]').count()) === 1);
+
+  // Lot CAD-1 : registre des outils, Rectangle (R), Déplacer (M), liste des éléments au clavier, garde de sortie, rejeu.
+  /** Raccourci tapé hors de tout bouton ou champ (comme dans la zone de dessin). */
+  const touche = async (k, p = page) => {
+    await p.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+    await p.keyboard.press(k);
+  };
+  const outilActif = async (id) => (await page.locator(`[data-studio-2d-entree="${id}"]`).getAttribute("aria-pressed")) === "true";
+  const champs = (sel) => page.locator(`${sel} input`).evaluateAll((els) => els.map((e) => e.value));
+  const rect = page.locator('[data-type="rectangle"]');
+  await touche(" ");
+  await page.locator('[data-studio-2d-entree="rectangle"]').focus();
+  await page.keyboard.press(" ");
+  check("CAD-1 : Espace sur un bouton de la barre l'active (raccourci global non détourné)", await outilActif("rectangle"));
+  await touche(" ");
+  await touche("r");
+  const titres = await page.locator('[role=toolbar][aria-label="Outils"] button').evaluateAll((els) => els.map((e) => e.getAttribute("title")));
+  const icones = await page.locator('[role=toolbar] button path').evaluateAll((els) => els.map((e) => e.getAttribute("d")));
+  check("CAD-1 : raccourci R → Rectangle ; Rectangle et Déplacer dans « Outils », infobulle « Libellé — raccourci », icônes toutes distinctes", (await outilActif("rectangle")) && titres.includes("Rectangle — R") && titres.includes("Déplacer — M") && new Set(icones).size === icones.length, titres.join(" | "));
+  await placer(10, 0);
+  check("CAD-1 : après le premier coin, la saisie demande le coin opposé", (await page.locator("[data-studio-2d-etape]").textContent()) === "Coin opposé");
+  await placer(13, 2);
+  check("CAD-1 : rectangle posé par saisie numérique (10 ; 0) → (13 ; 2) : origine bas-gauche, 3 × 2 m", (await rect.count()) === 1 && (await rect.getAttribute("data-geometrie")) === "10 0 3 2");
+  await touche("Shift+Z");
+  await touche(" ");
+  const r1 = await rect.evaluate((e) => ({ x: +e.getAttribute("x"), y: +e.getAttribute("y"), w: +e.getAttribute("width"), h: +e.getAttribute("height") }));
+  await cliquer(page, r1.x + r1.w / 2, r1.y + r1.h);
+  await page.locator('[data-studio-2d-inspecteur="rectangle"]').waitFor();
+  check("CAD-1 : clic sur un côté → l'inspecteur montre le rectangle (origine X/Y, largeur, hauteur)", (await champs('[data-studio-2d-inspecteur="rectangle"]')).join(";") === "10;0;3;2");
+  check("CAD-1 : « Éléments du dessin » liste chaque élément au clavier", (await page.locator("[data-studio-2d-element]").count()) === 3);
+  await page.locator('[data-studio-2d-element][data-type-element="ligne"]').focus();
+  await page.keyboard.press("Enter");
+  await page.locator('[data-studio-2d-inspecteur="ligne"]').waitFor();
+  check("CAD-1 : Entrée sur un élément de la liste le sélectionne", (await page.locator('[data-studio-2d-element][data-type-element="ligne"]').getAttribute("aria-pressed")) === "true");
+  // Déplacer la ligne (0 ; 0) → (1 ; 1) par saisie numérique : la cote liée suit, sa valeur ne change pas.
+  const lAvant = await extremites(page, '[data-type="ligne"]');
+  const aAvant = await extremites(page, '[data-type="cote"] line');
+  await touche("m");
+  check("CAD-1 : raccourci M → Déplacer ; la saisie demande le point de base", (await outilActif("deplacer")) && (await page.locator("[data-studio-2d-etape]").textContent()) === "Point de base");
+  await placer(0, 0);
+  await placer(1, 1);
+  const lApres = await extremites(page, '[data-type="ligne"]');
+  const aApres = await extremites(page, '[data-type="cote"] line');
+  check(
+    "CAD-1 : ligne déplacée de (1 ; 1) m, la cote liée suit (mêmes points, valeur 6,250 m inchangée)",
+    (await valeurCote()) === "6.250" && lApres.x1 > lAvant.x1 && lApres.y1 < lAvant.y1 && Math.abs(lApres.x1 - lAvant.x1 - (lApres.x2 - lAvant.x2)) < 1e-6 && aApres.x1 === lApres.x1 && aApres.y1 === lApres.y1 && aAvant.x1 === lAvant.x1 && (await champs('[data-studio-2d-inspecteur="ligne"]')).join(";") === "1;1;7.25;1",
+  );
+  await touche("Control+z");
+  check("CAD-1 : Ctrl+Z annule le déplacement", (await extremites(page, '[data-type="ligne"]')).x1 === lAvant.x1);
+  await touche("Control+y");
+  check("CAD-1 : Ctrl+Y le rétablit", (await extremites(page, '[data-type="ligne"]')).x1 === lApres.x1);
+  // Une cote associée sélectionnée seule ne se déplace pas : refus entier, message clair, rien ne bouge.
+  await touche(" ");
+  const cercles = await page.locator('[data-type="cote"] circle').evaluateAll((cs) => cs.map((c) => ({ x: +c.getAttribute("cx"), y: +c.getAttribute("cy") })));
+  await cliquer(page, (cercles[0].x + cercles[1].x) / 2, (cercles[0].y + cercles[1].y) / 2);
+  await page.locator('[data-studio-2d-inspecteur="cote"]').waitFor();
+  await touche("m");
+  await placer(0, 0);
+  await placer(0, 1);
+  const refus = (await page.locator("[data-studio-2d-message]").textContent()) ?? "";
+  const aRefus = await extremites(page, '[data-type="cote"] line');
+  check("CAD-1 : cote associée déplacée seule → refus explicite, cote et ligne inchangées", refus.includes("Cote associée à une ligne non déplacée") && aRefus.x1 === aApres.x1 && aRefus.y1 === aApres.y1 && (await valeurCote()) === "6.250", refus);
+  // Annuler la création du calque actif : le dessin reprend sur le premier calque.
+  await page.fill("#studio-2d-calque-nom", "Calque B");
+  await page.locator(".studio-2d-calque-nouveau button[type=submit]").click();
+  await touche("Control+z");
+  await touche("l");
+  await placer(20, 0);
+  await placer(21, 0);
+  await touche("Escape");
+  check("CAD-1 : calque actif retiré par Ctrl+Z → la ligne se pose sur le premier calque", (await page.locator('[data-type="ligne"]').count()) === 2 && (await page.locator("[data-studio-2d-message]").count()) === 0 && (await page.locator("[data-calque]").count()) === 1);
+  // Suppr depuis la liste des éléments ; puis annuler.
+  const derniere = page.locator('[data-studio-2d-element][data-type-element="ligne"]').last();
+  await derniere.focus();
+  await page.keyboard.press("Delete");
+  check("CAD-1 : Suppr sur un élément de la liste le supprime", (await page.locator('[data-type="ligne"]').count()) === 1);
+  await touche("Control+z");
+  // Garde de sortie : un lien de la planche demande confirmation tant que le dessin n'est pas enregistré.
+  const urlAvant = page.url();
+  let dialogue = "";
+  page.once("dialog", (d) => {
+    dialogue = d.message();
+    void d.dismiss();
+  });
+  await page.locator('[data-studio-2d-revisions] [data-revision="1"] a').click();
+  await page.waitForTimeout(300);
+  check("CAD-1 : quitter par un lien de révision avec un dessin non enregistré → confirmation ; refusée, rien n'est perdu", dialogue.includes("ne sont pas enregistrées") && page.url() === urlAvant && (await etat2d()) === "Modifications non enregistrées" && (await rect.count()) === 1, dialogue);
+  await touche("Control+s");
+  await page.waitForFunction(() => document.querySelector("[data-studio-2d-etat]")?.textContent === "Enregistré — révision n° 4");
+  await page.goto(urlEtude);
+  await page.locator("[data-studio-etude]").waitFor();
+  await page.goto(url2d);
+  await page.locator('[data-type="rectangle"]').waitFor();
+  const rouvert4 = [await rect.getAttribute("data-geometrie"), await page.locator('[data-type="ligne"]').count(), await valeurCote(), await etat2d()];
+  check("CAD-1 : enregistré puis rouvert, le rectangle et la ligne déplacée sont restitués (révision n° 4)", rouvert4.join(" | ") === "10 0 3 2 | 2 | 6.250 | Enregistré — révision n° 4", rouvert4.join(" | "));
+  // Réponse perdue : le nouvel essai du même dessin rejoue la même requête (aucune révision en double).
+  let perdre = 0;
+  await page.route(`**${revisionsApi}`, async (route) => {
+    if (route.request().method() === "POST" && perdre > 0) {
+      perdre -= 1;
+      await route.fetch();
+      await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "reponse_perdue" }) });
+    } else await route.continue();
+  });
+  const deplacerRectangle = async (dy) => {
+    await page.locator('[data-studio-2d-element][data-type-element="rectangle"]').click();
+    await touche("m");
+    await placer(10, 0);
+    await placer(10, dy);
+  };
+  await deplacerRectangle(1);
+  perdre = 1;
+  await touche("Control+s");
+  await page.locator("[data-studio-2d-message] button").waitFor();
+  await page.locator("[data-studio-2d-message] button").click();
+  await page.waitForFunction(() => document.querySelector("[data-studio-2d-etat]")?.textContent === "Enregistré — révision n° 5");
+  check("CAD-1 : réponse perdue puis « Réessayer » sans modification → même requête, une seule révision créée", (await a.api("get", revisionsApi)).length === 5 && (await rect.getAttribute("data-geometrie")) === "10 1 3 2");
+  // Réponse perdue puis dessin modifié : nouvelle requête ; le serveur signale le conflit (jamais « requête réutilisée »).
+  await deplacerRectangle(-1);
+  perdre = 1;
+  await touche("Control+s");
+  await page.locator("[data-studio-2d-message] button").waitFor();
+  await deplacerRectangle(1);
+  await touche("Control+s");
+  await page.locator("[data-studio-2d-conflit]").waitFor();
+  check("CAD-1 : après une réponse perdue, un dessin modifié part sous une nouvelle requête → conflit explicite, rien d'écrasé", !((await page.locator("[data-studio-2d-conflit]").textContent()) ?? "").includes("identifiant de requête") && (await a.api("get", revisionsApi)).length === 6);
+  await page.unroute(`**${revisionsApi}`);
+  await page.locator("[data-studio-2d-conflit] button").click();
+  await page.waitForFunction(() => document.querySelector("[data-studio-2d-etat]")?.textContent === "Enregistré — révision n° 6");
+  check("CAD-1 : la dernière révision est rechargée explicitement (rectangle à (10 ; 0))", (await rect.getAttribute("data-geometrie")) === "10 0 3 2");
+  await page.screenshot({ path: join(OUT, "studio-planche-2d-cad1.png") });
+  await page.addScriptTag({ path: AXE_SCRIPT });
+  const gravesCad1 = await page.evaluate(async () => (await window.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] } })).violations.filter((v) => ["critical", "serious"].includes(v.impact)).map((v) => v.id));
+  check("CAD-1 : accessibilité de la Planche 2D (rectangle, liste des éléments) : aucune violation critique ou sérieuse", gravesCad1.length === 0, gravesCad1.join(", "));
 
   // Accessibilité de l'accueil Studio.
   await page.goto(`${BASE}/studio`);

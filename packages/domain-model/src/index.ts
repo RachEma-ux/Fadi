@@ -17,3 +17,4 @@ export * from "./business-checks.js";
 export * from "./documents.js";
 export * from "./example-report.js";
 export * as studio2d from "./studio-document2d.js";
+export * as studioRegistre from "./studio-registre.js";
