@@ -44,3 +44,19 @@ Les recommandations antérieures [Q-M003-D01..D07](https://github.com/RachEma-ux
 - Les six contrôles de provenance `6/630 = 1,0 %` ne démontrent pas six fonctions développées ; 630 affectations ne font pas 630 livraisons.
 - « Code », « Review ChatGPT » et « Review Admin » restent trois validations séparées dans la checklist interactive ; aucune coche implicite.
 - Livrables code ne sont « prêts à revue » qu'avec preuve des tests simulés, de l'absence de connexion DB et des contrôles CI pertinentes. Le propriétaire conserve les opérations extérieures réservées.
+
+## 5. Exécution constatée Mission 004 — sans extension du mandat
+
+Le lot DB-1/2 est publié dans la PR draft #169 au commit `a15d65044ca4454bf3159f4155e51465b2a70a2c` : 129 tests simulés, types, build et CI pure 39125959694 réussis. Les jobs d’intégration sont skipped ; DB-3 et la fusion restent exclus. Le dernier mandat utilisateur Mission 004 interdit **toute connexion à une base réelle** : il prime la portée plus large de D04 pour cette session. Aucun service n’a été repris.
+
+Le checkpoint documentaire `7b0cca44fa44449cae80785dea078a857be4180c` est sauvegardé sur la branche courte `docs/156-m004-checkpoint-sans-db`, sans PR : aucun des six workflows inspectés n’est éligible sur ce push. Référence distante, absence de PR et zéro run au SHA ont été confirmés. Cette sauvegarde conserve les fichiers et registres canoniques ; leur intégration à #165 attend la décision sur le patch CI documentaire sûr. Aucun workflow n’a été modifié dans cette branche.
+
+Ce snapshot comporte 30/630 conditions **documentaires** vérifiées, dont 24 nouvelles revues individuellement, et aucune acceptation produit ou gate. Le relevé 6/630 de la section précédente reste historique et demeure celui de #165 tant que ce checkpoint n’y est pas intégré. PDEV reste N/D. [Rapport et preuves du checkpoint](reports/mission-004/README.md).
+
+Questions nouvelles réellement publiées, sans reprendre D01–D07 :
+
+- [Q-M004-CI-DOC-PURE — patch complet](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249783428) : décision technique sur le workflow avant synchronisation #165 ; ni admin ni DB-3.
+- [Q-M004-G0-REVIEW](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249930964) : décision de passage documentaire G0 sur le dossier complet et ses trois revues ; pas un nouveau vote du pilote.
+- [Q-M004-DEC01-ORIENTATION](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249931771) et [Q-M004-DEC03-ORIENTATION](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249932632) : orientations de schéma à instruire, sans clôture complète des décisions, code Studio, POC ou migration autorisés.
+
+En l’absence de réponse, seuls ces choix ou opérations dépendantes attendent. Les comparaisons d’oracles, qualifications individuelles et contrats documentaires prêts continuent ; aucune décision n’est déduite du temps écoulé.

@@ -19,3 +19,7 @@ Synchronisation165 attend décisionCI sansDB ; checkpointtemporaire sansPR possi
 ## Critères de sortie
 
 Preuve de clôture par nature et ID, conformité/test/acceptation distinctes. Aucun cochage source/HTML par préparation ; options reportées conservées. Propriétaires uniques : A0 documentscommuns ; A3 setup/clientDB sousrevues A2/A5, A6workflow ; futurs schémas/manifestes A2contrat puisA3autorisé, routes/styles/traductions A4contrat puisA3désigné. Respecter PR142/152/154/168 avant recouvrement.
+
+## Suite du checkpoint Mission 004
+
+Après7b0cca4 :32qualifications individuelles sansclôture, huitcomparaisonsM08, contratsM23/M27 et revueCSP détaillée. P630reste30conditionsdocumentaires ;203Àdéfinir/188Encours/209Bloqué/30Vérifié. La prochaine cohorte d’analyse porte sur M08-PATH-001..007, lecture seule avec revue indépendante ; détails et limites dans STATUS/HANDOFF mis à jour ensemble.

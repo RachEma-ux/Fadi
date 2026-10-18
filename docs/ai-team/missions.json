@@ -473,7 +473,7 @@
       "execution": {
         "checkpoint": "Mission004 après instructions63e804b, code PR169/a15d650",
         "statut": "En cours",
-        "constat": "125 occurrences/69fiches/33chemins rapprochés ;185 relations candidates et305 citations exactes contrôlées, sans équivalence d’oracles.",
+        "constat": "125 occurrences/69fiches/33chemins rapprochés ;185 relations candidates et305 citations exactes contrôlées, sans équivalence d’oracles. Puis huitentrées de niveaux différents examinées :52sous-attendus,7présents27partiels18absents,183occurrences/131citationsuniques exactes ; revue A5 indépendante. Conflit P2 classification confirmé statiquement :écritureclasseIfc inconditionnelle aprèscode/retrait, contrairementcontrat relu ;7sources/96lignes, pasruntime.",
         "responsable": "A2",
         "preuves": [
           "docs/ai-team/reports/mission-003/A2/isolation-nominal-review.json",
@@ -484,7 +484,10 @@
           "docs/ai-team/reports/mission-004/A2/M08-125-PATH-MAPPING.json",
           "docs/ai-team/reports/mission-004/A5/M08-REVUE-ORACLES-A5.json",
           "docs/ai-team/reports/mission-004/validation-M08-A0.json",
-          "docs/ai-team/reports/mission-004/README.md"
+          "docs/ai-team/reports/mission-004/README.md",
+          "docs/ai-team/reports/mission-004/A2/M08-8-ORACLES-COMPARAISON.json",
+          "docs/ai-team/reports/mission-004/A5/M08-8-REVUE-INDEPENDANTE-A5.json",
+          "docs/ai-team/reports/mission-004/A2/M08-CLASSIFICATION-CONFLIT-STATIQUE.md"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -494,9 +497,9 @@
           "cause": "Réalisation/accords/preuves aval distincts restent requis pour clore la mission entière ; la sous-tâche documentaire READY continue.",
           "responsable": "A2",
           "essais_effectues": "125 occurrences/69fiches/33chemins rapprochés ;185 relations candidates et305 citations exactes contrôlées, sans équivalence d’oracles.",
-          "prochaine_action": "Comparer attendus complets des candidats partiels, puis traiter abrégé/DA09prospectif et hors scanner/licences ; garder mission ouverte."
+          "prochaine_action": "Comparer attendus des entrées restantes sans équivalence déduite ; commencer M08-PATH-001..007. Instruire écart apparent DA06-08/classeIfc en relisant D111 avant arbitrage."
         },
-        "suite": "Comparer attendus complets des candidats partiels, puis traiter abrégé/DA09prospectif et hors scanner/licences ; garder mission ouverte.",
+        "suite": "Comparer attendus des entrées restantes sans équivalence déduite ; commencer M08-PATH-001..007. Instruire écart apparent DA06-08/classeIfc en relisant D111 avant arbitrage.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -1284,24 +1287,50 @@
         "M14:DEC-11/13 applicables"
       ],
       "execution": {
-        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
-        "statut": "Bloqué",
-        "constat": "Dossier workers/mémoire préparé ; aucun traitement lancé.",
+        "checkpoint": "Mission004 suite après7b0cca4",
+        "statut": "En cours",
+        "constat": "Contrat documentaire jobs/reprise/restauration préparé, sixexemples et manifeste illustratif incomplet, revue A2 sans conflit documentaire bloquant ; aucun runtime/DB/restore.",
         "responsable": "A6",
         "preuves": [
-          "docs/ai-team/reports/mission-003/A2/LOT-D.md"
+          "docs/ai-team/reports/mission-003/A2/LOT-D.md",
+          "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+          "docs/ai-team/reports/mission-004/A2/REVUE-M23-M27.json"
         ],
         "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
         "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
         "cloturee": false,
         "acceptation_metier": false,
         "blocage": {
-          "cause": "Dossier workers/mémoire préparé ; aucun traitement lancé.",
+          "cause": "Décisions et autorisations de réalisation/restauration absentes ; sous-tâche documentaire réalisée seulement.",
           "responsable": "A6",
-          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
-          "prochaine_action": "DEC11/13, contrats jobs/révision et instrumentation avant lot D."
+          "essais_effectues": "Contrat documentaire jobs/reprise/restauration préparé, sixexemples et manifeste illustratif incomplet, revue A2 sans conflit documentaire bloquant ; aucun runtime/DB/restore.",
+          "prochaine_action": "Instruire DEC et mécanisme de coupe/epoch/commit après réponse aux contratsG1 ; préparation indépendante continue, code/POC/restauration restent non autorisés."
         },
-        "suite": "DEC11/13, contrats jobs/révision et instrumentation avant lot D."
+        "suite": "Instruire DEC et mécanisme de coupe/epoch/commit après réponse aux contratsG1 ; préparation indépendante continue, code/POC/restauration restent non autorisés.",
+        "historique": [
+          {
+            "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+            "statut": "Bloqué",
+            "constat": "Dossier workers/mémoire préparé ; aucun traitement lancé.",
+            "responsable": "A6",
+            "preuves": [
+              "docs/ai-team/reports/mission-003/A2/LOT-D.md",
+              "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+              "docs/ai-team/reports/mission-004/A2/REVUE-M23-M27.json"
+            ],
+            "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+            "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+            "cloturee": false,
+            "acceptation_metier": false,
+            "blocage": {
+              "cause": "Dossier workers/mémoire préparé ; aucun traitement lancé.",
+              "responsable": "A6",
+              "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+              "prochaine_action": "DEC11/13, contrats jobs/révision et instrumentation avant lot D."
+            },
+            "suite": "DEC11/13, contrats jobs/révision et instrumentation avant lot D."
+          }
+        ]
       }
     },
     {
@@ -1517,24 +1546,50 @@
         "M00:accord avant migration sensible"
       ],
       "execution": {
-        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
-        "statut": "Bloqué",
-        "constat": "Migration/retour arrière spécifiés ; aucun inventaire client ni migration exécutés.",
+        "checkpoint": "Mission004 suite après7b0cca4",
+        "statut": "En cours",
+        "constat": "Contrat documentaire jobs/reprise/restauration préparé, sixexemples et manifeste illustratif incomplet, revue A2 sans conflit documentaire bloquant ; aucun runtime/DB/restore.",
         "responsable": "A6",
         "preuves": [
-          "docs/ai-team/reports/mission-003/A2/LOT-R.md"
+          "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+          "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+          "docs/ai-team/reports/mission-004/A2/REVUE-M23-M27.json"
         ],
         "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
         "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
         "cloturee": false,
         "acceptation_metier": false,
         "blocage": {
-          "cause": "Migration/retour arrière spécifiés ; aucun inventaire client ni migration exécutés.",
+          "cause": "Décisions et autorisations de réalisation/restauration absentes ; sous-tâche documentaire réalisée seulement.",
           "responsable": "A6",
-          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
-          "prochaine_action": "Schémas décidés puis simulation autorisée sur copie isolée ; accords sensibles séparés."
+          "essais_effectues": "Contrat documentaire jobs/reprise/restauration préparé, sixexemples et manifeste illustratif incomplet, revue A2 sans conflit documentaire bloquant ; aucun runtime/DB/restore.",
+          "prochaine_action": "Instruire DEC et mécanisme de coupe/epoch/commit après réponse aux contratsG1 ; préparation indépendante continue, code/POC/restauration restent non autorisés."
         },
-        "suite": "Schémas décidés puis simulation autorisée sur copie isolée ; accords sensibles séparés."
+        "suite": "Instruire DEC et mécanisme de coupe/epoch/commit après réponse aux contratsG1 ; préparation indépendante continue, code/POC/restauration restent non autorisés.",
+        "historique": [
+          {
+            "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+            "statut": "Bloqué",
+            "constat": "Migration/retour arrière spécifiés ; aucun inventaire client ni migration exécutés.",
+            "responsable": "A6",
+            "preuves": [
+              "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+              "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+              "docs/ai-team/reports/mission-004/A2/REVUE-M23-M27.json"
+            ],
+            "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+            "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+            "cloturee": false,
+            "acceptation_metier": false,
+            "blocage": {
+              "cause": "Migration/retour arrière spécifiés ; aucun inventaire client ni migration exécutés.",
+              "responsable": "A6",
+              "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+              "prochaine_action": "Schémas décidés puis simulation autorisée sur copie isolée ; accords sensibles séparés."
+            },
+            "suite": "Schémas décidés puis simulation autorisée sur copie isolée ; accords sensibles séparés."
+          }
+        ]
       }
     },
     {

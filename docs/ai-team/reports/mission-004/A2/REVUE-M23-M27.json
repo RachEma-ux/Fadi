@@ -1,0 +1,221 @@
+{
+  "review": "A2-REVUE-M23-M27-M004",
+  "scope": "Revue indépendante documentaire des quatre fichiers A6 : six exemples et manifeste de restauration lus entièrement et rapprochés de M17, M24 et IF-003/007/010/011.",
+  "sources": [
+    {
+      "path": "A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+      "sha256": "45b5b77923079d12f9dc98a1050a32ed177f74de0243075b2efb041a1585eb3e"
+    },
+    {
+      "path": "A6/M23-M27/EXEMPLES-JOBS-REPRISE-RESTAURATION.json",
+      "sha256": "71c1cfeafd36f1741f55395ccb4d524a9abee439f9e078a385d7802a1eb54632"
+    },
+    {
+      "path": "A6/M23-M27/SOURCES.json",
+      "sha256": "ba6f442df835dc3d3a36e01a1b9d4bfbf8788ec825157948fa01e8d8fc0c3b8f"
+    },
+    {
+      "path": "A6/M23-M27/VALIDATION-COHERENCE-JSON.json",
+      "sha256": "9b0bd10c3bbac6fbcc8dcb676db970db6ec44769c10f916c8b3b0cf1ac6c1ff1"
+    },
+    {
+      "path": "A2/M05-M17-CONTRATS-DURABLES.md",
+      "sha256": "893d4917fe810867b589727e82d1789db56453f86c78fbfab56b294acedac84b"
+    },
+    {
+      "path": "A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+      "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917"
+    },
+    {
+      "path": "A1/studio-141-fiches-v2.json",
+      "sha256": "48c8aa1093bec1fda771961d4d0fb7827ba7e4775f72ed9afe6cf29feada2df3"
+    }
+  ],
+  "normative_refs_exactes": [
+    {
+      "id": "EX-089",
+      "texte_exact": "EX-089 — Persistance et reprise. Une confirmation envoyée au navigateur doit correspondre à un engagement durable conforme au contrat de sauvegarde. Les sauvegardes, restaurations et récupérations d’incident sont testées sur un corpus contenant données de conception, associations et publications.",
+      "source_paragraphs": [
+        866
+      ],
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    {
+      "id": "EX-090",
+      "texte_exact": "EX-090 — Reconstruction. Une restauration doit permettre de retrouver le modèle canonique confirmé, les manifestes et leurs pièces, les références, les droits applicables et les identités des documents. Les caches GPU et index spatiaux sont reconstruits, non sauvegardés comme preuve faisant autorité.",
+      "source_paragraphs": [
+        869
+      ],
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    {
+      "id": "EX-091",
+      "texte_exact": "EX-091 — Migration non destructrice. Une étude existante ne doit pas perdre une propriété, une cote, une association, un identifiant documentaire, une révision ou un accès sans rapport explicite, procédure d’accord et solution de restauration. Toute bascule définit des jeux d’essai d’avant/après et un point de retour arrière.",
+      "source_paragraphs": [
+        872
+      ],
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    {
+      "id": "INV-005",
+      "texte_exact": "Une opération rejetée ne modifie pas partiellement les données canoniques.",
+      "source_paragraphs": [
+        215,
+        216
+      ],
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    {
+      "id": "INV-006",
+      "texte_exact": "Un résultat dérivé ancien est identifiable et n’écrase pas le résultat courant.",
+      "source_paragraphs": [
+        217,
+        218
+      ],
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    {
+      "id": "IF-003",
+      "texte_exact": "IF-003 — Calcul lourd (exemple booléen). ① collecte des paramètres ; ② capture immuable de l’identifiant de révision ; ③ soumission au gestionnaire de tâches ; ④ worker/WASM ou service serveur ; ⑤ retour résultat + révision source + métriques ; ⑥ vérification du contexte et des droits ; ⑦ engagement transactionnel explicite ; ⑧ mise à jour des projections. Un résultat ancien peut être conservé à titre historique, pas appliqué à une révision plus récente.",
+      "source_paragraphs": [
+        200
+      ],
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    {
+      "id": "IF-007",
+      "texte_exact": "IF-007 — Statuts des jobs. queued → loading → running → completed, avec branches cancel_requested, cancelled, failed, superseded, timed_out. Une demande d’annulation n’équivaut pas immédiatement à un arrêt matériel ; le résultat d’une tâche finalement terminée après annulation ne peut être engagé sans nouvelle vérification.",
+      "source_paragraphs": [
+        664
+      ],
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    {
+      "id": "IF-010",
+      "texte_exact": "IF-010 — Observation. Champs : issueId, catégorie, source du contrôle, révisions examinées, objets/vues, auteur, gravité selon règles décidées, description et pièces justificatives, responsable éventuel, état, journal de décisions, références des recontrôles et condition de clôture. Les identifiants BCF éventuels sont conservés comme références, non assimilés automatiquement aux identifiants internes.",
+      "source_paragraphs": [
+        819
+      ],
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    {
+      "id": "IF-011",
+      "texte_exact": "IF-011 — Journal de changement. Événement avec eventId, transaction, auteur, étude/variante, révision base/issue, effets, horodatage serveur et relation éventuelle à un job. La diffusion de notifications ne constitue pas une confirmation métier sans engagement préalable.",
+      "source_paragraphs": [
+        868
+      ],
+      "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    }
+  ],
+  "verdict": "AUCUNE_CONTRADICTION_BLOQUANTE_IDENTIFIEE_DANS_PERIMETRE_DOCUMENTAIRE",
+  "blocking_findings": [],
+  "corrections_requested": [],
+  "contract_checks": [
+    "États IF-007 conservés ; exécution, fraîcheur, éligibilité et engagement restent des dimensions distinctes.",
+    "Ancienne génération, annulation ou timeout ne permettent aucun engagement automatique, même si le calcul géométrique semble identique.",
+    "authorityEpoch reste une précondition candidate ; aucune autorité concurrente. Les parcours A/B/C ne créent pas de modèle absent.",
+    "Une coupe cohérente doit réunir modèle, journal, résultats des demandes et outbox. Sa réalisation reste à ratifier ; notification seule ne confirme rien.",
+    "Un retry ou une notification ne clôt pas une observation IF-010 ; les attributs de journal IF-011 sont conservés.",
+    "Publication historique et nouvelle source restent séparées. Approve et publish relèvent toujours de M24, sans droit implicite conféré par une livraison.",
+    "La restauration dans une copie isolée préserve les nouvelles écritures et demandes pendantes. Toute bascule exige rapprochement, accord et solution de restauration ; les anciennes identités sont refusées.",
+    "Aucun budget, délai, quota, nombre de workers, rétention, RPO ou RTO fixé ; mesures et décisions restent ouvertes."
+  ],
+  "example_verdicts": [
+    {
+      "id": "DOC-STALE",
+      "verdict": "COHERENT_DOCUMENTAIRE",
+      "checks": [
+        "completed ne vaut pas engagement. Le résultat associated rev-10 face à rev-11 reste historique.",
+        "Zéro effet canonique et tête courante rev-11 préservée."
+      ],
+      "limits": [
+        "Pas de preuve de refus ou atomicité réellement exécutée."
+      ]
+    },
+    {
+      "id": "DOC-CRASH",
+      "verdict": "COHERENT_DOCUMENTAIRE",
+      "checks": [
+        "Tentative 1 failed/génération 1 distincte de tentative 2 queued/génération 2.",
+        "Ancien résultat rejeté et zéro effet ; acceptedAttempt désigne la tentative retenue, pas un résultat terminé ou engagé."
+      ],
+      "limits": [
+        "Aucun worker ou crash exécuté ; terminaison des promesses exactement une fois encore à démontrer."
+      ]
+    },
+    {
+      "id": "DOC-CANCEL-CURRENT",
+      "verdict": "COHERENT_DOCUMENTAIRE",
+      "checks": [
+        "cancel_requested peut être suivi de la fin matérielle completed sans engagement automatique.",
+        "Une nouvelle intention et des droits actuels sont requis. Après engagement, compenser nécessite une nouvelle commande ; aucun événement original effacé."
+      ],
+      "limits": [
+        "Aucune annulation de noyau démontrée ; validité et exécution restent distinctes."
+      ]
+    },
+    {
+      "id": "DOC-LOST-ACK",
+      "verdict": "COHERENT_DOCUMENTAIRE",
+      "checks": [
+        "Même requestId, portée et contenu retournent événement et révision durables identiques, sans nouvel événement.",
+        "Contenu différent refusé. Sans preuve durable, le client reste indéterminé, sans succès ou annulation inventés.",
+        "Événement IF-011 avec transaction, auteur, contexte, révisions, effets, date et job."
+      ],
+      "limits": [
+        "Acteur authentifié implicite dans le scénario synthétique ; M17 conserve la portée acteur/contexte et les droits serveur. Aucun nouveau format de transport adopté."
+      ]
+    },
+    {
+      "id": "DOC-OUTBOX-PUBLICATION",
+      "verdict": "COHERENT_DOCUMENTAIRE",
+      "checks": [
+        "Engagement durable et livraison pending distincts ; un doublon ne crée ni approbation ni nouvel événement métier.",
+        "Empreintes du manifeste et de son approbation identiques ; ensemble explicitement coordonné dessin2D rev-10 et associé rev-12.",
+        "Source ultérieure sans réécriture de publication ; observation soumise au recontrôle."
+      ],
+      "limits": [
+        "Observation IF-010 volontairement partielle : catégorie, source, auteur, gravité, pièces et journal restent à compléter dans une réalisation future.",
+        "Ne démontre pas les permissions approve/publish ni la conformité complète IF-009 ; M24 reste le contrat de référence."
+      ]
+    },
+    {
+      "id": "DOC-RESTORE-NEW-WRITES",
+      "verdict": "COHERENT_DOCUMENTAIRE",
+      "checks": [
+        "Copie isolée ; aucun remplacement implicite de R12/R13 par R10.",
+        "Nouvelles écritures confirmées et queue pendante conservées avant rapprochement et accord.",
+        "Ancien job sans engagement automatique ; nouvelle epoch seulement après bascule autorisée."
+      ],
+      "limits": [
+        "Un rapport de pertes approuvé ne dispense pas de solution de restauration EX-091.",
+        "Aucun mapping, rejeu, bascule ou restauration réellement exécuté."
+      ]
+    },
+    {
+      "id": "restoreManifestCandidate",
+      "verdict": "COHERENT_EN_TANT_QU_EXEMPLE_EXPLICITEMENT_INCOMPLET",
+      "checks": [
+        "Contexte, coupe, epoch, sources versionnées, journal, résultats des commandes, outbox, publications, approbations, pièces, droits et observations référencés.",
+        "Caches GPU, index et previews reconstruisibles ; queues et événements ne sont pas jetés.",
+        "Pièce manquante implique état incomplet, sans substitution latest ; aucune rétention décidée."
+      ],
+      "limits": [
+        "Exemple explicitement incomplet, pas manifeste accepté : placeholders ne prouvent ni lecteurs, versions, parentés, droits actuels, disponibilité des pièces, unités et repères complets.",
+        "Toute instanciation future incomplète doit refuser une déclaration de récupération fidèle."
+      ]
+    }
+  ],
+  "pure_documentary_checks": {
+    "source_sha256_matches": 5,
+    "illustrative_fingerprints_recomputed": 6,
+    "application_validator_executed": false,
+    "note": "Recalculs de SHA256 et cohérence de fichiers JSON uniquement. Aucun worker, DB, restauration ou test produit exécuté par A2."
+  },
+  "limits": [
+    "Avis de cohérence, sans conformité exhaustive aux 141 obligations ni acceptation du MVP ; exemples non implémentés.",
+    "IF-009 complet reste régi par M24 ; observation IF-010 et manifeste de restauration illustratifs à compléter avant recette.",
+    "Aucun code, DB, worker, migration, CI ou GitHub modifié ; aucune production ou porte de validation prononcée.",
+    "G1/G2/G3 et autorisations de réalisation ou restauration restent distinctes ; cet avis ne clôt ni M23 ni M27."
+  ]
+}

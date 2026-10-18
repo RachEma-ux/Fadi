@@ -23,13 +23,13 @@
   "acceptations_metier": 0,
   "etats_taches": {
     "Vérifié": 30,
-    "À définir": 234,
-    "Bloqué": 207,
-    "En cours": 159
+    "À définir": 203,
+    "En cours": 188,
+    "Bloqué": 209
   },
   "etats_missions": {
-    "En cours": 23,
-    "Bloqué": 8
+    "En cours": 25,
+    "Bloqué": 6
   },
   "reproduction": "Comparer export de check_missions.py --export aux champs id/mission/agent/description du registre ; lire les w:p du DOCX verrouillé (1-based) aux ancres source_paragraphs et source_complements_exacts ; vérifier SHA256 des manifestes. Les14 tests unitaires du validateur et la continuité sont exécutés séparément.",
   "limites": [

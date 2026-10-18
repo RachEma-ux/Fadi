@@ -27,3 +27,7 @@ Mission 003 conserve les originaux Mission 002 sous docs/ai-team/reports/mission
 ## Autorisations et reprise Mission 004
 
 D01–D07 délégués dans166, DB1/2 explicitement autorisé et PR #169 ouverte sansfusion. Dernier mandat interdit touteconnexionDBréelle, service, migration ou production ; il prime toute instruction plus large de repriseCloud. Studio reste en préparation, D07 place entréeaprèsProjets pourspécification ; routes et modèles physiques ne sont pas adoptés par ce choix. [État courant et preuves](STATUS.md), [reprise exacte](HANDOFF.md). A0 est seul intégrateur des fichierspartagés ; septagents réellementmobilisés.
+
+## Suite du checkpoint Mission 004
+
+Après7b0cca4 :32qualifications individuelles sansclôture, huitcomparaisonsM08, contratsM23/M27 et revueCSP détaillée. P630reste30conditionsdocumentaires ;203Àdéfinir/188Encours/209Bloqué/30Vérifié. La prochaine cohorte d’analyse porte sur M08-PATH-001..007, lecture seule avec revue indépendante ; détails et limites dans STATUS/HANDOFF mis à jour ensemble.

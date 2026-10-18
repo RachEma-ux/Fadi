@@ -41,7 +41,7 @@ Les pièces agents sont conservées à octets identiques. Le [manifeste](manifes
 
 ## Avancement réel du programme
 
-Le registre contient **234 À définir, 159 En cours, 207 Bloqué et 30 Vérifié documentaire** : 630 IDs uniques. P630 = 30/630 ≈ **4,8 %**, exclusivement selon des conditions documentaires. **PDEV = N/D**, faute de DEV_SCOPE et baseline acceptés. Zéro case source ou HTML modifiée ; zéro acceptation métier Studio ; aucune porte G0–G4 acceptée. Les 141 fiches restent En cours et les 31 missions restent ouvertes, dont 23 En cours et huit Bloqué. DB-1/2 ne ferme pas M02 entière.
+Le registre contient **203 À définir, 188 En cours, 209 Bloqué et 30 Vérifié documentaire** : 630 IDs uniques. P630 = 30/630 ≈ **4,8 %**, exclusivement selon des conditions documentaires. **PDEV = N/D**, faute de DEV_SCOPE et baseline acceptés. Zéro case source ou HTML modifiée ; zéro acceptation métier Studio ; aucune porte G0–G4 acceptée. Les 141 fiches restent En cours et les 31 missions restent ouvertes, dont 25 En cours et six Bloqué. DB-1/2 ne ferme pas M02 entière.
 
 ## Décisions retenues et prochaines décisions
 
@@ -63,3 +63,21 @@ Les décisions nouvelles portent sur le patch CI documentaire concret, la revue 
 Les anciens échecs CI154/76e43d1 (quatre arcs, révision 90 attendue 91) et PR142 restent attribués à leurs SHA ; aucun rerun ou affaiblissement d’oracle. Les résultats historiques 1 757 tests, 47 scénarios et trois IFC ne deviennent pas une preuve du code courant, de round-trip paramétrique ou de certification BIM.
 
 Avant interruption technique : STATUS et HANDOFF des deux chantiers mis à jour ensemble, commentaire `[CODEX-HANDOFF][NEXT-READY]` avec SHA exact et prochaine opération. Le programme continue lors d’une session active ; aucun travail en arrière-plan ou relancement automatique n’est prétendu.
+
+## Poursuite effective après le premier checkpoint
+
+Les 32 [qualifications individuelles supplémentaires](A1/delta-32-CAD-ARC-G0-G1-qualification.json) sont intégrées après [revue A4](A4/REVUE-32-QUALIFICATIONS.json) et contrôle A0 : 29 En cours, deux Bloqué sur la décision de passage G0, une À définir sur personnes/disponibilités humaines. Elles ajoutent conditions mesurables, existant, manques, décisions, 79 ancres de contenu et prochaines actions ; aucune clôture ni progression P630. Qualité et exploitation restent des responsabilités distinctes.
+
+M08 : [huit oracles rapprochés](A2/M08-8-ORACLES-COMPARAISON.md) et [revus indépendamment A5](A5/M08-8-REVUE-INDEPENDANTE-A5.md). 52 sous-attendus : sept présents dans des préparations, 27 partiels et 18 absents dans les candidats examinés. 183 occurrences de preuve correspondent à131citations uniques ; toutes exactes au contrôle A0. Aucune équivalence E2E complète ; l’écart de classification IFC est conservé pour instruction sans réécrire les décisions.
+
+M23/M27 : [contrat jobs/reprise/restauration](A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md), six exemples et manifeste illustratif volontairement incomplet ; [revue A2](A2/REVUE-M23-M27.json). Aucune restauration ou simulation de moteur effectuée ; calcul, fraîcheur et engagement restent distincts, les écritures nouvelles et queues doivent être préservées, aucun budget ni rétention décidé.
+
+M09 : [revue des usages CSP A4](A4/REVUE-M09-CSP-USAGES.md) et dossier A5 actualisé. Les cinq compléments documentaires sont traités, dont icônes KML HTTPS, styles dynamiques, worker/WASM et FR/EN/pending. Le choix de politique pour les images distantes reste à décider, sans wildcard ou suppression silencieuse. Aucun enforcement n’est prêt à être déclaré conforme sans recette.
+
+Prochaine READY : comparaison en lecture seule des attendus M08-PATH-001..007, candidats versionnés, rapport A2 et revue A5, puis intégration A0. Les questions techniques G0/DEC01/DEC03/CI sont déjà publiées avec leurs dossiers ; aucune réponse reçue n’est présumée.
+
+## Constat P2 supplémentaire — classification canonique
+
+[Constat statique et lot proposé](A2/M08-CLASSIFICATION-CONFLIT-STATIQUE.md), [sources exactes](A2/M08-CLASSIFICATION-CONFLIT-STATIQUE.json) : l’affectation ou le retrait d’un code externe écrit systématiquement la correspondance de classe Fadi dans `classeIfc`, provenance règle/statut vérifiée. La fiche et les décisions D-065/D-111/D-112 relues ne prescrivent pas cette substitution ; D-174 conserve l’acceptation historique sans amender ces textes. A0 a lu le réducteur puis A2 a confirmé indépendamment ; sept sources et96lignes sont vérifiées, aucune reproduction runtime. Le test actuel attend cette écriture ; sa présence ne démontre pas le respect du contrat.
+
+Un correctif pur borné est préparé, sans l’engager : préserver l’absence ou la déclaration saisie/importée, code/retrait/lots/inverses et contrôle/export distincts. Aucune réécriture de décision, nettoyage des données ou migration ; les écritures historiques ne peuvent pas être corrigées par supposition. Seule une autorisation de ce nouveau lot permettrait son code, jamais l’autorisation DB-1/2 par extension.

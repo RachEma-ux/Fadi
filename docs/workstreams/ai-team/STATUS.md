@@ -8,7 +8,7 @@ Référence main observée : `a4caaab0e6665480f09febe3914c960b424b6b47` ; instru
 
 [Rapport A0 et pièces Mission 004](../../ai-team/reports/mission-004/README.md). Original Mission 002 :14 pièces/19 inventoriées déjà archivées ; Mission 003 reste historique immuable. **A0/A1/A2/A3/A4/A5/A6 ont réellement exécuté** leurs périmètres, un seul écrivain par fichier partagé.
 
-[Registre unique630](../studio/task-register.json) : **234 À définir,159 En cours,207 Bloqué,30 Vérifié documentaire**. P630=30/630≈4,8%, pas un pourcentage du code ; PDEV=N/D sansDEV_SCOPE et baseline acceptés.24 nouveaux IDs ont leur condition documentaire individuelle, contenu, empreinte, revue indépendante A5 et47 ancres contrôlées A0. Zéro case source cochée ; zéro acceptation métier/fonctionnalité Studio ; G0–G4 non acceptés.141 fiches restent En cours,18 décisions techniques à instruire,9 NAV /38 TEST non exécutés. Les 31 missions restent ouvertes.
+[Registre unique630](../studio/task-register.json) : **203 À définir,188 En cours,209 Bloqué,30 Vérifié documentaire**. P630=30/630≈4,8%, pas un pourcentage du code ; PDEV=N/D sansDEV_SCOPE et baseline acceptés.24 nouveaux IDs ont leur condition documentaire individuelle, contenu, empreinte, revue indépendante A5 et47 ancres contrôlées A0. Zéro case source cochée ; zéro acceptation métier/fonctionnalité Studio ; G0–G4 non acceptés.141 fiches restent En cours,18 décisions techniques à instruire,9 NAV /38 TEST non exécutés. Les 31 missions restent ouvertes.
 
 ## Faits vérifiés
 
@@ -51,3 +51,19 @@ La règle « ne rien abandonner » signifie conserver preuves, dépendances et p
 ## Sauvegarde documentaire sans déclencher de base
 
 Le présent état est porté par la branche courte `docs/156-m004-checkpoint-sans-db`, sans PR. A6 a inspecté les six workflows : aucun ne devient éligible sur ce push non-main sans PR. Aucune CI exécutée ne sera inventée. L’intégration des mêmes fichiers et IDs à la branche canonique de #165 attend la décision technique sur le patch CI pur ; le programme et ses deux chantiers restent uniques. Le SHA publié et les vérifications sont consignés dans #166.
+
+## Publication du premier checkpoint Mission 004 et questions nouvelles
+
+Commit `7b0cca44fa44449cae80785dea078a857be4180c` réellement poussé sur la branche courte sans PR. Référence GitHub confirmée, aucune PR associée, zéro run au SHA : aucun résultat CI inventé. Le [progrès #166/6249920975](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249920975) et #156/6249921707 référencent le rapport. #165 reste ouverte à63e804b, #169 draft àa15d650 ; main restea4caaab et non protégé au contrôle.
+
+Questions ouvertes : CI-doc-pure ; [G0-REVIEW](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249930964) ; [DEC01-ORIENTATION](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249931771) ; [DEC03-ORIENTATION](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249932632). D01–D07 ne sont pas reposés. Pas de réponse déduite du silence. Les revues M08 et CSP, les qualifications individuelles et les contrats de reprise ont été poursuivis en parallèle après ce checkpoint.
+
+## Suite après 7b0cca4 — travail exécuté et reprise suivante
+
+32 qualifications individuelles CAD/ARC/G0/G1 intégrées après revue A4 et contrôle A0 de79ancres plus104EX exacts :29passent En cours,2Bloqué et1reste À définir. Aucune nouvelle tâche Vérifié ; P630reste30/630. Les personnes/disponibilités réelles ne sont pas déduites des agents. M23/M27 disposent de contrats et six exemples documentaires revus A2, manifeste de restauration explicitement incomplet ;31missions toujours ouvertes,25En cours/6Bloqué.
+
+M08 : huit entrées,52sous-attendus (7présents/27partiels/18absents) ;183occurrences/131citationsuniques exactes, revue indépendante A5 ; aucune équivalence E2E complète. CSP : dossier complété après revue des icônesKML, stylesCSSOM et workerWASM, aucun header appliqué ; décision sur images distantes/enforcement encore ouverte.
+
+**Prochaine opération autorisée exacte :** lire les réponses #166 et comparer les attendus complets de M08-PATH-001 à007 aux assertions des candidats au SHA169, sans exécuter de test ni modifier code/fiches/mapping125 ; rapport A2, revue A5, intégration A0. En parallèle, les orientations G0/DEC et CI attendent leur décision propre, sans arrêter les analyses indépendantes. Si une réponse autorise un lot nouveau, vérifier son périmètre et toutes exclusions avant réalisation.
+
+Constat P2 neuf confirmé statiquement A0/A2 : `classification.affecter` écrit `classeIfc` par correspondance malgré le contrat de déclaration et de contrôle dérivé. Sept sources/96lignes exactes, pas de reproduction runtime. Lot pur de correction préparé séparément, non autorisé ; aucune donnée/décision historique modifiée. Voir rapport M004 et sources A2.

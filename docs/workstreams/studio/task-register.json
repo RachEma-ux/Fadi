@@ -11,7 +11,7 @@
     "path": "docs/ai-team/reports/mission-002-originals/A1-630-taches.csv",
     "sha256": "eb47f0c8b273718e537160a84eb00a626acf541fce690ef65c0a08cb3f2db894"
   },
-  "note": "630 IDs/descriptions conservés.30 conditions documentaires vérifiées dont24 revues individuellement Mission004 ; zéro case source cochée, zéro fonctionnalité/gate/acceptation métier Studio.141 fiches v2 restent En cours.",
+  "note": "630 IDs/descriptions conservés.30 conditions documentaires vérifiées dont24 revues individuellement Mission004 ; zéro case source cochée, zéro fonctionnalité/gate/acceptation métier Studio.141 fiches v2 restent En cours. Suite après7b0cca4 :32qualifications individuelles supplémentaires,29En cours/2Bloqué/1Àdéfinir, sansnouvelleclôture ; P630reste30/630.",
   "tasks": [
     {
       "id": "SRC-01",
@@ -942,7 +942,7 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -966,6 +966,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "CAD-04",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -974,12 +982,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Confirmation de l’effet réel sur données étapes sur build Studio ; NAV002/009 non exécutés.",
         "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "D01 et contrat NAV posent autonomie, aucun GET créateur, liens Parcours seulement explicites.",
+        "deblocage": "Code Studio autorisé/G3 lot I ; D01/D07 déjà retenus, pas à reposer."
       },
-      "suite": "Confirmer que l’accès à Studio ne requiert aucune étape du Parcours et ne crée ni ne valide d’étape implicitement. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A4/A5 conserver oracle avant/après21étapes et absence mutation pour future recette autorisée.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -1000,12 +1008,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
-        "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A4/A5 conserver oracle avant/après21étapes et absence mutation pour future recette autorisée."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "doc+garantie fonctionnelle",
+        "verbe_source": "Confirmer",
+        "condition_mesurable": "Confirmer le contrat sans prérequis Parcours ET prouver lors réalisation qu’ouverture ne crée/valide aucune étape.",
+        "existant_qualifie": "D01 et contrat NAV posent autonomie, aucun GET créateur, liens Parcours seulement explicites.",
+        "manquant_avant_cloture": "Confirmation de l’effet réel sur données étapes sur build Studio ; NAV002/009 non exécutés.",
+        "decision_bloquante_ou_a_instruire": "Code Studio autorisé/G3 lot I ; D01/D07 déjà retenus, pas à reposer.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -1021,7 +1046,7 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -1045,6 +1070,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "CAD-05",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -1053,12 +1086,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Choix physique et interfaces publiques ratifiés, contrôle des dépendances de réalisation.",
         "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "C-STUDY/autorités/persistance et M24 réemploient services projets/documents/droits ; pas second système.",
+        "deblocage": "DEC03/18 et G3 du sous-ensemble ; cadrage conservation acquis."
       },
-      "suite": "Conserver les services généraux de Fadi : pas de seconde application, de second système de comptes ou de base métier concurrente. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2 compléter propriétaire public de chaque donnée et preuve future imports/transactions sans duplication.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -1079,12 +1112,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
-        "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2 compléter propriétaire public de chaque donnée et preuve future imports/transactions sans duplication."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "doc+garantie architecture",
+        "verbe_source": "Conserver",
+        "condition_mesurable": "Désigner propriétaires et services partagés, puis vérifier absence comptes/base métier concurrente dans sous-ensemble livré.",
+        "existant_qualifie": "C-STUDY/autorités/persistance et M24 réemploient services projets/documents/droits ; pas second système.",
+        "manquant_avant_cloture": "Choix physique et interfaces publiques ratifiés, contrôle des dépendances de réalisation.",
+        "decision_bloquante_ou_a_instruire": "DEC03/18 et G3 du sous-ensemble ; cadrage conservation acquis.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -1236,7 +1286,7 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -1260,6 +1310,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "CAD-07",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -1268,12 +1326,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Inventaire fonctionnel exhaustif et qualification utilité/capacité/test non démontrés par125chemins seuls.",
         "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "G0/M21 maintiennent fonctions natives et normes ; M08 rapproche125chemins documentaires.",
+        "deblocage": "DEC18 par composant ; aucune suppression fonctionnelle autorisée."
       },
-      "suite": "Maintenir les fonctions industrielles utiles dans l’inventaire à qualifier, sans suppression automatique liée à leur spécialisation. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "Rapprocher fiches industrielles/capacités et M08 sans transformer mapping fichiers en audit de toutes fonctions.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -1294,12 +1352,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
-        "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "Rapprocher fiches industrielles/capacités et M08 sans transformer mapping fichiers en audit de toutes fonctions."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "inventaire documentaire+conservation",
+        "verbe_source": "Maintenir",
+        "condition_mesurable": "Chaque fonction industrielle utile figure dans inventaire qualifié avec traitement/contrat/preuve ; aucune suppression par spécialisation.",
+        "existant_qualifie": "G0/M21 maintiennent fonctions natives et normes ; M08 rapproche125chemins documentaires.",
+        "manquant_avant_cloture": "Inventaire fonctionnel exhaustif et qualification utilité/capacité/test non démontrés par125chemins seuls.",
+        "decision_bloquante_ou_a_instruire": "DEC18 par composant ; aucune suppression fonctionnelle autorisée.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -1315,7 +1390,7 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
+      "statut": "Bloqué",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -1339,6 +1414,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "CAD-DEC-01",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -1347,12 +1430,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Acte distinct de passage G0 dans canal166/registre de décision ; pas déductible choix pilote.",
         "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "D01 retient usage pilote, trois revues de cadrage disponibles, critères dossier finalisés.",
+        "deblocage": "Passage G0 à enregistrer selon166 ; D01/D02/D07 ne sont plus questions ouvertes."
       },
-      "suite": "Faire ratifier le premier usage métier et ses critères à G0. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A0 présenter référence dossier/revues et consigner réponse de porte, sans autorisation codeStudio implicite.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -1373,12 +1456,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "Bloqué",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
-        "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A0 présenter référence dossier/revues et consigner réponse de porte, sans autorisation codeStudio implicite."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "gate/décision",
+        "verbe_source": "Faire ratifier",
+        "condition_mesurable": "Décision explicite de passage G0 couvre dossier/critères exacts après revue, avec autorité/date/preuves enregistrées.",
+        "existant_qualifie": "D01 retient usage pilote, trois revues de cadrage disponibles, critères dossier finalisés.",
+        "manquant_avant_cloture": "Acte distinct de passage G0 dans canal166/registre de décision ; pas déductible choix pilote.",
+        "decision_bloquante_ou_a_instruire": "Passage G0 à enregistrer selon166 ; D01/D02/D07 ne sont plus questions ouvertes.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -1394,7 +1494,7 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -1418,6 +1518,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "CAD-DEC-02",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -1426,12 +1534,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Mapping explicite backend/frontend et capacité humaine d’approbation métier à confirmer pour réalisation ; agents ≠ personnes disponibles.",
         "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Table A0–A6 affecte préparation, A2 couvreCAO/BIM, A1métier, A4UX, A5preuves etA6exploitation.",
+        "deblocage": "Organisation des responsables de sous-lot ; aucune attribution compte réel autorisée."
       },
-      "suite": "Affecter les responsables produit, architecture, CAO, backend, frontend, BIM/documentation, qualité/sécurité et exploitation. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A0 compléter qui porte backend/frontend et approbation compétente, séparer responsabilité rédaction/implémentation/acceptation.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -1452,12 +1560,30 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
-        "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A0 compléter qui porte backend/frontend et approbation compétente, séparer responsabilité rédaction/implémentation/acceptation."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "organisation documentaire",
+        "verbe_source": "Affecter",
+        "condition_mesurable": "Responsable identifié pour chacun des huit domaines produit/architecture/CAO/backend/frontend/BIM-documentation/qualité-exploitation et périmètre accepté.",
+        "existant_qualifie": "Table A0–A6 affecte préparation, A2 couvreCAO/BIM, A1métier, A4UX, A5preuves etA6exploitation.",
+        "manquant_avant_cloture": "Mapping explicite backend/frontend et capacité humaine d’approbation métier à confirmer pour réalisation ; agents ≠ personnes disponibles.",
+        "decision_bloquante_ou_a_instruire": "Organisation des responsables de sous-lot ; aucune attribution compte réel autorisée.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit.",
+        "note_revue_A4": "Conserver huit responsabilités source séparées ; qualité A5 et exploitation A6 distinctes. Aucun rôle humain ou disponibilité effective déduit des agents."
       }
     },
     {
@@ -1497,6 +1623,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "CAD-DEC-03",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -1505,12 +1639,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Noms/personnes, disponibilité/cadence et délégations humaines non disponibles ; aucun calendrier fiable.",
         "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Rôles agents et séparation approbation/publication/cumul explicite sont documentés.",
+        "deblocage": "Choix organisation humain précis, distinct D07 séparation permissions déjà acquis."
       },
-      "suite": "Préciser les personnes, leur disponibilité et les règles de cumul des responsabilités. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A0 recueillir disponibilités/approbateur et politique de cumul ; conserver inconnues sans fausse estimation.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -1531,12 +1665,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "À définir",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
-        "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A0 recueillir disponibilités/approbateur et politique de cumul ; conserver inconnues sans fausse estimation."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "organisation à définir",
+        "verbe_source": "Préciser",
+        "condition_mesurable": "Personnes effectivement désignées, disponibilités connues et règles de cumul explicites, sans inventer charge/calendrier.",
+        "existant_qualifie": "Rôles agents et séparation approbation/publication/cumul explicite sont documentés.",
+        "manquant_avant_cloture": "Noms/personnes, disponibilité/cadence et délégations humaines non disponibles ; aucun calendrier fiable.",
+        "decision_bloquante_ou_a_instruire": "Choix organisation humain précis, distinct D07 séparation permissions déjà acquis.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -1678,7 +1829,7 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -1702,6 +1853,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "CAD-DEC-05",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -1710,12 +1869,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Arbitrages spécifiques nouveaux paquets/stockage/budgets et acte final routes non tous consignés ; pas confondre cadrage D07 avec choix physique.",
         "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Routes complètes candidates, trois autorités, DEC01/03/13/18 et priorités décrites, pas SQL/API imposés.",
+        "deblocage": "DEC01/03/13/18 et décision finale routes sous-lot ; D07 acquis pour principes."
       },
-      "suite": "Soumettre les routes, les nouveaux paquets, les budgets et le stockage aux décisions prévues, sans les présenter comme arrêtés. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2/A4 présenter uniquement alternatives techniques restantes et exigences de preuve, pas demander nouveau choix aprèsProjets.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -1736,12 +1895,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
-        "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2/A4 présenter uniquement alternatives techniques restantes et exigences de preuve, pas demander nouveau choix aprèsProjets."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "instruction décisions",
+        "verbe_source": "Soumettre",
+        "condition_mesurable": "Options routes/paquets/budgets/stockage soumises aux DEC applicables, alternatives/critères/preuves et décision traçables sans choix présenté arrêté.",
+        "existant_qualifie": "Routes complètes candidates, trois autorités, DEC01/03/13/18 et priorités décrites, pas SQL/API imposés.",
+        "manquant_avant_cloture": "Arbitrages spécifiques nouveaux paquets/stockage/budgets et acte final routes non tous consignés ; pas confondre cadrage D07 avec choix physique.",
+        "decision_bloquante_ou_a_instruire": "DEC01/03/13/18 et décision finale routes sous-lot ; D07 acquis pour principes.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -5244,7 +5420,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -5268,6 +5444,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-01",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -5276,12 +5460,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Schéma de chaîne global consolidé avec interfaces publiques et exceptions restantes à valider ; code absent.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "NAV définit shells/façade ; M21 intentions→commandes et scène reconstruisible ; M17 modèles puis effets.",
+        "deblocage": "G1 contrats du sous-ensemble, DEC03/18 ; aucun codeStudio acquis."
       },
-      "suite": "Définir l’enchaînement AppShell → StudioShell → accueil/contexte → quatre domaines → outils → commandes → modèles → projections/services. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2 consolider une vue de chaîne référencée et faire relire invariants de direction.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -5302,12 +5486,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2 consolider une vue de chaîne référencée et faire relire invariants de direction."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "architecture documentaire",
+        "verbe_source": "Définir",
+        "condition_mesurable": "Chaîne de responsabilités AppShell→StudioShell→contexte/domaines→outils→commandes→modèles→projections décrite sans inversion autorité.",
+        "existant_qualifie": "NAV définit shells/façade ; M21 intentions→commandes et scène reconstruisible ; M17 modèles puis effets.",
+        "manquant_avant_cloture": "Schéma de chaîne global consolidé avec interfaces publiques et exceptions restantes à valider ; code absent.",
+        "decision_bloquante_ou_a_instruire": "G1 contrats du sous-ensemble, DEC03/18 ; aucun codeStudio acquis.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -5325,7 +5526,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -5349,6 +5550,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-02",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -5357,12 +5566,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Mention explicite et revue de l’absence appel réseau par mouvement/geste et contrat local du Manager à consolider.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "M21 sépare catalogue/Manager/moteur, cycle chargement et intentions ; ressource descriptive sans loaderexécutable.",
+        "deblocage": "DEC05/06/07 pour forme physique ; pas blocage de rédaction indépendante."
       },
-      "suite": "Définir le Registry comme fournisseur de métadonnées du Manager, sans appel réseau de résolution à chaque geste. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A4/A2 compléter séquence geste local et frontière catalogue/loader sans supposer un service réseau par événement.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -5383,12 +5592,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A4/A2 compléter séquence geste local et frontière catalogue/loader sans supposer un service réseau par événement."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "architecture documentaire",
+        "verbe_source": "Définir",
+        "condition_mesurable": "Registry ne fournit que métadonnées au Manager, recherche sans moteur et aucun aller-retour de résolution pour chaque geste.",
+        "existant_qualifie": "M21 sépare catalogue/Manager/moteur, cycle chargement et intentions ; ressource descriptive sans loaderexécutable.",
+        "manquant_avant_cloture": "Mention explicite et revue de l’absence appel réseau par mouvement/geste et contrat local du Manager à consolider.",
+        "decision_bloquante_ou_a_instruire": "DEC05/06/07 pour forme physique ; pas blocage de rédaction indépendante.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -5406,7 +5632,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -5430,6 +5656,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-03",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -5438,12 +5672,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Interface physique publique/type et politique cache invalidé/403-404 approuvés encore candidats.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Façade NAV décritidentifiants/droits/base/freshness/writer/schema ; auth/deeplink et refus explicites.",
+        "deblocage": "DEC03/18 ; G1 contratcontexte ; D07 serveur/contexte déjà retenu."
       },
-      "suite": "Définir l’interface publique d’authentification et de résolution du projet utilisée par StudioShell, sans dépendance à ProjectShell. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2 borner signature/erreurs/façade auth et vérifier absence import profond ProjectShell dans future réalisation.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -5464,12 +5698,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2 borner signature/erreurs/façade auth et vérifier absence import profond ProjectShell dans future réalisation."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "contrat documentaire",
+        "verbe_source": "Définir",
+        "condition_mesurable": "Interface publique session/projet fournit contexte et erreurs autorisés à StudioShell sans dépendance ProjectShell.",
+        "existant_qualifie": "Façade NAV décritidentifiants/droits/base/freshness/writer/schema ; auth/deeplink et refus explicites.",
+        "manquant_avant_cloture": "Interface physique publique/type et politique cache invalidé/403-404 approuvés encore candidats.",
+        "decision_bloquante_ou_a_instruire": "DEC03/18 ; G1 contratcontexte ; D07 serveur/contexte déjà retenu.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -5487,7 +5738,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -5511,6 +5762,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-04",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -5519,12 +5778,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Liste explicite écrans/planches/panneaux/UI/adaptateurs et API publique de modules/studio à consolider ; chemin physique non implémenté.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "NAVStudioShell et domaines ; M17 sépare shells/façades/packages purs et aucune dépendance profondeStudio↔Atelier.",
+        "deblocage": "DEC18 et frontières M07/G1 ; créer module non autorisé ici."
       },
-      "suite": "Définir la frontière du module web candidat apps/web/src/modules/studio/ : écrans, planches, panneaux, état UI et adaptateurs. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2 ajouter tableau propriété modules/studio vs packages/services, sans imposer paquets prématurés.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -5545,12 +5804,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2 ajouter tableau propriété modules/studio vs packages/services, sans imposer paquets prématurés."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "frontière documentaire",
+        "verbe_source": "Définir",
+        "condition_mesurable": "Périmètre du module web candidat Studio et responsabilités écrans/planches/panneaux/UI/adaptateurs explicités, hors modèles purs/API.",
+        "existant_qualifie": "NAVStudioShell et domaines ; M17 sépare shells/façades/packages purs et aucune dépendance profondeStudio↔Atelier.",
+        "manquant_avant_cloture": "Liste explicite écrans/planches/panneaux/UI/adaptateurs et API publique de modules/studio à consolider ; chemin physique non implémenté.",
+        "decision_bloquante_ou_a_instruire": "DEC18 et frontières M07/G1 ; créer module non autorisé ici.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -5568,7 +5844,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -5592,6 +5868,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-05",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -5600,12 +5884,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Extraits retenus par composant et nommage définitif après coûts/licences/tests ; pas décision automatique.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Trois autorités et contratsC-* candidats, M17packages purs sansUI/import apps et matrice compatibilité observée.",
+        "deblocage": "DEC01/03/18 selon composants ; G3 avant extraction/code."
       },
-      "suite": "Définir les contrats et modèles purs réutilisables, sans React, DOM ni état graphique ; décider les extractions et noms de paquets après audit. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2 compléter comparaison conserver/adapter/isoler et preuve d’API pure pour le premier sous-ensemble.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -5626,12 +5910,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2 compléter comparaison conserver/adapter/isoler et preuve d’API pure pour le premier sous-ensemble."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "contrat+arbitrage technique",
+        "verbe_source": "Définir",
+        "condition_mesurable": "Modèles/contrats purs sans React/DOM identifiés ; extractions/noms paquets décidés après audit bénéfice et compatibilité.",
+        "existant_qualifie": "Trois autorités et contratsC-* candidats, M17packages purs sansUI/import apps et matrice compatibilité observée.",
+        "manquant_avant_cloture": "Extraits retenus par composant et nommage définitif après coûts/licences/tests ; pas décision automatique.",
+        "decision_bloquante_ou_a_instruire": "DEC01/03/18 selon composants ; G3 avant extraction/code.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -5649,7 +5950,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -5673,6 +5974,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-06",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -5681,12 +5990,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Tableau responsabilité complet index/rendu/ordonnanceur et contrats de ressources/libération/quotas à stabiliser.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "M21Manager charge/mutualise ressources et gère erreurs ; M17scène reconstruisible/jobsversionnés.",
+        "deblocage": "DEC07/09/10/11/13 ; protections minimales dès exposition lourde."
       },
-      "suite": "Définir la responsabilité des loaders, projections, index, rendu, workers et ordonnanceur partagés côté web. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2/A4/A6 relier classes de ressources aux propriétaires/interfaces et corpus A5 sans seuil inventé.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -5707,12 +6016,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2/A4/A6 relier classes de ressources aux propriétaires/interfaces et corpus A5 sans seuil inventé."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "architecture documentaire",
+        "verbe_source": "Définir",
+        "condition_mesurable": "Responsable de chaque loader/projection/index/rendu/worker/ordonnanceur partagé explicite, dépendances et refus définis.",
+        "existant_qualifie": "M21Manager charge/mutualise ressources et gère erreurs ; M17scène reconstruisible/jobsversionnés.",
+        "manquant_avant_cloture": "Tableau responsabilité complet index/rendu/ordonnanceur et contrats de ressources/libération/quotas à stabiliser.",
+        "decision_bloquante_ou_a_instruire": "DEC07/09/10/11/13 ; protections minimales dès exposition lourde.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -5730,7 +6056,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -5754,6 +6080,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-07",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -5762,12 +6096,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Catalogue public d’interfaces physiques et transactions/jobs/persistance finalisés et ratifiés ; API exemples non endpoints.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "M17C-STUDY/C-COMMAND et M24 séparent actes et source d’autorité ; droits et refus serveur décrits.",
+        "deblocage": "DEC03/11/16/18 ; G1/G3 concernés."
       },
-      "suite": "Définir les services API pour droits, études, révisions, transactions, jobs, publications et reprise, sans seconde autorité métier. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2 définir façade logique exhaustive et marquer choix de transport/stockage ouverts avant code.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -5788,12 +6122,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2 définir façade logique exhaustive et marquer choix de transport/stockage ouverts avant code."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "contrat API documentaire",
+        "verbe_source": "Définir",
+        "condition_mesurable": "Services droits/études/révisions/transactions/jobs/publications/reprise attribués sans seconde autorité métier, schémas/erreurs invariants explicites.",
+        "existant_qualifie": "M17C-STUDY/C-COMMAND et M24 séparent actes et source d’autorité ; droits et refus serveur décrits.",
+        "manquant_avant_cloture": "Catalogue public d’interfaces physiques et transactions/jobs/persistance finalisés et ratifiés ; API exemples non endpoints.",
+        "decision_bloquante_ou_a_instruire": "DEC03/11/16/18 ; G1/G3 concernés.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -5811,7 +6162,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -5835,6 +6186,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-08",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -5843,12 +6202,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Contrôle explicite de tous consommateurs/imports des fichiersStudio/ et règle claire de propriété documentaire à consolider, pas déduit seule existence dossier.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "G0sources Studio distinctes ; NAV refuse iframe ; M17modules/façades purs sans copier sourceHTML.",
+        "deblocage": "Convention G1 ; aucun déplacement/applicationHTML autorisé."
       },
-      "suite": "Maintenir Studio/ comme dossier documentaire, distinct du module exécutable. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2 relier règle de frontière à contrôle d’import/route pertinent sans prétendre scannertouteapplication.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -5869,12 +6228,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2 relier règle de frontière à contrôle d’import/route pertinent sans prétendre scannertouteapplication."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "convention documentaire+contrôle dépôt",
+        "verbe_source": "Maintenir",
+        "condition_mesurable": "Studio/ reste documentaire, module exécutable dans responsabilité web/packages distincte ; aucun HTML mindmap chargé comme application.",
+        "existant_qualifie": "G0sources Studio distinctes ; NAV refuse iframe ; M17modules/façades purs sans copier sourceHTML.",
+        "manquant_avant_cloture": "Contrôle explicite de tous consommateurs/imports des fichiersStudio/ et règle claire de propriété documentaire à consolider, pas déduit seule existence dossier.",
+        "decision_bloquante_ou_a_instruire": "Convention G1 ; aucun déplacement/applicationHTML autorisé.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -5892,7 +6268,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -5916,6 +6292,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-09",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -5924,12 +6308,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Direction de chaque interface retenue, contrat d’exception héritée et décision d’extraction par composant finalisés.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "M17façades publiques/services transverses/packages purs, pas imports profonds ; M21responsabilités et ressourcesmutualisées.",
+        "deblocage": "DEC18 et politique M07, G1 puis codebornéG3."
       },
-      "suite": "Définir les interfaces publiques et la direction des dépendances partagées entre Atelier et Studio ; ne pas imposer un paquet par bouton. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2 comparer API candidate et imports observés, documenter exceptions sans créer second garde concurrent #152.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -5950,12 +6334,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2 comparer API candidate et imports observés, documenter exceptions sans créer second garde concurrent #152."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "interface architecture+arbitrage",
+        "verbe_source": "Définir",
+        "condition_mesurable": "Interfaces publiques Atelier/Studio et sens dépendances définis, réutilisation justifiée sans paquet par bouton.",
+        "existant_qualifie": "M17façades publiques/services transverses/packages purs, pas imports profonds ; M21responsabilités et ressourcesmutualisées.",
+        "manquant_avant_cloture": "Direction de chaque interface retenue, contrat d’exception héritée et décision d’extraction par composant finalisés.",
+        "decision_bloquante_ou_a_instruire": "DEC18 et politique M07, G1 puis codebornéG3.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -5973,7 +6374,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -5997,6 +6398,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-10",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -6005,12 +6414,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Mention spécifique cartesmentalesHTML comme documents uniquement et règle de contrôle des consommateurs à consolider pour cet ID exact.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "NAVStudioShell autonome sousAppShell sansiframe ; G0pasappconcurrente ; référencesdoc séparées.",
+        "deblocage": "Aucune nouvelle décision produit ; réalisation/contrôle futur souslotautorisé."
       },
-      "suite": "Exclure l’intégration par iframe de l’Atelier complet et l’utilisation des cartes mentales HTML comme module applicatif. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2 inscrire prohibition cartesmentalesHTML explicite dans frontièreStudio/ et préparer oracle absence iframe/intégrationdoc.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -6031,12 +6440,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2 inscrire prohibition cartesmentalesHTML explicite dans frontièreStudio/ et préparer oracle absence iframe/intégrationdoc."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "règle architecture documentaire",
+        "verbe_source": "Exclure",
+        "condition_mesurable": "Exclusion iframeAtelier complet et usage des cartes mentalesHTML comme module applicatif inscrite et vérifiable.",
+        "existant_qualifie": "NAVStudioShell autonome sousAppShell sansiframe ; G0pasappconcurrente ; référencesdoc séparées.",
+        "manquant_avant_cloture": "Mention spécifique cartesmentalesHTML comme documents uniquement et règle de contrôle des consommateurs à consolider pour cet ID exact.",
+        "decision_bloquante_ou_a_instruire": "Aucune nouvelle décision produit ; réalisation/contrôle futur souslotautorisé.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -6054,7 +6480,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -6078,6 +6504,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-DATA-01",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -6086,12 +6520,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Contrat physique document/commandes et réouverture validés pour sous-ensemble ; pas de preuve d’implémentation.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "M17table autorité drawing2d et M24A sansmodèle3D ; schéma/version/unité/repère explicites.",
+        "deblocage": "DEC01/03/18 ; G1/G3 A.1/A.2."
       },
-      "suite": "Définir l’autorité du document 2D indépendant sur ses primitives. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2 finaliser modèle et validators candidats, A5 rattacher TEST001 avec oracles indépendance/réouverture.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -6112,12 +6546,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2 finaliser modèle et validators candidats, A5 rattacher TEST001 avec oracles indépendance/réouverture."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "autorité documentaire",
+        "verbe_source": "Définir",
+        "condition_mesurable": "Le document2D possède ses primitives indépendamment de tout modèle3D et son écrivain unique est défini.",
+        "existant_qualifie": "M17table autorité drawing2d et M24A sansmodèle3D ; schéma/version/unité/repère explicites.",
+        "manquant_avant_cloture": "Contrat physique document/commandes et réouverture validés pour sous-ensemble ; pas de preuve d’implémentation.",
+        "decision_bloquante_ou_a_instruire": "DEC01/03/18 ; G1/G3 A.1/A.2.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -6135,7 +6586,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -6159,6 +6610,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-DATA-02",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -6167,12 +6626,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Type physique/contrat exact géométrie retenue, unités/validation/persistance et vue/coupe testées restent à qualifier.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "M17model3d autonome ; M24B directe et source canonique séparée des scènes.",
+        "deblocage": "DEC03/11/18 et G1/G3 A.3."
       },
-      "suite": "Définir l’autorité propre de la géométrie 3D libre sur sa définition spatiale. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2 compléter sous-ensemble direct3D et critères de sauvegarde/réouverture sans esquisse fictive.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -6193,12 +6652,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2 compléter sous-ensemble direct3D et critères de sauvegarde/réouverture sans esquisse fictive."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "autorité documentaire",
+        "verbe_source": "Définir",
+        "condition_mesurable": "La géométrie3D libre possède sa définition spatiale et aucun dessin2D préalable requis.",
+        "existant_qualifie": "M17model3d autonome ; M24B directe et source canonique séparée des scènes.",
+        "manquant_avant_cloture": "Type physique/contrat exact géométrie retenue, unités/validation/persistance et vue/coupe testées restent à qualifier.",
+        "decision_bloquante_ou_a_instruire": "DEC03/11/18 et G1/G3 A.3.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -6216,7 +6692,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -6240,6 +6716,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-DATA-03",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -6248,12 +6732,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Mapping topologique/contraintes/propagation dans contratdétaillé et validation des choix ; aucun moteur testé.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "M17associated unique ; M24objectId/hôtes/topologie et refus doubleécrivain ; exemplesdocumentaires.",
+        "deblocage": "DEC02/03/12/18 ; pas verrou des études2D/3D indépendantes."
       },
-      "suite": "Définir l’autorité sémantique commune des objets architecturaux associés aux deux planches. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2 spécifier casambigus/refus et copies/références, A5 relier casmurouvertureTEST003–014.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -6274,12 +6758,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2 spécifier casambigus/refus et copies/références, A5 relier casmurouvertureTEST003–014."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "autorité documentaire",
+        "verbe_source": "Définir",
+        "condition_mesurable": "Objet architectural associé a une source sémantique unique, vues2D/3D projections et writer unique.",
+        "existant_qualifie": "M17associated unique ; M24objectId/hôtes/topologie et refus doubleécrivain ; exemplesdocumentaires.",
+        "manquant_avant_cloture": "Mapping topologique/contraintes/propagation dans contratdétaillé et validation des choix ; aucun moteur testé.",
+        "decision_bloquante_ou_a_instruire": "DEC02/03/12/18 ; pas verrou des études2D/3D indépendantes.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -6297,7 +6798,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -6321,6 +6822,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-DATA-04",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -6329,12 +6838,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Protocole d’invalidation par type et preuve de rattachement réel de chaque projection/index/cote ; contrat non ratifié.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "M17snapshot/caches ; M24sources/dérivés/reconstruction et anciensrésultats ; M21 intentionsvalidées.",
+        "deblocage": "DEC02/09/10/11 ; G1 sous-ensemble et tests futursautorisé."
       },
-      "suite": "Rattacher projections, cotes dérivées, scènes et index à leur provenance et à leur révision, sans autorité concurrente. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2 préciser sourceRevisionSet/effets/freshness par dérivé avec repli reconstructioncorrecte.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -6355,12 +6864,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2 préciser sourceRevisionSet/effets/freshness par dérivé avec repli reconstructioncorrecte."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "contrat+effet fonctionnel",
+        "verbe_source": "Rattacher",
+        "condition_mesurable": "Chaque projection/cote dérivée/scène/index référence source/révision/actualité, reste reconstruisible et non autorité.",
+        "existant_qualifie": "M17snapshot/caches ; M24sources/dérivés/reconstruction et anciensrésultats ; M21 intentionsvalidées.",
+        "manquant_avant_cloture": "Protocole d’invalidation par type et preuve de rattachement réel de chaque projection/index/cote ; contrat non ratifié.",
+        "decision_bloquante_ou_a_instruire": "DEC02/09/10/11 ; G1 sous-ensemble et tests futursautorisé.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -6378,7 +6904,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -6402,6 +6928,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-DATA-05",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -6410,12 +6944,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Règles finales compatibilitétransport/limites/cléidempotence et revue par fonction retenue encore ouvertes.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "M17reprendIF006 sans extension normativewire ; M24 sauvegarde/déduplication ; exemplesdoc.",
+        "deblocage": "DEC03/12/18 ; G1 contratcommande, pas autorisation codeStudio."
       },
-      "suite": "Spécifier contexte, requestId, version de contrat, baseRevisionId, cibles et paramètres dans les commandes. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2 confronter IF006paragraphe529–531 aux exemples et publier mapping non ambigu des versions.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -6436,12 +6970,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2 confronter IF006paragraphe529–531 aux exemples et publier mapping non ambigu des versions."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "contrat documentaire",
+        "verbe_source": "Spécifier",
+        "condition_mesurable": "Enveloppe conserve contexte/requestId/contractVersion/baseRevisionId/cibles/paramètres selon IF006 exact, versions distinctes.",
+        "existant_qualifie": "M17reprendIF006 sans extension normativewire ; M24 sauvegarde/déduplication ; exemplesdoc.",
+        "manquant_avant_cloture": "Règles finales compatibilitétransport/limites/cléidempotence et revue par fonction retenue encore ouvertes.",
+        "decision_bloquante_ou_a_instruire": "DEC03/12/18 ; G1 contratcommande, pas autorisation codeStudio.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -6459,7 +7010,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -6483,6 +7034,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-DATA-06",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -6491,12 +7050,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Contrats physiques auth/périmètre/refus et preuves négatives runtime de chaque action non validés par exemples.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "M17contrôles etcodescandidats ; NAVauth/reconnexion ; M24droits séparés.",
+        "deblocage": "DEC03/12/18 ; G1 puis tests autorisés, DB3 distincte."
       },
-      "suite": "Spécifier la restauration serveur de l’identité authentifiée et les contrôles d’appartenance, de droits et de version. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2/A5 compléter matrixtenant/projet/étude/variante/ressource et acteurforgé/retraitdroit/queuemauvaisutilisateur.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -6517,12 +7076,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2/A5 compléter matrixtenant/projet/étude/variante/ressource et acteurforgé/retraitdroit/queuemauvaisutilisateur."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "contrat documentaire+sécurité future",
+        "verbe_source": "Spécifier",
+        "condition_mesurable": "Serveur établit identité, vérifie parenté/droits/versions/writer avant effet, refus sans fuite ni mutation partielle.",
+        "existant_qualifie": "M17contrôles etcodescandidats ; NAVauth/reconnexion ; M24droits séparés.",
+        "manquant_avant_cloture": "Contrats physiques auth/périmètre/refus et preuves négatives runtime de chaque action non validés par exemples.",
+        "decision_bloquante_ou_a_instruire": "DEC03/12/18 ; G1 puis tests autorisés, DB3 distincte.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -6540,7 +7116,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -6564,6 +7140,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-DATA-07",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -6572,12 +7156,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Table exhaustive cinqissues et compatibilité erreurs/timeout/job/rejeu à stabiliser ; aucune réponseAPI courante promise.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "M17résultatsdurables/conflit/cléidempotence/jobs et M21états pending/confirmé distincts ; IFsource conservée.",
+        "deblocage": "DEC11/12 et G1 C-COMMAND."
       },
-      "suite": "Spécifier les issues de commande : acceptation, refus, conflit, traitement différé ou doublon. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2 compléter cinqissues avec payloadsillustratifs et A5 oracles zéroeffet/refus/idempotence, sans autre API normative.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -6598,12 +7182,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2 compléter cinqissues avec payloadsillustratifs et A5 oracles zéroeffet/refus/idempotence, sans autre API normative."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "contrat documentaire",
+        "verbe_source": "Spécifier",
+        "condition_mesurable": "Chaque issue accepted/rejected/conflict/pending/duplicate définit révision/erreur/job/premierrésultat et effet autorisé ou zéro effet.",
+        "existant_qualifie": "M17résultatsdurables/conflit/cléidempotence/jobs et M21états pending/confirmé distincts ; IFsource conservée.",
+        "manquant_avant_cloture": "Table exhaustive cinqissues et compatibilité erreurs/timeout/job/rejeu à stabiliser ; aucune réponseAPI courante promise.",
+        "decision_bloquante_ou_a_instruire": "DEC11/12 et G1 C-COMMAND.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -6621,7 +7222,7 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -6645,6 +7246,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "ARC-DATA-08",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -6653,12 +7262,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Protocole d’effets/invalidation versionné par domaine et tests tardifs/concurrents ; non démontré par hashJSON.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "M17transaction/journal/effets puis caches ; M24fraîcheur/jobsanciens, réouverturefidèle.",
+        "deblocage": "DEC10/11/12, G1/G3 des fonctions exposées."
       },
-      "suite": "Définir l’invalidation après engagement canonique et le rattachement des résultats anciens à leur source. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2 fixer événementengagé→effets→invalidation, A5 conserver oracles14/24 et reprise sans résultat périmé.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -6679,12 +7288,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2 fixer événementengagé→effets→invalidation, A5 conserver oracles14/24 et reprise sans résultat périmé."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "contrat+effet fonctionnel",
+        "verbe_source": "Définir",
+        "condition_mesurable": "Invalidation suit engagement canonique ; chaque jobancien reste rattaché source et n’écrase jamais courant.",
+        "existant_qualifie": "M17transaction/journal/effets puis caches ; M24fraîcheur/jobsanciens, réouverturefidèle.",
+        "manquant_avant_cloture": "Protocole d’effets/invalidation versionné par domaine et tests tardifs/concurrents ; non démontré par hashJSON.",
+        "decision_bloquante_ou_a_instruire": "DEC10/11/12, G1/G3 des fonctions exposées.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -7186,7 +7812,7 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -7210,6 +7836,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "G0-01",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -7218,12 +7852,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Réception explicite de cetID parA5/A0 et référencecheckpoint ; passageG0 est tâcheG003distincte.",
         "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "G0M004 toutessections, troisrevuescadrage sansréservebloquante, décisionretenueD01/02/07.",
+        "deblocage": "Aucune nouvelle décisionD01/02/07 ; acteG0distinct à enregistrer166."
       },
-      "suite": "Constituer le dossier de cadrage avec DEM-01, les sources, le premier usage, le pilote et ses responsables. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A5/A0 contrôler pièces/contraintes/responsables pour cetID, puis qualifier sa complétudedocumentaire sans fermerG003.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -7244,12 +7878,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
-        "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A5/A0 contrôler pièces/contraintes/responsables pour cetID, puis qualifier sa complétudedocumentaire sans fermerG003."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "constitution dossier documentaire",
+        "verbe_source": "Constituer",
+        "condition_mesurable": "Dossiercomplet contient DEM01/sources/premierusage/pilote/responsables et contraintes, sans exiger code.",
+        "existant_qualifie": "G0M004 toutessections, troisrevuescadrage sansréservebloquante, décisionretenueD01/02/07.",
+        "manquant_avant_cloture": "Réception explicite de cetID parA5/A0 et référencecheckpoint ; passageG0 est tâcheG003distincte.",
+        "decision_bloquante_ou_a_instruire": "Aucune nouvelle décisionD01/02/07 ; acteG0distinct à enregistrer166.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -7265,7 +7916,7 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -7289,6 +7940,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "G0-02",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -7297,12 +7956,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Vérification individuelle deG002 à rattacher aux revues/preuves ; pasacceptationgate ou scénarioexécuté.",
         "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Troisparcours minimaux avec finutile/quantités/permissions et reportsD02, troisrevuesG0.",
+        "deblocage": "D01/02choixretenus, nepasreposer ; G003reste indépendant."
       },
-      "suite": "Vérifier que les critères du premier usage sont explicites et que les options exclues sont nommées. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A5 confirmer contenu critèreparcritère et distinction reportduMVP/conservationprogramme ; A0 journalise résultat de cettevérification.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -7323,12 +7982,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
-        "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A5 confirmer contenu critèreparcritère et distinction reportduMVP/conservationprogramme ; A0 journalise résultat de cettevérification."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "vérification documentaire",
+        "verbe_source": "Vérifier",
+        "condition_mesurable": "Critères du premierusage sont mesurables et optionsreportées/exclues nommées, revues explicitement.",
+        "existant_qualifie": "Troisparcours minimaux avec finutile/quantités/permissions et reportsD02, troisrevuesG0.",
+        "manquant_avant_cloture": "Vérification individuelle deG002 à rattacher aux revues/preuves ; pasacceptationgate ou scénarioexécuté.",
+        "decision_bloquante_ou_a_instruire": "D01/02choixretenus, nepasreposer ; G003reste indépendant.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -7344,7 +8020,7 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
+      "statut": "Bloqué",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -7368,6 +8044,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "G0-03",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -7376,12 +8060,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Réponse/acte explicite de passage de porte G0 dans166 ; aucun telaccord déduit ouconsigné parA1.",
         "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Dossier etrevuescadrage disponibles ; D01/02/07 retenus pourpréparer.",
+        "deblocage": "ATTENTE décisionG0 canal166 ; pas nouvellequestion identiqueD01/02/07."
       },
-      "suite": "Obtenir et enregistrer l’acceptation de la cible et des critères de G0, sans fermer une inconnue pour tenir une échéance. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A0 consulter décision166 aucheckpoint, conserver ceG003nonclos tantqu’accord inexistant, poursuivreG1documentaire indépendante.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -7402,12 +8086,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "Bloqué",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
-        "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A0 consulter décision166 aucheckpoint, conserver ceG003nonclos tantqu’accord inexistant, poursuivreG1documentaire indépendante."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "gate/acceptation explicite",
+        "verbe_source": "Obtenir et enregistrer",
+        "condition_mesurable": "Accord de passage G0 identifie cible/critères/dossier exacts, autorité/date et preuves, sans masquerinconnues.",
+        "existant_qualifie": "Dossier etrevuescadrage disponibles ; D01/02/07 retenus pourpréparer.",
+        "manquant_avant_cloture": "Réponse/acte explicite de passage de porte G0 dans166 ; aucun telaccord déduit ouconsigné parA1.",
+        "decision_bloquante_ou_a_instruire": "ATTENTE décisionG0 canal166 ; pas nouvellequestion identiqueD01/02/07.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -7425,7 +8126,7 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -7449,6 +8150,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "G1-01",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -7457,12 +8166,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Index d’assemblage exhaustif périmètrepremierlot, outilsprécisretenus et contratsmigrations/rollback détaillés encore à compléter ; docs candidats.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "NAVM004, M17durable, M21Registry/Manager, M24publication et141sources, risques/M003 lotsR.",
+        "deblocage": "DEC01/03/04/05/06/07/12/14/16/18 selonlot ; choixD07 déjàretenu."
       },
-      "suite": "Rassembler les contrats de navigation et des outils retenus, les modèles de données, les droits, l’historique, les migrations et les risques. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2/A4/A5 constituer dossiercontractuel parlot, joindre matricecontrat↔source↔risque↔test et manques sansforcergate.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -7483,12 +8192,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2/A4/A5 constituer dossiercontractuel parlot, joindre matricecontrat↔source↔risque↔test et manques sansforcergate."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "assemblage contrats documentaire",
+        "verbe_source": "Rassembler",
+        "condition_mesurable": "Dossier rassemble navigation/outilsretenus/modèles/droits/historique/migration/risques avec sources etversion, sans présumer qu’ils sont ratifiés.",
+        "existant_qualifie": "NAVM004, M17durable, M21Registry/Manager, M24publication et141sources, risques/M003 lotsR.",
+        "manquant_avant_cloture": "Index d’assemblage exhaustif périmètrepremierlot, outilsprécisretenus et contratsmigrations/rollback détaillés encore à compléter ; docs candidats.",
+        "decision_bloquante_ou_a_instruire": "DEC01/03/04/05/06/07/12/14/16/18 selonlot ; choixD07 déjàretenu.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -7506,7 +8232,7 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -7530,6 +8256,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "G1-02",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -7538,12 +8272,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Contrôle de lien bidirectionnel registre↔fiches à la référencecourante et revue decomplétude de cetID ; pasconformité des104fonctions.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "141fiches exactes104/15/11/11 +141deltas et liensTR existants ; extractionXMLvérifiéeindépendamment.",
+        "deblocage": "Aucune décisiontechnique nécessaire pour releverleslibellés ; contrats/capacités restentouverts."
       },
-      "suite": "Relever toutes les exigences du référentiel dans le registre de traçabilité. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A1/A5 comparer ensembleEX001–104 et leursTR dansregistre àsourceXML, enregistrerpreuve documentaire sans compter104réalisations.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -7564,12 +8298,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A1/A5 comparer ensembleEX001–104 et leursTR dansregistre àsourceXML, enregistrerpreuve documentaire sans compter104réalisations."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "traçabilité documentaire",
+        "verbe_source": "Relever",
+        "condition_mesurable": "Toutes104EX exactes RT001 sont relevées sansomission et liéesau registre ; autresINV/IF/ACgardés distincts.",
+        "existant_qualifie": "141fiches exactes104/15/11/11 +141deltas et liensTR existants ; extractionXMLvérifiéeindépendamment.",
+        "manquant_avant_cloture": "Contrôle de lien bidirectionnel registre↔fiches à la référencecourante et revue decomplétude de cetID ; pasconformité des104fonctions.",
+        "decision_bloquante_ou_a_instruire": "Aucune décisiontechnique nécessaire pour releverleslibellés ; contrats/capacités restentouverts.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -7587,7 +8338,7 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -7611,6 +8362,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "G1-03",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -7619,12 +8378,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Périmètrepremierlot arrêté, contratsratifiés et revue fonctionparfonction, pas seulementprésence141fichiers.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "M17troisautorités, M21capacités/cycle, M24publication/reopen et oraclescandidats.",
+        "deblocage": "DECcritique dulot et décisionG1 ; D01/02/07cadrage acquis ne fermepasG1."
       },
-      "suite": "Vérifier qu’une source de vérité et un contrat vérifiable existent pour chaque fonction du lot à engager. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A2 définir premier sousensemble, A1/A4/A5 vérifierchaquefonction/sourcecontratpreuve et consigner inconnues locales.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -7645,12 +8404,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A2 définir premier sousensemble, A1/A4/A5 vérifierchaquefonction/sourcecontratpreuve et consigner inconnues locales."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "vérification architecture/contrats",
+        "verbe_source": "Vérifier",
+        "condition_mesurable": "Pour chaquefonction dupremierlot explicitementchoisi, propriétaire/sourceautoritaire et contrat vérifiable complets, entrées/sorties/refus/effets/tests traçables.",
+        "existant_qualifie": "M17troisautorités, M21capacités/cycle, M24publication/reopen et oraclescandidats.",
+        "manquant_avant_cloture": "Périmètrepremierlot arrêté, contratsratifiés et revue fonctionparfonction, pas seulementprésence141fichiers.",
+        "decision_bloquante_ou_a_instruire": "DECcritique dulot et décisionG1 ; D01/02/07cadrage acquis ne fermepasG1.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {
@@ -7668,7 +8444,7 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À définir",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -7692,6 +8468,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "qualification_documentaire_M004",
+          "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+          "ID": "G1-04",
+          "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+          "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
         }
       ],
       "github": {
@@ -7700,12 +8484,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètre/contrat ou décision de la tâche à préciser.",
+        "cause": "Résultat formelG1 consolidé et décision applicable, liste précise descontrats ouverts/conditions de sortie aucheckpoint.",
         "responsable": "A2",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Instruire les DEC/gates applicables et obtenir autorisation du sous-lot, puis produire preuve sur cible sûre."
+        "essais_effectues": "Rapports M17/M21/M24 etrevuesdocumentaires distinguentnonimplémenté/nongate ; dossiersDECpriorisés.",
+        "deblocage": "Décision/évaluationG1 selon souslot ; pasassimiler publicationdoc7b0cca4 àporte passée."
       },
-      "suite": "Enregistrer le résultat de G1 et les points restant ouverts. Résultat daté lié au SHA/build/corpus et décision applicable ; aucune coche sans preuve.",
+      "suite": "A0 consolider revues etconditions puis journaliserG1 nonpassé/eninstruction ou décisionprouvée, STATUS/HANDOFFensemble.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -7726,12 +8510,29 @@
           "statut": "À définir",
           "preuve": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
           "limite": "Aucune case source cochée ; aucun test métier exécuté ni acceptation produit."
+        },
+        {
+          "origine": "Mission004 qualification individuelle A1, revue A4, contrôle79ancres A0",
+          "ancien_statut": "À définir",
+          "statut": "En cours",
+          "preuve": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+          "limite": "État de préparation, aucune clôture/acceptation/gate."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Dossier de groupe disponible, qualification individuelle encore ouverte",
-        "fichier": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
-        "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        "etat": "Qualification individuelle disponible ; réalisation/validation encore ouverte",
+        "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+        "prochaine_action": "A0 consolider revues etconditions puis journaliserG1 nonpassé/eninstruction ou décisionprouvée, STATUS/HANDOFFensemble."
+      },
+      "qualification_individuelle_mission004": {
+        "nature": "checkpoint résultat porte",
+        "verbe_source": "Enregistrer",
+        "condition_mesurable": "RésultatG1 et pointstoujoursouverts enregistrés selon revue et décisionréelle, sanssuccèsimplicite.",
+        "existant_qualifie": "Rapports M17/M21/M24 etrevuesdocumentaires distinguentnonimplémenté/nongate ; dossiersDECpriorisés.",
+        "manquant_avant_cloture": "Résultat formelG1 consolidé et décision applicable, liste précise descontrats ouverts/conditions de sortie aucheckpoint.",
+        "decision_bloquante_ou_a_instruire": "Décision/évaluationG1 selon souslot ; pasassimiler publicationdoc7b0cca4 àporte passée.",
+        "conformite_capacite": "Non évaluée/Non testée Studio",
+        "limite": "État de préparation seulement ; une décision manquante bloque son opération, pas le programme ; aucun accord code/gate/permission effectif déduit."
       }
     },
     {

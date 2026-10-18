@@ -348,5 +348,60 @@
     "Aucun avis CVE/GHSA consulté ; zéro résultat de scan de vulnérabilités revendiqué.",
     "Licencelock peut différer de binaires OCCT/WebAssembly et polices/vendors incorporés.",
     "npm/pip/images/actions distincts, dépendancesPythonpytest nonverrouillées actuellement dans workflow."
-  ]
+  ],
+  "A4_review_followup": {
+    "status": "Préparation complétée ; aucune exécution ou enforcement",
+    "review_path": "agents/A4/REVUE-M09-CSP-USAGES.json",
+    "review_sha256": "bbfc9eb949a7a224de880e18eb2a51bb1bbf90c24b0324b588c459d4095caae4",
+    "review_reference": "7b0cca44fa44449cae80785dea078a857be4180c",
+    "workflow_difference": "ci.yml diffère de PR169 a15d650 ; conclusions CI non transférables",
+    "native_external_icons": {
+      "source": "apps/web/public/parcelle/index.html",
+      "lines": [
+        1648,
+        1650,
+        2103,
+        2121
+      ],
+      "policy_ready": false,
+      "decision_options": [
+        "sources HTTPS finies approuvées",
+        "relocalisation contrôlée autorisée séparément",
+        "refus avec perte explicite à accepter, conservation références et reprise"
+      ],
+      "oracles": [
+        "CSP05",
+        "CSP07"
+      ]
+    },
+    "dynamic_styles": {
+      "lines": [
+        1958,
+        2054,
+        2109,
+        2118,
+        3340
+      ],
+      "oracles": [
+        "CSP05",
+        "CSP09"
+      ],
+      "required": "CSS calculée, ancrage/rotation/visibilité et accessibilité par navigateur"
+    },
+    "worker_effective_policy": {
+      "oracles": [
+        "CSP01",
+        "CSP03",
+        "CSP04"
+      ],
+      "required": "Policy contexte worker, fetch/compilation WASM et override D177 ; fallback non assimilé à worker OK"
+    },
+    "language_pending": {
+      "source": "apps/web/src/lib/i18n/index.ts:32–40",
+      "oracles": [
+        "CSP09"
+      ],
+      "required": "Reload conserve état durable/pending ; langue propre Parcelle/documents respectée"
+    }
+  }
 }
