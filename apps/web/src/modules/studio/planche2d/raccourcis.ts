@@ -12,15 +12,15 @@ export type IdCommandeEditeur =
   | "annuler" | "retablir" | "annuler-trace" | "enregistrer" | "tout-selectionner"
   | "zoom-avant" | "zoom-arriere" | "cadrer" | "plein-ecran" | "vue-3d"
   | "accrochage-sommets" | "accrochage-grille"
-  | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille"
+  | "importer-dxf" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille"
   | "outils" | "palette";
-export type GroupeCommande = "edition" | "vue" | "accrochage" | "export" | "presentation" | "catalogue";
+export type GroupeCommande = "edition" | "vue" | "accrochage" | "import" | "export" | "presentation" | "catalogue";
 export type BarreStudio = StudioToolGroup | GroupeCommande;
 export type IconeCommande =
   | "studio-undo" | "studio-redo" | "studio-cancel" | "studio-save" | "studio-select-all"
   | "studio-zoom-in" | "studio-zoom-out" | "studio-frame" | "studio-fullscreen" | "studio-view-3d"
   | "studio-snap-vertex" | "studio-snap-grid"
-  | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet"
+  | "studio-import-dxf" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet"
   | "studio-catalog" | "studio-palette";
 
 export interface CommandeEditeur {
@@ -57,6 +57,8 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "vue-3d", libelleFR: "Vue 3D", raccourci: "Shift+D", iconeSymbolique: "studio-view-3d", groupe: "vue", ecrit: false, bascule: true },
   { id: "accrochage-sommets", libelleFR: "Accrocher aux sommets", raccourci: "Shift+S", iconeSymbolique: "studio-snap-vertex", groupe: "accrochage", ecrit: false, bascule: true },
   { id: "accrochage-grille", libelleFR: "Accrocher à la grille", raccourci: "F9", iconeSymbolique: "studio-snap-grid", groupe: "accrochage", ecrit: false, bascule: true },
+  // Import DXF vers le brouillon (aperçu, unité, entités non prises) : Maj+U (U comme « upload »), libre et non réservé.
+  { id: "importer-dxf", libelleFR: "Importer DXF", raccourci: "Shift+U", iconeSymbolique: "studio-import-dxf", groupe: "import", ecrit: true },
   { id: "exporter-svg", libelleFR: "Exporter SVG", raccourci: "Shift+V", iconeSymbolique: "studio-export-svg", groupe: "export", ecrit: false, telechargement: "svg" },
   { id: "exporter-dxf", libelleFR: "Exporter DXF", raccourci: "Shift+X", iconeSymbolique: "studio-export-dxf", groupe: "export", ecrit: false, telechargement: "dxf" },
   // IFC4X3 des seuls objets extrudés (Maj+I : I comme IFC, libre et non réservé).
@@ -76,6 +78,7 @@ export const BARRES_STUDIO: readonly { id: BarreStudio; libelleFR: string }[] = 
   { id: "edition", libelleFR: "Édition" },
   { id: "vue", libelleFR: "Vue" },
   { id: "accrochage", libelleFR: "Accrochage" },
+  { id: "import", libelleFR: "Importer" },
   { id: "export", libelleFR: "Exporter" },
   { id: "presentation", libelleFR: "Présentation" },
   { id: "catalogue", libelleFR: "Catalogue" },

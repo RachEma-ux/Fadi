@@ -13,12 +13,14 @@
  * seulement) et « Vue 3D » (Maj+D), chargée à la demande, du brouillon courant.
  * Présentation : « Feuille » (Maj+P) compose la révision affichée sur une feuille ISO (format, échelle, cartouche
  * prérempli par les données réelles), l'imprime à sa taille réelle ou la télécharge en SVG / PDF ; lecture seule admise.
+ * Import : « Importer DXF » (Maj+U) ajoute au brouillon, en un lot annulable, les commandes lues par `lireDxfStudio` ;
+ * l'enregistrement découpe les commandes en attente en enveloppes de 500 commandes au plus (`import/envoi.ts`).
  */
 import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type PointerEvent } from "react";
 import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { applyStudioCommands, STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, type StudioCommand, type StudioDimension, type StudioEnvelope, type StudioLayer, type StudioPoint, type StudioShape } from "@parcours/atelier-model";
+import { applyStudioCommands, STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, type StudioCommand, type StudioDimension, type StudioLayer, type StudioPoint, type StudioShape } from "@parcours/atelier-model";
 import { Icon } from "../../components/Icon";
 import { api, ApiError, studioExportUrl, type StudioContext } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
@@ -27,7 +29,7 @@ import { cheminComparaisonStudio, cheminProjetStudio, cheminVarianteStudio } fro
 import { StudioRefus } from "./studio-ecrans";
 import { BarreOutils } from "./planche2d/BarreOutils";
 import {
-  annulerBrouillon, appliquerBrouillon, commandesEnAttente, creerBrouillon, documentBrouillon, enveloppeBrouillon, messageRefus,
+  annulerBrouillon, appliquerBrouillon, commandesEnAttente, creerBrouillon, documentBrouillon, messageRefus,
   peutAnnuler, peutRetablir, retablirBrouillon, type Brouillon,
 } from "./planche2d/brouillon";
 import { commandeReglage, estVisible, layerIdPour, listeCalques, prochainNomCalque } from "./planche2d/calques";
@@ -48,6 +50,8 @@ import { commandesAplatir, commandesExtrusion, formesSelectionnees, valeursDe, V
 import { FormulaireExtrusion } from "./vue3d/FormulaireExtrusion";
 import { cartoucheInitial } from "./feuille/feuille-ui";
 import { PanneauFeuille } from "./feuille/PanneauFeuille";
+import { DialogueImportDxf } from "./import/DialogueImportDxf";
+import { accuserLot, enveloppeSuivante, envoiPartiel, planEnvoi, type PlanEnvoi } from "./import/envoi";
 import "./studio.css";
 import "./planche2d/planche2d.css";
 
@@ -101,7 +105,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
   const [accrocheGrille, setAccrocheGrille] = useState(false);
   const [rectangle, setRectangle] = useState<RectangleSelection | null>(null);
   const [apercu, setApercu] = useState<{ ids: string[]; dx: number; dy: number } | null>(null);
-  const [dialogue, setDialogue] = useState<"outils" | "palette" | "feuille" | null>(null);
+  const [dialogue, setDialogue] = useState<"outils" | "palette" | "feuille" | "import-dxf" | null>(null);
   const { user } = useAuth();
   const [calqueActif, setCalqueActif] = useState<string>(STUDIO_DEFAULT_LAYER_ID);
   const [nomCalque, setNomCalque] = useState("");
@@ -116,7 +120,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
   const [values, setValues] = useState<Valeurs>({ x: 0, y: 0, a: 4, b: 3, dx: 1, dy: 0, offset: 0.5 });
   const [extrusion, setExtrusion] = useState<ValeursExtrusion>(VALEURS_VIDES);
   const [vue3d, setVue3d] = useState(false);
-  const envelope = useRef<StudioEnvelope | null>(null);
+  const envelope = useRef<PlanEnvoi | null>(null);
   const alive = useRef(true), dirty = useRef(false), saving = useRef(false);
   const clavier = useRef<(e: KeyboardEvent) => void>(() => {});
   const relacher = useRef<(e: KeyboardEvent) => void>(() => {});
@@ -482,6 +486,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
         // Le lien de la barre télécharge (même origine, cookie de session) : le raccourci le suit.
         shell.current?.querySelector<HTMLAnchorElement>(`a[data-studio-commande="${id}"][href]`)?.click();
         return;
+      case "importer-dxf": return setDialogue("import-dxf");
       case "feuille": return setDialogue("feuille");
       case "outils": return setDialogue("outils");
       case "palette": return setDialogue("palette");
@@ -549,12 +554,16 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
   async function save() {
     if (!context || !brouillon || historical || saving.current) return;
     saving.current = true;
-    // Un nouvel essai après une erreur réseau rejoue la même enveloppe (même requestId) : jamais de double effet.
-    envelope.current ??= enveloppeBrouillon(brouillon, context.revision.id, crypto.randomUUID());
+    // Un nouvel essai après une erreur réseau rejoue le même lot (même requestId) : jamais de double effet. Au-delà de
+    // 500 commandes, les lots partent dans l'ordre, chacun sur la révision produite par le précédent.
+    envelope.current ??= planEnvoi(commandesEnAttente(brouillon), context.revision.id, () => crypto.randomUUID());
     setPending(true); setError(""); setInfo("");
     try {
-      await api.studioCommands(projectId, studyId, variantId, envelope.current);
-      if (!alive.current) return;
+      for (let lot = enveloppeSuivante(envelope.current); lot; lot = enveloppeSuivante(envelope.current)) {
+        const accuse = await api.studioCommands(projectId, studyId, variantId, lot);
+        envelope.current = accuserLot(envelope.current, accuse.revision.id);
+        if (!alive.current) return;
+      }
       // L'historique et la tête ont changé côté serveur : les listes affichées sont relues.
       void client.invalidateQueries({ queryKey: ["studio-revisions", projectId, studyId, variantId] });
       void client.invalidateQueries({ queryKey: ["studio-study", projectId, studyId] });
@@ -577,7 +586,10 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
     catch (e) {
       if (!alive.current) return;
       if (e instanceof ApiError && e.status < 500 && e.status !== 408) {
-        setBlocked(e.status === 409 || e.status === 403 || e.status === 401); setUncertain(false); envelope.current = null;
+        const partiel = !!envelope.current && envoiPartiel(envelope.current);
+        const [faits, total] = [envelope.current?.envoyes ?? 0, envelope.current?.lots.length ?? 0];
+        setBlocked(partiel || e.status === 409 || e.status === 403 || e.status === 401); setUncertain(false); envelope.current = null;
+        if (partiel) { setError(`Enregistrement partiel : ${faits} lot(s) sur ${total} enregistré(s), la suite est refusée. Le brouillon restant est conservé ; rechargez la version serveur.`); return; }
         setError(e.status === 409
           ? (e.code === "stale_revision" ? "Conflit de révision : une autre révision est devenue la version courante. Votre brouillon est conservé et n’a rien écrasé." : "Conflit de révision. Le brouillon est conservé.")
           : "Enregistrement refusé. Le brouillon reste non enregistré.");
@@ -636,6 +648,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
     <RevisionsPanel projectId={projectId} studyId={studyId} variantId={variantId} headRevisionId={context.variant.headRevisionId} shownRevisionId={context.revision.id} />
     {dialogue === "outils" && <GestionnaireOutils disponible={entreeDisponible} surExecuter={executerEntree} surFermer={() => setDialogue(null)} />}
     {dialogue === "palette" && <PaletteCommandes disponible={entreeDisponible} surExecuter={executerEntree} surFermer={() => setDialogue(null)} />}
+    {dialogue === "import-dxf" && <DialogueImportDxf doc={drawing} modifiable={writable} surFermer={() => setDialogue(null)}
+      surAjouter={(cs, r) => { if (!apply(cs)) return false; setDialogue(null); setInfo(`Import DXF ajouté au brouillon : ${r.rapport.entites.total} objet(s). Enregistrez pour l’envoyer au serveur.`); return true; }} />}
     {dialogue === "feuille" && <PanneauFeuille doc={context.revision.document} brouillonNonEnregistre={commands.length > 0} surFermer={() => setDialogue(null)}
       cartouche={cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })} />}</>}
   </section>;
