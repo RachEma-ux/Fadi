@@ -489,3 +489,30 @@ CREATE TABLE IF NOT EXISTS studio_variantes (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS studio_variantes_nom_idx ON studio_variantes (etude_id, lower(nom));
 CREATE INDEX IF NOT EXISTS studio_variantes_etude_idx ON studio_variantes (project_id, etude_id, created_at);
+
+-- Studio : révisions immuables d'une variante (orientation DEC-03). Chaque révision porte un contenu complet et validé
+-- (document 2D, orientation DEC-01), son parent, son empreinte et la requête qui l'a créée (idempotence) ; numéro
+-- croissant dans la variante. Aucune mise à jour : le déclencheur refuse toute modification d'une révision.
+CREATE TABLE IF NOT EXISTS studio_revisions (
+  id text PRIMARY KEY,
+  variante_id text NOT NULL REFERENCES studio_variantes (id) ON DELETE CASCADE,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  numero integer NOT NULL CHECK (numero > 0),
+  parent_id text REFERENCES studio_revisions (id) ON DELETE CASCADE,
+  document_id text NOT NULL,
+  request_id text NOT NULL,
+  schema_version text NOT NULL,
+  contenu jsonb NOT NULL,
+  empreinte text NOT NULL,
+  author_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_revisions_numero_idx ON studio_revisions (variante_id, numero);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_revisions_requete_idx ON studio_revisions (variante_id, request_id);
+CREATE OR REPLACE FUNCTION studio_revisions_immuables() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_revisions : une révision est immuable';
+END;
+$$;
+DROP TRIGGER IF EXISTS studio_revisions_immuables ON studio_revisions;
+CREATE TRIGGER studio_revisions_immuables BEFORE UPDATE ON studio_revisions FOR EACH ROW EXECUTE FUNCTION studio_revisions_immuables();

@@ -1,0 +1,160 @@
+/* Planche 2D de Studio : barres, zone de dessin et panneaux ; sur mobile, les panneaux passent sous le dessin. */
+.studio-2d {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.studio-2d-barres {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.studio-2d-barre {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+}
+.studio-2d-bouton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 10px;
+}
+.studio-2d-bouton[aria-pressed="true"] {
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.1);
+}
+.studio-2d-etat {
+  margin-left: auto;
+  font-size: 0.9rem;
+}
+.studio-2d-bandeau {
+  margin: 0;
+  padding: 8px 12px;
+  border-left: 3px solid currentColor;
+}
+.studio-2d-corps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 8px;
+}
+.studio-2d-zone {
+  position: relative;
+  height: min(70vh, 640px);
+  min-height: 320px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  background: #fff;
+  touch-action: none;
+}
+.studio-2d-zone svg {
+  display: block;
+  cursor: crosshair;
+}
+.studio-2d-zone svg[data-outil="selection"] {
+  cursor: default;
+}
+.studio-2d-coordonnees {
+  position: absolute;
+  left: 8px;
+  bottom: 4px;
+  margin: 0;
+  font-size: 0.8rem;
+  color: #333;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 2px 6px;
+}
+.studio-2d-grille {
+  stroke: #e5e5e5;
+  stroke-width: 1;
+}
+.studio-2d-axe {
+  stroke: #b8b8b8;
+  stroke-width: 1;
+}
+.studio-2d-ligne {
+  stroke: #1d1d1d;
+  stroke-width: 2;
+}
+.studio-2d-cote {
+  stroke: #2a5d8f;
+  fill: #2a5d8f;
+  stroke-width: 1;
+  font-size: 12px;
+}
+.studio-2d-cote text {
+  stroke: none;
+}
+.studio-2d-cote-a-resoudre {
+  stroke: #b3261e;
+  fill: #b3261e;
+  stroke-dasharray: 4 3;
+}
+.studio-2d-attache {
+  stroke-dasharray: 2 2;
+}
+.studio-2d-choisie,
+.studio-2d-choisie line {
+  stroke: #c06000;
+  stroke-width: 3;
+}
+.studio-2d-apercu line {
+  stroke: #c06000;
+  stroke-dasharray: 5 4;
+}
+.studio-2d-accroche,
+.studio-2d-accroche-milieu {
+  fill: none;
+  stroke: #0a7d28;
+  stroke-width: 2;
+}
+.studio-2d-accroche-milieu {
+  stroke: #6a3fb5;
+}
+.studio-2d-panneaux {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.studio-2d-panneaux .panel {
+  margin: 0;
+}
+.studio-2d-panneaux label {
+  display: block;
+}
+.studio-2d-panneaux input:not([type="radio"]):not([type="checkbox"]) {
+  width: 100%;
+  min-height: 36px;
+}
+.studio-2d-calques ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.studio-2d-revisions ol {
+  margin: 0;
+  padding-left: 18px;
+}
+.studio-2d-calques li label {
+  display: inline-flex;
+  gap: 4px;
+  margin-right: 8px;
+}
+.studio-2d-alerte {
+  margin: 0;
+  color: #b3261e;
+}
+@media (max-width: 760px) {
+  .studio-2d-corps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .studio-2d-zone {
+    height: 60vh;
+  }
+}

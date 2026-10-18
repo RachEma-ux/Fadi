@@ -11,6 +11,7 @@ import { useAuth } from "../../lib/auth-context";
 import { useLastDossier } from "../../lib/last-dossier";
 import { denied } from "../accueil/dossier-data";
 import { cheminEtudeStudio, cheminProjetStudio, cheminVarianteStudio, DOMAINES_STUDIO, lireRouteStudio, PLANCHES_STUDIO, RACINE_STUDIO, type DomaineStudio, type PlancheStudio } from "./routes-studio";
+import { Planche2D } from "./planche2d/Planche2D";
 import "./studio.css";
 
 class ErreurRecuperable extends Component<{ cle: string; children: ReactNode }, { erreur: boolean; cle: string }> {
@@ -313,7 +314,7 @@ function CreerVariante({ projectId, etudeId }: { projectId: string; etudeId: str
 const LIBELLES_DOMAINE: Record<DomaineStudio, string> = { dessin: "Dessin", bim: "BIM", visualisation: "Visualisation", documentation: "Documentation" };
 const LIBELLES_PLANCHE: Record<PlancheStudio, string> = { "2d": "Planche 2D", "3d": "Planche 3D" };
 
-function StudioVariante({ projectId, etudeId, variantId, domaine, planche }: { projectId: string; etudeId: string; variantId: string; domaine: DomaineStudio; planche: PlancheStudio | null }) {
+function StudioVariante({ projectId, etudeId, variantId, domaine, planche, revision }: { projectId: string; etudeId: string; variantId: string; domaine: DomaineStudio; planche: PlancheStudio | null; revision: string | null }) {
   const projet = useProjetStudio(projectId);
   const etude = useEtudeStudio(projectId, etudeId);
   const variante = useVarianteStudio(projectId, etudeId, variantId);
@@ -348,6 +349,8 @@ function StudioVariante({ projectId, etudeId, variantId, domaine, planche }: { p
               ))}
             </div>
             {planche ? <p data-studio-planche-active={planche}>{`${LIBELLES_PLANCHE[planche]} retenue pour cette variante.`}</p> : <p data-studio-planche-aucune>Aucune planche choisie.</p>}
+            {planche === "2d" && <Planche2D projectId={projectId} etudeId={etudeId} variantId={v.id} revision={revision} peutEcrire={peutModifier(projet.data.role)} />}
+            {planche === "3d" && <p className="panel-sub" data-studio-3d-indisponible>La Planche 3D n’est pas encore disponible dans Studio.</p>}
           </>
         ) : (
           <p data-studio-domaine-vide>Ce domaine ne contient encore rien pour cette variante.</p>

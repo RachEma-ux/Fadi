@@ -11,9 +11,11 @@ import { studioEtudes, studioVariantes } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
 import { projectOr404 } from "../lib/owned-project.js";
+import { studioRevisionsRouter } from "./studio-revisions.js";
 
 export const studioEtudesRouter = Router({ mergeParams: true });
 studioEtudesRouter.use(requireAuth);
+studioEtudesRouter.use("/:etudeId/variantes/:variantId/revisions", studioRevisionsRouter);
 
 type Ligne = typeof studioEtudes.$inferSelect;
 const vue = (e: Ligne) => ({ id: e.id, projectId: e.projectId, nom: e.nom, description: e.description, createdAt: e.createdAt, updatedAt: e.updatedAt });

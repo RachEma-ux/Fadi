@@ -110,6 +110,21 @@ export interface VarianteStudio {
   createdAt: string;
 }
 
+/** Révision immuable d'une variante : `contenu` n'est rendu que par la lecture d'une révision précise. */
+export interface RevisionStudio {
+  id: string;
+  varianteId: string;
+  numero: number;
+  parentId: string | null;
+  documentId: string;
+  schemaVersion: string;
+  empreinte: string;
+  authorId: string;
+  createdAt: string;
+  contenu?: unknown;
+  rejoue?: boolean;
+}
+
 export interface Project {
   id: string;
   ownerId: string;
@@ -766,6 +781,12 @@ export const api = {
     request<VarianteStudio[]>(`/projects/${encodeURIComponent(projectId)}/studio/etudes/${encodeURIComponent(etudeId)}/variantes`),
   getVarianteStudio: (projectId: string, etudeId: string, variantId: string) =>
     request<VarianteStudio>(`/projects/${encodeURIComponent(projectId)}/studio/etudes/${encodeURIComponent(etudeId)}/variantes/${encodeURIComponent(variantId)}`),
+  listRevisionsStudio: (projectId: string, etudeId: string, variantId: string) =>
+    request<RevisionStudio[]>(`/projects/${encodeURIComponent(projectId)}/studio/etudes/${encodeURIComponent(etudeId)}/variantes/${encodeURIComponent(variantId)}/revisions`),
+  getRevisionStudio: (projectId: string, etudeId: string, variantId: string, revisionId: string) =>
+    request<RevisionStudio>(`/projects/${encodeURIComponent(projectId)}/studio/etudes/${encodeURIComponent(etudeId)}/variantes/${encodeURIComponent(variantId)}/revisions/${encodeURIComponent(revisionId)}`),
+  enregistrerRevisionStudio: (projectId: string, etudeId: string, variantId: string, corps: { requestId: string; baseRevisionId: string | null; contenu: unknown }) =>
+    request<RevisionStudio>(`/projects/${encodeURIComponent(projectId)}/studio/etudes/${encodeURIComponent(etudeId)}/variantes/${encodeURIComponent(variantId)}/revisions`, { method: "POST", body: JSON.stringify(corps) }),
   creerVarianteStudio: (projectId: string, etudeId: string, nom: string) =>
     request<VarianteStudio>(`/projects/${encodeURIComponent(projectId)}/studio/etudes/${encodeURIComponent(etudeId)}/variantes`, { method: "POST", body: JSON.stringify({ nom }) }),
 

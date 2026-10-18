@@ -624,3 +624,20 @@ export const studioVariantes = pgTable("studio_variantes", {
   authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("studio_variantes_etude_idx").on(t.projectId, t.etudeId, t.createdAt)]);
+
+/** Révision immuable d'une variante de Studio (déclencheur `studio_revisions_immuables`, init.sql) ; numéro et requête uniques dans la variante. */
+export const studioRevisions = pgTable("studio_revisions", {
+  id: text("id").primaryKey(),
+  varianteId: text("variante_id").notNull().references(() => studioVariantes.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  numero: integer("numero").notNull(),
+  parentId: text("parent_id"),
+  documentId: text("document_id").notNull(),
+  requestId: text("request_id").notNull(),
+  schemaVersion: text("schema_version").notNull(),
+  contenu: jsonb("contenu").$type<unknown>().notNull(),
+  empreinte: text("empreinte").notNull(),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [uniqueIndex("studio_revisions_numero_idx").on(t.varianteId, t.numero), uniqueIndex("studio_revisions_requete_idx").on(t.varianteId, t.requestId)]);
+

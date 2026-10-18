@@ -2,7 +2,8 @@
 /**
  * Recette de Studio (ADR-STUDIO-NAV-01, NAV-001 à NAV-004, NAV-006, NAV-008, NAV-009) : entrée de la barre verticale,
  * routes propres sous /studio, aucun passage par le Parcours ni l'Atelier, refus sans divulgation, adresse inconnue
- * explicite, barre jamais masquée ; études créées par l'interface, uniques par projet, droits relus par le serveur. API et application construites, même origine, base CI dédiée.
+ * explicite, barre jamais masquée ; études et variantes créées par l'interface, droits relus par le serveur ; Planche 2D :
+ * dessin, cote associée, révisions immuables, réouverture, conflit et lecture seule. API et application construites, même origine, base CI dédiée.
  *
  * BASE_URL=http://localhost:3001 OUT=atelier-captures/studio node apps/web/e2e/studio-navigation.mjs
  */
@@ -169,7 +170,8 @@ try {
   await page.reload();
   await page.locator('[data-studio-planche-active="3d"]').waitFor();
   check("variantes : l'actualisation restitue la planche choisie", true);
-  check("variantes : aucune lecture ni écriture du Parcours, de l'Atelier ou de la Planche", requetes.filter((p) => !p.startsWith("/assets/") && /\/steps|\/programme|\/atelier|\/planche/.test(p)).length === 0, requetes.join(" "));
+  const interditesVar = requetes.filter((p) => !p.startsWith("/assets/") && /\/steps|\/programme|\/atelier|\/planche/.test(p));
+  check("variantes : aucune lecture ni écriture du Parcours, de l'Atelier ou de la Planche", interditesVar.length === 0, interditesVar.join(" "));
   await page.goto(`${urlVariante.split("?")[0]}?domaine=bim&planche=2d`);
   await page.locator("[data-studio-inconnue]").waitFor();
   check("variantes : planche hors du dessin → adresse non reconnue, conservée", page.url().endsWith("domaine=bim&planche=2d"));
@@ -191,6 +193,112 @@ try {
   await page.goto(`${BASE}/studio/projets/${pA2.id}/etudes/${etudeId}/variantes/${urlVariante.split("?")[0].split("/").pop()}`);
   await page.locator("[data-studio-refus]").waitFor();
   check("variantes : une variante ouverte sous un autre projet est refusée", !(await page.locator("#workspace-content").textContent()).includes("Variante nord"));
+
+  // Planche 2D (lot A) : dessiner, coter, enregistrer en révision, fermer, rouvrir, révision passée, conflit, lecteur.
+  const url2d = `${urlVariante.split("?")[0]}?domaine=dessin&planche=2d`;
+  const revisionsApi = `/projects/${pA.id}/studio/etudes/${etudeId}/variantes/${urlVariante.split("?")[0].split("/").pop()}/revisions`;
+  const etat2d = (p = page) => p.locator("[data-studio-2d-etat]").textContent();
+  const valeurCote = (p = page) => p.locator('[data-type="cote"]').first().getAttribute("data-valeur");
+  /** Clique un point de l'écran de la zone de dessin. */
+  const cliquer = async (p, x, y) => {
+    await p.locator("[data-studio-2d-svg]").scrollIntoViewIfNeeded();
+    const boite = await p.locator("[data-studio-2d-svg]").boundingBox();
+    await p.mouse.click(boite.x + x, boite.y + y);
+  };
+  const extremites = (p, sel, i = 0) => p.locator(sel).nth(i).evaluate((l) => ({ x1: +l.getAttribute("x1"), y1: +l.getAttribute("y1"), x2: +l.getAttribute("x2"), y2: +l.getAttribute("y2") }));
+  const placer = async (x, y) => {
+    await page.fill("#studio-2d-x", String(x));
+    await page.fill("#studio-2d-y", String(y));
+    await page.locator("[data-studio-2d-saisie] button[type=submit]").click();
+  };
+  requetes.length = 0;
+  await page.goto(url2d);
+  await page.locator("[data-studio-2d]").waitFor();
+  check("Planche 2D : ouverture sans révision, rien n'est créé", (await etat2d()) === "Aucune révision enregistrée" && (await a.api("get", revisionsApi)).length === 0);
+  await page.locator("body").press("l");
+  check("Planche 2D : raccourci L choisit l'outil Ligne", (await page.locator('[data-studio-2d-entree="ligne"]').getAttribute("aria-pressed")) === "true");
+  await placer(0, 0);
+  await placer(4, 0);
+  await page.locator("body").press("Escape");
+  check("Planche 2D : ligne posée par saisie numérique (0 ; 0) → (4 ; 0)", (await page.locator('[data-type="ligne"]').count()) === 1);
+  await page.locator('[data-studio-2d-entree="ligne"]').click();
+  await cliquer(page, 120, 80);
+  await cliquer(page, 240, 80);
+  await page.locator("body").press("Escape");
+  check("Planche 2D : ligne dessinée à la souris", (await page.locator('[data-type="ligne"]').count()) === 2);
+  // Cote liée aux deux extrémités de la première ligne, par accrochage.
+  await page.locator("body").press("Shift+C");
+  const l1 = await extremites(page, '[data-type="ligne"]');
+  await cliquer(page, l1.x1, l1.y1);
+  await cliquer(page, l1.x2, l1.y2);
+  await cliquer(page, (l1.x1 + l1.x2) / 2, l1.y1 - 30);
+  check("Planche 2D : cote accrochée aux extrémités, valeur dérivée 4,000 m", (await valeurCote()) === "4.000");
+  await page.keyboard.press("Control+s");
+  await page.waitForFunction(() => document.querySelector("[data-studio-2d-etat]")?.textContent === "Enregistré — révision n° 1");
+  check("Planche 2D : Ctrl+S enregistre la révision n° 1", (await a.api("get", revisionsApi)).length === 1);
+  // Édition précise : l'extrémité B passe à 6,25 m, la cote liée suit ; annuler / rétablir.
+  await page.locator("body").press(" ");
+  const l1b = await extremites(page, '[data-type="ligne"]');
+  await cliquer(page, (l1b.x1 + l1b.x2) / 2, l1b.y1);
+  await page.locator('[data-studio-2d-inspecteur="ligne"]').waitFor();
+  await page.fill("#studio-2d-champ-2", "6,25");
+  await page.locator('[data-studio-2d-inspecteur="ligne"] button[type=submit]').click();
+  check("Planche 2D : la cote associée suit la ligne modifiée (6,250 m)", (await valeurCote()) === "6.250" && (await etat2d()) === "Modifications non enregistrées");
+  await page.locator("body").press("Control+z");
+  check("Planche 2D : Ctrl+Z annule", (await valeurCote()) === "4.000");
+  await page.locator("body").press("Control+y");
+  check("Planche 2D : Ctrl+Y rétablit", (await valeurCote()) === "6.250");
+  await page.locator('[data-studio-2d-entree="enregistrer"]').click();
+  await page.waitForFunction(() => document.querySelector("[data-studio-2d-etat]")?.textContent === "Enregistré — révision n° 2");
+  const interdites2d = requetes.filter((p) => !p.startsWith("/assets/") && /\/steps|\/programme|\/atelier/.test(p));
+  check("Planche 2D : aucune lecture ni écriture de l'Atelier ou du Parcours", interdites2d.length === 0, interdites2d.join(" "));
+  // Fermer puis rouvrir : même contenu, même révision.
+  await page.goto(urlEtude);
+  await page.locator("[data-studio-etude]").waitFor();
+  await page.goto(url2d);
+  await page.locator('[data-type="cote"]').waitFor();
+  const rouvert = [await page.locator('[data-type="ligne"]').count(), await valeurCote(), await etat2d()];
+  check("Planche 2D : rouvert, le dessin est restitué (2 lignes, cote 6,250 m, révision n° 2)", rouvert[0] === 2 && rouvert[1] === "6.250" && rouvert[2] === "Enregistré — révision n° 2", rouvert.join(" | "));
+  await page.screenshot({ path: join(OUT, "studio-planche-2d.png") });
+  await page.addScriptTag({ path: AXE_SCRIPT });
+  const graves2d = await page.evaluate(async () => (await window.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] } })).violations.filter((v) => ["critical", "serious"].includes(v.impact)).map((v) => v.id));
+  check("accessibilité de la Planche 2D : aucune violation critique ou sérieuse", graves2d.length === 0, graves2d.join(", "));
+  // Révision passée : lecture seule, contenu d'origine, adresse propre.
+  await page.locator('[data-studio-2d-revisions] [data-revision="1"] a').click();
+  await page.locator("[data-studio-2d-historique]").waitFor();
+  check("Planche 2D : la révision n° 1 se relit telle quelle, en lecture seule", page.url().includes("revision=rev_") && (await valeurCote()) === "4.000" && (await page.locator('[data-studio-2d-entree="ligne"]').isDisabled()));
+  await page.locator("[data-studio-2d-historique] a").click();
+  await page.locator('[data-studio-2d-lecture="non"]').waitFor();
+  // Conflit : un second onglet enregistre sur une base dépassée → refus, rien d'écrasé, rechargement explicite.
+  const autre = await a.context.newPage();
+  await autre.goto(url2d);
+  await autre.locator('[data-type="cote"]').waitFor();
+  await page.locator("body").press(" ");
+  const l2 = await extremites(page, '[data-type="ligne"]', 1);
+  await cliquer(page, (l2.x1 + l2.x2) / 2, l2.y1);
+  await page.locator("body").press("Delete");
+  await page.keyboard.press("Control+s");
+  await page.waitForFunction(() => document.querySelector("[data-studio-2d-etat]")?.textContent === "Enregistré — révision n° 3");
+  await autre.locator('[data-studio-2d-entree="ligne"]').click();
+  await cliquer(autre, 100, 200);
+  await cliquer(autre, 200, 260);
+  await autre.locator('[data-studio-2d-entree="enregistrer"]').click();
+  await autre.locator("[data-studio-2d-conflit]").waitFor();
+  check("Planche 2D : base dépassée → conflit, aucune révision écrasée", (await a.api("get", revisionsApi)).length === 3);
+  await autre.locator("[data-studio-2d-conflit] button").click();
+  await autre.waitForFunction(() => document.querySelector("[data-studio-2d-etat]")?.textContent === "Enregistré — révision n° 3");
+  check("Planche 2D : après conflit, la dernière révision est rechargée explicitement", (await autre.locator('[data-type="ligne"]').count()) === 1);
+  await autre.close();
+  // Supprimer la ligne cotée : la cote reste, à résoudre.
+  const l3 = await extremites(page, '[data-type="ligne"]');
+  await cliquer(page, (l3.x1 + l3.x2) / 2, l3.y1);
+  await page.locator("body").press("Delete");
+  check("Planche 2D : ligne cotée supprimée → cote conservée, à résoudre", (await page.locator("[data-studio-2d-a-resoudre]").count()) === 1 && (await page.locator('[data-type="cote"]').count()) === 1);
+  await page.locator("body").press("Control+z");
+  // Lecteur : consulte sans modifier.
+  await b.page.goto(url2d);
+  await b.page.locator("[data-studio-2d-lecteur]").waitFor();
+  check("Planche 2D : un lecteur consulte sans pouvoir dessiner ni enregistrer", (await b.page.locator('[data-studio-2d-entree="ligne"]').isDisabled()) && (await b.page.locator('[data-studio-2d-entree="enregistrer"]').isDisabled()) && (await b.page.locator('[data-type="cote"]').count()) === 1);
 
   // Accessibilité de l'accueil Studio.
   await page.goto(`${BASE}/studio`);

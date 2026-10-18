@@ -16,3 +16,4 @@ export * from "./concept-preview.js";
 export * from "./business-checks.js";
 export * from "./documents.js";
 export * from "./example-report.js";
+export * as studio2d from "./studio-document2d.js";
