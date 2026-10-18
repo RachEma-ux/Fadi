@@ -1,6 +1,6 @@
 # Programme156 — reprise496dcfc et continuation après165
 
-État courant : main817bd36, PR165 fusionnée par une autre session, continuation documentaire sur la même branche dans [PR172](https://github.com/RachEma-ux/Fadi/pull/172). Dernier SHA publié avant la présente consolidation :2076e18. Les31 missions restent ouvertes (25 En cours,6 Bloquées). Aucun accord de fusion, administration, DB réelle ou production exécuté par A0.
+État courant : main817bd36, PR165 fusionnée par une autre session, continuation documentaire sur la même branche dans [PR172](https://github.com/RachEma-ux/Fadi/pull/172). Dernier SHA documentaire vérifié :1d7adda8a4f767138514ff5adca33523cfc096b1. Les31 missions restent ouvertes (25 En cours,6 Bloquées). Aucun accord de fusion, administration, DB réelle ou production exécuté par A0.
 
 ## Qualification des203 et réception des remises
 
@@ -33,3 +33,5 @@ A0 seul intègre registre/checkpoints ; agents dans leurs partitions. STATUS/HAN
 Les originaux citent leurs chemins de session :[aliases par empreinte vers les copies publiées](SOURCE-ALIASES-203-A0.json). Trois étapes sont conservées :203+REP donne42conditions ; COEX ajoute2conditions ; les compléments ajoutent seulement des preuves, sans nouvelle clôture. L’orthographe COEX06 du deltaA2 désigne explicitement COEX-06 canonique.
 
 [Prochaine opération par mission](NEXT-READY-CONSOLIDE-A0.json) :31missions ouvertes, questions déjà publiées et déclencheurs précis ; ne pas refaire les22compléments terminés dans cette session.
+
+[CI exacte1d7adda](CI-172-1d7-observation.json) :quatre contrôles documentaires réussis, job117703610654 success, e2e/validate/image skipped. Les163 chemins du diff contre main sont documentaires ; contrôle structure et chemins réussi. L’option locale Node qui lance Git a rencontré EPERM ; la validation pure de la liste Git autorisée a réussi, limite conservée explicitement.
