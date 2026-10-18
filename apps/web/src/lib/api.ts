@@ -156,6 +156,20 @@ export interface NotificationItem {
 export interface NotificationsView {
   seenAt: string | null;
   items: NotificationItem[];
+  /** Notifications retirées par vos préférences (types masqués, projets en sourdine). */
+  masquees?: number;
+}
+
+export type NotificationKind = NotificationItem["kind"];
+
+/** Préférences de notification du compte (serveur) : types masqués et projets mis en sourdine. */
+export interface NotificationPreferencesView {
+  typesMasques: NotificationKind[];
+  projetsMuets: string[];
+  /** Tous les types calculés par le serveur, dans l'ordre d'affichage. */
+  types: NotificationKind[];
+  /** Code et nom des projets muets encore accessibles. */
+  projets: { id: string; code: string; name: string }[];
 }
 
 export interface EditingLock {
@@ -813,6 +827,12 @@ export const api = {
   /** Notifications dans l'application (accès reçus, commentaires des autres, réservations d'édition), relues des données datées. */
   listNotifications: () => request<NotificationsView>("/notifications"),
   markNotificationsSeen: () => request<{ seenAt: string }>("/notifications/seen", { method: "POST" }),
+  /** Préférences de notification (types masqués, projets en sourdine), appliquées par le serveur à `/notifications`. */
+  lirePreferencesNotification: () => request<NotificationPreferencesView>("/preferences/notifications"),
+  enregistrerTypesMasques: (typesMasques: NotificationKind[]) =>
+    request<NotificationPreferencesView>("/preferences/notifications", { method: "PUT", body: JSON.stringify({ typesMasques }) }),
+  mettreProjetEnSourdine: (projectId: string, muet: boolean) =>
+    request<NotificationPreferencesView>(`/preferences/notifications/projets/${encodeURIComponent(projectId)}`, { method: "PUT", body: JSON.stringify({ muet }) }),
   /** Ensembles d'affichage personnels de l'Atelier, synchronisés entre les appareils du compte (D-118). */
   lireEnsemblesPersonnels: () => request<EnsemblesPersonnels>("/preferences/atelier-ensembles"),
   enregistrerEnsemblesPersonnels: (ensembles: EnsemblesPersonnels["ensembles"], base: string | null) =>

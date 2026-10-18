@@ -3,11 +3,13 @@
  * le compte (adresse, déconnexion), la connexion MapTiler (clé de
  * l'utilisateur, réutilisée par l'étape 01 et l'outil Parcelle, jamais
  * envoyée à l'API Fadi), les données conservées par ce navigateur pour le
- * travail hors-ligne, et la version de l'application. Les droits d'accès
+ * travail hors-ligne, la version de l'application, et les notifications
+ * (types affichés, projets en sourdine — préférences du compte, appliquées
+ * par le serveur). Les droits d'accès
  * d'un projet se règlent dans son module Collaboration, pas ici.
  */
 import { useEffect, useState, type FormEvent } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useAuth } from "../lib/auth-context";
 import { localStore } from "../lib/local-store";
@@ -15,6 +17,9 @@ import { QUERY_CACHE_VERSION } from "../lib/query-persister";
 import { forgetMaptilerKey, maptilerKey, MAPTILER_KEY_STORAGE, useMaptilerKey } from "../lib/maptiler";
 import { useOnline } from "../components/SyncIndicator";
 import { ChoixLangue } from "../components/ChoixLangue";
+import { api, type NotificationKind, type NotificationPreferencesView } from "../lib/api";
+import { NOTIFICATION_KIND_DESCRIPTION, NOTIFICATION_KIND_LABEL, NOTIFICATION_KINDS } from "../components/notification-kinds";
+import { NOTIFICATION_PREFERENCES_KEY } from "../components/NotificationBell";
 
 type KeyState = "absente" | "session" | "locale";
 
@@ -237,6 +242,89 @@ function AppSettings() {
   );
 }
 
+/** Cibles d'au moins 24 px (WCAG 2.5.8) : la liste des types empile sept cases à cocher. */
+const LISTE_TYPES = { listStyle: "none", padding: 0, margin: "0.5rem 0", display: "grid", gap: "0.75rem" } as const;
+const CIBLE_TACTILE = { width: 24, height: 24, flex: "0 0 auto" } as const;
+
+/** Notifications : un interrupteur par type (affiché / masqué) et les projets en sourdine, réactivables ici. */
+function NotificationSettings() {
+  const queryClient = useQueryClient();
+  const prefs = useQuery({ queryKey: NOTIFICATION_PREFERENCES_KEY, queryFn: api.lirePreferencesNotification });
+  const onSuccess = (view: NotificationPreferencesView) => {
+    queryClient.setQueryData(NOTIFICATION_PREFERENCES_KEY, view);
+    void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+  };
+  // L'interrupteur suit le geste aussitôt ; un refus du serveur rétablit l'état relu.
+  const types = useMutation({
+    mutationFn: api.enregistrerTypesMasques,
+    onMutate: async (typesMasques: NotificationKind[]) => {
+      // Une lecture en cours ne doit pas écraser le geste par l'état précédent.
+      await queryClient.cancelQueries({ queryKey: NOTIFICATION_PREFERENCES_KEY });
+      const avant = queryClient.getQueryData<NotificationPreferencesView>(NOTIFICATION_PREFERENCES_KEY);
+      if (avant) queryClient.setQueryData(NOTIFICATION_PREFERENCES_KEY, { ...avant, typesMasques });
+      return { avant };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.avant) queryClient.setQueryData(NOTIFICATION_PREFERENCES_KEY, ctx.avant);
+    },
+    onSuccess,
+  });
+  const projet = useMutation({ mutationFn: (projectId: string) => api.mettreProjetEnSourdine(projectId, false), onSuccess });
+  const data = prefs.data;
+  const kinds = (data?.types ?? NOTIFICATION_KINDS).filter((k): k is NotificationKind => k in NOTIFICATION_KIND_LABEL);
+  const busy = types.isPending || projet.isPending;
+  function toggle(kind: NotificationKind, shown: boolean) {
+    if (!data) return;
+    const masques = shown ? data.typesMasques.filter((k) => k !== kind) : [...data.typesMasques, kind];
+    types.mutate(masques);
+  }
+  return (
+    <section className="panel settings-section" id="settings-notifications" aria-labelledby="settings-notifications-title" data-settings-notifications>
+      <h2 id="settings-notifications-title">Notifications</h2>
+      <p className="panel-sub">Choisissez les notifications affichées dans la cloche, pour votre compte sur tous vos appareils. Les alertes du dossier ne se masquent pas. Aucun courriel n’est envoyé.</p>
+      {prefs.isLoading && <p role="status">Chargement…</p>}
+      {prefs.isError && <p role="alert">Préférences non disponibles sans réseau.</p>}
+      {data && (
+        <ul className="settings-notification-kinds" style={LISTE_TYPES}>
+          {kinds.map((kind) => {
+            const shown = !data.typesMasques.includes(kind);
+            return (
+              <li key={kind} data-kind={kind} style={{ display: "grid", gap: "0.15rem" }}>
+                <label className="h7-checkbox">
+                  <input type="checkbox" style={CIBLE_TACTILE} checked={shown} disabled={busy} onChange={(e) => toggle(kind, e.target.checked)} /> {NOTIFICATION_KIND_LABEL[kind]}
+                </label>
+                <small>{NOTIFICATION_KIND_DESCRIPTION[kind]}</small>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {data && (
+        <div className="settings-muted-projects">
+          <h3>Projets en sourdine</h3>
+          {data.projets.length === 0 ? (
+            <p className="h7-muted">Aucun projet en sourdine. Un projet se met en sourdine depuis la cloche, dans le projet.</p>
+          ) : (
+            <ul>
+              {data.projets.map((p) => (
+                <li key={p.id} data-muted-project={p.id}>
+                  <span translate="no">
+                    {p.code} — {p.name}
+                  </span>{" "}
+                  <button type="button" className="button-secondary" disabled={busy} onClick={() => projet.mutate(p.id)}>
+                    Réactiver
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+      {(types.isError || projet.isError) && <p role="alert">Le réglage n’a pas pu être enregistré (serveur injoignable ou refus).</p>}
+    </section>
+  );
+}
+
 /** « Nom affiché » : le prénom ou le nom sous lequel l'accueil et la barre latérale vous saluent ; facultatif, effaçable. */
 function DisplayNameForm() {
   const { user, updateProfile } = useAuth();
@@ -276,7 +364,7 @@ export function ParametresPage() {
       <div className="home-greeting">
         <div>
           <h1>Paramètres</h1>
-          <p>Compte, services externes et données locales. Les droits d’accès d’un projet (lecteur, éditeur, propriétaire, réservation d’édition) se règlent dans son module Collaboration.</p>
+          <p>Compte, notifications, services externes et données locales. Les droits d’accès d’un projet (lecteur, éditeur, propriétaire, réservation d’édition) se règlent dans son module Collaboration.</p>
         </div>
       </div>
       <section className="panel settings-section" aria-labelledby="settings-account">
@@ -302,6 +390,7 @@ export function ParametresPage() {
         <p className="panel-sub">Français ou anglais, pour cet appareil. Les données du projet, les exemples et les documents produits restent dans leur langue.</p>
         <ChoixLangue />
       </section>
+      <NotificationSettings />
       <MaptilerSettings />
       <LocalDataSettings />
       <AppSettings />

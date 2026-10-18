@@ -34,6 +34,8 @@ export const users = pgTable("users", {
   atelierEnsembles: jsonb("atelier_ensembles"),
   /** Date serveur du dernier enregistrement de ces ensembles (version comparée par les appareils). */
   atelierEnsemblesAt: timestamp("atelier_ensembles_at", { withTimezone: true }),
+  /** Préférences de notification du compte : `{ typesMasques, projetsMuets }` (lib/notification-preferences.ts) ; null tant que rien n'est réglé (tout est affiché). */
+  notificationPreferences: jsonb("notification_preferences"),
 }, (t) => [uniqueIndex("users_email_unique").on(t.email)]);
 
 export const sessions = pgTable("sessions", {

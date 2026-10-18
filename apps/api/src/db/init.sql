@@ -19,6 +19,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS notifications_seen_at timestamptz;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS atelier_ensembles jsonb;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS atelier_ensembles_at timestamptz;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name text;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS notification_preferences jsonb;
 
 CREATE TABLE IF NOT EXISTS sessions (
   id text PRIMARY KEY,

@@ -3,6 +3,8 @@
  * - Notifications de collaboration : non lues jusqu'à leur consultation.
  * - Alertes du dossier : actives tant que le fait qui les cause subsiste.
  * Consulter une alerte ne la marque jamais comme résolue.
+ * Dans un projet, le menu propose de mettre ce projet en sourdine (préférence du compte, serveur) ; les types de
+ * notification se règlent dans Paramètres.
  */
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,8 +17,10 @@ import { useDossierQueries, denied, dateLabel } from "../modules/accueil/dossier
 import { useDossierSync } from "../modules/accueil/use-dossier-sync";
 import { dossierAlerts, type DossierAlert, type DossierAlertCommand } from "../modules/accueil/dossier-alerts";
 import { cheminVarianteStudio } from "../modules/studio/routes-studio";
+import { NOTIFICATION_KIND_LABEL as KIND_LABEL } from "./notification-kinds";
 
-const KIND_LABEL: Record<NotificationItem["kind"], string> = { acces: "Accès", commentaire: "Commentaire", reservation: "Réservation", modification: "Modification", verrou: "Verrou", peremption: "Document périmé", "commentaire-studio": "Commentaire Studio" };
+/** Clé de cache des préférences de notification, partagée avec Paramètres. */
+export const NOTIFICATION_PREFERENCES_KEY = ["preferences", "notifications"] as const;
 
 function targetOf(n: NotificationItem): string {
   // Commentaire d'une variante Studio : la variante, panneau des commentaires ouvert.
@@ -87,13 +91,14 @@ function ScopedBell({ projectId }: { projectId: string }) {
       setBusyCommand(null);
     }
   }
-  return <BellView key={projectId} alerts={alerts} projectCode={project?.code} onRecover={recover} busyCommand={busyCommand} feedback={feedback} />;
+  return <BellView key={projectId} alerts={alerts} projectId={projectId} projectCode={project?.code} onRecover={recover} busyCommand={busyCommand} feedback={feedback} />;
 }
 
 function BellView({
-  alerts, projectCode, onRecover, busyCommand, feedback,
+  alerts, projectId, projectCode, onRecover, busyCommand, feedback,
 }: {
   alerts: DossierAlert[];
+  projectId?: string;
   projectCode?: string;
   onRecover?: (command: DossierAlertCommand) => Promise<void>;
   busyCommand?: DossierAlertCommand | null;
@@ -106,7 +111,17 @@ function BellView({
   const trigger = useRef<HTMLButtonElement>(null);
   const query = useQuery({ queryKey: ["notifications"], queryFn: api.listNotifications, enabled: !!user, refetchInterval: 60_000 });
   const seen = useMutation({ mutationFn: api.markNotificationsSeen, onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["notifications"] }) });
+  const prefs = useQuery({ queryKey: NOTIFICATION_PREFERENCES_KEY, queryFn: api.lirePreferencesNotification, enabled: !!user && !!projectId && open });
+  const muet = !!projectId && !!prefs.data?.projetsMuets.includes(projectId);
+  const sourdine = useMutation({
+    mutationFn: (next: boolean) => api.mettreProjetEnSourdine(projectId!, next),
+    onSuccess: (view) => {
+      queryClient.setQueryData(NOTIFICATION_PREFERENCES_KEY, view);
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
   const items = query.data?.items ?? [];
+  const masquees = query.data?.masquees ?? 0;
   const unread = items.filter((n) => n.unread).length;
   const active = alerts.length;
   const total = unread + active;
@@ -163,6 +178,13 @@ function BellView({
         {projectCode && <h2>Notifications ({unread} non lue(s))</h2>}
         {query.isLoading && <p role="status">Chargement…</p>}
         {query.isError && <p role="alert">Notifications non disponibles sans réseau.</p>}
+        {projectId && <div className="notification-mute" data-project-muted={muet ? "true" : "false"}>
+          {muet && <p role="status">{"Ce projet est en sourdine : ses notifications ne sont plus affichées."}</p>}
+          <button type="button" className="link-button" disabled={!prefs.data || sourdine.isPending} onClick={() => sourdine.mutate(!muet)}>
+            {sourdine.isPending ? "Enregistrement…" : muet ? "Réactiver les notifications de ce projet" : "Mettre ce projet en sourdine"}
+          </button>
+          {sourdine.isError && <p role="alert">{"Le réglage n’a pas pu être enregistré (serveur injoignable ou refus)."}</p>}
+        </div>}
         {query.data && items.length === 0 && <p>Aucune notification pour l’instant.</p>}
         {items.length > 0 && <ul className="notification-list">{items.map((n) => <li key={n.id} className={n.unread ? "notification-unread" : undefined} data-kind={n.kind}>
           <span className="h7-chip">{KIND_LABEL[n.kind]}</span>
@@ -170,7 +192,9 @@ function BellView({
           <small>{new Date(n.at).toLocaleString(LOCALE)}</small>
         </li>)}</ul>}
       </section>
+      {masquees > 0 && <p className="notification-hidden" data-hidden-count={masquees}>{`${masquees} notification(s) masquée(s) par vos préférences.`}</p>}
       <p className="notification-foot">Les alertes restent affichées jusqu’à la résolution de leur cause. Aucun courriel n’est envoyé.</p>
+      <p className="notification-foot"><Link to="/parametres#settings-notifications" onClick={() => setOpen(false)}>Régler les notifications</Link></p>
     </div>}
   </div>;
 }
