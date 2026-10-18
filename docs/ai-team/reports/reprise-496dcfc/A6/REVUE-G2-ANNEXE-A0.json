@@ -1,0 +1,52 @@
+{
+  "review": "A6 annexe concrète G2 A0, lecture seule",
+  "source": "/workspace/work/mission003/repo/docs/ai-team/reports/reprise-496dcfc/G2-PERIMETRE-A0-PROPOSE.md",
+  "source_sha256": "07dcf61cc91ad5eae368efa76e511adbbf18f1a1d4e1e9cbefc874ef6c497652",
+  "conclusion": "proposition documentaire recevable, réserves opérationnelles à lever avant tout accord/exécution ; aucune décision G1/G2",
+  "positives": [
+    "5 sources futures explicitement allowlistées, hors application et sans nouveau package/script/workflow",
+    "output root/session exclusive et refus traversal/symlink/existant ; aucun cleanup implicite",
+    "limites proposées fichiers/octets/profondeur/objets/points/processus/durée explicitement confinement POC, pas métriques produit",
+    "imports publics seuls sous inventaire A2 transitif avant exécution ; aucun fallback import profond/copieur",
+    "enfant à executable/arguments fixes sans shell/envhérité ; fixtures synthétiques seulement",
+    "rollback abandon usage expérimental et origine conservée",
+    "PR et CI intégration explicitement interdites avant stratégie pure séparément autorisée"
+  ],
+  "reserves_before_execution": [
+    {
+      "id": "G2-A6-R1",
+      "topic": "atomic confinement",
+      "requirement": "lstat/realpath préalable seul insuffisant contre substitution entre contrôle et écriture ; implémentation future doit ancrer les opérations aux répertoires contrôlés, refuser symlinks à chaque composant et créer exclusivement sans écrasement/promotion vers cible existante",
+      "status": "à spécifier/éprouver après accord, aucun code ici"
+    },
+    {
+      "id": "G2-A6-R2",
+      "topic": "network/DB absence",
+      "requirement": "environnement minimal sans URL/secret ne bloque pas à lui seul les sockets ; absence de réseau/DB doit être garantie par graphe imports inventorié et contexte exécution sans permissions réseau, avec contrôles négatifs permis dans lot futur ; aucun élargissement permissions pour exécuter le POC",
+      "status": "précondition future, aucune connexion ici"
+    },
+    {
+      "id": "G2-A6-R3",
+      "topic": "hard timeout and own child",
+      "requirement": "annulation après délai doit interrompre aussi un calcul synchrone bloquant : pas timer du même event loop seul ; mécanisme superviseur/limite exécution à préciser et arrêt limité au processus/enfant propre, sans tuer service ou processus partagé ; pas promotion de sortie après annulation",
+      "status": "bornes A0 candidates à approuver, ni délai observé ni budget Studio"
+    },
+    {
+      "id": "G2-A6-R4",
+      "topic": "size accounting and corruption",
+      "requirement": "limites comptées sur octets UTF8 réels/cumul/fichiers, avant lecture illimitée et promotion ; refus non-fini avant JSON (pas conversion implicite null) ; conserver sortie invalide séparée et aucune révision validée après dépassement",
+      "status": "oracles purs futurs, pas exécution"
+    },
+    {
+      "id": "G2-A6-R5",
+      "topic": "workflow activation",
+      "requirement": "ne pas créer PR future avec CI services par défaut ; publier sources/checkpoint seulement selon canal ne déclenchant pas ces jobs, ou décision CIpure préalable explicite et contexte exact prouvé",
+      "status": "annexe traite correctement principe, méthode future encore requise"
+    }
+  ],
+  "proposed_limits_are_not_approved": true,
+  "no_budget_measurements_claimed": true,
+  "no_source_changes": true,
+  "no_POC_or_import_or_CI_or_service_or_DB_execution": true,
+  "no_gate_accepted": true
+}

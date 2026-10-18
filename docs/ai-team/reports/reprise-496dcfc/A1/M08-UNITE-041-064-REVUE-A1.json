@@ -1,0 +1,1655 @@
+{
+  "review": "M08-UNITE-041-064-REVUE-A1",
+  "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "portee": "Relecture indépendante statique documentaire ; aucune exécution moteur/test/API/DB. Aucun registre modifié.",
+  "independent_freeze_sha256": "d3b23388b854e9f032720a71641e48fab3e8d6e3f820531d729941d9b39b778f",
+  "cohort_A2_sha256": "45ee8808f103b7a062a30e5058d7becf1e0e41ebf8aaf4ca4e606b6ad7c59547",
+  "methodologie": "Fiches complètes et sept fichiers candidats lus avant les entrées de verdict de la cohorte A2 ; seuls métadonnées de cohorte et mapping historique générique vus auparavant. Notes figées avant confrontation. Lecture statique seulement, aucune exécution. Absence signifie absence assertion dans candidats prescrits et non défaut implémentation.",
+  "verdict": "Recevable pour consolidation documentaire ; aucune preuve de recette produit ni clôture M08 par ce rapport.",
+  "controle": {
+    "ids": 12,
+    "attendus_avec_doublon": 112,
+    "comptes_recalcules": {
+      "absent": 75,
+      "partiel": 33,
+      "nonconclu": 3,
+      "present": 1
+    },
+    "comptes_A2_identiques": true,
+    "citations_verifiees": 465,
+    "ecarts_citation": 0,
+    "049_050_memes_assertions": true,
+    "lignes_normatives_uniques": 11,
+    "attendus_hors_doublon": 103
+  },
+  "clarifications_non_bloquantes": [
+    "Ne pas additionner les 33 partiel aux garanties démontrées : plusieurs sont exclusivement contexte indirect (inverse générique, scission de mur, propriété retirée, géométrie OCCT).",
+    "Un refus objet.modifier nom sur une représentation importée est la seule assertion classée present ; il ne prouve pas une interdiction exhaustive de toutes les autres commandes.",
+    "062/064 compléments nouveau.test sont explicitement hors candidats initiaux ; les compter comme contexte supplémentaire uniquement. Cercle accepté par test existant vs refus historique demeure conflit documentaire non arbitré.",
+    "Le détail A2 volume OCCT30 à9décimales correspond à (16-1)*2 ; ce volume OCCT ne devient pas preuve volume maillage paramétrique ni tolérance normative DA01-01."
+  ],
+  "entries": [
+    {
+      "entry_id": "M08-PATH-041",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-02-13.md",
+        "source_line": 23,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/transformer.test.ts`) : rectangle → 4 lignes dont les extrémités se rejoignent ; polyligne de 5 sommets → 4 lignes ; mur refusé ; cotation référencée : « à réparer » avec 4 propositions ; inverse restaure l'objet et ses identifiants ; mêmes identifiants pour la même enveloppe. |"
+      },
+      "note_independante_figee": "Aucune assertion de décomposition dans les candidats. Le scindage de mur et son inverse générique ne prouvent ni rectangle décomposé ni identifiants restaurés de cette opération.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Rectangle décomposé quatre lignes",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Création rectangle/bloc ou extrusion ne teste pas transformer.decomposer.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Extrémités quatre lignes jointives",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas lignes issues de décomposition comparées.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Polyligne cinq sommets quatre lignes",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas décomposition polyligne dans candidats.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Mur décomposition refusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucun refus transformer.decomposer mur.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Cotation référencée à réparer aprèsdécomposition",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Àréparer asserté après scission de mur et miroir, pas décomposition esquisse.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 74,
+              "exact_line": "    expect(ref.etat).toBe(\"a-reparer\");",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Quatre propositions aprèsdécomposition",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Deux propositions de murs après scission, pas quatre segments.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 75,
+              "exact_line": "    expect(ref.propositions.map((p) => p.objetId)).toEqual([\"mur-s-1\", \"mur-s-2\"]);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Inverse restaure objet etIDs",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inverse créationmur/porte/niveau exact, pas décomposition.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Même enveloppe mêmesIDs décomposition",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Déterminisme mur créé seulement.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 26,
+              "exact_line": "    const a = appliquerLot(etat, lot([{ type: \"mur.tracer\", params: murParams(0, 0, 4, 0) }], \"abc\"));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 27,
+              "exact_line": "    const b = appliquerLot(etat, lot([{ type: \"mur.tracer\", params: murParams(0, 0, 4, 0) }], \"abc\"));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-043",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-02-14.md",
+        "source_line": 23,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/transformer.test.ts`) : sommet de polygone déplacé, autres inchangés ; insertion et suppression : effectifs et ordre ; suppression sous le minimum refusée ; polygone auto-sécant refusé ; coin de rectangle : rectangle redimensionné ; mur : extrémité déplacée, porte à distance conservée ; dalle : insertion décale `contour[i]`, cotation « à réparer » avec correspondance ; cercle : rayon ; inverse bit à bit. |"
+      },
+      "note_independante_figee": "Une commande pointsDeControle est émise dans le scénario aimantation de ligne ; pas assertion finale du sommet déplacé ni autres sommets inchangés. Étirer mur garde le centre de porte, mais commande transformer.etirer distincte du contrat points de contrôle. Insertion/suppression/minimum/auto-intersection/rectangle/dalle/rayon/inverse ciblé absents.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Sommet polygone déplacé",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Geste sommet sur ligne émet pointsDeControle+contrainte ; pas polygone.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 802,
+              "exact_line": "    expect(r2.commandes.map((c) => c.type)).toEqual([\"transformer.pointsDeControle\", \"contrainte.ajouter\"]);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Autres sommets inchangés",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas comparaison des autres sommets après geste.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Insertion effectif correct",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucun test insertion sommet dans candidats.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Insertion ordre correct",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucun ordre de sommets après insertion.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Suppression effectif etordre",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Suppression objet entière pas suppression point.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Suppression sousminimum refusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas refus effectif minimal par pointsDeControle.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Polygone auto-sécant refusé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas refus polygone croisé après édition.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Coin rectangle redimensionné sans déformation",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Rectangle déplacé/extrudé n’est pas édition coin.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 9,
+          "attendu_A2": "Mur extrémité déplacée parpoignée",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Étirement par commande directe ; pas geste poignée mur.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 154,
+              "exact_line": "    const r = appliquerLot(etat, lot([{ type: \"transformer.etirer\", params: { id: \"mur-w-1\", extremite: \"b\", point: pt(8, 0) } }], \"et\"));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 10,
+          "attendu_A2": "Porte distance conservée parpoignée mur",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Centre conservé après étirement direct, pas chemin pointsDeControle.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 72,
+              "exact_line": "    expect(pointCaracteristique(r.etat, \"porte-o-1\", \"centre\")).toEqual(pt(1, 0));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 155,
+              "exact_line": "    expect(pointCaracteristique(r.etat, \"porte-o-1\", \"centre\")).toEqual(pt(1, 0));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 11,
+          "attendu_A2": "Dalle insertion décale contour[i]",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas insertion dalle.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 12,
+          "attendu_A2": "Cote àréparer aveccorrespondanceindices",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Scissionmur propositionsd’objets ne prouve pas correspondance indices dalle.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 13,
+          "attendu_A2": "Cercle rayon édité parpoignée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Cercle décalé/cliquécôté pas édition rayon parpoignée.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 14,
+          "attendu_A2": "Inverse pointsDeControle bitàbit",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inverse lot créationmur/porte/niveau, pas pointcontrôle.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-047",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-02-17.md",
+        "source_line": 23,
+        "source_exact_line": "| Validation | **Unité** : pas de réducteur propre ; couvert par `packages/atelier-model/src/commandes/transformer.test.ts` (DA-02-01, 03, 05). |"
+      },
+      "note_independante_figee": "Assertions manipulateur D070 présentes : pivot, axe, angle, facteur, rotation émise, valeur nulle refusée, ouverture seule exclue. Transformations reducer déplacement/miroir/échelle présentes. Pas fichier transformer.test ; délégation documentaire ne permet pas couverture totale ni preuve annulation UI.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Couverture des commandes déplacementDA02-01",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Positionporte aprèsdéplacement et manipulateuraxe couverts ; inverse/refus/relations détaillés restent dans cohorte017.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 115,
+              "exact_line": "    expect((r.etat.objets[\"porte-o-1\"] as Occurrence<\"porte\">).params.position).toBe(0.25);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Couverture rotationDA02-03",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Manipulateur angle90 et type tourner assertés, seulement objetsDefined après application ; pas b/porte/inverse.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 582,
+              "exact_line": "    expect(r.angle).toBe(90);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 587,
+              "exact_line": "    expect(c.commande.type).toBe(\"transformer.tourner\");",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 588,
+              "exact_line": "    expect(appliquer(etat, [c.commande]).objets).toBeDefined();",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Couverture échelleDA02-05",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Facteuraperçu2 et épaisseur mur inchangée existent ; pas couverture complète de commande échelle.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 585,
+              "exact_line": "    expect(s.facteur).toBe(2);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Pas de réducteur propre au manipulateur",
+          "classification_A2": "nonconclu",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Ligne validation décrit responsabilité interface, pas assertion executable de l’absence ; tests manip émettent une commandecommune sans prouver architecture complète.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 587,
+              "exact_line": "    expect(c.commande.type).toBe(\"transformer.tourner\");",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-049",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-03-01.md",
+        "source_line": 19,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/solide.test.ts` ; `packages/core-geometry/src/extrusion.test.ts`) : prisme à contour simple : maillage fermé, V − E + F = 2 ; avec n trous : V − E + F = 2 − 2n ; volume du maillage = (aire du contour − aires des trous) × hauteur à la tolérance de DA-01-01 près ; normales vers l'extérieur ; contour auto-sécant refusé ; même entrée, même `empreinteEntrees` et mêmes sommets (déterminisme) ; inverse restitue. |"
+      },
+      "note_independante_figee": "Volume OCCT carré et trou, empreinte et BREP reproductibles : autre représentation. Aucun Euler/fermeture/normales/assertion auto-intersection, empreinteEntrees+sommets paramétriques ni inverse de solide dans candidats. Cube fictif modèle pur ne valide pas noyau.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Prisme contour simple : maillage fermé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Volume calculé par fonction supposant maillage fermé ne prouve pas arête incidente deuxfaces ; aucun test fermeture.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/projection/maillage.test.ts",
+              "line": 16,
+              "exact_line": "/** Volume d'un maillage fermé (théorème de la divergence). */",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Prisme simple Euler V-E+F=2",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Ni comptage topologique V/E/F ni égalité Euler dans quatre candidats.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "n trous Euler2-2n",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Triangulation aire nette et extrusionBrep avec un trou ne testent pas Euler.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/projection/maillage.test.ts",
+              "line": 34,
+              "exact_line": "  it(\"retire les trous (aire nette)\", () => {",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/projection/maillage.test.ts",
+              "line": 39,
+              "exact_line": "    expect(aireTriangles([...ext, ...t1, ...t2], tri)).toBeCloseTo(92);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Volume maillage aire nette×hauteur toléranceDA01-01",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Maillage volume vérifié pour mur, OCCT volume30 à9décimales pour extrusion avec trou ; autre classe et aucune liaison toléranceDA01-01.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/geometry-exact/src/index.test.ts",
+              "line": 21,
+              "exact_line": "  it(\"extrusion avec trou : volume = (aire − trou) × hauteur\", () => {",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/geometry-exact/src/index.test.ts",
+              "line": 23,
+              "exact_line": "    expect(s.volume).toBeCloseTo((16 - 1) * 2, 9);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Normales vers extérieur",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucun oracle d’orientation des normales ; volume absolu masque le signe.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/projection/maillage.test.ts",
+              "line": 23,
+              "exact_line": "  return Math.abs(v);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Contour auto-sécant refusé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Refus pointmalformé/hauteur0 exact et maillageindices invalides distincts ; aucun contour auto-sécant.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/geometry-exact/src/index.test.ts",
+              "line": 157,
+              "exact_line": "    expect(() => validerOperation({ type: \"extrusion\", extrusion: { profil: [[0, 0], [1, 0], [1, 1]], z0: 0, hauteur: 1 } })).toThrow(ErreurExacte);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/geometry-exact/src/index.test.ts",
+              "line": 158,
+              "exact_line": "    expect(() => validerOperation({ type: \"extrusion\", extrusion: { profil: carre(1), z0: 0, hauteur: 0 } })).toThrow(/hauteur/);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Même entrée : empreinteEntrees identique",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "OCCT compare empreinte/Brep pour deux exécutions ; pas empreinteEntrees de représentation prismatique native.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/geometry-exact/src/index.test.ts",
+              "line": 11,
+              "exact_line": "    const a = M.executer(op), b = M.executer(op);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/geometry-exact/src/index.test.ts",
+              "line": 16,
+              "exact_line": "    expect(a.empreinte).toBe(b.empreinte);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/geometry-exact/src/index.test.ts",
+              "line": 17,
+              "exact_line": "    expect(a.brep).toBe(b.brep);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Même entrée : mêmes sommets",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "MaillerBrep relu comparé au maillage ; pas sommets de deux calculs indépendants à partir même paramètres natifs.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/geometry-exact/src/index.test.ts",
+              "line": 151,
+              "exact_line": "    expect(M.mailler(c.brep)).toEqual(c.maillage);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 9,
+          "attendu_A2": "Inverse extrusion restitue état",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucun inverse extrusion dans quatre candidats. Exactmodel helper utilise requestId aléatoire, pas oracle déterministe enveloppe.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/solide-exact.test.ts",
+              "line": 21,
+              "exact_line": "const lot = (etat: ReturnType<typeof modeleVide>, commands: { type: string; params: Record<string, unknown>; cibles?: string[] }[]) => appliquerLot(etat, { requestId: `r${Math.random()}`, baseRevision: 0, contract: CONTRAT_COMMANDES, label: \"t\", commands });",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-050",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-03-01.md",
+        "source_line": 19,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/solide.test.ts` ; `packages/core-geometry/src/extrusion.test.ts`) : prisme à contour simple : maillage fermé, V − E + F = 2 ; avec n trous : V − E + F = 2 − 2n ; volume du maillage = (aire du contour − aires des trous) × hauteur à la tolérance de DA-01-01 près ; normales vers l'extérieur ; contour auto-sécant refusé ; même entrée, même `empreinteEntrees` et mêmes sommets (déterminisme) ; inverse restitue. |"
+      },
+      "note_independante_figee": "Même ligne et même contrat que049, seconde référence historique manquante ; ne pas compter deux exigences indépendantes.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Prisme contour simple : maillage fermé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Volume calculé par fonction supposant maillage fermé ne prouve pas arête incidente deuxfaces ; aucun test fermeture.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/projection/maillage.test.ts",
+              "line": 16,
+              "exact_line": "/** Volume d'un maillage fermé (théorème de la divergence). */",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Prisme simple Euler V-E+F=2",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Ni comptage topologique V/E/F ni égalité Euler dans quatre candidats.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "n trous Euler2-2n",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Triangulation aire nette et extrusionBrep avec un trou ne testent pas Euler.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/projection/maillage.test.ts",
+              "line": 34,
+              "exact_line": "  it(\"retire les trous (aire nette)\", () => {",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/projection/maillage.test.ts",
+              "line": 39,
+              "exact_line": "    expect(aireTriangles([...ext, ...t1, ...t2], tri)).toBeCloseTo(92);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Volume maillage aire nette×hauteur toléranceDA01-01",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Maillage volume vérifié pour mur, OCCT volume30 à9décimales pour extrusion avec trou ; autre classe et aucune liaison toléranceDA01-01.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/geometry-exact/src/index.test.ts",
+              "line": 21,
+              "exact_line": "  it(\"extrusion avec trou : volume = (aire − trou) × hauteur\", () => {",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/geometry-exact/src/index.test.ts",
+              "line": 23,
+              "exact_line": "    expect(s.volume).toBeCloseTo((16 - 1) * 2, 9);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Normales vers extérieur",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucun oracle d’orientation des normales ; volume absolu masque le signe.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/projection/maillage.test.ts",
+              "line": 23,
+              "exact_line": "  return Math.abs(v);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Contour auto-sécant refusé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Refus pointmalformé/hauteur0 exact et maillageindices invalides distincts ; aucun contour auto-sécant.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/geometry-exact/src/index.test.ts",
+              "line": 157,
+              "exact_line": "    expect(() => validerOperation({ type: \"extrusion\", extrusion: { profil: [[0, 0], [1, 0], [1, 1]], z0: 0, hauteur: 1 } })).toThrow(ErreurExacte);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/geometry-exact/src/index.test.ts",
+              "line": 158,
+              "exact_line": "    expect(() => validerOperation({ type: \"extrusion\", extrusion: { profil: carre(1), z0: 0, hauteur: 0 } })).toThrow(/hauteur/);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Même entrée : empreinteEntrees identique",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "OCCT compare empreinte/Brep pour deux exécutions ; pas empreinteEntrees de représentation prismatique native.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/geometry-exact/src/index.test.ts",
+              "line": 11,
+              "exact_line": "    const a = M.executer(op), b = M.executer(op);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/geometry-exact/src/index.test.ts",
+              "line": 16,
+              "exact_line": "    expect(a.empreinte).toBe(b.empreinte);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/geometry-exact/src/index.test.ts",
+              "line": 17,
+              "exact_line": "    expect(a.brep).toBe(b.brep);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Même entrée : mêmes sommets",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "MaillerBrep relu comparé au maillage ; pas sommets de deux calculs indépendants à partir même paramètres natifs.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/geometry-exact/src/index.test.ts",
+              "line": 151,
+              "exact_line": "    expect(M.mailler(c.brep)).toEqual(c.maillage);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 9,
+          "attendu_A2": "Inverse extrusion restitue état",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucun inverse extrusion dans quatre candidats. Exactmodel helper utilise requestId aléatoire, pas oracle déterministe enveloppe.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/solide-exact.test.ts",
+              "line": 21,
+              "exact_line": "const lot = (etat: ReturnType<typeof modeleVide>, commands: { type: string; params: Record<string, unknown>; cibles?: string[] }[]) => appliquerLot(etat, { requestId: `r${Math.random()}`, baseRevision: 0, contract: CONTRAT_COMMANDES, label: \"t\", commands });",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-052",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-03-09.md",
+        "source_line": 20,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/representations.test.ts`) : mêmes paramètres et même version du moteur, deux exécutions : même empreinte et même géométrie ; paramètre modifié : nouvelle empreinte ; version du moteur changée : « à recalculer » ; épaisseur de mur modifiée : ouvertures gardent `t`, emprise contrôlée, cotation rattachée recalculée ; champ dérivé refusé ; inverse restitue. |"
+      },
+      "note_independante_figee": "Aucune assertion empreinteEntrees/versionMoteur à recalculer/mur.modifier épaisseur dans candidat. Identifiants requestId déterministes mur.tracer et inverse générique création ne couvrent pas contrat paramétrique.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Mêmes paramètres/version deux exécutions : même empreinte",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Deux lots identiques créationmur vérifient IDs/objets ; aucune empreinte représentation.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 29,
+              "exact_line": "    expect(JSON.stringify(a.etat)).toBe(JSON.stringify(b.etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Mêmes paramètres/version même géométrie",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Égalité objets canoniques aprèscréation, pas représentation calculée ni versionmoteur.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 29,
+              "exact_line": "    expect(JSON.stringify(a.etat)).toBe(JSON.stringify(b.etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Paramètre modifié nouvelleempreinte",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune empreinte représentation dans candidat.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Versionmoteur changée àrecalculer",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucun oracle de versionmoteur et fraîcheur.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Épaisseur mur modifiée : porte t conservé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "t aprèsdéplacement testé maispas modificationépaisseur.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Épaisseur modifiée emprise contrôlée",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Créationouverture horsmur refusée ; pas aprèsmodificationépaisseur.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 49,
+              "exact_line": "    expect(() => appliquerLot(etat, lot([{ type: \"ouverture.poser\", params: { classe: \"porte\", murHoteId: \"mur-w-1\", position: 0.05, largeur: m(0.9), hauteur: m(2.1) } }]))).toThrow(/sort du mur/);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Cotation rattachée recalculée aprèsepaisseur",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Résolution cote apresscission ne prouve pas épaisseur.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Champ dérivé refusé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Statutcertifiee propriété refusé n’est pas paramètredérivé.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 9,
+          "attendu_A2": "Inverse modification paramétrique",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inverse créationmur/porte/niveau, pas changementépaisseur.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-054",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-03-10.md",
+        "source_line": 19,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/poignees.test.ts`, avec DA-02-14) : pour chaque poignée de la table, le geste produit la commande attendue et les valeurs canoniques finales (jamais un maillage) ; geste annulé : aucune commande ; objet importé : seuls `transformer.*` admis ; même réducteur dans le navigateur et sur le serveur : mêmes résultats. |"
+      },
+      "note_independante_figee": "Assertion import IFC refuse objet.modifier nom puis déplacement maillage constaté. Cela ne démontre pas que SEUL transformer.* est admis. Pas chaque poignée ni annulation ni équivalence navigateur/serveur.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Poignée mur →commande etvaleurscanoniques",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Candidat échangeIFC/DXF ne teste pas geste mur.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Ouverture lelongmur →commande etvaleurs",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas geste ouverture danscandidat.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Poignée largeurouverture →commandeetvaleurs",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas geste largeurouverture.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Dalle sommets →commandeetvaleurs",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas geste dalle.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Poteau point/angle →commandeetvaleurs",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas geste poteau.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Esquisse sommets →commandeetvaleurs",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Import esquisses n’est pas geste d’édition.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Solide contour →commandeetvaleurs",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas geste solide.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Solide faces haute/basse/latérales →paramètres",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas face tirée dans échangeIFC.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 9,
+          "attendu_A2": "Geste ne modifie jamaismaillage dérivé",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Objetimporté interdit objet.modifier et déplacementtransforme son maillage ; pas geste natif ni assertion jamaismaillage édité.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/echanges/echanges.test.ts",
+              "line": 151,
+              "exact_line": "    expect(() => appliquerLot(e, { requestId: \"m\", baseRevision: 0, contract: CONTRAT_COMMANDES, label: \"m\", commands: [{ type: \"objet.modifier\", params: { id: \"ifc-G00\", params: { nom: \"x\" } } }] })).toThrow(/représentation importée/);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/echanges/echanges.test.ts",
+              "line": 154,
+              "exact_line": "    expect((d.objets[\"ifc-G00\"] as Occurrence<\"objet-importe\">).params.maillage.positions.slice(0, 2)).toEqual([1, 1]);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 10,
+          "attendu_A2": "Geste annulé aucunecommande",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas pointercancel/Échap ni commandesnulles de geste.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 11,
+          "attendu_A2": "Importé : modifierparamètres refusé",
+          "classification_A2": "present",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Objetimporté objet.modifier nom explicitement refusé.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/echanges/echanges.test.ts",
+              "line": 151,
+              "exact_line": "    expect(() => appliquerLot(e, { requestId: \"m\", baseRevision: 0, contract: CONTRAT_COMMANDES, label: \"m\", commands: [{ type: \"objet.modifier\", params: { id: \"ifc-G00\", params: { nom: \"x\" } } }] })).toThrow(/représentation importée/);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 12,
+          "attendu_A2": "Importé : seuls transformer.* admis",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Un deplacer accepté et objet.modifier refusé ; pas exhaustivité tous transformer.* et autres commandes.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/echanges/echanges.test.ts",
+              "line": 153,
+              "exact_line": "    const d = appliquerLot(e, { requestId: \"d\", baseRevision: 0, contract: CONTRAT_COMMANDES, label: \"d\", commands: [{ type: \"transformer.deplacer\", params: { cibles: [\"ifc-G00\"], dx: 1, dy: 1 } }] }).etat;",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/echanges/echanges.test.ts",
+              "line": 154,
+              "exact_line": "    expect((d.objets[\"ifc-G00\"] as Occurrence<\"objet-importe\">).params.maillage.positions.slice(0, 2)).toEqual([1, 1]);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 13,
+          "attendu_A2": "Même réducteur navigateur/serveur mêmesrésultats",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Test pure unique contexte sans comparaison deuxexécutions navigateur/serveur.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-056",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-03-12.md",
+        "source_line": 19,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/groupe.test.ts`, cas solides) : 3 `solide` extrudés puis groupés ; `transformer.deplacer` sur le groupe : 3 corps déplacés, un seul lot ; volume d'ensemble = somme des volumes ; chevauchement signalé ; suppression d'un corps : effet listé ; inverse restitue. |"
+      },
+      "note_independante_figee": "Deux solides créés et groupés ; déplacement cible explicitement s1,s2 et seul contour s2 asserté. Pas trois corps ni ciblage groupe, somme volumes, chevauchement, suppression corps, inverse du groupe. Boolean OCCT contextualisé, autre contrat.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Trois solides extrudés puis groupés",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Deux solides s1/s2 extrudés etgroupés ; pas trois.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 264,
+              "exact_line": "      { type: \"solide.extruder\", params: { id: \"s1\", niveauId: \"rdc\", contour: [pt(10, 0), pt(11, 0), pt(11, 1), pt(10, 1)], trous: [], hauteur: m(1), role: \"solid\" } },",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 265,
+              "exact_line": "      { type: \"solide.extruder\", params: { id: \"s2\", niveauId: \"rdc\", contour: [pt(12, 0), pt(13, 0), pt(13, 1), pt(12, 1)], trous: [], hauteur: m(2), role: \"solid\" } },",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 286,
+              "exact_line": "    const g = appliquer(base(), [{ type: \"groupe.creer\", params: { id: \"g\", nom: \"Mobilier fixe\", cibles: [\"s1\", \"s2\"] } }]).etat;",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Déplacement groupe troiscorps unlot",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Une commande cibles s1/s2, seul contour0s2.x vérifié ; pas commande groupe ni troiscorps.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 288,
+              "exact_line": "    const d = appliquer(g, [{ type: \"transformer.deplacer\", params: { cibles: [\"s1\", \"s2\"], dx: 1, dy: 0 } }]).etat;",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 289,
+              "exact_line": "    expect((d.objets[\"s2\"] as Occurrence<\"solide\">).params.contour[0]!.x).toBe(13);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Volume ensemble sommevolumes",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "VolumeunionOCCT n’est pas sommevolumes groupe natif ; pas quantitégroupetotale.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Chevauchement signalé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Booléen intersection volumétrique n’est pas diagnostic de chevauchement ensemble.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Suppressioncorps effetlisté",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Groupe dissous sans suppression corps ; pas effet suppression.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 290,
+              "exact_line": "    const x = appliquer(d, [{ type: \"groupe.dissoudre\", params: { id: \"g\" } }]).etat;",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 291,
+              "exact_line": "    expect(x.groupes[\"g\"]).toBeUndefined();",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Inverse restitue groupe/corps",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inverse lot générique autreobjets ; pas inverse groupe solide.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-058",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-03-13.md",
+        "source_line": 19,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/coherence.test.ts`) : état importé de P.118 : comptes par classe = rapport ; ouverture hors emprise listée ; pièce désalignée listée ; relations dérivées recalculées après `mur.modifier` ; aucune correction automatique (état identique après contrôle) ; inverse restitue. |"
+      },
+      "note_independante_figee": "Candidats n’importent pas P118 pour contrôle de cohérence ; refus ouverture hors mur à création différent de problème listé sur état importé. Aucune non-mutation après contrôle, relations après mur.modifier ou inverse ciblé.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "ImportP118 comptesparclasse égalrapport",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Deuxcandidats modèles synthétiques ; aucun rapportimportP118.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Ouverturehorsemprise listée",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Créationhorsmurrefusée et étirement listant àréparer ; pas contrôleétatP118.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 49,
+              "exact_line": "    expect(() => appliquerLot(etat, lot([{ type: \"ouverture.poser\", params: { classe: \"porte\", murHoteId: \"mur-w-1\", position: 0.05, largeur: m(0.9), hauteur: m(2.1) } }]))).toThrow(/sort du mur/);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 158,
+              "exact_line": "    expect(r2.effets.referencesAReparer).toEqual([\"porte-o-1\"]);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Pièce désalignée listée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Détectionpièces aires12/12 ne liste pas désalignement.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Relationsdérivées recalculées aprèsmur.modifier",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Scission teste hébergement/références, autrecommande.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Contrôles sans correction : étatidentique",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucune comparaison étatavant/après contrôlecohérence.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Inverse restitue cohérence",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inverse lotcréation seulement.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-060",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-03-15.md",
+        "source_line": 19,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/construction.test.ts`) : `mur.modifier` (épaisseur, alignement) : emprise recalculée, axe inchangé, ouvertures gardent `t` ; `typeId` inconnu refusé ; valeur absente reste « non évaluée » (ni 0 ni vide) ; `exterieur` non recalculé ; poteau : `statutConception` conservé tel quel ; inverse restitue. |"
+      },
+      "note_independante_figee": "Propriété thermique retirée ->undefined assertion directe mais contexte différent des valeurs de construction absentes non évaluées ; pas mur.modifier épaisseur/alignement, type inconnu, exterieur conservé, statutConception poteau. Inverse propriété n’est pas inverse mur construction.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Mur.modifierépaisseur : emprise recalculée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucun mur.modifierépaisseur/assertionemprise danscandidats.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Alignementmodifié : axe inchangé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Miroirpermuteaxe, pas éditionalignement.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Ouvertures t inchangé aprèséditionconstruction",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "t aprèsdéplacement ne démontre pas modificationépaisseur/alignement.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "TypeId inconnu refusé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas assertion typeinconnu danscandidats.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Valeurabsente nonévaluée ni0nivide",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Propriétéretirée absente testée maispas paramètreconstructif absent.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Exterieur nonrecalculé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas assertion exterieur.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Poteau statutConception conservételquel",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas assertion statutConception.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Inverse éditionconstruction",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Inverse autrelot seulement.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "exact_line": "    expect(JSON.stringify(retour.etat)).toBe(JSON.stringify(etat));",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-062",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-04-01.md",
+        "source_line": 19,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/solide.test.ts`) : polygone de 4 sommets extrudé : `hauteur` et `decalageBase` exacts, volume = aire × hauteur ; rectangle avec trou : volume = (aire − aire du trou) × hauteur ; direction `bas` : base abaissée, hauteur positive ; profil ouvert, auto-sécant, hauteur ≤ 0, unité ≠ m, cercle refusés ; consommation de l'esquisse : supprimée dans le lot ; inverse restitue l'état initial. |"
+      },
+      "note_independante_figee": "Candidat maillage teste mur/triangulation et non solide.extruder. Aire trous triangulés n’est pas volume prisme troué. Pas négatifs attendus ni consommation esquisse ni inverse.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Polygone4 extrudé hauteur exacte",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Maillagecandidat ne crée pas solideextruder synthétique ; pas assertionhauteurcanonique.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "DecalageBase exact",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Aucun decalagebase solide asserté.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Volume =aire×hauteur",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Volume boîte mur vérifié, pas extrusion polygonesolide.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/projection/maillage.test.ts",
+              "line": 52,
+              "exact_line": "    expect(volume(mm.positions, mm.indices)).toBeCloseTo(5 * 0.2 * 2.5);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Rectangle avec trou volumeequalsaire nette×h",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Trianguler aire nette92, pas volume solidesurhauteur.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "packages/atelier-model/src/projection/maillage.test.ts",
+              "line": 39,
+              "exact_line": "    expect(aireTriangles([...ext, ...t1, ...t2], tri)).toBeCloseTo(92);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Directionbas baseabaissée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas extrusion versbas.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Directionbas hauteurpositive",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas assertionhauteurpositive après directionbas.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Profilouvert refusé",
+          "classification_A2": "nonconclu",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "D067 autorise avecépaisseur explicite ; sansépaisseur reste refusàqualifier, aucun test danscandidatmaillage. Substitutionconditionnelle n’est pas preuveexécution.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "docs/atelier/decisions.md",
+              "line": 71,
+              "exact_line": "| D-067 | 2026-10-05 | Repère altimétrique (R5) : `site.altimetrie.definir` { altitude, systeme, source } déclare l'altitude absolue de la cote locale 0 (propriétés du projet `site:altimetrie:*`, saisie, « déclarée ») ; `altitude: null` la retire ; sans déclaration, l'altitude absolue est « non évaluée ». Navigateur : altitude absolue de chaque niveau ; IFC : IfcSite.RefElevation et remarque d'export. Extrusion d'un profil ouvert : paramètre « Épaisseur d'un profil ouvert » de l'outil Extruder (ligne ou polyligne ouverte, bande centrée sur le tracé, arcs discrétisés). Main levée (DA-01-06) : le geste de base n'existait pas dans l'interface (fiche « prototype » sans outil) ; ajouté : tracé suivi au pointeur, `simplifierTrace` (Douglas–Peucker, tolérance de l'outil, 0,05 m par défaut), fermeture si le tracé revient à moins de trois tolérances du départ, polyligne ou, avec Alt au relâchement, spline. | Fiches DA-05-04, DA-04-01, DA-01-06. | Chef de projet | compléments |",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Profilautosécant refusé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas refuscontour autosécant dansmaillagecandidat.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 9,
+          "attendu_A2": "Hauteur0 refusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas refus hauteur0solide.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 10,
+          "attendu_A2": "Hauteur négative refusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas refus hauteurnégative.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 11,
+          "attendu_A2": "Unitéhauteur≠m refusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas unitéfausse solide.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 12,
+          "attendu_A2": "Cercle refusé",
+          "classification_A2": "nonconclu",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Nouveau.testadmet cercle extrudé maiscandidatmaillage ne le testepas ; aucune décisioncercle expliciteremplacement déduite deD067 qui concerne ouvert. Contradictionapparente àqualifier sans créer norme.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 372,
+              "exact_line": "      { type: \"esquisse.cercle\", params: { niveauId: \"rdc\", centre: pt(5, 5), rayon: m(1) } },",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 381,
+              "exact_line": "    expect(solides).toHaveLength(2);",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 13,
+          "attendu_A2": "Consommeresquisse suppriméedanslot",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas oracle consommation.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 14,
+          "attendu_A2": "Inverse restitueinitial",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas inverse danscandidatmaillage.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    },
+    {
+      "entry_id": "M08-PATH-064",
+      "source": {
+        "source_fiche": "docs/atelier/fiches/DA-04-07.md",
+        "source_line": 20,
+        "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/solide.test.ts` ; `packages/core-geometry/src/decalage-arete.test.ts`) : face haute : `hauteur` modifiée, base fixe ; face basse : sommet fixe ; face latérale d'un rectangle : emprise modifiée, sommets recalculés à l'intersection ; hauteur résultante nulle, arête annulée, auto-intersection, trou sortant refusés ; contour ouvert : face latérale refusée ; représentation importée refusée ; inverse restitue les valeurs bit à bit. |"
+      },
+      "note_independante_figee": "Candidat maillage ne contient ni pousser/tirer ni commande solide.modifier : aucune assertion du contrat. Cas latéral dans nouveau.test hors candidats prescrits064, ne pas importer implicitement.",
+      "confrontation": [
+        {
+          "rang_A2": 1,
+          "attendu_A2": "Facehaute hauteurmodifiée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Maillage aprèsniveauHaut modifié n’est pas gestehautesolide.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 2,
+          "attendu_A2": "Facehaute basefixe",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas comparaison base aprèsfacehautesolide.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 3,
+          "attendu_A2": "Facebasse sommetfixe",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas facebassesolide.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 4,
+          "attendu_A2": "Facelatéralerectangle emprise modifiée",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "ComplémentN D125 dalle contour exact poussé, pas solidesynthétique ni candidatmaillage.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 781,
+              "exact_line": "    expect(paramsFacePoussee(f, 0.5)).toEqual({ contour: [pt(0, 0), pt(4.5, 0), pt(4.5, 3), pt(0, 3)] });",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 5,
+          "attendu_A2": "Sommetslatéraux intersections recalculées",
+          "classification_A2": "partiel",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Coordonnéescontourdalle4→4.5attestées, pas preuvegénérale intersection ni solide.",
+          "citations_exactes_confrontees": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 781,
+              "exact_line": "    expect(paramsFacePoussee(f, 0.5)).toEqual({ contour: [pt(0, 0), pt(4.5, 0), pt(4.5, 3), pt(0, 3)] });",
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 6,
+          "attendu_A2": "Hauteur résultante0 refusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas refus hautrésultat0.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 7,
+          "attendu_A2": "Arêteannulée refusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas refus arêteannulée.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 8,
+          "attendu_A2": "Auto-intersection refusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas refus auto-intersection aprèspoussertirer.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 9,
+          "attendu_A2": "Trousortant refusé",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas refus trouaprèsfacepoussée.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 10,
+          "attendu_A2": "Contouropen facelatéralerefusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas objetouvert poussé latéralement.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 11,
+          "attendu_A2": "Représentationimportée refusée",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Maillagecandidat ne teste pas refus gesteimporté ; D125 élargit classes natives sans leverR16.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        },
+        {
+          "rang_A2": 12,
+          "attendu_A2": "Inverse valeursbitàbit",
+          "classification_A2": "absent",
+          "avis_A1": "Conforme à la lecture statique, sous la limite du contexte signalé",
+          "motif_A2_relu": "Pas inversepoussertirer dansmaillagecandidat.",
+          "citations_exactes_confrontees": [],
+          "portee": "Assertion directement ciblée seulement pour present ; partiel = indice contextuel et non garantie attendue acquise ; absent = absence dans périmètre candidat, pas capacité produit absente."
+        }
+      ],
+      "avis": "Aucune survalidation de garantie complète détectée ; preuves contextuelles explicitement limitées."
+    }
+  ],
+  "citation_errors": [],
+  "reviews_runtime": false
+}

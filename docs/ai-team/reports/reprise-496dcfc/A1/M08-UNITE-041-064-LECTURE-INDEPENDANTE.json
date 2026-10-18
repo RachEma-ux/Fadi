@@ -1,0 +1,683 @@
+{
+  "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "methodologie": "Fiches complètes et sept fichiers candidats lus avant les entrées de verdict de la cohorte A2 ; seuls métadonnées de cohorte et mapping historique générique vus auparavant. Notes figées avant confrontation. Lecture statique seulement, aucune exécution. Absence signifie absence assertion dans candidats prescrits et non défaut implémentation.",
+  "entries": [
+    {
+      "entry_id": "M08-PATH-041",
+      "source_fiche": "docs/atelier/fiches/DA-02-13.md",
+      "source_line": 23,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/transformer.test.ts`) : rectangle → 4 lignes dont les extrémités se rejoignent ; polyligne de 5 sommets → 4 lignes ; mur refusé ; cotation référencée : « à réparer » avec 4 propositions ; inverse restaure l'objet et ses identifiants ; mêmes identifiants pour la même enveloppe. |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/transformer.test.ts",
+      "candidate_paths": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "notes_independantes": "Aucune assertion de décomposition dans les candidats. Le scindage de mur et son inverse générique ne prouvent ni rectangle décomposé ni identifiants restaurés de cette opération.",
+      "atomes_source": [
+        {
+          "numero": 1,
+          "texte_exact": "rectangle → 4 lignes dont les extrémités se rejoignent",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 2,
+          "texte_exact": "polyligne de 5 sommets → 4 lignes",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 3,
+          "texte_exact": "mur refusé",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 4,
+          "texte_exact": "cotation référencée : « à réparer » avec 4 propositions",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 5,
+          "texte_exact": "inverse restaure l'objet et ses identifiants",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 6,
+          "texte_exact": "mêmes identifiants pour la même enveloppe.",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-043",
+      "source_fiche": "docs/atelier/fiches/DA-02-14.md",
+      "source_line": 23,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/transformer.test.ts`) : sommet de polygone déplacé, autres inchangés ; insertion et suppression : effectifs et ordre ; suppression sous le minimum refusée ; polygone auto-sécant refusé ; coin de rectangle : rectangle redimensionné ; mur : extrémité déplacée, porte à distance conservée ; dalle : insertion décale `contour[i]`, cotation « à réparer » avec correspondance ; cercle : rayon ; inverse bit à bit. |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/transformer.test.ts",
+      "candidate_paths": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "notes_independantes": "Une commande pointsDeControle est émise dans le scénario aimantation de ligne ; pas assertion finale du sommet déplacé ni autres sommets inchangés. Étirer mur garde le centre de porte, mais commande transformer.etirer distincte du contrat points de contrôle. Insertion/suppression/minimum/auto-intersection/rectangle/dalle/rayon/inverse ciblé absents.",
+      "atomes_source": [
+        {
+          "numero": 1,
+          "texte_exact": "sommet de polygone déplacé, autres inchangés",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 2,
+          "texte_exact": "insertion et suppression : effectifs et ordre",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 3,
+          "texte_exact": "suppression sous le minimum refusée",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 4,
+          "texte_exact": "polygone auto-sécant refusé",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 5,
+          "texte_exact": "coin de rectangle : rectangle redimensionné",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 6,
+          "texte_exact": "mur : extrémité déplacée, porte à distance conservée",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 7,
+          "texte_exact": "dalle : insertion décale `contour[i]`, cotation « à réparer » avec correspondance",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 8,
+          "texte_exact": "cercle : rayon",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 9,
+          "texte_exact": "inverse bit à bit.",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-047",
+      "source_fiche": "docs/atelier/fiches/DA-02-17.md",
+      "source_line": 23,
+      "source_exact_line": "| Validation | **Unité** : pas de réducteur propre ; couvert par `packages/atelier-model/src/commandes/transformer.test.ts` (DA-02-01, 03, 05). |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/transformer.test.ts",
+      "candidate_paths": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "notes_independantes": "Assertions manipulateur D070 présentes : pivot, axe, angle, facteur, rotation émise, valeur nulle refusée, ouverture seule exclue. Transformations reducer déplacement/miroir/échelle présentes. Pas fichier transformer.test ; délégation documentaire ne permet pas couverture totale ni preuve annulation UI.",
+      "atomes_source": [
+        {
+          "numero": 1,
+          "texte_exact": "pas de réducteur propre",
+          "qualification": "Délégation documentaire et assertions partielles de transformations ; pas clôture"
+        },
+        {
+          "numero": 2,
+          "texte_exact": "couvert par `packages/atelier-model/src/commandes/transformer.test.ts` (DA-02-01, 03, 05).",
+          "qualification": "Délégation documentaire et assertions partielles de transformations ; pas clôture"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-049",
+      "source_fiche": "docs/atelier/fiches/DA-03-01.md",
+      "source_line": 19,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/solide.test.ts` ; `packages/core-geometry/src/extrusion.test.ts`) : prisme à contour simple : maillage fermé, V − E + F = 2 ; avec n trous : V − E + F = 2 − 2n ; volume du maillage = (aire du contour − aires des trous) × hauteur à la tolérance de DA-01-01 près ; normales vers l'extérieur ; contour auto-sécant refusé ; même entrée, même `empreinteEntrees` et mêmes sommets (déterminisme) ; inverse restitue. |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/solide.test.ts",
+      "candidate_paths": [
+        "packages/atelier-model/src/projection/maillage.test.ts",
+        "packages/geometry-exact/src/index.test.ts",
+        "packages/atelier-model/src/solide-exact.test.ts",
+        "apps/web/src/modules/atelier/nouveau/exact/operations.test.ts"
+      ],
+      "notes_independantes": "Volume OCCT carré et trou, empreinte et BREP reproductibles : autre représentation. Aucun Euler/fermeture/normales/assertion auto-intersection, empreinteEntrees+sommets paramétriques ni inverse de solide dans candidats. Cube fictif modèle pur ne valide pas noyau.",
+      "atomes_source": [
+        {
+          "numero": 1,
+          "texte_exact": "prisme à contour simple : maillage fermé, V − E + F = 2",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 2,
+          "texte_exact": "avec n trous : V − E + F = 2 − 2n",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 3,
+          "texte_exact": "volume du maillage = (aire du contour − aires des trous) × hauteur à la tolérance de DA-01-01 près",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 4,
+          "texte_exact": "normales vers l'extérieur",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 5,
+          "texte_exact": "contour auto-sécant refusé",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 6,
+          "texte_exact": "même entrée, même `empreinteEntrees` et mêmes sommets (déterminisme)",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 7,
+          "texte_exact": "inverse restitue.",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-050",
+      "source_fiche": "docs/atelier/fiches/DA-03-01.md",
+      "source_line": 19,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/solide.test.ts` ; `packages/core-geometry/src/extrusion.test.ts`) : prisme à contour simple : maillage fermé, V − E + F = 2 ; avec n trous : V − E + F = 2 − 2n ; volume du maillage = (aire du contour − aires des trous) × hauteur à la tolérance de DA-01-01 près ; normales vers l'extérieur ; contour auto-sécant refusé ; même entrée, même `empreinteEntrees` et mêmes sommets (déterminisme) ; inverse restitue. |",
+      "missing_literal_path": "packages/core-geometry/src/extrusion.test.ts",
+      "candidate_paths": [
+        "packages/atelier-model/src/projection/maillage.test.ts",
+        "packages/geometry-exact/src/index.test.ts",
+        "packages/atelier-model/src/solide-exact.test.ts",
+        "apps/web/src/modules/atelier/nouveau/exact/operations.test.ts"
+      ],
+      "notes_independantes": "Même ligne et même contrat que049, seconde référence historique manquante ; ne pas compter deux exigences indépendantes.",
+      "atomes_source": [
+        {
+          "numero": 1,
+          "texte_exact": "prisme à contour simple : maillage fermé, V − E + F = 2",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 2,
+          "texte_exact": "avec n trous : V − E + F = 2 − 2n",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 3,
+          "texte_exact": "volume du maillage = (aire du contour − aires des trous) × hauteur à la tolérance de DA-01-01 près",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 4,
+          "texte_exact": "normales vers l'extérieur",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 5,
+          "texte_exact": "contour auto-sécant refusé",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 6,
+          "texte_exact": "même entrée, même `empreinteEntrees` et mêmes sommets (déterminisme)",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 7,
+          "texte_exact": "inverse restitue.",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-052",
+      "source_fiche": "docs/atelier/fiches/DA-03-09.md",
+      "source_line": 20,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/representations.test.ts`) : mêmes paramètres et même version du moteur, deux exécutions : même empreinte et même géométrie ; paramètre modifié : nouvelle empreinte ; version du moteur changée : « à recalculer » ; épaisseur de mur modifiée : ouvertures gardent `t`, emprise contrôlée, cotation rattachée recalculée ; champ dérivé refusé ; inverse restitue. |",
+      "missing_literal_path": "packages/atelier-model/src/representations.test.ts",
+      "candidate_paths": [
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "notes_independantes": "Aucune assertion empreinteEntrees/versionMoteur à recalculer/mur.modifier épaisseur dans candidat. Identifiants requestId déterministes mur.tracer et inverse générique création ne couvrent pas contrat paramétrique.",
+      "atomes_source": [
+        {
+          "numero": 1,
+          "texte_exact": "mêmes paramètres et même version du moteur, deux exécutions : même empreinte et même géométrie",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 2,
+          "texte_exact": "paramètre modifié : nouvelle empreinte",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 3,
+          "texte_exact": "version du moteur changée : « à recalculer »",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 4,
+          "texte_exact": "épaisseur de mur modifiée : ouvertures gardent `t`, emprise contrôlée, cotation rattachée recalculée",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 5,
+          "texte_exact": "champ dérivé refusé",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 6,
+          "texte_exact": "inverse restitue.",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-054",
+      "source_fiche": "docs/atelier/fiches/DA-03-10.md",
+      "source_line": 19,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/poignees.test.ts`, avec DA-02-14) : pour chaque poignée de la table, le geste produit la commande attendue et les valeurs canoniques finales (jamais un maillage) ; geste annulé : aucune commande ; objet importé : seuls `transformer.*` admis ; même réducteur dans le navigateur et sur le serveur : mêmes résultats. |",
+      "missing_literal_path": "packages/atelier-model/src/poignees.test.ts",
+      "candidate_paths": [
+        "packages/atelier-model/src/echanges/echanges.test.ts"
+      ],
+      "notes_independantes": "Assertion import IFC refuse objet.modifier nom puis déplacement maillage constaté. Cela ne démontre pas que SEUL transformer.* est admis. Pas chaque poignée ni annulation ni équivalence navigateur/serveur.",
+      "atomes_source": [
+        {
+          "numero": 1,
+          "texte_exact": "pour chaque poignée de la table, le geste produit la commande attendue et les valeurs canoniques finales (jamais un maillage)",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 2,
+          "texte_exact": "geste annulé : aucune commande",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 3,
+          "texte_exact": "objet importé : seuls `transformer.*` admis",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 4,
+          "texte_exact": "même réducteur dans le navigateur et sur le serveur : mêmes résultats.",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-056",
+      "source_fiche": "docs/atelier/fiches/DA-03-12.md",
+      "source_line": 19,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/groupe.test.ts`, cas solides) : 3 `solide` extrudés puis groupés ; `transformer.deplacer` sur le groupe : 3 corps déplacés, un seul lot ; volume d'ensemble = somme des volumes ; chevauchement signalé ; suppression d'un corps : effet listé ; inverse restitue. |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/groupe.test.ts",
+      "candidate_paths": [
+        "packages/atelier-model/src/commandes/commandes.test.ts",
+        "packages/geometry-exact/src/index.test.ts",
+        "packages/atelier-model/src/solide-exact.test.ts",
+        "apps/web/src/modules/atelier/nouveau/exact/operations.test.ts"
+      ],
+      "notes_independantes": "Deux solides créés et groupés ; déplacement cible explicitement s1,s2 et seul contour s2 asserté. Pas trois corps ni ciblage groupe, somme volumes, chevauchement, suppression corps, inverse du groupe. Boolean OCCT contextualisé, autre contrat.",
+      "atomes_source": [
+        {
+          "numero": 1,
+          "texte_exact": "3 `solide` extrudés puis groupés",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 2,
+          "texte_exact": "`transformer.deplacer` sur le groupe : 3 corps déplacés, un seul lot",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 3,
+          "texte_exact": "volume d'ensemble = somme des volumes",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 4,
+          "texte_exact": "chevauchement signalé",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 5,
+          "texte_exact": "suppression d'un corps : effet listé",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 6,
+          "texte_exact": "inverse restitue.",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-058",
+      "source_fiche": "docs/atelier/fiches/DA-03-13.md",
+      "source_line": 19,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/coherence.test.ts`) : état importé de P.118 : comptes par classe = rapport ; ouverture hors emprise listée ; pièce désalignée listée ; relations dérivées recalculées après `mur.modifier` ; aucune correction automatique (état identique après contrôle) ; inverse restitue. |",
+      "missing_literal_path": "packages/atelier-model/src/coherence.test.ts",
+      "candidate_paths": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "notes_independantes": "Candidats n’importent pas P118 pour contrôle de cohérence ; refus ouverture hors mur à création différent de problème listé sur état importé. Aucune non-mutation après contrôle, relations après mur.modifier ou inverse ciblé.",
+      "atomes_source": [
+        {
+          "numero": 1,
+          "texte_exact": "état importé de P.118 : comptes par classe = rapport",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 2,
+          "texte_exact": "ouverture hors emprise listée",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 3,
+          "texte_exact": "pièce désalignée listée",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 4,
+          "texte_exact": "relations dérivées recalculées après `mur.modifier`",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 5,
+          "texte_exact": "aucune correction automatique (état identique après contrôle)",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 6,
+          "texte_exact": "inverse restitue.",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-060",
+      "source_fiche": "docs/atelier/fiches/DA-03-15.md",
+      "source_line": 19,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/construction.test.ts`) : `mur.modifier` (épaisseur, alignement) : emprise recalculée, axe inchangé, ouvertures gardent `t` ; `typeId` inconnu refusé ; valeur absente reste « non évaluée » (ni 0 ni vide) ; `exterieur` non recalculé ; poteau : `statutConception` conservé tel quel ; inverse restitue. |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/construction.test.ts",
+      "candidate_paths": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "notes_independantes": "Propriété thermique retirée ->undefined assertion directe mais contexte différent des valeurs de construction absentes non évaluées ; pas mur.modifier épaisseur/alignement, type inconnu, exterieur conservé, statutConception poteau. Inverse propriété n’est pas inverse mur construction.",
+      "atomes_source": [
+        {
+          "numero": 1,
+          "texte_exact": "`mur.modifier` (épaisseur, alignement) : emprise recalculée, axe inchangé, ouvertures gardent `t`",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 2,
+          "texte_exact": "`typeId` inconnu refusé",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 3,
+          "texte_exact": "valeur absente reste « non évaluée » (ni 0 ni vide)",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 4,
+          "texte_exact": "`exterieur` non recalculé",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 5,
+          "texte_exact": "poteau : `statutConception` conservé tel quel",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 6,
+          "texte_exact": "inverse restitue.",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-062",
+      "source_fiche": "docs/atelier/fiches/DA-04-01.md",
+      "source_line": 19,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/solide.test.ts`) : polygone de 4 sommets extrudé : `hauteur` et `decalageBase` exacts, volume = aire × hauteur ; rectangle avec trou : volume = (aire − aire du trou) × hauteur ; direction `bas` : base abaissée, hauteur positive ; profil ouvert, auto-sécant, hauteur ≤ 0, unité ≠ m, cercle refusés ; consommation de l'esquisse : supprimée dans le lot ; inverse restitue l'état initial. |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/solide.test.ts",
+      "candidate_paths": [
+        "packages/atelier-model/src/projection/maillage.test.ts"
+      ],
+      "notes_independantes": "Candidat maillage teste mur/triangulation et non solide.extruder. Aire trous triangulés n’est pas volume prisme troué. Pas négatifs attendus ni consommation esquisse ni inverse.",
+      "atomes_source": [
+        {
+          "numero": 1,
+          "texte_exact": "polygone de 4 sommets extrudé : `hauteur` et `decalageBase` exacts, volume = aire × hauteur",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 2,
+          "texte_exact": "rectangle avec trou : volume = (aire − aire du trou) × hauteur",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 3,
+          "texte_exact": "direction `bas` : base abaissée, hauteur positive",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 4,
+          "texte_exact": "profil ouvert, auto-sécant, hauteur ≤ 0, unité ≠ m, cercle refusés",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 5,
+          "texte_exact": "consommation de l'esquisse : supprimée dans le lot",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 6,
+          "texte_exact": "inverse restitue l'état initial.",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-064",
+      "source_fiche": "docs/atelier/fiches/DA-04-07.md",
+      "source_line": 20,
+      "source_exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/solide.test.ts` ; `packages/core-geometry/src/decalage-arete.test.ts`) : face haute : `hauteur` modifiée, base fixe ; face basse : sommet fixe ; face latérale d'un rectangle : emprise modifiée, sommets recalculés à l'intersection ; hauteur résultante nulle, arête annulée, auto-intersection, trou sortant refusés ; contour ouvert : face latérale refusée ; représentation importée refusée ; inverse restitue les valeurs bit à bit. |",
+      "missing_literal_path": "packages/atelier-model/src/commandes/solide.test.ts",
+      "candidate_paths": [
+        "packages/atelier-model/src/projection/maillage.test.ts"
+      ],
+      "notes_independantes": "Candidat maillage ne contient ni pousser/tirer ni commande solide.modifier : aucune assertion du contrat. Cas latéral dans nouveau.test hors candidats prescrits064, ne pas importer implicitement.",
+      "atomes_source": [
+        {
+          "numero": 1,
+          "texte_exact": "face haute : `hauteur` modifiée, base fixe",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 2,
+          "texte_exact": "face basse : sommet fixe",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 3,
+          "texte_exact": "face latérale d'un rectangle : emprise modifiée, sommets recalculés à l'intersection",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 4,
+          "texte_exact": "hauteur résultante nulle, arête annulée, auto-intersection, trou sortant refusés",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 5,
+          "texte_exact": "contour ouvert : face latérale refusée",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 6,
+          "texte_exact": "représentation importée refusée",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        },
+        {
+          "numero": 7,
+          "texte_exact": "inverse restitue les valeurs bit à bit.",
+          "qualification": "À confronter : absence de preuve complète directe dans le périmètre prescrit"
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/exact/operations.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "1cac7d8ac8bcb3df91b665be9d4acb90357005bc",
+      "sha256": "4a717c02732fbcdce69d09d553c14fb72e0b518f3fdfe5c72a1895d8881951f2",
+      "lines": 108,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/apps__web__src__modules__atelier__nouveau__exact__operations.test.ts"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "3ace5e26daac369268a402dff7492b8f64d0de31",
+      "sha256": "76db99ee8febdbe9c69f54281ba10364bf33ac0742a2b9da1355eca01387e415",
+      "lines": 934,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/apps__web__src__modules__atelier__nouveau__nouveau.test.ts"
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-13.md",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "bfc33bea48628274d0253795c910e24df495ea07",
+      "sha256": "a1d7ed42a13c85763ebb491d83db51a0fd9cd8caa4d494a57044da97cb14bce7",
+      "lines": 32,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/docs__atelier__fiches__DA-02-13.md"
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-14.md",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "2dab150a4f115e38451bc5bd4c10099e84b734b5",
+      "sha256": "f0f2278a524ae15fdef1f614729d9d43330b6b920276dcad20c32e870ee7398c",
+      "lines": 34,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/docs__atelier__fiches__DA-02-14.md"
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-17.md",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "252e83be8a6255c219faafd0d9220e9f24344598",
+      "sha256": "0f61e1519951ec271d33118c35b9eb84385084091400694f7adb7bd437356635",
+      "lines": 38,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/docs__atelier__fiches__DA-02-17.md"
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-01.md",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "316c3251f457f77340d65dfd0e6de12cfa288a67",
+      "sha256": "a3f433392f0184287e074d4a82fa32548c7f5897e008a04bc6a5686e609ec6e9",
+      "lines": 27,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/docs__atelier__fiches__DA-03-01.md"
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-09.md",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "1c786eca42ac714ee754391421c07a4a6b3d743d",
+      "sha256": "929e76e9844a20913dde3e3ed6e1fb5d05453e8cdb7267d1a11a461abc92d557",
+      "lines": 24,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/docs__atelier__fiches__DA-03-09.md"
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-10.md",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "1d80ecb3945793bcf8b3009b424fb3a5ec05d49e",
+      "sha256": "f9026bff14c70f31af590e47ca81fa094c7e404e3a98bb3f3c348eefb8fb3068",
+      "lines": 23,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/docs__atelier__fiches__DA-03-10.md"
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-12.md",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "f6da69270181238f5ea0955bc0b417aa9c70f2da",
+      "sha256": "f271a921e92ed07950be12e5a7b940acb5190812ab1ac55e4524297801fa4a47",
+      "lines": 27,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/docs__atelier__fiches__DA-03-12.md"
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-13.md",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "34ea935a6cef9ced0c34fffd99e24d8b2e71d086",
+      "sha256": "22c530b7715e138b89a9d37b428e956c6f68e0b797efab7c56603cad08ac2ddd",
+      "lines": 23,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/docs__atelier__fiches__DA-03-13.md"
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-15.md",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "a1a603a34c4687453a57cb75f725b87b8319d70b",
+      "sha256": "a09553dd89ebfa679a264e7230f095d37310b4f687df1e787cfad62ec224ca13",
+      "lines": 23,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/docs__atelier__fiches__DA-03-15.md"
+    },
+    {
+      "path": "docs/atelier/fiches/DA-04-01.md",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "5dc6227c919d2d085a41e2ac17546fd9b5bcd50f",
+      "sha256": "b36ce360b532261d5f9b98feae1187bf0ef251ab3cedfee6a7c2ae771ebdfe05",
+      "lines": 28,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/docs__atelier__fiches__DA-04-01.md"
+    },
+    {
+      "path": "docs/atelier/fiches/DA-04-07.md",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "7bcc364ae8b896b0c53b303958a6cbf18d27fa61",
+      "sha256": "b9c5d54af77016dc08d5c2a672a055ecea818327ff058f61b4d71fd26d25b096",
+      "lines": 28,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/docs__atelier__fiches__DA-04-07.md"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "458b232273b5e5529ff6489804371cba011901db",
+      "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+      "lines": 294,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/packages__atelier-model__src__commandes__commandes.test.ts"
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/echanges.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "1a384109cb8098cbac51e65c811f74ea950077c9",
+      "sha256": "082ff7430b4df8a2bf94cac2e7d2daef8aba6bcadaa34c6a95d1e3ea636f5310",
+      "lines": 338,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/packages__atelier-model__src__echanges__echanges.test.ts"
+    },
+    {
+      "path": "packages/atelier-model/src/projection/maillage.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "4bffbe7b626c1ad2661e5cb2b88379b387515d58",
+      "sha256": "6e7dd4f59a6691c499ad8191df498490b3163110146581756bb7ce5eb5825dd2",
+      "lines": 111,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/packages__atelier-model__src__projection__maillage.test.ts"
+    },
+    {
+      "path": "packages/atelier-model/src/solide-exact.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "d73bd690a7ffca24c87bc944bce6c72f9fbf8b70",
+      "sha256": "a8432c52975d4fb01d2caf4156b4881ece013040489101c6bb754bdc7b1a0e0a",
+      "lines": 91,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/packages__atelier-model__src__solide-exact.test.ts"
+    },
+    {
+      "path": "packages/geometry-exact/src/index.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "16a0ee6e02ca2e68797d3061704ce93bc33fbbe1",
+      "sha256": "a0c4412a1649d4523f5e9786bcb6430e12acdac3c696fd2978338459144dc6ee",
+      "lines": 177,
+      "local_read_copy": "/workspace/work/resume496/agents/A1/lecture041/packages__geometry-exact__src__index.test.ts"
+    }
+  ],
+  "freeze_utc": "2026-10-18T13:25:16.214996+00:00"
+}

@@ -4,42 +4,41 @@ Mis à jour : 2026-10-18 (UTC).
 
 ## État
 
-Reprise du checkpoint `496dcfc7bf80868ef21216d667187087db32a738`. Branche documentaire canonique `docs/156-codex-missions-completes`, PR #165 ouverte. Main observée : `a4caaab0e6665480f09febe3914c960b424b6b47`. PR #169 reste draft à `a15d65044ca4454bf3159f4155e51465b2a70a2c` ; aucun rerun DB-1/2. Le SHA porteur de ce checkpoint se lit dans Git et dans #166.
+Reprise de `496dcfc7bf80868ef21216d667187087db32a738`, programme #156 entier. Branche documentaire `docs/156-codex-missions-completes`, PR #165 ouverte, dernier checkpoint publié `b1023605b965b27ff56fabf179756592673c98d4`. Main observée `a4caaab0e6665480f09febe3914c960b424b6b47`. PR #169 draft reste à `a15d65044ca4454bf3159f4155e51465b2a70a2c`, sans rerun DB-1/2. PR #171 draft, lot CLASSIF-1 / Issue #170, à `5e0285d37f23c7c539502664036f0a2ff0986409`. Aucune fusion.
 
-Six nouvelles décisions déléguées et directive6250119063 effectivement lues ; [ACK de reprise](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250149589). [Rapport courant et preuves](../../ai-team/reports/reprise-496dcfc/README.md). Les anciens checkpoints Mission003/004 restent leurs états datés, sans réécriture de décision historique.
+Les six décisions et la directive6250119063 ont été lues ; [ACK](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250149589) puis [progrès publié](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250266800). [Rapport et pièces de cette reprise](../../ai-team/reports/reprise-496dcfc/README.md). La version courante est portée par le commit Git de ces fichiers ; les rapports agents sont des snapshots datés et peuvent décrire une étape antérieure.
 
-**G0 accepté pour le cadrage documentaire seulement**, décision6250109830 sur dossier7b0cca4 et ses trois revues. Quatre conditions documentaires ont été rapprochées individuellement : G0-01/02 Vérifié, G0-03 et CAD-DEC-01 Accepté dans cette portée. **G1–G4 non acceptés**, aucune fonctionnalité Studio acceptée. Personnes/disponibilités CAD-DEC-03, contrats physiques, droits finaux, corpus, budgets, POC et migration/rollback restent ouverts.
-
-Registre unique630 : **203 À définir,186 En cours,207 Bloqué,32 Vérifié documentaire,2 Accepté cadrage documentaire**. P630=34/630≈5,4%, avec correspondance explicite des deux états documentaires ; **PDEV=N/D**, faute de DEV_SCOPE/baseline. Zéro case source/HTML cochée. Les31 missions restent ouvertes.
+G0 est **Accepté pour cadrage documentaire** uniquement, décision6250109830 sur dossier7b0cca4. G0-01/02 : Vérifié documentaire ; G0-03/CAD-DEC-01 : Accepté cadrage documentaire. Registre630 inchangé depuis ce delta : **203 À définir / 186 En cours / 207 Bloqué / 32 Vérifié documentaire / 2 Accepté cadrage documentaire**, P630=34/630=5,4%. **PDEV=N/D**, DEV_SCOPE/baseline non acceptés. Zéro case source/HTML cochée, toutes les31 missions restent ouvertes. G1–G4 non acceptés, décisions physiques DEC01/03 ouvertes, aucune capacité Studio acceptée.
 
 ## Faits vérifiés
 
-- M08-PATH-001..007 : lecture seule A2, revue indépendante A5 et consolidation A0.49sous-attendus, une préparation présente/24partiels/24absents ;39contextes non conclus.9sources,204citations/128uniques exactes. A5 conserve sa lecture indépendante48atomes et explique les différences de grain ; chaque verdict A2 est revu. Aucune équivalence d’oracle complet ni exécution de test applicatif.
-- CI documentaire : décision6250109536 appliquée à `.github/workflows/ci.yml`. Repo+headrepo Fadi, eventPR, branche documentaire et base main exacts ;11contextes/6diffs/5bases invalides testés. Anciennes définitions validate/e2e/image inchangées sauf condition avant services. Job pur distinct, diff allowlist avant contrôles ; hors allowlist échoue sans DB. Aucun [skip ci] générique.
-- Local :14tests du validateur,630affectations et continuité à exécuter au checkpoint avant push ; résultats consignés dans le rapport au SHA porteur. Aucun test API/E2E, DB réelle, migration, service ou production lancé. Les résultats CI historiques ne sont pas transférés.
-- PR169/a15d650 : les mêmes runs39125959694/39125959914/39125959712 sont relus réussis, sans rerun ;129tests simulés historiques de ce SHA, validate/e2e/image skipped. DB-3 reste non validé.
-- Runtime43 observé courant/running, politique enforced, aucun secret/variable runtime configuré déclaré ; pas une preuve de santé API/DB. Main reste non protégé, aucune administration activée.
+- CLASSIF-1 : inventaire conjoint A2/A5 préalable, correction A3 limitée à la non-déduction IFC, 24 cas purs indépendants A5. Suite Atelier **492 tests / 107 fichiers réussis**, types et build réussis localement et au SHA5e0285d dans CI39130408506. Jobs validate/e2e/image skipped avant services ; aucune DB/API/E2E réelle exécutée. Revues A2/A5/A6 et A0 conservées. Main et données historiques non corrigées ; PR171 prête à revue, pas acceptée/fusionnée.
+- CI documentaire165 : au SHAb102360, CI39129967610, couverture39129967587, continuité39129967590, isolation39129967601 et inventaire39129967593 réussis. Job documentaire sans base117682953687 réussi ; trois jobs intégration skipped, aucune réussite d'intégration déduite. Une nouvelle publication exige son propre constat CI.
+- M08 : **125/125 analyses documentaires produites**, dont8 historiques conservées, **87/125 avec revue indépendante ou historique** à cet instant ;0 restent à analyser. Priorité001–007 terminée en lecture seule A2/A5/A0 ; suivantes009–015,016/018/020/022 et024–045 revues. Revues017–039 A3,041–064 A1 et046–072 A5 reçues ; dernières cohortes065..125 en revue indépendante. Index individuel dans le rapport ; zéro oracle complet déclaré équivalent, zéro scénario exécuté.
+- G1 : compléments v2, schémas logiques et exemples documentaires sous orientations DEC01/03, revues A2/A4. Versions initiales conservées comme historique, v2 active. Index G1-01..04 et proposition de POC G2 prêts à instruction, sans passage de porte ni code/POC exécuté. DEC18 :12 groupes de moteurs candidats inventoriés A3, revue licences/frontières A6 reçue, droits et conformité de distribution encore ouverts ; interfaces publiques distinctes des modules internes UI.
+- M09 : cinq workflowsmain lus, aucun scanner CVE dédié identifié. Métadonnée security_and_analysis absente, endpoints d'alertes refusés par le connecteur avec400 INVALID_ARGUMENT ; état et comptes **inconnus**, pas zéro alerte. Aucun scan, administration ou contournement.
+- Runtime Cloud43 observé running/enforced/courant, sans secrets/variables configurés déclarés ; pas une preuve de santé API/DB. Main non protégé lors du dernier contrôle ; aucune activation administrative. Les14 tests documentaires/couverture630/continuité sont exécutés au checkpoint et leurs résultats consignés dans la preuve A0, sans test historique transféré.
 
 ## Points ouverts
 
-| Sous-tâche | Responsable / état | Preuve et prochaine action |
+| Sous-tâche | Propriétaire / état | Suite exacte |
 |---|---|---|
-| M08-PATH-001..007 | A2/A5/A0 — Vérifié documentaire | Rapports sources et confrontation versés ; aucun test ou équivalence complète déduit |
-| Synchronisation #165 | A6/A0 — En cours, autorisée | Contrôler diff final puis push avec CI pure, vérifier jobs/skips au SHA exact ; aucune fusion |
-| A3-CLASSIF-1 | A2/A5 puis A3 — inventaire validé, code engagé | Autorisation6250110849 et inventaire conjoint42sources/216citations satisfaits ; A3 activé sur branche distincte de169, tests purs et revues à produire |
-| G0 | A1/A4/A0 — Accepté cadrage documentaire | Acte6250109830 exact, réserves conservées ; aucune acceptation G1–G4 |
-| DEC-01/03 et G1 | A1/A2/A4 — préparation prête | Orientations optionA retenues6250110124/0501, modèles physiques et preuves restent ouverts ; pas code/POC/SQL |
-| CSP/KML | A4/A5 — préparation | OptionA retenue6250111226 ; aucune origine approuvée par inférence. Pas header/enforcement/scan réseau autorisés |
-| DB-3, services, admin, migrations, fusion, production | Propriétaires missions.json — accord spécifique requis | Ne pas déduire d’autorisation depuis G0/CI/CLASSIF ; poursuivre les tâches indépendantes |
+| M08,125 entrées | A2/A4 analyses, A1/A3/A5 revues, A0 consolidation — En cours | Terminer les revues restantes des125 analyses, conserver chaque ID et les limites |
+| CLASSIF-1 / #170/#171 | A3 code, A2/A5 revues, A6 CI — Vérifié dans branche | Revue humaine et réconciliation future des workflows165/169/171 avant toute fusion autorisée |
+| G1 / DEC01-03 / M17-M24 | A1/A2/A4 — préparations | Instruire les conditions G1 individuellement ; pas de porte passée par le dépôt des fichiers |
+| POC G2 expérimental | A0/A2/A5/A6 — proposition, exécution bloquée | Soumettre annexe bornée, import public à attester et accord explicite après préconditions ; aucun code implicite |
+| DEC18 moteurs | A3/A6 — inventaire et revue documentaires reçus | Confirmer frontières publiques/licences, coûts restent à mesurer, pas adaptation Studio autorisée |
+| M09 sécurité | A6/A5 — état partiellement observable | Relayer au responsable l'accès de lecture manquant ; pas lancer de scan ni supposer absence de vulnérabilités |
+| DB-3, services, admin, migrations, fusion, production | Propriétaires missions.json — accord spécifique requis | Conserver le blocage local et poursuivre tous les autres READY |
 
 ## Liens de suivi
 
-1. Lire AGENTS, continuité et les deux HANDOFF→STATUS→TASKS→CONTEXT ; vérifier les références et réponses récentes #166. Les six décisions sont reçues, ne pas les reposer.
-2. Publier les preuves de M08-PATH-001..007 et poursuivre une cohorte réellement non traitée du mapping125, après exclusion des huit entrées déjà examinées en Mission004. A2 analyse, A5 revue ; aucun test requis pour cette lecture.
-3. Terminer la preuve du routage CI, synchroniser165 sans DB et relire les jobs au SHA exact. Ne jamais présenter un skip comme un succès d’intégration.
-4. Dès inventaires A2/A5 satisfaisants, A3 seul réalise CLASSIF-1 dans sa branche dédiée, A6 seul son workflow, A2/A5 revues. Si effet hors périmètre, suspendre uniquement ce code et demander une extension bornée ; poursuivre G1/M08.
-5. G1 reste une étude documentaire sous les deux orientations retenues ; POC, codeStudio, migration et portes aval nécessitent leurs décisions distinctes.
+1. Relire les nouvelles réponses #166 et revalider les SHA ; conserver les six décisions acquises sans les reposer.
+2. Terminer les cohortes M08 : toutes les analyses A2/A4 sont remises ; revues A3/A1/A5 selon index. A3 revue indépendante017..039, A1 revue041..064, A5 E2E046..072 puis suivantes ; A5 contrôle les réserves A1/A3 avec attribution exacte.
+3. A0 copie les remises stabilisées à octets identiques, valide citations/empreintes, actualise STATUS/HANDOFF ensemble, contrôles documentaires, commit/push165 et CI au SHA exact ; publier CODEX-PROGRESS.
+4. Soumettre uniquement les nouveaux choix techniques G1/POC borné avec liens GitHub concrets après revue de l'annexe ; aucune exécution du POC sans décision. Les autres READY continuent pendant cette attente.
+5. Parcourir toutes les31 missions ouvertes ; conserver propriétaire, cause, essais et prochaine action de chaque blocage. Aucun arrêt global causé par une PR ou question ouverte.
 
 ## Préconditions de clôture
 
-Le programme reste M00–M30 et630IDs. Chaque clôture dépend de sa nature et de ses preuves ; une affectation ou une PR ne clôt pas une mission. Aucune fusion, administration, connexionDB réelle, reprise de service ou production implicitement autorisée. Les checkpoints antérieurs sont conservés dans Git à496dcfc.
+Une preuve par nature et ID, conformité/tests/acceptation distinctes. Les checkpoints historiques restent dans Git. Aucune mission entière close par une préparation ou PR.

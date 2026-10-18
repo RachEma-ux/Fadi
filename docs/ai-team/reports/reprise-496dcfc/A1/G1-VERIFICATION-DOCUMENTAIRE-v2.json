@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "positive_examples": 3,
+  "negative_examples": 10,
+  "canonical_contentVersion_used": true,
+  "published_piece_documentVersion_distinct": true,
+  "content_hash_links_valid": 12,
+  "targeted_negative_faults_labeled": 10,
+  "previous_revision_and_content_preserved": true,
+  "product_tests_executed": 0,
+  "schema_API_physical_accepted": false,
+  "G1_accepted": false,
+  "DEC01_DEC03_closed": false,
+  "repo_changed": false,
+  "note_count": "2positifs aveccontenu +10négatifs ; lepositif étude seule neporteaucuncontenu àhasher"
+}

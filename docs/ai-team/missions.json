@@ -21,9 +21,9 @@
       "source_ranges": [],
       "inputs": [],
       "execution": {
-        "checkpoint": "Reprise496dcfc, décisions6250109536..6250111226",
+        "checkpoint": "Suite reprise496dcfc, CLASSIF1 PR171 et cohortes M08",
         "statut": "En cours",
-        "constat": "Reprise effective496dcfc, sixdécisions lues, ACK6250149589 ; A2/A5 septoracles et A0 consolidation ; programme31missions toujoursouvert.",
+        "constat": "Coordination réelle des sept rôles ; reprise496, décisions reçues, PR171 pure vérifiée et nouvelles cohortes M08 consolidées.",
         "responsable": "A0",
         "preuves": [
           "docs/ai-team/reports/mission-003/README.md",
@@ -521,9 +521,9 @@
         "M00:inventaire et décision de conservation"
       ],
       "execution": {
-        "checkpoint": "Reprise496dcfc, décisions6250109536..6250111226",
+        "checkpoint": "Suite reprise496dcfc, CLASSIF1 PR171 et cohortes M08",
         "statut": "En cours",
-        "constat": "M08-PATH-001..007 :49sous-attendus (1préparationprésente/24partiels/24absents),39contextesnonconclus ;204citations/128uniques exactes, revueA5 indépendante réconciliée sans fausseéquivalence.",
+        "constat": "125/125 analyses avec8 historiques ;87 revues avec historiques à cet instant, 0 analyses restantes ; revues restantes READY. Aucun oracle complet ou scénario runtime validé.",
         "responsable": "A2",
         "preuves": [
           "docs/ai-team/reports/mission-003/A2/isolation-nominal-review.json",
@@ -624,9 +624,9 @@
         "M02:garde avant tests avec données"
       ],
       "execution": {
-        "checkpoint": "Reprise496dcfc, décisions6250109536..6250111226",
+        "checkpoint": "Suite reprise496dcfc, CLASSIF1 PR171 et cohortes M08",
         "statut": "En cours",
-        "constat": "CSP/KML optionA de préparation retenue6250111226 ; origines identifiées distinctes des approbations,9casdocetfallbackneutre sans header/enforcement/scanréseau.",
+        "constat": "État GitHub partiellement observable : aucun scanner dédié identifié dans5 workflowsmain ; endpoints alertes refusés connecteur400, comptes inconnus. Aucun scan lancé.",
         "responsable": "A5",
         "preuves": [
           "docs/ai-team/reports/mission-003/A5/A5-M02-M09-M15-M26.md",
@@ -958,9 +958,9 @@
         "M00:autorisation spécifique du POC"
       ],
       "execution": {
-        "checkpoint": "Reprise496dcfc, décisions6250109536..6250111226",
+        "checkpoint": "Suite reprise496dcfc, CLASSIF1 PR171 et cohortes M08",
         "statut": "En cours",
-        "constat": "OrientationsDEC01/03 optionA retenues par6250110124/0501 ; documents2Dautonomes etidentités propres, DECphysiques non closes.",
+        "constat": "G0 accepté cadrage documentaire sur décision6250109830 ; G1–G4 restent ouverts.",
         "responsable": "A2",
         "preuves": [
           "docs/ai-team/reports/mission-003/A1/studio-18-decisions.json",
@@ -1169,14 +1169,15 @@
         "M13:autorités de données"
       ],
       "execution": {
-        "checkpoint": "Mission004 après instructions63e804b, code PR169/a15d650",
+        "checkpoint": "Suite reprise496dcfc, CLASSIF1 PR171 et cohortes M08",
         "statut": "En cours",
-        "constat": "Contrats logiques Projet/Étude/Variante/Révision, trois autorités, writer unique, commandes/snapshot/publication préparés ;21exemples non exécutables.",
+        "constat": "Compléments G1 v2 et inventaire DEC18 de12 familles moteurs proposés ; contrats physiques et droits non clos, pas codeStudio/POC.",
         "responsable": "A2",
         "preuves": [
           "docs/ai-team/reports/mission-003/A2/LOT-A.1.md",
           "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
-          "docs/ai-team/reports/mission-004/README.md"
+          "docs/ai-team/reports/mission-004/README.md",
+          "docs/ai-team/reports/reprise-496dcfc/README.md"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -1512,13 +1513,14 @@
         "M22/M23:sous-ensembles nécessaires à la charge"
       ],
       "execution": {
-        "checkpoint": "Mission004 après instructions63e804b, code PR169/a15d650",
+        "checkpoint": "Suite reprise496dcfc, CLASSIF1 PR171 et cohortes M08",
         "statut": "En cours",
-        "constat": "Préparation manifeste publication A/B/C poursuivie indépendamment des capacités non réalisées.",
+        "constat": "Projet/Étude/Variante/Révision logique v2 et exemples documentaires préparés sous orientation DEC03A ; persistance physique/migration non décidées.",
         "responsable": "A1",
         "preuves": [
           "docs/ai-team/reports/mission-003/A2/LOT-E.md",
-          "docs/ai-team/reports/mission-004/README.md"
+          "docs/ai-team/reports/mission-004/README.md",
+          "docs/ai-team/reports/reprise-496dcfc/README.md"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
