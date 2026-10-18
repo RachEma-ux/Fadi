@@ -597,13 +597,26 @@ try {
   await boiteImport.locator("[data-studio-import-ajouter]").click();
   await boiteImport.waitFor({ state: "detached" });
   const avantGrand = envois.length;
+  // Le second lot est refusé une fois (400) : le brouillon repart de la révision du premier lot, avec les 100
+  // commandes non envoyées seules en attente ; un nouvel « Enregistrer » envoie ce reste.
+  let lotsVus = 0;
+  await page.route("**/commands", (route) => (++lotsVus === 2 ? route.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify({ error: "invalid_commands" }) }) : route.continue()));
   await page.keyboard.press("Control+s");
+  await page.locator("[data-studio-erreur-planche]").filter({ hasText: "Enregistrement partiel : 1 lot(s) sur 2" }).waitFor();
+  await page.unroute("**/commands");
+  const apresPremier = await a.api("get", cheminInitial);
+  check("Import DXF : refus du second lot — 500 commandes enregistrées, les 100 autres seules en attente, sur la révision du premier lot",
+    apresPremier.revision.document.objects.length === teteInitiale.document.objects.length + 500 && (await portee()).includes("(100 commande(s)")
+    && (await page.locator(".studio-context [title]").first().getAttribute("title")) === apresPremier.revision.id
+    && (await page.locator("[data-studio-erreur-planche]").textContent()).includes("100 commande(s) non envoyée(s)"), await portee());
+  await outils.getByRole("button", { name: "Enregistrer", exact: true }).click();
   await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
   const lotsGrand = envois.slice(avantGrand);
   const grandRelu = await a.api("get", cheminInitial);
   check("Import DXF : enregistrement en deux enveloppes (500 + 100), la seconde sur la révision de la première",
-    lotsGrand.length === 2 && lotsGrand[0].commands.length === 500 && lotsGrand[1].commands.length === 100 && lotsGrand[0].baseRevisionId === teteInitiale.id
-    && lotsGrand[1].baseRevisionId === grandRelu.revision.parentRevisionId && lotsGrand[0].requestId !== lotsGrand[1].requestId && grandRelu.revision.document.objects.length === teteInitiale.document.objects.length + 600,
+    lotsGrand.length === 3 && lotsGrand[0].commands.length === 500 && lotsGrand[1].commands.length === 100 && lotsGrand[0].baseRevisionId === teteInitiale.id
+    && lotsGrand[1].baseRevisionId === apresPremier.revision.id && JSON.stringify(lotsGrand[2].commands) === JSON.stringify(lotsGrand[1].commands) && lotsGrand[2].baseRevisionId === apresPremier.revision.id
+    && grandRelu.revision.parentRevisionId === apresPremier.revision.id && grandRelu.revision.document.objects.length === teteInitiale.document.objects.length + 600,
     lotsGrand.map((e) => `${e.commands.length}@${e.baseRevisionId}`).join(" "));
 
   // Accessibilité de l'accueil Studio.

@@ -9027,5 +9027,11 @@
 "Fichier DXF illisible : seul le DXF ASCII (R12 ou suivant) est lu.": "Unreadable DXF file: only ASCII DXF (R12 or later) is read.",
 "Lecture du fichier impossible.": "The file could not be read.",
 "Import DXF ajouté au brouillon : {0} objet(s). Enregistrez pour l’envoyer au serveur.": "DXF import added to the draft: {0} object(s). Save to send it to the server.",
-"Enregistrement partiel : {0} lot(s) sur {1} enregistré(s), la suite est refusée. Le brouillon restant est conservé ; rechargez la version serveur.": "Partial save: {0} of {1} batch(es) saved, the rest was refused. The remaining draft is kept; reload the server version."
+"Enregistrement partiel : {0} lot(s) sur {1} enregistré(s), puis une autre révision est devenue la version courante. Les {2} commande(s) non envoyée(s) restent dans ce brouillon, sur votre dernière révision enregistrée ; recharger la version serveur les perdra.": "Partial save: {0} of {1} batch(es) saved, then another revision became the current version. The {2} unsent command(s) remain in this draft, on your last saved revision; reloading the server version will lose them.",
+"Enregistrement partiel : {0} lot(s) sur {1} enregistré(s), la suite est refusée. Les {2} commande(s) non envoyée(s) restent en attente dans le brouillon, sur la dernière révision enregistrée.": "Partial save: {0} of {1} batch(es) saved, the rest was refused. The {2} unsent command(s) remain pending in the draft, on the last saved revision.",
+"coordonnées manquantes": "missing coordinates",
+"largeur ignorée": "width ignored",
+"épaisseur ignorée": "thickness ignored",
+"coordonnée au-delà de 10⁹ m": "coordinate beyond 10⁹ m",
+"longueur nulle après conversion": "zero length after conversion"
 }

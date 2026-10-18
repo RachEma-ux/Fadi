@@ -362,6 +362,8 @@ interface State {
   objects: StudioShape[];
   layers: StudioLayer[];
   dimensions: StudioDimension[];
+  /** Identifiants d'objets et de cotes présents : contrôle d'unicité en temps constant (un import peut compter 20 000 créations). */
+  ids: Set<string>;
 }
 type Handler = (state: State, params: unknown, path: string) => void;
 
@@ -374,7 +376,7 @@ function editable(state: State, target: { layerId?: string }, path: string): voi
   if (stateLayer(state, target.layerId, path).locked) fail(path, "calque verrouillé");
 }
 function freeId(state: State, id: string, path: string): void {
-  if (state.objects.some((o) => o.id === id) || state.dimensions.some((o) => o.id === id)) fail(path, "identifiant déjà utilisé");
+  if (state.ids.has(id)) fail(path, "identifiant déjà utilisé");
 }
 function shapeMap(state: State): Map<string, StudioShape> {
   return new Map(state.objects.map((o) => [o.id, o]));
@@ -411,6 +413,7 @@ function createShape(type: StudioShape["type"]): Handler {
     freeId(state, o.id, path);
     editable(state, o, path);
     state.objects.push(o);
+    state.ids.add(o.id);
   };
 }
 
@@ -466,6 +469,7 @@ const HANDLERS: Record<StudioCommandToolId, Handler> = {
     const d = enteredDimension(state, params, path);
     freeId(state, d.id, path);
     state.dimensions.push(d);
+    state.ids.add(d.id);
   },
   "studio.dessin.supprimer": (state, params, path) => {
     const p = record(params, ["ids"], `${path}.params`);
@@ -477,6 +481,7 @@ const HANDLERS: Record<StudioCommandToolId, Handler> = {
       editable(state, target, path);
     }
     state.objects = state.objects.filter((o) => !ids.has(o.id));
+    for (const id of ids) state.ids.delete(id);
     state.dimensions = state.dimensions.filter((d) => !ids.has(d.id)).map((d) => {
       const breakStart = !!d.links.start && ids.has(d.links.start.objectId);
       const breakEnd = !!d.links.end && ids.has(d.links.end.objectId);
@@ -555,7 +560,10 @@ export const STUDIO_APPLIED_TOOL_IDS: readonly StudioCommandToolId[] = Object.fr
 /** Apply to a private clone; a rejected lot never mutates document or caller inputs. */
 export function applyStudioCommands(document: StudioDocument, commands: readonly StudioCommand[]): StudioDocument {
   const current = validateStudioDocument(document);
-  const state: State = { id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [] };
+  const state: State = {
+    id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [],
+    ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id)]),
+  };
   const batch = array(commands, "commands");
   if (batch.length === 0) fail("commands", "au moins une commande attendue");
   for (let i = 0; i < batch.length; i++) {

@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { applyStudioCommands, lireDxfStudio, newStudioDocument, STUDIO_CONTRACT, StudioValidationError, type StudioCommand } from "@parcours/atelier-model";
 import dico from "../../../lib/i18n/en.json";
 import { DialogueImportDxf, Rapport } from "./DialogueImportDxf";
-import { accuserLot, decouperCommandes, ENVELOPPE_MAX_COMMANDES, ENVELOPPE_MAX_OCTETS, enveloppeSuivante, envoiPartiel, envoiTermine, planEnvoi } from "./envoi";
+import { accuserLot, commandesNonEnvoyees, decouperCommandes, ENVELOPPE_MAX_COMMANDES, ENVELOPPE_MAX_OCTETS, enveloppeSuivante, envoiPartiel, envoiTermine, planEnvoi } from "./envoi";
 import { CIBLES_CALQUE, lireDxf, messageImport, typeNonPris, UNITES_PROPOSEES } from "./import-dxf-ui";
 
 const ligne = (i: number): StudioCommand => ({ toolId: "studio.dessin.ligne", params: { id: `l${i}`, type: "line", start: { x: 0, y: i }, end: { x: 1, y: i } } });
@@ -56,6 +56,18 @@ describe("Enregistrement en plusieurs enveloppes", () => {
     // Appliquer les lots l'un après l'autre donne le document d'un envoi unique.
     const doc0 = newStudioDocument("d");
     expect(envoyees.reduce((d, e) => applyStudioCommands(d, e.commands), doc0)).toEqual(applyStudioCommands(doc0, cs));
+  });
+
+  it("refus d'un lot suivant : seules les commandes non envoyées restent à rejouer sur la dernière révision confirmée", () => {
+    const cs = lignes(1201);
+    const doc0 = newStudioDocument("d");
+    const plan = accuserLot(planEnvoi(cs, "rev-0", compteur()), "rev-1");
+    const reste = commandesNonEnvoyees(plan);
+    expect(reste).toEqual(cs.slice(500));
+    // Le brouillon rebâti (révision confirmée + reste) aboutit au même document que l'envoi complet.
+    const confirme = applyStudioCommands(doc0, plan.lots[0]!);
+    expect(applyStudioCommands(confirme, reste)).toEqual(applyStudioCommands(doc0, cs));
+    expect(commandesNonEnvoyees(planEnvoi([], "r", compteur()))).toEqual([]);
   });
 
   it("borne d'octets : un lot ne dépasse jamais la taille admise par le serveur", () => {
@@ -144,7 +156,9 @@ describe("Boîte « Importer DXF »", () => {
       "{0} objet(s) à ajouter : {1} ligne(s), {2} rectangle(s), {3} segment(s) de polyligne.", "Étendue : X de {0} à {1} m, Y de {2} à {3} m (repère local).",
       "{0} entité(s) avec une cote Z non nulle : projetée(s) sur le plan, Z ignoré.", "Non pris : {0} élément(s), listés par type.", "({0} objet(s))",
       "Import DXF ajouté au brouillon : {0} objet(s). Enregistrez pour l’envoyer au serveur.",
-      "Enregistrement partiel : {0} lot(s) sur {1} enregistré(s), la suite est refusée. Le brouillon restant est conservé ; rechargez la version serveur.",
+      "Enregistrement partiel : {0} lot(s) sur {1} enregistré(s), puis une autre révision est devenue la version courante. Les {2} commande(s) non envoyée(s) restent dans ce brouillon, sur votre dernière révision enregistrée ; recharger la version serveur les perdra.",
+      "Enregistrement partiel : {0} lot(s) sur {1} enregistré(s), la suite est refusée. Les {2} commande(s) non envoyée(s) restent en attente dans le brouillon, sur la dernière révision enregistrée.",
+      "coordonnées manquantes", "largeur ignorée", "épaisseur ignorée", "coordonnée au-delà de 10⁹ m", "longueur nulle après conversion",
       "L’import dépasserait la limite de {0} objets du document : rien n’est ajouté.", "L’import dépasserait la limite de {0} calques du document : rien n’est ajouté.",
       "Calque verrouillé dans le document : {0}. Déverrouillez-le avant l’import.",
       "DXF binaire non pris en charge : enregistrez le fichier en DXF ASCII.", "Fichier trop volumineux : 5 Mo au plus.",
