@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, mkdirSync, statSync } from 'node:fs';
 import { createHash, randomUUID, randomBytes } from 'node:crypto';
 import { resolve } from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const profilePath = process.env.STUDIO_TEST_PROFILE;
 assert(profilePath, 'An explicit A6 disposable profile is required before any request');
@@ -32,12 +33,15 @@ mkdirSync(OUT, { recursive: true, mode: 0o700 });
 const statePath = resolve(OUT, 'private-state.json');
 const phase = process.env.PHASE ?? 'initial';
 assert(['initial', 'reopen'].includes(phase));
+const runtimeCommit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+const recipeSha256 = createHash('sha256').update(readFileSync(new URL(import.meta.url))).digest('hex');
 const browserErrors = [];
-const report = { runId: profile.runId, phase, date: new Date().toISOString(), attestationSha256: createHash('sha256').update(readFileSync(profilePath)).digest('hex'), checks: [], limits: ['Disposable synthetic fixtures only; no production', 'API equality corroborates persistence reads; database restart evidence belongs to A6'] };
+const report = { runtimeCommit, recipeSha256, runId: profile.runId, phase, date: new Date().toISOString(), attestationSha256: createHash('sha256').update(readFileSync(profilePath)).digest('hex'), checks: [], limits: ['Disposable synthetic fixtures only; no production', 'API equality corroborates persistence reads; database restart evidence belongs to A6'] };
 const check = (name, fn) => { fn(); report.checks.push({ name, result: 'passed' }); };
 const docHash = (doc) => createHash('sha256').update(JSON.stringify(doc)).digest('hex');
 const { chromium } = await import('playwright');
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+report.browserVersion = browser.version();
 const contexts = [];
 async function context() { const c = await browser.newContext({ viewport: { width: 1440, height: 1000 } }); contexts.push(c); c.on('page', (p) => { p.on('pageerror', (e) => browserErrors.push({ kind: 'pageerror', message: e.message.slice(0, 240) })); p.on('console', (m) => { if (m.type() === 'error') browserErrors.push({ kind: 'console', message: m.text().slice(0, 240) }); }); }); return c; }
 async function api(c, method, path, data) {
@@ -200,7 +204,7 @@ async function exerciseStudioUI(page, projectId) {
   await page.getByRole('heading', { name: 'Étude QA Studio', exact: true }).waitFor();
   const tools = page.getByRole('toolbar', { name: 'Outils de dessin' });
   const props = page.getByRole('complementary', { name: 'Propriétés du dessin' });
-  const tool = (name) => tools.getByRole('button', { name: new RegExp('^' + name + '(?: |$)') });
+  const tool = (name) => tools.getByRole('button', { name: new RegExp('^' + name) });
   const numeric = async (pairs) => { for (const [name, value] of pairs) await props.getByLabel(name, { exact: true }).fill(String(value)); };
   await tool('Ligne').click();
   const board = page.getByRole('group', { name: 'Planche de dessin 2D', exact: true });
