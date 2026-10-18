@@ -2,7 +2,7 @@
 import { and, asc, desc, eq } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { applyStudioCommands, newStudioDocument, STUDIO_CONTRACT, StudioValidationError, validateStudioDocument, type StudioEnvelope } from "@parcours/atelier-model";
+import { applyStudioCommands, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, StudioValidationError, validateStudioDocument, type StudioEnvelope } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { projectMembers, studioRevisions, studioStudies, studioVariants, type StudioContext } from "../db/schema.js";
 import { newId } from "./ids.js";
@@ -18,7 +18,7 @@ const identifier = z.string().min(1).max(128).regex(/^[A-Za-z0-9._:-]+$/);
 const envelopeSchema = z.object({
   contractVersion: z.literal(STUDIO_CONTRACT), requestId: identifier, baseRevisionId: identifier,
   commands: z.array(z.object({
-    toolId: z.enum(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.deplacer", "studio.dessin.modifier"]),
+    toolId: z.enum(STUDIO_COMMAND_TOOL_IDS),
     params: z.record(z.string(), z.unknown()),
   }).strict()).min(1).max(500),
 }).strict();
