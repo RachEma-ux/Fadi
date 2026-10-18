@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CONTRAT_COMMANDES, appliquerLot, type Commande, type Enveloppe } from "../commandes/index.js";
 import { importerModeleNatif, type JeuNatif } from "../import/natif.js";
 import { modeleVide, objetsDeClasse, type ModeleAtelier } from "../modele.js";
@@ -13,6 +13,10 @@ import { svgFeuille, svgVue } from "./rendu-svg.js";
 import { dxfFeuille, dxfVue } from "./rendu-dxf.js";
 import { genererVue, genererVueDefinition, HAUTEUR_COUPE_DEFAUT, type ParamsVue } from "./vues.js";
 import { contoursUnion, projeterMaillages, type Camera } from "./visibilite.js";
+
+// Compositions complètes (P.118, feuilles PDF/DXF) : ~2 s seules, davantage quand toute la suite tourne en parallèle.
+// Délai explicite pour ce fichier ; aucune assertion n'est changée.
+vi.setConfig({ testTimeout: 30_000 });
 
 const lot = (commands: Commande[], requestId = "req", baseRevision = 0): Enveloppe => ({ requestId, baseRevision, contract: CONTRAT_COMMANDES, label: "test", commands });
 const JEU = JSON.parse(readFileSync(new URL("../../../../apps/api/src/data/examples/p118-native-model.json", import.meta.url), "utf8")) as JeuNatif;

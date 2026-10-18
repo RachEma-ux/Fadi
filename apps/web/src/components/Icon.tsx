@@ -51,6 +51,7 @@ export type IconName =
   | "studio-zoom-out"
   | "studio-snap-vertex"
   | "studio-snap-grid"
+  | "studio-import-dxf"
   | "studio-export-svg"
   | "studio-export-dxf"
   | "studio-export-ifc"
@@ -113,6 +114,8 @@ const PATHS: Record<IconName, string> = {
   "studio-zoom-out": "M10.5 3.5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 5 5M7.5 10.5h6",
   "studio-snap-vertex": "M4 20 12 6l8 14M9 3h6v6H9ZM12 9v2",
   "studio-snap-grid": "M3 3h18v18H3ZM9 3v18M15 3v18M3 9h18M3 15h18M13 13h4v4h-4Z",
+  // Fichier entré par la gauche (flèche vers le fichier) : import DXF dans le brouillon.
+  "studio-import-dxf": "M9 3h7l4 4v14H9v-5M16 3v4h4M9 3v5M2 12h9M8 9l3 3-3 3M13 10h4M14 13h3M13 16h4",
   "studio-export-svg": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M8 11c2-3 6 3 8 0M17 15v6M14 18l3 3 3-3",
   "studio-export-dxf": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M8 9h6M8 12h3M11 9v6M17 15v6M14 18l3 3 3-3",
   // Fichier, petit volume (cube en perspective) et flèche de téléchargement : export IFC (modèle 3D).

@@ -1,6 +1,7 @@
 /**
  * Studio — enveloppe autonome (ADR-STUDIO-NAV-01, portée sur l'API de Studio V1). Sous AppShell / RequireAuth comme
- * les autres pages, sans ProjectShell ni Parcours : aucune lecture des étapes, aucun mode immersif. Une erreur
+ * les autres pages, sans ProjectShell ni Parcours : aucun mode immersif ; seule la page d'une étude lit, par la route
+ * Studio `…/studies/:s/steps`, les étapes du projet qu'elle peut lier (libellés du serveur). Une erreur
  * d'affichage reste récupérable sans masquer la navigation de Fadi (NAV-008) ; un refus ne divulgue rien (NAV-004) ;
  * une adresse inconnue donne un écran explicite (R-B). Le serveur reste seul juge des droits.
  */
@@ -12,6 +13,7 @@ import { cheminComparaisonStudio, cheminEtudeStudio, cheminProjetStudio, cheminV
 import { StudioRefus } from "./studio-ecrans";
 import { VariantWorkspace } from "./VariantWorkspace";
 import { PageComparaison } from "./comparaison/PageComparaison";
+import { EtapesParcoursEtude } from "./liens/EtapesLiees";
 import "./studio.css";
 
 /** Une création non confirmée (réseau, 5xx) se rejoue avec le même requestId : le serveur rend la même étude ou variante, sans doublon. */
@@ -63,7 +65,7 @@ export function StudioShell() {
         {route.vue === "accueil" && <StudioAccueil />}
         {route.vue === "projet" && <StudioProjet projectId={route.projectId} />}
         {route.vue === "etude" && <StudioEtude projectId={route.projectId} studyId={route.studyId} />}
-        {route.vue === "variante" && <VariantWorkspace key={`${route.projectId}/${route.studyId}/${route.variantId}/${route.revisionId ?? ""}`} projectId={route.projectId} studyId={route.studyId} variantId={route.variantId} revisionId={route.revisionId} />}
+        {route.vue === "variante" && <VariantWorkspace key={`${route.projectId}/${route.studyId}/${route.variantId}/${route.revisionId ?? ""}`} projectId={route.projectId} studyId={route.studyId} variantId={route.variantId} revisionId={route.revisionId} commentairesOuverts={route.commentaires} />}
         {route.vue === "comparer" && <PageComparaison projectId={route.projectId} studyId={route.studyId} de={route.de} a={route.a} />}
         {route.vue === "inconnue" && (
           <section className="studio-welcome" role="alert" data-studio-inconnue>
@@ -235,6 +237,7 @@ function StudioEtude({ projectId, studyId }: { projectId: string; studyId: strin
         </ul>
       )}
       <p><Link to={cheminComparaisonStudio(projectId, study.id)} data-studio-lien-comparer>Comparer les variantes et révisions →</Link></p>
+      <EtapesParcoursEtude projectId={projectId} studyId={study.id} />
       {canWrite
         ? <CreerVariante projectId={projectId} studyId={study.id} />
         : <p data-studio-lecture-seule>Lecture seule : la création de variantes est réservée aux membres autorisés à modifier ce projet.</p>}

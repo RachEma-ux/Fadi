@@ -14,6 +14,8 @@
  *                               depuis par une modification d'un autre (D-110) ;
  *                               verrous fins (étage, zone, objet) pris ou
  *                               libérés par un autre membre (D-143) ;
+ *                               commentaires des autres sur les variantes
+ *                               Studio de ces projets (non supprimés) ;
  *                               « non lue » = postérieure à votre dernière
  *                               consultation ;
  *   POST /notifications/seen  → marque tout comme consulté (date conservée par
@@ -23,9 +25,9 @@
  * service externe, absent (voir docs/migration/matrix.md).
  */
 import { Router } from "express";
-import { and, desc, eq, gt, inArray, ne, or } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { atelierCommands, atelierLockEvents, atelierLocks, drawingExports, projectComments, projectMembers, projects, users } from "../db/schema.js";
+import { and, desc, eq, gt, inArray, isNull, ne, or } from "drizzle-orm";
+import { atelierCommands, atelierLockEvents, atelierLocks, drawingExports, projectComments, projectMembers, projects, studioComments, studioStudies, studioVariants, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { activeLock, type ProjectRole } from "../lib/owned-project.js";
 import { ROLE_LABEL } from "./members.js";
@@ -36,12 +38,14 @@ notificationsRouter.use(requireAuth);
 export interface NotificationItem {
   id: string;
   at: string;
-  /** `acces` · `commentaire` · `reservation` · `modification` (objets de l'Atelier, D-081) · `verrou` · `peremption` (D-110) */
-  kind: "acces" | "commentaire" | "reservation" | "modification" | "verrou" | "peremption";
+  /** `acces` · `commentaire` · `reservation` · `modification` (objets de l'Atelier, D-081) · `verrou` · `peremption` (D-110) · `commentaire-studio` (variante Studio) */
+  kind: "acces" | "commentaire" | "reservation" | "modification" | "verrou" | "peremption" | "commentaire-studio";
   projectId: string;
   projectCode: string;
   projectName: string;
   stepNumber: number | null;
+  /** Variante Studio commentée (`commentaire-studio` seulement). */
+  studio?: { studyId: string; variantId: string };
   text: string;
   unread: boolean;
 }
@@ -119,6 +123,36 @@ export async function notificationsFor(userId: string, email: string): Promise<{
           text: `${lock.email} a réservé l’édition de ${p.code} — ${p.name} jusqu’à ${new Date(lock.expiresAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: process.env["FADI_TZ"] ?? "Europe/Paris" })} : lecture et commentaires seulement d’ici là.`,
           unread: false,
         });
+    }
+  }
+
+  // Commentaires des autres sur les variantes Studio de ces projets (mêmes destinataires que les commentaires du
+  // projet : propriétaire et membres, sauf l'auteur), 30 derniers jours ; un commentaire supprimé n'est plus signalé.
+  if (projectIds.length) {
+    const studio = await db
+      .select({ id: studioComments.id, body: studioComments.body, createdAt: studioComments.createdAt, variantId: studioVariants.id, variantName: studioVariants.name, studyId: studioStudies.id, studyName: studioStudies.name, projectId: projects.id, code: projects.code, name: projects.name, email: users.email })
+      .from(studioComments)
+      .innerJoin(studioVariants, eq(studioVariants.id, studioComments.variantId))
+      .innerJoin(studioStudies, eq(studioStudies.id, studioVariants.studyId))
+      .innerJoin(projects, eq(projects.id, studioStudies.projectId))
+      .innerJoin(users, eq(users.id, studioComments.authorId))
+      .where(and(inArray(studioStudies.projectId, projectIds), ne(studioComments.authorId, userId), isNull(studioComments.deletedAt), gt(studioComments.createdAt, since)))
+      .orderBy(desc(studioComments.createdAt))
+      .limit(LIMIT);
+    for (const c of studio) {
+      const excerpt = c.body.length > 120 ? `${c.body.slice(0, 120)}…` : c.body;
+      items.push({
+        id: `commentaire-studio:${c.id}`,
+        at: c.createdAt.toISOString(),
+        kind: "commentaire-studio",
+        projectId: c.projectId,
+        projectCode: c.code,
+        projectName: c.name,
+        stepNumber: null,
+        studio: { studyId: c.studyId, variantId: c.variantId },
+        text: `${c.email} a commenté la variante « ${c.variantName} » de l’étude Studio « ${c.studyName} » (${c.code}) : « ${excerpt} »`,
+        unread: false,
+      });
     }
   }
 

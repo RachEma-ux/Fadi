@@ -58,6 +58,10 @@ if (PHASE === 'reopen') {
     const reComments = await owner('GET', `${variantPath(s)}/comments`);
     check('réouverture : fils de commentaires identiques', reComments.status === 200 && JSON.stringify(reComments.body.comments.map((x) => x.id)) === JSON.stringify(s.commentIds));
   }
+  if (s.linkedSteps) {
+    const reSteps = await owner('GET', `/projects/${s.projectId}/studio/studies/${s.studyId}/steps`);
+    check('réouverture : étapes du Parcours liées identiques', reSteps.status === 200 && JSON.stringify(reSteps.body.steps.map((x) => x.number)) === JSON.stringify(s.linkedSteps));
+  }
   if (s.exportStudy) {
     const owner2 = await owner('GET', `/projects/${s.projectId}/studio/studies/${s.exportStudy.studyId}/variants/${s.exportStudy.variantId}/export?format=svg`);
     check('réouverture : export SVG de l\'étude idempotente identique', owner2.status === 200 && digest(owner2.text) === s.exportStudy.svgSha256);
@@ -343,7 +347,48 @@ if (PHASE === 'reopen') {
   check('commentaires : la tête du dessin n\'est pas modifiée', (await owner('GET', variantPath(s))).body?.revision?.id === moved.body.revision.id);
   const commentIds = (await owner('GET', commentsPath)).body?.comments?.map((x) => x.id);
 
-  if (STATE) writeFileSync(STATE, JSON.stringify({ ...s, commentIds, owner: ownerCredentials, headRevisionId: head.body.revision.id, initialRevisionId: created.body.revision.id, documentSha256: digest(head.body.revision.document), variantIds: expectedOrder, revisionIds: ids, exportStudy: { studyId: ev.studyId, variantId: ev.variantId, svgSha256: digest(svg.text) } }), { mode: 0o600 });
+  // Notifications : un commentaire de variante est signalé aux autres membres du projet (propriétaire compris), jamais
+  // à son auteur ni hors du projet ; un commentaire supprimé n'est plus signalé ; le lien porte l'étude et la variante.
+  const studioNotes = async (who) => ((await who('GET', '/notifications')).body?.items ?? []).filter((n) => n.kind === 'commentaire-studio');
+  const readerNotes = await studioNotes(reader);
+  const sameSet = (a, b) => JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
+  check('notifications : le lecteur voit les commentaires Studio des autres (propriétaire, éditeur), pas les siens ni le supprimé',
+    sameSet(readerNotes.map((n) => n.id), [headAnchored.body.id, reply.body.id, otherVariantComment.body.id].map((id) => `commentaire-studio:${id}`)), JSON.stringify(readerNotes.map((n) => n.id)));
+  const noteReply = readerNotes.find((n) => n.id === `commentaire-studio:${reply.body.id}`);
+  check('notifications : variante et étude désignées, texte avec auteur et extrait', noteReply?.projectId === projectId && noteReply?.studio?.studyId === s.studyId && noteReply?.studio?.variantId === s.variantId && noteReply.stepNumber === null && noteReply.text.includes(editorCredentials.email) && noteReply.text.includes('« Réponse de l’éditeur »') && isIso(noteReply.at), JSON.stringify(noteReply));
+  const ownerNotes = await studioNotes(owner);
+  check('notifications : le propriétaire voit ceux du lecteur et de l\'éditeur, pas les siens',
+    sameSet(ownerNotes.map((n) => n.id), [reply.body.id, replyToReply.body.id, readerComment.body.id].map((id) => `commentaire-studio:${id}`)), JSON.stringify(ownerNotes.map((n) => n.id)));
+  check('notifications : un compte hors du projet ne reçoit rien', (await studioNotes(foreign)).length === 0);
+
+  // Liens étude ↔ étapes du Parcours : lecture `read`, PUT idempotent de la liste complète avec `modify`.
+  const stepsPath = `${studyPath}/steps`;
+  const noLinks = await owner('GET', stepsPath);
+  check('étapes liées : aucune au départ, 21 étapes du projet proposées avec leurs libellés', noLinks.status === 200 && noLinks.body.steps.length === 0 && noLinks.body.available.length === 21 && noLinks.body.available.every((x, i) => x.number === i + 1 && typeof x.title === 'string' && x.title.length > 0 && typeof x.phase === 'string') && noLinks.body.canWrite === true, JSON.stringify(noLinks.body).slice(0, 300));
+  const linked = await owner('PUT', stepsPath, { steps: [3, 1] });
+  check('étapes liées : PUT [3, 1] → 200, liste triée', linked.status === 200 && JSON.stringify(linked.body.steps.map((x) => x.number)) === '[1,3]' && linked.body.steps.every((x) => isIso(x.createdAt)), JSON.stringify(linked.body).slice(0, 300));
+  const linkedAgain = await owner('PUT', stepsPath, { steps: [1, 3] });
+  check('étapes liées : même liste rejouée → identique (dates conservées)', linkedAgain.status === 200 && JSON.stringify(linkedAgain.body.steps) === JSON.stringify(linked.body.steps));
+  const byEditor = await editor('PUT', stepsPath, { steps: [2, 3] });
+  const kept3 = linked.body.steps.find((x) => x.number === 3)?.createdAt;
+  check('étapes liées : l\'éditeur remplace la liste (2, 3), le lien conservé garde sa date', byEditor.status === 200 && JSON.stringify(byEditor.body.steps.map((x) => x.number)) === '[2,3]' && byEditor.body.steps.find((x) => x.number === 3)?.createdAt === kept3, JSON.stringify(byEditor.body).slice(0, 300));
+  const unknownStep = await owner('PUT', stepsPath, { steps: [2, 99] });
+  check('étapes liées : étape inconnue du projet → 400 unknown_steps, rien de modifié', unknownStep.status === 400 && unknownStep.body?.code === 'unknown_steps' && JSON.stringify(unknownStep.body.steps) === '[99]' && JSON.stringify((await owner('GET', stepsPath)).body.steps.map((x) => x.number)) === '[2,3]', `${unknownStep.status} ${JSON.stringify(unknownStep.body)}`);
+  check('étapes liées : étape citée deux fois, non entière, zéro, champ inconnu ou liste absente → 400', (await owner('PUT', stepsPath, { steps: [2, 2] })).status === 400 && (await owner('PUT', stepsPath, { steps: [1.5] })).status === 400 && (await owner('PUT', stepsPath, { steps: [0] })).status === 400 && (await owner('PUT', stepsPath, { steps: [], x: 1 })).status === 400 && (await owner('PUT', stepsPath, {})).status === 400);
+  const readerSteps = await reader('GET', stepsPath);
+  check('étapes liées : le lecteur lit (canWrite faux) et ne peut pas modifier (403)', readerSteps.status === 200 && readerSteps.body.canWrite === false && JSON.stringify(readerSteps.body.steps.map((x) => x.number)) === '[2,3]' && (await reader('PUT', stepsPath, { steps: [] })).status === 403);
+  check('étapes liées : autre compte refusé (403/404), anonyme 401', [403, 404].includes((await foreign('GET', stepsPath)).status) && [403, 404].includes((await foreign('PUT', stepsPath, { steps: [1] })).status) && (await anonymous('GET', stepsPath)).status === 401 && (await anonymous('PUT', stepsPath, { steps: [1] })).status === 401);
+  check('étapes liées : étude d\'un autre projet → 404 (lecture et écriture)', (await owner('GET', `${root}/${foreignStudy.body?.study?.id}/steps`)).status === 404 && (await owner('PUT', `${root}/${foreignStudy.body?.study?.id}/steps`, { steps: [1] })).status === 404);
+  const ofStep = (who, n, pid = projectId) => who('GET', `/projects/${pid}/studio/steps/${n}/studies`);
+  const step2 = await ofStep(reader, 2);
+  check('étape 02 : l\'étude liée est listée (lecture), nommée', step2.status === 200 && step2.body.studies.length === 1 && step2.body.studies[0].id === s.studyId && step2.body.studies[0].name === 'Étude de recette', JSON.stringify(step2.body));
+  check('étape 01 : plus aucune étude liée après remplacement', (await ofStep(owner, 1)).body?.studies?.length === 0);
+  check('études d\'une étape : numéro absent du projet ou mal formé → 400', (await ofStep(owner, 99)).status === 400 && (await ofStep(owner, 'abc')).status === 400 && (await ofStep(owner, 0)).status === 400);
+  check('études d\'une étape : autre compte refusé (403/404), anonyme 401', [403, 404].includes((await ofStep(foreign, 2)).status) && (await ofStep(anonymous, 2)).status === 401);
+  check('études d\'une étape : les liens d\'un projet ne fuient pas dans un autre', (await ofStep(foreign, 2, foreignProject.body?.id)).body?.studies?.length === 0);
+  const linkedSteps = (await owner('GET', stepsPath)).body?.steps?.map((x) => x.number);
+
+  if (STATE) writeFileSync(STATE, JSON.stringify({ ...s, commentIds, linkedSteps, owner: ownerCredentials, headRevisionId: head.body.revision.id, initialRevisionId: created.body.revision.id, documentSha256: digest(head.body.revision.document), variantIds: expectedOrder, revisionIds: ids, exportStudy: { studyId: ev.studyId, variantId: ev.variantId, svgSha256: digest(svg.text) } }), { mode: 0o600 });
 }
 if (failures) { console.log(`${failures} vérification(s) en échec`); process.exit(1); }
 console.log(`Studio (${PHASE}) : toutes les vérifications réussies.`);

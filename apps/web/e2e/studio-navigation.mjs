@@ -215,6 +215,62 @@ try {
   await b.page.locator("[data-studio-lecture-seule]").waitFor();
   check("lecteur : la variante s'ouvre en lecture seule", await b.page.getByRole("toolbar", { name: "Outils de dessin" }).getByRole("button", { name: "Enregistrer", exact: true }).isDisabled());
 
+  // Étapes du Parcours liées : choix multiple sur la page de l'étude (libellés du serveur, ceux des étapes du projet),
+  // enregistrées par la route Studio ; le lecteur voit sans modifier.
+  await page.goto(`${BASE}/studio/projets/${pA.id}/etudes/${studyId}`);
+  const choixEtapes = page.locator("[data-studio-etapes-liees] [data-studio-etape]");
+  await page.waitForFunction(() => document.querySelectorAll("[data-studio-etapes-liees] [data-studio-etape]").length === 21);
+  const etapesProjet = await a.api("get", `/projects/${pA.id}/steps`);
+  const libelles = await choixEtapes.evaluateAll((els) => els.map((e) => e.textContent.replace(/\s+/g, " ").trim()));
+  check("étapes liées : les 21 étapes du projet proposées avec leurs libellés du Parcours (numéro, titre, phase)", libelles.length === 21 && etapesProjet.every((s, i) => libelles[i] === `${String(s.number).padStart(2, "0")} ${s.title} ${s.phase}`), `${libelles[0]} | ${etapesProjet[0]?.title}`);
+  check("étapes liées : aucune cochée au départ, enregistrement inactif", (await page.locator("[data-studio-etapes-liees] input:checked").count()) === 0 && (await page.locator("[data-studio-enregistrer-etapes]").isDisabled()));
+  await page.locator('[data-studio-etape="2"] input').check();
+  await page.locator('[data-studio-etape="5"] input').check();
+  await page.locator("[data-studio-enregistrer-etapes]").click();
+  await page.locator("[data-studio-etapes-liees] [role=status]").filter({ hasText: "Étapes liées enregistrées." }).waitFor();
+  const liees = await a.api("get", `/projects/${pA.id}/studio/studies/${studyId}/steps`);
+  check("étapes liées : 02 et 05 enregistrées côté serveur", JSON.stringify(liees.steps.map((x) => x.number)) === "[2,5]");
+  await page.reload();
+  await page.locator('[data-studio-etape="5"] input:checked').waitFor();
+  check("étapes liées : l'actualisation relit 02 et 05 cochées", (await page.locator("[data-studio-etapes-liees] input:checked").count()) === 2);
+  await b.page.goto(`${BASE}/studio/projets/${pA.id}/etudes/${studyId}`);
+  await b.page.locator("[data-studio-etapes-lecture-seule]").waitFor();
+  // Les liens arrivent par une requête : attendre qu'ils soient affichés avant de les compter.
+  await b.page.locator("[data-studio-etapes-liees] input:checked").nth(1).waitFor({ timeout: 15000 }).catch(() => {});
+  check("étapes liées : le lecteur voit les étapes cochées sans pouvoir modifier", (await b.page.locator("[data-studio-etapes-liees] input:checked").count()) === 2 && (await b.page.locator("[data-studio-etapes-liees] input").first().isDisabled()) && (await b.page.locator("[data-studio-enregistrer-etapes]").count()) === 0);
+
+  // Étape du Parcours : bloc « Études Studio liées » seulement sur une étape liée ; le lien ouvre l'étude dans Studio.
+  const etudesDeLEtape = (n) => page.waitForResponse((r) => new URL(r.url()).pathname === `/projects/${pA.id}/studio/steps/${n}/studies`);
+  let reponseEtape = etudesDeLEtape(3);
+  await page.goto(`${BASE}/projets/${pA.id}?module=parcours&etape=3`);
+  await reponseEtape;
+  await page.locator(".step-comments").waitFor();
+  check("étape 03 non liée : aucun bloc « Études Studio liées »", (await page.locator("[data-studio-etudes-liees]").count()) === 0);
+  reponseEtape = etudesDeLEtape(2);
+  await page.goto(`${BASE}/projets/${pA.id}?module=parcours&etape=2`);
+  await reponseEtape;
+  const bloc = page.locator('[data-studio-etudes-liees="2"]');
+  await bloc.waitFor();
+  check("étape 02 liée : bloc « Études Studio liées » avec l'étude nommée", (await bloc.locator("h3").textContent()) === "Études Studio liées" && (await bloc.locator(`a[data-studio-etude-liee="${studyId}"]`).textContent()) === "Implantation nord");
+  await page.screenshot({ path: join(OUT, "parcours-etudes-studio-liees.png") });
+  await bloc.locator("a").click();
+  await page.waitForURL(`${BASE}/studio/projets/${pA.id}/etudes/${studyId}`);
+  await page.locator(`[data-studio-etude="${studyId}"]`).waitFor();
+  check("étape 02 → étude Studio : la page de l'étude s'ouvre", true);
+
+  // Notification : un commentaire du lecteur sur la variante est signalé au propriétaire ; le lien ouvre la variante,
+  // panneau des commentaires ouvert (?commentaires=ouverts).
+  await b.api("post", `/projects/${pA.id}/studio/studies/${studyId}/variants/${variantId}/comments`, { body: "Remarque du lecteur sur la variante" });
+  await page.goto(`${BASE}/accueil`);
+  await page.locator(".notification-bell > button").click();
+  const note = page.locator('.notification-incoming .notification-list li[data-kind="commentaire-studio"]').first();
+  await note.waitFor();
+  check("notification : commentaire Studio du lecteur signalé au propriétaire", (await note.textContent()).includes(`${emailB} a commenté la variante « Variante nord » de l’étude Studio « Implantation nord » (P.STU.A) : « Remarque du lecteur sur la variante »`), await note.textContent());
+  await note.locator("a").click();
+  await page.waitForURL(`${base}?commentaires=ouverts`);
+  await page.locator("#studio-commentaires").waitFor();
+  check("notification → variante, panneau des commentaires ouvert", (await page.locator("[data-studio-basculer-commentaires]").getAttribute("aria-pressed")) === "true" && (await page.locator("#studio-commentaires").textContent()).includes("Remarque du lecteur sur la variante"));
+
   // Planche 2D : ligne, cote associative accrochée, déplacement (la cote suit), suppression (cote « à résoudre »),
   // calque créé puis masqué, annuler / rétablir, enregistrement (un seul lot, même requestId au nouvel essai),
   // actualisation identique, conflit de révision sans écrasement.
@@ -519,6 +575,105 @@ try {
   await page.locator("[data-studio-lecture-seule-revision]").waitFor();
   check("Feuille : disponible en révision historique (lecture seule)", await outils.locator('[data-studio-commande="feuille"]').isEnabled());
   check("exports : en révision historique, le lien porte la révision affichée", (await lienExport("svg")) === `${variantePath}/export?format=svg&revision=${encodeURIComponent(ancienne)}` && (await lienExport("dxf")) === `${variantePath}/export?format=dxf&revision=${encodeURIComponent(ancienne)}`);
+
+  // Import DXF (Maj+U, barre Importer) : indisponible en révision historique ; un DXF en millimètres (2 LINE, 1
+  // LWPOLYLINE fermée, 1 CIRCLE) → rapport (1 non pris : CIRCLE), 3 objets convertis en mètres, annulable, enregistré,
+  // relu identique ; un import de 600 lignes part en deux enveloppes de 500 commandes au plus.
+  const boutonImport = outils.locator('[data-studio-barre="import"] [data-studio-commande="importer-dxf"][aria-keyshortcuts="Shift+U"]');
+  check("Import DXF : commande de la barre Importer (Maj+U), indisponible en lecture seule", (await boutonImport.count()) === 1 && (await boutonImport.isDisabled()));
+  await page.goto(base);
+  await page.locator('svg [role="button"]').first().waitFor({ state: "attached" });
+  const teteAvantImport = (await a.api("get", variantePath)).revision;
+  const dxfDe = (insunits, entites) => [
+    "0", "SECTION", "2", "HEADER", "9", "$ACADVER", "1", "AC1015", "9", "$INSUNITS", "70", String(insunits), "0", "ENDSEC",
+    "0", "SECTION", "2", "ENTITIES", ...entites, "0", "ENDSEC", "0", "EOF", "",
+  ].join("\r\n");
+  const dxfMm = dxfDe(4, [
+    "0", "LINE", "8", "0", "10", "20000", "20", "20000", "11", "24000", "21", "20000",
+    "0", "LINE", "8", "0", "10", "20000", "20", "20000", "11", "20000", "21", "23000",
+    "0", "LWPOLYLINE", "8", "0", "90", "4", "70", "1", "10", "21000", "20", "21000", "10", "23000", "20", "21000", "10", "23000", "20", "22500", "10", "21000", "20", "22500",
+    "0", "CIRCLE", "8", "0", "10", "20500", "20", "20500", "30", "0", "40", "250",
+  ]);
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+U");
+  const boiteImport = page.locator("[data-studio-import-dxf]");
+  await boiteImport.waitFor();
+  check("Import DXF : « Ajouter au brouillon » indisponible avant le choix d'un fichier", await boiteImport.locator("[data-studio-import-ajouter]").isDisabled());
+  await boiteImport.locator("[data-studio-import-fichier]").setInputFiles({ name: "plan-mm.dxf", mimeType: "application/dxf", buffer: Buffer.from(dxfMm) });
+  const rapportImport = boiteImport.locator("[data-studio-import-rapport]");
+  await rapportImport.waitFor();
+  const nonPrisImport = await rapportImport.locator("[data-studio-import-non-pris-type]").evaluateAll((els) => els.map((e) => `${e.getAttribute("data-studio-import-non-pris-type")}:${e.getAttribute("data-studio-import-non-pris-nombre")}`));
+  check("Import DXF : rapport — unité mm lue dans le fichier, 3 objets, 1 non pris (CIRCLE)",
+    (await rapportImport.getAttribute("data-studio-import-statut")) === "pret" && (await rapportImport.getAttribute("data-studio-import-unite")) === "mm" && (await rapportImport.getAttribute("data-studio-import-objets")) === "3"
+    && (await rapportImport.getAttribute("data-studio-import-non-pris")) === "1" && nonPrisImport.join() === "CIRCLE:1" && (await rapportImport.locator("[data-studio-import-choix-unite]").count()) === 0
+    && (await rapportImport.locator("[data-studio-import-unite-fichier]").textContent()).includes("1 unité = 0,001 m"), nonPrisImport.join());
+  await boiteImport.locator("[data-studio-import-ajouter]").click();
+  await boiteImport.waitFor({ state: "detached" });
+  check("Import DXF : un lot de 3 commandes en attente dans le brouillon", (await portee()).includes("(3 commande(s)"), await portee());
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Control+z");
+  check("Import DXF : annulable (Ctrl+Z retire tout le lot)", (await portee()).includes("(0 commande(s)"), await portee());
+  await page.keyboard.press("Control+y");
+  check("Import DXF : rétabli (Ctrl+Y)", (await portee()).includes("(3 commande(s)"), await portee());
+  const avantImport = envois.length;
+  await page.keyboard.press("Control+s");
+  await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
+  const envoiImport = envois[envois.length - 1];
+  const attendus = [
+    { toolId: "studio.dessin.ligne", params: { type: "line", start: { x: 20, y: 20 }, end: { x: 24, y: 20 } } },
+    { toolId: "studio.dessin.ligne", params: { type: "line", start: { x: 20, y: 20 }, end: { x: 20, y: 23 } } },
+    { toolId: "studio.dessin.rectangle", params: { type: "rectangle", origin: { x: 21, y: 21 }, width: 2, height: 1.5 } },
+  ];
+  const sansIdImport = (c) => { const { id, ...p } = c.params; return { toolId: c.toolId, params: p }; };
+  check("Import DXF : enregistré en une enveloppe, millimètres convertis en mètres, identifiants « dxf-… »",
+    envois.length === avantImport + 1 && envoiImport.baseRevisionId === teteAvantImport.id && JSON.stringify(envoiImport.commands.map(sansIdImport)) === JSON.stringify(attendus) && envoiImport.commands.every((c) => /^dxf-\d+$/.test(c.params.id)), JSON.stringify(envoiImport?.commands));
+  const importe = await a.api("get", variantePath);
+  const idsImport = envoiImport.commands.map((c) => c.params.id);
+  check("Import DXF : le serveur a ajouté les 3 objets, rien d'autre ne change", importe.revision.document.objects.length === teteAvantImport.document.objects.length + 3
+    && JSON.stringify(importe.revision.document.objects.filter((o) => idsImport.includes(o.id)).map((o) => sansIdImport({ toolId: "", params: o }).params)) === JSON.stringify(attendus.map((x) => x.params))
+    && JSON.stringify(importe.revision.document.objects.filter((o) => !idsImport.includes(o.id))) === JSON.stringify(teteAvantImport.document.objects));
+  const empreinteImport = await empreinte();
+  await page.reload();
+  await page.locator(`[data-studio-objet="${idsImport[2]}"]`).waitFor({ state: "attached" });
+  check("Import DXF : l'actualisation restitue le même dessin", (await empreinte()) === empreinteImport && JSON.stringify((await a.api("get", variantePath)).revision) === JSON.stringify(importe.revision));
+
+  // Grand import (600 lignes, mètres) sur la variante initiale : deux enveloppes chaînées (500 puis 100 commandes).
+  const baseInitiale = `${BASE}/studio/projets/${pA.id}/etudes/${studyId}/variantes/${initialVariantId}`;
+  const cheminInitial = `/projects/${pA.id}/studio/studies/${studyId}/variants/${initialVariantId}`;
+  await page.goto(baseInitiale);
+  await outils.waitFor();
+  const teteInitiale = (await a.api("get", cheminInitial)).revision;
+  const grand = dxfDe(6, Array.from({ length: 600 }, (_, i) => ["0", "LINE", "8", "0", "10", "0", "20", String(i), "11", "5", "21", String(i)]).flat());
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+U");
+  await boiteImport.waitFor();
+  await boiteImport.locator("[data-studio-import-fichier]").setInputFiles({ name: "grand.dxf", mimeType: "application/dxf", buffer: Buffer.from(grand) });
+  await rapportImport.waitFor();
+  check("Import DXF : 600 lignes annoncées, unité m du fichier, tout est pris", (await rapportImport.getAttribute("data-studio-import-objets")) === "600" && (await rapportImport.getAttribute("data-studio-import-unite")) === "m" && (await rapportImport.locator("[data-studio-import-tout-pris]").count()) === 1);
+  await boiteImport.locator("[data-studio-import-ajouter]").click();
+  await boiteImport.waitFor({ state: "detached" });
+  const avantGrand = envois.length;
+  // Le second lot est refusé une fois (400) : le brouillon repart de la révision du premier lot, avec les 100
+  // commandes non envoyées seules en attente ; un nouvel « Enregistrer » envoie ce reste.
+  let lotsVus = 0;
+  await page.route("**/commands", (route) => (++lotsVus === 2 ? route.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify({ error: "invalid_commands" }) }) : route.continue()));
+  await page.keyboard.press("Control+s");
+  await page.locator("[data-studio-erreur-planche]").filter({ hasText: "Enregistrement partiel : 1 lot(s) sur 2" }).waitFor();
+  await page.unroute("**/commands");
+  const apresPremier = await a.api("get", cheminInitial);
+  check("Import DXF : refus du second lot — 500 commandes enregistrées, les 100 autres seules en attente, sur la révision du premier lot",
+    apresPremier.revision.document.objects.length === teteInitiale.document.objects.length + 500 && (await portee()).includes("(100 commande(s)")
+    && (await page.locator(".studio-context [title]").first().getAttribute("title")) === apresPremier.revision.id
+    && (await page.locator("[data-studio-erreur-planche]").textContent()).includes("100 commande(s) non envoyée(s)"), await portee());
+  await outils.getByRole("button", { name: "Enregistrer", exact: true }).click();
+  await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
+  const lotsGrand = envois.slice(avantGrand);
+  const grandRelu = await a.api("get", cheminInitial);
+  check("Import DXF : enregistrement en deux enveloppes (500 + 100), la seconde sur la révision de la première",
+    lotsGrand.length === 3 && lotsGrand[0].commands.length === 500 && lotsGrand[1].commands.length === 100 && lotsGrand[0].baseRevisionId === teteInitiale.id
+    && lotsGrand[1].baseRevisionId === apresPremier.revision.id && JSON.stringify(lotsGrand[2].commands) === JSON.stringify(lotsGrand[1].commands) && lotsGrand[2].baseRevisionId === apresPremier.revision.id
+    && grandRelu.revision.parentRevisionId === apresPremier.revision.id && grandRelu.revision.document.objects.length === teteInitiale.document.objects.length + 600,
+    lotsGrand.map((e) => `${e.commands.length}@${e.baseRevisionId}`).join(" "));
 
   // Accessibilité de l'accueil Studio.
   await page.goto(`${BASE}/studio`);

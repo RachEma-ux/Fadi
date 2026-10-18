@@ -17,6 +17,7 @@ import { AtelierHarmonyPage } from "../atelier/AtelierHarmonyPage";
 import { DesignReviewFold } from "../atelier/DesignReview";
 import { useProjectAccess } from "../../lib/access";
 import { StepComments } from "../collaboration/CollaborationModule";
+import { EtudesStudioLiees } from "../studio/liens/EtapesLiees";
 import { ImportProjectButton } from "../projets-sources/ImportProjectButton";
 import { ParcelleTool } from "../projets-sources/ParcelleTool";
 import { StepSources } from "../projets-sources/StepSources";
@@ -324,6 +325,8 @@ function StepDetail({
       {!reference && (step.number <= 3 ? <SiteQualitiesFold projectId={projectId} siteText={step.profile.site} /> : <LibraryFold projectId={projectId} />)}
       <StepSources projectId={projectId} stepNumber={step.number} />
       <StepComments projectId={projectId} stepNumber={step.number} />
+      {/* Études Studio liées à cette étape : bloc facultatif, absent sans lien (l'étape elle-même est inchangée). */}
+      <EtudesStudioLiees projectId={projectId} stepNumber={step.number} />
 
       {patch.isError && !(patch.error instanceof ApiError && patch.error.status === 409) && (
         <p role="alert" className="h7-error">

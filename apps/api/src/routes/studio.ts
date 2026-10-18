@@ -1,10 +1,11 @@
-/** Module Studio autonome : aucun rattachement à une étape Parcours ou au modèle Atelier. */
+/** Module Studio autonome : aucun rattachement au modèle Atelier ; lien de lecture facultatif vers des étapes du Parcours (studio-liens). */
 import { Router, json, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioStudy, STUDIO_EXPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
 import { createStudioComment, deleteStudioComment, listStudioComments, studioCommentSchema } from "../lib/studio-commentaires.js";
+import { listStudiesOfStep, listStudioStudySteps, setStudioStudySteps, studioStudyStepsSchema } from "../lib/studio-liens.js";
 
 export const studioRouter = Router({ mergeParams: true });
 studioRouter.use(requireAuth);
@@ -110,4 +111,26 @@ studioRouter.post(commentsPath, endpoint(async (req, res) => {
 studioRouter.delete(`${commentsPath}/:commentId`, endpoint(async (req, res) => {
   await deleteStudioComment(scope(req), req.user!.id, req.params["commentId"] as string);
   res.status(204).end();
+}));
+/**
+ * Étapes du Parcours rattachées à une étude : lecture `read`, remplacement de la liste complète avec `modify`
+ * (PUT idempotent) ; une étape absente du projet → 400 ; une étude d'un autre projet → 404.
+ */
+studioRouter.get("/studies/:studyId/steps", endpoint(async (req, res) => {
+  const s = scope(req);
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await listStudioStudySteps(s.projectId, s.studyId, req.user!.id));
+}));
+studioRouter.put("/studies/:studyId/steps", endpoint(async (req, res) => {
+  const parsed = studioStudyStepsSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
+  const s = scope(req);
+  res.json(await setStudioStudySteps(s.projectId, s.studyId, req.user!.id, parsed.data.steps));
+}));
+/** Études rattachées à une étape du Parcours (bloc « Études Studio liées » de l'étape) : lecture `read`. */
+studioRouter.get("/steps/:stepNumber/studies", endpoint(async (req, res) => {
+  const raw = req.params["stepNumber"] as string;
+  if (!/^[1-9][0-9]{0,3}$/.test(raw)) { res.status(400).json({ error: "invalid_input", message: "Numéro d'étape attendu." }); return; }
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await listStudiesOfStep(scope(req).projectId, Number(raw), req.user!.id));
 }));

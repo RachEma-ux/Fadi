@@ -60,7 +60,7 @@ describe("Planche 2D de Studio — règle d'or", () => {
     for (const b of BARRES_STUDIO) expect(outilsDeBarre(b.id).length + commandesDeBarre(b.id).length, b.id).toBeGreaterThan(0);
     expect(STUDIO_TOOLS.filter((t) => t.nature === "mutation").map((t) => t.toolId)).toEqual([...STUDIO_COMMAND_TOOL_IDS]);
     // Vue, accrochage, exports et catalogue : les commandes livrées avec la sélection multiple et le zoom.
-    for (const id of ["tout-selectionner", "zoom-avant", "zoom-arriere", "accrochage-sommets", "accrochage-grille", "exporter-svg", "exporter-dxf", "exporter-ifc", "feuille", "outils", "palette"]) {
+    for (const id of ["tout-selectionner", "zoom-avant", "zoom-arriere", "accrochage-sommets", "accrochage-grille", "importer-dxf", "exporter-svg", "exporter-dxf", "exporter-ifc", "feuille", "outils", "palette"]) {
       expect(COMMANDES_EDITEUR.some((c) => c.id === id), id).toBe(true);
     }
   });
@@ -108,6 +108,14 @@ describe("Planche 2D de Studio — règle d'or", () => {
     expect(RACCOURCIS_RESERVES).toContain("Ctrl+P");
     expect(COMMANDES_EDITEUR.find((c) => c.id === "feuille")).toMatchObject({ groupe: "presentation", ecrit: false, iconeSymbolique: "studio-sheet" });
     expect(commandesDeBarre("presentation").map((c) => c.id)).toEqual(["feuille"]);
+    // Import DXF : Maj+U, barre Importer, icône propre, indisponible en lecture seule (commande d'écriture), pas un lien.
+    expect(cibleRaccourci("Shift+U")).toEqual({ type: "commande", id: "importer-dxf" });
+    expect(cibleRaccourci("Ctrl+U")).toBeNull();
+    expect(RACCOURCIS_RESERVES).toContain("Ctrl+U");
+    expect(COMMANDES_EDITEUR.find((c) => c.id === "importer-dxf")).toMatchObject({ groupe: "import", ecrit: true, iconeSymbolique: "studio-import-dxf", libelleFR: "Importer DXF" });
+    expect(COMMANDES_EDITEUR.find((c) => c.id === "importer-dxf")?.telechargement).toBeUndefined();
+    expect(commandesDeBarre("import").map((c) => c.id)).toEqual(["importer-dxf"]);
+    expect(BARRES_STUDIO.map((b) => b.id).indexOf("import")).toBe(BARRES_STUDIO.map((b) => b.id).indexOf("export") - 1);
     // Dans un champ de saisie, seuls Enregistrer et la palette restent actifs.
     expect(actifDansUnChamp("Ctrl+S")).toBe(true);
     expect(actifDansUnChamp("Ctrl+K")).toBe(true);
