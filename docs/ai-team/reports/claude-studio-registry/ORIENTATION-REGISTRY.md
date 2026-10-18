@@ -1,21 +1,37 @@
-# Orientation du propriétaire : les outils Studio sont gérés par le Tool Registry, catalogue central
+# Orientation du propriétaire : outils Studio gérés par le Tool Registry, contrats compatibles agents, MCP facultatif
 
 **Date :** 18 octobre 2026. **Périmètre :** Studio seulement ; l'Atelier et la Planche gardent leurs registres actuels pendant la coexistence (COEX-02).
 **Rédaction :** Claude Code, hors équipe Codex. **Nature :** orientation relevée et rapprochée des sources. Ce document ne vaut ni décision DEC-05 ou DEC-06, ni autorisation de code.
 
-## Correction du 18 octobre 2026
+## Historique de l'orientation, le 18 octobre 2026
 
-Le propriétaire avait d'abord écrit : « Les outils seront gérés par MCP ». Il a ensuite corrigé :
+1. « Les outils seront gérés par MCP. » Cette première lecture a été **retirée** (commit `12235b6`, historique Git).
+2. « Confusion de ma part : c'est le Registry, le catalogue, dont je voulais parler. Abandonne le MCP. »
+3. **Dernier mot du propriétaire.** Il a transmis une évaluation qu'il adopte comme position finale ; elle **remplace le point 2 pour ce qui concerne MCP** :
 
-> « Confusion de ma part : c'est le Registry, le catalogue, dont je voulais parler. Abandonne le MCP. »
+   > « MCP is anticipated correctly at the architectural level, but insufficiently committed at the implementation-planning level […]. I recommend keeping MCP optional as an external interface, while making agent-compatible tool contracts mandatory from the start. This preserves Studio's independence and prevents having to redesign the tools later for AI access. »
 
-La version précédente de ce document, qui interprétait l'orientation comme un MCP retenu, est **retirée**. Elle reste consultable dans l'historique Git : commit `12235b6`, chemin `docs/ai-team/reports/claude-studio-mcp/ORIENTATION-MCP.md`. Ses conséquences annoncées sont **annulées** :
+**Position retenue (finale) :**
 
-- D02 n'est pas remis en cause ;
-- DEC-15 n'est pas modifiée ;
-- TEST-033 et le lot F.3 gardent leur statut d'origine.
+- **(a) Registry.** Les outils Studio sont gérés par le Tool Registry, catalogue central, et par le Tool Manager. Détail ci-dessous.
+- **(b) MCP n'est pas abandonné.** Il reste une **interface externe facultative** : REF-01 section 07, lot F.3 (P2), DEC-15 ouverte, TEST-033. Le report du pilote décidé par D02 est **confirmé** ; rien n'est supprimé ni coché.
+- **(c) Exigence P0 nouvelle.** Les contrats d'outils du Registry sont **compatibles avec les agents dès l'origine**, pour chaque outil éligible. Cela n'impose **aucun** serveur MCP : il s'agit de ne pas avoir à reprendre les outils plus tard.
+- **(d) Phasage P1 / P2.** Le premier adaptateur restreint après DEC-15, puis l'extension. C'est une **recommandation** de l'évaluation, pas une autorisation : chaque étape reste soumise à DEC-15, aux contrats de sécurité et à une autorisation de lot. Publication, approbation et opérations destructives restent sous autorisation explicite.
 
-La consigne « Abandonne le MCP » est consignée **mot pour mot**. Elle confirme que MCP n'est pas retenu. Les éléments MCP des sources (adaptateur facultatif de REF-01 section 07, C.6, TEST-033, DEC-15, F.3-01 à F.3-04) ne sont **pas supprimés** du registre : un report ou une exclusion reste visible et n'est jamais coché comme livré (CODEX-START-HERE §7). Leur qualification exacte, « reporté » (D02) ou « exclu », revient à A0 et à A1, qui citent cette consigne.
+### Exigence P0 (c) rapprochée du contrat d'outil de REF-02 §5.2
+
+| Élément exigé par l'évaluation | Déjà prévu par REF-02 | À ajouter ou préciser dans DEC-05 / B.1 |
+|---|---|---|
+| Identifiant stable et version de contrat | Oui : identité `toolId`, `contractVersion` (EX-027, §5.3) | — |
+| Schéma d'entrée validé | Oui : entrées, `inputSchemaRef` | Format **lisible par machine**, par exemple JSON Schema, à fixer |
+| Schéma de sortie et résultat lisible par machine | En partie : « Résultat » donne `commandType`, effets, dépendances à invalider | **Schéma de sortie déclaré** (`outputSchemaRef`) et forme stable des refus |
+| Exigences de permission | Oui : « Permissions » (action métier, sujet, état, rôle) | — |
+| Gestion des révisions | Oui : `baseRevisionId` du contrat de commandes (§8), « Historique » | Rappel explicite dans chaque fiche |
+| Essai à blanc et estimation des objets touchés | En partie : C.6 « Prévisualisation » ; `POST /commands/essai` existe côté Atelier | Indicateur `supportsDryRun` dans la fiche |
+| Éligibilité à l'exposition aux agents | En partie : C.6 « outil non exposable » → refus | Champ `agentExposure` (`none` / `read` / `propose` / `execute`), **`none` par défaut** ; confirmation requise par catégorie |
+| Gestes continus exclus | Oui : REF-01 section 07 ; C.6 « pas d'aller-retour réseau par mouvement de pointeur » | Les machines d'outil interactives restent `agentExposure: none` |
+
+**Où cela s'insère dans la checklist** : B.1-02 (`toolId`, propriétaire, contrat), B.1-03 (contextes, permissions, loaders, dépendances), B.1-06 (manifeste versionné) et l'instruction de DEC-05. Les identifiants des 630 tâches ne changent pas ; l'exigence s'ajoute comme critère de ces tâches.
 
 ## Ce que l'orientation retient
 
@@ -47,6 +63,8 @@ La consigne « Abandonne le MCP » est consignée **mot pour mot**. Elle confirm
 - **DEC-05.** Format exact du manifeste, validation au build, mode hors ligne, compatibilité et confiance.
 - **DEC-06.** API du Tool Manager : séquence d'activation, événements, tests.
 - **DEC-18.** Réconciliation des catalogues existants (Planche : 52 outils, Atelier : 111 entrées) avec le Registry Studio.
+- **DEC-15.** Sécurité, consentement, authentification, transport et déploiement d'un futur adaptateur MCP. C'est la condition de toute étape P1.
+- **B.1-05.** La collision historique « echelle » est traitée par la PR #176, non fusionnée. Sa preuve sera à requalifier au commit de réalisation.
 
 ## Limites
 
