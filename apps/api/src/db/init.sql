@@ -473,7 +473,8 @@ CREATE TABLE IF NOT EXISTS studio_studies (
   project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   name text NOT NULL CHECK (length(name) BETWEEN 1 AND 200),
   initial_variant_id text NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now()
+  created_at timestamptz NOT NULL DEFAULT now(),
+  creation_request_id text
 );
 CREATE INDEX IF NOT EXISTS studio_studies_project_idx ON studio_studies(project_id);
 CREATE TABLE IF NOT EXISTS studio_variants (
@@ -482,6 +483,7 @@ CREATE TABLE IF NOT EXISTS studio_variants (
   name text NOT NULL,
   head_revision_id text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
+  creation_request_id text,
   CONSTRAINT studio_variants_study_id_unique UNIQUE(study_id, id)
 );
 -- Bases créées avant l'ordre de création des variantes : colonne ajoutée sans réécrire les lignes existantes.
@@ -518,6 +520,14 @@ ALTER TABLE studio_studies DROP CONSTRAINT IF EXISTS studio_studies_initial_vari
 ALTER TABLE studio_variants DROP CONSTRAINT IF EXISTS studio_variants_head_same_variant,
   ADD CONSTRAINT studio_variants_head_same_variant FOREIGN KEY(id, head_revision_id)
   REFERENCES studio_revisions(variant_id, id) DEFERRABLE INITIALLY DEFERRED NOT VALID;
+-- Création idempotente d'étude et de variante (requestId facultatif du client) : colonnes nullables ajoutées sans
+-- réécrire les lignes existantes (NULL = création sans identifiant), uniques seulement quand elles sont renseignées.
+ALTER TABLE studio_studies ADD COLUMN IF NOT EXISTS creation_request_id text;
+ALTER TABLE studio_variants ADD COLUMN IF NOT EXISTS creation_request_id text;
+CREATE UNIQUE INDEX IF NOT EXISTS studio_studies_creation_request_unique ON studio_studies(project_id, creation_request_id)
+  WHERE creation_request_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS studio_variants_creation_request_unique ON studio_variants(study_id, creation_request_id)
+  WHERE creation_request_id IS NOT NULL;
 -- Toute UPDATE d'une révision Studio, même accidentelle, est refusée (les suppressions suivent la cascade du projet).
 CREATE OR REPLACE FUNCTION studio_v1_immutable_revision() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN

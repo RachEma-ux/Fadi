@@ -1,30 +1,46 @@
 /**
  * Règle d'or (AGENTS.md, D-202) appliquée à la planche 2D de Studio V1 : chaque outil du registre `STUDIO_TOOLS` et
- * chaque commande de l'éditeur a sa propre icône (existante dans Icon.tsx, jamais partagée), une place dans une barre
- * appropriée et un raccourci unique ; la table clavier de l'éditeur est exactement celle du registre.
+ * chaque commande de l'éditeur (vue, accrochage, exports, catalogue compris) a sa propre icône (existante dans
+ * Icon.tsx, jamais partagée), une place dans une barre appropriée et un raccourci unique, jamais réservé par le
+ * navigateur ; la table clavier de l'éditeur est exactement celle du registre et des commandes ; le catalogue
+ * « Outils » et la palette lisent le registre sans le recopier.
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { STUDIO_COMMAND_TOOL_IDS, STUDIO_TOOLS } from "@parcours/atelier-model";
 import { Icon, type IconName } from "../../../components/Icon";
+import { studioExportUrl } from "../../../lib/api";
 import { BarreOutils } from "./BarreOutils";
-import { BARRES_STUDIO, cibleRaccourci, combinaison, COMMANDES_EDITEUR, commandesDeBarre, libelleRaccourci, outilsDeBarre, TABLE_CLAVIER } from "./raccourcis";
+import { CATALOGUE, groupesCatalogue, rechercher } from "./catalogue";
+import { GestionnaireOutils, PaletteCommandes } from "./CatalogueOutils";
+import {
+  actifDansUnChamp, ariaRaccourci, BARRES_STUDIO, cibleRaccourci, combinaison, COMMANDES_EDITEUR, commandesDeBarre, libelleRaccourci, outilsDeBarre,
+  RACCOURCIS_RESERVES, TABLE_CLAVIER,
+} from "./raccourcis";
 
 const entrees = [
-  ...STUDIO_TOOLS.map((t) => ({ id: t.toolId, icone: t.iconeSymbolique as IconName, raccourcis: [t.raccourci], barre: t.groupe as string })),
-  ...COMMANDES_EDITEUR.map((c) => ({ id: c.id, icone: c.iconeSymbolique as IconName, raccourcis: [c.raccourci, ...(c.autres ?? [])], barre: c.groupe as string })),
+  ...STUDIO_TOOLS.map((t) => ({ id: t.toolId as string, libelle: t.libelleFR, icone: t.iconeSymbolique as IconName, raccourcis: [t.raccourci], barre: t.groupe as string })),
+  ...COMMANDES_EDITEUR.map((c) => ({ id: c.id as string, libelle: c.libelleFR, icone: c.iconeSymbolique as IconName, raccourcis: [c.raccourci, ...(c.autres ?? [])], barre: c.groupe as string })),
 ];
 const trace = (name: IconName) => /<path d="([^"]*)"/.exec(renderToStaticMarkup(createElement(Icon, { name })))?.[1] ?? "";
+const echapper = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** Événement clavier qui produit le raccourci (lettre en minuscule sans Maj, comme un vrai clavier). */
 function evenement(r: string) {
-  const parts = r.split("+");
+  // Une touche « + » finale (« + », « Shift++ ») n'est pas un séparateur.
+  const parts = r === "-" ? ["-"] : r.endsWith("+") ? [...r.slice(0, -1).split("+").filter(Boolean), "+"] : r.split("+");
   const touche = parts[parts.length - 1]!;
   const shiftKey = parts.includes("Shift");
   const key = touche === "Space" ? " " : touche.length === 1 ? (shiftKey ? touche.toUpperCase() : touche.toLowerCase()) : touche;
   return { key, ctrlKey: parts.includes("Ctrl"), metaKey: false, shiftKey, altKey: false };
 }
+
+const LIENS = { "exporter-svg": "/projects/p/studio/studies/s/variants/v/export?format=svg", "exporter-dxf": "/projects/p/studio/studies/s/variants/v/export?format=dxf" };
+const barre = () => renderToStaticMarkup(createElement(BarreOutils, {
+  outil: "studio.dessin.selection", outilDisponible: () => true, commandeDisponible: () => true, surOutil: () => {}, surCommande: () => {},
+  basculeActive: { "accrochage-sommets": true, "accrochage-grille": false }, lienCommande: LIENS,
+}));
 
 describe("Planche 2D de Studio — règle d'or", () => {
   it("chaque outil et chaque commande a sa propre icône, dessinée dans Icon.tsx", () => {
@@ -40,8 +56,13 @@ describe("Planche 2D de Studio — règle d'or", () => {
     for (const e of entrees) expect(barres.has(e.barre), e.id).toBe(true);
     const ranges = BARRES_STUDIO.flatMap((b) => [...outilsDeBarre(b.id).map((t) => t.toolId as string), ...commandesDeBarre(b.id).map((c) => c.id as string)]);
     expect(ranges.sort()).toEqual(entrees.map((e) => e.id).sort());
-    // Les mutations du registre sont exactement les commandes envoyées au serveur.
+    // Aucune barre vide ; les mutations du registre sont exactement les commandes envoyées au serveur.
+    for (const b of BARRES_STUDIO) expect(outilsDeBarre(b.id).length + commandesDeBarre(b.id).length, b.id).toBeGreaterThan(0);
     expect(STUDIO_TOOLS.filter((t) => t.nature === "mutation").map((t) => t.toolId)).toEqual([...STUDIO_COMMAND_TOOL_IDS]);
+    // Vue, accrochage, exports et catalogue : les commandes livrées avec la sélection multiple et le zoom.
+    for (const id of ["tout-selectionner", "zoom-avant", "zoom-arriere", "accrochage-sommets", "accrochage-grille", "exporter-svg", "exporter-dxf", "outils", "palette"]) {
+      expect(COMMANDES_EDITEUR.some((c) => c.id === id), id).toBe(true);
+    }
   });
 
   it("chaque raccourci est unique et la table clavier de l'éditeur est celle du registre", () => {
@@ -61,28 +82,112 @@ describe("Planche 2D de Studio — règle d'or", () => {
     }
   });
 
-  it("la barre rendue montre chaque outil et chaque commande : icône, nom visible et raccourci", () => {
-    const html = renderToStaticMarkup(createElement(BarreOutils, {
-      outil: "studio.dessin.selection", outilDisponible: () => true, commandeDisponible: () => true, surOutil: () => {}, surCommande: () => {},
-    }));
+  it("aucun raccourci ne prend une combinaison réservée par le navigateur (Ctrl+N, Ctrl+T, Ctrl+W, Ctrl+Maj+N, Ctrl+Maj+T…)", () => {
+    for (const r of ["Ctrl+N", "Ctrl+T", "Ctrl+W", "Ctrl+Shift+N", "Ctrl+Shift+T"]) expect(RACCOURCIS_RESERVES).toContain(r);
+    for (const r of TABLE_CLAVIER.keys()) expect(RACCOURCIS_RESERVES, r).not.toContain(r);
+    // Les raccourcis de la palette (Ctrl+K) et de la grille (F9) sont ceux annoncés.
+    expect(cibleRaccourci("Ctrl+K")).toEqual({ type: "commande", id: "palette" });
+    expect(cibleRaccourci("F9")).toEqual({ type: "commande", id: "accrochage-grille" });
+    expect(cibleRaccourci("=")).toEqual({ type: "commande", id: "zoom-avant" });
+    expect(cibleRaccourci("-")).toEqual({ type: "commande", id: "zoom-arriere" });
+    expect(cibleRaccourci("Ctrl+A")).toEqual({ type: "commande", id: "tout-selectionner" });
+    // Dans un champ de saisie, seuls Enregistrer et la palette restent actifs.
+    expect(actifDansUnChamp("Ctrl+S")).toBe(true);
+    expect(actifDansUnChamp("Ctrl+K")).toBe(true);
+    expect(actifDansUnChamp("Ctrl+A")).toBe(false);
+    expect(actifDansUnChamp("L")).toBe(false);
+  });
+
+  it("la barre rendue montre chaque outil et chaque commande : icône, nom visible, raccourci, barre", () => {
+    const html = barre();
     expect(html).toContain('role="toolbar" aria-label="Outils de dessin"');
-    for (const t of STUDIO_TOOLS) {
-      const bouton = new RegExp(`<button[^>]*aria-label="${t.libelleFR}"[^>]*aria-keyshortcuts="[^"]+"[^>]*data-studio-outil="${t.toolId}"[^>]*>(.*?)</button>`).exec(html);
-      expect(bouton, t.toolId).not.toBeNull();
-      expect(bouton![1]).toContain(`<path d="${trace(t.iconeSymbolique)}"`);
-      expect(bouton![1]).toContain(`<span>${t.libelleFR}</span>`);
-      expect(bouton![1]).toContain(`<kbd aria-hidden="true">${libelleRaccourci(t.raccourci)}</kbd>`);
+    const controle = (attribut: string, id: string, libelle: string, icone: IconName, raccourci: string, barreId: string) => {
+      const element = new RegExp(`<(button|a)[^>]*aria-label="${echapper(libelle)}"[^>]*aria-keyshortcuts="${echapper(ariaRaccourci(raccourci))}"[^>]*${attribut}="${echapper(id)}"[^>]*>(.*?)</\\1>`).exec(html);
+      expect(element, id).not.toBeNull();
+      expect(element![2]).toContain(`<path d="${trace(icone)}"`);
+      expect(element![2]).toContain(`<span>${libelle}</span>`);
+      expect(element![2]).toContain(`<kbd aria-hidden="true">${libelleRaccourci(raccourci)}</kbd>`);
+      const groupe = new RegExp(`<div[^>]*data-studio-barre="${barreId}"[^>]*>(?:(?!data-studio-barre=).)*${attribut}="${echapper(id)}"`).exec(html);
+      expect(groupe, `${id} dans la barre ${barreId}`).not.toBeNull();
+    };
+    for (const t of STUDIO_TOOLS) controle("data-studio-outil", t.toolId, t.libelleFR, t.iconeSymbolique, t.raccourci, t.groupe);
+    for (const c of COMMANDES_EDITEUR) controle("data-studio-commande", c.id, c.libelleFR, c.iconeSymbolique, c.raccourci, c.groupe);
+  });
+
+  it("bascules d'accrochage enfoncées ou non ; exports : liens de téléchargement vers l'adresse d'export", () => {
+    const html = barre();
+    expect(html).toMatch(/aria-pressed="true"[^>]*data-studio-commande="accrochage-sommets"/);
+    expect(html).toMatch(/aria-pressed="false"[^>]*data-studio-commande="accrochage-grille"/);
+    for (const [id, href] of Object.entries(LIENS)) {
+      expect(html).toMatch(new RegExp(`<a [^>]*href="${echapper(href.replace(/&/g, "&amp;"))}"[^>]*download=""[^>]*data-studio-commande="${id}"`));
     }
-    for (const c of COMMANDES_EDITEUR) expect(html, c.id).toMatch(new RegExp(`data-studio-commande="${c.id}"`));
+    expect(studioExportUrl("p", "s", "v", "svg")).toBe(LIENS["exporter-svg"]);
+    expect(studioExportUrl("p 1", "s", "v", "dxf", "r/1")).toBe("/projects/p%201/studio/studies/s/variants/v/export?format=dxf&revision=r%2F1");
+    // Indisponible : ni adresse ni téléchargement.
+    const inactif = renderToStaticMarkup(createElement(BarreOutils, { outil: "studio.dessin.selection", outilDisponible: () => true, commandeDisponible: () => false, surOutil: () => {}, surCommande: () => {}, lienCommande: LIENS }));
+    expect(inactif).not.toContain("href=");
+    expect(inactif).toMatch(/aria-disabled="true"[^>]*data-studio-commande="exporter-svg"/);
   });
 
   it("lecture du clavier : modificateur seul ou Alt ignorés, Cmd vaut Ctrl", () => {
     expect(combinaison({ key: "Shift", ctrlKey: false, metaKey: false, shiftKey: true, altKey: false })).toBeNull();
     expect(combinaison({ key: "l", ctrlKey: false, metaKey: false, shiftKey: false, altKey: true })).toBeNull();
     expect(combinaison({ key: "z", ctrlKey: false, metaKey: true, shiftKey: false, altKey: false })).toBe("Ctrl+Z");
+    expect(combinaison({ key: "F9", ctrlKey: false, metaKey: false, shiftKey: false, altKey: false })).toBe("F9");
     expect(cibleRaccourci("Ctrl+Shift+Z")).toEqual({ type: "commande", id: "retablir" });
     expect(cibleRaccourci("Q")).toBeNull();
     expect(libelleRaccourci("Ctrl+Shift+F")).toBe("Ctrl+Maj+F");
     expect(libelleRaccourci("Delete")).toBe("Suppr");
+  });
+});
+
+describe("Catalogue « Outils » et palette (#166, Registry)", () => {
+  it("le catalogue lit le registre sans le recopier : mêmes descripteurs, même ordre, puis les commandes", () => {
+    expect(CATALOGUE).toHaveLength(STUDIO_TOOLS.length + COMMANDES_EDITEUR.length);
+    STUDIO_TOOLS.forEach((t, i) => {
+      const e = CATALOGUE[i]!;
+      expect(e.outil).toBe(t);
+      expect([e.identifiant, e.libelleFR, e.raccourcis[0], e.icone, e.barre, e.nature, e.agentExposure]).toEqual([t.toolId, t.libelleFR, t.raccourci, t.iconeSymbolique, t.groupe, t.nature, t.agentExposure]);
+    });
+    COMMANDES_EDITEUR.forEach((c, i) => expect(CATALOGUE[STUDIO_TOOLS.length + i]!.commande).toBe(c));
+    expect(groupesCatalogue(CATALOGUE).flatMap((g) => g.entrees)).toHaveLength(CATALOGUE.length);
+  });
+
+  it("recherche par nom (sans accents), raccourci (registre ou affiché) et identifiant", () => {
+    expect(rechercher("Ligne")[0]?.identifiant).toBe("studio.dessin.ligne");
+    expect(rechercher("selection").map((e) => e.identifiant)).toContain("studio.dessin.selection");
+    expect(rechercher("Cote").map((e) => e.identifiant)).toEqual(["studio.dessin.cote"]);
+    expect(rechercher("Maj+C")[0]?.identifiant).toBe("studio.dessin.cote");
+    expect(rechercher("Shift+C")[0]?.identifiant).toBe("studio.dessin.cote");
+    expect(rechercher("studio.calque").map((e) => e.identifiant)).toEqual(["studio.calque.creer", "studio.calque.modifier"]);
+    expect(rechercher("objet.calque").map((e) => e.identifiant)).toEqual(["studio.objet.calque"]);
+    expect(rechercher("ctrl+k")[0]?.identifiant).toBe("palette");
+    expect(rechercher("Line", (e) => (e.identifiant === "studio.dessin.ligne" ? ["Line"] : []))[0]?.identifiant).toBe("studio.dessin.ligne");
+    expect(rechercher("zzz-introuvable")).toEqual([]);
+    expect(rechercher("")).toHaveLength(CATALOGUE.length);
+  });
+
+  it("le gestionnaire montre chaque entrée : icône, nom, raccourci, identifiant, disponibilité et exposition agent", () => {
+    const html = renderToStaticMarkup(createElement(GestionnaireOutils, { disponible: (e) => e.nature !== "mutation", surExecuter: () => {}, surFermer: () => {} }));
+    expect(html).toContain('role="dialog"');
+    for (const e of CATALOGUE) {
+      const ligne = new RegExp(`<li data-studio-catalogue-entree="${echapper(e.identifiant)}" data-studio-disponible="(oui|non)">(.*?)</li>`).exec(html);
+      expect(ligne, e.identifiant).not.toBeNull();
+      // Lecture seule simulée : les mutations sont indisponibles, leur bouton « Utiliser » désactivé.
+      expect(ligne![1]).toBe(e.nature === "mutation" ? "non" : "oui");
+      expect(ligne![2]).toContain(`<path d="${trace(e.icone as IconName)}"`);
+      expect(ligne![2]).toContain(`>${e.libelleFR}</span>`);
+      for (const r of e.raccourcis) expect(ligne![2]).toContain(`>${libelleRaccourci(r)}</kbd>`);
+      expect(ligne![2]).toContain(`<code translate="no">${e.identifiant}</code>`);
+      expect(ligne![2]).toContain(`data-studio-exposition="${e.agentExposure ?? "hors-registre"}"`);
+      if (e.nature === "mutation") expect(ligne![2]).toMatch(/<button type="button" disabled=""/);
+    }
+  });
+
+  it("la palette liste les entrées et marque l'indisponible", () => {
+    const html = renderToStaticMarkup(createElement(PaletteCommandes, { disponible: (e) => e.identifiant !== "enregistrer", surExecuter: () => {}, surFermer: () => {} }));
+    expect(html).toContain('role="listbox"');
+    for (const e of CATALOGUE) expect(html).toContain(`data-studio-palette-entree="${e.identifiant}"`);
+    expect(html).toMatch(/aria-disabled="true" data-studio-palette-entree="enregistrer"/);
   });
 });

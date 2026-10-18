@@ -28,10 +28,13 @@ function client() {
     const text = await res.text();
     let json = null;
     try { json = text ? JSON.parse(text) : null; } catch { json = text; }
-    return { status: res.status, body: json };
+    return { status: res.status, body: json, text, headers: res.headers };
   };
 }
 const digest = (value) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
+/** JSON à clés triées : jsonb ne conserve pas l'ordre des clés d'une réponse rejouée. */
+const canonical = (v) => (Array.isArray(v) ? `[${v.map(canonical).join(',')}]` : v && typeof v === 'object' ? `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canonical(v[k])}`).join(',')}}` : JSON.stringify(v));
+const count = (text, re) => (typeof text === 'string' ? text.match(re)?.length ?? 0 : 0);
 const credentials = () => ({ email: `studio-${randomUUID().replaceAll('-', '')}@example.test`, password: randomBytes(24).toString('hex') });
 const variantPath = (s) => `/projects/${s.projectId}/studio/studies/${s.studyId}/variants/${s.variantId}`;
 
@@ -49,6 +52,12 @@ if (PHASE === 'reopen') {
   check('réouverture : étude relue avec ses variantes dans le même ordre', study.status === 200 && JSON.stringify(study.body.variants.map((x) => x.id)) === JSON.stringify(s.variantIds) && study.body.canWrite === true, JSON.stringify(study.body).slice(0, 300));
   const history = await owner('GET', `${variantPath(s)}/revisions`);
   check('réouverture : historique identique, plus récente d\'abord', history.status === 200 && JSON.stringify(history.body.revisions.map((x) => x.id)) === JSON.stringify(s.revisionIds));
+  const reExport = await owner('GET', `${variantPath(s)}/export?format=dxf`);
+  check('réouverture : export DXF de la tête après redémarrage', reExport.status === 200 && reExport.headers.get('content-type') === 'application/dxf' && count(reExport.text, /\r\nLINE\r\n/g) === 1 && count(reExport.text, /\r\nPOLYLINE\r\n/g) === 1 && reExport.headers.get('content-disposition')?.endsWith(`-${s.headRevisionId.slice(-8)}.dxf"`), `${reExport.status} ${reExport.headers.get('content-disposition')}`);
+  if (s.exportStudy) {
+    const owner2 = await owner('GET', `/projects/${s.projectId}/studio/studies/${s.exportStudy.studyId}/variants/${s.exportStudy.variantId}/export?format=svg`);
+    check('réouverture : export SVG de l\'étude idempotente identique', owner2.status === 200 && digest(owner2.text) === s.exportStudy.svgSha256);
+  }
 } else {
   const owner = client(), foreign = client(), anonymous = client();
   const ownerCredentials = credentials();
@@ -156,7 +165,68 @@ if (PHASE === 'reopen') {
   const after = await owner('GET', `${studyPath}/variants`);
   check('aucune variante créée par les requêtes refusées', after.body?.variants?.length === 3);
 
-  if (STATE) writeFileSync(STATE, JSON.stringify({ ...s, owner: ownerCredentials, headRevisionId: head.body.revision.id, initialRevisionId: created.body.revision.id, documentSha256: digest(head.body.revision.document), variantIds: expectedOrder, revisionIds: ids }), { mode: 0o600 });
+  // Création idempotente (requestId facultatif) : rejeu du même auteur = réponse 201 d'origine, autre auteur = 409.
+  const editor = client();
+  const editorCredentials = credentials();
+  check('compte éditeur créé', (await editor('POST', '/auth/register', editorCredentials)).status === 201);
+  check('éditeur ajouté au projet', (await owner('POST', `/projects/${projectId}/members`, { email: editorCredentials.email, role: 'editeur' })).status === 201);
+  const studyRequestId = `creation-${randomUUID()}`;
+  const ideal = await owner('POST', root, { name: 'Étude d’export', requestId: studyRequestId });
+  check('étude créée avec requestId (201, replayed=false)', ideal.status === 201 && ideal.body.replayed === false && ideal.headers.get('idempotent-replayed') === 'false', JSON.stringify(ideal.body).slice(0, 200));
+  const idealAgain = await owner('POST', root, { name: 'Étude d’export', requestId: studyRequestId });
+  check('rejeu de création d\'étude : 201, mêmes identifiants, replayed=true', idealAgain.status === 201 && idealAgain.body.replayed === true && idealAgain.headers.get('idempotent-replayed') === 'true' && idealAgain.body.study.id === ideal.body.study.id && idealAgain.body.variant.id === ideal.body.variant.id && idealAgain.body.revision.id === ideal.body.revision.id && canonical({ ...idealAgain.body, replayed: false }) === canonical(ideal.body), JSON.stringify(idealAgain.body).slice(0, 200));
+  const studyConflictOther = await editor('POST', root, { name: 'Étude d’export', requestId: studyRequestId });
+  check('requestId d\'étude rejoué par un autre auteur : 409 request_conflict', studyConflictOther.status === 409 && studyConflictOther.body.error === 'request_conflict', `${studyConflictOther.status} ${JSON.stringify(studyConflictOther.body)}`);
+  const studyConflictName = await owner('POST', root, { name: 'Autre nom', requestId: studyRequestId });
+  check('requestId d\'étude rejoué avec un autre nom : 409 request_conflict', studyConflictName.status === 409 && studyConflictName.body.error === 'request_conflict');
+  check('requestId d\'étude invalide refusé (400)', (await owner('POST', root, { name: 'X', requestId: 'pas valide !' })).status === 400);
+  const studiesAfter = await owner('GET', root);
+  check('une seule étude créée par les rejeux', studiesAfter.body?.studies?.filter((x) => x.name === 'Étude d’export').length === 1);
+  const idealStudyPath = `${root}/${ideal.body.study.id}`;
+  const variantRequestId = `creation-${randomUUID()}`;
+  const v1 = await owner('POST', `${idealStudyPath}/variants`, { name: 'Variante idempotente', requestId: variantRequestId });
+  const v1Again = await owner('POST', `${idealStudyPath}/variants`, { name: 'Variante idempotente', requestId: variantRequestId });
+  check('rejeu de création de variante : 201, mêmes identifiants, replayed=true', v1.status === 201 && v1.body.replayed === false && v1Again.status === 201 && v1Again.body.replayed === true && v1Again.headers.get('idempotent-replayed') === 'true' && v1Again.body.variant.id === v1.body.variant.id && v1Again.body.revision.id === v1.body.revision.id, `${v1.status} ${v1Again.status}`);
+  const variantConflict = await editor('POST', `${idealStudyPath}/variants`, { name: 'Variante idempotente', requestId: variantRequestId });
+  check('requestId de variante rejoué par un autre auteur : 409 request_conflict', variantConflict.status === 409 && variantConflict.body.error === 'request_conflict', String(variantConflict.status));
+  const sameIdOtherStudy = await owner('POST', `${root}/${study2.body.study.id}/variants`, { name: 'Variante idempotente', requestId: variantRequestId });
+  check('même requestId de variante dans une autre étude : création distincte (unique par étude)', sameIdOtherStudy.status === 201 && sameIdOtherStudy.body.replayed === false && sameIdOtherStudy.body.variant.id !== v1.body.variant.id);
+  const idealVariants = await owner('GET', `${idealStudyPath}/variants`);
+  check('variantes de l\'étude idempotente : initiale + une seule créée', idealVariants.body?.variants?.length === 2);
+
+  // Export SVG / DXF après dessin d'une ligne, d'un rectangle sur calque et d'une cote liée.
+  const ev = { projectId, studyId: ideal.body.study.id, variantId: ideal.body.variant.id };
+  const drawn = await owner('POST', `${variantPath(ev)}/commands`, {
+    contractVersion: 'studio-commands/1', requestId: `recette-${randomUUID()}`, baseRevisionId: ideal.body.revision.id,
+    commands: [
+      { toolId: 'studio.calque.creer', params: { id: 'murs', name: 'Murs', visible: true, locked: false } },
+      { toolId: 'studio.dessin.ligne', params: { id: 'l-export', type: 'line', start: { x: 0, y: 0 }, end: { x: 5, y: 0 } } },
+      { toolId: 'studio.dessin.rectangle', params: { id: 'r-export', type: 'rectangle', layerId: 'murs', origin: { x: 0, y: 1 }, width: 3, height: 2 } },
+      { toolId: 'studio.dessin.cote', params: { id: 'c-export', type: 'dimension', start: { x: 0, y: 0 }, end: { x: 5, y: 0 }, offset: -0.5, links: { start: { objectId: 'l-export', anchor: 'start' }, end: { objectId: 'l-export', anchor: 'end' } }, toResolve: false } },
+    ],
+  });
+  check('dessin et cote enregistrés pour l\'export', drawn.status === 200 && drawn.body.revision.document.dimensions?.length === 1, JSON.stringify(drawn.body).slice(0, 300));
+  const exportPath = `${variantPath(ev)}/export`;
+  const tail = drawn.body?.revision?.id?.slice(-8);
+  const svg = await owner('GET', `${exportPath}?format=svg`);
+  check('export SVG : 200, image/svg+xml, pièce jointe nommée', svg.status === 200 && svg.headers.get('content-type')?.startsWith('image/svg+xml') && svg.headers.get('content-disposition') === `attachment; filename="etude-d-export-variante-initiale-${tail}.svg"`, `${svg.status} ${svg.headers.get('content-type')} ${svg.headers.get('content-disposition')}`);
+  check('export SVG : calques, ligne, rectangle, cote et valeur mesurée', count(svg.text, /<g data-layer=/g) === 2 && count(svg.text, /<line data-id=/g) === 1 && count(svg.text, /<rect data-id=/g) === 1 && count(svg.text, /<g data-dimension=/g) === 1 && svg.text.includes('>5,00 m</text>') && svg.text.includes('data-layer="murs" data-name="Murs"'), String(svg.text).slice(0, 400));
+  check('export SVG : en-tête de révision exportée', svg.headers.get('x-studio-revision') === drawn.body?.revision?.id);
+  const dxf = await owner('GET', `${exportPath}?format=dxf`);
+  check('export DXF : 200, application/dxf, pièce jointe nommée', dxf.status === 200 && dxf.headers.get('content-type') === 'application/dxf' && dxf.headers.get('content-disposition') === `attachment; filename="etude-d-export-variante-initiale-${tail}.dxf"`, `${dxf.status} ${dxf.headers.get('content-type')} ${dxf.headers.get('content-disposition')}`);
+  check('export DXF : R12, mètres, entités et calques attendus, valeur mesurée', dxf.text.includes('$ACADVER\r\n1\r\nAC1009') && dxf.text.includes('$INSUNITS\r\n70\r\n6') && count(dxf.text, /\r\nLINE\r\n/g) === 4 && count(dxf.text, /\r\nPOLYLINE\r\n/g) === 1 && count(dxf.text, /\r\nVERTEX\r\n/g) === 4 && count(dxf.text, /\r\nTEXT\r\n/g) === 1 && dxf.text.includes('\r\n1\r\n5,00 m\r\n') && dxf.text.includes('LAYER\r\n2\r\n0\r\n') && dxf.text.includes('LAYER\r\n2\r\nMURS\r\n') && dxf.text.endsWith('EOF\r\n'), String(dxf.text).slice(0, 300));
+  const oldSvg = await owner('GET', `${exportPath}?format=svg&revision=${ideal.body.revision.id}`);
+  check('export d\'une révision antérieure : document vide, nom suffixé par cette révision', oldSvg.status === 200 && count(oldSvg.text, /<line data-id=/g) === 0 && oldSvg.headers.get('content-disposition')?.endsWith(`-${ideal.body.revision.id.slice(-8)}.svg"`));
+  check('export : format inconnu 400', (await owner('GET', `${exportPath}?format=pdf`)).status === 400);
+  check('export : format absent 400', (await owner('GET', exportPath)).status === 400);
+  check('export : révision inconnue 404', (await owner('GET', `${exportPath}?format=svg&revision=studio_revision_inconnue`)).status === 404);
+  check('export : révision d\'une autre variante 404', (await owner('GET', `${exportPath}?format=svg&revision=${created.body.revision.id}`)).status === 404);
+  check('export : éditeur membre autorisé en lecture', (await editor('GET', `${exportPath}?format=dxf`)).status === 200);
+  check('export : autre compte refusé (403/404)', [403, 404].includes((await foreign('GET', `${exportPath}?format=svg`)).status));
+  check('export : anonyme 401', (await anonymous('GET', `${exportPath}?format=svg`)).status === 401);
+  check('export : étude d\'un autre projet 404', (await owner('GET', `${elsewhere}/variants/${foreignStudy.body?.variant?.id}/export?format=svg`)).status === 404);
+
+  if (STATE) writeFileSync(STATE, JSON.stringify({ ...s, owner: ownerCredentials, headRevisionId: head.body.revision.id, initialRevisionId: created.body.revision.id, documentSha256: digest(head.body.revision.document), variantIds: expectedOrder, revisionIds: ids, exportStudy: { studyId: ev.studyId, variantId: ev.variantId, svgSha256: digest(svg.text) } }), { mode: 0o600 });
 }
 if (failures) { console.log(`${failures} vérification(s) en échec`); process.exit(1); }
 console.log(`Studio (${PHASE}) : toutes les vérifications réussies.`);
