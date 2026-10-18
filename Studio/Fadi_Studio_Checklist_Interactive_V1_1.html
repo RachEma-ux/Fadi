@@ -40,7 +40,7 @@ a{color:var(--accent)}.app{display:grid;grid-template-columns:278px minmax(0,1fr
  <div class="sidebar-foot"><div style="display:flex;justify-content:space-between"><strong>Progression globale</strong><span id="sideRate">0 %</span></div><div class="side-progress"><span id="sideBar" style="width:0%"></span></div><div style="display:flex;justify-content:space-between;margin-top:9px"><span id="saveState" aria-live="polite">Enregistrement automatique local</span><strong id="overallCount">0 / 630</strong></div></div>
 </aside><div class="main">
 <header class="topbar"><div class="crumb" id="crumb">Studio / Vue d’ensemble</div><div class="toolbar-actions">
- <button type="button" class="btn soft" id="overview">Accueil</button><button type="button" class="btn soft" id="allTasks">Toutes les tâches</button>
+ <button type="button" class="btn soft" id="overview">Accueil</button><a class="btn soft" href="Fadi_Dashboard_Horaire.html" title="Consulter le tableau de bord horaire">Tableau de bord ↗</a><button type="button" class="btn soft" id="allTasks">Toutes les tâches</button>
  <label class="btn file-btn" for="importFile" title="Restaurer une sauvegarde JSON">Importer JSON</label><input type="file" id="importFile" accept=".json,application/json" hidden>
  <details class="export-wrap"><summary class="btn primary" style="list-style:none;cursor:pointer">Exporter ▾</summary><div class="export-panel"><button type="button" id="exportJSON">Sauvegarde complète · JSON</button><button type="button" id="exportCSV">Tableau de suivi · CSV</button><button type="button" id="exportMD">Checklist suivie · Markdown</button></div></details>
  <button type="button" class="btn" id="print" title="Imprimer ou enregistrer en PDF">Imprimer</button>
