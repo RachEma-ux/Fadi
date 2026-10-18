@@ -480,8 +480,11 @@ CREATE TABLE IF NOT EXISTS studio_variants (
   study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
   name text NOT NULL,
   head_revision_id text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT studio_variants_study_id_unique UNIQUE(study_id, id)
 );
+-- Bases créées avant l'ordre de création des variantes : colonne ajoutée sans réécrire les lignes existantes.
+ALTER TABLE studio_variants ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
 CREATE TABLE IF NOT EXISTS studio_revisions (
   id text PRIMARY KEY,
   variant_id text NOT NULL REFERENCES studio_variants(id) ON DELETE CASCADE,
@@ -494,7 +497,8 @@ CREATE TABLE IF NOT EXISTS studio_revisions (
   envelope jsonb,
   request_id text NOT NULL,
   payload_hash text NOT NULL CHECK (payload_hash ~ '^[0-9a-f]{64}$'),
-  source text NOT NULL CHECK (source IN ('authenticated-session', 'study-initialization')),
+  source text NOT NULL CONSTRAINT studio_revisions_source_check
+    CHECK (source IN ('authenticated-session', 'study-initialization', 'variant-initialization')),
   author_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   created_at timestamptz NOT NULL DEFAULT now(),
   response jsonb NOT NULL,
@@ -503,6 +507,10 @@ CREATE TABLE IF NOT EXISTS studio_revisions (
   CONSTRAINT studio_revisions_parent_same_variant FOREIGN KEY(variant_id, parent_revision_id)
     REFERENCES studio_revisions(variant_id, id) DEFERRABLE INITIALLY DEFERRED
 );
+-- Le nom explicite reprend celui que PostgreSQL donnait à l'ancien CHECK anonyme : recréé à chaque application.
+ALTER TABLE studio_revisions DROP CONSTRAINT IF EXISTS studio_revisions_source_check,
+  ADD CONSTRAINT studio_revisions_source_check
+  CHECK (source IN ('authenticated-session', 'study-initialization', 'variant-initialization'));
 ALTER TABLE studio_studies DROP CONSTRAINT IF EXISTS studio_studies_initial_variant,
   ADD CONSTRAINT studio_studies_initial_variant FOREIGN KEY(id, initial_variant_id)
   REFERENCES studio_variants(study_id, id) DEFERRABLE INITIALLY DEFERRED;
