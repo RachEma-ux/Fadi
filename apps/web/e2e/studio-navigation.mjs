@@ -313,6 +313,118 @@ try {
   check("conflit : message, brouillon conservé, rechargement proposé, tête non écrasée", apres.revision.id === autre.revision.id && (await lignes.count()) === 1 && (await page.getByRole("button", { name: "Recharger la version serveur", exact: true }).isVisible()));
   await page.screenshot({ path: join(OUT, "studio-planche-2d.png") });
 
+  // Vue : zoom (touche « = », bouton, molette sur le pointeur) et panoramique (bouton du milieu) sans toucher au
+  // document ; sélection par rectangle (fenêtre / capture), Ctrl+A, Échap ; glisser de la sélection (aperçu, une
+  // commande par objet, enregistrée, relue identique) ; palette Ctrl+K ; gestionnaire « Outils » ; liens d'export.
+  await page.goto(base);
+  await page.locator('svg [role="button"][aria-label^="Rectangle "]').first().waitFor({ state: "attached" });
+  const teteAvantVue = (await a.api("get", variantePath)).revision;
+  const portee = async () => (await page.locator("[data-studio-annuler-portee]").textContent()) ?? "";
+  const vueBox = async () => (await planche.getAttribute("viewBox")).split(" ").map(Number);
+  const ecranDe = (x, y) => planche.evaluate((svg, w) => { const t = new DOMPoint(w.x, w.y).matrixTransform(svg.getScreenCTM()); return { x: t.x, y: t.y }; }, { x, y });
+  const sousEcran = (p) => planche.evaluate((svg, q) => { const t = new DOMPoint(q.x, q.y).matrixTransform(svg.getScreenCTM().inverse()); return { x: t.x, y: t.y }; }, p);
+  const vueChangee = (avant) => page.waitForFunction((v) => document.querySelector('[aria-label="Planche de dessin 2D"]')?.getAttribute("viewBox") !== v, avant.join(" "));
+  await page.evaluate(() => document.activeElement?.blur());
+  const vb0 = await vueBox();
+  await page.keyboard.press("=");
+  await vueChangee(vb0);
+  const vb1 = await vueBox();
+  check("vue : « = » rapproche la vue (zoom avant)", vb1[2] < vb0[2] && Math.abs(vb1[2] / vb1[3] - vb0[2] / vb0[3]) < 1e-9, `${vb0.join(" ")} → ${vb1.join(" ")}`);
+  await outils.getByRole("button", { name: "Zoom arrière", exact: true }).click();
+  const vb2 = await vueBox();
+  check("vue : « Zoom arrière » éloigne la vue", Math.abs(vb2[2] - vb0[2]) < 1e-9, vb2.join(" "));
+  await planche.scrollIntoViewIfNeeded();
+  const boite = await planche.boundingBox();
+  const pointeur = { x: boite.x + boite.width * 0.3, y: boite.y + boite.height * 0.4 };
+  const sousAvant = await sousEcran(pointeur);
+  await page.mouse.move(pointeur.x, pointeur.y);
+  await page.mouse.wheel(0, -300);
+  await vueChangee(vb2);
+  const vb3 = await vueBox(), sousApres = await sousEcran(pointeur);
+  check("vue : la molette zoome en gardant le point sous le pointeur", vb3[2] < vb2[2] && Math.hypot(sousApres.x - sousAvant.x, sousApres.y - sousAvant.y) < 0.02, `${JSON.stringify(sousAvant)} / ${JSON.stringify(sousApres)}`);
+  await page.mouse.down({ button: "middle" });
+  await page.mouse.move(pointeur.x + 80, pointeur.y + 40, { steps: 5 });
+  await page.mouse.up({ button: "middle" });
+  const vb4 = await vueBox();
+  check("vue : le bouton du milieu déplace la vue sans zoomer", Math.abs(vb4[2] - vb3[2]) < 1e-9 && vb4[0] < vb3[0] && vb4[1] < vb3[1], `${vb3.join(" ")} → ${vb4.join(" ")}`);
+  check("vue : zoom et panoramique ne changent pas le document", (await portee()).includes("(0 commande(s)") && (await a.api("get", variantePath)).revision.id === teteAvantVue.id);
+
+  await outils.getByRole("button", { name: "Cadrer", exact: true }).click();
+  await planche.scrollIntoViewIfNeeded();
+  const choisis = page.locator("svg .selected");
+  const glisser = async ([x0, y0], [x1, y1], avantRelache) => {
+    const p = await ecranDe(x0, y0), q = await ecranDe(x1, y1);
+    await page.mouse.move(p.x, p.y);
+    await page.mouse.down();
+    await page.mouse.move((p.x + q.x) / 2, (p.y + q.y) / 2, { steps: 4 });
+    await page.mouse.move(q.x, q.y, { steps: 4 });
+    if (avantRelache) await avantRelache();
+    await page.mouse.up();
+  };
+  const visibles = teteAvantVue.document.objects.filter((o) => !o.layerId);
+  const rect0 = visibles.find((o) => o.type === "rectangle"), ligne0 = visibles.find((o) => o.type === "line");
+  check("préparation : un rectangle et une ligne sur le calque visible", !!rect0 && !!ligne0 && rect0.origin.x === 2 && ligne0.start.x === 0);
+  await glisser([5.5, 1], [7, 2.5]);
+  check("rectangle de gauche à droite (fenêtre) : un objet coupé n'est pas pris", (await choisis.count()) === 0);
+  await glisser([7, 1], [5.5, 2.5]);
+  check("rectangle de droite à gauche (capture) : l'objet touché est pris", (await choisis.count()) === 1 && (await page.locator(`[data-studio-objet="${rect0.id}"]`).getAttribute("aria-pressed")) === "true");
+  await glisser([-0.5, -0.5], [6.5, 5.5]);
+  check("rectangle de sélection (fenêtre) : deux objets sélectionnés", (await choisis.count()) === 2 && (await page.locator("[data-studio-selection-compte]").getAttribute("data-studio-selection-compte")) === "2");
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Control+a");
+  const selectionnables = await page.locator("svg [data-studio-selectionnable]").count();
+  check("Ctrl+A : tout ce qui est affiché et déverrouillé est sélectionné", (await choisis.count()) === selectionnables && selectionnables >= 3);
+  await page.keyboard.press("Escape");
+  check("Échap : la sélection est vidée", (await choisis.count()) === 0);
+  await glisser([-0.5, -0.5], [6.5, 5.5]);
+  await page.keyboard.press("F9");
+  check("F9 : l'accrochage à la grille est activé", (await outils.getByRole("button", { name: "Accrocher à la grille", exact: true }).getAttribute("aria-pressed")) === "true");
+  const rectangleAffiche = page.locator(`[data-studio-objet="${rect0.id}"] rect`);
+  let apercuX = null;
+  await glisser([4.1, 3.3], [5.1, 4.3], async () => { apercuX = await rectangleAffiche.getAttribute("x"); });
+  check("glisser : aperçu pendant le geste", apercuX === "3", String(apercuX));
+  check("glisser : une commande en attente par objet déplacé", (await portee()).includes("(2 commande(s)"));
+  const avantGlisser = envois.length;
+  await page.keyboard.press("Control+s");
+  await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
+  const envoiGlisser = envois[envois.length - 1];
+  check("glisser : enregistré en deux commandes studio.dessin.deplacer", envois.length === avantGlisser + 1 && envoiGlisser.commands.map((c) => `${c.toolId}:${c.params.id}:${c.params.dx},${c.params.dy}`).sort().join() === [`studio.dessin.deplacer:${ligne0.id}:1,1`, `studio.dessin.deplacer:${rect0.id}:1,1`].sort().join(), JSON.stringify(envoiGlisser?.commands));
+  const deplace = await a.api("get", variantePath);
+  const rect1 = deplace.revision.document.objects.find((o) => o.id === rect0.id), ligne1 = deplace.revision.document.objects.find((o) => o.id === ligne0.id);
+  check("glisser : le serveur a déplacé les deux objets de (1, 1)", rect1.origin.x === 3 && rect1.origin.y === 3 && ligne1.start.x === 1 && ligne1.start.y === 1 && ligne1.end.x === 2);
+  const empreinteGlisser = await empreinte();
+  await page.reload();
+  await rectangleAffiche.waitFor({ state: "attached" });
+  check("glisser : l'actualisation restitue le même dessin", (await empreinte()) === empreinteGlisser && (await rectangleAffiche.getAttribute("x")) === "3" && JSON.stringify((await a.api("get", variantePath)).revision) === JSON.stringify(deplace.revision));
+
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Control+k");
+  const palette = page.locator("[data-studio-palette]");
+  await palette.waitFor();
+  await page.keyboard.type("Ligne");
+  check("palette Ctrl+K : « Ligne » est la première proposition", (await palette.locator('[role="option"]').first().getAttribute("data-studio-palette-entree")) === "studio.dessin.ligne");
+  await page.keyboard.press("Enter");
+  await palette.waitFor({ state: "detached" });
+  check("palette Ctrl+K : Entrée lance l'outil Ligne", (await outils.getByRole("button", { name: "Ligne", exact: true }).getAttribute("aria-pressed")) === "true");
+  await outils.getByRole("button", { name: "Sélection", exact: true }).click();
+  await outils.getByRole("button", { name: "Outils", exact: true }).click();
+  const gestionnaire = page.locator("[data-studio-gestionnaire-outils]");
+  await gestionnaire.waitFor();
+  check("Outils : le catalogue liste tout le registre", (await gestionnaire.locator("[data-studio-catalogue-entree]").count()) >= 25 && (await gestionnaire.locator('[data-studio-catalogue-entree="studio.dessin.ligne"] [data-studio-exposition="none"]').count()) === 1);
+  await gestionnaire.getByLabel("Rechercher un outil", { exact: true }).fill("Cote");
+  check("Outils : la recherche « Cote » trouve l'outil Cote, et lui seul", (await gestionnaire.locator("[data-studio-catalogue-entree]").count()) === 1 && (await gestionnaire.locator('[data-studio-catalogue-entree="studio.dessin.cote"]').isVisible()));
+  await page.getByRole("dialog").getByRole("button", { name: "Fermer", exact: true }).click();
+  await gestionnaire.waitFor({ state: "detached" });
+
+  const lienExport = (format) => outils.locator(`a[data-studio-commande="exporter-${format}"]`).getAttribute("href");
+  check("exports : liens SVG et DXF vers l'adresse d'export de la variante", (await lienExport("svg")) === `${variantePath}/export?format=svg` && (await lienExport("dxf")) === `${variantePath}/export?format=dxf`);
+  const reponse = await page.request.get(`${BASE}${variantePath}/export?format=svg`);
+  if (reponse.status() === 404) console.log("· export : point d'entrée absent de ce serveur, seuls les liens sont contrôlés");
+  else check("exports : le serveur renvoie une pièce jointe", reponse.ok() && /attachment/i.test(reponse.headers()["content-disposition"] ?? ""), String(reponse.status()));
+  await page.goto(`${base}?revision=${encodeURIComponent(ancienne)}`);
+  await page.locator("[data-studio-lecture-seule-revision]").waitFor();
+  check("exports : en révision historique, le lien porte la révision affichée", (await lienExport("svg")) === `${variantePath}/export?format=svg&revision=${encodeURIComponent(ancienne)}` && (await lienExport("dxf")) === `${variantePath}/export?format=dxf&revision=${encodeURIComponent(ancienne)}`);
+
   // Accessibilité de l'accueil Studio.
   await page.goto(`${BASE}/studio`);
   await page.locator("[data-studio-projets]").waitFor();

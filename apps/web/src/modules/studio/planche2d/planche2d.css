@@ -32,3 +32,35 @@
 .studio-calques fieldset{border:0;padding:0;margin:0}
 .studio-calques-aide{font-size:11px;color:#657c83}
 @media(max-width:540px){.studio-tools-group{flex:1 1 100%}}
+/* Vue : gestes du pointeur (molette, panoramique, deux doigts) gérés par l'éditeur ; traits d'épaisseur constante à l'écran. */
+.studio-sheet>svg{touch-action:none;user-select:none;-webkit-user-select:none}
+.studio-sheet>svg[data-studio-glissement]{cursor:grabbing}
+.studio-shape>*,.studio-cote line,.studio-apercu line,.studio-apercu rect,.studio-apercu circle{vector-effect:non-scaling-stroke}
+.studio-shape>*{stroke-width:2px}.studio-shape line{stroke-width:3px}.studio-shape.selected>*{stroke-width:3.5px}
+.studio-cote line{stroke-width:1.2px}.studio-cote .studio-cote-ligne{stroke-width:1.5px}.studio-cote .studio-cote-trait{stroke-width:2px}
+.studio-apercu line,.studio-apercu rect{stroke-width:2px;stroke-dasharray:6 4}
+.studio-apercu .studio-accroche{stroke-width:2px}
+.studio-apercu .studio-rectangle-selection{stroke:#1a6b70;stroke-width:1.2px;fill:#1a6b7014;stroke-dasharray:none}
+.studio-apercu .studio-rectangle-selection.capture{stroke:#2f7d3a;fill:#2f7d3a14;stroke-dasharray:6 4}
+/* Exports : liens de téléchargement présentés comme les boutons de la barre. */
+.studio-tools a.studio-lien-bouton{display:flex;align-items:center;gap:8px;font-size:13px;min-height:44px;box-sizing:border-box;border:1px solid #b9cdd0;border-radius:8px;padding:9px 13px;background:white;color:var(--studio-ink);text-decoration:none}
+.studio-tools a.studio-lien-bouton:hover:not([aria-disabled]){background:#edf5f3;border-color:#1a6b70}
+.studio-tools a.studio-lien-bouton[aria-disabled]{opacity:.48;cursor:not-allowed}
+/* Gestionnaire « Outils » et palette de commandes. */
+.studio-dialogue-fond{position:fixed;inset:0;background:#0d262c66;display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px;z-index:50;box-sizing:border-box}
+.studio-dialogue{background:#fff;border-radius:14px;box-shadow:0 20px 50px #0d262c40;width:min(760px,100%);max-height:88vh;overflow:auto;padding:18px 20px;box-sizing:border-box;color:var(--studio-ink)}
+.studio-dialogue.studio-palette{width:min(560px,100%)}
+.studio-dialogue-tete{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px}
+.studio-dialogue-tete h2{font-size:18px;margin:0}
+.studio-dialogue-aide{font-size:12px;color:#587079;margin:4px 0 10px}
+.studio-dialogue h3{font-size:13px;text-transform:uppercase;letter-spacing:1px;margin:16px 0 6px;color:#40575e}
+.studio-catalogue{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.studio-catalogue li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:8px 10px;border:1px solid #e3eaec;border-radius:8px;font-size:13px;overflow-wrap:anywhere}
+.studio-catalogue li[aria-selected=true]{border-color:var(--studio-accent);background:#edf5f3}
+.studio-catalogue li[role=option]{cursor:pointer}.studio-catalogue li[aria-disabled=true]{opacity:.55;cursor:not-allowed}
+.studio-catalogue-nom{font-weight:600;flex:1 1 140px}
+.studio-catalogue-touches{display:inline-flex;gap:4px}.studio-catalogue kbd{font-size:11px;border:1px solid currentColor;padding:1px 5px;border-radius:3px;opacity:.75}
+.studio-catalogue code{font-size:11px;color:#40575e}
+.studio-catalogue-meta{font-size:11px;color:#587079}
+.studio-catalogue li button{min-height:36px;padding:4px 10px;font-size:12px;margin-left:auto}
+@media(max-width:540px){.studio-tools a.studio-lien-bouton{flex:1;justify-content:center}.studio-tools a.studio-lien-bouton kbd{display:none}}
