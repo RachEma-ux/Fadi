@@ -1,0 +1,27 @@
+name: Architecture native — garde-fous
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: architecture-guards-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+jobs:
+  architecture-guards:
+    name: Architecture — frontières et isolation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - name: Régressions et témoins des garde-fous
+        run: node --test scripts/architecture-guards.test.mjs
+      - name: Frontières et cycles sur le dépôt réel
+        run: node scripts/check-module-deps.mjs
+      - name: Isolation nominale sur le dépôt réel
+        run: node scripts/check-fadi-isolation.mjs
