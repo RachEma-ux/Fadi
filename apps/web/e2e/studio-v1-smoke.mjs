@@ -46,8 +46,17 @@ try {
     createdFirstLevel = true;
   }
   await page.locator('.atelier-n .plan2d').waitFor({ state: 'visible' });
+  const nativeResponse = await c.request.get(`${profile.apiBaseUrl}/projects/${state.projectId}/atelier/model`);
+  assert.equal(nativeResponse.status(), 200);
+  const native = await nativeResponse.json();
+  assert(Number.isInteger(native.revision) && native.revision >= 1, 'Native model revision must be persisted');
+  const persistedLevel = Object.values(native.modele.niveaux).find((level) => level.nom === 'Rez-de-chaussée');
+  assert(persistedLevel, 'Server model must contain the first native level');
+  assert.equal(persistedLevel.elevation, 0);
+  await page.locator('.atelier-n .barre-sync[data-etat="enregistre"]').waitFor({ state: 'visible' });
+
   assert.equal(await page.getByRole('alert').count(), 0);
-  report.checks.push({ name: 'existing Atelier native plan mounts through original navigation', result: 'passed', createdFirstLevel, commandStatus: createdFirstLevel ? 200 : null });
+  report.checks.push({ name: 'existing Atelier native plan mounts through original navigation', result: 'passed', createdFirstLevel, commandStatus: createdFirstLevel ? 200 : null, persistedRevision: native.revision, persistedLevelId: persistedLevel.id, uiSyncState: 'enregistre' });
   report.limits.push('Native first-level creation and plan mount only; no claim of full Atelier drawing regression coverage');
   await page.screenshot({ path: resolve(out, 'existing-atelier-seam.png') });
   await page.goto(`${profile.uiBaseUrl}/studio/projets/${state.projectId}/etudes/${state.studyId}/variantes/${state.variantId}`);
