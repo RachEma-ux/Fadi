@@ -3,10 +3,11 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import { studio2d } from "@parcours/domain-model";
 import { createApp } from "../app.js";
+import { resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { pool } from "../db/client.js";
 
 const app = createApp();
-beforeEach(async () => { await pool.query("TRUNCATE projects, sessions, users CASCADE"); });
+beforeEach(async () => { await resetTestDatabase(pool, ["projects", "sessions", "users"]); });
 afterAll(async () => { await pool.end(); });
 
 async function account(email: string) {

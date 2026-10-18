@@ -1,0 +1,409 @@
+{
+  "objet": "Revue indépendante A1 des seulesPROV03/04/05, ADR01/02 horspérimètre",
+  "remise_commit": "b6794c64c7ff98fadf62868331f4297631201069",
+  "reference_documentaire": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "methodologie": "Lecture gitshow pinned + parsecomparaison pure indépendante ; aucun scriptClaude importé/exécuté, aucun moteur/test/DB/service.",
+  "sources": [
+    {
+      "path": "docs/ai-team/reports/claude-m11-prov/PROV-03-05.md",
+      "commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "blob": "66d61f0e8231dfc65603e1c088e210b4148c9d2b",
+      "sha256": "10effdcf60897fd682a7170b27aa0b02de39a12a1d62fbbadb26b334d60d6515"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m11-prov/DELTA-REGISTRE-PROPOSE.json",
+      "commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "blob": "810fd211c16b55aae26a7850324271b32f5f44ce",
+      "sha256": "25ac898e05a7396be400ad29a19831dacd32a88c4ff50ce759e4da445dc0cd51"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m11-prov/README.md",
+      "commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "blob": "e55f35cb9e5420784cda14f46eb0e6f625c55b2f",
+      "sha256": "eb9eab6355f2a818015c6090f6192beb7623d2422608059703190229f5e23231"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+      "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Checklist_Interactive_V1_1.html",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob": "2311cb4c0fe5c85b55ed41104fddce1c8a69c56c",
+      "sha256": "013b79c4889183a874ceaac9435dcf5d97fc6fcde2b982f5abd680efeaaea645"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob": "db5588eca8980efcd7276c1cc2182b9070c6eb38",
+      "sha256": "4976191179bafa59cbc3a24fef9c28c9f50dcc7fa9a0bd8573dc075586659ce3"
+    },
+    {
+      "path": "docs/ai-team/check_missions.py",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob": "7dfe4df3a93e216095217c42571e7789f6261ae9",
+      "sha256": "05390da0787aadb2b6d7e59be9b547b5db4fa86d958425408fd0be7fcbc84088"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob": "2c0c2c9198f3ebc70f6bb006f3fa1f59ce2b4c7c",
+      "sha256": "9542a7ca056edcb50f3ecb1892b47e242dc45aa9589c3d7463a4f93a31e9f7ec"
+    },
+    {
+      "path": ".github/workflows/codex-missions.yml",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob": "ecc7e3a1b5a9c84d5db30e356d8662185b48d760",
+      "sha256": "a9001f9777603d031d0f0ff82195f0f3bbb00e281989a0e3302e3ef5b4965143"
+    },
+    {
+      "path": "docs/ai-team/missions.json",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob": "66e0c56c938474e7f850f8736cf0569fd601c500",
+      "sha256": "5c9bd2d9ba8a3d209ba7ac2bbeeac6810e0a1f28c05820741f10292dbf2cfcfe"
+    }
+  ],
+  "PROV-03": {
+    "source_exacte": [
+      "- [ ] **PROV-03** — Conserver REP-01 comme observation du 18/10/2026 au commit 5cf61d1fed9ed523b331228af20bce93a4f2bf63, sans l’assimiler à un HEAD futur."
+    ],
+    "occurrences_historiques": [
+      {
+        "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+        "line": 97,
+        "exact": "- [ ] **REP-01** — Relever le commit de travail et le distinguer de REP-01 : 5cf61d1fed9ed523b331228af20bce93a4f2bf63."
+      },
+      {
+        "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+        "line": 1325,
+        "exact": "- [ ] **PROV-03** — Conserver REP-01 comme observation du 18/10/2026 au commit 5cf61d1fed9ed523b331228af20bce93a4f2bf63, sans l’assimiler à un HEAD futur."
+      },
+      {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": 19,
+        "exact": "| REP-01 | Lecture ciblée du dépôt au commit 5cf61d1fed9ed523b331228af20bce93a4f2bf63. | Points d’intégration du routage, de la navigation, de la modularité et du suivi. Ce n’est pas un nouvel audit exhaustif des moteurs. |"
+      },
+      {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": 486,
+        "exact": "REP-01 : `RachEma-ux/Fadi`, branche `main`, commit `5cf61d1fed9ed523b331228af20bce93a4f2bf63`, relevé le 18 octobre 2026. Les fichiers ci-dessous ont été lus pour les constats du §2 et l’organisation de suivi du §9. Les références portent sur cette révision, pas sur un HEAD futur."
+      },
+      {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": 490,
+        "exact": "https://github.com/RachEma-ux/Fadi/blob/5cf61d1fed9ed523b331228af20bce93a4f2bf63/apps/web/src/App.tsx"
+      },
+      {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": 494,
+        "exact": "https://github.com/RachEma-ux/Fadi/blob/5cf61d1fed9ed523b331228af20bce93a4f2bf63/apps/web/src/routes/AppShell.tsx"
+      },
+      {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": 498,
+        "exact": "https://github.com/RachEma-ux/Fadi/blob/5cf61d1fed9ed523b331228af20bce93a4f2bf63/apps/web/src/routes/ProjectShell.tsx"
+      },
+      {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": 502,
+        "exact": "https://github.com/RachEma-ux/Fadi/blob/5cf61d1fed9ed523b331228af20bce93a4f2bf63/apps/web/src/modules/module-registry.ts"
+      },
+      {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": 506,
+        "exact": "https://github.com/RachEma-ux/Fadi/blob/5cf61d1fed9ed523b331228af20bce93a4f2bf63/apps/web/src/lib/use-immersive.ts"
+      },
+      {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": 510,
+        "exact": "https://github.com/RachEma-ux/Fadi/blob/5cf61d1fed9ed523b331228af20bce93a4f2bf63/scripts/check-module-deps.mjs"
+      },
+      {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": 514,
+        "exact": "https://github.com/RachEma-ux/Fadi/blob/5cf61d1fed9ed523b331228af20bce93a4f2bf63/docs/continuity/README.md"
+      },
+      {
+        "path": "docs/ai-team/reports/mission-002-originals/L1-L6-consolidation-A0.md",
+        "line": 11,
+        "exact": "Main distant : 27c0c5a35e2f116752a83a9c66459484488a1975. Checkout local propre : work@aadd083ca282ed7db8af31f0fb3724c861b5107f. Comparaison GitHub officielle : trois fichiers ajoutés seulement (checklist Markdown/Word et archive d'audit), aucune différence applicative. work n'est pas un défaut par son nom ; contrôler SHA, arbre et provenance. Comparaison 5cf61d1… → 38c71f1… confirmée : deux commits, quatre documents Studio."
+      },
+      {
+        "path": "docs/ai-team/reports/mission-003/A6/RAPPORT-A6-M01-M03-M04-M10.md",
+        "line": 61,
+        "exact": "Issue149 et ses trois commentaires ont été réellement lus. Corps ancien à cases non cochées n’est pas un verdict actuel. Commentaire6243033659 rapporte déploiement technique du SHA5cf61d1… à23:14:15UTC le17octobre et acceptation utilisateur « C est bon. La suite ? », sur captures transmises ; pas nouvel accès SSH. Commentaire6243082764 rapporte sauvegarde POST-validation : dump horodaté23:27:50UTC, snapshotd2107ead, résultat service success et contrôle métadonnées7/7 sans erreurs. Prévalidation6df3cf5c distincte. Ne pas redéployer ou refaire ces opérations par hypothèse."
+      },
+      {
+        "path": "docs/audits/2026-10-18-a0-codex-cloud.md",
+        "line": 150,
+        "exact": "| D03 — P2 | HANDOFF/STATUS purge décrivent #148 comme brouillon ; GitHub confirme sa fusion le 17 octobre à 20:20:11Z, merge 5cf61d1fed9ed523b331228af20bce93a4f2bf63. #147 reste ouverte. | Actualiser ensemble STATUS/HANDOFF ; distinguer fusion du lot et clôture de l’inventaire. |"
+      },
+      {
+        "path": "docs/workstreams/purge-drawall/HANDOFF.md",
+        "line": 7,
+        "exact": "La PR #148 est fusionnée depuis le 17 octobre 2026 au commit `5cf61d1fed9ed523b331228af20bce93a4f2bf63` ; #147 reste ouverte. Les mentions de PR brouillon et fichiers externes présents dans les sections antérieures ci-dessous sont des observations historiques, pas l’état courant. Les quatre documents interproduits retirés ne sont pas restaurés."
+      },
+      {
+        "path": "docs/workstreams/purge-drawall/STATUS.md",
+        "line": 7,
+        "exact": "La PR #148 est fusionnée depuis le 17 octobre 2026 au commit `5cf61d1fed9ed523b331228af20bce93a4f2bf63` ; #147 reste ouverte. Les mentions de PR brouillon et fichiers externes présents dans les sections antérieures ci-dessous sont des observations historiques, pas l’état courant. Les quatre documents interproduits retirés ne sont pas restaurés."
+      }
+    ],
+    "avis": "Vérifiédocumentaire recevable à817bd36 : référencesdatées, pasHEADfutur. Obligationrécurrente, pasqualification de toutSHAultérieur."
+  },
+  "PROV-04": {
+    "source_exacte": [
+      "- [ ] **PROV-04** — Conserver les chemins de sources du plan et distinguer les résultats futurs de l’audit historique 3bcda929…."
+    ],
+    "sources10": [
+      {
+        "path": "apps/web/src/App.tsx",
+        "blob": "1098848dbf84d54189307e0ba0afad9d0f2b82f5",
+        "present": true,
+        "listed_in_plan": true,
+        "nature_presence": "Source citée annexeD parchemin/nom",
+        "blob_REP01_5cf61": "1098848dbf84d54189307e0ba0afad9d0f2b82f5",
+        "identique_REP01": true
+      },
+      {
+        "path": "apps/web/src/routes/AppShell.tsx",
+        "blob": "1e784b7686ed10f60ab944cde660354a2bbac7c9",
+        "present": true,
+        "listed_in_plan": true,
+        "nature_presence": "Source citée annexeD parchemin/nom",
+        "blob_REP01_5cf61": "1e784b7686ed10f60ab944cde660354a2bbac7c9",
+        "identique_REP01": true
+      },
+      {
+        "path": "apps/web/src/routes/ProjectShell.tsx",
+        "blob": "a1d0584ace1b7c7b62c0c56ac77c0075b46c5844",
+        "present": true,
+        "listed_in_plan": true,
+        "nature_presence": "Source citée annexeD parchemin/nom",
+        "blob_REP01_5cf61": "a1d0584ace1b7c7b62c0c56ac77c0075b46c5844",
+        "identique_REP01": true
+      },
+      {
+        "path": "apps/web/src/modules/module-registry.ts",
+        "blob": "ddd5fd90086076095e0b2eb552fcc0b46559ba01",
+        "present": true,
+        "listed_in_plan": true,
+        "nature_presence": "Source citée annexeD parchemin/nom",
+        "blob_REP01_5cf61": "ddd5fd90086076095e0b2eb552fcc0b46559ba01",
+        "identique_REP01": true
+      },
+      {
+        "path": "apps/web/src/lib/use-immersive.ts",
+        "blob": "ab382d7456d15a7fe32009818cd9d27c6ff19ba3",
+        "present": true,
+        "listed_in_plan": true,
+        "nature_presence": "Source citée annexeD parchemin/nom",
+        "blob_REP01_5cf61": "ab382d7456d15a7fe32009818cd9d27c6ff19ba3",
+        "identique_REP01": true
+      },
+      {
+        "path": "scripts/check-module-deps.mjs",
+        "blob": "f3207476e238adb8e0c472c9561c3969a6879da1",
+        "present": true,
+        "listed_in_plan": true,
+        "nature_presence": "Source citée annexeD parchemin/nom",
+        "blob_REP01_5cf61": "f3207476e238adb8e0c472c9561c3969a6879da1",
+        "identique_REP01": true
+      },
+      {
+        "path": "docs/continuity/README.md",
+        "blob": "dae46c4fd63a675da18e3573aadfc9f39ca24c5a",
+        "present": true,
+        "listed_in_plan": true,
+        "nature_presence": "Source citée annexeD parchemin/nom",
+        "blob_REP01_5cf61": "dae46c4fd63a675da18e3573aadfc9f39ca24c5a",
+        "identique_REP01": true
+      },
+      {
+        "path": "Studio/Fadi_Studio_Definition_Officielle_Reference_V2_1.docx",
+        "blob": "e1d61ca38809e1faac6111c5ffb0881619b9a6dc",
+        "present": true,
+        "listed_in_plan": true,
+        "nature_presence": "Source citée annexeD parchemin/nom",
+        "empreinte_exacte_declaree_plan_conforme": true
+      },
+      {
+        "path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+        "blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+        "present": true,
+        "listed_in_plan": true,
+        "nature_presence": "Source citée annexeD parchemin/nom",
+        "empreinte_exacte_declaree_plan_conforme": true
+      },
+      {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "blob": "db5588eca8980efcd7276c1cc2182b9070c6eb38",
+        "present": true,
+        "listed_in_plan": false,
+        "nature_presence": "Plan lui-même : document support présent, pas auto-référence exigée"
+      }
+    ],
+    "historique3bcda_occurrences": [
+      {
+        "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+        "line": 1326,
+        "exact": "- [ ] **PROV-04** — Conserver les chemins de sources du plan et distinguer les résultats futurs de l’audit historique 3bcda929…."
+      },
+      {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": 52,
+        "exact": "Les deux Word de REF-01 et REF-02 présents dans `Studio/` ont les mêmes empreintes Git que les copies lues. L’annexe A de REF-02 reste, elle, un audit historique au commit `3bcda929…` : ses constats sur les moteurs doivent être requalifiés, pas assimilés à des tests actuels."
+      },
+      {
+        "path": "docs/ai-team/reports/mission-002-originals/A4-ux.md",
+        "line": 29,
+        "exact": "Lecture GitHub directe via `github_fetch_pr`, PR https://github.com/RachEma-ux/Fadi/pull/142 : **ouverte, non fusionnée**, `mergeable: false`, tête `0d9606059f383e993b4bc69d57700ff411856919`, base rapportée `3bcda9296eaa0a0376ca5d2279dd71f52a75184b`. Elle modifie ProjectShell, useImmersive et les styles pour conserver l'enveloppe Fadi, uniformiser neuf pages et adapter les gestes aux menus superposés. La recette 593/593 citée dans le corps vise `a383fa4555725b8643ffe8ea6ed91c8b65fd9fff`, pas une preuve exécutée sur la dernière tête. Aucun verdict CI actuel déduit ici. L'état actuel du code local conserve le masquage."
+      }
+    ],
+    "plan_history_citations": [
+      {
+        "line": 52,
+        "exact": "Les deux Word de REF-01 et REF-02 présents dans `Studio/` ont les mêmes empreintes Git que les copies lues. L’annexe A de REF-02 reste, elle, un audit historique au commit `3bcda929…` : ses constats sur les moteurs doivent être requalifiés, pas assimilés à des tests actuels."
+      },
+      {
+        "line": 72,
+        "exact": "| `/studio/.../revisions/:revisionId` | Consultation identifiée d’une révision ; historique non réécrit. |"
+      },
+      {
+        "line": 119,
+        "exact": "La première intégration ajoute Studio sans supprimer les accès historiques. Chaque composant de l’Atelier est classé : conserver, compléter, corriger, isoler, remplacer ou retirer, avec preuve et décision. La réutilisation d’une fonction ne signifie pas recopier l’ensemble du module."
+      },
+      {
+        "line": 130,
+        "exact": "| G1 — Spécification | Décrire navigation, contrats des outils retenus, données, droits, historique, migrations et risques. Relever toutes les exigences de REF-02. | Un contrat vérifiable et une source de vérité pour chaque fonction du lot. |"
+      },
+      {
+        "line": 159,
+        "exact": "A.5 : faire converger les gestes vers le contrat de commandes et l’historique hybride ; traiter prévisualisation, refus atomique, idempotence, conflits, annulation concurrente et reprise après coupure. Aucun résultat d’une révision dépassée ne remplace l’état courant."
+      },
+      {
+        "line": 167,
+        "exact": "B.1 : inventorier et réconcilier les catalogues existants ; fixer toolId, propriétaire, contrat, contextes, permissions, loaders et dépendances. Conserver les alias de migration nécessaires. Requalifier la collision historique « echelle » entre objet d’accès et transformation, sans présumer qu’elle subsiste au commit de réalisation."
+      },
+      {
+        "line": 225,
+        "exact": "R.1 : figer un build candidat ; comparer données historiques et données migrées en environnement de validation. R.2 : restaurer une sauvegarde complète comprenant géométries, documents, références, droits, historiques et manifestes. R.3 : effectuer la recette utilisateur depuis l’entrée verticale Studio, sur les trois parcours. R.4 : autoriser puis effectuer une bascule progressive sur projets pilotes ; journaliser les versions et la décision. R.5 : vérifier le site déployé avec l’utilisateur, conserver une sauvegarde du nouvel état accepté et surveiller les erreurs et consommations."
+      },
+      {
+        "line": 243,
+        "exact": "| J4 — Association fiable | Mur/ouverture, hôtes, copie indépendante, conflits et historique. | Le fonctionnement de tous les outils du catalogue. |"
+      },
+      {
+        "line": 277,
+        "exact": "Chaque mesure conserve appareil, navigateur, GPU, réseau, état des caches, build, commit, jeu de données, répétitions, distribution et seuil accepté. Mesurer séparément transfert, activation, calcul, rendu CPU/GPU, invalidation et mémoire résiduelle. Les seuils sont décidés dans DEC-13, pas empruntés à une limite arbitraire par outil. Comparer en même temps cibles de snapping/picking, dimensions, quantités, historique et exports."
+      },
+      {
+        "line": 289,
+        "exact": "Recenser les projets et objets existants, les formes de dessin, unités, niveaux, associations, cotes, composants, historiques, profils, commandes offline, références externes et publications. Identifier ce qui est compatible, convertible, ambigu ou non convertible. Les quantités et propriétés avant migration deviennent un corpus de comparaison, avec données privées protégées."
+      },
+      {
+        "line": 295,
+        "exact": "En préproduction, réaliser d’abord la migration sur copie isolée. Pour les projets pilotes, choisir entre continuité des identifiants et mécanisme explicite de correspondance, selon DEC-01/02/03/18. Une publication historique reste liée à ses pièces originales. Les commandes locales en attente doivent être synchronisées, migrées sous contrat ou mises en attente de résolution avant bascule ; jamais supprimées."
+      },
+      {
+        "line": 297,
+        "exact": "Le transfert d’autorité d’écriture d’Atelier vers Studio est une décision par périmètre. Ne pas autoriser deux chaînes d’écriture incompatibles sur la même étude. Conserver l’accès de consultation historique nécessaire. La suppression d’anciens écrans, routes ou stockages est un lot ultérieur explicitement autorisé, pas un effet secondaire du lot I."
+      },
+      {
+        "line": 341,
+        "exact": "| Données ou historique dupliqués entre Atelier et Studio | A.1/A.5 et transfert explicite d’autorité lors de R. |"
+      },
+      {
+        "line": 375,
+        "exact": "| TEST-010 | **Agrandir l’ouverture à 1,2 m depuis l’autre planche.** Nouveau volume net 3,096 m³ ; révision historique inchangée. | A + E |"
+      },
+      {
+        "line": 396,
+        "exact": "| TEST-031 | **Retirer une publication historique.** Action journalisée, contenu historique récupérable selon politique. | E |"
+      },
+      {
+        "line": 413,
+        "exact": "| DEC-03 | **Définition Étude / Variante / Révision et migration des projets.** Preuve : Entités, isolation, historique, restauration. | A + R · Architecture/backend |"
+      },
+      {
+        "line": 422,
+        "exact": "| DEC-12 | **Historique et undo/redo entre sous-modèles.** Preuve : Deltas, commandes, révisions et conflits réels. | A · Modèle/backend |"
+      },
+      {
+        "line": 443,
+        "exact": "| EX-045 à EX-049 | Preview, journal, historique et reprise | A + D + R |"
+      },
+      {
+        "line": 463,
+        "exact": "| §8 · Commandes et historique | Lot A.5, transversal X et reprise R. |"
+      },
+      {
+        "line": 469,
+        "exact": "| Annexe A · Observations historiques | Point de départ à requalifier ; aucune conformité actuelle présumée. |"
+      },
+      {
+        "line": 486,
+        "exact": "REP-01 : `RachEma-ux/Fadi`, branche `main`, commit `5cf61d1fed9ed523b331228af20bce93a4f2bf63`, relevé le 18 octobre 2026. Les fichiers ci-dessous ont été lus pour les constats du §2 et l’organisation de suivi du §9. Les références portent sur cette révision, pas sur un HEAD futur."
+      },
+      {
+        "line": 518,
+        "exact": "Le présent travail est une lecture des deux sources et une planification, complétée par les points d’intégration ci-dessus. Il ne comporte ni nouvelle exécution des 38 tests, ni audit exhaustif des paquets, ni mesure du serveur de production. Les constats historiques de REF-02 restent historiques. Les routes, sous-lots et critères NAV sont des propositions d’exécution du plan, à valider dans leur périmètre."
+      }
+    ],
+    "avis": "Vérifiédocumentaire recevable :10cheminsprésents/blobsconformes ; audit3bcda historique etrésultatsfuturs distincts."
+  },
+  "PROV-05": {
+    "source_exacte": [
+      "- [ ] **PROV-05** — Documenter à chaque révision de la checklist les modifications du découpage, sans renuméroter EX, INV, IF, AC, TEST, NAV ou DEC."
+    ],
+    "comparison_independante": {
+      "markdown_count": 630,
+      "html_count": 630,
+      "same_order_ids": true,
+      "same_all_labels": true,
+      "differences": []
+    },
+    "garde_lue_non_executee": {
+      "lecture_statique": true,
+      "script_Claude_execute_par_A1": false,
+      "source_blob_config": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+      "source_blob_recalcule": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+      "normalisation_coches_uniquement": true,
+      "error_source_change_present": true,
+      "workflow_mentions_checker": {
+        "ci": true,
+        "missions": true
+      },
+      "limite": "Garde sourceMarkdown ; pas surveillance humaine automatique de toutSHA/historique ni garantie HTML au futur."
+    },
+    "avis": "Vérifiédocumentaire recevable si630/630IDsordreetlibellésexacts ; portéeV1/V1.1uniquement, nouvellecomparaisonrequisechaquerévision."
+  },
+  "delta_review": [
+    {
+      "id": "PROV-03",
+      "propose": "Vérifié",
+      "recevable_par_nature": "Vérifié documentaire seulement auSHA/source comparés ; conformitéproduit nonévaluée, aucuneacceptation, casesinchangées.",
+      "recurrence": "Obligation permanente : relire toute nouvelle occurrence."
+    },
+    {
+      "id": "PROV-04",
+      "propose": "Vérifié",
+      "recevable_par_nature": "Vérifié documentaire seulement auSHA/source comparés ; conformitéproduit nonévaluée, aucuneacceptation, casesinchangées.",
+      "recurrence": "Revérifier à chaque nouveau SHA de référence."
+    },
+    {
+      "id": "PROV-05",
+      "propose": "Vérifié",
+      "recevable_par_nature": "Vérifié documentaire seulement auSHA/source comparés ; conformitéproduit nonévaluée, aucuneacceptation, casesinchangées.",
+      "recurrence": "À refaire à chaque révision future de la checklist."
+    }
+  ],
+  "reserves": [
+    "Le mot forcémentdétectée concerne modificationsourceMarkdown normalisée sousCIeffectivementexécutée ; ne pas étendre à touschampsHTML ou toute future CI.",
+    "RésultatsClaude CODEX_MISSIONS_COVERAGE_OK restent attribuésClaude ; A1 a lu lagarde, pasexécutéleurscript.",
+    "A0 seul intégréregistreaprèsrevues ; aucunepermission appliquée par cedossier."
+  ],
+  "statuts_appliques": false
+}

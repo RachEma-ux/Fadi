@@ -1,0 +1,188 @@
+{
+  "agent": "A5",
+  "pieces": [
+    {
+      "path": "/workspace/work/resume496/agents/A5/CLASSIF1-INVENTAIRE-INDEPENDANT-A5.json",
+      "sha256": "a047a5925eba616fba9f923654edc76f492adc1869f11d5642644e81896db974"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/CLASSIF1-INVENTAIRE-INDEPENDANT-A5.md",
+      "sha256": "79b576a0ee48bae11b3836ab48275a11af90893dc11220c529d54b117ab9e508"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/CLASSIF1-REVUE-CONJOINTE-A5.json",
+      "sha256": "ef65fe28720344ed351b0a7bffa6d00903842cc6344b3a56855c0215ba43bf97"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/CLASSIF1-REVUE-CONJOINTE-A5.md",
+      "sha256": "9dcbb0b059eb577784ea36db5b8bc59133fb79c11c42e4e13656113c7caf2bb0"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/CLASSIF1-TESTS-ET-REVUE-A5.json",
+      "sha256": "6a44cc3b2c4f647ffbd1cb59db0b8167860c6ed44a616ad3299ba0ccba836e55"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/CLASSIF1-TESTS-ET-REVUE-A5.md",
+      "sha256": "a481d2288ab11a924757b5cf374c3e8eec09b8942fc85657768a0834b93867e0"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-001-007-CONFRONTATION-A2-A5.json",
+      "sha256": "1942e09f76e023e0898522142c48286dc10acf02d58c1e690f988d587440d5d7"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-001-007-REVUE-INDEPENDANTE.json",
+      "sha256": "d05aa59783c39b73f221c09957b5ce430c565ee9f25d59eaa4070b298b1ca4bc"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-001-007-REVUE-INDEPENDANTE.md",
+      "sha256": "030402a5ad633075adc4c3e37193d5236ff399a5dc1b0aaed55ed9630f61c3cf"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-009-015-CONFRONTATION-A5.json",
+      "sha256": "da7bf0fc95c2e32c04d54db8b9d126398c1358f83ca185302135d50d708960aa"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-009-015-CONFRONTATION-A5.md",
+      "sha256": "8275b60014840376549353fc58f307eed00596e4191760f07258a126994a41e8"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-009-015-LECTURE-INDEPENDANTE-A5.json",
+      "sha256": "657aec58d97fe550d094da46a2ca8b24ea10b5a255b9430cfcc302a2a31e332b"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-016-018-020-022-CONFRONTATION-A5.json",
+      "sha256": "c5365fbecd8b1df405c945e85c2f137db0e5d59e9a22922bfb2f21702721b05b"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-016-018-020-022-CONFRONTATION-A5.md",
+      "sha256": "be67e8afc70445df47491fa44dc18c950ff66fa9c203c901b96fd54439e41159"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-016-018-020-022-LECTURE-INDEPENDANTE-A5.json",
+      "sha256": "cd1f1fa36677be75d2098b91e584909807e71ccebd37337264a1a4ca3e86c24a"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-E2E-024-045-CONFRONTATION-A5.json",
+      "sha256": "5c3e37054a4b2c634e8c590d08152925576ecf3c09a0f36b72feab2e934047bc"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-E2E-024-045-CONFRONTATION-A5.md",
+      "sha256": "e1f5807c6a6e02e81ffa7e0860553c4b8d961090152c2f7e730987dc2dd0a8b4"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-E2E-024-045-LECTURE-INDEPENDANTE-A5.json",
+      "sha256": "d3ee2964e18295f3a4bab7d6ada9625e1ad69f67ffca7c52b26e41c3c913c8e8"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-E2E-046-072-CONFRONTATION-A5.json",
+      "sha256": "9d8d4ec4e6e5a6f838111d1d0da77ae23429923f6c3611429e04e51b9c5d8964"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-E2E-046-072-CONFRONTATION-A5.md",
+      "sha256": "e74dd1ab2f672673c5a247e3444bae4c59967fcc301ffe62c1392d4b688e2b73"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-E2E-046-072-LECTURE-INDEPENDANTE-A5.json",
+      "sha256": "73f4b2a7701f5977aff20c38ea45b2a4b9ad78c42e2129097548214477bdc5e3"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-E2E-074-103-CONFRONTATION-A5.json",
+      "sha256": "1b5108440eeb977c00394743940b8e053edbc09fe0590896d6cbc57631c37fa7"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-E2E-074-103-CONFRONTATION-A5.md",
+      "sha256": "99ea41b898583b82cb1e8a264e03a9441b600925f1983bcdb69e9bcb077b382d"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-E2E-074-103-LECTURE-INDEPENDANTE-A5.json",
+      "sha256": "d9e1a4af5284bf3428d58ab61936d04ab2295b90d30decc6ef03c2aadb313c91"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-E2E-105-125-CONFRONTATION-A5.json",
+      "sha256": "6c6ae1d1d816953467702e2299480197ede7e1a285a5a1640bafdc0b661085f5"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-E2E-105-125-CONFRONTATION-A5.md",
+      "sha256": "7fe7ee457a5481843f9d0718bc81b4b1bdd9ad42cd7a85393375b285f77b504b"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-E2E-105-125-LECTURE-INDEPENDANTE-A5.json",
+      "sha256": "af1f454bc8a93422c9c2654853664ff22248b796a1d2d4333ad80930e1d87f2d"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-TROIS-CONTRADICTIONS-OUVERTES-A5.json",
+      "sha256": "fba93cc20594c7150f8d40d63795228acbfe55a453b3af42c290be3264db3f6d"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-TROIS-CONTRADICTIONS-OUVERTES-A5.md",
+      "sha256": "3cbebf78864380fc16bbe5797342a83c0a86c0a7747c4d8828fca81545d4879e"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-UNITE-017-039-QA-REVUE-A3-A5.json",
+      "sha256": "f82ba54a3a2648da19665ac9532a06a14c59576d37ba583e1c609c4ee030400e"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-UNITE-017-039-QA-REVUE-A3-A5.md",
+      "sha256": "ea3505f518becdbb3267fb9d6647ca0b98cfadd36f6aa8d8cd0e6af47dbc38c8"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-UNITE-017-039-RESERVES-QUALITE-A5.json",
+      "sha256": "36ded40aad7b28a73b2ba5ce784a7c83f9d9b837935385b14cc5a34f3f38fd38"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-UNITE-017-039-RESERVES-QUALITE-A5.md",
+      "sha256": "64c084758a44b86d29ada2f9bdd5bb5b791a0d954eede4267bafd74ee3448d1a"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-UNITE-041-064-QA-RESERVES-A5.json",
+      "sha256": "236d97a588c47d97a23a47ba8b94d370469b3c7aa1519ea1918058fcaf91a3fe"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-UNITE-041-064-QA-RESERVES-A5.md",
+      "sha256": "b1bf5b0e3b9236ccdfb6d3afe9635c059ef8fbfc4e1a4f0f43845f867a7a1742"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-UNITE-065-092-QA-RESERVES-A5.json",
+      "sha256": "30c00d3c485ff3f1bd81740bed2eac96a6ef67ec6e8a2612ac59cb7aec6f0dfa"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-UNITE-065-092-QA-RESERVES-A5.md",
+      "sha256": "7d3a34b32f096f7f8c54e1431194c17738df3b20048cfffbf444b220e017b04f"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-UNITE-094-124-QA-RESERVES-A5.json",
+      "sha256": "a080b506052304177e3315ed6759fb2ef51fec457463a30a01df68e6b3d545c8"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/M08-UNITE-094-124-QA-RESERVES-A5.md",
+      "sha256": "0172ed7f9b99293b05a69447ca8b594e0177fb9c45edbb79606927d6e911d17b"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/R4-M09-RAPPROCHEMENT-A5.json",
+      "sha256": "63b873028405bf565b374b4e462003c8ab9482b069a3e7e591ee8c125e9a01fe"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/R4-M09-RAPPROCHEMENT-A5.md",
+      "sha256": "fb120ab0671c731ed7ac4a8307de27a2033cb791896d3afa15924273cbac96d9"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+      "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.md",
+      "sha256": "63c5d63c87b9252372f97bbe78b2b4a66f945ba83aa45d88ffbfeeb40bca6467"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/classification-conservation-final.log",
+      "sha256": "78757c001570390222a8f59e42217ca90881d45c3fcda6473627c7de52b22cbe"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/classification-conservation-first.log",
+      "sha256": "431dc15ed43a5e2eb9a16fc31d5b627481bddd18005d25cb2ab8392fcf725e24"
+    }
+  ],
+  "count": 45,
+  "scope": "Livrables A5 uniquement ; helpers Python exclus, originaux préservés. A0 seul intègre.",
+  "new_read_only_work": "Revues E2E toutes cohortes ; QA réserves unitaires attribuées A1/A3 ;3contradictions ouvertes ;READYR4/R5. Aucun nouveau test/runtime après24purs CLASSIF1 déjà remis."
+}

@@ -1,0 +1,1158 @@
+{
+  "objet": "Recherche finie de prochaineREADY sur32IDs A1 aprèsqualification203",
+  "sources": [
+    {
+      "path": "/workspace/work/resume496/agents/A1/203-QUALIFICATION-A1.json",
+      "sha256": "5d2c48fba32ab23033f5ba12ae760099d28b93e3f2f627435cb3033d1a091e85"
+    },
+    {
+      "path": "/workspace/work/resume496/incoming/snapshots/task-register-docs2076.json",
+      "sha256": "01e6e4a794653d9bca770b9152d3c7cca9159e893b7e56b4d16551da0a1e578f"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+      "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1-v2.json",
+      "sha256": "ea5300f241df47d168b1c3f0fc7180cd189b70d7d6b64e5f299a55522dd52f0c"
+    }
+  ],
+  "reference_main": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "reference_registre": "docs2076 snapshot fourniA0 ; aucun état futur inféré",
+  "conclusion": "Aucune nouvelle sous-tâche documentaire indépendante non redondante identifiée parmi ces32IDs. La matrice finie de préconditions est la remise utile ; les autres partitions continuent sans blocage global.",
+  "items": [
+    {
+      "id": "SRC-06",
+      "proprietaire_original": "A1",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Arbitrage effectif d’une contradiction résiduelle ou nouvelle contradiction de sources.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 34,
+              "exact": "5. IFC valide/export versus paramétrique : consultation/import en représentations ne prouve ni round-trip paramétrique ni certification ; rapports pertes et statut non natif restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "SRC-06",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "ConflitsG0/M08 etpréséance déjà consignés ; ne pas inventer résolution ni reposer gates6250904693/5795.",
+      "next_trigger": "Réponse aux questions existantes, décision physique ou amendement normatif source.",
+      "prochaine_action_declenchee": "Réemployer conflits G0 et M08 cercle, obtenir décisions ciblées sans réécrire sources.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "CAD-DEC-03",
+      "proprietaire_original": "A1",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "À définir",
+      "precondition_restante": "Identités humaines réelles, disponibilités et pouvoirs/cumul fournis par autorité responsable.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 15,
+              "exact": "| G0 | `docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md` auSHA7b0cca44fa44449cae80785dea078a857be4180c | Cadrage accepté seulement avec réserves explicites, CAD-DEC-03 ouvert |"
+            },
+            {
+              "line": 52,
+              "exact": "Aucun changement de ces quatre statuts n'est appliqué par A1 ; ce n'est pas un nouveau registre. G0-03 accepté n'implique ni G1-03 vérifié ni G1 passé. CAD-DEC-03 noms/disponibilités des personnes demeure ouvert."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "CAD-DEC-03",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Matrice rôles/droits et manque humain déjà documentés ; pas de donnée indépendante à inventer.",
+      "next_trigger": "Réponse nominative exploitable ; aucun agent fictif en remplacement.",
+      "prochaine_action_declenchee": "Demander noms/disponibilités et cumul autorisé ; A0–A6 ne sont pas habilitations humaines.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "E.1-02",
+      "proprietaire_original": "A1",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Choix physique/interdomaines/DEC16 applicable etaccord réalisation souslotE, puispreuves surcibleautorisée.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+          "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917",
+          "citations": [
+            {
+              "line": 109,
+              "exact": "Quantité IF-008 : sourceRevisionSet, ruleId/ruleVersion, sourceObjectIds, unité, rawValue, déductions, valeur affichée et fraîcheur ; ajustement manuel séparé avec auteur/motif, pas écrasement du calcul. Ne pas sommer règles/unités/révisions incompatibles silencieusement. Exigence approuvée reste indépendante du dessin, EX-065."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "E.1-02",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "ContratM24/IF etdelta203 déjà préparés ; répéter dictionnaire, manifeste oucontrôle créerait clone sans nouveau fait.",
+      "next_trigger": "Contrat adopté, souslotréalisé ou nouvelle exigence contrôlée modifiant M24/IF existants.",
+      "prochaine_action_declenchee": "Revoir lien requirementId/version distinct de resultId/sourceRevision/ruleVersion, puis réalisationE autorisée.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "E.1-05",
+      "proprietaire_original": "A1",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Choix physique/interdomaines/DEC16 applicable etaccord réalisation souslotE, puispreuves surcibleautorisée.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+          "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917",
+          "citations": [
+            {
+              "line": 109,
+              "exact": "Quantité IF-008 : sourceRevisionSet, ruleId/ruleVersion, sourceObjectIds, unité, rawValue, déductions, valeur affichée et fraîcheur ; ajustement manuel séparé avec auteur/motif, pas écrasement du calcul. Ne pas sommer règles/unités/révisions incompatibles silencieusement. Exigence approuvée reste indépendante du dessin, EX-065."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "E.1-05",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "ContratM24/IF etdelta203 déjà préparés ; répéter dictionnaire, manifeste oucontrôle créerait clone sans nouveau fait.",
+      "next_trigger": "Contrat adopté, souslotréalisé ou nouvelle exigence contrôlée modifiant M24/IF existants.",
+      "prochaine_action_declenchee": "Revoir association ensemble sources exact/règle/version/tolérance et refus d’un résultat périmé.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "E.2-01",
+      "proprietaire_original": "A1",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Choix physique/interdomaines/DEC16 applicable etaccord réalisation souslotE, puispreuves surcibleautorisée.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+          "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917",
+          "citations": [
+            {
+              "line": 45,
+              "exact": "Entrées : ensemble de sources canoniques révisées, dessins libres ou associés, références versionnées acceptées, vues/feuilles/quantités/documents, contrôles et observations. Toutes les références doivent former une coupe logique cohérente : interdiction d'assembler une ancienne pièce et une nouvelle géométrie après lectures entrelacées sans signalement."
+            },
+            {
+              "line": 47,
+              "exact": "Sortie : manifeste candidat IF-009 avec identifiant, usage, auteur/date, documents ordonnés (ID/version/empreinte), révisions/empreintes sources, règles/versions, rapports de contrôle et décisions sur observations bloquantes. Une pièce non générée, manquante, périmée, inaccessible ou de source ambiguë ne devient pas prête par présence d'une ligne de catalogue."
+            },
+            {
+              "line": 51,
+              "exact": "Le contrôle distingue **état d'exécution** (non lancé/en cours/terminé/échec) et **conclusion** (conforme/non conforme/non testé/non applicable justifié). Un échec technique ne signifie jamais conforme. Un contrôleur habilité recontrôle les corrections ; une observation ne se clôt pas parce que son concepteur la dit corrigée ou supprime l'objet. Une dérogation, si permise, est une décision tracée sur la bonne source et le bon usage, pas une fermeture silencieuse."
+            },
+            {
+              "line": 57,
+              "exact": "Entrées : droit d'approbation effectif, ensemble figé exact, contrôles requis et observations bloquantes traitées selon politique, usage et décision. Sortie : approbation liée à **l'empreinte du manifeste et à ses pièces**, acteur et date serveur, portée/usage et journal. L'ancienne décision reste liée à son ancien ensemble lorsque le travail continue."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "E.2-01",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "ContratM24/IF etdelta203 déjà préparés ; répéter dictionnaire, manifeste oucontrôle créerait clone sans nouveau fait.",
+      "next_trigger": "Contrat adopté, souslotréalisé ou nouvelle exigence contrôlée modifiant M24/IF existants.",
+      "prochaine_action_declenchee": "Réemployer IF010/EX069 ; définir observationId unique, liens objets/révisions et états sans dupliquer Collaboration.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "E.4-03",
+      "proprietaire_original": "A1",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Choix physique/interdomaines/DEC16 applicable etaccord réalisation souslotE, puispreuves surcibleautorisée.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+          "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917",
+          "citations": [
+            {
+              "line": 33,
+              "exact": "Les exemples utilisent une publication par variante A/B/C d'une même étude synthétique. IF-009 permet un ensemble coordonné multi-sources : un futur dossier peut référencer plusieurs variantes/révisions explicitement autorisées, mais ne mélange jamais implicitement les sources sous un unique faux numéro de révision. Les règles de choix inter-variantes restent à instruire par DEC-16 ; les exemples n'en font pas une API acquise."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "E.4-03",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "ContratM24/IF etdelta203 déjà préparés ; répéter dictionnaire, manifeste oucontrôle créerait clone sans nouveau fait.",
+      "next_trigger": "Contrat adopté, souslotréalisé ou nouvelle exigence contrôlée modifiant M24/IF existants.",
+      "prochaine_action_declenchee": "Rapprocher IF009 et exemples M24 existants ; arbitrer ensemble multisources avant implémentation.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "E.5-05",
+      "proprietaire_original": "A1",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Choix physique/interdomaines/DEC16 applicable etaccord réalisation souslotE, puispreuves surcibleautorisée.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 55,
+              "exact": "| D2BIM et coordination | Propriétés/contrôles/exigences distinctes des résultats ; références externes acceptées | Résultat avec source/règle/révision/conclusion, observation identifiée et recontrôlée |"
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "E.5-05",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "ContratM24/IF etdelta203 déjà préparés ; répéter dictionnaire, manifeste oucontrôle créerait clone sans nouveau fait.",
+      "next_trigger": "Contrat adopté, souslotréalisé ou nouvelle exigence contrôlée modifiant M24/IF existants.",
+      "prochaine_action_declenchee": "Conserver trois types de résultat/provenances ; image sans autorité commande ni métrés, testnégatif futur.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "E.6-02",
+      "proprietaire_original": "A1",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "À définir",
+      "precondition_restante": "Sousensemble format/sens/version/entités/livrables pilote décidé ; jeu de données et autorisation de réalisation/recette.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+          "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917",
+          "citations": [
+            {
+              "line": 115,
+              "exact": "`M24-EXEMPLES-MANIFESTES.json` contient trois exemples positifs **documentaires** A/B/C et quinze cas négatifs JSON bien formés. Les noms `illustrative-*`, `fixture-*`, états `expected-*`, contenus et permissions supposées ne sont pas des données/états/contrats réellement enregistrés. Même un exemple appelé positif n'est pas un test Fadi passé. Ses pièces sont des objetsJSON synthétiques de démonstration de manifeste, **pas des exportsPDF/IFC ni un format natif Studio livré** ; il ne couvre pas seul le contenu complet du MVP."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "E.6-02",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "M24/G0/EX079–080 et limitesIFCproxy existent ; pas de rapport de fidélité réel sans objet à échanger.",
+      "next_trigger": "Choix échange/natif concret reçu, ou adaptateur livré sous mandat distinct.",
+      "prochaine_action_declenchee": "Décider types/versions/entités et contrats sans promettre exports existants équivalentsStudio.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "E.6-03",
+      "proprietaire_original": "A1",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "À définir",
+      "precondition_restante": "Sousensemble format/sens/version/entités/livrables pilote décidé ; jeu de données et autorisation de réalisation/recette.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+          "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917",
+          "citations": [
+            {
+              "line": 149,
+              "exact": "| IFC/DXF et limites | Adaptateurs existants à qualifier par sens/version/entité | TEST028 ; rapport pertes/proxies/non natif, jamais certification/round-trip supposés |"
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "E.6-03",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "M24/G0/EX079–080 et limitesIFCproxy existent ; pas de rapport de fidélité réel sans objet à échanger.",
+      "next_trigger": "Choix échange/natif concret reçu, ou adaptateur livré sous mandat distinct.",
+      "prochaine_action_declenchee": "Proposer matrice par sens/version/entité puis arbitrage ; rapports pertes/proxys obligatoires.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "PROV-03",
+      "proprietaire_original": "A1",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Nouvelle révision de checklist, nouvel audit ou nouvelle preuve à inscrire en provenance.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 3,
+              "exact": "Programme#156, contribution A1, 18 octobre2026. Cet index **référence** les contrats existants, sans les recopier ni devenir une deuxième norme. G0 documentaire accepté au dossier7b0cca44… par6250109830 ; orientations DEC01/03 retenues pour spécifications par6250110124/0501 ; décisions physiques et G1–G4 encore ouvertes. Aucun nouveau code, POC exécuté, stockage SQL/paquet ou DEV_SCOPE n'est décidé ici."
+            },
+            {
+              "line": 15,
+              "exact": "| G0 | `docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md` auSHA7b0cca44fa44449cae80785dea078a857be4180c | Cadrage accepté seulement avec réserves explicites, CAD-DEC-03 ouvert |"
+            },
+            {
+              "line": 52,
+              "exact": "Aucun changement de ces quatre statuts n'est appliqué par A1 ; ce n'est pas un nouveau registre. G0-03 accepté n'implique ni G1-03 vérifié ni G1 passé. CAD-DEC-03 noms/disponibilités des personnes demeure ouvert."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "PROV-03",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Photographies5cf61/audit3bcda/main817 distinguées ; v1/v2 préservées ; obligation récurrente sans événementnouveau à traiter.",
+      "next_trigger": "Événement documentaire réel : diffsource, nouveauSHA ou rapport daté.",
+      "prochaine_action_declenchee": "Réemployer table provenance jointe sans présenterREP01 testactuel.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "PROV-04",
+      "proprietaire_original": "A1",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Nouvelle révision de checklist, nouvel audit ou nouvelle preuve à inscrire en provenance.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 5,
+              "exact": "## Sources actives uniques et versions"
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "PROV-04",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Photographies5cf61/audit3bcda/main817 distinguées ; v1/v2 préservées ; obligation récurrente sans événementnouveau à traiter.",
+      "next_trigger": "Événement documentaire réel : diffsource, nouveauSHA ou rapport daté.",
+      "prochaine_action_declenchee": "Joindre couple source/révision à tout futur résultat, sans renommer documents.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "PROV-05",
+      "proprietaire_original": "A1",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Nouvelle révision de checklist, nouvel audit ou nouvelle preuve à inscrire en provenance.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1-v2-DELTA.json",
+          "sha256": "a69d50bdc3d269fa98e20c7b6c2840f06b5502c1179e76df207118d8735e8706",
+          "citations": [
+            {
+              "line": 2,
+              "exact": "  \"v1_sha256\": \"3d212ffb93dc33380ac313556cb36b00302246b82ac7096b466c530b4923c719\","
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "PROV-05",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Photographies5cf61/audit3bcda/main817 distinguées ; v1/v2 préservées ; obligation récurrente sans événementnouveau à traiter.",
+      "next_trigger": "Événement documentaire réel : diffsource, nouveauSHA ou rapport daté.",
+      "prochaine_action_declenchee": "À chaque future modification autorisée checklist, fournir diff IDs/textes/raisons, sans renuméroter.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "SEQ-01",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Ouverture du prochain souslot aveccontrats/décisions/preuves applicables et accord précis.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 23,
+              "exact": "Exclus de sa réalisation initiale proposée : éditeurs/outils complets A.2/A.3, association topologique A.4, tous moteurs industriels réintégrés dans un nouveau catalogue, Registry/Manager completB, optimisationC/ordonnanceurD, revue/publication métier complèteE, migration de données existantesR et optionsF reportées. Leurs **interfaces** utiles restent prises en compte pour ne pas créer un contrat incompatible. Une intégration I/A.1 livrée ne serait pas le MVP A/B/C terminable ; TEST001 complet attend E. Aucun de ces lots n'est ouvert par cet index."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "SEQ-01",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Ordre septlots déjà explicité dans indexG1 etdelta203, aucune nouvelle dépendance à documenter sans fait nouveau.",
+      "next_trigger": "Nouveau contrat ratifié ou décision souslot modifiant une arête de séquence.",
+      "prochaine_action_declenchee": "Réutiliser séquence et pointeurs lots existants ; A0 consigne contrat/gate/accord précis de chaque ouverture.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "SEQ-02",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Ouverture du prochain souslot aveccontrats/décisions/preuves applicables et accord précis.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 23,
+              "exact": "Exclus de sa réalisation initiale proposée : éditeurs/outils complets A.2/A.3, association topologique A.4, tous moteurs industriels réintégrés dans un nouveau catalogue, Registry/Manager completB, optimisationC/ordonnanceurD, revue/publication métier complèteE, migration de données existantesR et optionsF reportées. Leurs **interfaces** utiles restent prises en compte pour ne pas créer un contrat incompatible. Une intégration I/A.1 livrée ne serait pas le MVP A/B/C terminable ; TEST001 complet attend E. Aucun de ces lots n'est ouvert par cet index."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "SEQ-02",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Ordre septlots déjà explicité dans indexG1 etdelta203, aucune nouvelle dépendance à documenter sans fait nouveau.",
+      "next_trigger": "Nouveau contrat ratifié ou décision souslot modifiant une arête de séquence.",
+      "prochaine_action_declenchee": "Réutiliser séquence et pointeurs lots existants ; A0 consigne contrat/gate/accord précis de chaque ouverture.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "SEQ-03",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Ouverture du prochain souslot aveccontrats/décisions/preuves applicables et accord précis.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 23,
+              "exact": "Exclus de sa réalisation initiale proposée : éditeurs/outils complets A.2/A.3, association topologique A.4, tous moteurs industriels réintégrés dans un nouveau catalogue, Registry/Manager completB, optimisationC/ordonnanceurD, revue/publication métier complèteE, migration de données existantesR et optionsF reportées. Leurs **interfaces** utiles restent prises en compte pour ne pas créer un contrat incompatible. Une intégration I/A.1 livrée ne serait pas le MVP A/B/C terminable ; TEST001 complet attend E. Aucun de ces lots n'est ouvert par cet index."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "SEQ-03",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Ordre septlots déjà explicité dans indexG1 etdelta203, aucune nouvelle dépendance à documenter sans fait nouveau.",
+      "next_trigger": "Nouveau contrat ratifié ou décision souslot modifiant une arête de séquence.",
+      "prochaine_action_declenchee": "Réutiliser séquence et pointeurs lots existants ; A0 consigne contrat/gate/accord précis de chaque ouverture.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "SEQ-04",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Ouverture du prochain souslot aveccontrats/décisions/preuves applicables et accord précis.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 23,
+              "exact": "Exclus de sa réalisation initiale proposée : éditeurs/outils complets A.2/A.3, association topologique A.4, tous moteurs industriels réintégrés dans un nouveau catalogue, Registry/Manager completB, optimisationC/ordonnanceurD, revue/publication métier complèteE, migration de données existantesR et optionsF reportées. Leurs **interfaces** utiles restent prises en compte pour ne pas créer un contrat incompatible. Une intégration I/A.1 livrée ne serait pas le MVP A/B/C terminable ; TEST001 complet attend E. Aucun de ces lots n'est ouvert par cet index."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "SEQ-04",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Ordre septlots déjà explicité dans indexG1 etdelta203, aucune nouvelle dépendance à documenter sans fait nouveau.",
+      "next_trigger": "Nouveau contrat ratifié ou décision souslot modifiant une arête de séquence.",
+      "prochaine_action_declenchee": "Réutiliser séquence et pointeurs lots existants ; A0 consigne contrat/gate/accord précis de chaque ouverture.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "SEQ-05",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Ouverture du prochain souslot aveccontrats/décisions/preuves applicables et accord précis.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 23,
+              "exact": "Exclus de sa réalisation initiale proposée : éditeurs/outils complets A.2/A.3, association topologique A.4, tous moteurs industriels réintégrés dans un nouveau catalogue, Registry/Manager completB, optimisationC/ordonnanceurD, revue/publication métier complèteE, migration de données existantesR et optionsF reportées. Leurs **interfaces** utiles restent prises en compte pour ne pas créer un contrat incompatible. Une intégration I/A.1 livrée ne serait pas le MVP A/B/C terminable ; TEST001 complet attend E. Aucun de ces lots n'est ouvert par cet index."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "SEQ-05",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Ordre septlots déjà explicité dans indexG1 etdelta203, aucune nouvelle dépendance à documenter sans fait nouveau.",
+      "next_trigger": "Nouveau contrat ratifié ou décision souslot modifiant une arête de séquence.",
+      "prochaine_action_declenchee": "Réutiliser séquence et pointeurs lots existants ; A0 consigne contrat/gate/accord précis de chaque ouverture.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "SEQ-06",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Ouverture du prochain souslot aveccontrats/décisions/preuves applicables et accord précis.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 23,
+              "exact": "Exclus de sa réalisation initiale proposée : éditeurs/outils complets A.2/A.3, association topologique A.4, tous moteurs industriels réintégrés dans un nouveau catalogue, Registry/Manager completB, optimisationC/ordonnanceurD, revue/publication métier complèteE, migration de données existantesR et optionsF reportées. Leurs **interfaces** utiles restent prises en compte pour ne pas créer un contrat incompatible. Une intégration I/A.1 livrée ne serait pas le MVP A/B/C terminable ; TEST001 complet attend E. Aucun de ces lots n'est ouvert par cet index."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "SEQ-06",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Ordre septlots déjà explicité dans indexG1 etdelta203, aucune nouvelle dépendance à documenter sans fait nouveau.",
+      "next_trigger": "Nouveau contrat ratifié ou décision souslot modifiant une arête de séquence.",
+      "prochaine_action_declenchee": "Réutiliser séquence et pointeurs lots existants ; A0 consigne contrat/gate/accord précis de chaque ouverture.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "SEQ-07",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Ouverture du prochain souslot aveccontrats/décisions/preuves applicables et accord précis.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 23,
+              "exact": "Exclus de sa réalisation initiale proposée : éditeurs/outils complets A.2/A.3, association topologique A.4, tous moteurs industriels réintégrés dans un nouveau catalogue, Registry/Manager completB, optimisationC/ordonnanceurD, revue/publication métier complèteE, migration de données existantesR et optionsF reportées. Leurs **interfaces** utiles restent prises en compte pour ne pas créer un contrat incompatible. Une intégration I/A.1 livrée ne serait pas le MVP A/B/C terminable ; TEST001 complet attend E. Aucun de ces lots n'est ouvert par cet index."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "SEQ-07",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Ordre septlots déjà explicité dans indexG1 etdelta203, aucune nouvelle dépendance à documenter sans fait nouveau.",
+      "next_trigger": "Nouveau contrat ratifié ou décision souslot modifiant une arête de séquence.",
+      "prochaine_action_declenchee": "Réutiliser séquence et pointeurs lots existants ; A0 consigne contrat/gate/accord précis de chaque ouverture.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "J0",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "À faire",
+      "precondition_restante": "Décisions nécessaires premierlot et traçabilité complètes au périmètre effectif, au-delà G0doc",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "J0",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Critères positifs, limites/nonpreuve etprérequis J0 déjà consignés ; préparer une seconde fiche serait doublon. Vérification effective non READY.",
+      "next_trigger": "Réception des preuves/capacités exactes du jalon, puis mandat de vérification adapté.",
+      "prochaine_action_declenchee": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "J1",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "À faire",
+      "precondition_restante": "RoutesI réalisées etNAV de base exécutables surbuildautorisé",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "J1",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Critères positifs, limites/nonpreuve etprérequis J1 déjà consignés ; préparer une seconde fiche serait doublon. Vérification effective non READY.",
+      "next_trigger": "Réception des preuves/capacités exactes du jalon, puis mandat de vérification adapté.",
+      "prochaine_action_declenchee": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "J2",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "À faire",
+      "precondition_restante": "A.1 réalisé avec commandes etpersistance/réouverture prouvées",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "J2",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Critères positifs, limites/nonpreuve etprérequis J2 déjà consignés ; préparer une seconde fiche serait doublon. Vérification effective non READY.",
+      "next_trigger": "Réception des preuves/capacités exactes du jalon, puis mandat de vérification adapté.",
+      "prochaine_action_declenchee": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "J3",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "À faire",
+      "precondition_restante": "Éditeurs2D/3D indépendants réalisés etprofils utilisables",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "J3",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Critères positifs, limites/nonpreuve etprérequis J3 déjà consignés ; préparer une seconde fiche serait doublon. Vérification effective non READY.",
+      "next_trigger": "Réception des preuves/capacités exactes du jalon, puis mandat de vérification adapté.",
+      "prochaine_action_declenchee": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "J4",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "À faire",
+      "precondition_restante": "Association/hôtes/copie/conflits/historique réalisés",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "J4",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Critères positifs, limites/nonpreuve etprérequis J4 déjà consignés ; préparer une seconde fiche serait doublon. Vérification effective non READY.",
+      "next_trigger": "Réception des preuves/capacités exactes du jalon, puis mandat de vérification adapté.",
+      "prochaine_action_declenchee": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "J5",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "À faire",
+      "precondition_restante": "B/C/D applicables réalisés etbudgets/charges/appareils décidés",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "J5",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Critères positifs, limites/nonpreuve etprérequis J5 déjà consignés ; préparer une seconde fiche serait doublon. Vérification effective non READY.",
+      "next_trigger": "Réception des preuves/capacités exactes du jalon, puis mandat de vérification adapté.",
+      "prochaine_action_declenchee": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "J6",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "À faire",
+      "precondition_restante": "E réalisé avecquantités/observations/revue/publicationcohérentes",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "J6",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Critères positifs, limites/nonpreuve etprérequis J6 déjà consignés ; préparer une seconde fiche serait doublon. Vérification effective non READY.",
+      "next_trigger": "Réception des preuves/capacités exactes du jalon, puis mandat de vérification adapté.",
+      "prochaine_action_declenchee": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "J7",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "À faire",
+      "precondition_restante": "Buildcandidat etrecettesA/B/C +migration/restauration autorisées",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "J7",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Critères positifs, limites/nonpreuve etprérequis J7 déjà consignés ; préparer une seconde fiche serait doublon. Vérification effective non READY.",
+      "next_trigger": "Réception des preuves/capacités exactes du jalon, puis mandat de vérification adapté.",
+      "prochaine_action_declenchee": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "J8",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "À faire",
+      "precondition_restante": "Déploiementdistinct autorisé, preuveusage etexploitation",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "J8",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Critères positifs, limites/nonpreuve etprérequis J8 déjà consignés ; préparer une seconde fiche serait doublon. Vérification effective non READY.",
+      "next_trigger": "Réception des preuves/capacités exactes du jalon, puis mandat de vérification adapté.",
+      "prochaine_action_declenchee": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "PIL-01",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Périmètre pilote détaillé ratifié etpreuves intégration des fonctions terminables.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 55,
+              "exact": "| D2BIM et coordination | Propriétés/contrôles/exigences distinctes des résultats ; références externes acceptées | Résultat avec source/règle/révision/conclusion, observation identifiée et recontrôlée |"
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "PIL-01",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "CadrageG0/quatredomaines/troisparcours etcritères refus déjà tracés ; aucunpilote accepté par simple dossier.",
+      "next_trigger": "Décision pilote nouvelle oulivraison candidate vérifiable.",
+      "prochaine_action_declenchee": "Réemployer tableMVP G0 et exigences ; conserver publication/observation/reprise comme critères éliminatoires.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "PIL-02",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "À définir",
+      "precondition_restante": "Sélection métier bornée des outils usuels et statut des nonretenus, avec autorité et contrats.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/M21-CONTRAT-MINIMAL.md",
+          "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625",
+          "citations": [
+            {
+              "line": 5,
+              "exact": "18 octobre2026 ; référence d’instructions `301a4fa8f2594fa1c8f0317c18085b5ae22ac7a3`. Reprise de M003 `M21-MANAGER-PREPARATION.md`, lotB A2, NAV et fiches normatives141, sans modifier les originaux ni les sources. **Préparation documentaire non exécutable**, aucune application/POC/loader/moteur/API/DB créé. Catalogue JSON de huit exemples, pas un catalogue industriel exhaustif ni un profil pilote accepté. PDEV N/D, G1/G3 non passés par cet artefact."
+            },
+            {
+              "line": 9,
+              "exact": "EX-026..031 catalogue/gouvernance ; EX-032..037 Manager/préférences/recherche/accessibilité/gestes ; EX-038..044 chargement/cache/offline ; IF-005 activation ; IF-004/006/011 commandes/révisions/journal ; INV-009/014/015 profil/offline/découverte. D07 retient placement/navigation/droits pour spécifications, pas la forme physique du Registry. DEC-04 profils, DEC-05 manifests, DEC-06 Manager, DEC-07 chunks, DEC-14 offline et DEC-18 réutilisation restent à instruire au périmètre concerné. Les choix d’IDs, touches, modules et télémétrie ci-dessous ne sont pas approuvés par leur présence dans JSON."
+            },
+            {
+              "line": 21,
+              "exact": "Les deux `echelle` de la palette Atelier n’ont pas le même sens. Exemple alias scoping catalogue+version+fiche distingue DA-07-13 objet et DA-02-05 homothétie ; historique version «à qualifier». Sans discriminateur, résultat **ambigu** : aucune activation/migration automatique, présenter choix nommé. Table proposée ne renomme pas commandes, favoris ni historique persistés. A2 doit identifier stockage et compatibilité avant tout sous-lot de correction autorisé."
+            },
+            {
+              "line": 44,
+              "exact": "| Ressources | non chargées/chargement/prêtes/échec ; cache compatible/incomplet | Progression/retry ; catalogue seul ≠ outiloffline utilisable. |"
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "PIL-02",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "G0, exemplesM21 et distinctionprofil20/catalogue déjà disponibles ; répéter une liste de candidats ne tranche pas choix.",
+      "next_trigger": "Décision de sélection ou nouvelle contrainte métier effectivement reçue.",
+      "prochaine_action_declenchee": "Soumettre sélection métier par fonction A/B/C avec contrats et exclusions, sans réduire au profil20.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "PIL-03",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "En cours",
+      "precondition_restante": "Éventuelle modification future du profilessai/catalogue/limiteproduit.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/M21-CONTRAT-MINIMAL.md",
+          "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625",
+          "citations": [
+            {
+              "line": 5,
+              "exact": "18 octobre2026 ; référence d’instructions `301a4fa8f2594fa1c8f0317c18085b5ae22ac7a3`. Reprise de M003 `M21-MANAGER-PREPARATION.md`, lotB A2, NAV et fiches normatives141, sans modifier les originaux ni les sources. **Préparation documentaire non exécutable**, aucune application/POC/loader/moteur/API/DB créé. Catalogue JSON de huit exemples, pas un catalogue industriel exhaustif ni un profil pilote accepté. PDEV N/D, G1/G3 non passés par cet artefact."
+            },
+            {
+              "line": 9,
+              "exact": "EX-026..031 catalogue/gouvernance ; EX-032..037 Manager/préférences/recherche/accessibilité/gestes ; EX-038..044 chargement/cache/offline ; IF-005 activation ; IF-004/006/011 commandes/révisions/journal ; INV-009/014/015 profil/offline/découverte. D07 retient placement/navigation/droits pour spécifications, pas la forme physique du Registry. DEC-04 profils, DEC-05 manifests, DEC-06 Manager, DEC-07 chunks, DEC-14 offline et DEC-18 réutilisation restent à instruire au périmètre concerné. Les choix d’IDs, touches, modules et télémétrie ci-dessous ne sont pas approuvés par leur présence dans JSON."
+            },
+            {
+              "line": 21,
+              "exact": "Les deux `echelle` de la palette Atelier n’ont pas le même sens. Exemple alias scoping catalogue+version+fiche distingue DA-07-13 objet et DA-02-05 homothétie ; historique version «à qualifier». Sans discriminateur, résultat **ambigu** : aucune activation/migration automatique, présenter choix nommé. Table proposée ne renomme pas commandes, favoris ni historique persistés. A2 doit identifier stockage et compatibilité avant tout sous-lot de correction autorisé."
+            },
+            {
+              "line": 44,
+              "exact": "| Ressources | non chargées/chargement/prêtes/échec ; cache compatible/incomplet | Progression/retry ; catalogue seul ≠ outiloffline utilisable. |"
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "PIL-03",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "Delta203 dit20profilessai ≠ catalogue ≠ plafond ; aucune actiondocumentaire résiduelle sans nouvelle source.",
+      "next_trigger": "Nouveau profil ou décision explicite limite ; sinon maintien de distinction actuelle.",
+      "prochaine_action_declenchee": "Consigner explicitement20=profil d’essai non plafond dans delta ciblé joint.",
+      "statut_non_modifie": true
+    },
+    {
+      "id": "PIL-04",
+      "proprietaire_original": "A0",
+      "statut_canonique_snapshot2076": "À définir",
+      "statut_qualification_precedente_propose": "À définir",
+      "precondition_restante": "Sélection métier bornée des outils usuels et statut des nonretenus, avec autorité et contrats.",
+      "preparation_disponible": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/M21-CONTRAT-MINIMAL.md",
+          "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625",
+          "citations": [
+            {
+              "line": 5,
+              "exact": "18 octobre2026 ; référence d’instructions `301a4fa8f2594fa1c8f0317c18085b5ae22ac7a3`. Reprise de M003 `M21-MANAGER-PREPARATION.md`, lotB A2, NAV et fiches normatives141, sans modifier les originaux ni les sources. **Préparation documentaire non exécutable**, aucune application/POC/loader/moteur/API/DB créé. Catalogue JSON de huit exemples, pas un catalogue industriel exhaustif ni un profil pilote accepté. PDEV N/D, G1/G3 non passés par cet artefact."
+            },
+            {
+              "line": 9,
+              "exact": "EX-026..031 catalogue/gouvernance ; EX-032..037 Manager/préférences/recherche/accessibilité/gestes ; EX-038..044 chargement/cache/offline ; IF-005 activation ; IF-004/006/011 commandes/révisions/journal ; INV-009/014/015 profil/offline/découverte. D07 retient placement/navigation/droits pour spécifications, pas la forme physique du Registry. DEC-04 profils, DEC-05 manifests, DEC-06 Manager, DEC-07 chunks, DEC-14 offline et DEC-18 réutilisation restent à instruire au périmètre concerné. Les choix d’IDs, touches, modules et télémétrie ci-dessous ne sont pas approuvés par leur présence dans JSON."
+            },
+            {
+              "line": 21,
+              "exact": "Les deux `echelle` de la palette Atelier n’ont pas le même sens. Exemple alias scoping catalogue+version+fiche distingue DA-07-13 objet et DA-02-05 homothétie ; historique version «à qualifier». Sans discriminateur, résultat **ambigu** : aucune activation/migration automatique, présenter choix nommé. Table proposée ne renomme pas commandes, favoris ni historique persistés. A2 doit identifier stockage et compatibilité avant tout sous-lot de correction autorisé."
+            },
+            {
+              "line": 44,
+              "exact": "| Ressources | non chargées/chargement/prêtes/échec ; cache compatible/incomplet | Progression/retry ; catalogue seul ≠ outiloffline utilisable. |"
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+          "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+          "section": "PIL-04",
+          "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+        }
+      ],
+      "action_documentaire_independante_residuelle": "Aucune identifiée dans ce périmètre après réemploi des préparations existantes.",
+      "raison": "G0, exemplesM21 et distinctionprofil20/catalogue déjà disponibles ; répéter une liste de candidats ne tranche pas choix.",
+      "next_trigger": "Décision de sélection ou nouvelle contrainte métier effectivement reçue.",
+      "prochaine_action_declenchee": "Conserver candidats nonretenus « à qualifier », F reporté D02, pas tous indisponibles par déduction.",
+      "statut_non_modifie": true
+    }
+  ],
+  "comptes": {
+    "IDs": 32,
+    "nouvelle_action_documentaire_residuelle_identifiee": 0,
+    "statuts_Verifie_Accepte_proposes": 0
+  },
+  "execution_reelle": "Lecture du sousensemble32 etréemploi des preuves ; matrice dedéclencheurs réalisée, aucun auditglobal/dossierG1/corpusclone créé.",
+  "questions_existantes": "6250904693/5795 conservées sans nouvelle sollicitation de gate.",
+  "limites": "Aucun code/test/moteur/API/DB/service/PR/fusion/admin/registre/coches modifié. A0 seul documentscommuns. Proposition précédente En cours/Àfaire n’est pas statutcanonique ni acceptation."
+}

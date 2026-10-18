@@ -1,0 +1,84 @@
+{
+  "date_UTC": "2026-10-18",
+  "copies": [
+    {
+      "path": "docs/ai-team/reports/claude-m11-prov/DELTA-REGISTRE-PROPOSE.json",
+      "source_commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "sha256": "25ac898e05a7396be400ad29a19831dacd32a88c4ff50ce759e4da445dc0cd51",
+      "bytes": 8423,
+      "statut": "Copie source ; rapports attribués à Claude, scripts non importés/exécutés par Codex ; ADR Proposé uniquement"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m11-prov/PROV-03-05.md",
+      "source_commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "sha256": "10effdcf60897fd682a7170b27aa0b02de39a12a1d62fbbadb26b334d60d6515",
+      "bytes": 6023,
+      "statut": "Copie source ; rapports attribués à Claude, scripts non importés/exécutés par Codex ; ADR Proposé uniquement"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m11-prov/README.md",
+      "source_commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "sha256": "eb9eab6355f2a818015c6090f6192beb7623d2422608059703190229f5e23231",
+      "bytes": 3318,
+      "statut": "Copie source ; rapports attribués à Claude, scripts non importés/exécutés par Codex ; ADR Proposé uniquement"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-verif-169-171/README.md",
+      "source_commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "sha256": "8a5bc77b44d2fe1886304872cae2fde8b5532113e9160f53c8e86de5be413757",
+      "bytes": 6676,
+      "statut": "Copie source ; rapports attribués à Claude, scripts non importés/exécutés par Codex ; ADR Proposé uniquement"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-verif-169-171/ci-resolu-169-171.yml",
+      "source_commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "sha256": "eccb5d87a6083b3ec1a261658d12e6bfbf2426e7db8d0cdbb70ea9703878e209",
+      "bytes": 30813,
+      "statut": "Copie source ; rapports attribués à Claude, scripts non importés/exécutés par Codex ; ADR Proposé uniquement"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-verif-169-171/ci-resolu-169.yml",
+      "source_commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "sha256": "ecb2902742ea20d7187bf440cd94917039035019f861de23b4bf57edd3701590",
+      "bytes": 28077,
+      "statut": "Copie source ; rapports attribués à Claude, scripts non importés/exécutés par Codex ; ADR Proposé uniquement"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-verif-169-171/ci-resolu-171.yml",
+      "source_commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "sha256": "beca2dea96a0cef5dd027b16fe6bbcf5099b3b73c196210ca2f02ca47ad618b9",
+      "bytes": 28456,
+      "statut": "Copie source ; rapports attribués à Claude, scripts non importés/exécutés par Codex ; ADR Proposé uniquement"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-verif-169-171/ci_eval.py",
+      "source_commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "sha256": "b39be37ac447997103137c03d21bd5a84576f62607b8f3a40a2b7386c8f9c246",
+      "bytes": 1909,
+      "statut": "Copie source ; rapports attribués à Claude, scripts non importés/exécutés par Codex ; ADR Proposé uniquement"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-verif-169-171/ci_merge.py",
+      "source_commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "sha256": "076cda5afb87e8e51c8c478e69cb00c8f0bab660c61671209172ea65932c6424",
+      "bytes": 2487,
+      "statut": "Copie source ; rapports attribués à Claude, scripts non importés/exécutés par Codex ; ADR Proposé uniquement"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-verif-169-171/routage.txt",
+      "source_commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "sha256": "7d58a200412e12256faacdde65d69e797cd94a2899f5a0f2ff27f6601f2cdc30",
+      "bytes": 1515,
+      "statut": "Copie source ; rapports attribués à Claude, scripts non importés/exécutés par Codex ; ADR Proposé uniquement"
+    },
+    {
+      "path": "docs/continuity/decisions/ADR-STUDIO-NAV-01.md",
+      "source_commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "sha256": "14b67cab74ada41f955221c1189c6689d17390670eb9c3a398112b00fa0b0745",
+      "bytes": 13952,
+      "statut": "Copie source ; rapports attribués à Claude, scripts non importés/exécutés par Codex ; ADR Proposé uniquement"
+    }
+  ],
+  "source_comment": 6251213726,
+  "note": "Les fichiers CI sous docs sont propositions et preuves inertes, distincts des workflows réels. Revue A6 et A5 des variantes actuelles requise avant tout push de branchecode."
+}

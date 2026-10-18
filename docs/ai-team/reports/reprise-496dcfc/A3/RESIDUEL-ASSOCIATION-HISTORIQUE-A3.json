@@ -1,0 +1,1197 @@
+{
+  "report": "RESIDUEL-ASSOCIATION-HISTORIQUE-A3",
+  "agent": "A3",
+  "created_utc": "2026-10-18T14:35:41.318260+00:00",
+  "reference_documents_commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+  "artifact_inputs": [
+    {
+      "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+      "commit": null,
+      "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e",
+      "meaning": "Remise locale A2 figée ; copie A0 en cours, aucune attribution de commit inventée."
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A2/NEXT-READY-POST203-A2.json",
+      "commit": null,
+      "sha256": "aebe223472c8e61939d495fc0d903f4682e983e014dbda98485026317985ac55",
+      "meaning": "Remise locale A2 figée ; copie A0 en cours, aucune attribution de commit inventée."
+    }
+  ],
+  "source_inventory": [
+    {
+      "key": "LOT",
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "git_blob": "22d652d23b6b19fb62c824a60e1a3fd18b6bcf07",
+      "sha256": "0c8b061a17a635b6ebe9bb3c593d14706489c28f334e4ff45e87a9018f60575b",
+      "line_count": 167
+    },
+    {
+      "key": "LOT2D",
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.2.md",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "git_blob": "bfb2f8309b8e27d0e385decccd882867e8751e8d",
+      "sha256": "f07be9bd6b449b0bed65bc81942055b2212a1ef326f5ae6dacc0a544e35ea4b0",
+      "line_count": 107
+    },
+    {
+      "key": "LOT3D",
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.3.md",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "git_blob": "027e0f1f16f7c5d37d2a3221694eeb5eb14ad3a0",
+      "sha256": "44a46d3a0b15d752b22ef5ef4d7fca5c737e1262ef58cbabf3717176d6db921b",
+      "line_count": 135
+    },
+    {
+      "key": "M17",
+      "path": "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "git_blob": "9c5da1a6582cbebaf3ab6ef1492d4081de0ac498",
+      "sha256": "893d4917fe810867b589727e82d1789db56453f86c78fbfab56b294acedac84b",
+      "line_count": 86
+    },
+    {
+      "key": "REPRISE",
+      "path": "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "git_blob": "1bb47b00580fac70e8d19d1e4c07d7de382de5e2",
+      "sha256": "45b5b77923079d12f9dc98a1050a32ed177f74de0243075b2efb041a1585eb3e",
+      "line_count": 94
+    },
+    {
+      "key": "NAV",
+      "path": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "git_blob": "d8d95c166171c567625f798f5dc17867ce412ba8",
+      "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+      "line_count": 132
+    },
+    {
+      "key": "ORACLES",
+      "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "git_blob": "ae5075fd4269258d5ff13d7c85de327627c219b6",
+      "sha256": "65f599e6645d6a927cc6f114a2d61ce371e814b4e097091120faba49aca89fe4",
+      "line_count": 39
+    },
+    {
+      "key": "MOTEURS",
+      "path": "docs/ai-team/reports/reprise-496dcfc/A3/DEC18-MOTEURS-PUBLICS-CANDIDATS.json",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "git_blob": "03df267b09e03c399b5ece5c12030671af6df22a",
+      "sha256": "24de7c5169d0d1bb5d3f1be2119c5186065ae9f2c5fc45277c6a5318b7164c8b",
+      "line_count": 1858
+    },
+    {
+      "key": "G1V2",
+      "path": "docs/ai-team/reports/reprise-496dcfc/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "git_blob": "c6fd3c15d1c37a131846badade4d77842a98fda7",
+      "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+      "line_count": 71
+    },
+    {
+      "key": "CHECKLIST",
+      "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "git_blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+      "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+      "line_count": 1355
+    }
+  ],
+  "citations": [
+    {
+      "id": "CONTRAT-ASSOCIATION",
+      "source_key": "LOT",
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
+      "line": 9,
+      "exact_line": "**Contrat candidat à ratifier :** C-ASSOCIATION : associationId, kind=associated|linked-reference|independent-copy, sourceRef,targetRef,propagation,state,provenance. associated même objectId ; copy nouvelles identités sans propagation ; linked pin version et acceptation explicite. C-COMMAND : requestId,contractVersion,toolId,scope C-STUDIO-CONTEXT,targetIds,operation,parameters ; acteur serveur. accepted/rejected/conflict/pending/duplicate avec révisions/effets et aucun succès anticipé. Undo nouveau command revalidé, jamais rewind historique.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "AC-001-wp419",
+      "source_key": "LOT",
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
+      "line": 163,
+      "exact_line": "> AC-001. Le objectId du mur reste stable ; l’ouverture reste reliée au bon hôte ; les deux planches reflètent la même définition ; les métrés sont mis à jour ou marqués périmés ; undo/redo et réouverture retrouvent les valeurs ; un dossier publié conserve la version examinée.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "AC-003-wp560",
+      "source_key": "LOT",
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
+      "line": 167,
+      "exact_line": "> AC-003. Deux utilisateurs modifiant un mur de manière incompatible obtiennent un conflit traçable, une révision de référence préservée et aucune application implicite du dernier enregistrement. La restauration fonctionne après coupure simulée sans duplication de la commande.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "EX-020-wp363",
+      "source_key": "LOT2D",
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.2.md",
+      "line": 35,
+      "exact_line": "> EX-020 — Indépendance forte. Un dessin 2D doit pouvoir être sérialisé, restauré, édité et exporté sans reconstruction d’un modèle 3D « de substitution ». Les extrusions ou transferts créent un objet 3D nouveau ou une association déclarée.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "EX-023-wp414",
+      "source_key": "LOT",
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
+      "line": 79,
+      "exact_line": "> EX-023 — Repères et unités. Toute primitive possède un système de coordonnées identifiable : document 2D, local d’objet, système de projet et, le cas échéant, système géographique référencé. Les transformations sont versionnées et vérifiées, avec unités explicites ; la projection graphique en pixels ne constitue jamais l’unité de référence.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "EX-015-wp301",
+      "source_key": "LOT",
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
+      "line": 55,
+      "exact_line": "> EX-015 — Références topologiques. Le système ne reconstitue jamais une relation entre une cote et une face découpée sur la seule proximité spatiale si plusieurs cibles plausibles existent. Il la conserve avec correspondance démontrée ou signale une rupture à résoudre.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "EX-017-wp331",
+      "source_key": "LOT",
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
+      "line": 63,
+      "exact_line": "> EX-017 — Atomicité. Les modifications canoniques d’une même opération sont engagées ensemble ou pas du tout. Les rafraîchissements de cache peuvent être différés et signalés, mais ne constituent pas des modifications canoniques validées.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "EX-018-wp332",
+      "source_key": "LOT",
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
+      "line": 67,
+      "exact_line": "> EX-018 — Idempotence. Une même commande répétée après une interruption, avec son requestId et le même périmètre, n’est pas appliquée deux fois. Une nouvelle commande distincte exige une nouvelle identité.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "EX-021-wp364",
+      "source_key": "LOT",
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
+      "line": 71,
+      "exact_line": "> EX-021 — Correspondance explicite. Une commande sur un objet architectural depuis l’une des planches cible le même objectId et les mêmes relations. Les deux planches ne doivent pas maintenir leurs propres versions autoritaires du mur.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "EX-022-wp383",
+      "source_key": "LOT",
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
+      "line": 75,
+      "exact_line": "> EX-022 — Propagation limitée. Toute propagation est définie par le type d’association et la dépendance. L’extraction d’une coupe ne confère pas à ses segments le pouvoir universel de modifier le volume ; une cote associée ne modifie pas automatiquement sa cible.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "IF-004-wp330",
+      "source_key": "LOT",
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
+      "line": 147,
+      "exact_line": "> IF-004 — Précondition de version. Toute intention qui modifie un objet en environnement collaboratif référence baseRevisionId et, lorsque nécessaire, les versions individuelles des objets et relations touchés. En cas de divergence incompatible : refus et proposition de résolution ou nouveau calcul sur la base courante.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "IF-011-wp868",
+      "source_key": "LOT",
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
+      "line": 159,
+      "exact_line": "> IF-011 — Journal de changement. Événement avec eventId, transaction, auteur, étude/variante, révision base/issue, effets, horodatage serveur et relation éventuelle à un job. La diffusion de notifications ne constitue pas une confirmation métier sans engagement préalable.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "M17-autorite",
+      "source_key": "M17",
+      "path": "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+      "line": 23,
+      "exact_line": "Un objet/révision a un seul couple propriétaire logique + writerAuthority autorisé, établi serveur. Deux surfaces peuvent afficher le même objet, elles n'obtiennent pas deux droits d'écriture directs. Une copie indépendante reçoit nouvel ID et provenance ; une référence liée reste distincte d'une copie. L'autorité associée ne duplique pas les quantités transverses autoritaires ni le programme approuvé. Une vue graphique n'est jamais une autorité métier.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "M17-enveloppe",
+      "source_key": "M17",
+      "path": "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+      "line": 31,
+      "exact_line": "L'enveloppe illustrative IF-006 est réutilisée telle quelle : requestId/toolId/contractVersion/actorId/scope(projectId,studyId,variantId,baseRevisionId)/targetIds/operation/parameters/mode. Les variantes de représentation physique restent à ratifier ; aucune route nouvelle annoncée. Les métadonnées writerAuthority, expectedObjectVersions et relationVersions des exemples se trouvent dans une section documentaire `preconditions`, pas ajoutées en prétendant modifier IF-006. Leur emplacement physique est ouvert.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "M17-preconditions",
+      "source_key": "M17",
+      "path": "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+      "line": 33,
+      "exact_line": "Avant effet : authentification serveur et concordance actorId, autorisation tenant/projet/étude/variante/objet et action ; versions de contrat/document supportées ; parenté complète ; base courante et versions d'objets/relations si nécessaire ; writer unique ; unités/repère/tolérances valides, références non ambiguës, limites de taille et coût. Role est une capacité serveur d'édition, de revue, d'approbation ou de publication, jamais un champ client créant un droit. Délégation/cumul explicites et journalisés selon politique approuvée ; administrateur technique n'est pas approbateur métier implicite.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "M17-dedup",
+      "source_key": "M17",
+      "path": "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+      "line": 35,
+      "exact_line": "Proposition de déduplication : clé serveur de portée tenant/projet/étude/variante + identité authentifiée + requestId, conservant empreinte sémantique du message et résultat durable. Même clé et contenu identique retourne le même résultat sans nouvel effet, même si la tête a avancé ; même clé et autre contenu refuse REQUEST_ID_REUSED. La durée de rétention et le traitement après expiration restent à décider avant production, sans changer silencieusement la rétention des sauvegardes. Une nouvelle commande reçoit nouvel ID. Preview ne confirme pas de sauvegarde ; passage preview→commit n'est pas un replay de contenu différent sous même clé.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "M17-commit",
+      "source_key": "M17",
+      "path": "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+      "line": 37,
+      "exact_line": "Commit : engagement atomique de toutes données canoniques touchées, révision de sortie, journal IF-011 et événement/outbox durable. La notification seule ne confirme rien. Succès expose résultat/revision/event/transaction/effets/portées invalidées ; caches restent reconstruisibles. Job IF-003 renvoie sa révision source ; résultat périmé, annulé ou sans droit renouvelé ne s'engage pas automatiquement. Undo/redo est une nouvelle opération contrôlée sur tête courante, pas déplacement destructif d'un pointeur historique. Un rebase incompatible refuse et présente résolution/recalcul, pas écrasement.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "M17-erreurs-candidates",
+      "source_key": "M17",
+      "path": "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+      "line": 39,
+      "exact_line": "Codes d'erreurs **candidats**, pas codes API actuels : UNAUTHENTICATED, INVALID_IDENTIFIER, FORBIDDEN_SCOPE, CONTEXT_PARENT_MISMATCH, SCHEMA_UNSUPPORTED, CONTRACT_UNSUPPORTED, REVISION_CONFLICT, OBJECT_VERSION_CONFLICT, WRITER_MISMATCH, REQUEST_ID_REUSED, AMBIGUOUS_REFERENCE, IMMUTABLE_REVISION, INPUT_LIMIT, DURABILITY_FAILED, PUBLICATION_INCOMPLETE, APPROVAL_MISMATCH. Chaque refus produit zéro effet canonique et trace de refus sans secret. Ne pas révéler l'existence d'une ressource interdite ; mapping HTTP/masquage 403/404 à décider. Timeout réseau après commit peut donner résultat indéterminé côté navigateur : réinterroger par requestId, jamais annoncer l'annulation du commit sans preuve.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "M17-snapshot",
+      "source_key": "M17",
+      "path": "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+      "line": 43,
+      "exact_line": "Candidat snapshot : identifiant/version de schéma/contexte complet/révision/parents/transaction/auteur et heure serveur ; liste des trois autorités présentes et références immuables de leurs documents, versions, empreintes, unités/repères ; sources et règles versionnées ; associations et leur état ; journal et observations référencés. Une branche A peut contenir seulement le dessin2D ; B seulement le modèle3D ; C l'autorité associée et ses projections. Aucun snapshot n'exige un sous-modèle absent pour simuler la conformité. Manifeste et contenus doivent constituer une même coupe logique, protégée contre lectures entrelacées : le défaut potentiel GET Atelier décrit dans CI154-SNAPSHOT-CONTRAT n'est pas une recette de snapshot cohérent. Choix transaction/isolement/version-set à ratifier et éprouver.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "M23-ACK-perdu",
+      "source_key": "REPRISE",
+      "path": "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+      "line": 39,
+      "exact_line": "| Commit dont ACK perdu | Client indéterminé ; interrogation/rejeu même requestId+portée+payload | Même résultat durable, pas seconde mutation ni annulation supposée |",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "M23-compensation",
+      "source_key": "REPRISE",
+      "path": "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+      "line": 41,
+      "exact_line": "Si une annulation arrive **après engagement durable**, elle ne supprime ni événement ni publication. Toute compensation est une nouvelle commande contrôlée à la tête courante, avec son propre requestId et son journal ; conflits/refus préservent l’original. Une action d’édition distante peut rendre invalide même un résultat géométriquement identique : état source et autorisation font partie du contrat.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "M27-reprise-contexte",
+      "source_key": "REPRISE",
+      "path": "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+      "line": 47,
+      "exact_line": "1. Reprendre le contexte exact et l’autorité de chaque donnée ; authentifier et autoriser avant lecture des résultats/pièces. Pas de redirection de queue vers l’utilisateur ou variante nouvellement affichés.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "M27-resultats-avant-rejeu",
+      "source_key": "REPRISE",
+      "path": "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+      "line": 48,
+      "exact_line": "2. Interroger les résultats des requestId connus avant tout rejeu. Même requestId avec nouveau payload/contexte est refusé ; nouveau travail exige nouvelle identité.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "M27-coupe-coherente",
+      "source_key": "REPRISE",
+      "path": "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+      "line": 49,
+      "exact_line": "3. Charger une **coupe logique cohérente** des documents canoniques, révisions, journal/request-results et outbox. Le mécanisme transaction/isolement/version-set est à ratifier/éprouver ; une série de GET indépendants ne prouve pas cette coupe.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "M27-etats-reprise",
+      "source_key": "REPRISE",
+      "path": "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+      "line": 50,
+      "exact_line": "4. Reconstituer séparément intentions locales pendantes, commits centraux confirmés, conflits/rejets et previews abandonnées. Si durable inconnu, afficher indéterminé et garder la demande ; ne pas la purger pour afficher « enregistré ».",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "M27-notifications",
+      "source_key": "REPRISE",
+      "path": "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+      "line": 51,
+      "exact_line": "5. Consommer la notification par eventId ; une livraison répétée ne crée pas une nouvelle commande/publication. Une notification perdue ne déconfirme pas le commit durable ; elle impose resynchronisation depuis le journal.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "NAV-contexte",
+      "source_key": "NAV",
+      "path": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+      "line": 21,
+      "exact_line": "Tous les identifiants sont opaques, encodés comme segments ; type/longueur admis par contrat A2, jamais interprétés comme noms de fichiers. Résolution serveur vérifie existence **et** projectId↔studyId↔variantId↔revisionId et droits sur chaque ressource. Aucune redirection automatique vers le dernier projet en cas de lien interdit. Un contexte obsolète n'est pas remplacé silencieusement. Ordre de priorité : URL explicite autorisée, puis choix utilisateur ; dernier contexte personnel = suggestion seulement. Aucun paramètre URL ne transmet une permission.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "NAV-pending",
+      "source_key": "NAV",
+      "path": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+      "line": 78,
+      "exact_line": "3. Commandes localement durables en attente : Rester / Attendre confirmation / Quitter en conservant le travail local si preuve de reprise du contexte. Montrer explicitement non confirmé serveur ; ne jamais vider la queue.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "NAV-expiration",
+      "source_key": "NAV",
+      "path": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+      "line": 107,
+      "exact_line": "- Session expirée en édition : arrêter l’envoi de nouvelles mutations ; distinguer commande dont accusé serveur manque d’une commande refusée. Conserver la file locale autorisée et son propriétaire utilisateur/contexte ; ne pas l’envoyer sous un nouvel utilisateur après reconnexion.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "NAV-reconnexion",
+      "source_key": "NAV",
+      "path": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+      "line": 108,
+      "exact_line": "- Reconnexion même utilisateur : revalider droits/baseRevision et requestId avant reprise ; résultat accepté mais réponse perdue doit être dédupliqué côté serveur. Reconnexion autre utilisateur : isoler/verrouiller la file d’origine sans fuite ; proposer revenir au bon compte, pas réattribuer les objets.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "NAV-annulation-affichage",
+      "source_key": "NAV",
+      "path": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+      "line": 110,
+      "exact_line": "- Retour navigateur pendant chargement/conflit : respecter garde de transition ; `AbortController` ou cancellation d’affichage seul ne prouve pas annulation de commande serveur. Une commande partie reste suivie dans son contexte initial.",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "TEST-003-catalogue",
+      "source_key": "ORACLES",
+      "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "line": 4,
+      "exact_line": "TEST-003,Studio/Fadi_Studio_Plan_Implementation_V1_0.md,368,STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38,a09c11d397c8527987c3d1c4410ebb2eb240a819,S2;S4,A,NAV-005;NAV-006,Modifier même mur associé en2D puis3D.,Même objectId/paramètres/hôtes ; projections cohérentes après chaque commande.,Mise à jour portant un ancien numéro de révision.,Rejet/conflit explicite ; aucune seconde source concurrente.,Deux objets maîtres divergents ou écrasement silencieux.,atelier-commands.test.ts;atelier-nouveau.mjs,Candidat de non-régression Fadi ; aucune équivalence Studio démontrée,Jointure TEST explicite des141fiches A1 ; lien candidat à revoir si non prescrit,Non exécuté,En cours,SHA/build; contrat/version; corpus/hash; runId; environnement; avant/après; verdict; logs expurgés; décision,Aucun résultatStudio,Fixtures documentaires constituées seulement,Non accepté,Revue A1/A2/A4 puis autorisation du lot et essai sur environnement jetable attesté,D01 pilotelocal/pavillon A/B/C ; D07 contexte/droits distincts,Dans pilote ou validation capacité native pertinente ; périmètre à revue,fixtures/S2.json;fixtures/S4.json,\"Valeursmathématiques synthétiques fixture ; tolérancescontrat/DEC13 à décider, aucun seuilproduit inventé\"",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "TEST-004-catalogue",
+      "source_key": "ORACLES",
+      "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "line": 5,
+      "exact_line": "TEST-004,Studio/Fadi_Studio_Plan_Implementation_V1_0.md,369,STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38,a09c11d397c8527987c3d1c4410ebb2eb240a819,S1;S5,A,NAV-007,Copier profil puis objet en mode indépendant.,Nouveaux IDs ; modifier copie ne change jamais source.,Tenter propagation après rupture explicite du lien.,\"Aucune mutation source, absence de référence active cachée.\",Identités réutilisées ou propagation vers source.,planche-objets.mjs;planche-liens.mjs,Candidat de non-régression Fadi ; aucune équivalence Studio démontrée,Jointure TEST explicite des141fiches A1 ; lien candidat à revoir si non prescrit,Non exécuté,En cours,SHA/build; contrat/version; corpus/hash; runId; environnement; avant/après; verdict; logs expurgés; décision,Aucun résultatStudio,Fixtures documentaires constituées seulement,Non accepté,Revue A1/A2/A4 puis autorisation du lot et essai sur environnement jetable attesté,D01 pilotelocal/pavillon A/B/C ; D07 contexte/droits distincts,Dans pilote ou validation capacité native pertinente ; périmètre à revue,fixtures/S1.json;fixtures/S5.json,\"Valeursmathématiques synthétiques fixture ; tolérancescontrat/DEC13 à décider, aucun seuilproduit inventé\"",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "TEST-005-catalogue",
+      "source_key": "ORACLES",
+      "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "line": 6,
+      "exact_line": "TEST-005,Studio/Fadi_Studio_Plan_Implementation_V1_0.md,370,STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38,a09c11d397c8527987c3d1c4410ebb2eb240a819,S1;S5,A,NAV-005,Extruder profil2D avec hauteur/direction explicites et suivi demandé.,Volume attendu/orientation/suivi stockés ; profil reste identifiable.,Hauteur/direction absente ou non finie.,Commande refusée sans solide partiel ni hauteur inventée.,\"Valeur implicite non déclarée, transaction partielle.\",planche-pousser-l10a.mjs,Candidat de non-régression Fadi ; aucune équivalence Studio démontrée,Jointure TEST explicite des141fiches A1 ; lien candidat à revoir si non prescrit,Non exécuté,En cours,SHA/build; contrat/version; corpus/hash; runId; environnement; avant/après; verdict; logs expurgés; décision,Aucun résultatStudio,Fixtures documentaires constituées seulement,Non accepté,Revue A1/A2/A4 puis autorisation du lot et essai sur environnement jetable attesté,D01 pilotelocal/pavillon A/B/C ; D07 contexte/droits distincts,Dans pilote ou validation capacité native pertinente ; périmètre à revue,fixtures/S1.json;fixtures/S5.json,\"Valeursmathématiques synthétiques fixture ; tolérancescontrat/DEC13 à décider, aucun seuilproduit inventé\"",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "TEST-006-catalogue",
+      "source_key": "ORACLES",
+      "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "line": 7,
+      "exact_line": "TEST-006,Studio/Fadi_Studio_Plan_Implementation_V1_0.md,371,STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38,a09c11d397c8527987c3d1c4410ebb2eb240a819,S1;S5,A,NAV-007,Modifier profil source lié puis calcul dépendant.,Recalcul correct ou invalidation explicite du volume dépendant.,Réponse calcul ancienne après nouvelle commande.,Réponse périmée ignorée ; travail actuel non remplacé.,Ancien volume marqué courant ou géométrie divergente silencieuse.,planche-liens.mjs,Candidat de non-régression Fadi ; aucune équivalence Studio démontrée,Jointure TEST explicite des141fiches A1 ; lien candidat à revoir si non prescrit,Non exécuté,En cours,SHA/build; contrat/version; corpus/hash; runId; environnement; avant/après; verdict; logs expurgés; décision,Aucun résultatStudio,Fixtures documentaires constituées seulement,Non accepté,Revue A1/A2/A4 puis autorisation du lot et essai sur environnement jetable attesté,D01 pilotelocal/pavillon A/B/C ; D07 contexte/droits distincts,Dans pilote ou validation capacité native pertinente ; périmètre à revue,fixtures/S1.json;fixtures/S5.json,\"Valeursmathématiques synthétiques fixture ; tolérancescontrat/DEC13 à décider, aucun seuilproduit inventé\"",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "TEST-007-catalogue",
+      "source_key": "ORACLES",
+      "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "line": 8,
+      "exact_line": "TEST-007,Studio/Fadi_Studio_Plan_Implementation_V1_0.md,372,STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38,a09c11d397c8527987c3d1c4410ebb2eb240a819,S1;S5,A,NAV-007,Diviser face cotée en deux avec références topologiques.,Cote rattachée avec preuve stable ou état à résoudre clairement identifié.,Correspondance topologique ambiguë/disparue.,Pas de rattachement approximatif silencieux ; publication bloquée ou réserve explicite selon contrat approuvé.,Cote apparemment valide sur mauvaise face.,planche-modification.mjs,Candidat de non-régression Fadi ; aucune équivalence Studio démontrée,Jointure TEST explicite des141fiches A1 ; lien candidat à revoir si non prescrit,Non exécuté,En cours,SHA/build; contrat/version; corpus/hash; runId; environnement; avant/après; verdict; logs expurgés; décision,Aucun résultatStudio,Fixtures documentaires constituées seulement,Non accepté,Revue A1/A2/A4 puis autorisation du lot et essai sur environnement jetable attesté,D01 pilotelocal/pavillon A/B/C ; D07 contexte/droits distincts,Dans pilote ou validation capacité native pertinente ; périmètre à revue,fixtures/S1.json;fixtures/S5.json,\"Valeursmathématiques synthétiques fixture ; tolérancescontrat/DEC13 à décider, aucun seuilproduit inventé\"",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "TEST-008-catalogue",
+      "source_key": "ORACLES",
+      "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "line": 9,
+      "exact_line": "TEST-008,Studio/Fadi_Studio_Plan_Implementation_V1_0.md,373,STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38,a09c11d397c8527987c3d1c4410ebb2eb240a819,S2,A,NAV-007,Déplacer porte dans limites hôte valide.,\"Hôte/position/quantités cohérents, transaction entière.\",Déplacer porte hors mur hôte.,Refus atomique ou résolution explicite décidée ; aucune géométrie partielle.,Porte sans hôte rendue valide ou demi-transaction.,atelier-commands.test.ts,Candidat de non-régression Fadi ; aucune équivalence Studio démontrée,Jointure TEST explicite des141fiches A1 ; lien candidat à revoir si non prescrit,Non exécuté,En cours,SHA/build; contrat/version; corpus/hash; runId; environnement; avant/après; verdict; logs expurgés; décision,Aucun résultatStudio,Fixtures documentaires constituées seulement,Non accepté,Revue A1/A2/A4 puis autorisation du lot et essai sur environnement jetable attesté,D01 pilotelocal/pavillon A/B/C ; D07 contexte/droits distincts,Dans pilote ou validation capacité native pertinente ; périmètre à revue,fixtures/S2.json,\"Valeursmathématiques synthétiques fixture ; tolérancescontrat/DEC13 à décider, aucun seuilproduit inventé\"",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "TEST-009-catalogue",
+      "source_key": "ORACLES",
+      "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "line": 10,
+      "exact_line": "TEST-009,Studio/Fadi_Studio_Plan_Implementation_V1_0.md,374,STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38,a09c11d397c8527987c3d1c4410ebb2eb240a819,S2,A;E,NAV-006,\"Mur6×3×0,2m, ouverture1×2,1m.\",\"Brut3,600m³ ; déduit0,420m³ ; net3,180m³ ; mêmes valeurs documentées.\",Ouverture dépasse hôte ou unités incompatibles.,Refus/invalidation explicite sans volume net trompeur.,Quantité incorrecte ou source/unité perdue.,atelier-documents.mjs,Candidat de non-régression Fadi ; aucune équivalence Studio démontrée,Jointure TEST explicite des141fiches A1 ; lien candidat à revoir si non prescrit,Non exécuté,En cours,SHA/build; contrat/version; corpus/hash; runId; environnement; avant/après; verdict; logs expurgés; décision,Aucun résultatStudio,Fixtures documentaires constituées seulement,Non accepté,Revue A1/A2/A4 puis autorisation du lot et essai sur environnement jetable attesté,D01 pilotelocal/pavillon A/B/C ; D07 contexte/droits distincts,Dans pilote ou validation capacité native pertinente ; périmètre à revue,fixtures/S2.json,STUDIO-PLAN-001 TEST009/010 ; 3.180 puis3.096m³",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "TEST-010-catalogue",
+      "source_key": "ORACLES",
+      "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "line": 11,
+      "exact_line": "TEST-010,Studio/Fadi_Studio_Plan_Implementation_V1_0.md,375,STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38,a09c11d397c8527987c3d1c4410ebb2eb240a819,S2;S6,A;E,NAV-006,\"Agrandir ouverture à1,2m depuis autre planche.\",\"Net3,096m³ actuel ; révision historique garde3,180m³.\",Exporter ancienne révision après modification actuelle.,Ancien manifeste/révision inchangés et clairement identifiés.,Historique réécrit ou ancien dossier remplacé silencieusement.,atelier-versions.mjs,Candidat de non-régression Fadi ; aucune équivalence Studio démontrée,Jointure TEST explicite des141fiches A1 ; lien candidat à revoir si non prescrit,Non exécuté,En cours,SHA/build; contrat/version; corpus/hash; runId; environnement; avant/après; verdict; logs expurgés; décision,Aucun résultatStudio,Fixtures documentaires constituées seulement,Non accepté,Revue A1/A2/A4 puis autorisation du lot et essai sur environnement jetable attesté,D01 pilotelocal/pavillon A/B/C ; D07 contexte/droits distincts,Dans pilote ou validation capacité native pertinente ; périmètre à revue,fixtures/S2.json;fixtures/S6.json,STUDIO-PLAN-001 TEST009/010 ; 3.180 puis3.096m³",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "TEST-011-catalogue",
+      "source_key": "ORACLES",
+      "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "line": 12,
+      "exact_line": "TEST-011,Studio/Fadi_Studio_Plan_Implementation_V1_0.md,376,STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38,a09c11d397c8527987c3d1c4410ebb2eb240a819,S2;S6,A,NAV-007,Annuler puis rétablir opération associée.,\"Références, métrés et affichage reviennent exactement aux états attendus.\",Annuler après modification concurrente du même objet.,Conflit/règle explicite ; aucune perte du travail autrui ni publication.,Undo écrase autrui ou supprime historique publié.,atelier-commands.test.ts;atelier-versions.mjs,Candidat de non-régression Fadi ; aucune équivalence Studio démontrée,Jointure TEST explicite des141fiches A1 ; lien candidat à revoir si non prescrit,Non exécuté,En cours,SHA/build; contrat/version; corpus/hash; runId; environnement; avant/après; verdict; logs expurgés; décision,Aucun résultatStudio,Fixtures documentaires constituées seulement,Non accepté,Revue A1/A2/A4 puis autorisation du lot et essai sur environnement jetable attesté,D01 pilotelocal/pavillon A/B/C ; D07 contexte/droits distincts,Dans pilote ou validation capacité native pertinente ; périmètre à revue,fixtures/S2.json;fixtures/S6.json,\"Valeursmathématiques synthétiques fixture ; tolérancescontrat/DEC13 à décider, aucun seuilproduit inventé\"",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "TEST-012-catalogue",
+      "source_key": "ORACLES",
+      "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "line": 13,
+      "exact_line": "TEST-012,Studio/Fadi_Studio_Plan_Implementation_V1_0.md,377,STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38,a09c11d397c8527987c3d1c4410ebb2eb240a819,S2;S6,A;X,NAV-007,Deux sessions modifient même mur sur même base.,\"Une validation, seconde revalidation/conflit affiché ; données serveur autoritaires.\",Envoyer baseRevision périmée ou proposer contournement UI.,Refus serveur sans last-write-wins ni écrasement.,Deux validations divergentes sur même base sans résolution.,atelier-commands.test.ts,Candidat de non-régression Fadi ; aucune équivalence Studio démontrée,Jointure TEST explicite des141fiches A1 ; lien candidat à revoir si non prescrit,Non exécuté,En cours,SHA/build; contrat/version; corpus/hash; runId; environnement; avant/après; verdict; logs expurgés; décision,Aucun résultatStudio,Fixtures documentaires constituées seulement,Non accepté,Revue A1/A2/A4 puis autorisation du lot et essai sur environnement jetable attesté,D01 pilotelocal/pavillon A/B/C ; D07 contexte/droits distincts,Dans pilote ou validation capacité native pertinente ; périmètre à revue,fixtures/S2.json;fixtures/S6.json,\"Valeursmathématiques synthétiques fixture ; tolérancescontrat/DEC13 à décider, aucun seuilproduit inventé\"",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "TEST-013-catalogue",
+      "source_key": "ORACLES",
+      "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "line": 14,
+      "exact_line": "TEST-013,Studio/Fadi_Studio_Plan_Implementation_V1_0.md,378,STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38,a09c11d397c8527987c3d1c4410ebb2eb240a819,S7,A;R,NAV-007,Répéter même requestId après perte réponse réseau.,Une seule application et même résultat serveur.,Même requestId avec contenu différent.,Refus de divergence ou contrat idempotence explicite ; jamais deuxième mutation.,Double application ou confusion identité/contenu.,atelier-commands.test.ts;parcours-scenario.mjs,Candidat de non-régression Fadi ; aucune équivalence Studio démontrée,Jointure TEST explicite des141fiches A1 ; lien candidat à revoir si non prescrit,Non exécuté,En cours,SHA/build; contrat/version; corpus/hash; runId; environnement; avant/après; verdict; logs expurgés; décision,Aucun résultatStudio,Fixtures documentaires constituées seulement,Non accepté,Revue A1/A2/A4 puis autorisation du lot et essai sur environnement jetable attesté,D01 pilotelocal/pavillon A/B/C ; D07 contexte/droits distincts,Dans pilote ou validation capacité native pertinente ; périmètre à revue,fixtures/S7.json,\"Valeursmathématiques synthétiques fixture ; tolérancescontrat/DEC13 à décider, aucun seuilproduit inventé\"",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "TEST-014-catalogue",
+      "source_key": "ORACLES",
+      "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "line": 15,
+      "exact_line": "TEST-014,Studio/Fadi_Studio_Plan_Implementation_V1_0.md,379,STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38,a09c11d397c8527987c3d1c4410ebb2eb240a819,S5;S6,A;D,NAV-008,Job exact finit pour révision courante.,Résultat validé et engagé atomiquement pour révision correspondante.,Job finit après changement révision.,\"Marqué périmé, non engagé ; attente terminée proprement.\",Résultat périmé remplace modèle courant.,p2-noyau-exact.mjs,Candidat de non-régression Fadi ; aucune équivalence Studio démontrée,Jointure TEST explicite des141fiches A1 ; lien candidat à revoir si non prescrit,Non exécuté,En cours,SHA/build; contrat/version; corpus/hash; runId; environnement; avant/après; verdict; logs expurgés; décision,Aucun résultatStudio,Fixtures documentaires constituées seulement,Non accepté,Revue A1/A2/A4 puis autorisation du lot et essai sur environnement jetable attesté,D01 pilotelocal/pavillon A/B/C ; D07 contexte/droits distincts,Dans pilote ou validation capacité native pertinente ; périmètre à revue,fixtures/S5.json;fixtures/S6.json,\"Valeursmathématiques synthétiques fixture ; tolérancescontrat/DEC13 à décider, aucun seuilproduit inventé\"",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "TEST-018-catalogue",
+      "source_key": "ORACLES",
+      "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "line": 19,
+      "exact_line": "TEST-018,Studio/Fadi_Studio_Plan_Implementation_V1_0.md,383,STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38,a09c11d397c8527987c3d1c4410ebb2eb240a819,S6,B;E;X,NAV-004;NAV-006,Profil valide affiche Publier pour rôle habilité.,Publication soumise contrôles serveur et manifeste approuvé.,Importer profil Publier sans droit ou droit révoqué avant appel.,\"Refus serveur, aucune publication ni fuite.\",Publication par simple présence bouton/profil.,app.test.ts,Candidat de non-régression Fadi ; aucune équivalence Studio démontrée,Jointure TEST explicite des141fiches A1 ; lien candidat à revoir si non prescrit,Non exécuté,En cours,SHA/build; contrat/version; corpus/hash; runId; environnement; avant/après; verdict; logs expurgés; décision,Aucun résultatStudio,Fixtures documentaires constituées seulement,Non accepté,Revue A1/A2/A4 puis autorisation du lot et essai sur environnement jetable attesté,D01 pilotelocal/pavillon A/B/C ; D07 contexte/droits distincts,Dans pilote ou validation capacité native pertinente ; périmètre à revue,fixtures/S6.json,\"Valeursmathématiques synthétiques fixture ; tolérancescontrat/DEC13 à décider, aucun seuilproduit inventé\"",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "TEST-035-catalogue",
+      "source_key": "ORACLES",
+      "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "line": 36,
+      "exact_line": "TEST-035,Studio/Fadi_Studio_Plan_Implementation_V1_0.md,400,STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38,a09c11d397c8527987c3d1c4410ebb2eb240a819,S4;S6,A;E;X,NAV-004,Utilisateur accède projet autorisé via URL/job/export.,Données exactes limitées droits du projet.,Croiser projectId/studyId/variantId/job/export objet autre projet.,Refus serveur sans fuite payload/headers/cache/job status ; pas mutation.,Une fuite interprojet même partielle.,app.test.ts,Candidat de non-régression Fadi ; aucune équivalence Studio démontrée,Jointure TEST explicite des141fiches A1 ; lien candidat à revoir si non prescrit,Non exécuté,En cours,SHA/build; contrat/version; corpus/hash; runId; environnement; avant/après; verdict; logs expurgés; décision,Aucun résultatStudio,Fixtures documentaires constituées seulement,Non accepté,Revue A1/A2/A4 puis autorisation du lot et essai sur environnement jetable attesté,D01 pilotelocal/pavillon A/B/C ; D07 contexte/droits distincts,Dans pilote ou validation capacité native pertinente ; périmètre à revue,fixtures/S4.json;fixtures/S6.json,\"Valeursmathématiques synthétiques fixture ; tolérancescontrat/DEC13 à décider, aucun seuilproduit inventé\"",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    },
+    {
+      "id": "TEST-038-catalogue",
+      "source_key": "ORACLES",
+      "path": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "line": 39,
+      "exact_line": "TEST-038,Studio/Fadi_Studio_Plan_Implementation_V1_0.md,403,STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38,a09c11d397c8527987c3d1c4410ebb2eb240a819,S4;S6,E,NAV-006,Publier dossier multi-modèles/révisions contrôlés.,\"Manifeste coordonné immuable, hash de chaque source et approbation exacte ensemble.\",Changer une source après approbation ou retirer droit avant publication.,Refus/nouvelle approbation ; aucun assemblage mixte non revu.,Hash/versions incohérents ou publication non autorisée.,atelier-versions.mjs;atelier-documents.mjs,Candidat de non-régression Fadi ; aucune équivalence Studio démontrée,Jointure TEST explicite des141fiches A1 ; lien candidat à revoir si non prescrit,Non exécuté,En cours,SHA/build; contrat/version; corpus/hash; runId; environnement; avant/après; verdict; logs expurgés; décision,Aucun résultatStudio,Fixtures documentaires constituées seulement,Non accepté,Revue A1/A2/A4 puis autorisation du lot et essai sur environnement jetable attesté,D01 pilotelocal/pavillon A/B/C ; D07 contexte/droits distincts,Dans pilote ou validation capacité native pertinente ; périmètre à revue,fixtures/S4.json;fixtures/S6.json,\"Valeursmathématiques synthétiques fixture ; tolérancescontrat/DEC13 à décider, aucun seuilproduit inventé\"",
+      "commit": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde"
+    }
+  ],
+  "scope_ids_exact": [
+    "A.4-03",
+    "A.4-04",
+    "A.4-07",
+    "A.5-09"
+  ],
+  "mode": "SPECIFICATION_DOCUMENTAIRE_SEULEMENT_SANS_CODE_TEST_IMPORT_HARNESS_API_DB_RESEAU_SERVICE",
+  "purpose": "Delta de scénarios sur quatre tâches déjà qualifiées A2 ; réemploi des contrats canoniques, pas nouveau format de données ou stratégie physique.",
+  "counts": {
+    "source_tasks": 4,
+    "documentary_case_groups": 20,
+    "new_normative_TEST_ids": 0,
+    "tests_executed": 0,
+    "canonical_status_changes": 0,
+    "source_tasks_closed": 0
+  },
+  "common_observation_contract": {
+    "authority": "Distinguer dessin2D indépendant, modèle3D indépendant et objet architectural associé. Les deux projections de ce dernier ciblent le même objectId/writer ; aucune propagation déduite d’une simple géométrie.",
+    "before_after_set": "Comparer contenu canonique et versions, identités/provenance, hôtes/relations/contraintes/cotes, journal des engagements, résultats requestId/outbox, sources de projection et fraîcheur ; publication historique quand applicable. Les diagnostics/trace de refus expurgée sont distincts d’un nouveau commit métier.",
+    "inputs": "Corpus synthétiques S1/S2/S5/S6/S7 existants à compléter par A5 pour le sous-lot seulement ; un paramètre fautif par variante négative, unités/repères et versions explicites. Aucun fichier de corpus créé ici.",
+    "oracle_links": "Les vingt clés de sous-cas ne sont ni nouveaux IDs de checklist ni nouveaux TEST. Les liens aux38 TEST existants sont candidats lorsqu’ils étendent leur formulation ; les prescriptions exactes restent dans le catalogue et les textes EX/INV/IF/AC.",
+    "evidence_future": "Code/buildSHA, version contrat/moteur/corpus et empreintes, environnement sûr et autorisé, exécutant/date/commande/résultat, instant avant/après, critère ciblé, revue et limites ; présence d’un test ou arithmétique seule insuffisantes.",
+    "no_new_physical_choice": "DEC02/12/18, identités/versions physiques, stockage/canonicalisation, rétention/queue, protocoles de reprise et permissions finales demeurent ouverts ; aucune route, table, réseau, moteur ou politique de cascade ajouté.",
+    "gate_scope": "G0 accepté cadrage uniquement ; G1/G2/G3/G4 non acceptés par cette remise. Toute future réalisation/POC exige son acte borné et ses préconditions."
+  },
+  "entries": [
+    {
+      "id": "A.4-03",
+      "mission": "M20",
+      "proprietaire_canonique": "A2",
+      "preparateur_delta": "A3",
+      "obligation_exacte": "Conserver le même objectId pour un objet architectural modifié depuis les deux planches.",
+      "source_checklist": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 363,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L363"
+      },
+      "statut_du_delta": "Préparation complémentaire rédigée, à revue A2/A5 ; aucun statut canonique modifié",
+      "complement_non_redondant": "Décompose AC001 en identité, fraîcheur, undo/reprise et publication ; distingue les preuves moteur, canonique, projection et historique.",
+      "cible_integration_canonique": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md et M17/M23-M27/NAV aux sections citées, ou preuve additive sur ces IDs ; pas de nouveau contrat concurrent",
+      "scenarios_documentaires": [
+        {
+          "case_key": "A.4-03/edition-croisee",
+          "titre": "Éditer depuis 2D puis 3D sans deuxième mur",
+          "propriete_et_autorite": "L’autorité associée porte le mur et ses relations ; les surfaces 2D/3D portent des projections et intentions de commande.",
+          "entree_documentaire": "Même contexte synthétique P/S/V ; mur W, ouverture O hôte W, révision R0. Deux intentions séquentielles, la seconde capturant la révision acceptée de la première. Reprendre le cas RT 6×3×0,2 m et largeur d’ouverture 1→1,2 m seulement pour les métrés.",
+          "sortie_attendue_candidate": "Même objectId W, O reliée au même hôte ; une nouvelle révision par commande acceptée, effets et projections corrélés à leurs sources. Le geste 3D ne crée pas Wbis.",
+          "oracle_candidat": "Comparer les identités W/O/hôte et les paramètres canoniques après chaque étape, pas seulement l’image. Pour cet unique cas RT sans autres déductions : net 3,180 puis 3,096 m³ ; sinon métrés explicitement périmés jusqu’au recalcul. Vérifier qu’aucun second writer n’a accepté une copie divergente.",
+          "rattachement_tests_existants": [
+            "TEST-003",
+            "TEST-009",
+            "TEST-010"
+          ],
+          "nature_du_rattachement": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+          "source_refs": [
+            "AC-001-wp419",
+            "EX-021-wp364",
+            "M17-autorite",
+            "M17-preconditions",
+            "TEST-003-catalogue",
+            "TEST-009-catalogue",
+            "TEST-010-catalogue"
+          ],
+          "limite": "Les valeurs RT sont un oracle synthétique limité, pas une règle générale de métrés. Les identités/transactions sont logiques ; aucun stockage, endpoint ou objectId physique choisi.",
+          "trigger_reprise": "Après revue A2/A1/A5 du contrat associé et preuve de capacité autorisée : fixer corpus S2/S6 et appliquer l’oracle au SHA réel ; aucun essai maintenant.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        },
+        {
+          "case_key": "A.4-03/projections-fraicheur",
+          "titre": "Séparer source courante et projection ancienne",
+          "propriete_et_autorite": "Le contenu associé est canonique ; projection, vue et cache sont reconstruisibles et portent leur sourceRevision.",
+          "entree_documentaire": "Une commande acceptée passe R0→R1 ; une projection 2D ou 3D reste sur R0 ou un calcul R0 revient ensuite.",
+          "sortie_attendue_candidate": "La définition W/R1 reste unique ; état courant/périmé/recalcul en cours explicite. Aucun affichage ancien ne devient source d’un nouveau commit ou métrage annoncé actuel.",
+          "oracle_candidat": "Vérifier correspondance objectId/sourceRevision des deux surfaces et invalidations ; si les métrés ne sont pas recalculés, leur état périmé est visible. Le résultat R0 arrivé tard produit zéro nouvel effet canonique sur R1.",
+          "rattachement_tests_existants": [
+            "TEST-003",
+            "TEST-014"
+          ],
+          "nature_du_rattachement": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+          "source_refs": [
+            "AC-001-wp419",
+            "EX-021-wp364",
+            "M17-commit",
+            "TEST-003-catalogue",
+            "TEST-014-catalogue"
+          ],
+          "limite": "Aucun délai de rafraîchissement ou budget FPS fixé ; le cas ne prouve ni renderer ni worker réels.",
+          "trigger_reprise": "Lorsque le mécanisme de projection/invalidation et son protocole de révision sont définis pour le lot autorisé, joindre preuve avant/après et résultat périmé.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        },
+        {
+          "case_key": "A.4-03/historique-reouverture",
+          "titre": "Undo/redo et réouverture retrouvent l’objet associé",
+          "propriete_et_autorite": "Historique immuable et C-COMMAND : annuler est une nouvelle opération contrôlée, pas une mutation de R0.",
+          "entree_documentaire": "État associé avant/après une édition ; annulation puis rétablissement sur une tête autorisée, fermeture puis réouverture du contexte/révision exacts. Variante séparée : autre édition intervenue avant l’annulation.",
+          "sortie_attendue_candidate": "Valeurs, hôtes, références et métrés retrouvent l’état attendu ; les révisions historiques restent identifiables. En concurrence incompatible : conflit explicite et travail d’autrui conservé.",
+          "oracle_candidat": "Comparer états canoniques et relations complets, historique accepté et identités de commande, puis la source réellement rouverte. Une capture identique ou un inverse mémoire seul ne prouve pas la durabilité.",
+          "rattachement_tests_existants": [
+            "TEST-011",
+            "TEST-012"
+          ],
+          "nature_du_rattachement": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+          "source_refs": [
+            "AC-001-wp419",
+            "AC-003-wp560",
+            "IF-004-wp330",
+            "M17-commit",
+            "M17-snapshot",
+            "TEST-011-catalogue",
+            "TEST-012-catalogue"
+          ],
+          "limite": "Le mécanisme hybride et la persistance ne sont pas sélectionnés ici ; aucun appel DB, coupure ou restauration exécuté.",
+          "trigger_reprise": "Après décision DEC12 utile au périmètre, capacité de reprise livrée et accord d’essai sûr : associer corpus S2/S6 et preuve de fermeture/réouverture.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        },
+        {
+          "case_key": "A.4-03/publication-historique",
+          "titre": "La publication conserve la version examinée",
+          "propriete_et_autorite": "L’approbation/publication vise un ensemble figé ; le travail associé courant peut évoluer sans réécrire les pièces historiques.",
+          "entree_documentaire": "Dossier publié sur R0/W et ses pièces ; nouvelle édition depuis l’autre planche produit R1. Tentative de publier R1 sous l’approbation R0.",
+          "sortie_attendue_candidate": "Ancien manifeste, sources, pièces et empreintes restent ceux de R0 ; R1 nécessite l’approbation/acte adéquat. Aucune substitution latest.",
+          "oracle_candidat": "Comparer manifeste, versions et empreintes avant/après la nouvelle édition ; le refus de nouvelle publication n’efface ni n’annule l’ancienne. Conserver les permissions séparées approbation/publication.",
+          "rattachement_tests_existants": [
+            "TEST-010",
+            "TEST-018",
+            "TEST-038"
+          ],
+          "nature_du_rattachement": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+          "source_refs": [
+            "AC-001-wp419",
+            "IF-011-wp868",
+            "M17-snapshot",
+            "TEST-010-catalogue",
+            "TEST-018-catalogue",
+            "TEST-038-catalogue"
+          ],
+          "limite": "Critère final dépendant d’E/M24, pas précondition artificielle pour commencer la spécification A.4. Aucun dossier réellement publié.",
+          "trigger_reprise": "Quand la capacité de publication du pilote et ses droits seront autorisés/disponibles, rattacher la preuve à ce critère AC001 sans déclarer M20 complet avant elle.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        }
+      ],
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "test_runtime_executed": false,
+      "source_checked": false,
+      "trigger_apres_remise": "Revue indépendante A2/A5 puis attente d’une décision, interface ou preuve nouvelle exactement liée à ces cas ; ne pas recopier le dossier ni ouvrir un autre sujet spéculatif."
+    },
+    {
+      "id": "A.4-04",
+      "mission": "M20",
+      "proprietaire_canonique": "A2",
+      "preparateur_delta": "A3",
+      "obligation_exacte": "Conserver les hôtes et contraintes lors des modifications associées.",
+      "source_checklist": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 364,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L364"
+      },
+      "statut_du_delta": "Préparation complémentaire rédigée, à revue A2/A5 ; aucun statut canonique modifié",
+      "complement_non_redondant": "Isole mouvement, suppression, fractionnement et références invalides avec sorties conditionnelles DEC02 ; n’invente ni cascade ni politique d’ID.",
+      "cible_integration_canonique": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md et M17/M23-M27/NAV aux sections citées, ou preuve additive sur ces IDs ; pas de nouveau contrat concurrent",
+      "scenarios_documentaires": [
+        {
+          "case_key": "A.4-04/deplacement",
+          "titre": "Déplacement avec hôte et contraintes valides",
+          "propriete_et_autorite": "La commande associée possède ensemble canonique mur/ouverture/contraintes ; la projection n’actualise pas séparément un hostId.",
+          "entree_documentaire": "Ouverture O dans W avec contraintes explicites. Une variante de cas déplace O à l’intérieur ; une autre tente une position hors hôte. Changer un seul paramètre fautif par variante.",
+          "sortie_attendue_candidate": "Hôte, position et quantités restent cohérents dans une même opération ; hors hôte : refus atomique ou état de résolution explicitement décidé, sans détachement silencieux.",
+          "oracle_candidat": "Avant/après : hostId, paramètres de position, contraintes, cotes, état des métrés et révision. En refus, zéro modification canonique et aucune révision acceptée supplémentaire ; une trace de refus expurgée est permise.",
+          "rattachement_tests_existants": [
+            "TEST-008"
+          ],
+          "nature_du_rattachement": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+          "source_refs": [
+            "AC-001-wp419",
+            "EX-017-wp331",
+            "M17-autorite",
+            "M17-preconditions",
+            "TEST-008-catalogue"
+          ],
+          "limite": "La politique de résolution n’est pas choisie ici ; ne pas considérer toute position hors hôte automatiquement réparable.",
+          "trigger_reprise": "DEC02 doit préciser limites/contraintes et politique de résolution du cas ; A5 isole les fautes dans le corpus avant tout essai.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        },
+        {
+          "case_key": "A.4-04/suppression-hote",
+          "titre": "Suppression de l’hôte sans perte cachée des enfants",
+          "propriete_et_autorite": "L’identité et le cycle de vie de W, O et leurs relations appartiennent au contrat associé, pas à une règle de cascade déduite du moteur.",
+          "entree_documentaire": "Intention explicite de supprimer W alors que O, une cote et une contrainte le référencent. Révision/source et portée de suppression déclarées.",
+          "sortie_attendue_candidate": "Aucune disparition implicite d’O/cote/contrainte ni réaffectation par proximité. Selon politique DEC02 ratifiée : commande refusée sans effet, ou changement de relations/statut de rupture explicitement pris dans la même opération et conservant la provenance.",
+          "oracle_candidat": "Inventaire avant/après de chaque entité et relation ; objet supprimé, référence conservée à résoudre ou refus sont distingués. Le contrat doit rendre chaque perte/rupture visible et réversible selon l’historique, pas seulement enlever la géométrie de la scène.",
+          "rattachement_tests_existants": [
+            "TEST-007",
+            "TEST-008",
+            "TEST-011"
+          ],
+          "nature_du_rattachement": "Rattachement candidat à TEST007/008/011 ; suppression d’hôte est une déclinaison documentaire nouvelle, pas un test déjà prescrit/exécuté",
+          "source_refs": [
+            "AC-001-wp419",
+            "EX-015-wp301",
+            "EX-017-wp331",
+            "M17-commit",
+            "TEST-007-catalogue",
+            "TEST-008-catalogue",
+            "TEST-011-catalogue"
+          ],
+          "limite": "Extension proposée des oracles de référence/hôte : le catalogue ne prescrit pas à lui seul une politique de cascade ou de tombstone. Aucun choix physique fait.",
+          "trigger_reprise": "Attendre le choix précis DEC02 de cycle de vie/suppression et ses effets ; ensuite compléter seulement les assertions liées à cette décision.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        },
+        {
+          "case_key": "A.4-04/fractionnement",
+          "titre": "Fractionner sans choisir une référence par proximité",
+          "propriete_et_autorite": "La topologie exige une correspondance démontrée ou un état à résoudre ; la politique d’identité des nouvelles parties reste DEC02.",
+          "entree_documentaire": "W ou une face référencée est fractionné ; O/cote pointe sur la zone concernée. Construire deux variantes : correspondance univoque démontrable et plusieurs cibles plausibles.",
+          "sortie_attendue_candidate": "Références suivent le mapping démontré ou sont conservées en rupture explicite ; aucune sélection arbitraire de la partie la plus proche. Identités nouvelles/maintenues et provenance ne sont déclarées que suivant la politique de fractionnement décidée.",
+          "oracle_candidat": "Comparer table de correspondance et source exacte de chaque relation, pas la seule distance. Pour l’ambiguïté : aucun commit d’une association choisie au hasard, pas de métrage courant trompeur ; historique préservé.",
+          "rattachement_tests_existants": [
+            "TEST-007",
+            "TEST-011"
+          ],
+          "nature_du_rattachement": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+          "source_refs": [
+            "AC-001-wp419",
+            "EX-015-wp301",
+            "IF-004-wp330",
+            "M17-commit",
+            "TEST-007-catalogue",
+            "TEST-011-catalogue"
+          ],
+          "limite": "TEST007 concerne une face cotée ; son extension au fractionnement d’un hôte architectural est proposée et reste à revoir. AC001 ne décide pas quel ID survivra à une création de plusieurs objets.",
+          "trigger_reprise": "Après décision DEC02 sur identité/mapping et corpus de correspondance ciblé, soumettre le cas précis à revue A2/A5 ; pas de nouveau solveur.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        },
+        {
+          "case_key": "A.4-04/reference-invalide",
+          "titre": "Référence invalide ou périmée ne devient pas relation valide",
+          "propriete_et_autorite": "Préconditions d’objet/relation et parenté sont vérifiées par le writer ; les références inconnues restent explicites.",
+          "entree_documentaire": "Variantes indépendantes : hôte inexistant ; hôte d’un autre projet ; version de relation obsolète ; cible disparue après capture de la commande.",
+          "sortie_attendue_candidate": "Refus de contexte/version/ambiguïté avant effet, ou rupture à résoudre conformément au contrat ; aucune fuite interprojet ni rattachement implicite.",
+          "oracle_candidat": "Comparer objet, hostId, références, révision et journal accepté avant/après chaque refus. Une mise en cache ou un libellé UI « réparé » ne fait pas preuve de réparation canonique.",
+          "rattachement_tests_existants": [
+            "TEST-007",
+            "TEST-012",
+            "TEST-035"
+          ],
+          "nature_du_rattachement": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+          "source_refs": [
+            "EX-015-wp301",
+            "IF-004-wp330",
+            "M17-preconditions",
+            "M17-erreurs-candidates",
+            "TEST-007-catalogue",
+            "TEST-012-catalogue",
+            "TEST-035-catalogue"
+          ],
+          "limite": "Les codes d’erreur de M17 sont candidats ; aucun mapping HTTP ni politique de réparation nouvelle n’est annoncé.",
+          "trigger_reprise": "Fixer les versions de référence et le verdict attendu de chaque variante lors du contrat DEC02/12, puis preuve ciblée sur capacité autorisée.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        }
+      ],
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "test_runtime_executed": false,
+      "source_checked": false,
+      "trigger_apres_remise": "Revue indépendante A2/A5 puis attente d’une décision, interface ou preuve nouvelle exactement liée à ces cas ; ne pas recopier le dossier ni ouvrir un autre sujet spéculatif."
+    },
+    {
+      "id": "A.4-07",
+      "mission": "M20",
+      "proprietaire_canonique": "A2",
+      "preparateur_delta": "A3",
+      "obligation_exacte": "Prévoir l’extrusion d’un profil 2D avec hauteur, direction et relation de suivi explicites.",
+      "source_checklist": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 367,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L367"
+      },
+      "statut_du_delta": "Préparation complémentaire rédigée, à revue A2/A5 ; aucun statut canonique modifié",
+      "complement_non_redondant": "Sépare paramètres d’extrusion, mode de relation et preuve native/Studio ; garde EX020/023 et hypothèses analytiques explicites.",
+      "cible_integration_canonique": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md et M17/M23-M27/NAV aux sections citées, ou preuve additive sur ces IDs ; pas de nouveau contrat concurrent",
+      "scenarios_documentaires": [
+        {
+          "case_key": "A.4-07/independant",
+          "titre": "Extrusion indépendante explicite et dessin toujours autonome",
+          "propriete_et_autorite": "Le dessin 2D conserve sa propre autorité ; la création 3D indépendante a sa propre identité/provenance, sans propagation cachée.",
+          "entree_documentaire": "Profil fermé synthétique, unité m et repère identifiés ; hauteur 3 m, direction normale explicite. Exemple analytique limité : rectangle 6×2 m, aire 12 m². Mode indépendant demandé, pas déduit.",
+          "sortie_attendue_candidate": "Cible 3D nouvelle et source 2D identifiable ; le dessin peut encore être sérialisé/rouvert/édité sans objet 3D substitut. Modifier ensuite une copie indépendante ne modifie pas la source, et réciproquement selon le contrat de copie.",
+          "oracle_candidat": "Pour ce prisme normal sans trou ni autre opération : volume candidat 12×3=36 m³ et direction déclarée. Comparer identités/provenance et conservation du dessin ; cet oracle ne démontre ni forme générale, ni topologie, ni durabilité.",
+          "rattachement_tests_existants": [
+            "TEST-004",
+            "TEST-005"
+          ],
+          "nature_du_rattachement": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+          "source_refs": [
+            "EX-020-wp363",
+            "EX-023-wp414",
+            "CONTRAT-ASSOCIATION",
+            "M17-autorite",
+            "TEST-004-catalogue",
+            "TEST-005-catalogue"
+          ],
+          "limite": "36 m³ est une valeur analytique synthétique nouvelle, pas un résultat moteur obtenu ni une règle normative. Les primitives géométriques et leur adaptateur restent à qualifier.",
+          "trigger_reprise": "Après accord sur la sémantique de conversion/copie et le contrat d’extrusion DEC18, isoler le cas dans S1/S5 ; pas de chargement moteur maintenant.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        },
+        {
+          "case_key": "A.4-07/suivi-explicite",
+          "titre": "Suivi versionné du profil, distinct d’une extrusion réussie",
+          "propriete_et_autorite": "Le lien et la règle de propagation sont explicites ; profil source, cible 3D et même objet architectural vu dans deux planches ne sont pas des identités interchangeables.",
+          "entree_documentaire": "Mode de relation déclaré et source de profil versionnée ; modifier le profil après la première extrusion, puis faire revenir un calcul ancien.",
+          "sortie_attendue_candidate": "Suivant relation DEC02 approuvée : recalcul correct ou invalidation explicite de la cible. Source et cible restent traçables ; résultat ancien non engagé. L’édition d’une projection ne confère aucun pouvoir inverse universel sur le profil. Pour une référence liée, la version épinglée reste applicable jusqu’à acceptation explicite de sa mise à jour ; une source plus récente n’autorise pas à elle seule une propagation. Le mode associé suit uniquement sa règle de propagation déclarée.",
+          "oracle_candidat": "Comparer sourceRevision/profil, référence de relation, paramètres hauteur/direction et fraîcheur de la cible ; vérifier qu’aucun suivi n’existe si le lien a été rompu. Distinguer même objectId de l’objet associé et identités de ses primitives sources.",
+          "rattachement_tests_existants": [
+            "TEST-005",
+            "TEST-006",
+            "TEST-007"
+          ],
+          "nature_du_rattachement": "Extension candidate des TEST005/006 et du mapping TEST007 ; aucune équivalence entre preuve moteur et suivi métier",
+          "source_refs": [
+            "EX-020-wp363",
+            "EX-022-wp383",
+            "IF-004-wp330",
+            "M17-autorite",
+            "M17-commit",
+            "TEST-005-catalogue",
+            "TEST-006-catalogue",
+            "TEST-007-catalogue"
+          ],
+          "limite": "Ni conservation d’un maillage ni fonction d’extrusion native ne prouvent cette relation Studio. Politique de propagation/réparation toujours ouverte.",
+          "trigger_reprise": "DEC02 définit relation, versions et sens autorisés ; DEC18 qualifie l’opération publique ; ensuite seulement formaliser la preuve de suivi.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        },
+        {
+          "case_key": "A.4-07/entrees-refusees",
+          "titre": "Paramètres d’extrusion incomplets ou incompatibles",
+          "propriete_et_autorite": "Le writer valide source/version, unités et repères avant effet ; aucun défaut de hauteur ou de direction inventé.",
+          "entree_documentaire": "Une faute par variante : hauteur absente/non finie ; direction absente/non finie/nulle ; repère inconnu ; unité incompatible ; transformation sans version ; source périmée.",
+          "sortie_attendue_candidate": "Refus ciblé ou conflit avant création d’un solide partiel et avant modification du dessin. Aucune normalisation, conversion de repère ou hauteur par défaut silencieuse.",
+          "oracle_candidat": "Ancien profil, identités, relations et état canonique restent identiques ; aucun objet partiel ou journal accepté. Les règles sur hauteur nulle/signée et vecteur non unitaire restent à décider explicitement, sans imposer ici une convention physique.",
+          "rattachement_tests_existants": [
+            "TEST-005",
+            "TEST-012"
+          ],
+          "nature_du_rattachement": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+          "source_refs": [
+            "EX-020-wp363",
+            "EX-023-wp414",
+            "IF-004-wp330",
+            "M17-preconditions",
+            "M17-erreurs-candidates",
+            "TEST-005-catalogue",
+            "TEST-012-catalogue"
+          ],
+          "limite": "TEST005 prescrit hauteur/direction absente ou non finie ; autres variantes sont rattachements candidats issus EX023/M17, pas déjà démontrées.",
+          "trigger_reprise": "Préciser conventions d’unité/repère et validation de direction dans le sous-lot choisi ; A5 peut alors produire les variantes exactes sans faute supplémentaire.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        },
+        {
+          "case_key": "A.4-07/preuve-native-vs-studio",
+          "titre": "Séparer preuves du noyau et preuve du contrat Studio",
+          "propriete_et_autorite": "Un export public et un test existant sont des candidats de réemploi ; ils ne deviennent ni autorité Studio ni preuve de suivi.",
+          "entree_documentaire": "Réemployer inventaire DEC18 au code 5e0285 : MTR03 topologie/maillage Planche ; MTR06 façade MoteurExact/OperationExacte ; MTR08 commandes ; MTR09 versions/reprise. Distinguer sources de tests présentes et exécutions historiques exactes.",
+          "sortie_attendue_candidate": "Conserver deux colonnes : preuve native bornée au SHA/fichier/opération/oracle ; preuve Studio future portant profil/hauteur/direction/relation/contexte/versions/durabilité. Une colonne ne remplit pas l’autre.",
+          "oracle_candidat": "Vérifier que le dossier cite API publique, version, limites de mesh/BRep et provenance ; les tests « présents » restent non exécutés dans cette étude. Les 492 tests CLASSIF historiques ne démontrent pas TEST005/006 Studio ni un moteur complet.",
+          "rattachement_tests_existants": [
+            "TEST-005",
+            "TEST-006"
+          ],
+          "nature_du_rattachement": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+          "source_refs": [
+            "EX-020-wp363",
+            "EX-023-wp414",
+            "CONTRAT-ASSOCIATION",
+            "TEST-005-catalogue",
+            "TEST-006-catalogue"
+          ],
+          "limite": "L’inventaire DEC18 est statique et daté ; aucun nouvel import de moteur, relecture source applicative, benchmark ou opération d’extrusion exécutée.",
+          "trigger_reprise": "Au choix précis d’adaptateur/opération DEC18 : requalifier le delta de SHA et rattacher une preuve native ciblée, puis la preuve Studio distincte après autorisation.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        }
+      ],
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "test_runtime_executed": false,
+      "source_checked": false,
+      "trigger_apres_remise": "Revue indépendante A2/A5 puis attente d’une décision, interface ou preuve nouvelle exactement liée à ces cas ; ne pas recopier le dossier ni ouvrir un autre sujet spéculatif."
+    },
+    {
+      "id": "A.5-09",
+      "mission": "M20",
+      "proprietaire_canonique": "A2",
+      "preparateur_delta": "A3",
+      "obligation_exacte": "Prévoir la reprise des commandes après interruption et la revalidation lors de la reconnexion.",
+      "source_checklist": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 384,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L384"
+      },
+      "statut_du_delta": "Préparation complémentaire rédigée, à revue A2/A5 ; aucun statut canonique modifié",
+      "complement_non_redondant": "Distingue duplicata déjà engagé et nouvelle commande sur base ancienne ; ajoute les refus ciblés de reprise en conservant états et historique.",
+      "cible_integration_canonique": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md et M17/M23-M27/NAV aux sections citées, ou preuve additive sur ces IDs ; pas de nouveau contrat concurrent",
+      "scenarios_documentaires": [
+        {
+          "case_key": "A.5-09/ack-perdu",
+          "titre": "Accusé perdu : résultat indéterminé, pas seconde application",
+          "propriete_et_autorite": "Le serveur conserve résultat durable/requestId dans son périmètre ; le client n’invente ni commit ni annulation.",
+          "entree_documentaire": "Commande C acceptée sur R0→R1 mais réponse perdue ; la tête avance ensuite R2. Même acteur autorisé, même portée, requestId et contenu lors de la reprise documentaire.",
+          "sortie_attendue_candidate": "Avant confirmation retrouvée : état indéterminé et intention conservée. Après revalidation et recherche du résultat : même résultat historique R1, zéro nouvelle mutation ; R2 ne devient pas une deuxième exécution de C.",
+          "oracle_candidat": "Comparer au canonique capturé AVANT le rejeu, pas à l’état antérieur au premier commit. Le résultat durable, eventId/transaction/révision de C sont identiques ; compteur d’engagements de C reste un. Ne pas refuser à tort ce rejeu seulement parce que la tête a avancé.",
+          "rattachement_tests_existants": [
+            "TEST-013"
+          ],
+          "nature_du_rattachement": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+          "source_refs": [
+            "M17-dedup",
+            "M23-ACK-perdu",
+            "M27-reprise-contexte",
+            "M27-resultats-avant-rejeu",
+            "M27-etats-reprise",
+            "TEST-013-catalogue"
+          ],
+          "limite": "Aucun paquet réseau envoyé, aucune panne simulée. Le stockage de résultats et sa rétention restent à choisir ; le cas ne garantit pas la disponibilité après expiration.",
+          "trigger_reprise": "Fixer déduplication/rétention et protocole de lookup dans DEC12/M17 ; future preuve sur capacité/cible autorisées, pas sur un modèle mémoire présenté serveur.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        },
+        {
+          "case_key": "A.5-09/requestId-divergent",
+          "titre": "Même identité de demande avec contenu divergent",
+          "propriete_et_autorite": "Une identité de demande n’est réutilisable que pour la même intention sémantique dans la même portée autorisée.",
+          "entree_documentaire": "Conserver requestId de C et modifier un seul paramètre, ou transformer preview en commit sous cette même clé. Comparaison au résultat déjà existant.",
+          "sortie_attendue_candidate": "Refus de réutilisation divergente ; ancien résultat/historique conservé, aucune seconde mutation. Une intention réellement nouvelle doit être identifiée séparément.",
+          "oracle_candidat": "Zéro nouvel engagement canonique/outbox accepté ; empreinte et résultat de C inchangés. REQUEST_ID_REUSED est seulement le libellé candidat M17, pas un endpoint/code implémenté.",
+          "rattachement_tests_existants": [
+            "TEST-013"
+          ],
+          "nature_du_rattachement": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+          "source_refs": [
+            "M17-dedup",
+            "M17-erreurs-candidates",
+            "M27-resultats-avant-rejeu",
+            "TEST-013-catalogue"
+          ],
+          "limite": "La canonicalisation/empreinte physique n’est pas définie ici ; aucune règle arbitraire de hash remplace l’équivalence sémantique à ratifier.",
+          "trigger_reprise": "DEC12/16 et choix résiduel de canonicalisation précis ; reprendre uniquement cette variante après décision, sans refaire la méthode d’idempotence.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        },
+        {
+          "case_key": "A.5-09/autre-compte",
+          "titre": "La file d’un autre compte/contexte n’est pas réadressée",
+          "propriete_et_autorite": "Une intention conserve son propriétaire et son contexte complet ; authentification et parenté précèdent toute lecture ou mutation.",
+          "entree_documentaire": "File locale préparée pour compte A/projet P/variante V ; reconnexion de B ou navigation vers autre projet. Une variante de faute par test futur.",
+          "sortie_attendue_candidate": "File A isolée/verrouillée selon politique approuvée ; aucune transmission au nom de B ni fuite du résultat/pièce d’A. Aucun réadressage à la variante visible.",
+          "oracle_candidat": "Comparer propriétaire et scope de chaque intention ; requête/résultat ne divulguent pas les données interdites et zéro effet canonique dans le nouveau contexte. Conserver la demande d’origine au lieu de l’effacer pour afficher enregistré.",
+          "rattachement_tests_existants": [
+            "TEST-035"
+          ],
+          "nature_du_rattachement": "Rattachement candidat du TEST035 de contexte/projet au cas de compte changé, appuyé directement par NAV",
+          "source_refs": [
+            "M17-preconditions",
+            "M27-reprise-contexte",
+            "NAV-contexte",
+            "NAV-reconnexion",
+            "TEST-035-catalogue"
+          ],
+          "limite": "Le stockage local et son chiffrement/isolement restent des choix ouverts ; le scénario documentaire ne prouve pas leur réalisation.",
+          "trigger_reprise": "Définir les droits de lecture/reprise et le stockage de queue du sous-lot ; A4/A5 vérifient cas NAV liés avant tout essai.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        },
+        {
+          "case_key": "A.5-09/droit-revoque",
+          "titre": "Droit révoqué pendant interruption",
+          "propriete_et_autorite": "Les droits effectifs sont révalidés serveur ; un bouton ou une permission mise en cache ne fait pas autorité.",
+          "entree_documentaire": "Même compte et contexte, intention pending ; droit de mutation/lecture du résultat retiré avant reprise. Le commit antérieur éventuellement réussi est traité séparément.",
+          "sortie_attendue_candidate": "Refus d’envoi ou de lecture non autorisés, état local explicite et brouillon conservé seulement selon politique autorisée. Aucun retour de données interdites ; aucun faux succès.",
+          "oracle_candidat": "Zéro nouveau commit et aucune fuite. Ne pas annuler rétrospectivement un commit déjà durable ; le refus porte sur la nouvelle action ou la lecture actuelle. Les publications antérieures restent identifiables.",
+          "rattachement_tests_existants": [
+            "TEST-018",
+            "TEST-035"
+          ],
+          "nature_du_rattachement": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+          "source_refs": [
+            "M17-preconditions",
+            "M27-reprise-contexte",
+            "NAV-expiration",
+            "NAV-reconnexion",
+            "TEST-018-catalogue",
+            "TEST-035-catalogue"
+          ],
+          "limite": "TEST018 porte directement publication ; extension à l’édition/reprise est candidate via M17/NAV. Aucun rôle réel ni permission physique attribué.",
+          "trigger_reprise": "Matrice de permissions approuvée et mécanisme de revalidation exposé par le futur lot ; preuve distincte de simple visibilité UI.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        },
+        {
+          "case_key": "A.5-09/nouvelle-demande-base-perimee",
+          "titre": "Nouvelle demande sur base ancienne, distincte d’un duplicata",
+          "propriete_et_autorite": "Une nouvelle intention doit satisfaire baseRevision/versions d’objets et de relations ; l’historique est immuable.",
+          "entree_documentaire": "Nouveau requestId après interruption avec base R0 alors que W/relations ont évolué ; variante alternative visant une révision historique en consultation.",
+          "sortie_attendue_candidate": "Conflit/refus explicite ou recalcul/résolution autorisée ; aucun last-write-wins ni mutation de la révision historique.",
+          "oracle_candidat": "Comparer canonique, références/hôtes, journal accepté et publication avant/après refus. Ne pas appliquer à ce cas la règle de restitution d’un ancien résultat déjà durable du cas ACK perdu.",
+          "rattachement_tests_existants": [
+            "TEST-012",
+            "TEST-011"
+          ],
+          "nature_du_rattachement": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+          "source_refs": [
+            "IF-004-wp330",
+            "M17-commit",
+            "M17-erreurs-candidates",
+            "NAV-contexte",
+            "TEST-012-catalogue",
+            "TEST-011-catalogue"
+          ],
+          "limite": "La stratégie de fusion/rebase physique n’est pas choisie ; absence de conflit dans un exemple JSON ne la démontre pas.",
+          "trigger_reprise": "Après choix de versions/contrat et politique de rebase DEC12 : construire corpus avec mutation concurrente ciblée et revue A2/A5.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        },
+        {
+          "case_key": "A.5-09/contrat-queue-incompatible",
+          "titre": "Queue ou document d’une version non supportée",
+          "propriete_et_autorite": "Compatibilité du contrat/schema/lecteur est explicite ; une intention ancienne n’est pas rejouée avec des paramètres réinterprétés.",
+          "entree_documentaire": "Commande persistée avec contractVersion/schemaVersion non supporté, ou résultat dont le lecteur ne comprend pas les champs requis ; une faute ciblée par variante.",
+          "sortie_attendue_candidate": "Refus/incompatibilité signalée, demande et provenance conservées pour résolution ; pas downgrade silencieux, purge de queue ou migration non autorisée.",
+          "oracle_candidat": "Zéro engagement nouveau ; versions et intention d’origine encore traçables. Ne pas prétendre conservation universelle des champs inconnus par les lecteurs Atelier actuels : leur adéquation est un manque M05 documenté.",
+          "rattachement_tests_existants": [
+            "TEST-013"
+          ],
+          "nature_du_rattachement": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+          "source_refs": [
+            "M17-enveloppe",
+            "M17-preconditions",
+            "M17-erreurs-candidates",
+            "M27-etats-reprise",
+            "TEST-013-catalogue"
+          ],
+          "limite": "Extension proposée au TEST013 ; formats et politique de compatibilité sont des choix M05/M17/DEC12, pas un nouveau schéma dans ce delta.",
+          "trigger_reprise": "Quand les choix résiduels catalogue de versions/clients offline sont tranchés, ajouter uniquement la table lecteurs/commandes touchée.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        },
+        {
+          "case_key": "A.5-09/fermeture-annulation",
+          "titre": "Fermeture UI ou annulation après commit ne réécrit pas l’histoire",
+          "propriete_et_autorite": "La navigation et l’annulation d’affichage ne commandent pas implicitement l’annulation métier ; une compensation est une nouvelle commande.",
+          "entree_documentaire": "Commande envoyée/commit confirmé ou indéterminé ; quitter la planche, fermer la fenêtre ou demander annulation. Cas distinct : résultat d’une ancienne génération arrive après capacité d’engager révoquée.",
+          "sortie_attendue_candidate": "État pending/indéterminé/conflit conservé dans son contexte ; aucun effacement d’événement/publication. Si compensation autorisée, nouvelle intention avec révalidation. Résultat tardif non auto-engagé.",
+          "oracle_candidat": "Comparer journal accepté et publication immuables ; garder les intentions et statuts de la file, pas de « sauvegardé » sans durabilité. En refus de compensation, le commit d’origine reste ; un cache abandonné n’est pas preuve d’annulation serveur.",
+          "rattachement_tests_existants": [
+            "TEST-011",
+            "TEST-014"
+          ],
+          "nature_du_rattachement": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+          "source_refs": [
+            "M23-compensation",
+            "M17-commit",
+            "M27-etats-reprise",
+            "NAV-pending",
+            "NAV-annulation-affichage",
+            "TEST-011-catalogue",
+            "TEST-014-catalogue"
+          ],
+          "limite": "Aucune fermeture forcée, worker ou interruption réseau exécuté. Les timeouts et stratégies d’arrêt ne sont pas fixés par ce document.",
+          "trigger_reprise": "Réemployer les états M23 et NAV une fois la file durable/capacité d’annulation du lot est autorisée ; pas de nouveau gestionnaire de tâches.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        },
+        {
+          "case_key": "A.5-09/coupe-notification",
+          "titre": "Reprise incohérente ou notification dupliquée",
+          "propriete_et_autorite": "Une coupe cohérente de documents/révisions/journal/request-results/outbox fait autorité ; la notification n’est pas un second engagement.",
+          "entree_documentaire": "Combinaison documentaire volontairement incohérente de révision et résultats/journal/outbox, ou redélivrance du même eventId ; variantes séparées.",
+          "sortie_attendue_candidate": "Incohérence signalée et pas de promotion/rejeu aveugle ; notification répétée n’ajoute ni commande ni publication. Resynchronisation depuis source autoritaire selon contrat à ratifier.",
+          "oracle_candidat": "Comparer les liens de révision et identités de demande/événement ; aucun nouvel effet du doublon, aucune révision plus récente écrasée par un résultat ancien. Une série de GET ou un JSON parseable ne prouve pas la coupe.",
+          "rattachement_tests_existants": [
+            "TEST-013",
+            "TEST-014",
+            "TEST-038"
+          ],
+          "nature_du_rattachement": "Déclinaison candidate du catalogue existant ; aucun résultat exécuté",
+          "source_refs": [
+            "M17-snapshot",
+            "M27-coupe-coherente",
+            "M27-notifications",
+            "IF-011-wp868",
+            "TEST-013-catalogue",
+            "TEST-014-catalogue",
+            "TEST-038-catalogue"
+          ],
+          "limite": "Extension candidate de ces oracles et de M23/M27 ; aucune restauration réelle ou transaction multi-autorité démontrée, mécanisme physique encore ouvert.",
+          "trigger_reprise": "Après décision sur coupe/epoch/commit et autorisation bornée de récupération, compléter le manifeste existant et fournir preuve de cohérence, sans second mécanisme de restauration.",
+          "tests_executed": false,
+          "conformite_verifiee": false
+        }
+      ],
+      "acceptation_metier": false,
+      "condition_verifiee": false,
+      "test_runtime_executed": false,
+      "source_checked": false,
+      "trigger_apres_remise": "Revue indépendante A2/A5 puis attente d’une décision, interface ou preuve nouvelle exactement liée à ces cas ; ne pas recopier le dossier ni ouvrir un autre sujet spéculatif."
+    }
+  ],
+  "native_evidence_vs_future_studio": [
+    {
+      "id": "MTR-03",
+      "reference_code_inventory": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "public_api_reported": [
+        "Modele",
+        "Vec3",
+        "Resultat",
+        "modeleVide",
+        "ajouterSegment",
+        "ajouterRectangle",
+        "maillagesPlanche",
+        "MaillagePlanche"
+      ],
+      "proof_nature": "Inventaire statique et présence des fichiers de tests au SHA de l’inventaire ; pas nouvelle exécution native ici",
+      "limits_reused": [
+        "Topologie 3D et représentation de maillage, pas B-Rep exact.",
+        "Une Planche aplatie z=0 ne satisfait pas à elle seule l’autonomie du documentA.",
+        "Renderer/caméra/selection UI app/web ne sont pas publiés comme paquet partagé ; aucune extraction implicite."
+      ],
+      "studio_proof_still_required": "Contexte/autorité/versions/profil/hauteur/direction/relation/historique/persistance et refus ciblés du lot Studio ; non déduit de ces API"
+    },
+    {
+      "id": "MTR-06",
+      "reference_code_inventory": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "public_api_reported": [
+        "OperationExacte",
+        "OptionsMoteur",
+        "SolideExact",
+        "CONTRAT_SOLIDE_EXACT=solide-exact/1",
+        "MoteurExact.charger",
+        "executer",
+        "exporterStep",
+        "mailler",
+        "validerOperation",
+        "memeResultat"
+      ],
+      "proof_nature": "Inventaire statique et présence des fichiers de tests au SHA de l’inventaire ; pas nouvelle exécution native ici",
+      "limits_reused": [
+        "Brep canonique/maillage dérivé distincts ; Planche demeure maillage selon D177/182/183, aucune conversion paramétrique silencieuse.",
+        "Remplacement binaireWASM existant doit conserver licence/versions/empreinte ; reproductibilité et coût non remesurés ici.",
+        "Client Worker interne état global/localStorage et messages ; pas isolation contextuelle Studio, annulation/timeout/worker pool prouvés."
+      ],
+      "studio_proof_still_required": "Contexte/autorité/versions/profil/hauteur/direction/relation/historique/persistance et refus ciblés du lot Studio ; non déduit de ces API"
+    },
+    {
+      "id": "MTR-08",
+      "reference_code_inventory": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "public_api_reported": [
+        "Commande",
+        "Enveloppe",
+        "Effets",
+        "ResultatLot",
+        "appliquerCommande",
+        "appliquerLot",
+        "differentiel",
+        "appliquerDifferentiel",
+        "commandeInverse",
+        "CONTRAT_COMMANDES=atelier-commands/3",
+        "CONTRATS_ACCEPTES=1/2/3"
+      ],
+      "proof_nature": "Inventaire statique et présence des fichiers de tests au SHA de l’inventaire ; pas nouvelle exécution native ici",
+      "limits_reused": [
+        "Ne pas renuméroter/downgrader les contrats pour aligner ancien README/manifest.",
+        "L’enveloppe ne garantit pas seule tenant/projet/étude/variante/doc/revision/permissions, requestId et durabilité serveur Studio.",
+        "Commandes et ontologies industrielles natives conservées ; aucun outil supprimé pour simplifier Studio."
+      ],
+      "studio_proof_still_required": "Contexte/autorité/versions/profil/hauteur/direction/relation/historique/persistance et refus ciblés du lot Studio ; non déduit de ces API"
+    },
+    {
+      "id": "MTR-09",
+      "reference_code_inventory": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "public_api_reported": [
+        "Dessin",
+        "etatARevision",
+        "comparerModeles",
+        "comparerDessins",
+        "analyserFusion",
+        "cibleAnnulation",
+        "cibleRetablissement",
+        "rejouerLots",
+        "verifierModele",
+        "differencePlanche",
+        "appliquerDeltaPlanche",
+        "empreintePlanche"
+      ],
+      "proof_nature": "Inventaire statique et présence des fichiers de tests au SHA de l’inventaire ; pas nouvelle exécution native ici",
+      "limits_reused": [
+        "Versions Atelier courantes et archives ≠ identité logique Projet→Étude→Variante→Révision.",
+        "Historique local Planche pur limité200pas n’est ni journal serveur ni preuve de sauvegarde durable.",
+        "Empreinte n’est ni autorisation, signature de publication ni preuve de restauration."
+      ],
+      "studio_proof_still_required": "Contexte/autorité/versions/profil/hauteur/direction/relation/historique/persistance et refus ciblés du lot Studio ; non déduit de ces API"
+    }
+  ],
+  "source_normative_limits": {
+    "RT001_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+    "quotes_reused": "AC001 w:p419, AC003 w:p560, EX020 w:p363, EX023 w:p414, autres citations exactes dans dossiers A2 ; extraction141 existante réemployée, pas DOCX réextrait dans ce delta.",
+    "historical_dossiers": "Les mentions G0 non passé ou PR165 ouverte dans M003/M004 restent historiques ; elles ne remplacent pas l’acteG0 ni l’état GitHub courant.",
+    "arithmetic_example": "36m³ =12m²×3m pour prisme synthétique normal seulement ; aucun moteur ou oracle runtime exécuté, pas valeur normative générale."
+  },
+  "handoff": {
+    "delivered": "Les quatre préparations résiduelles demandées sont rédigées ; rien n’est déclaré Vérifié ou accepté.",
+    "owners": "A2 contrat ; A5 oracles/revue indépendante ; A1 exigences ; A4 NAV/états ; A6 durabilité ; A0 seul intégration/registre/checkpoints.",
+    "stop_condition": "Après remise, ne pas générer d’autre copie, harness, étude spéculative ou lot de code. Reprendre seulement sur retour de revue ou trigger précis des quatre tâches.",
+    "next_action": "A0 fait relire ce delta par A2/A5, référence ses seules preuves nouvelles aux quatre IDs et conserve les blocages physiques/autorisation ; aucune écriture canonique par A3."
+  }
+}
