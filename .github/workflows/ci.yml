@@ -31,7 +31,8 @@ jobs:
           node-version: 22
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm run typecheck
-      - run: npm run test --workspace=@parcours/atelier-model
+      - name: Régression des paquets purs et du web sans setup DB historique
+        run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
       - run: npm run test:db-guard
       - run: npm run build
       - name: Installer le Chromium attendu par Playwright
