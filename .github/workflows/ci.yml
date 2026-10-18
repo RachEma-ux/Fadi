@@ -11,7 +11,46 @@ concurrency:
 permissions:
   contents: read
 jobs:
+  classification-pure:
+    name: Classification — modèle pur sans base (intégration non exécutée)
+    if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: ""
+      TEST_DATABASE_URL: ""
+      MIGRATE_ON_START: "0"
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Installer sans script de cycle de vie
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Vérifier les types sans exécuter le serveur
+        run: npm run typecheck
+      - name: Suite complète pure du modèle Atelier
+        run: npm run test --workspace=@parcours/atelier-model
+      - name: Construire sans lancer API ni appliquer de schéma
+        run: npm run build
+      - name: Expliciter la couverture et les limites du lot pur
+        if: always()
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
+          ## A3-CLASSIF-1 — code pur, aucune base réelle
+          Types, suite complète du modèle Atelier et build seulement ; aucun serveur API ou PostgreSQL démarré.
+          Les jobs validate/e2e/image sont intentionnellement non exécutés sur cette branche exacte ; skipped ne signifie pas réussite d'intégration.
+          Aucune migration, recette API/E2E mutatrice ou validation d'une base réelle n'est effectuée.
+          Ce succès éventuel ne prouve ni correction des données historiques, ni recette métier complète, ni autorisation de fusion/déploiement.
+          Les échecs du job restent des échecs ; aucune assertion n'est ignorée pour obtenir un résultat vert.
+          SUMMARY
+
   validate:
+    # A3-CLASSIF-1 : aucune base réelle autorisée ; condition avant création des services.
+    if: ${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main') }}
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -63,6 +102,8 @@ jobs:
   # partage — contre l'API construite, qui sert elle-même le build de l'application (mode de production).
   # Les captures (docs/migration/captures/webapp/) sont publiées en artefact.
   e2e:
+    # A3-CLASSIF-1 : aucune base réelle autorisée ; condition avant création des services.
+    if: ${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     services:
@@ -318,6 +359,8 @@ jobs:
           retention-days: 14
 
   image:
+    # A3-CLASSIF-1 : aucune base réelle autorisée ; condition avant création des services.
+    if: ${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:

@@ -411,7 +411,7 @@ export function definirPropriete(etat: ModeleAtelier, p: Brut): ResultatCommande
   return { etat: { ...etat, objets: { ...etat.objets, [id]: { ...o, proprietes } as OccurrenceQuelconque } }, effets };
 }
 
-/** Classification : la classe IFC vient de l'ontologie (jamais devinée autrement) ; un code de classification externe est déclaré, avec son système. */
+/** Un code externe ne crée ni ne remplace une déclaration classeIfc ; contrôle et export IFC restent dérivés. */
 export function affecterClassification(etat: ModeleAtelier, p: Brut): ResultatCommande {
   const id = lire.objet(etat, p, "id");
   const systeme = lire.chaine(p, "systeme");
@@ -433,7 +433,6 @@ export function affecterClassification(etat: ModeleAtelier, p: Brut): ResultatCo
     if (libelle) proprietes[`classification:${systeme}:libelle`] = { valeur: libelle, provenance: "import", statut: "verifiee" };
     else delete proprietes[`classification:${systeme}:libelle`];
   }
-  proprietes["classeIfc"] = { valeur: CLASSES[o.classe].ifc, provenance: "regle", statut: "verifiee" };
   const effets = effetsVides();
   effets.modifies.push(id);
   return { etat: { ...etat, objets: { ...etat.objets, [id]: { ...o, proprietes } as OccurrenceQuelconque } }, effets };
