@@ -63,7 +63,13 @@ export type IconName =
   | "studio-sheet"
   | "studio-print"
   | "studio-sheet-svg"
-  | "studio-sheet-pdf";
+  | "studio-sheet-pdf"
+  | "studio-circle"
+  | "studio-arc"
+  | "studio-polyline"
+  | "studio-offset"
+  | "studio-polyline-finish"
+  | "studio-polyline-close";
 
 const PATHS: Record<IconName, string> = {
   search: "M10.5 3.5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 5 5",
@@ -130,6 +136,14 @@ const PATHS: Record<IconName, string> = {
   "studio-print": "M7 9V3h10v6M7 17H4v-8h16v8h-3M7 14h10v7H7ZM17 12h1",
   "studio-sheet-svg": "M3 4h14v10H3ZM9 11h8M9 11v3M6 9c2-3 4 2 6-1M19 14v7M16 18l3 3 3-3",
   "studio-sheet-pdf": "M3 4h14v10H3ZM9 11h8M9 11v3M6 7h3v3H6M19 14v7M16 18l3 3 3-3",
+  // Courbes : cercle et son centre ; arc entre deux poignées ; polyligne brisée à poignées ; décalage (deux tracés parallèles).
+  "studio-circle": "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16ZM11 12h2",
+  "studio-arc": "M5 19A14 14 0 0 1 19 5M3 17h4v4H3ZM17 3h4v4h-4Z",
+  "studio-polyline": "M4 18 9 8l6 8 5-10M2 16h4v4H2ZM18 4h4v4h-4Z",
+  "studio-offset": "M3 15c4-8 10-8 14-2M7 20c3-5 8-5 11-1M17 8l2 3-3 1",
+  // Fin de polyligne : tracé ouvert et marque de validation ; fermeture : tracé refermé sur son premier sommet.
+  "studio-polyline-finish": "M3 17 8 9l5 6M14 15l3 3 5-6",
+  "studio-polyline-close": "M4 18 8 6l8 3 4 9ZM2 16h4v4H2Z",
 };
 
 export function Icon({ name, size = 20, className }: { name: IconName; size?: number; className?: string }) {

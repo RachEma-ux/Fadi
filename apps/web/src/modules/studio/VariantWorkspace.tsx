@@ -15,12 +15,20 @@
  * prérempli par les données réelles), l'imprime à sa taille réelle ou la télécharge en SVG / PDF ; lecture seule admise.
  * Import : « Importer DXF » (Maj+U) ajoute au brouillon, en un lot annulable, les commandes lues par `lireDxfStudio` ;
  * l'enregistrement découpe les commandes en attente en enveloppes de 500 commandes au plus (`import/envoi.ts`).
+ * Courbes : Cercle (C : centre puis un point du cercle), Arc (A : trois points, ou centre, début et fin selon le mode
+ * choisi dans le panneau), Polyligne (P : sommets successifs ; Entrée la termine, Maj+Entrée ou un clic sur le premier
+ * sommet la ferme) ; Décaler (O) crée, pour chaque objet sélectionné, son décalé à la distance saisie (`studio.dessin.decaler`).
+ * Les constructions par points sont pures (`studioArcFromThreePoints`, `studioArcFromCenter`) ; l'aperçu n'est jamais
+ * une donnée du document.
  */
 import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type PointerEvent } from "react";
 import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { applyStudioCommands, STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, type StudioCommand, type StudioDimension, type StudioLayer, type StudioPoint, type StudioShape } from "@parcours/atelier-model";
+import {
+  applyStudioCommands, STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, studioAngleNormal, studioArcFromCenter, studioArcFromThreePoints,
+  type StudioArcGeometry, type StudioCommand, type StudioDimension, type StudioLayer, type StudioPoint, type StudioShape,
+} from "@parcours/atelier-model";
 import { Icon } from "../../components/Icon";
 import { api, ApiError, studioExportUrl, type StudioContext } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
@@ -37,7 +45,7 @@ import type { EntreeCatalogue } from "./planche2d/catalogue";
 import { GestionnaireOutils, PaletteCommandes } from "./planche2d/CatalogueOutils";
 import { Dessin2D, type PointPose, type RectangleSelection } from "./planche2d/Dessin2D";
 import {
-  accrocher, auCentimetre, CADRE_INITIAL, cadrer, emprise, formaterMetres, nouvelleCote, pointsAccroche, sommetExact, valeurCote, type Cadre,
+  accrocher, auCentimetre, CADRE_INITIAL, cadrer, ecrireSommets, emprise, formaterMetres, lireSommets, nouvelleCote, pointsAccroche, sommetExact, valeurCote, type Cadre,
 } from "./planche2d/geometrie-2d";
 import { PanneauCalques } from "./planche2d/PanneauCalques";
 import {
@@ -78,7 +86,13 @@ const SEUIL_GESTE_PX = 4;
 /** Écart arrondi au micromètre : le pointeur et les sommets ne produisent pas de bruit flottant dans les commandes. */
 const ecart = (a: number, b: number) => Math.round((b - a) * 1e6) / 1e6;
 
-type Valeurs = { x: number; y: number; a: number; b: number; dx: number; dy: number; offset: number };
+type Valeurs = { x: number; y: number; a: number; b: number; dx: number; dy: number; offset: number; r: number; a0: number; a1: number; distance: number };
+/** Mode de construction de l'arc : trois points (début, passage, fin) ou centre, début et fin (sens trigonométrique). */
+type ModeArc = "trois-points" | "centre";
+/** Arrondi au micromètre (rayons, coordonnées issues d'une construction) : pas de bruit flottant dans les commandes. */
+const micro = (v: number) => Math.round(v * 1e6) / 1e6;
+const enDegres = (a: number) => Math.round(((a * 180) / Math.PI) * 1e6) / 1e6;
+const enRadians = (d: number) => studioAngleNormal((d * Math.PI) / 180);
 type Ecran = { x: number; y: number };
 type Geste =
   | { type: "vue"; cadre0: Cadre; rect0: Rect; depart: Map<number, StudioPoint> }
@@ -101,6 +115,11 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [tool, setTool] = useState<StudioToolId>("studio.dessin.selection");
   const [selection, setSelection] = useState<string[]>([]);
   const [trace, setTrace] = useState<PointPose | null>(null);
+  // Points posés après le premier : passage ou début d'un arc, sommets suivants d'une polyligne.
+  const [suite, setSuite] = useState<StudioPoint[]>([]);
+  const [modeArc, setModeArc] = useState<ModeArc>("trois-points");
+  const [sommetsTexte, setSommetsTexte] = useState("0 0; 4 0; 4 3");
+  const [fermee, setFermee] = useState(false);
   const [survol, setSurvol] = useState<PointPose | null>(null);
   const [cadre, setCadre] = useState<Cadre>(CADRE_INITIAL);
   const [accrocheSommets, setAccrocheSommets] = useState(true);
@@ -119,7 +138,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [info, setInfo] = useState("");
   const [loadError, setLoadError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
-  const [values, setValues] = useState<Valeurs>({ x: 0, y: 0, a: 4, b: 3, dx: 1, dy: 0, offset: 0.5 });
+  const [values, setValues] = useState<Valeurs>({ x: 0, y: 0, a: 4, b: 3, dx: 1, dy: 0, offset: 0.5, r: 1, a0: 0, a1: 90, distance: 0.5 });
   const [extrusion, setExtrusion] = useState<ValeursExtrusion>(VALEURS_VIDES);
   const [vue3d, setVue3d] = useState(false);
   const [commentaires, setCommentaires] = useState(commentairesOuverts);
@@ -199,8 +218,13 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     // Les valeurs d'extrusion affichées sont celles que l'utilisateur a saisies pour cet objet, jamais une proposition.
     const saisies = o.type === "dimension" ? null : valeursDe(o);
     setExtrusion(saisies ?? VALEURS_VIDES);
-    if (o.type === "rectangle") setValues(v => ({ ...v, x: o.origin.x, y: o.origin.y, a: o.width, b: o.height }));
-    else setValues(v => ({ ...v, x: o.start.x, y: o.start.y, a: o.end.x, b: o.end.y, ...(o.type === "dimension" ? { offset: o.offset } : {}) }));
+    switch (o.type) {
+      case "rectangle": setValues(v => ({ ...v, x: o.origin.x, y: o.origin.y, a: o.width, b: o.height })); return;
+      case "circle": setValues(v => ({ ...v, x: o.center.x, y: o.center.y, r: o.radius })); return;
+      case "arc": setValues(v => ({ ...v, x: o.center.x, y: o.center.y, r: o.radius, a0: enDegres(o.startAngle), a1: enDegres(o.endAngle) })); return;
+      case "polyline": setSommetsTexte(ecrireSommets(o.points)); setFermee(o.closed); return;
+      default: setValues(v => ({ ...v, x: o.start.x, y: o.start.y, a: o.end.x, b: o.end.y, ...(o.type === "dimension" ? { offset: o.offset } : {}) }));
+    }
   }
   function select(ids: string[]) {
     setSelection(ids);
@@ -234,6 +258,34 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       return apply([{ toolId: "studio.dessin.rectangle", params: shape }]);
     }
     return apply([{ toolId: "studio.dessin.ligne", params: { id: crypto.randomUUID(), type: "line", ...(layerId() ? { layerId: layerId() } : {}), start, end } }]);
+  }
+  const calque = () => (layerId() ? { layerId: layerId() } : {});
+  function addCircle(center: StudioPoint, radius: number) {
+    if (!(radius > 0)) { setError("Le rayon doit être strictement positif."); return false; }
+    return apply([{ toolId: "studio.dessin.cercle", params: { id: crypto.randomUUID(), type: "circle", ...calque(), center: { ...center }, radius: micro(radius) } }]);
+  }
+  function addArc(g: StudioArcGeometry | null) {
+    if (!g) { setError("Arc impossible : points alignés ou confondus."); return false; }
+    return apply([{ toolId: "studio.dessin.arc", params: { id: crypto.randomUUID(), type: "arc", ...calque(), center: { x: micro(g.center.x), y: micro(g.center.y) }, radius: micro(g.radius), startAngle: g.startAngle, endAngle: g.endAngle } }]);
+  }
+  function addPolyline(points: readonly StudioPoint[], closed: boolean) {
+    return apply([{ toolId: "studio.dessin.polyligne", params: { id: crypto.randomUUID(), type: "polyline", ...calque(), points: points.map(p => ({ ...p })), closed } }]);
+  }
+  /** Termine la polyligne en cours (ouverte, ou fermée sur son premier sommet). */
+  function finishPolyline(closed: boolean) {
+    if (tool !== "studio.dessin.polyligne" || !trace) return;
+    const points = [trace.point, ...suite];
+    if (points.length < (closed ? 3 : 2)) { setError(closed ? "Une polyligne fermée a trois sommets au moins." : "Une polyligne a deux sommets au moins."); return; }
+    if (addPolyline(points, closed)) cancelTrace();
+  }
+  /** Décalage de chaque objet sélectionné (les cotes ne se décalent pas) ; les nouveaux objets deviennent la sélection. */
+  function offsetSelection(distance: number) {
+    if (!drawing) return;
+    const formes = formesSelectionnees(drawing, selectionIds);
+    if (!formes.length) { setInfo("Sélectionnez d’abord l’objet à décaler."); return; }
+    if (!(Number.isFinite(distance) && distance !== 0)) { setError("Saisissez une distance non nulle, en mètres."); return; }
+    const nouveaux = formes.map(() => crypto.randomUUID());
+    if (apply(formes.map((o, i) => ({ toolId: "studio.dessin.decaler", params: { id: o.id, newId: nouveaux[i]!, distance } })))) setSelection(nouveaux);
   }
   function addDimension(debut: PointPose, fin: PointPose) {
     return apply([{ toolId: "studio.dessin.cote", params: nouvelleCote(crypto.randomUUID(), debut, fin, Number.isFinite(values.offset) ? values.offset : 0.5, layerId()) }]);
@@ -285,13 +337,31 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     if (!pointsActifs) { if (tool === "studio.dessin.selection" && !e.shiftKey) select([]); return; }
     if (!writable) return;
     const p = pose(e, tool === "studio.dessin.deplacer" && trace ? selectionSet : undefined); if (!p) return;
-    if (!trace) { setTrace(p); return; }
+    if (!trace) { setTrace(p); setSuite([]); return; }
     const a = trace.point, b = p.point;
     if (tool === "studio.dessin.deplacer") {
       if (moveSelection(selectionIds, ecart(a.x, b.x), ecart(a.y, b.y))) { setTrace(null); setSurvol(null); }
       return;
     }
+    if (tool === "studio.dessin.polyligne") {
+      // Un clic sur le premier sommet (à la tolérance d'accrochage) ferme la polyligne.
+      const matrix = sheet.current?.getScreenCTM();
+      const tolerance = matrix ? ACCROCHE_PX / Math.max(Math.abs(matrix.a), 1e-9) : 0;
+      if (suite.length >= 2 && Math.hypot(b.x - a.x, b.y - a.y) <= tolerance) { finishPolyline(true); return; }
+      const dernier = suite[suite.length - 1] ?? a;
+      if (dernier.x === b.x && dernier.y === b.y) { setError("Deux sommets consécutifs doivent être distincts."); return; }
+      setSuite(s => [...s, b]); setError("");
+      return;
+    }
     if (a.x === b.x && a.y === b.y) { setError("Les deux points doivent être distincts."); return; }
+    if (tool === "studio.dessin.cercle") { if (addCircle(a, Math.hypot(b.x - a.x, b.y - a.y))) cancelTrace(); return; }
+    if (tool === "studio.dessin.arc") {
+      const second = suite[0];
+      if (!second) { setSuite([b]); setError(""); return; }
+      if (second.x === b.x && second.y === b.y) { setError("Les deux points doivent être distincts."); return; }
+      if (addArc(modeArc === "centre" ? studioArcFromCenter(a, second, b) : studioArcFromThreePoints(a, second, b))) cancelTrace();
+      return;
+    }
     if (tool === "studio.dessin.rectangle" && (a.x === b.x || a.y === b.y)) { setError("La largeur et la hauteur doivent être strictement positives."); return; }
     const ok = tool === "studio.dessin.cote" ? addDimension(trace, p) : addShape(a, b);
     if (ok) setTrace(null);
@@ -391,19 +461,47 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   }
 
   // ——— Formulaire numérique ———
+  /** Sommets saisis pour une polyligne ; message d'erreur et null si la saisie ne suffit pas. */
+  function sommetsSaisis(): StudioPoint[] | null {
+    const points = lireSommets(sommetsTexte);
+    if (!points || points.length < (fermee ? 3 : 2)) { setError(`Saisissez ${fermee ? "trois" : "deux"} sommets au moins, « x y » séparés par des points-virgules.`); return null; }
+    return points;
+  }
   function numeric(e: FormEvent) {
     e.preventDefault();
-    const dim = selected?.type === "dimension" ? selected : null;
-    const entered = tool === "studio.dessin.deplacer" ? [values.dx, values.dy] : tool === "studio.dessin.modifier" && dim ? [values.offset] : tool === "studio.dessin.cote" ? [values.x, values.y, values.a, values.b, values.offset] : [values.x, values.y, values.a, values.b];
+    const entered = fields.map(k => values[k]);
     if (!entered.every(Number.isFinite)) { setError("Saisissez des nombres finis dans tous les champs."); return; }
     const rectangleSaisi = tool === "studio.dessin.rectangle" || tool === "studio.dessin.modifier" && selected?.type === "rectangle";
     if (rectangleSaisi && (values.a <= 0 || values.b <= 0)) { setError("La largeur et la hauteur doivent être strictement positives."); return; }
+    if (fields.includes("r") && values.r <= 0) { setError("Le rayon doit être strictement positif."); return; }
+    if (fields.includes("a0") && enRadians(values.a0) === enRadians(values.a1)) { setError("Les angles de début et de fin doivent être différents."); return; }
     if (tool === "studio.dessin.deplacer" && selectionIds.length) { moveSelection(selectionIds, values.dx, values.dy); return; }
+    if (tool === "studio.dessin.decaler") { offsetSelection(values.distance); return; }
     if (tool === "studio.dessin.modifier" && selected) {
       if (selected.type === "dimension") { apply([{ toolId: "studio.dessin.modifier", params: { ...selected, offset: values.offset } }]); return; }
-      apply([{ toolId: "studio.dessin.modifier", params: selected.type === "line" ? { ...selected, start: { x: values.x, y: values.y }, end: { x: values.a, y: values.b } } : { ...selected, origin: { x: values.x, y: values.y }, width: values.a, height: values.b } }]);
+      let modifie: StudioShape;
+      switch (selected.type) {
+        case "line": modifie = { ...selected, start: { x: values.x, y: values.y }, end: { x: values.a, y: values.b } }; break;
+        case "rectangle": modifie = { ...selected, origin: { x: values.x, y: values.y }, width: values.a, height: values.b }; break;
+        case "circle": modifie = { ...selected, center: { x: values.x, y: values.y }, radius: values.r }; break;
+        case "arc": modifie = { ...selected, center: { x: values.x, y: values.y }, radius: values.r, startAngle: enRadians(values.a0), endAngle: enRadians(values.a1) }; break;
+        case "polyline": {
+          const points = sommetsSaisis(); if (!points) return;
+          // Les renflements ne se gardent que si le nombre de segments est inchangé.
+          const { bulges, ...reste } = selected;
+          const garde = bulges && bulges.length === (fermee ? points.length : points.length - 1) ? { bulges } : {};
+          modifie = { ...reste, points, closed: fermee, ...garde };
+        }
+      }
+      apply([{ toolId: "studio.dessin.modifier", params: modifie }]);
       return;
     }
+    if (tool === "studio.dessin.cercle") { addCircle({ x: values.x, y: values.y }, values.r); return; }
+    if (tool === "studio.dessin.arc") {
+      addArc({ center: { x: values.x, y: values.y }, radius: values.r, startAngle: enRadians(values.a0), endAngle: enRadians(values.a1) });
+      return;
+    }
+    if (tool === "studio.dessin.polyligne") { const points = sommetsSaisis(); if (points) addPolyline(points, fermee); return; }
     if (tool === "studio.dessin.cote" && drawing) {
       const sommets = pointsAccroche(drawing.objects, l => estVisible(drawing, l));
       const debut = { x: values.x, y: values.y }, fin = { x: values.a, y: values.b };
@@ -414,7 +512,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   }
 
   // ——— Outils et commandes ———
-  function cancelTrace() { setTrace(null); setSurvol(null); }
+  function cancelTrace() { setTrace(null); setSuite([]); setSurvol(null); }
   function runTool(toolId: StudioToolId) {
     if (OUTILS_MODES.has(toolId)) { setTool(toolId); cancelTrace(); setInfo(""); return; }
     if (!writable || !drawing) return;
@@ -480,6 +578,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
         return;
       case "enregistrer": if (canSave) void save(); return;
       case "tout-selectionner": if (drawing) select(toutSelectionnable(drawing)); return;
+      case "terminer-polyligne": return finishPolyline(false);
+      case "fermer-polyligne": return finishPolyline(true);
       case "zoom-avant": return poserCadre(zoomerAuCentre(cadreRef.current, true));
       case "zoom-arriere": return poserCadre(zoomerAuCentre(cadreRef.current, false));
       case "cadrer": if (drawing) poserCadre(cadrer(emprise(drawing, l => estVisible(drawing, l)))); return;
@@ -516,6 +616,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       case "annuler-trace": return !!trace || selectionIds.length > 0 || tool !== "studio.dessin.selection";
       case "enregistrer": return canSave;
       case "tout-selectionner": return !!drawing && toutSelectionnable(drawing).length > 0;
+      case "terminer-polyligne": return writable && tool === "studio.dessin.polyligne" && !!trace && suite.length >= 1;
+      case "fermer-polyligne": return writable && tool === "studio.dessin.polyligne" && !!trace && suite.length >= 2;
       case "zoom-avant": return cadre.w > LARGEUR_VUE.min;
       case "zoom-arriere": return cadre.w < LARGEUR_VUE.max;
       default: return c.ecrit ? writable : true;
@@ -544,6 +646,11 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     if (field && !actifDansUnChamp(c)) return;
     const cible = cibleRaccourci(c);
     if (!cible || !context || !drawing) return;
+    // Entrée / Maj+Entrée ne sont prises que pendant le tracé d'une polyligne : ailleurs, elles activent le bouton focalisé.
+    if (cible.type === "commande" && (cible.id === "terminer-polyligne" || cible.id === "fermer-polyligne")) {
+      const c2 = COMMANDES_EDITEUR.find(x => x.id === cible.id);
+      if (!c2 || !commandAvailable(c2)) return;
+    }
     e.preventDefault();
     // Espace : tenue, elle sert au panoramique (Espace + glisser) ; relâchée sans glisser, elle choisit la Sélection.
     if (cible.type === "outil" && cible.toolId === "studio.dessin.selection") { if (!e.repeat && !espace.current.tenu) espace.current = { tenu: true, panoramique: false }; return; }
@@ -623,12 +730,35 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const toolEntry = STUDIO_TOOLS.find(t => t.toolId === tool);
   const toResolve = drawing?.dimensions?.filter(d => d.toResolve).length ?? 0;
   const form = tool !== "studio.dessin.selection";
-  const formDisabled = tool === "studio.dessin.deplacer" ? selectionIds.length === 0 : tool === "studio.dessin.modifier" ? !selected : false;
-  const fields: (keyof Valeurs)[] = tool === "studio.dessin.deplacer" ? ["dx", "dy"] : tool === "studio.dessin.modifier" && selected?.type === "dimension" ? ["offset"] : tool === "studio.dessin.cote" ? ["x", "y", "a", "b", "offset"] : ["x", "y", "a", "b"];
+  const formDisabled = tool === "studio.dessin.deplacer" || tool === "studio.dessin.decaler" ? selectionIds.length === 0 : tool === "studio.dessin.modifier" ? !selected : false;
+  const typeSaisi = tool === "studio.dessin.modifier" ? selected?.type : ({ "studio.dessin.cercle": "circle", "studio.dessin.arc": "arc", "studio.dessin.polyligne": "polyline" } as const)[tool as string];
+  const centreEtAngles: (keyof Valeurs)[] = ["x", "y", "r", "a0", "a1"];
+  const fields: (keyof Valeurs)[] = tool === "studio.dessin.deplacer" ? ["dx", "dy"] : tool === "studio.dessin.decaler" ? ["distance"]
+    : typeSaisi === "dimension" ? ["offset"] : typeSaisi === "circle" ? ["x", "y", "r"] : typeSaisi === "arc" ? centreEtAngles : typeSaisi === "polyline" ? []
+    : tool === "studio.dessin.cote" ? ["x", "y", "a", "b", "offset"] : ["x", "y", "a", "b"];
+  const saisiePolyligne = typeSaisi === "polyline";
   const sized = selected?.type === "rectangle" && tool === "studio.dessin.modifier" || tool === "studio.dessin.rectangle";
-  const label = (k: keyof Valeurs) => ({ x: "X", y: "Y", a: sized ? "Largeur" : "X final", b: sized ? "Hauteur" : "Y final", dx: "Déplacement X", dy: "Déplacement Y", offset: "Décalage" })[k];
+  const centre = typeSaisi === "circle" || typeSaisi === "arc";
+  const label = (k: keyof Valeurs) => ({ x: centre ? "Centre X" : "X", y: centre ? "Centre Y" : "Y", a: sized ? "Largeur" : "X final", b: sized ? "Hauteur" : "Y final", dx: "Déplacement X", dy: "Déplacement Y", offset: "Décalage", r: "Rayon", a0: "Angle de début (°)", a1: "Angle de fin (°)", distance: "Distance" })[k];
+  // Aperçu d'une courbe en cours de tracé (jamais une donnée du document).
+  const fin = survol?.point;
+  const apercuForme: StudioShape | null = (() => {
+    if (!trace || !fin) return null;
+    const a = trace.point;
+    if (tool === "studio.dessin.cercle") { const radius = Math.hypot(fin.x - a.x, fin.y - a.y); return radius > 0 ? { id: "apercu", type: "circle", center: a, radius } : null; }
+    if (tool === "studio.dessin.arc" && suite[0]) {
+      const g = modeArc === "centre" ? studioArcFromCenter(a, suite[0], fin) : studioArcFromThreePoints(a, suite[0], fin);
+      return g ? { id: "apercu", type: "arc", ...g } : null;
+    }
+    if (tool === "studio.dessin.polyligne") return { id: "apercu", type: "polyline", points: [a, ...suite, fin], closed: false };
+    return null;
+  })();
   const hint = !writable && !historical && context?.canWrite === false ? "Lecture seule : la planche se consulte sans modification."
+    : trace && tool === "studio.dessin.polyligne" ? "Cliquez les sommets suivants ; Entrée termine, Maj+Entrée ou un clic sur le premier sommet ferme. Échap pour annuler."
+    : trace && tool === "studio.dessin.arc" ? (suite.length === 0 ? (modeArc === "centre" ? "Centre placé. Cliquez le début de l’arc (il fixe le rayon)." : "Début placé. Cliquez un point de passage de l’arc.") : (modeArc === "centre" ? "Cliquez la direction de la fin de l’arc (sens trigonométrique)." : "Cliquez la fin de l’arc."))
+    : trace && tool === "studio.dessin.cercle" ? "Centre placé. Cliquez un point du cercle. Échap pour annuler."
     : trace ? (tool === "studio.dessin.deplacer" ? "Point de base placé. Cliquez la destination. Échap pour annuler." : "Premier point placé. Cliquez le second point. Échap pour annuler.")
+    : tool === "studio.dessin.decaler" ? "Sélectionnez un objet, saisissez la distance (positive : à gauche d’une ligne, vers l’extérieur d’une forme fermée, d’un cercle ou d’un arc), puis décalez."
     : tool === "studio.dessin.selection" ? "Cliquez un objet, Maj + clic pour l’ajouter ou le retirer ; glissez vers la droite pour une fenêtre, vers la gauche pour une capture ; glissez la sélection pour la déplacer."
     : tool === "studio.dessin.cote" ? "Cote : cliquez deux points ; près d’un sommet, le point s’y accroche et la cote suit l’objet."
     : moveWithPointer ? "Cliquez un point de base puis sa destination, ou saisissez le déplacement."
@@ -645,6 +775,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     <div className="studio-editor"><div className="studio-sheet"><div className="studio-sheet-caption"><span>Dessin et modélisation</span><span data-studio-pas-grille={pas}>{`Grille ${pasAffiche} m`}</span><span>1 unité = 1 m</span></div>
       {vue3d && <LimiteVue3D><Suspense fallback={<p role="status">Chargement de la vue 3D…</p>}><Vue3DStudio doc={drawing} /></Suspense></LimiteVue3D>}
       {!vue3d && <Dessin2D svgRef={refPlanche} doc={apercuDoc ?? drawing} cadre={cadre} pas={pas} outil={tool} selection={selectionSet} trace={trace} survol={survol} rectangle={rectangle} glissement={!!apercu}
+        apercuForme={apercuForme} sommetsPoses={suite}
         clicsVersPlanche={o => OUTILS_TRACE.has(tool) || (tool === "studio.dessin.deplacer" && (!!trace || selectionSet.has(o.id)))}
         surPlanche={board} surSurvol={pointerMove} surPointeurBas={pointerDown} surPointeurHaut={pointerUp} surClicCapture={clickCapture} surSelection={(id, plus) => select(plus ? basculer(selectionIds, id) : [id])} />}
       <p className="studio-hint">{hint}</p>
@@ -663,7 +794,11 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       </div>}
       {formesChoisies.length > 0 && <FormulaireExtrusion valeurs={extrusion} modifiable={writable} formes={formesChoisies.length} extrudes={formesChoisies.filter(o => o.extrusion).length}
         surValeurs={setExtrusion} surExtruder={extrude} surAplatir={() => runTool("studio.objet.aplatir")} />}
-      {form && <form onSubmit={numeric}><fieldset disabled={!writable || formDisabled || (tool === "studio.dessin.modifier" && selected?.type === "dimension" && selected.toResolve)}><legend>Valeurs en mètres</legend>{fields.map(k => <label key={k}>{label(k)}<input type="number" step="any" required value={Number.isFinite(values[k]) ? values[k] : ""} onChange={e => setValues(v => ({ ...v, [k]: e.target.valueAsNumber }))} /></label>)}<button type="submit">{tool === "studio.dessin.deplacer" ? "Déplacer la sélection" : tool === "studio.dessin.modifier" ? "Modifier la sélection" : "Ajouter au dessin"}</button></fieldset></form>}
+      {form && <form onSubmit={numeric} data-studio-formulaire={tool}><fieldset disabled={!writable || formDisabled || (tool === "studio.dessin.modifier" && selected?.type === "dimension" && selected.toResolve)}><legend>Valeurs en mètres</legend>
+        {tool === "studio.dessin.arc" && <label>Construction de l’arc<select value={modeArc} onChange={e => { setModeArc(e.target.value as ModeArc); cancelTrace(); }} data-studio-mode-arc><option value="trois-points">Trois points (début, passage, fin)</option><option value="centre">Centre, début, fin</option></select></label>}
+        {fields.map(k => <label key={k}>{label(k)}<input type="number" step="any" required value={Number.isFinite(values[k]) ? values[k] : ""} onChange={e => setValues(v => ({ ...v, [k]: e.target.valueAsNumber }))} data-studio-champ={k} /></label>)}
+        {saisiePolyligne && <><label>Sommets (x y ; …)<input type="text" required value={sommetsTexte} onChange={e => setSommetsTexte(e.target.value)} data-studio-champ="sommets" /></label><label className="studio-case"><input type="checkbox" checked={fermee} onChange={e => setFermee(e.target.checked)} data-studio-champ="fermee" /> Fermée</label></>}
+        <button type="submit">{tool === "studio.dessin.deplacer" ? "Déplacer la sélection" : tool === "studio.dessin.decaler" ? "Décaler la sélection" : tool === "studio.dessin.modifier" ? "Modifier la sélection" : "Ajouter au dessin"}</button></fieldset></form>}
       <PanneauCalques doc={drawing} actif={actif?.id ?? STUDIO_DEFAULT_LAYER_ID} modifiable={writable} nom={nomCalque} nomRef={nomRef} surActif={id => setCalqueActif(id)} surNom={setNomCalque} surReglage={setLayer} surRenommer={renameLayer} />
       <div className="studio-note"><strong>Une planche autonome</strong><p>Les tracés restent en brouillon jusqu’à la confirmation du serveur. Aucun modèle 3D n’est nécessaire.</p></div></aside></div>
     {commentaires && <div id="studio-commentaires"><PanneauCommentaires projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} revision={context.revision.document} dessin={drawing}

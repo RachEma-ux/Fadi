@@ -57,5 +57,10 @@ export function messageRefus(e: unknown): string {
   if (m.includes("ne se déplace pas seule")) return "Une cote liée suit ses objets : déplacez l’objet coté.";
   if (m.includes("longueur nulle")) return "La cote liée deviendrait de longueur nulle : modification refusée.";
   if (m.includes("deux points distincts")) return "Les deux points doivent être distincts.";
+  if (m.includes("décalage impossible")) return "Décalage impossible pour cet objet : rayon ou côté annulé, jonction non tangente ou segment retourné.";
+  if (m.includes("contour simple")) return "Une polyligne fermée extrudée doit avoir un contour simple (sans croisement).";
+  if (m.includes("l’épaisseur ne s’applique qu’aux lignes et aux arcs")) return "L’épaisseur ne s’applique qu’aux lignes et aux arcs.";
+  if (m.includes("sommets consécutifs confondus")) return "Deux sommets consécutifs doivent être distincts.";
+  if (m.includes("rayon strictement positif")) return "Le rayon doit être strictement positif.";
   return "Géométrie invalide. Vérifiez les valeurs saisies.";
 }

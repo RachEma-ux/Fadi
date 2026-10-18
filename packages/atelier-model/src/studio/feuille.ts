@@ -1,6 +1,7 @@
 import { decouper, EPAISSEUR_MM, GRIS_TRAIT, grisRemplissage, type Bornes, type Primitive, type Trait } from "../documents/dessin.js";
 import { pdfPage } from "../documents/rendu-pdf.js";
 import type { Vec } from "../geometrie.js";
+import { studioShapeBoundPoints, studioShapeOutline } from "./courbes.js";
 import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument, type StudioDimension, type StudioDocument, type StudioShape } from "./document-2d.js";
 import { formatStudioLength, STUDIO_EXPORT_TO_RESOLVE } from "./export.js";
 
@@ -202,7 +203,7 @@ function dimensionGeometry(d: StudioDimension, locale: string): DrawnDimension {
 const layerOf = (o: { layerId?: string }): string => o.layerId ?? STUDIO_DEFAULT_LAYER_ID;
 
 function shapePoints(o: StudioShape): Vec[] {
-  return o.type === "line" ? [o.start, o.end] : [o.origin, { x: o.origin.x + o.width, y: o.origin.y + o.height }];
+  return studioShapeBoundPoints(o);
 }
 
 /**
@@ -263,7 +264,11 @@ export function composerFeuilleStudio(input: StudioDocument, options: StudioShee
       for (const o of shapes) {
         if (layerOf(o) !== layer.id) continue;
         if (o.type === "line") raw.push({ type: "ligne", a: map(o.start), b: map(o.end), trait: "vue", objetId: o.id });
-        else {
+        else if (o.type !== "rectangle") {
+          // Cercles, arcs, polylignes : contour discrétisé (déterministe), découpé comme tout polygone.
+          const { points, closed } = studioShapeOutline(o);
+          raw.push({ type: "poly", points: points.map(map), ferme: closed, trait: "vue", remplissage: null, objetId: o.id });
+        } else {
           const { x, y } = o.origin;
           raw.push({ type: "poly", points: [{ x, y }, { x: x + o.width, y }, { x: x + o.width, y: y + o.height }, { x, y: y + o.height }].map(map), ferme: true, trait: "vue", remplissage: null, objetId: o.id });
         }

@@ -1,3 +1,4 @@
+import { studioShapeBoundPoints, studioSvgPath } from "./courbes.js";
 import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument, type StudioDimension, type StudioDocument, type StudioItem, type StudioPoint } from "./document-2d.js";
 
 /**
@@ -135,9 +136,7 @@ function drawDimension(d: StudioDimension, locale: string, textHeight: number): 
 }
 
 function itemPoints(o: StudioItem): StudioPoint[] {
-  if (o.type === "line") return [o.start, o.end];
-  if (o.type === "rectangle") return [o.origin, { x: o.origin.x + o.width, y: o.origin.y + o.height }];
-  return [];
+  return o.type === "dimension" ? [] : studioShapeBoundPoints(o);
 }
 
 // ——— SVG ———
@@ -147,7 +146,7 @@ const xml = (s: string): string =>
   s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 
 /**
- * SVG du document : unité utilisateur = 1 m, `viewBox` = bornes des éléments visibles (tous s'il n'y en a aucun) plus
+ * SVG du document (lignes `<line>`, rectangles `<rect>`, cercles `<circle>`, arcs et polylignes `<path>` à arcs exacts) : unité utilisateur = 1 m, `viewBox` = bornes des éléments visibles (tous s'il n'y en a aucun) plus
  * la marge ; y retourné (y SVG = −y local). Un `<g data-layer>` par calque, dans l'ordre ; un calque masqué garde son
  * contenu sous `display="none"`. Chaque cote est un `<g data-dimension>` (ligne, lignes d'attache, texte de la valeur
  * mesurée) ; une cote à résoudre porte `data-status="to-resolve"` et la mention « à résoudre ».
@@ -189,6 +188,8 @@ export function exportStudioSvg(input: StudioDocument, exportOptions?: StudioExp
     for (const o of doc.objects) {
       if (layerKey(o) !== layer.id) continue;
       if (o.type === "line") lines.push(`<line data-id="${xml(o.id)}" x1="${nb(o.start.x)}" y1="${Y(o.start.y)}" x2="${nb(o.end.x)}" y2="${Y(o.end.y)}" vector-effect="non-scaling-stroke"/>`);
+      else if (o.type === "circle") lines.push(`<circle data-id="${xml(o.id)}" cx="${nb(o.center.x)}" cy="${Y(o.center.y)}" r="${nb(o.radius)}" vector-effect="non-scaling-stroke"/>`);
+      else if (o.type === "arc" || o.type === "polyline") lines.push(`<path data-id="${xml(o.id)}" data-type="${o.type}" d="${studioSvgPath(o, true, nb)}" vector-effect="non-scaling-stroke"/>`);
       else lines.push(`<rect data-id="${xml(o.id)}" x="${nb(o.origin.x)}" y="${Y(o.origin.y + o.height)}" width="${nb(o.width)}" height="${nb(o.height)}" vector-effect="non-scaling-stroke"/>`);
     }
     for (const g of dims) {
@@ -236,18 +237,39 @@ class DxfWriter {
     this.point(11, b);
   }
   closedPolyline(layer: string, pts: readonly StudioPoint[]): void {
+    this.polyline(layer, pts, true);
+  }
+  /** POLYLINE R12 (66 = 1, VERTEX… SEQEND) ; renflement d'un segment en code 42 sur son sommet de départ. */
+  polyline(layer: string, pts: readonly StudioPoint[], closed: boolean, bulges?: readonly number[]): void {
     this.pair(0, "POLYLINE");
     this.pair(8, layer);
     this.pair(66, 1);
     this.point(10, { x: 0, y: 0 });
-    this.pair(70, 1);
-    for (const p of pts) {
+    this.pair(70, closed ? 1 : 0);
+    pts.forEach((p, i) => {
       this.pair(0, "VERTEX");
       this.pair(8, layer);
       this.point(10, p);
-    }
+      const b = bulges?.[i] ?? 0;
+      if (b !== 0) this.pair(42, b);
+    });
     this.pair(0, "SEQEND");
     this.pair(8, layer);
+  }
+  circle(layer: string, c: StudioPoint, r: number): void {
+    this.pair(0, "CIRCLE");
+    this.pair(8, layer);
+    this.point(10, c);
+    this.pair(40, r);
+  }
+  /** ARC : angles en degrés, sens trigonométrique, de 50 (début) à 51 (fin). */
+  arc(layer: string, c: StudioPoint, r: number, start: number, end: number): void {
+    this.pair(0, "ARC");
+    this.pair(8, layer);
+    this.point(10, c);
+    this.pair(40, r);
+    this.pair(50, (start * 180) / Math.PI);
+    this.pair(51, (end * 180) / Math.PI);
   }
   text(layer: string, p: StudioPoint, height: number, value: string, angle: number): void {
     this.pair(0, "TEXT");
@@ -265,7 +287,8 @@ class DxfWriter {
  * DXF R12 ASCII (AC1009, CRLF), mètres ($INSUNITS = 6), repère local-2d. Table LAYER : « 0 » (calque implicite) puis
  * les calques du document (nom ASCII dérivé, `studioDxfLayerNames`) ; un calque masqué a une couleur négative (éteint),
  * un calque verrouillé le drapeau 4. Lignes → LINE ; rectangles → POLYLINE fermée de 4 sommets (R12 n'a pas de
- * LWPOLYLINE) ; cotes → LINE (cote et attaches) + TEXT de la valeur mesurée ou « à résoudre », sur leur calque.
+ * LWPOLYLINE) ; cercles → CIRCLE ; arcs → ARC (degrés, sens trigonométrique) ; polylignes → POLYLINE (70 = 1 si
+ * fermée) dont chaque VERTEX porte le renflement de son segment (code 42, omis s'il est nul) ; cotes → LINE (cote et attaches) + TEXT de la valeur mesurée ou « à résoudre », sur leur calque.
  */
 export function exportStudioDxf(input: StudioDocument, exportOptions?: Omit<StudioExportOptions, "margin">): string {
   const doc = validateStudioDocument(input);
@@ -312,6 +335,9 @@ export function exportStudioDxf(input: StudioDocument, exportOptions?: Omit<Stud
   for (const o of doc.objects) {
     const layer = nameOf.get(layerKey(o))!;
     if (o.type === "line") w.line(layer, o.start, o.end);
+    else if (o.type === "circle") w.circle(layer, o.center, o.radius);
+    else if (o.type === "arc") w.arc(layer, o.center, o.radius, o.startAngle, o.endAngle);
+    else if (o.type === "polyline") w.polyline(layer, o.points, o.closed, o.bulges);
     else {
       const { x, y } = o.origin;
       w.closedPolyline(layer, [{ x, y }, { x: x + o.width, y }, { x: x + o.width, y: y + o.height }, { x, y: y + o.height }]);

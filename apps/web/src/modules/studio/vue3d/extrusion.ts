@@ -1,8 +1,8 @@
 /**
  * Formulaire d'extrusion de la sélection (Studio) : des valeurs saisies aux commandes `studio.objet.extruder` /
  * `studio.objet.aplatir`. Aucune valeur par défaut : un champ vide (NaN) reste vide et bloque l'extrusion (base et
- * hauteur) ou signifie « sans épaisseur » (épaisseur). L'épaisseur ne vaut que pour les lignes ; les rectangles
- * s'extrudent sur leur emprise. Le modèle reste seul juge (calques verrouillés, valeurs). Pur : ni React ni DOM.
+ * hauteur) ou signifie « sans épaisseur » (épaisseur). L'épaisseur ne vaut que pour les lignes et les arcs ; rectangles,
+ * cercles et polylignes s'extrudent sans épaisseur (prisme sur l'emprise fermée, surface le long d'un tracé ouvert). Le modèle reste seul juge (calques verrouillés, valeurs). Pur : ni React ni DOM.
  */
 import type { StudioCommand, StudioDocument, StudioShape } from "@parcours/atelier-model";
 
@@ -18,7 +18,7 @@ export function formesSelectionnees(doc: StudioDocument, ids: readonly string[])
 /** Valeurs affichées pour un objet extrudé (celles que l'utilisateur a saisies) ; null s'il n'est pas extrudé. */
 export function valeursDe(o: StudioShape): ValeursExtrusion | null {
   if (!o.extrusion) return null;
-  const epaisseur = o.type === "line" ? o.extrusion.thickness : undefined;
+  const epaisseur = o.type === "line" || o.type === "arc" ? o.extrusion.thickness : undefined;
   return { base: o.extrusion.base, hauteur: o.extrusion.height, epaisseur: epaisseur ?? Number.NaN };
 }
 
@@ -31,13 +31,14 @@ export function commandesExtrusion(doc: StudioDocument, ids: readonly string[], 
   if (v.hauteur <= 0) return { erreur: "La hauteur doit être strictement positive." };
   const avecEpaisseur = !Number.isNaN(v.epaisseur);
   if (avecEpaisseur && !(Number.isFinite(v.epaisseur) && v.epaisseur > 0)) return { erreur: "L’épaisseur doit être strictement positive, ou laissée vide." };
-  const lignes = formes.filter((o) => o.type === "line").map((o) => o.id);
-  const rectangles = formes.filter((o) => o.type === "rectangle").map((o) => o.id);
+  // « lignes » : objets qui acceptent une épaisseur (lignes, arcs) ; « rectangles » : les autres, sans épaisseur.
+  const lignes = formes.filter((o) => o.type === "line" || o.type === "arc").map((o) => o.id);
+  const rectangles = formes.filter((o) => o.type !== "line" && o.type !== "arc").map((o) => o.id);
   const commandes: StudioCommand[] = [];
   if (lignes.length) commandes.push({ toolId: "studio.objet.extruder", params: { ids: lignes, base: v.base, height: v.hauteur, ...(avecEpaisseur ? { thickness: v.epaisseur } : {}) } });
   if (rectangles.length) commandes.push({ toolId: "studio.objet.extruder", params: { ids: rectangles, base: v.base, height: v.hauteur } });
   return avecEpaisseur && rectangles.length
-    ? { commandes, info: "L’épaisseur ne s’applique qu’aux lignes : les rectangles s’extrudent sur leur emprise." }
+    ? { commandes, info: formes.every((o) => o.type === "line" || o.type === "rectangle") ? "L’épaisseur ne s’applique qu’aux lignes : les rectangles s’extrudent sur leur emprise." : "L’épaisseur ne s’applique qu’aux lignes et aux arcs : les autres objets s’extrudent sans épaisseur." }
     : { commandes };
 }
 

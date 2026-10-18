@@ -4,7 +4,7 @@
  * touché suffit) et commandes de déplacement d'une sélection. Seuls les objets et les cotes affichés et déverrouillés
  * se sélectionnent. Pur : ni React ni DOM.
  */
-import type { StudioCommand, StudioDimension, StudioDocument, StudioPoint, StudioShape } from "@parcours/atelier-model";
+import { studioShapeSegments, type StudioCommand, type StudioDimension, type StudioDocument, type StudioPoint, type StudioShape } from "@parcours/atelier-model";
 import { estSelectionnable } from "./calques";
 import { traceCote } from "./geometrie-2d";
 
@@ -36,13 +36,12 @@ export const rectangleEntre = (a: StudioPoint, b: StudioPoint): Rectangle2D =>
 
 type Segment = readonly [StudioPoint, StudioPoint];
 
-/** Segments dessinés d'un élément (traits de la ligne, côtés du rectangle, lignes d'une cote). */
+/**
+ * Segments dessinés d'un élément (traits de la ligne, côtés du rectangle, contour discrétisé d'un cercle, d'un arc ou
+ * d'une polyligne, lignes d'une cote).
+ */
 export function segments(e: Element2D): Segment[] {
-  if (e.type === "line") return [[e.start, e.end]];
-  if (e.type === "rectangle") {
-    const a = e.origin, b = { x: a.x + e.width, y: a.y }, c = { x: a.x + e.width, y: a.y + e.height }, d = { x: a.x, y: a.y + e.height };
-    return [[a, b], [b, c], [c, d], [d, a]];
-  }
+  if (e.type !== "dimension") return studioShapeSegments(e);
   const g = traceCote(e);
   return [[e.start, g.a], [e.end, g.b], [g.a, g.b]];
 }

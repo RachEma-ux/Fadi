@@ -75,6 +75,7 @@ export function Rapport({ nom, resultat, unite, surUnite }: { nom: string; resul
         {UNITES_PROPOSEES.map((u) => <option key={u.valeur} value={u.valeur}>{u.libelle}</option>)}
       </select></label>}
       <p data-studio-import-decompte>{`${r.entites.total} objet(s) à ajouter : ${r.entites.lignes} ligne(s), ${r.entites.rectangles} rectangle(s), ${r.entites.segments} segment(s) de polyligne.`}</p>
+      {r.entites.cercles + r.entites.arcs + r.entites.polylignes > 0 && <p data-studio-import-courbes>{`Courbes : ${r.entites.cercles} cercle(s), ${r.entites.arcs} arc(s), ${r.entites.polylignes} polyligne(s).`}</p>}
       {r.bornes && <p data-studio-import-bornes>{`Étendue : X de ${metres(r.bornes.min.x, LOCALE)} à ${metres(r.bornes.max.x, LOCALE)} m, Y de ${metres(r.bornes.min.y, LOCALE)} à ${metres(r.bornes.max.y, LOCALE)} m (repère local).`}</p>}
       {r.zIgnores > 0 && <p>{`${r.zIgnores} entité(s) avec une cote Z non nulle : projetée(s) sur le plan, Z ignoré.`}</p>}
       {nonPris === 0

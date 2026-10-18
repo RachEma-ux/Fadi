@@ -1,4 +1,5 @@
-import { studioLayerState, validateStudioDocument, type StudioDocument, type StudioPoint, type StudioShape } from "./document-2d.js";
+import { studioArcPoints, studioArcSweep, studioCirclePoints, studioPolylinePath, studioShapeOutline, studioTriangulate } from "./courbes.js";
+import { studioLayerState, validateStudioDocument, type StudioDocument, type StudioLine, type StudioPoint, type StudioRectangle, type StudioShape } from "./document-2d.js";
 
 /**
  * Vue 3D dérivée d'un document Studio (`studio-document/1`). Le document reste dans le repère `local-2d` (mètres) ; la
@@ -27,7 +28,10 @@ export interface StudioSolid3d {
   id: string;
   type: StudioShape["type"];
   layerId?: string;
-  /** `prism` : emprise fermée (rectangle, ligne avec épaisseur) ; `wall-surface` : ligne sans épaisseur (surface verticale). */
+  /**
+   * `prism` : emprise fermée (rectangle, cercle, polyligne fermée, ligne ou arc avec épaisseur) ; `wall-surface` : ligne,
+   * arc ou polyligne ouverte sans épaisseur (surface verticale le long du tracé discrétisé).
+   */
   kind: "prism" | "wall-surface";
   vertices: StudioPoint3[];
   /** Triplets d'indices dans `vertices`. */
@@ -36,7 +40,7 @@ export interface StudioSolid3d {
   edges: [number, number][];
 }
 
-/** Contour plat (z = 0) d'un objet non extrudé ; `closed` pour un rectangle. */
+/** Contour plat (z = 0) d'un objet non extrudé, discrétisé pour les courbes ; `closed` pour une forme fermée. */
 export interface StudioOutline3d {
   id: string;
   type: StudioShape["type"];
@@ -60,7 +64,7 @@ export interface StudioMesh3d {
   bounds: { min: StudioPoint3; max: StudioPoint3 } | null;
 }
 
-function footprint(o: StudioShape, thickness: number | undefined): StudioPoint[] | null {
+function footprint(o: StudioLine | StudioRectangle, thickness: number | undefined): StudioPoint[] | null {
   if (o.type === "rectangle") {
     const { x, y } = o.origin;
     return [{ x, y }, { x: x + o.width, y }, { x: x + o.width, y: y + o.height }, { x, y: y + o.height }];
@@ -80,15 +84,22 @@ function footprint(o: StudioShape, thickness: number | undefined): StudioPoint[]
 
 const signedArea = (p: readonly StudioPoint[]) => p.reduce((s, a, i) => { const b = p[(i + 1) % p.length]!; return s + a.x * b.y - b.x * a.y; }, 0) / 2;
 
-function prism(base: StudioPoint[], zMin: number, zMax: number): Pick<StudioSolid3d, "vertices" | "triangles" | "edges"> {
+/**
+ * Prisme droit sur un anneau : faces du dessous et du dessus en éventail pour une emprise convexe (rectangle, mur droit,
+ * cercle), par oreilles sinon (polyligne fermée, mur courbe), puis faces latérales.
+ */
+function prism(base: StudioPoint[], zMin: number, zMax: number, convexe = true): Pick<StudioSolid3d, "vertices" | "triangles" | "edges"> {
   const ring = signedArea(base) < 0 ? [...base].reverse() : base;
   const n = ring.length;
   const vertices = [...ring.map((p) => studioLocal2dVers3d(p, zMin)), ...ring.map((p) => studioLocal2dVers3d(p, zMax))];
   const triangles: [number, number, number][] = [];
   const edges: [number, number][] = [];
-  for (let i = 1; i < n - 1; i++) {
-    triangles.push([0, i + 1, i]); // dessous, normale vers -z
-    triangles.push([n, n + i, n + i + 1]); // dessus, normale vers +z
+  const caps: [number, number, number][] = [];
+  if (convexe) for (let i = 1; i < n - 1; i++) caps.push([0, i, i + 1]);
+  else caps.push(...studioTriangulate(ring));
+  for (const [a, b, c] of caps) {
+    triangles.push([a, c, b]); // dessous, normale vers -z
+    triangles.push([n + a, n + b, n + c]); // dessus, normale vers +z
   }
   for (let i = 0; i < n; i++) {
     const j = (i + 1) % n;
@@ -103,11 +114,46 @@ function wallSurface(a: StudioPoint, b: StudioPoint, zMin: number, zMax: number)
   return { vertices, triangles: [[0, 1, 2], [0, 2, 3]], edges: [[0, 1], [1, 2], [2, 3], [3, 0]] };
 }
 
+/** Surface verticale le long d'un tracé ouvert discrétisé (arc, polyligne ouverte sans épaisseur). */
+function stripSurface(path: StudioPoint[], zMin: number, zMax: number): Pick<StudioSolid3d, "vertices" | "triangles" | "edges"> {
+  const n = path.length;
+  const vertices = [...path.map((p) => studioLocal2dVers3d(p, zMin)), ...path.map((p) => studioLocal2dVers3d(p, zMax))];
+  const triangles: [number, number, number][] = [];
+  const edges: [number, number][] = [[0, n], [n - 1, 2 * n - 1]];
+  for (let i = 0; i < n - 1; i++) {
+    triangles.push([i, i + 1, n + i + 1], [i, n + i + 1, n + i]);
+    edges.push([i, i + 1], [n + i, n + i + 1]);
+  }
+  return { vertices, triangles, edges };
+}
+
+/** Géométrie d'un objet extrudé, ou null si l'extrusion n'y a pas de sens (jamais pour un document valide). */
+function solid(o: StudioShape, zMin: number, zMax: number): { kind: StudioSolid3d["kind"]; geometry: Pick<StudioSolid3d, "vertices" | "triangles" | "edges"> } | null {
+  switch (o.type) {
+    case "line": {
+      const ring = footprint(o, o.extrusion?.thickness);
+      return ring ? { kind: "prism", geometry: prism(ring, zMin, zMax) } : { kind: "wall-surface", geometry: wallSurface(o.start, o.end, zMin, zMax) };
+    }
+    case "rectangle": return { kind: "prism", geometry: prism(footprint(o, undefined)!, zMin, zMax) };
+    case "circle": return { kind: "prism", geometry: prism(studioCirclePoints(o.center, o.radius), zMin, zMax) };
+    case "arc": {
+      const sweep = studioArcSweep(o.startAngle, o.endAngle);
+      const t = o.extrusion?.thickness;
+      if (t === undefined) return { kind: "wall-surface", geometry: stripSurface(studioArcPoints(o.center, o.radius, o.startAngle, sweep), zMin, zMax) };
+      // Mur courbe centré sur l'arc : bord extérieur puis bord intérieur parcouru en retour.
+      const ring = [...studioArcPoints(o.center, o.radius + t / 2, o.startAngle, sweep), ...studioArcPoints(o.center, o.radius - t / 2, o.startAngle, sweep).reverse()];
+      return { kind: "prism", geometry: prism(ring, zMin, zMax, false) };
+    }
+    case "polyline": {
+      const path = studioPolylinePath(o);
+      return o.closed ? { kind: "prism", geometry: prism(path, zMin, zMax, false) } : { kind: "wall-surface", geometry: stripSurface(path, zMin, zMax) };
+    }
+  }
+}
+
 function outline(o: StudioShape): StudioOutline3d {
-  const points = o.type === "line"
-    ? [o.start, o.end]
-    : [o.origin, { x: o.origin.x + o.width, y: o.origin.y }, { x: o.origin.x + o.width, y: o.origin.y + o.height }, { x: o.origin.x, y: o.origin.y + o.height }];
-  return { id: o.id, type: o.type, ...(o.layerId !== undefined ? { layerId: o.layerId } : {}), points: points.map((p) => studioLocal2dVers3d(p, 0)), closed: o.type === "rectangle" };
+  const { points, closed } = studioShapeOutline(o);
+  return { id: o.id, type: o.type, ...(o.layerId !== undefined ? { layerId: o.layerId } : {}), points: points.map((p) => studioLocal2dVers3d(p, 0)), closed };
 }
 
 /** Géométrie 3D dérivée du document (validé d'abord) ; les calques masqués ne sont pas rendus. */
@@ -120,12 +166,9 @@ export function studioMesh3d(document: StudioDocument): StudioMesh3d {
     if (!studioLayerState(doc, o.layerId)?.visible) { hidden++; continue; }
     const e = o.extrusion;
     if (!e) { outlines.push(outline(o)); continue; }
-    const zMin = e.base, zMax = e.base + e.height;
-    const thickness = o.type === "line" ? o.extrusion?.thickness : undefined;
-    const ring = footprint(o, thickness);
-    const geometry = ring ? prism(ring, zMin, zMax) : o.type === "line" ? wallSurface(o.start, o.end, zMin, zMax) : null;
-    if (!geometry) continue;
-    solids.push({ id: o.id, type: o.type, ...(o.layerId !== undefined ? { layerId: o.layerId } : {}), kind: ring ? "prism" : "wall-surface", ...geometry });
+    const s = solid(o, e.base, e.base + e.height);
+    if (!s) continue;
+    solids.push({ id: o.id, type: o.type, ...(o.layerId !== undefined ? { layerId: o.layerId } : {}), kind: s.kind, ...s.geometry });
   }
   let bounds: StudioMesh3d["bounds"] = null;
   // Boucle plutôt qu'un étalement : 20 000 objets donnent trop de sommets pour Math.min(...).

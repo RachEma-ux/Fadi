@@ -1,4 +1,5 @@
-import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument, type StudioDocument, type StudioLine, type StudioRectangle, type StudioShape } from "./document-2d.js";
+import { studioArcPoints, studioArcSweep, studioPolylinePath, studioSignedArea } from "./courbes.js";
+import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument, type StudioDocument, type StudioLine, type StudioPoint, type StudioRectangle, type StudioShape } from "./document-2d.js";
 
 /**
  * Export IFC 4.3 (IFC4X3_ADD2, fichier STEP ISO 10303-21) d'un document Studio (`studio-document/1`). Écriture directe,
@@ -16,6 +17,11 @@ import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument,
  *   sur la ligne, placé et orienté le long de la ligne, à la cote `base`, sur la hauteur `height`) ;
  *   ligne sans épaisseur → `IfcBuildingElementProxy` portant une surface verticale (`IfcTriangulatedFaceSet` ouvert) ;
  *   rectangle → `IfcBuildingElementProxy` prisme (ni dalle ni poteau ne sont devinés) ;
+ *   cercle → `IfcBuildingElementProxy` prisme d'un `IfcCircleProfileDef` (exact) ;
+ *   polyligne fermée → `IfcBuildingElementProxy` prisme d'un `IfcArbitraryClosedProfileDef` sur son contour discrétisé
+ *   (arcs en `STUDIO_SEGMENTS_PAR_TOUR` segments par tour, déterministe) ;
+ *   arc avec épaisseur → `IfcWall` (profil de couronne discrétisé, centré sur l'arc) ; arc sans épaisseur et polyligne
+ *   ouverte → `IfcBuildingElementProxy` surface verticale (`IfcTriangulatedFaceSet` ouvert le long du tracé discrétisé) ;
  *   les types prédéfinis restent `.NOTDEFINED.` ;
  * - objets non extrudés et cotes : non exportés en 3D, comptés dans le jeu de propriétés `Fadi_StudioExport` du projet ;
  * - calques : `IfcPresentationLayerWithStyle` (nom du calque, identifiant Studio, visibilité `LayerOn`, verrou
@@ -242,10 +248,72 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
     return { element, item, layerId: layerOf(o) };
   };
 
+  /** Profil fermé discrétisé (coordonnées absolues du plan, sens trigonométrique), extrudé depuis la cote de base. */
+  const arbitrarySolid = (ring: StudioPoint[], depth: number) => {
+    const r = studioSignedArea(ring) < 0 ? [...ring].reverse() : ring;
+    const curve = s.add(`IFCPOLYLINE(${refs([...r, r[0]!].map((p) => pt2(p.x, p.y)))})`);
+    const profile = s.add(`IFCARBITRARYCLOSEDPROFILEDEF(.AREA.,$,${ref(curve)})`);
+    return s.add(`IFCEXTRUDEDAREASOLID(${ref(profile)},$,${ref(zAxis)},${studioStepReal(depth)})`);
+  };
+  const proxy = (o: StudioShape, description: string, item: number, representation: "SweptSolid" | "Tessellation", placement: number) => {
+    const rep = s.add(`IFCSHAPEREPRESENTATION(${ref(body)},'Body','${representation}',${refs([item])})`);
+    return s.add(`IFCBUILDINGELEMENTPROXY(${gid(o.id)},$,${studioStepString(o.id)},${studioStepString(description)},$,${ref(placement)},${ref(shape([rep]))},${studioStepString(o.id)},.NOTDEFINED.)`);
+  };
+  /** Surface verticale ouverte le long d'un tracé discrétisé (coordonnées absolues, z de 0 à h au-dessus de la base). */
+  const stripItem = (path: StudioPoint[], h: number) => {
+    const n = path.length;
+    const coords = [...path.map((p) => [p.x, p.y, 0]), ...path.map((p) => [p.x, p.y, h])].map((p) => `(${p.map(studioStepReal).join(",")})`).join(",");
+    const list = s.add(`IFCCARTESIANPOINTLIST3D((${coords}),$)`);
+    const faces: string[] = [];
+    for (let i = 1; i < n; i++) faces.push(`(${i},${i + 1},${n + i + 1})`, `(${i},${n + i + 1},${n + i})`);
+    return s.add(`IFCTRIANGULATEDFACESET(${ref(list)},$,.F.,(${faces.join(",")}),$)`);
+  };
+  const curved = (o: Exclude<StudioShape, StudioLine | StudioRectangle>): Built => {
+    const e = o.extrusion!;
+    const placement = placed(0, 0, e.base);
+    if (o.type === "circle") {
+      const profile = s.add(`IFCCIRCLEPROFILEDEF(.AREA.,$,${ref(s.add(`IFCAXIS2PLACEMENT2D(${ref(pt2(o.center.x, o.center.y))},$)`))},${studioStepReal(o.radius)})`);
+      const item = s.add(`IFCEXTRUDEDAREASOLID(${ref(profile)},$,${ref(zAxis)},${studioStepReal(e.height)})`);
+      summary.prisms++;
+      return { element: proxy(o, "Prisme (cercle extrudé)", item, "SweptSolid", placement), item, layerId: layerOf(o) };
+    }
+    if (o.type === "polyline" && o.closed) {
+      const item = arbitrarySolid(studioPolylinePath(o), e.height);
+      summary.prisms++;
+      return { element: proxy(o, "Prisme (polyligne fermée extrudée)", item, "SweptSolid", placement), item, layerId: layerOf(o) };
+    }
+    if (o.type === "arc") {
+      const sweep = studioArcSweep(o.startAngle, o.endAngle);
+      const t = o.extrusion?.thickness;
+      if (t !== undefined) {
+        const ring = [...studioArcPoints(o.center, o.radius + t / 2, o.startAngle, sweep), ...studioArcPoints(o.center, o.radius - t / 2, o.startAngle, sweep).reverse()];
+        const item = arbitrarySolid(ring, e.height);
+        const rep = s.add(`IFCSHAPEREPRESENTATION(${ref(body)},'Body','SweptSolid',${refs([item])})`);
+        const element = s.add(`IFCWALL(${gid(o.id)},$,${studioStepString(o.id)},${studioStepString("Mur courbe (arc extrudé avec épaisseur)")},$,${ref(placement)},${ref(shape([rep]))},${studioStepString(o.id)},.NOTDEFINED.)`);
+        summary.walls++;
+        return { element, item, layerId: layerOf(o) };
+      }
+      const item = stripItem(studioArcPoints(o.center, o.radius, o.startAngle, sweep), e.height);
+      summary.surfaces++;
+      return { element: proxy(o, "Surface verticale (arc extrudé sans épaisseur)", item, "Tessellation", placement), item, layerId: layerOf(o) };
+    }
+    const item = stripItem(studioPolylinePath(o), e.height);
+    summary.surfaces++;
+    return { element: proxy(o, "Surface verticale (polyligne ouverte extrudée)", item, "Tessellation", placement), item, layerId: layerOf(o) };
+  };
+
   for (const o of doc.objects) {
     if (!o.extrusion) { summary.nonExtruded++; continue; }
     let b: Built;
-    if (o.type === "line") {
+    if (o.type !== "line" && o.type !== "rectangle") {
+      const e = o.extrusion;
+      b = curved(o);
+      const thickness = o.type === "arc" ? o.extrusion.thickness : undefined;
+      pset(`object|${o.id}`, "Fadi_StudioExtrusion", b.element, [
+        prop("StudioId", label(o.id)), prop("Base", length(e.base)), prop("Height", length(e.height)),
+        ...(thickness !== undefined ? [prop("Thickness", length(thickness))] : []),
+      ]);
+    } else if (o.type === "line") {
       const e = o.extrusion;
       b = e.thickness !== undefined ? wall({ ...o, extrusion: e }, e.thickness) : surface({ ...o, extrusion: e });
       pset(`object|${o.id}`, "Fadi_StudioExtrusion", b.element, [
