@@ -37,7 +37,7 @@ function construire(groupe: THREE.Group, mesh: StudioMesh3d) {
     g.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     g.setIndex(s.triangles.flat());
     g.computeVertexNormals();
-    const surface = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: s.type === "line" ? 0xd9d2c3 : 0xb9d3cf, roughness: 0.85, side: s.kind === "wall-surface" ? THREE.DoubleSide : THREE.FrontSide }));
+    const surface = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: s.type === "line" ? 0xd9d2c3 : 0xb9d3cf, roughness: 0.85, flatShading: true, side: s.kind === "wall-surface" ? THREE.DoubleSide : THREE.FrontSide }));
     surface.name = s.id;
     groupe.add(surface);
     const a = new THREE.BufferGeometry();
@@ -116,6 +116,7 @@ export function Vue3DStudio({ doc }: { doc: StudioDocument }) {
       vider(contenu);
       grille.geometry.dispose();
       (grille.material as THREE.Material).dispose();
+      renderer.forceContextLoss();
       renderer.dispose();
       renderer.domElement.remove();
       moteur.current = null;

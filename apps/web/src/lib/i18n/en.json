@@ -8924,5 +8924,6 @@
 "Saisissez la base et la hauteur, en mètres.": "Enter the base and height, in metres.",
 "La hauteur doit être strictement positive.": "The height must be strictly positive.",
 "L’épaisseur doit être strictement positive, ou laissée vide.": "The thickness must be strictly positive, or left empty.",
-"L’épaisseur ne s’applique qu’aux lignes : les rectangles s’extrudent sur leur emprise.": "Thickness only applies to lines: rectangles are extruded over their footprint."
+"L’épaisseur ne s’applique qu’aux lignes : les rectangles s’extrudent sur leur emprise.": "Thickness only applies to lines: rectangles are extruded over their footprint.",
+"Vue 3D indisponible. Le dessin et ses modifications non enregistrées sont conservés ; refermez puis rouvrez la vue 3D pour réessayer.": "3D view unavailable. The drawing and its unsaved changes are kept; close and reopen the 3D view to retry."
 }

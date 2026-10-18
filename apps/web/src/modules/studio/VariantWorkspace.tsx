@@ -12,8 +12,9 @@
  * Volume : extrusion déclarée de la sélection (`studio.objet.extruder` / `studio.objet.aplatir`, valeurs saisies
  * seulement) et « Vue 3D » (Maj+D), chargée à la demande, du brouillon courant.
  */
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type PointerEvent } from "react";
+import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type PointerEvent } from "react";
 import { Link } from "react-router-dom";
+import type { ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { applyStudioCommands, STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, type StudioCommand, type StudioDimension, type StudioEnvelope, type StudioLayer, type StudioPoint, type StudioShape } from "@parcours/atelier-model";
 import { Icon } from "../../components/Icon";
@@ -47,7 +48,17 @@ import "./studio.css";
 import "./planche2d/planche2d.css";
 
 /** Vue 3D (three.js) chargée à la demande : le code 3D n'alourdit pas l'éditeur 2D. */
-const Vue3DStudio = lazy(() => import("./vue3d/Vue3DStudio").then((m) => ({ default: m.Vue3DStudio })));
+const chargerVue3D = () => import("./vue3d/Vue3DStudio").then((m) => ({ default: m.Vue3DStudio }));
+let Vue3DStudio = lazy(chargerVue3D);
+
+/** Un échec de la vue 3D (chargement, rendu) reste local : le brouillon 2D non enregistré est conservé. */
+class LimiteVue3D extends Component<{ children: ReactNode }, { erreur: boolean }> {
+  state = { erreur: false };
+  static getDerivedStateFromError() { return { erreur: true }; }
+  // Refermer puis rouvrir la vue 3D relance un chargement neuf (React.lazy garderait l’échec).
+  componentDidCatch() { Vue3DStudio = lazy(chargerVue3D); }
+  render() { return this.state.erreur ? <p role="alert">Vue 3D indisponible. Le dessin et ses modifications non enregistrées sont conservés ; refermez puis rouvrez la vue 3D pour réessayer.</p> : this.props.children; }
+}
 
 const warning = () => LANGUE === "en" ? "Unsaved or unconfirmed changes. Leave this study?" : "Modifications non enregistrées ou non confirmées. Quitter cette étude ?";
 const refused = (e: unknown) => e instanceof ApiError && [401, 403, 404].includes(e.status);
@@ -169,7 +180,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
   function properties(o: StudioShape | StudioDimension) {
     // Les valeurs d'extrusion affichées sont celles que l'utilisateur a saisies pour cet objet, jamais une proposition.
     const saisies = o.type === "dimension" ? null : valeursDe(o);
-    if (saisies) setExtrusion(saisies);
+    setExtrusion(saisies ?? VALEURS_VIDES);
     if (o.type === "rectangle") setValues(v => ({ ...v, x: o.origin.x, y: o.origin.y, a: o.width, b: o.height }));
     else setValues(v => ({ ...v, x: o.start.x, y: o.start.y, a: o.end.x, b: o.end.y, ...(o.type === "dimension" ? { offset: o.offset } : {}) }));
   }
@@ -177,6 +188,11 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
     setSelection(ids);
     const o = ids.length === 1 ? itemDe(ids[0]) : null;
     if (o) properties(o);
+    else if (ids.length > 1) {
+      // Sélection multiple : des valeurs d'extrusion ne s'affichent que si tous les objets ont exactement les mêmes.
+      const valeurs = ids.map((id) => { const x = itemDe(id); return x && x.type !== "dimension" ? JSON.stringify(valeursDe(x)) : "null"; });
+      setExtrusion(new Set(valeurs).size === 1 && valeurs[0] !== "null" ? JSON.parse(valeurs[0]!) as ValeursExtrusion : VALEURS_VIDES);
+    }
   }
 
   /** Applique un lot localement (un pas d'historique) ; rien n'est envoyé avant « Enregistrer ». */
@@ -583,7 +599,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
       basculeActive={{ "accrochage-sommets": accrocheSommets, "accrochage-grille": accrocheGrille, "vue-3d": vue3d }} lienCommande={liens} surOutil={runTool} surCommande={runCommand} surLien={surLien} />
     <p className="studio-undo-scope" data-studio-annuler-portee>{`Annuler et Rétablir ne portent que sur les modifications non enregistrées (${commands.length} commande(s) en attente) ; une révision enregistrée ne s’annule pas ici.`}</p>
     <div className="studio-editor"><div className="studio-sheet"><div className="studio-sheet-caption"><span>Dessin et modélisation</span><span data-studio-pas-grille={pas}>{`Grille ${pasAffiche} m`}</span><span>1 unité = 1 m</span></div>
-      {vue3d && <Suspense fallback={<p role="status">Chargement de la vue 3D…</p>}><Vue3DStudio doc={drawing} /></Suspense>}
+      {vue3d && <LimiteVue3D><Suspense fallback={<p role="status">Chargement de la vue 3D…</p>}><Vue3DStudio doc={drawing} /></Suspense></LimiteVue3D>}
       {!vue3d && <Dessin2D svgRef={refPlanche} doc={apercuDoc ?? drawing} cadre={cadre} pas={pas} outil={tool} selection={selectionSet} trace={trace} survol={survol} rectangle={rectangle} glissement={!!apercu}
         clicsVersPlanche={o => OUTILS_TRACE.has(tool) || (tool === "studio.dessin.deplacer" && (!!trace || selectionSet.has(o.id)))}
         surPlanche={board} surSurvol={pointerMove} surPointeurBas={pointerDown} surPointeurHaut={pointerUp} surClicCapture={clickCapture} surSelection={(id, plus) => select(plus ? basculer(selectionIds, id) : [id])} />}

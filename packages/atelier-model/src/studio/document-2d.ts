@@ -201,6 +201,8 @@ function extrusionValues(o: Record<string, unknown>, path: string, thicknessAllo
   if (!thicknessAllowed) fail(`${path}.thickness`, "l’épaisseur ne s’applique qu’aux lignes (un rectangle s’extrude sur son emprise)");
   const thickness = finite(o.thickness, `${path}.thickness`);
   if (thickness <= 0) fail(`${path}.thickness`, "épaisseur strictement positive attendue");
+  // Borne technique (pas une valeur métier) : l’emprise du mur reste finie, loin de tout débordement flottant.
+  if (thickness > 1e6) fail(`${path}.thickness`, "épaisseur de 1 000 000 m au plus");
   return { base, height, thickness };
 }
 
