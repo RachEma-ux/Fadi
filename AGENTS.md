@@ -31,3 +31,11 @@
 - Tout changement dans `docs/workstreams/<chantier>/` doit actualiser **`STATUS.md` et `HANDOFF.md` dans la même PR**. Consigner une décision structurante dans son journal déjà existant, ou une nouvelle ADR si aucun journal canonique ne couvre le sujet.
 - Distinguer `À définir`, `Implémenté`, `Vérifié`, `Accepté` et `Bloqué`; chaque état « Vérifié » doit citer une preuve concrète (commit, test, rapport, revue). Avant une opération irréversible, enregistrer un checkpoint sur GitHub.
 - Ces consignes complètent les règles précédentes et **ne constituent pas une autorisation** de modifier l'architecture cible, fusionner une PR ou déployer Fadi sans accord.
+
+## Programme de missions Codex — Fadi et Studio (#156)
+
+- Pour une mission de ce programme, lire `docs/ai-team/CODEX-START-HERE.md`, `docs/ai-team/MISSIONS.md` et `docs/ai-team/missions.json`, puis les checkpoints des chantiers `ai-team` et `studio` selon l'ordre de reprise ci-dessus.
+- Traiter toutes les sous-tâches autorisées prêtes ; ne pas s'arrêter au plan ou à la première PR. Une tâche bloquée conserve cause, responsable, essais, déblocage et prochaine action ; poursuivre les tâches indépendantes. Avant interruption, enregistrer un checkpoint vérifiable, pas une promesse de travail en arrière-plan.
+- Vérifier la couverture avec `python3 docs/ai-team/check_missions.py --check`. Préserver tous les identifiants source ; une affectation 630/630 n'est pas une preuve de 630 réalisations. Ne pas cocher les options reportées/exclues comme livrées.
+- La disponibilité et l'exécution de sous-agents doivent être constatées, jamais simulées. Dépendances par contrat/livrable ; un seul agent propriétaire des fichiers partagés à la fois.
+- Ce programme conserve toutes les restrictions précédentes : POC/correctifs et portes G0–G4 selon autorisation, aucune fusion, administration ou production implicitement autorisée ; aucun test destructif sur une cible non explicitement jetable. Ne jamais modifier DrawAll ni supprimer les capacités industrielles/règles de dessin natives Fadi.
