@@ -14,7 +14,7 @@ import { CollaborationPage } from "./routes/CollaborationPage";
 
 // Les pages lourdes (projet ouvert avec ses sept modules, bibliothèque des bâtiments) sont chargées à leur première ouverture ;
 // l'enveloppe (connexion, accueil, liste des projets) reste légère. Le moteur de l'Atelier est lui-même un morceau séparé.
-const StudioPage = lazy(() => import("./modules/studio/StudioPage").then(m => ({ default: m.StudioPage })));
+const StudioShell = lazy(() => import("./modules/studio/StudioShell").then((m) => ({ default: m.StudioShell })));
 const ProjectShell = lazy(() => import("./routes/ProjectShell").then((m) => ({ default: m.ProjectShell })));
 const ProjectCockpitPage = lazy(() => import("./modules/pilotage/ProjectCockpitPage").then((m) => ({ default: m.ProjectCockpitPage })));
 const BuildingLibraryPage = lazy(() => import("./modules/bibliotheque/BuildingLibraryPage").then((m) => ({ default: m.BuildingLibraryPage })));
@@ -54,7 +54,15 @@ export function App() {
         >
           <Route path="/accueil" element={<AccueilPage />} />
           <Route path="/projets" element={<ProjectsPage />} />
-          {["/studio", "/studio/projets/:projectId", "/studio/projets/:projectId/etudes/:studyId/variantes/:variantId"].map(path => <Route key={path} path={path} element={<Suspense fallback={<Loading />}><StudioPage /></Suspense>} />)}
+          {/* Studio : une seule entrée ; son enveloppe lit l'adresse et montre « adresse non reconnue » plutôt qu'un repli. */}
+          <Route
+            path="/studio/*"
+            element={
+              <Suspense fallback={<Loading />}>
+                <StudioShell />
+              </Suspense>
+            }
+          />
           <Route path="/collaboration" element={<CollaborationPage />} />
           <Route
             path="/projets/:projectId"

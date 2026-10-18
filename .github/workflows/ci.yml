@@ -270,6 +270,10 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/studio-persistance.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de navigation Studio — enveloppe, étude, variantes, historique en lecture seule, adresse inconnue (apps/web/e2e/studio-navigation.mjs)
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-navigation.mjs 2>&1 | tee -a e2e.log
       - name: Recette du nouvel Atelier (apps/web/e2e/atelier-nouveau.mjs)
         run: |
           set -o pipefail
