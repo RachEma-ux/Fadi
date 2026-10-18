@@ -1,0 +1,64 @@
+{
+  "tache": "REP-07",
+  "date_utc": "2026-10-18",
+  "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "script": {
+    "chemin": "scripts/check-module-deps.mjs",
+    "blob": "f3207476e238adb8e0c472c9561c3969a6879da1"
+  },
+  "methode": "E0 sur le dépôt réel. E1–E4 sur une copie isolée hors dépôt (dossier temporaire de session) contenant le script inchangé, un dossier packages/ vide et des fichiers témoins minimaux ; aucun fichier du dépôt modifié, aucun réseau, aucune base.",
+  "essais": [
+    {
+      "id": "E0",
+      "cible": "dépôt réel",
+      "commande": "node scripts/check-module-deps.mjs",
+      "code_sortie": 0,
+      "sortie": "check-module-deps : dépendances conformes aux manifestes"
+    },
+    {
+      "id": "E1",
+      "cible": "copie isolée",
+      "fichier": "apps/web/src/temoin.ts",
+      "contenu": "import { x } from \"../../../apps/api/src/interne\";",
+      "code_sortie": 1,
+      "sortie": "check-module-deps : 1 violation(s) — apps/web/src/temoin.ts : import vers apps/api interdit (../../../apps/api/src/interne)",
+      "lecture": "témoin positif : le garde détecte la forme contenant « apps/api »"
+    },
+    {
+      "id": "E2",
+      "cible": "copie isolée",
+      "fichier": "apps/web/src/relatif.ts",
+      "contenu": "import { x } from \"../../api/src/interne\";",
+      "code_sortie": 0,
+      "sortie": "check-module-deps : dépendances conformes aux manifestes",
+      "lecture": "faux négatif : même cible apps/api/src/interne, chemin relatif sans la sous-chaîne « apps/api »"
+    },
+    {
+      "id": "E3",
+      "cible": "copie isolée",
+      "fichier": "apps/web/src/modules/studio/a.ts",
+      "contenu": "import { y } from \"../atelier/nouveau/interne\";",
+      "code_sortie": 0,
+      "sortie": "check-module-deps : dépendances conformes aux manifestes",
+      "lecture": "attendu au code actuel : aucune frontière entre modules web n'existe"
+    },
+    {
+      "id": "E4",
+      "cible": "copie isolée",
+      "fichier": "apps/web/src/dyn.ts",
+      "contenu": "const m = await import(`../../api/src/${\"interne\"}`);",
+      "code_sortie": 0,
+      "sortie": "check-module-deps : dépendances conformes aux manifestes",
+      "lecture": "import dynamique par gabarit non analysé par l'expression IMPORT_RE"
+    },
+    {
+      "id": "E5",
+      "cible": "dépôt réel",
+      "commande": "script node ponctuel : résolution par path.resolve de chaque import relatif statique ou dynamique littéral de apps/web/src et apps/api/src",
+      "resultat": "877 imports relatifs analysés ; 0 résolu dans l'application interdite",
+      "lecture": "le faux négatif E2 n'est exploité par aucun import actuel ; le garde reste à corriger pour l'avenir"
+    }
+  ],
+  "correctif_propose_non_applique": "Résoudre chaque spécificateur relatif par rapport au fichier importateur (path.resolve(dirname(file), spec)) puis refuser toute cible située sous le dossier de l'application interdite ; ajouter un test node --test couvrant E1, E2 et un cas licite. Lot de code à autoriser (A3), CI à ajuster par A6 si nécessaire.",
+  "limite": "E1–E4 sur copie isolée ; E5 montre qu'aucun import relatif actuel ne franchit la frontière web/api (imports par gabarit non couverts). Aucun test applicatif, aucune recette NAV."
+}

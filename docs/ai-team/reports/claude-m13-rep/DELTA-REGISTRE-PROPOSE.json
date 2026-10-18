@@ -1,0 +1,287 @@
+{
+  "schema": "delta-registre-v1",
+  "origine": "Claude Code — M13 REP-02..09, hors équipe Codex",
+  "rapport": "docs/ai-team/reports/claude-m13-rep/README.md",
+  "base_register_sha256": "7c5da578b34f775329e40827d8b99b6b7796d2055f9a1151725140c0013e686b",
+  "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "annonce": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250697907",
+  "statut_de_ce_delta": "Proposé — à revoir par A2/A5 puis intégrer par A0 avec tableau_registre.py --delta … --ecrire ; non appliqué au registre par son auteur.",
+  "changements": [
+    {
+      "id": "REP-02",
+      "statut_avant": "À définir",
+      "statut": "Vérifié",
+      "cloture": {
+        "condition_verifiee": true,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Lecture statique",
+        "portee": "Examen du point d’intégration au commit 817bd36, pas recette métier"
+      },
+      "blocage": {
+        "cause": null,
+        "responsable": "A2",
+        "essais_effectues": "Lecture statique de App.tsx : routes, garde client RequireAuth, quatre lazy/Suspense, repli * → /accueil, absence de route Studio et d’ErrorBoundary.",
+        "deblocage": null
+      },
+      "suite": "Relire au commit de réalisation du lot I ; les options et règles candidates alimentent ROUTE-09 / ADR-01 sans les trancher.",
+      "preuves_ajoutees": [
+        {
+          "type": "lecture_statique",
+          "fichier": "docs/ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md",
+          "section": "REP-02",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6250697907",
+          "constat": "Lecture statique de App.tsx : routes, garde client RequireAuth, quatre lazy/Suspense, repli * → /accueil, absence de route Studio et d’ErrorBoundary.",
+          "limite": "Condition d’examen documentaire seulement ; aucune conformité Studio, aucune recette NAV/E2E exécutée, aucune case source cochée ; revue A2/A5 et intégration A0 requises."
+        }
+      ]
+    },
+    {
+      "id": "REP-03",
+      "statut_avant": "À définir",
+      "statut": "Vérifié",
+      "cloture": {
+        "condition_verifiee": true,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Lecture statique",
+        "portee": "Examen du point d’intégration au commit 817bd36, pas recette métier"
+      },
+      "blocage": {
+        "cause": null,
+        "responsable": "A2",
+        "essais_effectues": "Lecture statique de AppShell.tsx : trois entrées de navigation principale, contexte projet limité à deux useMatch /projets, état actif Projets par préfixe.",
+        "deblocage": null
+      },
+      "suite": "Relire au commit de réalisation du lot I ; les options et règles candidates alimentent ROUTE-09 / ADR-01 sans les trancher.",
+      "preuves_ajoutees": [
+        {
+          "type": "lecture_statique",
+          "fichier": "docs/ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md",
+          "section": "REP-03",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6250697907",
+          "constat": "Lecture statique de AppShell.tsx : trois entrées de navigation principale, contexte projet limité à deux useMatch /projets, état actif Projets par préfixe.",
+          "limite": "Condition d’examen documentaire seulement ; aucune conformité Studio, aucune recette NAV/E2E exécutée, aucune case source cochée ; revue A2/A5 et intégration A0 requises."
+        }
+      ]
+    },
+    {
+      "id": "REP-04",
+      "statut_avant": "À définir",
+      "statut": "Vérifié",
+      "cloture": {
+        "condition_verifiee": true,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Lecture statique",
+        "portee": "Examen du point d’intégration au commit 817bd36, pas recette métier"
+      },
+      "blocage": {
+        "cause": null,
+        "responsable": "A2",
+        "essais_effectues": "Lecture statique de ProjectShell.tsx : requête des étapes systématique, services déjà extraits (access, sync, verrou, conflits, dernier dossier), assemblage propre à l’enveloppe.",
+        "deblocage": null
+      },
+      "suite": "Relire au commit de réalisation du lot I ; les options et règles candidates alimentent ROUTE-09 / ADR-01 sans les trancher.",
+      "preuves_ajoutees": [
+        {
+          "type": "lecture_statique",
+          "fichier": "docs/ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md",
+          "section": "REP-04",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6250697907",
+          "constat": "Lecture statique de ProjectShell.tsx : requête des étapes systématique, services déjà extraits (access, sync, verrou, conflits, dernier dossier), assemblage propre à l’enveloppe.",
+          "limite": "Condition d’examen documentaire seulement ; aucune conformité Studio, aucune recette NAV/E2E exécutée, aucune case source cochée ; revue A2/A5 et intégration A0 requises."
+        }
+      ]
+    },
+    {
+      "id": "REP-05",
+      "statut_avant": "À définir",
+      "statut": "Vérifié",
+      "cloture": {
+        "condition_verifiee": true,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Lecture statique",
+        "portee": "Examen du point d’intégration au commit 817bd36, pas recette métier"
+      },
+      "blocage": {
+        "cause": null,
+        "responsable": "A2",
+        "essais_effectues": "Lecture statique de use-immersive.ts et des CSS : classe globale atelier-immersive masquant la barre, deux appelants, drapeau sans compteur ; E2E parcours-scenario citée, non exécutée.",
+        "deblocage": null
+      },
+      "suite": "Relire au commit de réalisation du lot I ; les options et règles candidates alimentent ROUTE-09 / ADR-01 sans les trancher.",
+      "preuves_ajoutees": [
+        {
+          "type": "lecture_statique",
+          "fichier": "docs/ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md",
+          "section": "REP-05",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6250697907",
+          "constat": "Lecture statique de use-immersive.ts et des CSS : classe globale atelier-immersive masquant la barre, deux appelants, drapeau sans compteur ; E2E parcours-scenario citée, non exécutée.",
+          "limite": "Condition d’examen documentaire seulement ; aucune conformité Studio, aucune recette NAV/E2E exécutée, aucune case source cochée ; revue A2/A5 et intégration A0 requises."
+        }
+      ]
+    },
+    {
+      "id": "REP-06",
+      "statut_avant": "À définir",
+      "statut": "Vérifié",
+      "cloture": {
+        "condition_verifiee": true,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Lecture statique",
+        "portee": "Examen du point d’intégration au commit 817bd36, pas recette métier"
+      },
+      "blocage": {
+        "cause": null,
+        "responsable": "A2",
+        "essais_effectues": "Lecture statique de module-registry.ts et de ses trois consommateurs ; effet d’un descripteur studio dans MODULES démontré par lecture ; options a/b/c non tranchées ; écart de statut collaboration conservé.",
+        "deblocage": null
+      },
+      "suite": "Relire au commit de réalisation du lot I ; les options et règles candidates alimentent ROUTE-09 / ADR-01 sans les trancher.",
+      "preuves_ajoutees": [
+        {
+          "type": "lecture_statique",
+          "fichier": "docs/ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md",
+          "section": "REP-06",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6250697907",
+          "constat": "Lecture statique de module-registry.ts et de ses trois consommateurs ; effet d’un descripteur studio dans MODULES démontré par lecture ; options a/b/c non tranchées ; écart de statut collaboration conservé.",
+          "limite": "Condition d’examen documentaire seulement ; aucune conformité Studio, aucune recette NAV/E2E exécutée, aucune case source cochée ; revue A2/A5 et intégration A0 requises."
+        }
+      ]
+    },
+    {
+      "id": "REP-07",
+      "statut_avant": "À définir",
+      "statut": "Vérifié",
+      "cloture": {
+        "condition_verifiee": true,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Lecture statique + contrôles exécutés",
+        "portee": "Examen du point d’intégration au commit 817bd36, pas recette métier"
+      },
+      "blocage": {
+        "cause": null,
+        "responsable": "A2",
+        "essais_effectues": "Lecture de check-module-deps.mjs et essais E0–E5 exécutés : conforme au dépôt, faux négatif des imports relatifs sans « apps/api » démontré sur copie isolée, 0 occurrence actuelle.",
+        "deblocage": null
+      },
+      "suite": "Relire au commit de réalisation du lot I ; les options et règles candidates alimentent ROUTE-09 / ADR-01 sans les trancher.",
+      "preuves_ajoutees": [
+        {
+          "type": "lecture_et_controle_execute",
+          "fichier": "docs/ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md",
+          "section": "REP-07",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6250697907",
+          "constat": "Lecture de check-module-deps.mjs et essais E0–E5 exécutés : conforme au dépôt, faux négatif des imports relatifs sans « apps/api » démontré sur copie isolée, 0 occurrence actuelle.",
+          "limite": "Condition d’examen documentaire seulement ; aucune conformité Studio, aucune recette NAV/E2E exécutée, aucune case source cochée ; revue A2/A5 et intégration A0 requises."
+        },
+        {
+          "type": "essais_executes",
+          "fichier": "docs/ai-team/reports/claude-m13-rep/REP-07-ESSAIS.json",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Essais non destructifs sans base, API ni service."
+        }
+      ]
+    },
+    {
+      "id": "REP-08",
+      "statut_avant": "À définir",
+      "statut": "Vérifié",
+      "cloture": {
+        "condition_verifiee": true,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Lecture statique + contrôles exécutés",
+        "portee": "Examen du point d’intégration au commit 817bd36, pas recette métier"
+      },
+      "blocage": {
+        "cause": null,
+        "responsable": "A2",
+        "essais_effectues": "Lecture de docs/continuity/README.md et application à cette tâche ; check-continuity code 0 et 8/8 tests node réussis au 817bd36.",
+        "deblocage": null
+      },
+      "suite": "Relire au commit de réalisation du lot I ; les options et règles candidates alimentent ROUTE-09 / ADR-01 sans les trancher.",
+      "preuves_ajoutees": [
+        {
+          "type": "lecture_et_controle_execute",
+          "fichier": "docs/ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md",
+          "section": "REP-08",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6250697907",
+          "constat": "Lecture de docs/continuity/README.md et application à cette tâche ; check-continuity code 0 et 8/8 tests node réussis au 817bd36.",
+          "limite": "Condition d’examen documentaire seulement ; aucune conformité Studio, aucune recette NAV/E2E exécutée, aucune case source cochée ; revue A2/A5 et intégration A0 requises."
+        }
+      ]
+    },
+    {
+      "id": "REP-09",
+      "statut_avant": "À définir",
+      "statut": "Vérifié",
+      "cloture": {
+        "condition_verifiee": true,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Lecture statique + contrôles exécutés",
+        "portee": "Examen du point d’intégration au commit 817bd36, pas recette métier"
+      },
+      "blocage": {
+        "cause": null,
+        "responsable": "A2",
+        "essais_effectues": "Requalification des 14 OBS de l’annexe A de REF-02 au 817bd36 : verdict statique par OBS, distinction explicite lecture statique / tests exécutés, tests ciblés réellement lancés listés avec leur résultat.",
+        "deblocage": null
+      },
+      "suite": "Relire au commit de réalisation du lot I ; les options et règles candidates alimentent ROUTE-09 / ADR-01 sans les trancher.",
+      "preuves_ajoutees": [
+        {
+          "type": "lecture_statique",
+          "fichier": "docs/ai-team/reports/claude-m13-rep/REP-09-REQUALIFICATION.md",
+          "section": "REP-09",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6250697907",
+          "constat": "Requalification des 14 OBS de l’annexe A de REF-02 au 817bd36 : verdict statique par OBS, distinction explicite lecture statique / tests exécutés, tests ciblés réellement lancés listés avec leur résultat.",
+          "limite": "Condition d’examen documentaire seulement ; aucune conformité Studio, aucune recette NAV/E2E exécutée, aucune case source cochée ; revue A2/A5 et intégration A0 requises."
+        },
+        {
+          "type": "annexe_structuree",
+          "fichier": "docs/ai-team/reports/claude-m13-rep/REP-09-REQUALIFICATION.json",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Essais non destructifs sans base, API ni service."
+        }
+      ]
+    }
+  ]
+}
