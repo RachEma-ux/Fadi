@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cheminProjetStudio, estRouteStudio, lireRouteStudio } from "./routes-studio";
+import { cheminEtudeStudio, cheminProjetStudio, estRouteStudio, lireRouteStudio } from "./routes-studio";
 
 describe("adresses de Studio (lot I)", () => {
   it("accueil : /studio, avec ou sans barre finale", () => {
@@ -11,6 +11,13 @@ describe("adresses de Studio (lot I)", () => {
     const id = "3f2b6c1e-9a4d-4c55-8e0f-0a1b2c3d4e5f";
     expect(lireRouteStudio(cheminProjetStudio(id))).toEqual({ vue: "projet", projectId: id });
     expect(lireRouteStudio(`/studio/projets/${id}/`)).toEqual({ vue: "projet", projectId: id });
+  });
+
+  it("étude : projet et étude opaques, aller-retour exact", () => {
+    expect(lireRouteStudio(cheminEtudeStudio("p_1", "etu_2"))).toEqual({ vue: "etude", projectId: "p_1", etudeId: "etu_2" });
+    expect(lireRouteStudio("/studio/projets/p_1/etudes").vue).toBe("inconnue");
+    expect(lireRouteStudio("/studio/projets/p_1/etudes/etu_2/x").vue).toBe("inconnue");
+    expect(lireRouteStudio("/studio/projets/p_1/autre/etu_2").vue).toBe("inconnue");
   });
 
   it("adresse inconnue ou identifiant non admis : écran explicite, jamais un repli silencieux", () => {

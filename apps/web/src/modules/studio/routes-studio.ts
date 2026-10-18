@@ -9,6 +9,7 @@ export const RACINE_STUDIO = "/studio";
 export type RouteStudio =
   | { vue: "accueil" }
   | { vue: "projet"; projectId: string }
+  | { vue: "etude"; projectId: string; etudeId: string }
   | { vue: "inconnue"; chemin: string };
 
 /** Identifiant opaque admis dans un segment : il n'est jamais interprété comme un nom de fichier. */
@@ -20,14 +21,19 @@ export function lireRouteStudio(pathname: string): RouteStudio {
   const reste = pathname.slice(RACINE_STUDIO.length).replace(/\/+$/, "");
   if (!estRouteStudio(pathname) || reste === "") return estRouteStudio(pathname) ? { vue: "accueil" } : { vue: "inconnue", chemin: pathname };
   const segments = reste.slice(1).split("/");
-  let projectId: string;
+  let ids: string[];
   try {
-    projectId = decodeURIComponent(segments[1] ?? "");
+    ids = segments.map((x) => decodeURIComponent(x));
   } catch {
     return { vue: "inconnue", chemin: pathname };
   }
-  if (segments.length === 2 && segments[0] === "projets" && ID.test(projectId)) return { vue: "projet", projectId };
+  const [projets, projectId = "", etudes, etudeId = ""] = ids;
+  if (projets !== "projets" || !ID.test(projectId)) return { vue: "inconnue", chemin: pathname };
+  if (ids.length === 2) return { vue: "projet", projectId };
+  if (ids.length === 4 && etudes === "etudes" && ID.test(etudeId)) return { vue: "etude", projectId, etudeId };
   return { vue: "inconnue", chemin: pathname };
 }
 
 export const cheminProjetStudio = (projectId: string): string => `${RACINE_STUDIO}/projets/${encodeURIComponent(projectId)}`;
+
+export const cheminEtudeStudio = (projectId: string, etudeId: string): string => `${cheminProjetStudio(projectId)}/etudes/${encodeURIComponent(etudeId)}`;

@@ -462,3 +462,17 @@ CREATE TABLE IF NOT EXISTS atelier_propositions (
 );
 CREATE INDEX IF NOT EXISTS atelier_propositions_project_idx ON atelier_propositions (project_id, created_at);
 CREATE INDEX IF NOT EXISTS atelier_propositions_cle_idx ON atelier_propositions (project_id, cle, statut);
+
+-- Studio (lot A.1 amorcé) : une étude appartient à un seul projet (orientation DEC-03 : Projet → Étude → Variante →
+-- Révision) ; le nom est unique dans le projet, la suppression du projet emporte ses études.
+CREATE TABLE IF NOT EXISTS studio_etudes (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  nom text NOT NULL,
+  description text NOT NULL DEFAULT '',
+  author_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_etudes_nom_idx ON studio_etudes (project_id, lower(nom));
+CREATE INDEX IF NOT EXISTS studio_etudes_project_idx ON studio_etudes (project_id, created_at);

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Recette de Studio, lot I (ADR-STUDIO-NAV-01, NAV-001 à NAV-004, NAV-006, NAV-008, NAV-009) : entrée de la barre
- * verticale, routes propres sous /studio, aucun passage par le Parcours ni l'Atelier, refus sans divulgation,
- * adresse inconnue explicite, barre jamais masquée. API et application construites, même origine, base CI dédiée.
+ * Recette de Studio (ADR-STUDIO-NAV-01, NAV-001 à NAV-004, NAV-006, NAV-008, NAV-009) : entrée de la barre verticale,
+ * routes propres sous /studio, aucun passage par le Parcours ni l'Atelier, refus sans divulgation, adresse inconnue
+ * explicite, barre jamais masquée ; études créées par l'interface, uniques par projet, droits relus par le serveur. API et application construites, même origine, base CI dédiée.
  *
  * BASE_URL=http://localhost:3001 OUT=atelier-captures/studio node apps/web/e2e/studio-navigation.mjs
  */
@@ -107,6 +107,41 @@ try {
   check("adresse Studio inconnue : écran explicite, adresse conservée", page.url() === `${BASE}/studio/inconnu`);
   await page.screenshot({ path: join(OUT, "studio-inconnue.png") });
 
+  // Études : création par l'interface, liste, doublon refusé, page de l'étude sans Parcours ni Atelier.
+  await page.goto(`${BASE}/studio/projets/${pA.id}`);
+  await page.locator("[data-studio-aucune-etude]").waitFor();
+  await page.fill("#studio-etude-nom", "Implantation nord");
+  await page.fill("#studio-etude-description", "Première hypothèse d'implantation");
+  requetes.length = 0;
+  await page.locator('[data-studio-creer-etude] button[type="submit"]').click();
+  await page.waitForURL(new RegExp(`/studio/projets/${pA.id}/etudes/etu_`));
+  await page.locator("[data-studio-etude]").waitFor();
+  const urlEtude = page.url();
+  check("études : la création ouvre la page de l'étude, nommée dans le titre et le fil", (await page.locator("main.studio-page h1").textContent()) === "Implantation nord" && (await page.locator(".studio-fil").textContent()).includes("Implantation nord"));
+  check("études : aucune lecture du Parcours ni de l'Atelier", requetes.filter((p) => /\/steps|\/programme|\/atelier\//.test(p)).length === 0);
+  await page.reload();
+  await page.locator("[data-studio-etude]").waitFor();
+  check("études : l'actualisation restitue l'étude", page.url() === urlEtude);
+  await page.locator(".studio-fil a", { hasText: "P.STU.A" }).click();
+  await page.locator("[data-studio-etudes] li").first().waitFor();
+  check("études : le projet liste l'étude créée", (await page.locator("[data-studio-etudes]").textContent()).includes("Implantation nord"));
+  await page.fill("#studio-etude-nom", "IMPLANTATION NORD");
+  await page.locator('[data-studio-creer-etude] button[type="submit"]').click();
+  await page.locator("[data-studio-creer-etude] [role=alert]").waitFor();
+  check("études : un nom déjà pris (casse ignorée) est refusé avec un message", (await page.locator("[data-studio-creer-etude] [role=alert]").textContent()).includes("existe déjà") && (await a.api("get", `/projects/${pA.id}/studio/etudes`)).length === 1);
+  const etudeId = urlEtude.split("/").pop();
+  await page.goto(`${BASE}/studio/projets/${pA2.id}/etudes/${etudeId}`);
+  await page.locator("[data-studio-refus]").waitFor();
+  check("études : une étude ouverte sous un autre projet est refusée", !(await page.locator("#workspace-content").textContent()).includes("Implantation nord"));
+  await b.page.goto(`${BASE}${new URL(urlEtude).pathname}`);
+  await b.page.locator("[data-studio-refus]").waitFor();
+  check("études : l'étude d'autrui ne se divulgue pas", !(await b.page.locator("#workspace-content").textContent()).includes("Implantation nord"));
+  const emailB = await b.page.evaluate(async () => (await (await fetch("/auth/me", { credentials: "include" })).json()).email);
+  await a.api("post", `/projects/${pA.id}/members`, { email: emailB, role: "lecteur" });
+  await b.page.goto(`${BASE}/studio/projets/${pA.id}`);
+  await b.page.locator("[data-studio-etudes]").waitFor();
+  check("études : un lecteur voit les études sans formulaire de création", (await b.page.locator("[data-studio-lecture-seule]").isVisible()) && (await b.page.locator("[data-studio-creer-etude]").count()) === 0);
+
   // Accessibilité de l'accueil Studio.
   await page.goto(`${BASE}/studio`);
   await page.locator("[data-studio-projets]").waitFor();
@@ -132,7 +167,7 @@ try {
   check("NAV-009 : le module Atelier du projet reste accessible", page.url().includes("module=atelier"));
 
   check("aucune erreur JavaScript non interceptée", erreurs.length === 0, erreurs.join(" | "));
-  console.log("Recette Studio lot I : réussie.");
+  console.log("Recette Studio : réussie.");
 } finally {
   await browser.close();
 }

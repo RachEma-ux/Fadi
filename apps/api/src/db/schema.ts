@@ -603,3 +603,14 @@ export const atelierPropositions = pgTable("atelier_propositions", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   decidedAt: timestamp("decided_at", { withTimezone: true }),
 });
+
+/** Étude de Studio : rattachée à un seul projet, nom unique dans ce projet (index sur lower(nom), init.sql). */
+export const studioEtudes = pgTable("studio_etudes", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  nom: text("nom").notNull(),
+  description: text("description").notNull().default(""),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_etudes_project_idx").on(t.projectId, t.createdAt)]);

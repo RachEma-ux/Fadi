@@ -91,6 +91,16 @@ export interface ConceptPreview {
   validation: { issues: number; priorityIssues: number; auditGaps: number; auditToDocument: number; reviewedAt: string | null; reviewStale: boolean; modelRevision: number };
 }
 
+/** Étude de Studio : rattachée à un seul projet, nom unique dans ce projet. */
+export interface EtudeStudio {
+  id: string;
+  projectId: string;
+  nom: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Project {
   id: string;
   ownerId: string;
@@ -737,6 +747,12 @@ export const api = {
     request<Project>("/projects", { method: "POST", body: JSON.stringify({ code, name }) }),
   getProject: (id: string) => request<Project>(`/projects/${id}`),
   deleteProject: (id: string) => request<void>(`/projects/${id}`, { method: "DELETE" }),
+
+  // Studio : études d'un projet (droit relu par le serveur à chaque requête).
+  listEtudesStudio: (projectId: string) => request<EtudeStudio[]>(`/projects/${encodeURIComponent(projectId)}/studio/etudes`),
+  getEtudeStudio: (projectId: string, etudeId: string) => request<EtudeStudio>(`/projects/${encodeURIComponent(projectId)}/studio/etudes/${encodeURIComponent(etudeId)}`),
+  creerEtudeStudio: (projectId: string, nom: string, description: string) =>
+    request<EtudeStudio>(`/projects/${encodeURIComponent(projectId)}/studio/etudes`, { method: "POST", body: JSON.stringify({ nom, description }) }),
 
   // R2 : planning métier authentifié et versionné. Aucune date fictive n'est enregistrée.
   getProjectPlanning: (projectId: string) => request<ProjectPlanning>(`/projects/${encodeURIComponent(projectId)}/planning`),

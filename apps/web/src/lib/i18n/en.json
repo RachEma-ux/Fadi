@@ -8734,6 +8734,21 @@
 "Choisir un autre projet": "Choose another project",
 "Études": "Studies",
 "Votre rôle :": "Your role:",
-"Les études de Studio ne sont pas encore disponibles : leur création arrivera avec le lot suivant.": "Studio studies are not available yet: creating them will come with the next lot.",
-"lecteur": "reader"
+"lecteur": "reader",
+"Étude introuvable, ou vous n’y avez pas accès.": "Study not found, or you do not have access to it.",
+"Chargement des études…": "Loading studies…",
+"Impossible de charger les études.": "Unable to load the studies.",
+"Aucune étude dans ce projet pour l’instant.": "No studies in this project yet.",
+"Ce projet vous est partagé en lecture : la création d’études est réservée à son propriétaire et à ses éditeurs.": "This project is shared with you read-only: creating studies is reserved for its owner and editors.",
+"La création de l’étude a échoué.": "Creating the study failed.",
+"Nouvelle étude": "New study",
+"Nom de l’étude": "Study name",
+"Description (facultative)": "Description (optional)",
+"Créer l’étude": "Create the study",
+"Chargement de l’étude…": "Loading the study…",
+"Cadrage": "Framing",
+"Aucune description.": "No description.",
+"Projet :": "Project:",
+"Les variantes et l’espace de conception arrivent avec le lot suivant.": "Variants and the design space come with the next lot.",
+"Une étude « {0} » existe déjà dans ce projet.": "A study “{0}” already exists in this project."
 }
