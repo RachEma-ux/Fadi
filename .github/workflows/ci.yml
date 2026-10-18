@@ -42,7 +42,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: studio-v1-validation-${{ github.sha }}
-          path: work/studio-v1-proof/report-*.json
+          path: |
+            work/studio-v1-proof/report-*.json
+            work/studio-v1-proof/studio-*.png
+            work/studio-v1-proof/existing-atelier-seam.png
           if-no-files-found: error
 
   mission-docs-pure:

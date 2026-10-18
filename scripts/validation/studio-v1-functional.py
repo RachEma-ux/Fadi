@@ -150,6 +150,15 @@ def main():
             os.chmod(private_log, 0o600)
             if recipe.returncode:
                 raise RuntimeError(f'Studio {phase} recipe failed (exit {recipe.returncode}); inspect protected {private_log.name}')
+        seam = subprocess.run(
+            ['node', 'apps/web/e2e/studio-v1-smoke.mjs'], cwd=ROOT,
+            env=env, text=True, capture_output=True, timeout=180,
+        )
+        seam_log = path.parent / 'seam.log'
+        seam_log.write_text(seam.stdout + seam.stderr)
+        os.chmod(seam_log, 0o600)
+        if seam.returncode:
+            raise RuntimeError('Existing Parcours/Atelier navigation failed; inspect protected seam.log')
         success = True
         if args.keep_running:
             private_pids = path.parent / 'demo-processes.json'
