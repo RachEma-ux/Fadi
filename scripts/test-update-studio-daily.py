@@ -46,6 +46,21 @@ class DailyChecklistTest(unittest.TestCase):
         self.assertEqual(state["questions"]["owner_decision_pending_count"],1)
         self.assertIn("Décisions utilisateur encore nécessaires",daily.update_html(self.source,state))
 
+    def test_chatgpt_delegated_decision_is_answered_but_not_proof(self):
+        comments=[
+            {"created_at":"2026-10-18T09:00:00Z","html_url":daily.ISSUE,
+             "body":"[CODEX-QUESTION][Q-D03][OPEN] demande de lot DB"},
+            {"created_at":"2026-10-18T09:10:00Z","html_url":daily.ISSUE,
+             "body":"[CHATGPT-DECISION][Q-D03] Lot borné, sans DB réelle."}
+        ]
+        p={"comments":comments,"main_sha":None,"pr_sha":None,"github_status":"ok"}
+        state=daily.parse_data(p,self.ids,"2026-10-18T10:00:00Z")
+        self.assertEqual(state["questions"]["unanswered_count"],0)
+        self.assertEqual(state["questions"]["delegated_decision_count"],1)
+        self.assertEqual(state["questions"]["delegated_decision_ids"],["Q-D03"])
+        self.assertIsNone(state["progress"]["pdev_verified"])
+        self.assertIsNone(state["progress"]["p630_verified"])
+
     def test_untrusted_link_rejected(self):
         test_id=sorted(self.ids)[0]
         p={"comments":[{"created_at":"2026-10-18T09:30:00Z","html_url":daily.ISSUE,
