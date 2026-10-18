@@ -11,7 +11,45 @@ concurrency:
 permissions:
   contents: read
 jobs:
+  db-guard-pure:
+    name: DB1/2 — tests simulés sans base (DB3 non validée)
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: ""
+      TEST_DATABASE_URL: ""
+      MIGRATE_ON_START: "0"
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Installer sans aucun script de cycle de vie
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Vérifier les types sans exécuter le serveur
+        run: npm run typecheck
+      - name: Garde DB — uniquement tests et connexions simulés
+        run: npm run test:db-guard
+      - name: Construire sans lancer l'application ni appliquer de schéma
+        run: npm run build
+      - name: Rendre explicite le périmètre non exécuté
+        if: always()
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
+          ## A3-DB-1/2 : vérifications sans base réelle
+          Ce job ne démarre aucun service PostgreSQL/API, n'applique aucun schéma et n'exécute aucun test API/E2E mutateur.
+          Les jobs `validate`, `e2e` et `image` sont intentionnellement non exécutés sur cette seule PR de garde DB.
+          Leur statut skipped ne prouve aucune réussite d'intégration. DB-3, la recette fonctionnelle et la fusion restent non autorisées.
+          Les éventuels échecs des étapes de ce job restent des échecs ; ce résumé n'en modifie pas le verdict.
+          SUMMARY
+
   validate:
+    # DB-1/2 autorisé : aucune base réelle, même dans CI. Condition avant création des services.
+    if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') }}
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -63,6 +101,8 @@ jobs:
   # partage — contre l'API construite, qui sert elle-même le build de l'application (mode de production).
   # Les captures (docs/migration/captures/webapp/) sont publiées en artefact.
   e2e:
+    # DB-1/2 autorisé : aucune base réelle, même dans CI. Condition avant création des services.
+    if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     services:
@@ -318,6 +358,8 @@ jobs:
           retention-days: 14
 
   image:
+    # DB-1/2 autorisé : aucune base réelle, même dans CI. Condition avant création des services.
+    if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
