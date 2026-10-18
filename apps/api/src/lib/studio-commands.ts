@@ -1,8 +1,8 @@
 /** Handler Studio de l'orchestrateur commun : droits, rejeu, base, révision append-only. */
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { applyStudioCommands, newStudioDocument, STUDIO_CONTRACT, StudioValidationError, validateStudioDocument, type StudioEnvelope } from "@parcours/atelier-model";
+import { applyStudioCommands, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, StudioValidationError, validateStudioDocument, type StudioEnvelope } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { projectMembers, studioRevisions, studioStudies, studioVariants, type StudioContext } from "../db/schema.js";
 import { newId } from "./ids.js";
@@ -18,7 +18,7 @@ const identifier = z.string().min(1).max(128).regex(/^[A-Za-z0-9._:-]+$/);
 const envelopeSchema = z.object({
   contractVersion: z.literal(STUDIO_CONTRACT), requestId: identifier, baseRevisionId: identifier,
   commands: z.array(z.object({
-    toolId: z.enum(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.deplacer", "studio.dessin.modifier"]),
+    toolId: z.enum(STUDIO_COMMAND_TOOL_IDS),
     params: z.record(z.string(), z.unknown()),
   }).strict()).min(1).max(500),
 }).strict();
@@ -81,9 +81,61 @@ export async function readStudioContext(q: Querier, scope: StudioScope, actorId:
 
 export async function listStudioStudies(projectId: string, actorId: string) {
   assertAccess(await loadProjectAccess(projectId, actorId), actorId, "read");
-  const studies = await db.select({ id: studioStudies.id, name: studioStudies.name, initialVariantId: studioStudies.initialVariantId })
+  const rows = await db.select({ id: studioStudies.id, name: studioStudies.name, initialVariantId: studioStudies.initialVariantId, createdAt: studioStudies.createdAt })
     .from(studioStudies).where(eq(studioStudies.projectId, projectId)).orderBy(asc(studioStudies.createdAt), asc(studioStudies.id));
-  return { studies };
+  return { studies: rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() })) };
+}
+
+export interface StudioVariantSummary { id: string; name: string; headRevisionId: string }
+export interface StudioStudyRead {
+  study: { id: string; name: string; projectId: string; initialVariantId: string; createdAt: string };
+  variants: StudioVariantSummary[];
+  canWrite: boolean;
+}
+export interface StudioRevisionSummary { id: string; parentRevisionId: string | null; source: string; authorId: string; createdAt: string }
+
+/** Étude du projet de l'URL, sinon 404 (une étude d'un autre projet n'est pas révélée). */
+async function studyOf(q: Querier, projectId: string, studyId: string) {
+  const [study] = await q.select().from(studioStudies)
+    .where(and(eq(studioStudies.id, studyId), eq(studioStudies.projectId, projectId))).limit(1);
+  return study ?? notFound();
+}
+
+/** Variante initiale d'abord, puis les autres par ordre de création (identifiant en départage). */
+async function variantsOf(q: Querier, study: { id: string; initialVariantId: string }): Promise<StudioVariantSummary[]> {
+  const rows = await q.select({ id: studioVariants.id, name: studioVariants.name, headRevisionId: studioVariants.headRevisionId })
+    .from(studioVariants).where(eq(studioVariants.studyId, study.id)).orderBy(asc(studioVariants.createdAt), asc(studioVariants.id));
+  return [...rows.filter((row) => row.id === study.initialVariantId), ...rows.filter((row) => row.id !== study.initialVariantId)];
+}
+
+export async function readStudioStudy(q: Querier, projectId: string, studyId: string, actorId: string): Promise<StudioStudyRead> {
+  const access = assertAccess(await loadProjectAccess(projectId, actorId, q), actorId, "read");
+  const study = await studyOf(q, projectId, studyId);
+  return {
+    study: { id: study.id, name: study.name, projectId: study.projectId, initialVariantId: study.initialVariantId, createdAt: study.createdAt.toISOString() },
+    variants: await variantsOf(q, study),
+    canWrite: projectAccessRefusal(access, actorId, "modify") === null,
+  };
+}
+
+export async function listStudioVariants(q: Querier, projectId: string, studyId: string, actorId: string): Promise<{ variants: StudioVariantSummary[] }> {
+  assertAccess(await loadProjectAccess(projectId, actorId, q), actorId, "read");
+  return { variants: await variantsOf(q, await studyOf(q, projectId, studyId)) };
+}
+
+/** Historique d'une variante, du plus récent au plus ancien ; lecture seule, aucun document renvoyé. */
+export async function listStudioRevisions(q: Querier, scope: StudioScope, actorId: string): Promise<{ revisions: StudioRevisionSummary[] }> {
+  assertAccess(await loadProjectAccess(scope.projectId, actorId, q), actorId, "read");
+  const study = await studyOf(q, scope.projectId, scope.studyId);
+  const [variant] = await q.select({ id: studioVariants.id }).from(studioVariants)
+    .where(and(eq(studioVariants.id, scope.variantId), eq(studioVariants.studyId, study.id))).limit(1);
+  if (!variant) return notFound();
+  const rows = await q.select({
+    id: studioRevisions.id, parentRevisionId: studioRevisions.parentRevisionId, source: studioRevisions.source,
+    authorId: studioRevisions.authorId, createdAt: studioRevisions.createdAt,
+  }).from(studioRevisions).where(eq(studioRevisions.variantId, variant.id))
+    .orderBy(desc(studioRevisions.createdAt), desc(studioRevisions.id));
+  return { revisions: rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() })) };
 }
 
 export async function createStudioStudy(projectId: string, actorId: string, name: string): Promise<StudioContext> {
@@ -101,6 +153,28 @@ export async function createStudioStudy(projectId: string, actorId: string, name
       id: revisionId, variantId, parentRevisionId: null, document: response.revision.document, envelope: null,
       requestId: newId("initialization"), payloadHash: createHash("sha256").update(JSON.stringify({ projectId, studyId, variantId, name })).digest("hex"),
       source: "study-initialization", authorId: actorId, response,
+    });
+    return response;
+  });
+}
+
+/** Nouvelle variante d'une étude existante : une seule révision initiale, document vide, sans parent. */
+export async function createStudioVariant(projectId: string, studyId: string, actorId: string, name: string): Promise<StudioContext> {
+  return db.transaction(async (tx) => {
+    const access = await lockedAccess(tx, projectId, actorId);
+    const study = await studyOf(tx, projectId, studyId);
+    assertAccess(access, actorId, "modify");
+    const variantId = newId("studio_variant"), revisionId = newId("studio_revision");
+    const response: StudioContext = {
+      study: { id: study.id, name: study.name, projectId },
+      variant: { id: variantId, name, studyId: study.id, headRevisionId: revisionId },
+      revision: { id: revisionId, parentRevisionId: null, document: newStudioDocument(newId("studio_document")) }, canWrite: true,
+    };
+    await tx.insert(studioVariants).values({ id: variantId, studyId: study.id, name, headRevisionId: revisionId });
+    await tx.insert(studioRevisions).values({
+      id: revisionId, variantId, parentRevisionId: null, document: response.revision.document, envelope: null,
+      requestId: newId("initialization"), payloadHash: createHash("sha256").update(JSON.stringify({ projectId, studyId: study.id, variantId, name })).digest("hex"),
+      source: "variant-initialization", authorId: actorId, response,
     });
     return response;
   });

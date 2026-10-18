@@ -45,10 +45,15 @@ if (PHASE === 'reopen') {
   check('réouverture : document identique (empreinte)', digest(reopened.body?.revision?.document) === s.documentSha256);
   const first = await owner('GET', `${variantPath(s)}/revisions/${s.initialRevisionId}`);
   check('réouverture : révision initiale toujours lisible, vide et en lecture seule', first.status === 200 && first.body.revision.document.objects.length === 0 && first.body.canWrite === false);
+  const study = await owner('GET', `/projects/${s.projectId}/studio/studies/${s.studyId}`);
+  check('réouverture : étude relue avec ses variantes dans le même ordre', study.status === 200 && JSON.stringify(study.body.variants.map((x) => x.id)) === JSON.stringify(s.variantIds) && study.body.canWrite === true, JSON.stringify(study.body).slice(0, 300));
+  const history = await owner('GET', `${variantPath(s)}/revisions`);
+  check('réouverture : historique identique, plus récente d\'abord', history.status === 200 && JSON.stringify(history.body.revisions.map((x) => x.id)) === JSON.stringify(s.revisionIds));
 } else {
   const owner = client(), foreign = client(), anonymous = client();
   const ownerCredentials = credentials();
-  check('compte propriétaire créé par l\'API', (await owner('POST', '/auth/register', ownerCredentials)).status === 201);
+  const ownerUser = await owner('POST', '/auth/register', ownerCredentials);
+  check('compte propriétaire créé par l\'API', ownerUser.status === 201);
   check('second compte créé par l\'API', (await foreign('POST', '/auth/register', credentials())).status === 201);
   const project = await owner('POST', '/projects', { code: `SP_${randomUUID().slice(0, 8)}`, name: 'Studio — projet de recette synthétique' });
   check('projet créé', project.status === 201, String(project.status));
@@ -90,7 +95,68 @@ if (PHASE === 'reopen') {
   const old = await owner('GET', `${variantPath(s)}/revisions/${saved.body.revision.id}`);
   check('historique : révision précédente intacte et en lecture seule', old.status === 200 && old.body.revision.document.objects.find((x) => x.id === 'ligne-1')?.start.x === 0 && old.body.canWrite === false);
 
-  if (STATE) writeFileSync(STATE, JSON.stringify({ ...s, owner: ownerCredentials, headRevisionId: head.body.revision.id, initialRevisionId: created.body.revision.id, documentSha256: digest(head.body.revision.document) }), { mode: 0o600 });
+  // Étude, variantes et historique (lecture de l'étude, création de variante, liste des révisions).
+  const isIso = (value) => typeof value === 'string' && new Date(value).toISOString() === value;
+  const studyPath = `${root}/${s.studyId}`;
+  check('liste des études : date de création ISO', listed.body?.studies?.every((x) => isIso(x.createdAt)), JSON.stringify(listed.body).slice(0, 200));
+  const study = await owner('GET', studyPath);
+  check('étude relue : identité, variante initiale, date ISO et droit d\'écriture', study.status === 200 && study.body.study.id === s.studyId && study.body.study.projectId === projectId && study.body.study.name === 'Étude de recette' && study.body.study.initialVariantId === s.variantId && isIso(study.body.study.createdAt) && study.body.canWrite === true, JSON.stringify(study.body).slice(0, 200));
+  check('étude relue : variante initiale seule, tête courante', study.body?.variants?.length === 1 && study.body.variants[0].id === s.variantId && study.body.variants[0].headRevisionId === moved.body.revision.id && study.body.variants[0].name === 'Variante initiale');
+  const variantB = await owner('POST', `${studyPath}/variants`, { name: '  Variante B  ' });
+  check('variante créée (201) : nom épuré, document vide, sans parent, tête = révision initiale', variantB.status === 201 && variantB.body.variant.name === 'Variante B' && variantB.body.variant.studyId === s.studyId && variantB.body.study.id === s.studyId && variantB.body.revision.parentRevisionId === null && variantB.body.revision.document.objects.length === 0 && variantB.body.variant.headRevisionId === variantB.body.revision.id && variantB.body.canWrite === true, JSON.stringify(variantB.body).slice(0, 200));
+  const variantC = await owner('POST', `${studyPath}/variants`, { name: 'Variante C' });
+  check('seconde variante créée (201)', variantC.status === 201, String(variantC.status));
+  check('nom de variante vide refusé (400)', (await owner('POST', `${studyPath}/variants`, { name: '   ' })).status === 400);
+  check('champ inconnu refusé (400, schéma strict)', (await owner('POST', `${studyPath}/variants`, { name: 'X', extra: 1 })).status === 400);
+  check('nom de variante trop long refusé (400)', (await owner('POST', `${studyPath}/variants`, { name: 'v'.repeat(201) })).status === 400);
+  const expectedOrder = [s.variantId, variantB.body?.variant?.id, variantC.body?.variant?.id];
+  const variants = await owner('GET', `${studyPath}/variants`);
+  check('variantes listées : initiale d\'abord puis ordre de création', variants.status === 200 && JSON.stringify(variants.body.variants.map((x) => x.id)) === JSON.stringify(expectedOrder), JSON.stringify(variants.body).slice(0, 300));
+  check('variantes listées : forme { id, name, headRevisionId }', variants.body?.variants?.every((x) => Object.keys(x).sort().join() === 'headRevisionId,id,name'));
+  const studyAgain = await owner('GET', studyPath);
+  check('étude relue : même ordre de variantes', JSON.stringify(studyAgain.body?.variants) === JSON.stringify(variants.body?.variants));
+  const commandOnB = await owner('POST', `${root}/${s.studyId}/variants/${variantB.body.variant.id}/commands`, { contractVersion: 'studio-commands/1', requestId: `recette-${randomUUID()}`, baseRevisionId: variantB.body.revision.id, commands: [{ toolId: 'studio.dessin.ligne', params: { id: 'ligne-b', type: 'line', start: { x: 0, y: 0 }, end: { x: 1, y: 1 } } }] });
+  check('variante B : commande acceptée, variante initiale inchangée', commandOnB.status === 200 && (await owner('GET', variantPath(s))).body?.revision?.id === moved.body.revision.id);
+
+  const history = await owner('GET', `${variantPath(s)}/revisions`);
+  const ids = history.body?.revisions?.map((x) => x.id);
+  check('historique : plus récente d\'abord', history.status === 200 && JSON.stringify(ids) === JSON.stringify([moved.body.revision.id, saved.body.revision.id, created.body.revision.id]), JSON.stringify(history.body).slice(0, 300));
+  const revs = history.body?.revisions ?? [];
+  check('historique : chaîne des parents', revs[0]?.parentRevisionId === saved.body.revision.id && revs[1]?.parentRevisionId === created.body.revision.id && revs[2]?.parentRevisionId === null);
+  check('historique : sources et auteur', revs[0]?.source === 'authenticated-session' && revs[1]?.source === 'authenticated-session' && revs[2]?.source === 'study-initialization' && revs.every((x) => x.authorId === ownerUser.body.id && isIso(x.createdAt)));
+  check('historique : aucun document renvoyé', revs.every((x) => Object.keys(x).sort().join() === 'authorId,createdAt,id,parentRevisionId,source'));
+  const historyB = await owner('GET', `${studyPath}/variants/${variantB.body.variant.id}/revisions`);
+  check('historique de la variante B : commande puis initialisation de variante', historyB.status === 200 && historyB.body.revisions.length === 2 && historyB.body.revisions[0].id === commandOnB.body.revision.id && historyB.body.revisions[1].id === variantB.body.revision.id && historyB.body.revisions[1].source === 'variant-initialization' && historyB.body.revisions[1].parentRevisionId === null && historyB.body.revisions[0].parentRevisionId === variantB.body.revision.id, JSON.stringify(historyB.body).slice(0, 300));
+
+  // Portée : étude d'un autre projet, variante inconnue ou d'une autre étude → 404.
+  const foreignProject = await foreign('POST', '/projects', { code: `SF_${randomUUID().slice(0, 8)}`, name: 'Studio — projet étranger synthétique' });
+  const foreignStudy = await foreign('POST', `/projects/${foreignProject.body?.id}/studio/studies`, { name: 'Étude étrangère' });
+  check('projet et étude du second compte créés', foreignProject.status === 201 && foreignStudy.status === 201);
+  const elsewhere = `${root}/${foreignStudy.body?.study?.id}`;
+  check('étude d\'un autre projet : lecture 404', (await owner('GET', elsewhere)).status === 404);
+  check('étude d\'un autre projet : variantes 404', (await owner('GET', `${elsewhere}/variants`)).status === 404);
+  check('étude d\'un autre projet : création de variante 404', (await owner('POST', `${elsewhere}/variants`, { name: 'Intruse' })).status === 404);
+  check('étude d\'un autre projet : historique 404', (await owner('GET', `${elsewhere}/variants/${foreignStudy.body?.variant?.id}/revisions`)).status === 404);
+  check('étude inconnue : 404', (await owner('GET', `${root}/studio_study_inconnue`)).status === 404);
+  check('variante inconnue : historique 404', (await owner('GET', `${studyPath}/variants/studio_variant_inconnue/revisions`)).status === 404);
+  const study2 = await owner('POST', root, { name: 'Seconde étude' });
+  check('variante d\'une autre étude du même projet : historique 404', study2.status === 201 && (await owner('GET', `${root}/${study2.body.study.id}/variants/${s.variantId}/revisions`)).status === 404);
+  const foreignVariants = await foreign('GET', `/projects/${foreignProject.body?.id}/studio/studies/${foreignStudy.body?.study?.id}/variants`);
+  check('second compte : ses propres variantes lisibles', foreignVariants.status === 200 && foreignVariants.body.variants.length === 1);
+
+  // Comptes étrangers et anonymes sur les nouvelles routes.
+  const newRoutes = [
+    ['lecture de l\'étude', 'GET', studyPath], ['liste des variantes', 'GET', `${studyPath}/variants`],
+    ['création de variante', 'POST', `${studyPath}/variants`, { name: 'Intruse' }], ['historique', 'GET', `${variantPath(s)}/revisions`],
+  ];
+  for (const [short, method, path, body] of newRoutes) {
+    check(`autre compte refusé : ${short}`, [403, 404].includes((await foreign(method, path, body)).status));
+    check(`anonyme 401 : ${short}`, (await anonymous(method, path, body)).status === 401);
+  }
+  const after = await owner('GET', `${studyPath}/variants`);
+  check('aucune variante créée par les requêtes refusées', after.body?.variants?.length === 3);
+
+  if (STATE) writeFileSync(STATE, JSON.stringify({ ...s, owner: ownerCredentials, headRevisionId: head.body.revision.id, initialRevisionId: created.body.revision.id, documentSha256: digest(head.body.revision.document), variantIds: expectedOrder, revisionIds: ids }), { mode: 0o600 });
 }
 if (failures) { console.log(`${failures} vérification(s) en échec`); process.exit(1); }
 console.log(`Studio (${PHASE}) : toutes les vérifications réussies.`);

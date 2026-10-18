@@ -800,7 +800,7 @@ function ParametresOutil({ etat, ui, readOnly = false, onCommandes, projectId, o
       {ui.outil === "plafond" && <OutilPlafond key={`pl-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "coque" && <OutilCoque key={`cq-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "rampe" && <OutilRampe key={`ra-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
-      {ui.outil === "echelle" && <OutilEchelle key={`ec-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "echelle-acces" && <OutilEchelle key={`ec-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "mur-rideau" && <OutilMurRideau key={`mr-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "terrain" && <OutilTerrain etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "reservation" && <OutilReservation key={`rv-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
