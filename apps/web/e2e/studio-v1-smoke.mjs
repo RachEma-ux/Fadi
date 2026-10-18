@@ -1,4 +1,4 @@
-/** Read/navigation seam check on the synthetic fixture produced by studio-v1.mjs. */
+/** Native navigation/first-level seam check on the attested synthetic fixture. */
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -34,12 +34,21 @@ try {
   await page.getByRole('navigation', { name: 'Modules du projet' }).getByRole('button', { name: 'Atelier architectural', exact: true }).click();
   await page.locator('.atelier-n').waitFor();
   const emptyHeading = page.getByRole('heading', { name: "Ce projet n'a pas encore de modèle dessiné", exact: true });
-  await emptyHeading.waitFor();
-  await page.getByRole('button', { name: 'Créer le niveau', exact: true }).waitFor();
-  assert.equal(await page.locator('.atelier-n .plan2d').count(), 0, 'This deliberately empty project has no native model');
+  await page.waitForFunction(() => Boolean(document.querySelector('.atelier-n .plan2d') || document.querySelector('.atelier-n-vide')));
+  let createdFirstLevel = false;
+  if (await emptyHeading.isVisible()) {
+    assert(expiry > Date.now(), 'Attestation must remain valid before the synthetic native write');
+    await page.getByLabel('Altitude (m, repère local)', { exact: true }).fill('0');
+    const accepted = page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === `/projects/${state.projectId}/atelier/commands`);
+    await page.getByRole('button', { name: 'Créer le niveau', exact: true }).click();
+    const response = await accepted;
+    assert.equal(response.status(), 200, 'Native first-level command must be acknowledged by the real API');
+    createdFirstLevel = true;
+  }
+  await page.locator('.atelier-n .plan2d').waitFor({ state: 'visible' });
   assert.equal(await page.getByRole('alert').count(), 0);
-  report.checks.push({ name: 'existing Atelier mounts its explicit valid empty-model state through original navigation', result: 'passed' });
-  report.limits.push('Atelier empty-model state checked only; no level created and no native plan drawing functionality exercised');
+  report.checks.push({ name: 'existing Atelier native plan mounts through original navigation', result: 'passed', createdFirstLevel, commandStatus: createdFirstLevel ? 200 : null });
+  report.limits.push('Native first-level creation and plan mount only; no claim of full Atelier drawing regression coverage');
   await page.screenshot({ path: resolve(out, 'existing-atelier-seam.png') });
   await page.goto(`${profile.uiBaseUrl}/studio/projets/${state.projectId}/etudes/${state.studyId}/variantes/${state.variantId}`);
   await page.getByRole('heading', { name: state.studyName, exact: true }).waitFor();
