@@ -1,0 +1,153 @@
+{
+  "head_sha": "fa9f0db232f49007c5a8bebded4ffce530a5bf8f",
+  "observed_at_utc": "2026-10-18 13:34:14 UTC",
+  "runs": [
+    {
+      "id": 39131918896,
+      "name": "Fadi — isolation des autres applications",
+      "head_sha": "fa9f0db232f49007c5a8bebded4ffce530a5bf8f",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 39131919051,
+      "name": "Audit isolation DrawAll (Fadi uniquement)",
+      "head_sha": "fa9f0db232f49007c5a8bebded4ffce530a5bf8f",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 39131919001,
+      "name": "Continuité de développement",
+      "head_sha": "fa9f0db232f49007c5a8bebded4ffce530a5bf8f",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 39131919052,
+      "name": "Codex — couverture des missions",
+      "head_sha": "fa9f0db232f49007c5a8bebded4ffce530a5bf8f",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 39131918789,
+      "name": "CI",
+      "head_sha": "fa9f0db232f49007c5a8bebded4ffce530a5bf8f",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "jobs": [
+    {
+      "id": 117688658959,
+      "name": "Mission 004 — documentation sans base (intégration non exécutée)",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 39131918789,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Refuser un diff hors du périmètre documentaire avant les contrôles",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Tests unitaires du validateur documentaire sans base ni réseau",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Couverture des 31 missions et 630 affectations",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Continuité — tests et structure",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Isolation nominale Fadi",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Déclarer les vérifications d'intégration non effectuées",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19
+        }
+      ]
+    },
+    {
+      "id": 117688659965,
+      "name": "image",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_id": 39131918789,
+      "logs_url": null,
+      "steps": null
+    },
+    {
+      "id": 117688659994,
+      "name": "e2e",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_id": 39131918789,
+      "logs_url": null,
+      "steps": null
+    },
+    {
+      "id": 117688660190,
+      "name": "validate",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_id": 39131918789,
+      "logs_url": null,
+      "steps": null
+    }
+  ],
+  "limites": "Documentation seulement, trois jobs intégration skipped avant services. Aucun résultat transféré à un autre SHA."
+}

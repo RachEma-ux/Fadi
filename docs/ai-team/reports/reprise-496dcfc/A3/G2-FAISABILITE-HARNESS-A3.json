@@ -1,0 +1,2157 @@
+{
+  "report": "G2-FAISABILITE-HARNESS-A3",
+  "agent": "A3",
+  "created_utc": "2026-10-18T13:41:34.481997+00:00",
+  "mode": "LECTURE_STATIQUE_SANS_CODE_POC_SANS_IMPORT_SANS_TEST",
+  "code_reference": "5e0285d37f23c7c539502664036f0a2ff0986409",
+  "head_local_verified": "5e0285d37f23c7c539502664036f0a2ff0986409",
+  "working_tree_status": "",
+  "reference_meaning": "PR171, référence demandée par A0 ; aucune vérification de main distant/CI courante par cette étude.",
+  "verdict": "BUNDLE_NATIF_NODE_PUR_SUPERVISOR_PY_A_SOUMETTRE ; SIXIEME_SOURCE_NON_AUTORISEE ; CONFINEMENT_ET_TIMEOUT_NON_DEMONTRES",
+  "authorization": "Aucun lot G2 activé ; seules lectures statiques autorisées, empreintes et rapports. Aucun fichier expérimental/config/artefact bundle créé ; aucune installation, CLI/help/runner/test/build/POC/import applicatif exécuté.",
+  "future_sources": [
+    "experiments/studio/g2-2d-identities/README.md",
+    "experiments/studio/g2-2d-identities/schema.ts",
+    "experiments/studio/g2-2d-identities/fixtures.ts",
+    "experiments/studio/g2-2d-identities/harness.ts",
+    "experiments/studio/g2-2d-identities/harness.test.ts"
+  ],
+  "scope_precision": "Cinq fichiers autorisables dont quatre TypeScript ; un seul fichier test. README ne s’exécute pas ; les imports publics et le runner restent une fermeture supplémentaire nécessaire, pas un sixième fichier produit.",
+  "document_inputs": [
+    {
+      "path": "/workspace/work/mission003/repo/docs/ai-team/reports/reprise-496dcfc/G2-PERIMETRE-A0-PROPOSE.md",
+      "commit": null,
+      "sha256": "3de688104e96a64d4126f4dca1320dc6b07eca008aa6ae0df65a881ff9a86d75",
+      "meaning": "Artefact documentaire de travail lu ; aucune attribution de commit inventée."
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A2/G2-GRAPHE-IMPORT-PUBLIC-A2.json",
+      "commit": null,
+      "sha256": "4f57e852670404cafbbe6942d6d46ab710eb7c9f19a15321739a3b27bd004915",
+      "meaning": "Artefact documentaire de travail lu ; aucune attribution de commit inventée."
+    }
+  ],
+  "locked_tooling": {
+    "node_modules/vitest": {
+      "version": "5.0.3",
+      "integrity": "sha512-xMw97S3rjdtj5dkVat7jCsqWBpvchs3RlpQctUqwJD0KkERk40vz2fJ77lDwW/Vzh/pk18eItYAzkodhSes3jQ==",
+      "bin": {
+        "vitest": "vitest.mjs"
+      },
+      "engines": {
+        "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
+      }
+    },
+    "node_modules/vite": {
+      "version": "6.4.3",
+      "integrity": "sha512-NTKlcQjlAK7MlQoyb6LgaqHc8sso/pVyUJYWMws3jg21uTJw/LddqIFPcPqP6PzpgbIcZyKI85sFE4HBrQDA8A==",
+      "bin": {
+        "vite": "bin/vite.js"
+      },
+      "engines": {
+        "node": "^18.0.0 || ^20.0.0 || >=22.0.0"
+      }
+    },
+    "node_modules/typescript": {
+      "version": "5.9.3",
+      "integrity": "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==",
+      "bin": {
+        "tsc": "bin/tsc",
+        "tsserver": "bin/tsserver"
+      },
+      "engines": {
+        "node": ">=14.17"
+      }
+    },
+    "node_modules/tsx": {
+      "version": "4.19.4",
+      "integrity": "sha512-gK5GVzDkJK1SI1zwHf32Mqxf2tSJkNx+eYcNly5+nHvWqXUJYUkWBQtKauoESz3ymezAI++ZwT855x5p5eop+Q==",
+      "bin": {
+        "tsx": "dist/cli.mjs"
+      },
+      "engines": {
+        "node": ">=18.0.0"
+      }
+    },
+    "node_modules/@types/node": {
+      "version": "22.15.35",
+      "integrity": "sha512-stV91mHxlWpDksiUiivmFfQzjy2JLlb2NUTxKipiANEbxBZsdbDU9fSrT7SHY4uoCXAxYfJZVasn3x2/hqpd3g=="
+    },
+    "node_modules/esbuild": {
+      "version": "0.25.12",
+      "integrity": "sha512-bbPBYYrtZbkt6Os6FiTLCTFxvq4tt3JKall1vRwshA3fdVztsLAatFaZobhkBC8/BrPetoa0oksYoKXoG4ryJg==",
+      "bin": {
+        "esbuild": "bin/esbuild"
+      },
+      "engines": {
+        "node": ">=18"
+      }
+    },
+    "node_modules/@esbuild/linux-x64": {
+      "version": "0.25.12",
+      "integrity": "sha512-uqZMTLr/zR/ed4jIGnwSLkaHmPjOjJvnm6TVVitAa08SLS9Z0VM8wIRx7gWbJB5/J54YuIMInDquWyYvQLZkgw==",
+      "cpu": [
+        "x64"
+      ],
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">=18"
+      }
+    },
+    "node_modules/get-tsconfig": {
+      "version": "4.14.3",
+      "integrity": "sha512-++QEw4DIY7WGoukz+/+A/8dGYPT9l9yIadnmSgZ8Rjr3YVSVDipQSO9CdnJo9ePqFqUUqh+wk9uIaoiAwsiPkA=="
+    }
+  },
+  "sources": [
+    {
+      "path": "package.json",
+      "provenance": "Git au SHA de référence",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "sha256": "abf927865c7607250f4c0db2962a1e99a50afd34eb18b34565aa447eee72e931",
+      "line_count": 22,
+      "git_blob": "7e3f73e2226193dae30838944ef4ab6baa7ebbcd"
+    },
+    {
+      "path": "packages/core-geometry/package.json",
+      "provenance": "Git au SHA de référence",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "sha256": "229bc46d4ea297389e0e8f39288f1a2e3a38c98f021269a2f49811aeccc82636",
+      "line_count": 17,
+      "git_blob": "9be6f4bf2f711bdda59cd70434d98717f93bca37"
+    },
+    {
+      "path": "packages/core-geometry/tsconfig.json",
+      "provenance": "Git au SHA de référence",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "sha256": "019967f6ac7f30c1146a6283514ef72292426fecfce9327e4ebb9ea6767a0a35",
+      "line_count": 21,
+      "git_blob": "0d69275a4fb85c6433c69a4a6791db32b9a0142b"
+    },
+    {
+      "path": "apps/api/package.json",
+      "provenance": "Git au SHA de référence",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "sha256": "57d5b8aad66ab6907b9bb1e47a2921b3a6a005f64064f054ff5bef6367d3038d",
+      "line_count": 46,
+      "git_blob": "50dfc88136a7cdc85eaac8107d8b4580bb1278f7"
+    },
+    {
+      "path": "apps/api/vitest.config.ts",
+      "provenance": "Git au SHA de référence",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "sha256": "12c0220c20a7dd57c4e516a6e758b4cb906d24a0d01d2668794b93aab2781726",
+      "line_count": 13,
+      "git_blob": "0567ca85bffbd9a2b10cf118fa9cbfcf537d9268"
+    },
+    {
+      "path": "apps/api/tsconfig.json",
+      "provenance": "Git au SHA de référence",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "sha256": "a1dd93005a3a43a93cb6ddaae8f47875f7636bbecf3ae291dd6d95d1265faca7",
+      "line_count": 22,
+      "git_blob": "6d8604716496a29d3a0e75feec9ecfdf2b4a0849"
+    },
+    {
+      "path": "apps/web/vitest.config.ts",
+      "provenance": "Git au SHA de référence",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "sha256": "029c351637fd90a4a55ae7bcf99703524cbd7c0ad9b94a19b19d6955180067c1",
+      "line_count": 4,
+      "git_blob": "297afe824e413d6b37c4ce0bf06b5017ae091582"
+    },
+    {
+      "path": "packages/geometry-exact/vitest.config.ts",
+      "provenance": "Git au SHA de référence",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "sha256": "010f41eac235bf7f0c2da0f2583ef1700bb97795bc1bb4e88b0202fd61f80382",
+      "line_count": 2,
+      "git_blob": "26b1ef78895a49fda114b6b7cf8224f911997369"
+    },
+    {
+      "path": "package-lock.json",
+      "provenance": "Git au SHA de référence",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "sha256": "7506e0ae6075d622a1d8ee6835bc2411316c8915f279c4aea06c12b1144df6f3",
+      "line_count": 4934,
+      "git_blob": "3801bea00d04cd4aa816356d950e461304dfa3e3"
+    },
+    {
+      "path": "node_modules/vitest/package.json",
+      "provenance": "Fichier installé local, lecture statique ; non suivi par Git",
+      "commit": null,
+      "sha256": "df72ec137c86d8454d129967ed88c640012fa8db7950d58f79cee8a94df437f1",
+      "line_count": 223,
+      "version_source": "Version déclarée du paquet et package-lock.json rapprochés ; intégrité de tarball non recalculée ici."
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/constants.-juJ8b_4.js",
+      "provenance": "Fichier installé local, lecture statique ; non suivi par Git",
+      "commit": null,
+      "sha256": "ebaa6e7ddfcd2ff420aa3aa01782f73a9bcdf5648b6a867aa35bf18b2125cb1c",
+      "line_count": 38,
+      "version_source": "Version déclarée du paquet et package-lock.json rapprochés ; intégrité de tarball non recalculée ici."
+    },
+    {
+      "path": "node_modules/vitest/dist/config.cjs",
+      "provenance": "Fichier installé local, lecture statique ; non suivi par Git",
+      "commit": null,
+      "sha256": "2acf70ce8144fbfbea3714a3afaea270f37d72e19398cc7134dd766baba30037",
+      "line_count": 106,
+      "version_source": "Version déclarée du paquet et package-lock.json rapprochés ; intégrité de tarball non recalculée ici."
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "provenance": "Fichier installé local, lecture statique ; non suivi par Git",
+      "commit": null,
+      "sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b",
+      "line_count": 2436,
+      "version_source": "Version déclarée du paquet et package-lock.json rapprochés ; intégrité de tarball non recalculée ici."
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "provenance": "Fichier installé local, lecture statique ; non suivi par Git",
+      "commit": null,
+      "sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd",
+      "line_count": 27912,
+      "version_source": "Version déclarée du paquet et package-lock.json rapprochés ; intégrité de tarball non recalculée ici."
+    },
+    {
+      "path": "node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js",
+      "provenance": "Fichier installé local, lecture statique ; non suivi par Git",
+      "commit": null,
+      "sha256": "88f9adf5652dc907fa20c9bf936a91fbe1c1328ca3624c39c649692eccb301e6",
+      "line_count": 49670,
+      "version_source": "Version déclarée du paquet et package-lock.json rapprochés ; intégrité de tarball non recalculée ici."
+    },
+    {
+      "path": "node_modules/typescript/lib/_tsc.js",
+      "provenance": "Fichier installé local, lecture statique ; non suivi par Git",
+      "commit": null,
+      "sha256": "e8f349eabd48486bdb2bf9dc1a00c89d58297270c54b745838879e2859194419",
+      "line_count": 133818,
+      "version_source": "Version déclarée du paquet et package-lock.json rapprochés ; intégrité de tarball non recalculée ici."
+    },
+    {
+      "path": "node_modules/@types/node/fs/promises.d.ts",
+      "provenance": "Fichier installé local, lecture statique ; non suivi par Git",
+      "commit": null,
+      "sha256": "ffe66ee5c9c47017aca2136e95d51235c10e6790753215608bff1e712ff54ec6",
+      "line_count": 1273,
+      "version_source": "Version déclarée du paquet et package-lock.json rapprochés ; intégrité de tarball non recalculée ici."
+    },
+    {
+      "path": "node_modules/@types/node/fs.d.ts",
+      "provenance": "Fichier installé local, lecture statique ; non suivi par Git",
+      "commit": null,
+      "sha256": "25d130083f833251b5b4c2794890831b1b8ce2ead24089f724181576cf9d7279",
+      "line_count": 4437,
+      "version_source": "Version déclarée du paquet et package-lock.json rapprochés ; intégrité de tarball non recalculée ici."
+    },
+    {
+      "path": "node_modules/@types/node/child_process.d.ts",
+      "provenance": "Fichier installé local, lecture statique ; non suivi par Git",
+      "commit": null,
+      "sha256": "4314c7a11517e221f7296b46547dbc4df047115b182f544d072bdccffa57fc72",
+      "line_count": 1549,
+      "version_source": "Version déclarée du paquet et package-lock.json rapprochés ; intégrité de tarball non recalculée ici."
+    },
+    {
+      "path": "node_modules/@types/node/process.d.ts",
+      "provenance": "Fichier installé local, lecture statique ; non suivi par Git",
+      "commit": null,
+      "sha256": "636302a00dfd1f9fe6e8e91e4e9350c6518dcc8d51a474e4fc3a9ba07135100b",
+      "line_count": 2063,
+      "version_source": "Version déclarée du paquet et package-lock.json rapprochés ; intégrité de tarball non recalculée ici."
+    },
+    {
+      "path": "node_modules/tsx/package.json",
+      "commit": null,
+      "sha256": "5cb9e1cac206505b183db610bb3f4c9b5b0c7750260705192e478552201a5f1c",
+      "line_count": 68,
+      "provenance": "Source installée locale lue statiquement ; non attribuée au SHA Git ; version rapprochée du lock, tarball non réauthentifié."
+    },
+    {
+      "path": "node_modules/tsx/dist/loader.mjs",
+      "commit": null,
+      "sha256": "f3317378d0f41d5443dc4564e27bbce721687dc2ca829cf416880747b125478b",
+      "line_count": 1,
+      "provenance": "Source installée locale lue statiquement ; non attribuée au SHA Git ; version rapprochée du lock, tarball non réauthentifié."
+    },
+    {
+      "path": "node_modules/tsx/dist/esm/index.mjs",
+      "commit": null,
+      "sha256": "ddb0cd858639b442e873d3c281cf65b245921ea9b886d3e42efc4ca57f20cedd",
+      "line_count": 2,
+      "provenance": "Source installée locale lue statiquement ; non attribuée au SHA Git ; version rapprochée du lock, tarball non réauthentifié."
+    },
+    {
+      "path": "node_modules/tsx/dist/register-hc1YoAqe.mjs",
+      "commit": null,
+      "sha256": "b6ca3cd367ce2cebb7480ddb2880ef82200f128c6b6f47cd100abbecb2fa4cd6",
+      "line_count": 1,
+      "provenance": "Source installée locale lue statiquement ; non attribuée au SHA Git ; version rapprochée du lock, tarball non réauthentifié."
+    },
+    {
+      "path": "node_modules/tsx/dist/register-CuoYSLaL.mjs",
+      "commit": null,
+      "sha256": "2938d1a7b2db9151c9a13514a8384beb02eb8360ea7c9f217838c0f50fff6d77",
+      "line_count": 3,
+      "provenance": "Source installée locale lue statiquement ; non attribuée au SHA Git ; version rapprochée du lock, tarball non réauthentifié."
+    },
+    {
+      "path": "node_modules/tsx/dist/register-D2KMMyKp.cjs",
+      "commit": null,
+      "sha256": "18bd233a0e306f6b4cd933a29ee48bae9758dd43ac51910e2a9dd801218d0a30",
+      "line_count": 3,
+      "provenance": "Source installée locale lue statiquement ; non attribuée au SHA Git ; version rapprochée du lock, tarball non réauthentifié."
+    },
+    {
+      "path": "node_modules/tsx/dist/cjs/index.cjs",
+      "commit": null,
+      "sha256": "40ee7ffd76b775a95fde5c6404459f93b433a1ce972f8a8535d4be52dbbf515e",
+      "line_count": 1,
+      "provenance": "Source installée locale lue statiquement ; non attribuée au SHA Git ; version rapprochée du lock, tarball non réauthentifié."
+    },
+    {
+      "path": "node_modules/tsx/dist/client-BQVF1NaW.mjs",
+      "commit": null,
+      "sha256": "334ad3dbfaf820eeb08dd2fa40750c8316e6f8a61311bdf99defd3c361fbece4",
+      "line_count": 1,
+      "provenance": "Source installée locale lue statiquement ; non attribuée au SHA Git ; version rapprochée du lock, tarball non réauthentifié."
+    },
+    {
+      "path": "node_modules/tsx/dist/client-D6NvIMSC.cjs",
+      "commit": null,
+      "sha256": "af10790d58385f62c205140c3f7c25dae26638c2961fa24eb958f888d8995a40",
+      "line_count": 1,
+      "provenance": "Source installée locale lue statiquement ; non attribuée au SHA Git ; version rapprochée du lock, tarball non réauthentifié."
+    },
+    {
+      "path": "node_modules/tsx/dist/get-pipe-path-BHW2eJdv.mjs",
+      "commit": null,
+      "sha256": "307483caa22c2406677b4bd513bf602b4de3986f3e23eac7724e99c0d7ddc8d6",
+      "line_count": 1,
+      "provenance": "Source installée locale lue statiquement ; non attribuée au SHA Git ; version rapprochée du lock, tarball non réauthentifié."
+    },
+    {
+      "path": "node_modules/tsx/dist/temporary-directory-CwHp0_NW.mjs",
+      "commit": null,
+      "sha256": "e0771b7d9b216d438ff2ade7494a7a3ac6202c66cb752f2cd99bffb3d78226fe",
+      "line_count": 1,
+      "provenance": "Source installée locale lue statiquement ; non attribuée au SHA Git ; version rapprochée du lock, tarball non réauthentifié."
+    },
+    {
+      "path": "node_modules/tsx/dist/index-DGv_vkxZ.mjs",
+      "commit": null,
+      "sha256": "aa1b7e708597f14430c50f877cc8077620dd41e36608e0ad72fc237a73269dd3",
+      "line_count": 14,
+      "provenance": "Source installée locale lue statiquement ; non attribuée au SHA Git ; version rapprochée du lock, tarball non réauthentifié."
+    },
+    {
+      "path": "node_modules/tsx/dist/index-CylV0-__.cjs",
+      "commit": null,
+      "sha256": "a8f751d6588ffd1b2c7097c37f9ccd546677b28f233c5e67734e03fe11e26a3f",
+      "line_count": 14,
+      "provenance": "Source installée locale lue statiquement ; non attribuée au SHA Git ; version rapprochée du lock, tarball non réauthentifié."
+    },
+    {
+      "path": "node_modules/get-tsconfig/dist/index.mjs",
+      "commit": null,
+      "sha256": "2bb1e82fea648d598e1067cc5b643105493a63502458694b486f0c581b506503",
+      "line_count": 7,
+      "provenance": "Source installée locale lue statiquement ; non attribuée au SHA Git ; version rapprochée du lock, tarball non réauthentifié."
+    },
+    {
+      "path": "node_modules/esbuild/lib/main.js",
+      "commit": null,
+      "sha256": "0d1241812c443111d39475dfc66836003e9ef8b87e54d990dd67df29d20010e1",
+      "line_count": 2242,
+      "provenance": "Source installée locale lue statiquement ; non attribuée au SHA Git ; version rapprochée du lock, tarball non réauthentifié."
+    },
+    {
+      "path": "node_modules/@types/node/test.d.ts",
+      "commit": null,
+      "sha256": "edbb3546af6a57fa655860fef11f4109390f4a2f1eab4a93f548ccc21d604a56",
+      "line_count": 2175,
+      "provenance": "Source installée locale lue statiquement ; non attribuée au SHA Git ; version rapprochée du lock, tarball non réauthentifié."
+    }
+  ],
+  "citations": [
+    {
+      "path": "package.json",
+      "line": 6,
+      "exact_line": "  \"workspaces\": [",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "abf927865c7607250f4c0db2962a1e99a50afd34eb18b34565aa447eee72e931"
+    },
+    {
+      "path": "package.json",
+      "line": 7,
+      "exact_line": "    \"apps/*\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "abf927865c7607250f4c0db2962a1e99a50afd34eb18b34565aa447eee72e931"
+    },
+    {
+      "path": "package.json",
+      "line": 8,
+      "exact_line": "    \"packages/*\"",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "abf927865c7607250f4c0db2962a1e99a50afd34eb18b34565aa447eee72e931"
+    },
+    {
+      "path": "package.json",
+      "line": 11,
+      "exact_line": "    \"node\": \">=22.12.0\"",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "abf927865c7607250f4c0db2962a1e99a50afd34eb18b34565aa447eee72e931"
+    },
+    {
+      "path": "package.json",
+      "line": 16,
+      "exact_line": "    \"build\": \"npm run build --workspace=@fadi/web --workspace=@fadi/api\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "abf927865c7607250f4c0db2962a1e99a50afd34eb18b34565aa447eee72e931"
+    },
+    {
+      "path": "package.json",
+      "line": 18,
+      "exact_line": "    \"typecheck\": \"node scripts/check-module-deps.mjs && npm run typecheck --workspaces --if-present\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "abf927865c7607250f4c0db2962a1e99a50afd34eb18b34565aa447eee72e931"
+    },
+    {
+      "path": "package.json",
+      "line": 19,
+      "exact_line": "    \"test\": \"npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/api --workspace=@fadi/web\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "abf927865c7607250f4c0db2962a1e99a50afd34eb18b34565aa447eee72e931"
+    },
+    {
+      "path": "packages/core-geometry/package.json",
+      "line": 2,
+      "exact_line": "  \"name\": \"@parcours/core-geometry\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "229bc46d4ea297389e0e8f39288f1a2e3a38c98f021269a2f49811aeccc82636"
+    },
+    {
+      "path": "packages/core-geometry/package.json",
+      "line": 5,
+      "exact_line": "  \"type\": \"module\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "229bc46d4ea297389e0e8f39288f1a2e3a38c98f021269a2f49811aeccc82636"
+    },
+    {
+      "path": "packages/core-geometry/package.json",
+      "line": 7,
+      "exact_line": "    \".\": \"./src/index.ts\"",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "229bc46d4ea297389e0e8f39288f1a2e3a38c98f021269a2f49811aeccc82636"
+    },
+    {
+      "path": "packages/core-geometry/package.json",
+      "line": 10,
+      "exact_line": "    \"test\": \"vitest run\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "229bc46d4ea297389e0e8f39288f1a2e3a38c98f021269a2f49811aeccc82636"
+    },
+    {
+      "path": "packages/core-geometry/package.json",
+      "line": 11,
+      "exact_line": "    \"typecheck\": \"tsc --noEmit\"",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "229bc46d4ea297389e0e8f39288f1a2e3a38c98f021269a2f49811aeccc82636"
+    },
+    {
+      "path": "packages/core-geometry/package.json",
+      "line": 14,
+      "exact_line": "    \"typescript\": \"~5.9.3\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "229bc46d4ea297389e0e8f39288f1a2e3a38c98f021269a2f49811aeccc82636"
+    },
+    {
+      "path": "packages/core-geometry/package.json",
+      "line": 15,
+      "exact_line": "    \"vitest\": \"5.0.3\"",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "229bc46d4ea297389e0e8f39288f1a2e3a38c98f021269a2f49811aeccc82636"
+    },
+    {
+      "path": "packages/core-geometry/tsconfig.json",
+      "line": 3,
+      "exact_line": "    \"target\": \"ES2022\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "019967f6ac7f30c1146a6283514ef72292426fecfce9327e4ebb9ea6767a0a35"
+    },
+    {
+      "path": "packages/core-geometry/tsconfig.json",
+      "line": 4,
+      "exact_line": "    \"module\": \"ESNext\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "019967f6ac7f30c1146a6283514ef72292426fecfce9327e4ebb9ea6767a0a35"
+    },
+    {
+      "path": "packages/core-geometry/tsconfig.json",
+      "line": 5,
+      "exact_line": "    \"moduleResolution\": \"Bundler\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "019967f6ac7f30c1146a6283514ef72292426fecfce9327e4ebb9ea6767a0a35"
+    },
+    {
+      "path": "packages/core-geometry/tsconfig.json",
+      "line": 6,
+      "exact_line": "    \"lib\": [\"ES2022\", \"DOM\"],",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "019967f6ac7f30c1146a6283514ef72292426fecfce9327e4ebb9ea6767a0a35"
+    },
+    {
+      "path": "packages/core-geometry/tsconfig.json",
+      "line": 7,
+      "exact_line": "    \"strict\": true,",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "019967f6ac7f30c1146a6283514ef72292426fecfce9327e4ebb9ea6767a0a35"
+    },
+    {
+      "path": "packages/core-geometry/tsconfig.json",
+      "line": 8,
+      "exact_line": "    \"noUnusedLocals\": true,",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "019967f6ac7f30c1146a6283514ef72292426fecfce9327e4ebb9ea6767a0a35"
+    },
+    {
+      "path": "packages/core-geometry/tsconfig.json",
+      "line": 9,
+      "exact_line": "    \"noUnusedParameters\": true,",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "019967f6ac7f30c1146a6283514ef72292426fecfce9327e4ebb9ea6767a0a35"
+    },
+    {
+      "path": "packages/core-geometry/tsconfig.json",
+      "line": 10,
+      "exact_line": "    \"noUncheckedIndexedAccess\": true,",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "019967f6ac7f30c1146a6283514ef72292426fecfce9327e4ebb9ea6767a0a35"
+    },
+    {
+      "path": "packages/core-geometry/tsconfig.json",
+      "line": 11,
+      "exact_line": "    \"exactOptionalPropertyTypes\": true,",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "019967f6ac7f30c1146a6283514ef72292426fecfce9327e4ebb9ea6767a0a35"
+    },
+    {
+      "path": "packages/core-geometry/tsconfig.json",
+      "line": 12,
+      "exact_line": "    \"noImplicitOverride\": true,",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "019967f6ac7f30c1146a6283514ef72292426fecfce9327e4ebb9ea6767a0a35"
+    },
+    {
+      "path": "packages/core-geometry/tsconfig.json",
+      "line": 13,
+      "exact_line": "    \"noFallthroughCasesInSwitch\": true,",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "019967f6ac7f30c1146a6283514ef72292426fecfce9327e4ebb9ea6767a0a35"
+    },
+    {
+      "path": "packages/core-geometry/tsconfig.json",
+      "line": 14,
+      "exact_line": "    \"forceConsistentCasingInFileNames\": true,",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "019967f6ac7f30c1146a6283514ef72292426fecfce9327e4ebb9ea6767a0a35"
+    },
+    {
+      "path": "packages/core-geometry/tsconfig.json",
+      "line": 15,
+      "exact_line": "    \"skipLibCheck\": true,",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "019967f6ac7f30c1146a6283514ef72292426fecfce9327e4ebb9ea6767a0a35"
+    },
+    {
+      "path": "packages/core-geometry/tsconfig.json",
+      "line": 18,
+      "exact_line": "    \"rootDir\": \"src\"",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "019967f6ac7f30c1146a6283514ef72292426fecfce9327e4ebb9ea6767a0a35"
+    },
+    {
+      "path": "packages/core-geometry/tsconfig.json",
+      "line": 20,
+      "exact_line": "  \"include\": [\"src\"]",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "019967f6ac7f30c1146a6283514ef72292426fecfce9327e4ebb9ea6767a0a35"
+    },
+    {
+      "path": "apps/api/package.json",
+      "line": 7,
+      "exact_line": "    \"dev\": \"tsx watch src/server.ts\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "57d5b8aad66ab6907b9bb1e47a2921b3a6a005f64064f054ff5bef6367d3038d"
+    },
+    {
+      "path": "apps/api/package.json",
+      "line": 9,
+      "exact_line": "    \"start\": \"node dist/server.js\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "57d5b8aad66ab6907b9bb1e47a2921b3a6a005f64064f054ff5bef6367d3038d"
+    },
+    {
+      "path": "apps/api/package.json",
+      "line": 11,
+      "exact_line": "    \"test\": \"vitest run\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "57d5b8aad66ab6907b9bb1e47a2921b3a6a005f64064f054ff5bef6367d3038d"
+    },
+    {
+      "path": "apps/api/package.json",
+      "line": 12,
+      "exact_line": "    \"db:migrate\": \"tsx src/db/migrate.ts\"",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "57d5b8aad66ab6907b9bb1e47a2921b3a6a005f64064f054ff5bef6367d3038d"
+    },
+    {
+      "path": "apps/api/package.json",
+      "line": 36,
+      "exact_line": "    \"@types/node\": \"~22.15.2\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "57d5b8aad66ab6907b9bb1e47a2921b3a6a005f64064f054ff5bef6367d3038d"
+    },
+    {
+      "path": "apps/api/package.json",
+      "line": 42,
+      "exact_line": "    \"tsx\": \"~4.19.2\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "57d5b8aad66ab6907b9bb1e47a2921b3a6a005f64064f054ff5bef6367d3038d"
+    },
+    {
+      "path": "apps/api/package.json",
+      "line": 43,
+      "exact_line": "    \"typescript\": \"~5.9.3\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "57d5b8aad66ab6907b9bb1e47a2921b3a6a005f64064f054ff5bef6367d3038d"
+    },
+    {
+      "path": "apps/api/package.json",
+      "line": 44,
+      "exact_line": "    \"vitest\": \"5.0.3\"",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "57d5b8aad66ab6907b9bb1e47a2921b3a6a005f64064f054ff5bef6367d3038d"
+    },
+    {
+      "path": "apps/api/vitest.config.ts",
+      "line": 5,
+      "exact_line": "    setupFiles: [\"./vitest.setup.ts\"],",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "12c0220c20a7dd57c4e516a6e758b4cb906d24a0d01d2668794b93aab2781726"
+    },
+    {
+      "path": "apps/api/vitest.config.ts",
+      "line": 6,
+      "exact_line": "    // Les fichiers de test partagent la même base (remise à zéro par TRUNCATE) : ils s'exécutent l'un après l'autre,",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "12c0220c20a7dd57c4e516a6e758b4cb906d24a0d01d2668794b93aab2781726"
+    },
+    {
+      "path": "apps/api/vitest.config.ts",
+      "line": 8,
+      "exact_line": "    fileParallelism: false,",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "12c0220c20a7dd57c4e516a6e758b4cb906d24a0d01d2668794b93aab2781726"
+    },
+    {
+      "path": "apps/api/vitest.config.ts",
+      "line": 11,
+      "exact_line": "    testTimeout: 20_000,",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "12c0220c20a7dd57c4e516a6e758b4cb906d24a0d01d2668794b93aab2781726"
+    },
+    {
+      "path": "apps/api/tsconfig.json",
+      "line": 4,
+      "exact_line": "    \"module\": \"NodeNext\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "a1dd93005a3a43a93cb6ddaae8f47875f7636bbecf3ae291dd6d95d1265faca7"
+    },
+    {
+      "path": "apps/api/tsconfig.json",
+      "line": 5,
+      "exact_line": "    \"moduleResolution\": \"NodeNext\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "a1dd93005a3a43a93cb6ddaae8f47875f7636bbecf3ae291dd6d95d1265faca7"
+    },
+    {
+      "path": "apps/api/tsconfig.json",
+      "line": 18,
+      "exact_line": "    \"rootDir\": \"src\",",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "a1dd93005a3a43a93cb6ddaae8f47875f7636bbecf3ae291dd6d95d1265faca7"
+    },
+    {
+      "path": "apps/api/tsconfig.json",
+      "line": 19,
+      "exact_line": "    \"types\": [\"node\"]",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "a1dd93005a3a43a93cb6ddaae8f47875f7636bbecf3ae291dd6d95d1265faca7"
+    },
+    {
+      "path": "apps/api/tsconfig.json",
+      "line": 21,
+      "exact_line": "  \"include\": [\"src\"]",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "a1dd93005a3a43a93cb6ddaae8f47875f7636bbecf3ae291dd6d95d1265faca7"
+    },
+    {
+      "path": "apps/web/vitest.config.ts",
+      "line": 4,
+      "exact_line": "export default defineConfig({ test: { environment: \"node\", include: [\"src/**/*.test.ts\"] } });",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "029c351637fd90a4a55ae7bcf99703524cbd7c0ad9b94a19b19d6955180067c1"
+    },
+    {
+      "path": "packages/geometry-exact/vitest.config.ts",
+      "line": 2,
+      "exact_line": "export default defineConfig({ test: { testTimeout: 60000, hookTimeout: 60000 } });",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "source_sha256": "010f41eac235bf7f0c2da0f2583ef1700bb97795bc1bb4e88b0202fd61f80382"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/constants.-juJ8b_4.js",
+      "line": 6,
+      "exact_line": "const CONFIG_NAMES = [\"vitest.config\", \"vite.config\"];",
+      "commit": null,
+      "source_sha256": "ebaa6e7ddfcd2ff420aa3aa01782f73a9bcdf5648b6a867aa35bf18b2125cb1c"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/constants.-juJ8b_4.js",
+      "line": 15,
+      "exact_line": "const configFiles = CONFIG_NAMES.flatMap((name) => CONFIG_EXTENSIONS.map((ext) => name + ext));",
+      "commit": null,
+      "source_sha256": "ebaa6e7ddfcd2ff420aa3aa01782f73a9bcdf5648b6a867aa35bf18b2125cb1c"
+    },
+    {
+      "path": "node_modules/vitest/dist/config.cjs",
+      "line": 15,
+      "exact_line": "const defaultInclude = [\"**/*.{test,spec}.?(c|m)[jt]s?(x)\"];",
+      "commit": null,
+      "source_sha256": "2acf70ce8144fbfbea3714a3afaea270f37d72e19398cc7134dd766baba30037"
+    },
+    {
+      "path": "node_modules/vitest/dist/config.cjs",
+      "line": 51,
+      "exact_line": "\tisolate: true,",
+      "commit": null,
+      "source_sha256": "2acf70ce8144fbfbea3714a3afaea270f37d72e19398cc7134dd766baba30037"
+    },
+    {
+      "path": "node_modules/vitest/dist/config.cjs",
+      "line": 55,
+      "exact_line": "\tenvironment: \"node\",",
+      "commit": null,
+      "source_sha256": "2acf70ce8144fbfbea3714a3afaea270f37d72e19398cc7134dd766baba30037"
+    },
+    {
+      "path": "node_modules/vitest/dist/config.cjs",
+      "line": 61,
+      "exact_line": "\tinclude: defaultInclude,",
+      "commit": null,
+      "source_sha256": "2acf70ce8144fbfbea3714a3afaea270f37d72e19398cc7134dd766baba30037"
+    },
+    {
+      "path": "node_modules/vitest/dist/config.cjs",
+      "line": 63,
+      "exact_line": "\tteardownTimeout: 1e4,",
+      "commit": null,
+      "source_sha256": "2acf70ce8144fbfbea3714a3afaea270f37d72e19398cc7134dd766baba30037"
+    },
+    {
+      "path": "node_modules/vitest/dist/config.cjs",
+      "line": 69,
+      "exact_line": "\tapi: false,",
+      "commit": null,
+      "source_sha256": "2acf70ce8144fbfbea3714a3afaea270f37d72e19398cc7134dd766baba30037"
+    },
+    {
+      "path": "node_modules/vitest/dist/config.cjs",
+      "line": 70,
+      "exact_line": "\tui: false,",
+      "commit": null,
+      "source_sha256": "2acf70ce8144fbfbea3714a3afaea270f37d72e19398cc7134dd766baba30037"
+    },
+    {
+      "path": "node_modules/vitest/dist/config.cjs",
+      "line": 76,
+      "exact_line": "\tmaxConcurrency: 5,",
+      "commit": null,
+      "source_sha256": "2acf70ce8144fbfbea3714a3afaea270f37d72e19398cc7134dd766baba30037"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 648,
+      "exact_line": "\troot: {",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 654,
+      "exact_line": "\tconfig: {",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 923,
+      "exact_line": "\tpool: {",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 924,
+      "exact_line": "\t\tdescription: \"Specify pool, if not running in the browser (default: `forks`)\",",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 937,
+      "exact_line": "\tfileParallelism: { description: \"Should all test files run in parallel. Use `--no-file-parallelism` to disable (default: `true`)\" },",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 938,
+      "exact_line": "\tmaxWorkers: {",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 942,
+      "exact_line": "\tenvironment: {",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 947,
+      "exact_line": "\tpassWithNoTests: { description: \"Pass when no tests are found\" },",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 950,
+      "exact_line": "\tallowOnly: { description: \"Allow tests and suites that are marked as only (default: `!process.env.CI`)\" },",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 1007,
+      "exact_line": "\ttestTimeout: {",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 1011,
+      "exact_line": "\thookTimeout: {",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 1019,
+      "exact_line": "\tretry: {",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 1140,
+      "exact_line": "\tteardownTimeout: {",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 1144,
+      "exact_line": "\tcache: {",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 1156,
+      "exact_line": "\tmaxConcurrency: {",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 1160,
+      "exact_line": "\tfsModuleCache: { description: \"Cache transformed modules on the file system and reuse them between reruns (default: `false`)\" },",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 1201,
+      "exact_line": "\trun: { description: \"Disable watch mode\" },",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 1297,
+      "exact_line": "\tsetupFiles: null,",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 1298,
+      "exact_line": "\tglobalSetup: null,",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 1314,
+      "exact_line": "\tinclude: null,",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/cac.DfDGTQ9W.js",
+      "line": 1327,
+      "exact_line": "\tprojects: null,",
+      "commit": null,
+      "source_sha256": "96e83ae033d86fe0880fe4be5653b2f951dc64da1a4949d57e9fe13f30193c2b"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 9451,
+      "exact_line": "\t\t\t\t\t\tcacheDir: resolveTestCacheDir(root, viteConfig.test || {}, viteConfig.cacheDir),",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 9665,
+      "exact_line": "const API_TOKEN_FILE = \".vitest-secret-token\";",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 9671,
+      "exact_line": "\treturn process.env.XDG_DATA_HOME || join(homedir(), \".local/share\");",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 9674,
+      "exact_line": "\tif (existsSync(tokenPath)) return {",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 9679,
+      "exact_line": "\tmkdirSync(dirname(tokenPath), {",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 9683,
+      "exact_line": "\twriteFileSync(tokenPath, `${token}\\n`, { mode: 384 });",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 9693,
+      "exact_line": "function resolveApiToken(root) {",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 9694,
+      "exact_line": "\tconst tokenPaths = [join(getUserDataDir(), \"vitest\", API_TOKEN_FILE), join(searchForWorkspaceRoot(root), \"node_modules/.vitest\", API_TOKEN_FILE)];",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 9701,
+      "exact_line": "\tthrow new Error(`Failed to create Vitest API token at ${tokenPaths.join(\" or \")}`);",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 11202,
+      "exact_line": "\t\tthis._thread ||= new Worker(this.entrypoint, {",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 12204,
+      "exact_line": "\t\t\tconst dir = this.config.dir || this.config.root;",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 12214,
+      "exact_line": "\t\t\tconst [testFiles, typecheckTestFiles] = await Promise.all([typecheck.enabled && typecheck.only ? [] : this.globAllTestFiles(include, exclude, includeSource, dir), typecheck.enabled ? this.typecheckFilesList || this.globFiles(typecheck.include, typecheck.exclude, dir) : []]);",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 12217,
+      "exact_line": "\t\t\t\ttestFiles: this.filterFiles(testFiles, filters, dir),",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 12279,
+      "exact_line": "\t\t\tconst testFile = relative(dir, t).toLocaleLowerCase();",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 12284,
+      "exact_line": "\t\t\t\treturn testFile.includes(f.toLocaleLowerCase()) || testFile.includes(relativePath.toLocaleLowerCase());",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 14267,
+      "exact_line": "function findConfigFile(root) {",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 14274,
+      "exact_line": "\treturn false;",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 14300,
+      "exact_line": "\t} else api = { middlewareMode: true };",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 14537,
+      "exact_line": "\tresolved.setupFiles = toArray(resolved.setupFiles || []).map((file) => resolvePath(file, resolved.root));",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 14538,
+      "exact_line": "\tresolved.globalSetup = toArray(resolved.globalSetup || []).map((file) => resolvePath(file, resolved.root));",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 14659,
+      "exact_line": "\tif (resolved.cache !== false) {",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 14790,
+      "exact_line": "\tresolved.fsModuleCache ??= false;",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 14824,
+      "exact_line": "\tif (options.config === false) return false;",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 14832,
+      "exact_line": "\tconst configPath = resolveConfigPath(",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 14834,
+      "exact_line": "\t\tresolve(options.root || process.cwd()),",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 14840,
+      "exact_line": "\t\tconfigFile: configPath,",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 14851,
+      "exact_line": "\tconst rootViteConfig = await resolveConfig$2(inlineConfig, \"serve\");",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 14857,
+      "exact_line": "\tconst { token, tokenCreated } = resolveApiToken(rootViteConfig.root);",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 17953,
+      "exact_line": "\t\tconst outputFile = this.options.outputFile ?? getOutputFile(this.ctx.config, \"json\");",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 17958,
+      "exact_line": "\t\t\tawait promises.writeFile(reportFile, resultString, \"utf-8\");",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 17960,
+      "exact_line": "\t\t} else if (this.options.stdout) this.ctx.logger.log(resultString);",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vitest/dist/chunks/index.DpLw24bj.js",
+      "line": 17963,
+      "exact_line": "\t\t\tawait report.writeFile(\"output.json\", resultString);",
+      "commit": null,
+      "source_sha256": "1530a89d189ebdc57a1577e7fbfcd34eac55a0165589265b8d776b33f83678bd"
+    },
+    {
+      "path": "node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js",
+      "line": 15950,
+      "exact_line": "const knownTsOutputRE = /\\.(?:js|mjs|cjs|jsx)$/;",
+      "commit": null,
+      "source_sha256": "88f9adf5652dc907fa20c9bf936a91fbe1c1328ca3624c39c649692eccb301e6"
+    },
+    {
+      "path": "node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js",
+      "line": 15964,
+      "exact_line": "        if (res = tryResolveRealFile(",
+      "commit": null,
+      "source_sha256": "88f9adf5652dc907fa20c9bf936a91fbe1c1328ca3624c39c649692eccb301e6"
+    },
+    {
+      "path": "node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js",
+      "line": 15965,
+      "exact_line": "          fileName + fileExt.replace(\"js\", \"ts\"),",
+      "commit": null,
+      "source_sha256": "88f9adf5652dc907fa20c9bf936a91fbe1c1328ca3624c39c649692eccb301e6"
+    },
+    {
+      "path": "node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js",
+      "line": 15968,
+      "exact_line": "          return res;",
+      "commit": null,
+      "source_sha256": "88f9adf5652dc907fa20c9bf936a91fbe1c1328ca3624c39c649692eccb301e6"
+    },
+    {
+      "path": "node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js",
+      "line": 49055,
+      "exact_line": "  let envDir = config.envFile === false ? false : config.envDir;",
+      "commit": null,
+      "source_sha256": "88f9adf5652dc907fa20c9bf936a91fbe1c1328ca3624c39c649692eccb301e6"
+    },
+    {
+      "path": "node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js",
+      "line": 49059,
+      "exact_line": "  const userEnv = loadEnv(mode, envDir, resolveEnvPrefix(config));",
+      "commit": null,
+      "source_sha256": "88f9adf5652dc907fa20c9bf936a91fbe1c1328ca3624c39c649692eccb301e6"
+    },
+    {
+      "path": "node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js",
+      "line": 49074,
+      "exact_line": "  const cacheDir = normalizePath$3(",
+      "commit": null,
+      "source_sha256": "88f9adf5652dc907fa20c9bf936a91fbe1c1328ca3624c39c649692eccb301e6"
+    },
+    {
+      "path": "node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js",
+      "line": 49075,
+      "exact_line": "    config.cacheDir ? path$b.resolve(resolvedRoot, config.cacheDir) : pkgDir ? path$b.join(pkgDir, `node_modules/.vite`) : path$b.join(resolvedRoot, `.vite`)",
+      "commit": null,
+      "source_sha256": "88f9adf5652dc907fa20c9bf936a91fbe1c1328ca3624c39c649692eccb301e6"
+    },
+    {
+      "path": "node_modules/typescript/lib/_tsc.js",
+      "line": 131967,
+      "exact_line": "  if (commandLine.options.project) {",
+      "commit": null,
+      "source_sha256": "e8f349eabd48486bdb2bf9dc1a00c89d58297270c54b745838879e2859194419"
+    },
+    {
+      "path": "node_modules/typescript/lib/_tsc.js",
+      "line": 131968,
+      "exact_line": "    if (commandLine.fileNames.length !== 0) {",
+      "commit": null,
+      "source_sha256": "e8f349eabd48486bdb2bf9dc1a00c89d58297270c54b745838879e2859194419"
+    },
+    {
+      "path": "node_modules/typescript/lib/_tsc.js",
+      "line": 131986,
+      "exact_line": "  } else if (commandLine.fileNames.length === 0) {",
+      "commit": null,
+      "source_sha256": "e8f349eabd48486bdb2bf9dc1a00c89d58297270c54b745838879e2859194419"
+    },
+    {
+      "path": "node_modules/typescript/lib/_tsc.js",
+      "line": 131988,
+      "exact_line": "    configFileName = findConfigFile(searchPath, (fileName) => sys2.fileExists(fileName));",
+      "commit": null,
+      "source_sha256": "e8f349eabd48486bdb2bf9dc1a00c89d58297270c54b745838879e2859194419"
+    },
+    {
+      "path": "node_modules/typescript/lib/_tsc.js",
+      "line": 132004,
+      "exact_line": "  if (configFileName) {",
+      "commit": null,
+      "source_sha256": "e8f349eabd48486bdb2bf9dc1a00c89d58297270c54b745838879e2859194419"
+    },
+    {
+      "path": "node_modules/@types/node/fs/promises.d.ts",
+      "line": 510,
+      "exact_line": "     * calls. Instead, user code should open/read/write the file directly and handle",
+      "commit": null,
+      "source_sha256": "ffe66ee5c9c47017aca2136e95d51235c10e6790753215608bff1e712ff54ec6"
+    },
+    {
+      "path": "node_modules/@types/node/fs/promises.d.ts",
+      "line": 511,
+      "exact_line": "     * the error raised if the file is not accessible.",
+      "commit": null,
+      "source_sha256": "ffe66ee5c9c47017aca2136e95d51235c10e6790753215608bff1e712ff54ec6"
+    },
+    {
+      "path": "node_modules/@types/node/fs/promises.d.ts",
+      "line": 521,
+      "exact_line": "     * No guarantees are made about the atomicity of the copy operation. If an",
+      "commit": null,
+      "source_sha256": "ffe66ee5c9c47017aca2136e95d51235c10e6790753215608bff1e712ff54ec6"
+    },
+    {
+      "path": "node_modules/@types/node/fs/promises.d.ts",
+      "line": 535,
+      "exact_line": "     * // By using COPYFILE_EXCL, the operation will fail if destination.txt exists.",
+      "commit": null,
+      "source_sha256": "ffe66ee5c9c47017aca2136e95d51235c10e6790753215608bff1e712ff54ec6"
+    },
+    {
+      "path": "node_modules/@types/node/fs/promises.d.ts",
+      "line": 564,
+      "exact_line": "    function open(path: PathLike, flags?: string | number, mode?: Mode): Promise<FileHandle>;",
+      "commit": null,
+      "source_sha256": "ffe66ee5c9c47017aca2136e95d51235c10e6790753215608bff1e712ff54ec6"
+    },
+    {
+      "path": "node_modules/@types/node/fs/promises.d.ts",
+      "line": 570,
+      "exact_line": "    function rename(oldPath: PathLike, newPath: PathLike): Promise<void>;",
+      "commit": null,
+      "source_sha256": "ffe66ee5c9c47017aca2136e95d51235c10e6790753215608bff1e712ff54ec6"
+    },
+    {
+      "path": "node_modules/@types/node/fs.d.ts",
+      "line": 3581,
+      "exact_line": "        const O_CREAT: number;",
+      "commit": null,
+      "source_sha256": "25d130083f833251b5b4c2794890831b1b8ce2ead24089f724181576cf9d7279"
+    },
+    {
+      "path": "node_modules/@types/node/fs.d.ts",
+      "line": 3583,
+      "exact_line": "        const O_EXCL: number;",
+      "commit": null,
+      "source_sha256": "25d130083f833251b5b4c2794890831b1b8ce2ead24089f724181576cf9d7279"
+    },
+    {
+      "path": "node_modules/@types/node/fs.d.ts",
+      "line": 3595,
+      "exact_line": "        const O_DIRECTORY: number;",
+      "commit": null,
+      "source_sha256": "25d130083f833251b5b4c2794890831b1b8ce2ead24089f724181576cf9d7279"
+    },
+    {
+      "path": "node_modules/@types/node/fs.d.ts",
+      "line": 3604,
+      "exact_line": "        const O_NOFOLLOW: number;",
+      "commit": null,
+      "source_sha256": "25d130083f833251b5b4c2794890831b1b8ce2ead24089f724181576cf9d7279"
+    },
+    {
+      "path": "node_modules/@types/node/child_process.d.ts",
+      "line": 264,
+      "exact_line": "         * The `ChildProcess` object may emit an `'error'` event if the signal",
+      "commit": null,
+      "source_sha256": "4314c7a11517e221f7296b46547dbc4df047115b182f544d072bdccffa57fc72"
+    },
+    {
+      "path": "node_modules/@types/node/child_process.d.ts",
+      "line": 267,
+      "exact_line": "         * process identifier (PID) has been reassigned to another process, the signal will",
+      "commit": null,
+      "source_sha256": "4314c7a11517e221f7296b46547dbc4df047115b182f544d072bdccffa57fc72"
+    },
+    {
+      "path": "node_modules/@types/node/child_process.d.ts",
+      "line": 270,
+      "exact_line": "         * While the function is called `kill`, the signal delivered to the child process",
+      "commit": null,
+      "source_sha256": "4314c7a11517e221f7296b46547dbc4df047115b182f544d072bdccffa57fc72"
+    },
+    {
+      "path": "node_modules/@types/node/child_process.d.ts",
+      "line": 279,
+      "exact_line": "         * On Linux, child processes of child processes will not be terminated",
+      "commit": null,
+      "source_sha256": "4314c7a11517e221f7296b46547dbc4df047115b182f544d072bdccffa57fc72"
+    },
+    {
+      "path": "node_modules/@types/node/child_process.d.ts",
+      "line": 281,
+      "exact_line": "         * new process in a shell or with the use of the `shell` option of `ChildProcess`:",
+      "commit": null,
+      "source_sha256": "4314c7a11517e221f7296b46547dbc4df047115b182f544d072bdccffa57fc72"
+    },
+    {
+      "path": "node_modules/@types/node/child_process.d.ts",
+      "line": 632,
+      "exact_line": "        killSignal?: NodeJS.Signals | number | undefined;",
+      "commit": null,
+      "source_sha256": "4314c7a11517e221f7296b46547dbc4df047115b182f544d072bdccffa57fc72"
+    },
+    {
+      "path": "node_modules/@types/node/child_process.d.ts",
+      "line": 636,
+      "exact_line": "        timeout?: number | undefined;",
+      "commit": null,
+      "source_sha256": "4314c7a11517e221f7296b46547dbc4df047115b182f544d072bdccffa57fc72"
+    },
+    {
+      "path": "node_modules/@types/node/child_process.d.ts",
+      "line": 642,
+      "exact_line": "        env?: NodeJS.ProcessEnv | undefined;",
+      "commit": null,
+      "source_sha256": "4314c7a11517e221f7296b46547dbc4df047115b182f544d072bdccffa57fc72"
+    },
+    {
+      "path": "node_modules/@types/node/child_process.d.ts",
+      "line": 652,
+      "exact_line": "        timeout?: number | undefined;",
+      "commit": null,
+      "source_sha256": "4314c7a11517e221f7296b46547dbc4df047115b182f544d072bdccffa57fc72"
+    },
+    {
+      "path": "node_modules/@types/node/child_process.d.ts",
+      "line": 666,
+      "exact_line": "        shell?: boolean | string | undefined;",
+      "commit": null,
+      "source_sha256": "4314c7a11517e221f7296b46547dbc4df047115b182f544d072bdccffa57fc72"
+    },
+    {
+      "path": "node_modules/@types/node/child_process.d.ts",
+      "line": 670,
+      "exact_line": "        detached?: boolean | undefined;",
+      "commit": null,
+      "source_sha256": "4314c7a11517e221f7296b46547dbc4df047115b182f544d072bdccffa57fc72"
+    },
+    {
+      "path": "node_modules/@types/node/process.d.ts",
+      "line": 418,
+      "exact_line": "                 * * `fs` - All File System",
+      "commit": null,
+      "source_sha256": "636302a00dfd1f9fe6e8e91e4e9350c6518dcc8d51a474e4fc3a9ba07135100b"
+    },
+    {
+      "path": "node_modules/@types/node/process.d.ts",
+      "line": 419,
+      "exact_line": "                 * * `fs.read` - File System read operations",
+      "commit": null,
+      "source_sha256": "636302a00dfd1f9fe6e8e91e4e9350c6518dcc8d51a474e4fc3a9ba07135100b"
+    },
+    {
+      "path": "node_modules/@types/node/process.d.ts",
+      "line": 420,
+      "exact_line": "                 * * `fs.write` - File System write operations",
+      "commit": null,
+      "source_sha256": "636302a00dfd1f9fe6e8e91e4e9350c6518dcc8d51a474e4fc3a9ba07135100b"
+    },
+    {
+      "path": "node_modules/@types/node/process.d.ts",
+      "line": 421,
+      "exact_line": "                 * * `child` - Child process spawning operations",
+      "commit": null,
+      "source_sha256": "636302a00dfd1f9fe6e8e91e4e9350c6518dcc8d51a474e4fc3a9ba07135100b"
+    },
+    {
+      "path": "node_modules/@types/node/process.d.ts",
+      "line": 422,
+      "exact_line": "                 * * `worker` - Worker thread spawning operation",
+      "commit": null,
+      "source_sha256": "636302a00dfd1f9fe6e8e91e4e9350c6518dcc8d51a474e4fc3a9ba07135100b"
+    },
+    {
+      "path": "node_modules/@types/node/process.d.ts",
+      "line": 1696,
+      "exact_line": "                 * This API is available through the [--permission](https://nodejs.org/api/cli.html#--permission) flag.",
+      "commit": null,
+      "source_sha256": "636302a00dfd1f9fe6e8e91e4e9350c6518dcc8d51a474e4fc3a9ba07135100b"
+    },
+    {
+      "path": "node_modules/tsx/package.json",
+      "commit": null,
+      "source_sha256": "5cb9e1cac206505b183db610bb3f4c9b5b0c7750260705192e478552201a5f1c",
+      "offset0": 21,
+      "line": 3,
+      "exact_excerpt": "\"version\": \"4.19.4\""
+    },
+    {
+      "path": "node_modules/tsx/package.json",
+      "commit": null,
+      "source_sha256": "5cb9e1cac206505b183db610bb3f4c9b5b0c7750260705192e478552201a5f1c",
+      "offset0": 564,
+      "line": 28,
+      "exact_excerpt": "\".\": \"./dist/loader.mjs\""
+    },
+    {
+      "path": "node_modules/tsx/dist/loader.mjs",
+      "commit": null,
+      "source_sha256": "f3317378d0f41d5443dc4564e27bbce721687dc2ca829cf416880747b125478b",
+      "offset0": 0,
+      "line": 1,
+      "exact_excerpt": "import{r}from\"./get-pipe-path-BHW2eJdv.mjs\""
+    },
+    {
+      "path": "node_modules/tsx/dist/loader.mjs",
+      "commit": null,
+      "source_sha256": "f3317378d0f41d5443dc4564e27bbce721687dc2ca829cf416880747b125478b",
+      "offset0": 594,
+      "line": 1,
+      "exact_excerpt": "r(\"./cjs/index.cjs\")"
+    },
+    {
+      "path": "node_modules/tsx/dist/esm/index.mjs",
+      "commit": null,
+      "source_sha256": "ddb0cd858639b442e873d3c281cf65b245921ea9b886d3e42efc4ca57f20cedd",
+      "offset0": 929,
+      "line": 1,
+      "exact_excerpt": "tsx must be loaded with --import instead of --loader"
+    },
+    {
+      "path": "node_modules/tsx/dist/esm/index.mjs",
+      "commit": null,
+      "source_sha256": "ddb0cd858639b442e873d3c281cf65b245921ea9b886d3e42efc4ca57f20cedd",
+      "offset0": 1070,
+      "line": 2,
+      "exact_excerpt": "t.tsconfig!==!1&&k(t.tsconfig??process.env.TSX_TSCONFIG_PATH)"
+    },
+    {
+      "path": "node_modules/tsx/dist/esm/index.mjs",
+      "commit": null,
+      "source_sha256": "ddb0cd858639b442e873d3c281cf65b245921ea9b886d3e42efc4ca57f20cedd",
+      "offset0": 5628,
+      "line": 2,
+      "exact_excerpt": "g(W)&&j&&A()"
+    },
+    {
+      "path": "node_modules/tsx/dist/register-hc1YoAqe.mjs",
+      "commit": null,
+      "source_sha256": "b6ca3cd367ce2cebb7480ddb2880ef82200f128c6b6f47cd100abbecb2fa4cd6",
+      "offset0": 841,
+      "line": 1,
+      "exact_excerpt": "process.setSourceMapsEnabled(!0)"
+    },
+    {
+      "path": "node_modules/tsx/dist/register-hc1YoAqe.mjs",
+      "commit": null,
+      "source_sha256": "b6ca3cd367ce2cebb7480ddb2880ef82200f128c6b6f47cd100abbecb2fa4cd6",
+      "offset0": 759,
+      "line": 1,
+      "exact_excerpt": "m._resolveFilename=(p,...c)=>t(v(p),...c)"
+    },
+    {
+      "path": "node_modules/tsx/dist/register-hc1YoAqe.mjs",
+      "commit": null,
+      "source_sha256": "b6ca3cd367ce2cebb7480ddb2880ef82200f128c6b6f47cd100abbecb2fa4cd6",
+      "offset0": 897,
+      "line": 1,
+      "exact_excerpt": "new u"
+    },
+    {
+      "path": "node_modules/tsx/dist/register-hc1YoAqe.mjs",
+      "commit": null,
+      "source_sha256": "b6ca3cd367ce2cebb7480ddb2880ef82200f128c6b6f47cd100abbecb2fa4cd6",
+      "offset0": 903,
+      "line": 1,
+      "exact_excerpt": "m.register(`./esm/index.mjs?${Date.now()}`"
+    },
+    {
+      "path": "node_modules/tsx/dist/register-CuoYSLaL.mjs",
+      "commit": null,
+      "source_sha256": "2938d1a7b2db9151c9a13514a8384beb02eb8360ea7c9f217838c0f50fff6d77",
+      "offset0": 1299,
+      "line": 1,
+      "exact_excerpt": "e=X()"
+    },
+    {
+      "path": "node_modules/tsx/dist/register-CuoYSLaL.mjs",
+      "commit": null,
+      "source_sha256": "2938d1a7b2db9151c9a13514a8384beb02eb8360ea7c9f217838c0f50fff6d77",
+      "offset0": 1325,
+      "line": 1,
+      "exact_excerpt": "S=K(e),E=V(e)"
+    },
+    {
+      "path": "node_modules/tsx/dist/register-CuoYSLaL.mjs",
+      "commit": null,
+      "source_sha256": "2938d1a7b2db9151c9a13514a8384beb02eb8360ea7c9f217838c0f50fff6d77",
+      "offset0": 3263,
+      "line": 2,
+      "exact_excerpt": "g[\".js\"]=[\".ts\",\".tsx\",\".js\",\".jsx\"]"
+    },
+    {
+      "path": "node_modules/tsx/dist/register-CuoYSLaL.mjs",
+      "commit": null,
+      "source_sha256": "2938d1a7b2db9151c9a13514a8384beb02eb8360ea7c9f217838c0f50fff6d77",
+      "offset0": 5861,
+      "line": 3,
+      "exact_excerpt": "N(process.env.TSX_TSCONFIG_PATH)"
+    },
+    {
+      "path": "node_modules/tsx/dist/register-CuoYSLaL.mjs",
+      "commit": null,
+      "source_sha256": "2938d1a7b2db9151c9a13514a8384beb02eb8360ea7c9f217838c0f50fff6d77",
+      "offset0": 5977,
+      "line": 3,
+      "exact_excerpt": "d._resolveFilename=t"
+    },
+    {
+      "path": "node_modules/tsx/dist/register-D2KMMyKp.cjs",
+      "commit": null,
+      "source_sha256": "18bd233a0e306f6b4cd933a29ee48bae9758dd43ac51910e2a9dd801218d0a30",
+      "offset0": 1248,
+      "line": 1,
+      "exact_excerpt": "e=x.getTsconfig()"
+    },
+    {
+      "path": "node_modules/tsx/dist/register-D2KMMyKp.cjs",
+      "commit": null,
+      "source_sha256": "18bd233a0e306f6b4cd933a29ee48bae9758dd43ac51910e2a9dd801218d0a30",
+      "offset0": 6085,
+      "line": 3,
+      "exact_excerpt": "D(process.env.TSX_TSCONFIG_PATH)"
+    },
+    {
+      "path": "node_modules/tsx/dist/register-D2KMMyKp.cjs",
+      "commit": null,
+      "source_sha256": "18bd233a0e306f6b4cd933a29ee48bae9758dd43ac51910e2a9dd801218d0a30",
+      "offset0": 6201,
+      "line": 3,
+      "exact_excerpt": "p._resolveFilename=s"
+    },
+    {
+      "path": "node_modules/tsx/dist/cjs/index.cjs",
+      "commit": null,
+      "source_sha256": "40ee7ffd76b775a95fde5c6404459f93b433a1ce972f8a8535d4be52dbbf515e",
+      "offset0": 416,
+      "line": 1,
+      "exact_excerpt": "r.register()"
+    },
+    {
+      "path": "node_modules/tsx/dist/client-BQVF1NaW.mjs",
+      "commit": null,
+      "source_sha256": "334ad3dbfaf820eeb08dd2fa40750c8316e6f8a61311bdf99defd3c361fbece4",
+      "offset0": 203,
+      "line": 1,
+      "exact_excerpt": "p.createConnection(n"
+    },
+    {
+      "path": "node_modules/tsx/dist/client-BQVF1NaW.mjs",
+      "commit": null,
+      "source_sha256": "334ad3dbfaf820eeb08dd2fa40750c8316e6f8a61311bdf99defd3c361fbece4",
+      "offset0": 371,
+      "line": 1,
+      "exact_excerpt": "t.on(\"error\",()=>{e()})"
+    },
+    {
+      "path": "node_modules/tsx/dist/client-BQVF1NaW.mjs",
+      "commit": null,
+      "source_sha256": "334ad3dbfaf820eeb08dd2fa40750c8316e6f8a61311bdf99defd3c361fbece4",
+      "offset0": 442,
+      "line": 1,
+      "exact_excerpt": "f=m()"
+    },
+    {
+      "path": "node_modules/tsx/dist/client-D6NvIMSC.cjs",
+      "commit": null,
+      "source_sha256": "af10790d58385f62c205140c3f7c25dae26638c2961fa24eb958f888d8995a40",
+      "offset0": 228,
+      "line": 1,
+      "exact_excerpt": "p.createConnection(n"
+    },
+    {
+      "path": "node_modules/tsx/dist/client-D6NvIMSC.cjs",
+      "commit": null,
+      "source_sha256": "af10790d58385f62c205140c3f7c25dae26638c2961fa24eb958f888d8995a40",
+      "offset0": 396,
+      "line": 1,
+      "exact_excerpt": "t.on(\"error\",()=>{e()})"
+    },
+    {
+      "path": "node_modules/tsx/dist/client-D6NvIMSC.cjs",
+      "commit": null,
+      "source_sha256": "af10790d58385f62c205140c3f7c25dae26638c2961fa24eb958f888d8995a40",
+      "offset0": 467,
+      "line": 1,
+      "exact_excerpt": "i=g()"
+    },
+    {
+      "path": "node_modules/tsx/dist/get-pipe-path-BHW2eJdv.mjs",
+      "commit": null,
+      "source_sha256": "307483caa22c2406677b4bd513bf602b4de3986f3e23eac7724e99c0d7ddc8d6",
+      "offset0": 274,
+      "line": 1,
+      "exact_excerpt": "a.join(s,`${t}.pipe`)"
+    },
+    {
+      "path": "node_modules/tsx/dist/temporary-directory-CwHp0_NW.mjs",
+      "commit": null,
+      "source_sha256": "e0771b7d9b216d438ff2ade7494a7a3ac6202c66cb752f2cd99bffb3d78226fe",
+      "offset0": 105,
+      "line": 1,
+      "exact_excerpt": "r.join(o.tmpdir(),`tsx-${s}`)"
+    },
+    {
+      "path": "node_modules/tsx/dist/index-DGv_vkxZ.mjs",
+      "commit": null,
+      "source_sha256": "aa1b7e708597f14430c50f877cc8077620dd41e36608e0ad72fc237a73269dd3",
+      "offset0": 41006,
+      "line": 13,
+      "exact_excerpt": "process.env.TSX_DISABLE_CACHE?new Map:new br"
+    },
+    {
+      "path": "node_modules/tsx/dist/index-DGv_vkxZ.mjs",
+      "commit": null,
+      "source_sha256": "aa1b7e708597f14430c50f877cc8077620dd41e36608e0ad72fc237a73269dd3",
+      "offset0": 39914,
+      "line": 13,
+      "exact_excerpt": "$.mkdirSync(this.cacheDirectory,{recursive:!0})"
+    },
+    {
+      "path": "node_modules/tsx/dist/index-DGv_vkxZ.mjs",
+      "commit": null,
+      "source_sha256": "aa1b7e708597f14430c50f877cc8077620dd41e36608e0ad72fc237a73269dd3",
+      "offset0": 40105,
+      "line": 13,
+      "exact_excerpt": "this.expireDiskCache(),this.removeOldCacheDirectory()"
+    },
+    {
+      "path": "node_modules/tsx/dist/index-DGv_vkxZ.mjs",
+      "commit": null,
+      "source_sha256": "aa1b7e708597f14430c50f877cc8077620dd41e36608e0ad72fc237a73269dd3",
+      "offset0": 40498,
+      "line": 13,
+      "exact_excerpt": "$.promises.writeFile(X.join(this.cacheDirectory"
+    },
+    {
+      "path": "node_modules/tsx/dist/index-DGv_vkxZ.mjs",
+      "commit": null,
+      "source_sha256": "aa1b7e708597f14430c50f877cc8077620dd41e36608e0ad72fc237a73269dd3",
+      "offset0": 40859,
+      "line": 13,
+      "exact_excerpt": "await $.promises.rm(this.oldCacheDirectory,{recursive:!0,force:!0})"
+    },
+    {
+      "path": "node_modules/tsx/dist/index-DGv_vkxZ.mjs",
+      "commit": null,
+      "source_sha256": "aa1b7e708597f14430c50f877cc8077620dd41e36608e0ad72fc237a73269dd3",
+      "offset0": 51971,
+      "line": 14,
+      "exact_excerpt": "await qt(p,i)"
+    },
+    {
+      "path": "node_modules/tsx/dist/index-CylV0-__.cjs",
+      "commit": null,
+      "source_sha256": "a8f751d6588ffd1b2c7097c37f9ccd546677b28f233c5e67734e03fe11e26a3f",
+      "offset0": 40991,
+      "line": 13,
+      "exact_excerpt": "process.env.TSX_DISABLE_CACHE?new Map:new dr"
+    },
+    {
+      "path": "node_modules/tsx/dist/index-CylV0-__.cjs",
+      "commit": null,
+      "source_sha256": "a8f751d6588ffd1b2c7097c37f9ccd546677b28f233c5e67734e03fe11e26a3f",
+      "offset0": 40090,
+      "line": 13,
+      "exact_excerpt": "this.expireDiskCache(),this.removeOldCacheDirectory()"
+    },
+    {
+      "path": "node_modules/get-tsconfig/dist/index.mjs",
+      "commit": null,
+      "source_sha256": "2bb1e82fea648d598e1067cc5b643105493a63502458694b486f0c581b506503",
+      "offset0": 23195,
+      "line": 7,
+      "exact_excerpt": "sn=r((e=process.cwd(),t=\"tsconfig.json\""
+    },
+    {
+      "path": "node_modules/get-tsconfig/dist/index.mjs",
+      "commit": null,
+      "source_sha256": "2bb1e82fea648d598e1067cc5b643105493a63502458694b486f0c581b506503",
+      "offset0": 20458,
+      "line": 7,
+      "exact_excerpt": "t.writeFileSync(l,\"\")"
+    },
+    {
+      "path": "node_modules/get-tsconfig/dist/index.mjs",
+      "commit": null,
+      "source_sha256": "2bb1e82fea648d598e1067cc5b643105493a63502458694b486f0c581b506503",
+      "offset0": 20513,
+      "line": 7,
+      "exact_excerpt": "t.unlinkSync(l)"
+    },
+    {
+      "path": "node_modules/get-tsconfig/dist/index.mjs",
+      "commit": null,
+      "source_sha256": "2bb1e82fea648d598e1067cc5b643105493a63502458694b486f0c581b506503",
+      "offset0": 20613,
+      "line": 7,
+      "exact_excerpt": "if(t===void 0)return Ae(Ue.tmpdir(),l)"
+    },
+    {
+      "path": "node_modules/get-tsconfig/dist/index.mjs",
+      "commit": null,
+      "source_sha256": "2bb1e82fea648d598e1067cc5b643105493a63502458694b486f0c581b506503",
+      "offset0": 21653,
+      "line": 7,
+      "exact_excerpt": "De=r(({config:e,path:t},l=Ke())"
+    },
+    {
+      "path": "node_modules/esbuild/lib/main.js",
+      "commit": null,
+      "source_sha256": "0d1241812c443111d39475dfc66836003e9ef8b87e54d990dd67df29d20010e1",
+      "offset0": 14054,
+      "line": 346,
+      "exact_excerpt": "if (tsconfigRaw) flags.push(`--tsconfig-raw="
+    },
+    {
+      "path": "node_modules/esbuild/lib/main.js",
+      "commit": null,
+      "source_sha256": "0d1241812c443111d39475dfc66836003e9ef8b87e54d990dd67df29d20010e1",
+      "offset0": 19269,
+      "line": 433,
+      "exact_excerpt": "if (bundle) flags.push(\"--bundle\")"
+    },
+    {
+      "path": "node_modules/esbuild/lib/main.js",
+      "commit": null,
+      "source_sha256": "0d1241812c443111d39475dfc66836003e9ef8b87e54d990dd67df29d20010e1",
+      "offset0": 19507,
+      "line": 438,
+      "exact_excerpt": "if (outfile) flags.push(`--outfile="
+    },
+    {
+      "path": "node_modules/esbuild/lib/main.js",
+      "commit": null,
+      "source_sha256": "0d1241812c443111d39475dfc66836003e9ef8b87e54d990dd67df29d20010e1",
+      "offset0": 19711,
+      "line": 442,
+      "exact_excerpt": "if (packages) flags.push(`--packages="
+    },
+    {
+      "path": "node_modules/esbuild/lib/main.js",
+      "commit": null,
+      "source_sha256": "0d1241812c443111d39475dfc66836003e9ef8b87e54d990dd67df29d20010e1",
+      "offset0": 79844,
+      "line": 1978,
+      "exact_excerpt": "let child = child_process.spawn(command"
+    },
+    {
+      "path": "node_modules/esbuild/lib/main.js",
+      "commit": null,
+      "source_sha256": "0d1241812c443111d39475dfc66836003e9ef8b87e54d990dd67df29d20010e1",
+      "offset0": 79898,
+      "line": 1978,
+      "exact_excerpt": "--service=${\"0.25.12\"}"
+    },
+    {
+      "path": "node_modules/@types/node/test.d.ts",
+      "commit": null,
+      "source_sha256": "edbb3546af6a57fa655860fef11f4109390f4a2f1eab4a93f548ccc21d604a56",
+      "offset0": 108,
+      "line": 6,
+      "exact_excerpt": "import test from 'node:test';"
+    },
+    {
+      "path": "node_modules/@types/node/test.d.ts",
+      "commit": null,
+      "source_sha256": "edbb3546af6a57fa655860fef11f4109390f4a2f1eab4a93f548ccc21d604a56",
+      "offset0": 4191,
+      "line": 113,
+      "exact_excerpt": "The `timeout` option can be used to fail the test"
+    },
+    {
+      "path": "node_modules/@types/node/test.d.ts",
+      "commit": null,
+      "source_sha256": "edbb3546af6a57fa655860fef11f4109390f4a2f1eab4a93f548ccc21d604a56",
+      "offset0": 4437,
+      "line": 115,
+      "exact_excerpt": "thus prevent the scheduled cancellation."
+    }
+  ],
+  "commands": [
+    {
+      "id": "CMD-TSC",
+      "executable": "Chemin absolu Node vérifié par A6, sans shell ; node ci-dessous est une notation de lecture",
+      "cwd": "Racine physique du futur worktree au SHA final revu",
+      "argv": [
+        "./node_modules/typescript/bin/tsc",
+        "--noEmit",
+        "--pretty",
+        "false",
+        "--target",
+        "ES2022",
+        "--module",
+        "ESNext",
+        "--moduleResolution",
+        "Bundler",
+        "--lib",
+        "ES2022,DOM",
+        "--types",
+        "node",
+        "--strict",
+        "--noUnusedLocals",
+        "--noUnusedParameters",
+        "--noUncheckedIndexedAccess",
+        "--exactOptionalPropertyTypes",
+        "--noImplicitOverride",
+        "--noFallthroughCasesInSwitch",
+        "--forceConsistentCasingInFileNames",
+        "--skipLibCheck",
+        "experiments/studio/g2-2d-identities/schema.ts",
+        "experiments/studio/g2-2d-identities/fixtures.ts",
+        "experiments/studio/g2-2d-identities/harness.ts",
+        "experiments/studio/g2-2d-identities/harness.test.ts"
+      ],
+      "display": "node ./node_modules/typescript/bin/tsc --noEmit --pretty false --target ES2022 --module ESNext --moduleResolution Bundler --lib ES2022,DOM --types node --strict --noUnusedLocals --noUnusedParameters --noUncheckedIndexedAccess --exactOptionalPropertyTypes --noImplicitOverride --noFallthroughCasesInSwitch --forceConsistentCasingInFileNames --skipLibCheck experiments/studio/g2-2d-identities/schema.ts experiments/studio/g2-2d-identities/fixtures.ts experiments/studio/g2-2d-identities/harness.ts experiments/studio/g2-2d-identities/harness.test.ts",
+      "status": "PROPOSE_NON_EXECUTE",
+      "effect": "Typecheck des quatre racines TS expérimentales et de leur fermeture de types, sans émission ; README est relu comme documentation. Pas de tsconfig package hérité, pas de démarrage."
+    },
+    {
+      "id": "CMD-VITEST",
+      "executable": "Même Node absolu vérifié, sans shell",
+      "cwd": "Même racine physique",
+      "argv": [
+        "./node_modules/vitest/vitest.mjs",
+        "run",
+        "--root=experiments/studio/g2-2d-identities",
+        "--environment=node",
+        "--pool=threads",
+        "--maxWorkers=1",
+        "--no-file-parallelism",
+        "--maxConcurrency=1",
+        "--testTimeout=5000",
+        "--hookTimeout=5000",
+        "--teardownTimeout=1000",
+        "--retry=0",
+        "--no-cache",
+        "--no-fsModuleCache",
+        "--no-coverage",
+        "--no-browser",
+        "--no-ui",
+        "--no-open",
+        "--no-api",
+        "--no-allowOnly",
+        "--no-passWithNoTests",
+        "--reporter=verbose",
+        "harness.test.ts"
+      ],
+      "display": "node ./node_modules/vitest/vitest.mjs run --root=experiments/studio/g2-2d-identities --environment=node --pool=threads --maxWorkers=1 --no-file-parallelism --maxConcurrency=1 --testTimeout=5000 --hookTimeout=5000 --teardownTimeout=1000 --retry=0 --no-cache --no-fsModuleCache --no-coverage --no-browser --no-ui --no-open --no-api --no-allowOnly --no-passWithNoTests --reporter=verbose harness.test.ts",
+      "status": "CANDIDAT_ETAYE_STATIQUEMENT_NON_EXECUTE",
+      "effect": "Un seul candidat de fichier test sous la racine expérimentale inventoriée. Les trois autres TS sont des modules auxiliaires ; README n’est pas du code. Aucune garantie que ces quatre fichiers sont tous les modules chargés : runner et graphe public core sont aussi évalués."
+    },
+    {
+      "id": "CMD-TSX",
+      "executable": "Même Node absolu vérifié par A6",
+      "cwd": "Racine physique du worktree",
+      "argv": [
+        "--import",
+        "tsx",
+        "./experiments/studio/g2-2d-identities/harness.test.ts"
+      ],
+      "display": "node --import tsx ./experiments/studio/g2-2d-identities/harness.test.ts",
+      "env_additions": {
+        "TSX_DISABLE_CACHE": "1",
+        "TSX_TSCONFIG_PATH": "Chemin absolu vérifié de packages/core-geometry/tsconfig.json au SHA final"
+      },
+      "status": "OPTION_NON_ADOPTEE_NON_EXECUTEE",
+      "effect": "Le futur harness.test.ts utiliserait node:test et node:assert/strict, sans import Vitest. Pas de CLI TSX, pas de --test qui demande distribution/découverte de fichiers. Évite effets Vitest, pas les hooks TSX, IPC ou auxiliaires esbuild."
+    },
+    {
+      "id": "CMD-BUNDLE",
+      "executable": "Chemin absolu vérifié de node_modules/@esbuild/linux-x64/bin/esbuild (Linux x64 seulement)",
+      "cwd": "Racine physique du worktree",
+      "argv": [
+        "experiments/studio/g2-2d-identities/harness.test.ts",
+        "--bundle",
+        "--platform=node",
+        "--format=esm",
+        "--target=node22.12",
+        "--packages=bundle",
+        "--tsconfig-raw={}",
+        "--tree-shaking=false",
+        "--legal-comments=eof",
+        "--log-level=warning"
+      ],
+      "display": "./node_modules/@esbuild/linux-x64/bin/esbuild experiments/studio/g2-2d-identities/harness.test.ts --bundle --platform=node --format=esm --target=node22.12 --packages=bundle '--tsconfig-raw={}' --tree-shaking=false --legal-comments=eof --log-level=warning",
+      "status": "OPTION_A_PRIVILEGIER_POUR_REVUE_A6_NON_ADOPTEE_NON_EXECUTEE",
+      "effect": "Entrée TS unique, résolution du package par son export PUBLIC ; build de code sans import JS exécuté. Pas de CLI JS esbuild, service JS/TSX/Vitest, plugin API, outfile/outdir/metafile/sourcemap/serve/watch. Sortie JS attendue sur stdout, comportement natif non exécuté.",
+      "stdout_contract": "Superviseur capture en mémoire avec plafond avant toute écriture, vérifie exit0 et taille puis écrit via handle exclusif O_CREAT|O_EXCL|O_NOFOLLOW sous parent ancré ; pas de redirection shell ni --outfile susceptible d’écraser. Artefact .mjs inédit, hashé et compté dans les16 fichiers/8Mio ; plafond propre proposé1Mio à confirmer. Dépôt en lecture seule et tmpdir privé borné. Erreur ou dépassement = aucune promotion, pas nettoyage."
+    },
+    {
+      "id": "CMD-NODE-ARTEFACT",
+      "executable": "Même Node absolu vérifié",
+      "cwd": "Racine contrôlée par superviseur",
+      "argv": [
+        "<chemin physique atteste du nouvel artefact .mjs>"
+      ],
+      "display": "node <artefact-session-inédit.mjs>",
+      "status": "GABARIT_CONDITIONNEL_NON_EXECUTE_CHEMIN_FINAL_ENCORE_INCONNU",
+      "effect": "Pas --import/--loader ni TSX/Vitest et pas découverte --test. Le futur fichier source de test utilise node:test et node:assert/strict ; transpilé puis exécuté directement. Cette forme ne prouve pas le nombre de cas : le superviseur vérifie inventaire attendu non nul, aucun skip/only/todo et exitcode. Relecture dans invocation indépendante reste interface à définir, pas argument déjà implémenté."
+    }
+  ],
+  "controls": [
+    {
+      "id": "HAR-01",
+      "subject": "Sélection des cinq sources",
+      "finding": "Le répertoire experiments n’existe pas au SHA 5e ; aucun tsconfig/vitest/vite.config racine. Vitest cherche uniquement les noms config sous --root et passe configFile:false si aucun trouvé. Pas d’héritage implicite de apps/api/vitest.config.ts dans cette commande.",
+      "condition": "Avant exécution, vérifier exactement README.md/schema.ts/fixtures.ts/harness.ts/harness.test.ts, fichiers ordinaires, aucun lien ni .env/.env.* ni config ajoutée, aucun autre fichier test. SHA final et dépendances résolues localement vérifiés. Le filtre harness.test.ts est une sous-chaîne, pas une whitelist de sécurité ; c’est l’inventaire de cette racine qui le rend univoque."
+    },
+    {
+      "id": "HAR-02",
+      "subject": "Résolution publique TS ESM",
+      "finding": "Le package core expose src/index.ts. Le graphe A2 comporte quatre modules natifs sans effet IO identifié à l’import. Le résolveur Vite installé possède la substitution .js→.ts ; le runner fournit donc une piste existante sans paquet nouveau.",
+      "condition": "Aucune deep import, copie de polygonArea ou hypothèse de tree shaking. Revoir le delta de la fermeture A2 au SHA retenu. La résolution effective runner/workspace/TS reste non exécutée ; un échec sera conservé et non contourné."
+    },
+    {
+      "id": "HAR-03",
+      "subject": "Config supplémentaire",
+      "finding": "Une sixième config n’est pas indispensable pour cette sélection bornée et ce typecheck explicite. Elle devient nécessaire si l’on exige envFile:false et cacheDir explicite indépendamment de l’inventaire ou des valeurs CLI, car ces paramètres Vite et setupFiles/globalSetup/include/projects ne sont pas tous exposés par ce CLI.",
+      "condition": "Ne créer aucune config maintenant. Si A0 choisit cette variante, demander explicitement extension à experiments/studio/g2-2d-identities/vitest.config.ts ; décrire include exact harness.test.ts, setupFiles/globalSetup vides, aucune extension/projet/plugin utilisateur, envFile:false, cacheDir dans le scratch technique, Node/threads/1 et options d’arrêt. Cette config ne prouve ni confinement OS ni zéro réseau."
+    },
+    {
+      "id": "HAR-04",
+      "subject": "Écritures du runner",
+      "finding": "Vitest 5 appelle resolveApiToken même avec API/UI désactivées ; premier chemin XDG_DATA_HOME/vitest/.vitest-secret-token, repli workspace/node_modules/.vitest/.vitest-secret-token. no-cache ne l’annule pas. Le reporter JSON sans option stdout explicite peut créer un rapport ; il n’est pas retenu.",
+      "condition": "A6 doit autoriser et borner un sous-espace technique dans la session, fixer XDG_DATA_HOME et TMPDIR à cet espace, bloquer le repli dépôt par permissions/montage, inclure jeton/temp/cache/logs dans les limites ou faire préciser leur budget. Jeton jamais publié. Si l’écriture technique n’est pas autorisée ou dépasse une borne : refus, pas repli. Le dépôt est en lecture seule à l’exécution."
+    },
+    {
+      "id": "HAR-05",
+      "subject": "Environnement",
+      "finding": "Le runner lit aussi variables d’injection Vitest ; Vite peut lire les fichiers .env du root. Une variable vide ne bloque aucun socket.",
+      "condition": "Le superviseur passe un objet env construit de zéro : seulement valeurs fixes revues (par exemple CI=1, TZ=UTC, LANG=C.UTF-8 si disponible, XDG_DATA_HOME/TMPDIR scratch) et un PATH minimal si un auxiliaire est indispensable et identifié. Aucun spread process.env, NODE_OPTIONS/NODE_PATH/VITEST_MODULE_DIRECTORIES/npm_config_* ni credential/URL DB/proxy. Session physique confiée séparément à l’interface harness, jamais chemin provenant d’une fixture. Sans config dédiée, refuser tout .env* dans root inventorié."
+    },
+    {
+      "id": "HAR-06",
+      "subject": "Fichiers et liens",
+      "finding": "Node expose open(path,flags), O_CREAT/O_EXCL/O_NOFOLLOW et FileHandle. Cela protège la création exclusive du composant final dans le cadre OS adapté ; cela ne lie pas atomiquement toute la chaîne des parents. Les declarations fs lues n’exposent pas openat/openat2 ni RESOLVE_BENEATH. lstat/realpath/startsWith puis open reste vulnérable à substitution de parents.",
+      "condition": "Nom de session inédit/aléatoire, parents ancrés par environnement fiable, racine privée sans autre writer, fichiers ordinaires ouverts exclusivement, aucune entrée utilisateur de chemin, fstat du handle, vérifications des tailles et types avant usage. Si A6 ne peut garantir que les parents ne sont pas remplaçables pendant les ouvertures, la garantie forte demandée reste bloquée ; ne pas la remplacer par un simple contrôle de chaîne ou un chemin /proc auto-inventé."
+    },
+    {
+      "id": "HAR-07",
+      "subject": "Immuabilité et atomicité",
+      "finding": "Création exclusive ne signifie pas écriture complète atomique, transaction multi-fichiers ou résistance matérielle à une coupure. Un fichier partiel peut subsister après erreur/timeout. rename n’offre pas ici de no-replace portable.",
+      "condition": "Ne jamais ouvrir une destination existante en écriture, ni utiliser rename écrasant/copyFile standard/cleanup automatique. Anciennes révisions ouvertes en lecture et empreintes vérifiées. Fichiers candidats incomplets demeurent non promus ; un manifeste de réussite n’est considéré qu’après sortie correcte avant échéance et vérification externe. Aucune promesse de crash-durability ou transaction DB."
+    },
+    {
+      "id": "HAR-08",
+      "subject": "Bornes de données et ressources",
+      "finding": "Les 16 fichiers, 1 Mio/JSON, 8 Mio cumulés, profondeur32, 1000 objets, 10000 points sont des bornes proposées, jamais mesurées. Une vérification applicative ne constitue pas un quota OS.",
+      "condition": "Rejeter non-finitude/structures non synthétiques avant JSON.stringify, compter Buffer.byteLength UTF-8 avant création/écriture, réserver le cumul et les noms avant effets, sérialiser les écritures avec writer unique. Fichiers techniques et stdout/stderr doivent avoir budget explicite. A6 borne aussi disque/processus/mémoire hors du calcul ; aucun nettoyage silencieux en cas de dépassement."
+    },
+    {
+      "id": "HAR-09",
+      "subject": "Timeout et supervision",
+      "finding": "testTimeout/hookTimeout règlent des tests, pas l’initialisation complète, le calcul synchrone bloquant ou la durée globale. Node spawn timeout/AbortSignal envoient un signal ; kill n’est pas preuve de décès ni de disparition des descendants.",
+      "condition": "Superviseur extérieur au calcul, horloge monotone, délai global30s couvrant lancement/import/calcul/relecture selon budget à préciser, argv fixes et shell:false, stdout/stderr drainés et bornés, observation close/exit et vérification de la fin de l’arbre propre. Marquer annulé dès échéance et interdire promotion ultérieure. Groupe/cgroup/job dédié à cette exécution seulement ; jamais signal à processus partagé ni PID simplement mémorisé après réemploi possible. Aucun mécanisme externe vérifié ici."
+    },
+    {
+      "id": "HAR-10",
+      "subject": "Nombre de processus et relecture",
+      "finding": "pool=threads,maxWorkers=1 évite le fork de worker de test normal ; cela ne garantit pas un seul processus global. Vite/esbuild et chargeurs peuvent utiliser des auxiliaires ; ce graphe d’infrastructure n’est pas entièrement audité. Une seconde lecture dans le même test/processus ne prouve pas la réouverture indépendante.",
+      "condition": "Pas de spawn imbriqué dans un worker pour la relecture. Proposer deux invocations séquentielles indépendantes du même fichier test avec phases écriture/relecture explicites et nouvelle instance du runner ; le lecteur reçoit uniquement racine acceptée+identifiant/manifeste et n’écrit pas les révisions. Contrat de phase/argv pas encore défini par un fichier existant : ne pas inventer une commande read actuellement disponible. A6 doit préciser si le budget « un enfant de relecture » exclut ou inclut infrastructure ; si un processus total strict est exigé, cette candidate Vitest est non démontrée et arrêtée sans nouveau moteur/loader."
+    },
+    {
+      "id": "HAR-11",
+      "subject": "Réseau et isolation",
+      "finding": "no-api/no-browser/no-ui implique statiquement un Vite en middlewareMode plutôt qu’un service d’application exposé ; le runtime du runner peut néanmoins créer des objets serveur et le réseau n’est pas interdit par ces flags. Les types Node permission consultés listent fs/child/worker, pas une garantie de refus réseau.",
+      "condition": "A6 constate un refus réseau OS réel (sortant/entrant/loopback/IPC selon contrat) avant exécution dans un environnement dédié, sans lui substituer suppression d’env, mocks ou flags Node. Aucun serveur Fadi/API/DB, navigateur, installation, lifecycle ou service lancé. Si « aucun serveur » exclut même l’objet middleware interne du runner, il faut arbitrer la formulation ou déclarer ce runner incompatible ; pas d’affirmation implicite."
+    },
+    {
+      "id": "HAR-12",
+      "subject": "Types et portée du contrôle",
+      "finding": "Les quatre fichiers explicites évitent la recherche automatique tsconfig ; noEmit évite les sorties compilées. La lib DOM est requise pour les types publics core qui décrivent FaceCanvas, sans activer de navigateur. Le contrôle inclut la fermeture de types et node_modules, pas seulement quatre fichiers physiques.",
+      "condition": "Pas de -p packages/core-geometry (rootDir src exclut le harness), ni typecheck root prétendument couvrant experiments : workspaces limités apps/* et packages/*. Ne pas lancer npm test ou build root pour ce POC. Node réel doit satisfaire aussi engines Vitest ^22.12 || ^24 || >=26, plus étroit que >=22.12 racine."
+    },
+    {
+      "id": "HAR-13",
+      "subject": "TSX cache, configuration et hooks",
+      "finding": "Le point . de TSX4.19.4 expose loader.mjs qui charge les hooks ESM et enregistre CJS. Les deux branches choisissent Map au lieu de FileCache si TSX_DISABLE_CACHE est truthy. Sans cette valeur, FileCache crée/lit le cache tmpdir/tsx-<uid>, écrit et supprime des anciens caches automatiquement. Le chargement de config utilise getTsconfig() depuis cwd par défaut.",
+      "condition": "Si option retenue : TSX_DISABLE_CACHE=1 dans env explicite et TSX_TSCONFIG_PATH fixé au tsconfig core déjà revu (pas fixture/env hérité). Aucun nouveau tsconfig. Cela ne transforme pas ce config package en couverture de types du harness ; garder CMD-TSC. Hooks globaux, process.setSourceMapsEnabled et instance loader Node restent à intégrer au modèle de confiance."
+    },
+    {
+      "id": "HAR-14",
+      "subject": "TSX IPC et get-tsconfig",
+      "finding": "Les clients ESM et CJS appellent immédiatement net.createConnection vers tmpdir/tsx-<uid>/<ppid>.pipe et absorbent erreur. get-tsconfig.createFilesMatcher évalue isFsCaseSensitive ; en branche de secours il crée puis supprime un fichier .is-fs-case-sensitive-test-<pid>, dans cwd ou tmpdir. Sur un chemin à casse inversée absent il peut se limiter à existsSync, sans garantie générale.",
+      "condition": "Ne pas qualifier TSX de sans réseau/IPC/écriture/nettoyage. Aucun CLI TSX lancé ici, donc son serveur IPC CLI n’est pas une obligation de cette option ; la tentative du client loader existe malgré cela. Si la règle interdit toute tentative IPC ou suppression, écarter cette option plutôt qu’autoriser silencieusement ces effets."
+    },
+    {
+      "id": "HAR-15",
+      "subject": "Bundle esbuild et Node direct",
+      "finding": "Le binaire Linux x64 0.25.12 est installé comme fichier ordinaire non symlink ; seules présence/empreinte ont été constatées. Les flags tsconfig-raw/bundle/platform/format/target/packages/tree-shaking/legal-comments sont étayés par le générateur de flags du paquet installé. Le code natif n’a pas été lu ni exécuté ; comportement stdout et résolution restent hypothèses de faisabilité à vérifier après autorisation.",
+      "condition": "Pas de --outfile ni --allow-overwrite. tsconfig-raw={} explicite vise à éviter config auto/extends, mais ne prouve pas une trace exhaustive des lectures du binaire. Entrée unique future node:test, import core PUBLIC, pas bundle de Vitest/TSX. Capturer stdout borné avant écriture exclusive, vérifier imports externes limités aux builtins Node autorisés et absence d’actifs externes inattendus ; artefact hashé rendu non mutable avant Node. Un échec de résolution n’autorise ni deep import ni copie manuelle ni installation. Pas de source/config6e créée."
+    }
+  ],
+  "sixth_config": {
+    "indispensable_now": false,
+    "created": false,
+    "candidate_path": "experiments/studio/g2-2d-identities/vitest.config.ts",
+    "requires_scope_extension_if_selected": true,
+    "reason": "Aucune indispensable pour commandes TSC explicites ou option bundle/Node. Variante Vitest dédiée à soumettre seulement si choisie pour déclarer envFile/cache/include/setup explicitement ; ne résout pas confinement OS."
+  },
+  "open_points": [
+    {
+      "id": "G2-HAR-A",
+      "owner": "A0/A6",
+      "question": "Autoriser et compter les écritures techniques inévitables du runner (jeton/cache/temp/logs) dans la racine session, avec repli au dépôt interdit ; aucun secret publié."
+    },
+    {
+      "id": "G2-HAR-B",
+      "owner": "A6",
+      "question": "Fournir preuve de confinement réseau/FS et ancrage parents à la version Node/environnement finale ; rien n’est attesté ici."
+    },
+    {
+      "id": "G2-HAR-C",
+      "owner": "A0/A6",
+      "question": "Préciser budget processus infrastructure versus unique relecture, et sens de sans serveur vis-à-vis middleware interne Vitest."
+    },
+    {
+      "id": "G2-HAR-D",
+      "owner": "A0/A3/A5",
+      "question": "Fixer interface de phases et invocations indépendantes sans enfant imbriqué, inventaire des tests sans masquage et oracles avant code autorisé."
+    },
+    {
+      "id": "G2-HAR-E",
+      "owner": "A0/A6/A5",
+      "question": "Soumettre avant accord la variante bundle natif + Node pur et l’extension unique supervisor.py en Python stdlib ; compter l’artefact .mjs et sorties, définir protocole stdin/stdout/modes/relecture et revoir ancrage FS/réseau/supervision. Rien n’est créé ni adopté."
+    }
+  ],
+  "executed_checks": {
+    "git_read_only": true,
+    "text_hashes_and_json_report_generation": true,
+    "vitest_cli_or_help": false,
+    "typecheck": false,
+    "tests": false,
+    "runtime_imports": false,
+    "poc": false,
+    "db_or_services": false,
+    "network_probe": false
+  },
+  "next_action": "Relecture A6 puis ajustement A0 de la question de périmètre avant publication ; conserver le blocage des garanties non démontrées. Aucune exécution par cette remise.",
+  "native_binary": {
+    "path": "node_modules/@esbuild/linux-x64/bin/esbuild",
+    "regular_file": true,
+    "symlink": false,
+    "mode": "0o700",
+    "size": 10358936,
+    "sha256": "bab29b2ca7a9e89b67cf720b77b2d743f9f31f5cf0d5bd74ee8c8de30ced7014",
+    "executed": false,
+    "meaning": "Présence/empreinte du binaire optionnel Linux x64 installé ; code Go natif non audité ni ABI/CLI exécuté. Requalifier plateforme au futur lancement ; aucun téléchargement de repli."
+  },
+  "comparison": [
+    {
+      "option": "Vitest5",
+      "fifth_source_test_api": "vitest",
+      "benefit": "Sélection des fichiers et options existantes étayées ; résolveur TS public déjà prévu par runner.",
+      "limits": "Jeton persistant même no-api, cache et rapports possibles, .env du root, middleware Vite, infrastructure multi-processus à qualifier.",
+      "position": "Candidate possible seulement avec ces effets explicitement autorisés/bornés, pas option privilégiée pour éviter hooks."
+    },
+    {
+      "option": "Node --import tsx + node:test",
+      "fifth_source_test_api": "node:test + node:assert/strict",
+      "benefit": "Pas de Vitest ni jeton/report Vite ; pas de nouvelle dépendance/config obligatoire. TSX_DISABLE_CACHE=1 évite FileCache et son nettoyage dans branches ESM+CJS.",
+      "limits": "Hooks ESM+CJS globaux, sourceMaps, recherche config si chemin non fixé, tentative IPC locale à l’import et processus/threads de transformation esbuild ; son get-tsconfig peut sonder la casse par écriture/suppression. Pas zero-IO ni zero-IPC garanti.",
+      "position": "Option conservée, non privilégiée après lecture de ces effets."
+    },
+    {
+      "option": "Binaire esbuild existant → stdout borné → artefact inédit → Node direct + node:test",
+      "fifth_source_test_api": "node:test + node:assert/strict",
+      "benefit": "Évite hooks/runtime/caches Vitest et TSX ; aucune config6e ni package nouveau ; origine publique et build tracé. Compilation et exécution séparables sous supervision externe.",
+      "limits": "Artefact dérivé à autoriser/compter ; résolution et absence d’effets natifs non exécutées ; code natif Go non audité ; stdout/FS/config/plateforme à borner ; Node ne confine pas le réseau/FS à lui seul.",
+      "position": "À privilégier pour relecture A6 et question de périmètre A0, sans accord ou code acquis."
+    }
+  ],
+  "updated_utc": "2026-10-18T13:47:51.646859+00:00",
+  "sixth_source_proposal": {
+    "path": "experiments/studio/g2-2d-identities/supervisor.py",
+    "language": "Python stdlib uniquement, aucun package nouveau",
+    "status": "PROPOSE_AVANT_ACCORD_NON_CREE",
+    "necessity": "Pour la variante bundle natif + Node pur recommandée à revue, aucune primitive de supervision existante n’est attestée. Un superviseur versionné constitue l’extension concrète proposée pour création exclusive, comptage stdout et délai ; il ne faut pas prétendre ces garanties réalisées par les cinq sources seules.",
+    "replaces": "Extension supervisor.py à soumettre plutôt qu’une configuration Vitest ; aucune nécessité de config6e avec la variante bundle.",
+    "responsibility": "Seul propriétaire des écritures de session et de la supervision des enfants. Node reçoit données synthétiques bornées via stdin/argv fixe, calcule/teste/sérialise vers stdout ; pas d’accès direct maîtrisé par confiance seule à des chemins.",
+    "proposed_operations": [
+      "Ouvrir/ancrer la racine approuvée et chaque parent via descripteurs de répertoires ; chemins relatifs à dir_fd, composants sans slash utilisateur ; Linux os.open/os.mkdir avec dir_fd et O_DIRECTORY/O_NOFOLLOW selon disponibilité à confirmer avant exécution.",
+      "Créer session inédite sous racine autorisée, puis chaque sortie exclusivement avec O_CREAT|O_EXCL|O_NOFOLLOW, fstat du handle ; refuser entrée/destination existante, lien, dépassement et nom non fixé. Pas de rename écrasant ni suppression automatique.",
+      "Appeler binaire esbuild puis Node avec argv fixes et environnement de zéro, shell=False ; drainer stdout/stderr par flux bornés ; compter tous les artefacts/JSON/logs contre limites avant création.",
+      "Horloge monotone et échéance globale incluant compilation/import/calcul/relecture selon périmètre ratifié ; gérer fin, signal, échec et descendants dans groupe ou cgroup propre, jamais processus partagé.",
+      "Écrire uniquement après résultat complet, code0 et contrôles, garder tout fichier incomplet non promu après erreur/timeout ; anciennes révisions et source sont en lecture seule.",
+      "Relecture indépendante lors d’une invocation ultérieure, sans enfant de relecture imbriqué dans Node ; contrat de modes et preuve de fin du producteur à préciser avant code."
+    ],
+    "limits": [
+      "Faisabilité de stdlib dir_fd sur Linux, pas validation des primitives/plateforme actuelle : aucun POC ni script superviseur écrit ou exécuté.",
+      "dir_fd ne retire pas les privilèges des autres writers ni les courses de renommage de parents hors du modèle ; A6 doit garantir l’ancrage stable de la racine/private UID/montage et absence d’autres writers. Pas d’atomicité multi-fichiers ou de durabilité matérielle affirmée.",
+      "Python ne bloque pas le réseau de Node par un objet env ; refus réseau OS toujours précondition, aucun réseau attesté ici.",
+      "Le superviseur peut lui-même bloquer sur IO/parse/signal ; durée de l’arbre et interruption finale requièrent contrôle OS/externe attesté. Aucun timer seul ou appel kill n’est déclaré garantie complète.",
+      "Version et capacités Python stdlib réellement disponibles à vérifier ultérieurement en contrôle autorisé ; aucune installation ni addon pour combler un manque."
+    ]
+  }
+}

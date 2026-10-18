@@ -1,0 +1,1752 @@
+{
+  "review": "A5 NEXT READY après203, delta documentaire PERF précis",
+  "observed_register": {
+    "path": "/workspace/work/mission003/repo/docs/workstreams/studio/task-register.json",
+    "sha256": "283a2b5a8a21e4ad358b697d18c9cf97c02859ec4f69f1f7d953fd3afa7c8778"
+  },
+  "reference_register_worktree_note": "Fichier partagé lu seulement, A0 reste unique écrivain ; statuts photographiés et non appliqués.",
+  "qualification_input": {
+    "path": "/workspace/work/resume496/agents/A5/203-QUALIFICATION-A5.json",
+    "sha256": "bc344feeb6d3656d1ba98812726520259898b00fb624e6e1b34133323351a3d9"
+  },
+  "exact45": true,
+  "items": [
+    {
+      "id": "X.1-01",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Fixture documentaire partielle S1 ; Hachures/blocs/contraintes/courbes, sérialisation contrat et attentes complètes.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Hachures/blocs/contraintes/courbes, sérialisation contrat et attentes complètes."
+      ],
+      "next_concrete_action": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.1-02",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Fixture documentaire partielle S2 ; Plan de niveau pilote, croisements/références/hôtes et refus dans format exploitable.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Plan de niveau pilote, croisements/références/hôtes et refus dans format exploitable."
+      ],
+      "next_concrete_action": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.1-03",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Fixture documentaire partielle S3 ; Densité/superpositions/intersections, priorités égalité adoptées et traces algorithme.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Densité/superpositions/intersections, priorités égalité adoptées et traces algorithme."
+      ],
+      "next_concrete_action": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.1-04",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Fixture documentaire partielle S4 ; Structure/réseaux/composants adaptés immeuble ; pas validation réglementaire inventée.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Structure/réseaux/composants adaptés immeuble ; pas validation réglementaire inventée."
+      ],
+      "next_concrete_action": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.1-05",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Fixture documentaire partielle S5 ; Booléens/courbes/surfaces complexes représentatives, oracles topologiques et format stable.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Booléens/courbes/surfaces complexes représentatives, oracles topologiques et format stable."
+      ],
+      "next_concrete_action": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.1-06",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Fixture documentaire partielle S6 ; Dossiers/modèles/contrôles effectifs du contrat, sérialisation/manifeste hash et snapshots restaurables.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Dossiers/modèles/contrôles effectifs du contrat, sérialisation/manifeste hash et snapshots restaurables."
+      ],
+      "next_concrete_action": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.1-07",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Fixture documentaire partielle S7 ; États locaux versionnés, snapshots, protocole SW/quota/reconnexion exécutable après contrat.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "États locaux versionnés, snapshots, protocole SW/quota/reconnexion exécutable après contrat."
+      ],
+      "next_concrete_action": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.1-08",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "38 oracles positifs/négatifs et valeurs synthétiques disponibles ; références visuelles et tolérances non complètes.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Compléter captures de référence seulement sur banc autorisé, contrat adopté, sans transformer calcul synthétique en essai moteur.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.1-09",
+      "owner": "A5",
+      "observed_current_status": "À faire",
+      "original_preparation_status_proposed": "À faire",
+      "action_already_done": "Aucune instrumentation PERF01..10 produit exécutée dans cette mission.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Relever les dix définitions RT§18 puis préparer points de mesure par étape ; instrumentation exige lot applicatif distinct.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Dix définitions PERF extraites exactement et protocole instrumentation proposé par PERF, pas instrumentation ni mesure.",
+      "proposed_status_after": "En cours documentaire pour préparation instrumentation seulement, réalisationinstrumentation reste À faire",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.1-10",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Tailles illustratives, aucun engagement capacité mesuré.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Conserver tailles comme entrées de fixtures paramétrées, identifier appareil/build/caches sans annoncer capacité.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.2-01",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "15INV ont fiches positives/négatives documentaires A1 ; essais produit non réalisés.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/studio-141-fiches-v2.json",
+          "exists": true,
+          "sha256": "48c8aa1093bec1fda771961d4d0fb7827ba7e4775f72ed9afe6cf29feada2df3",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Lier chaque invariant aux oracles existants avec cas refus exact, puis exécution uniquement lot autorisé.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.2-02",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "D07 et NAV séparent droits approbation/publication ; aucun test serveur Studio.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/NAV-M004.json",
+          "exists": true,
+          "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Préparer doubles droits révoqués/pending/interprojets ; zéro engagement et état initial identique en refus.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.2-03",
+      "owner": "A5",
+      "observed_current_status": "À faire",
+      "original_preparation_status_proposed": "À faire",
+      "action_already_done": "Spécification garde runtime maintenue, aucun Studio runtime ici.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Lot A/B doit revalider enveloppe, contexte, droits, version, géométrie au runtime malgré types ; négatif payload direct hors Registry.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "À faire",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.2-04",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Conditions éliminatoires individualisées dans38oracles.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Tracer refus livraison avec ID défaut, preuve et propriétaire ; performance favorable ne neutralise jamais défaut.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.3-01",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "141fiches et liens candidats existants, pas couverture de réalisation.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/studio-141-fiches-v2.json",
+          "exists": true,
+          "sha256": "48c8aa1093bec1fda771961d4d0fb7827ba7e4775f72ed9afe6cf29feada2df3",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Réutiliser sans renumérotation, garder candidats non adoptés et lacunes par EX/INV/IF/AC.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.3-02",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "38TEST et9NAV reliés aux corpus ; décisions/ADR ouvertes distinctes.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Compléter obligation→lot→TEST/NAV→preuve→DEC/ADR avec nature statique/exécutée et SHA exact.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.3-03",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "141fiches documentaires existantes et revue M004, aucune capacité acceptée.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/mission004/agents/A5/REVUE-M17-M21-M24.json",
+          "exists": true,
+          "sha256": "56565e77aac291e8d3557f31bd0263a1b630ef9611be23ba69923d5ba128006c",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Compléter individuellement preuves/contrepreuves ; ne pas compter champs présents comme contrat exécuté.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.4-01",
+      "owner": "A5",
+      "observed_current_status": "À faire",
+      "original_preparation_status_proposed": "À faire",
+      "action_already_done": "REP07 montre absence frontières Studio ; PR152 autre périmètre non fusionné.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/REVUE-CLAUDE-REP-A5.json",
+          "exists": true,
+          "sha256": "4ea23df97163186179e86077eaf494e5612a6dffaf015e3cf813bb5e67dc9058",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Adopter interfaces publiques et règles Studio puis tests de témoins résolution/alias/import dynamique ; code non autorisé ici.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "À faire",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.4-02",
+      "owner": "A5",
+      "observed_current_status": "À faire",
+      "original_preparation_status_proposed": "À faire",
+      "action_already_done": "Workflows existants distincts de nouveaux contrôles Studio.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R4-M09-RAPPROCHEMENT-A5.json",
+          "exists": true,
+          "sha256": "63b873028405bf565b374b4e462003c8ab9482b069a3e7e591ee8c125e9a01fe",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "A6 propose job pur et périmètres sans SQL ; accord workflow et frontières avant intégration.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "À faire",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.4-03",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "M08 distingue assertions/source, autres opérations, absences bornées et exécution.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/M08-UNITE-065-092-QA-RESERVES-A5.json",
+          "exists": true,
+          "sha256": "30c00d3c485ff3f1bd81740bed2eac96a6ef67ec6e8a2612ac59cb7aec6f0dfa",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Conserver cette partition par nouveau SHA, aucune CI verte assimilée recette métier.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.5-01",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Checkpoints existants A0 ; qualification A5 n’écrit pas fichiers partagés.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/M08-REVUE-ANNOTATIONS-A5.json",
+          "exists": true,
+          "sha256": "caab70c424f98a510a9d91e29c33c89588bbd4bfbd53f455e53acef1b88c0a9a",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "A0 lie cette remise au checkpoint et code réellement testé, gardant auteur/run distincts.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "X.5-02",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Contrat de preuve versionnée appliqué aux revues ; aucun succès Studio.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/M08-UNITE-094-124-QA-RESERVES-A5.json",
+          "exists": true,
+          "sha256": "a080b506052304177e3315ed6759fb2ef51fec457463a30a01df68e6b3d545c8",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Exiger SHA/build/runId/date/corpus/env/verdict/oracle et revue, distinguer Vérifié documentaire de capacité acceptée.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "MES-01",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Appareil/navigateur/GPU/réseau/caches à consigner comme valeurs réellement observées, jamais modèle déclaré par défaut.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Aucune mesure réelle nouvelle, aucune valeur appareil ou budget inventée."
+      ],
+      "next_concrete_action": "A5/A6 rédigent protocole observable avant mesure autorisée ; A0 seul acte seuil DEC13 si nécessaire.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "MES-02",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Build/SHA/hash corpus/protocole répétitions/distribution/seuil adopté ; chaque résultat brut conservé.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Aucune mesure réelle nouvelle, aucune valeur appareil ou budget inventée."
+      ],
+      "next_concrete_action": "A5/A6 rédigent protocole observable avant mesure autorisée ; A0 seul acte seuil DEC13 si nécessaire.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "MES-03",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Séparer octets transférés, activation, calcul, renduCPU/GPU, invalidation et mémoire résiduelle ; pas FPS moyen comme substitut.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Aucune mesure réelle nouvelle, aucune valeur appareil ou budget inventée."
+      ],
+      "next_concrete_action": "A5/A6 rédigent protocole observable avant mesure autorisée ; A0 seul acte seuil DEC13 si nécessaire.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "MES-04",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "DEC13 non adopté pour budgets : A0 détenteur arbitrage, déclencheur avant critère performance dépendant ; autres critères progressent.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Aucune mesure réelle nouvelle, aucune valeur appareil ou budget inventée."
+      ],
+      "next_concrete_action": "A5/A6 rédigent protocole observable avant mesure autorisée ; A0 seul acte seuil DEC13 si nécessaire.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "MES-05",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Comparer cibles snapping/picking exactes, géométrie/dimensions/quantités/historique/exports avant-après ; gain sans égalité éliminé.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Aucune mesure réelle nouvelle, aucune valeur appareil ou budget inventée."
+      ],
+      "next_concrete_action": "A5/A6 rédigent protocole observable avant mesure autorisée ; A0 seul acte seuil DEC13 si nécessaire.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "BLOC-01",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Double autorité et référencecorrompue : A2 modèle écrivain unique, refus atomique avant engagement.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M12:attendus pour préparer",
+        "M15:corpus",
+        "M02:base sûre",
+        "M16–M25:capacités du scénario à exécuter"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Transformer prescription en cas de non-régression du lot autorisé ; conserver défaut ouvert jusqu’à résultat réel et revue.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "BLOC-02",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Projet source/cible étranger et droits révoqués : refus non divulgateur serveur, aucune donnée mutée.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M12:attendus pour préparer",
+        "M15:corpus",
+        "M02:base sûre",
+        "M16–M25:capacités du scénario à exécuter"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Transformer prescription en cas de non-régression du lot autorisé ; conserver défaut ouvert jusqu’à résultat réel et revue.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "BLOC-03",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Même requestId rejoué et conflit baseRevision : une seule application, choix explicite et brouillon conservé.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M12:attendus pour préparer",
+        "M15:corpus",
+        "M02:base sûre",
+        "M16–M25:capacités du scénario à exécuter"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Transformer prescription en cas de non-régression du lot autorisé ; conserver défaut ouvert jusqu’à résultat réel et revue.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "BLOC-04",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Résultat worker/version source périmé : rejet avant commande, aucune avancée révision.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M12:attendus pour préparer",
+        "M15:corpus",
+        "M02:base sûre",
+        "M16–M25:capacités du scénario à exécuter"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Transformer prescription en cas de non-régression du lot autorisé ; conserver défaut ouvert jusqu’à résultat réel et revue.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "BLOC-05",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Publication porte exactement manifeste approuvé ; modifier un octet/source/révision invalide approbation.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M12:attendus pour préparer",
+        "M15:corpus",
+        "M02:base sûre",
+        "M16–M25:capacités du scénario à exécuter"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Transformer prescription en cas de non-régression du lot autorisé ; conserver défaut ouvert jusqu’à résultat réel et revue.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "BLOC-06",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Défaut éliminatoire ouvert bloque livraison même FPS favorable ; A0 garde état et acte séparé.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M12:attendus pour préparer",
+        "M15:corpus",
+        "M02:base sûre",
+        "M16–M25:capacités du scénario à exécuter"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Transformer prescription en cas de non-régression du lot autorisé ; conserver défaut ouvert jusqu’à résultat réel et revue.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "BLOC-07",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Non-applicabilité argumentée par texte/source/périmètre, validation responsable tracée ; aucune exigence essentielle retirée.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M12:attendus pour préparer",
+        "M15:corpus",
+        "M02:base sûre",
+        "M16–M25:capacités du scénario à exécuter"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Transformer prescription en cas de non-régression du lot autorisé ; conserver défaut ouvert jusqu’à résultat réel et revue.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "BLOC-08",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Hors périmètre listé explicitement, présence CI ≠ scénario réussi ; conserver non exécuté/skipped/échec distincts.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M12:attendus pour préparer",
+        "M15:corpus",
+        "M02:base sûre",
+        "M16–M25:capacités du scénario à exécuter"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "Transformer prescription en cas de non-régression du lot autorisé ; conserver défaut ouvert jusqu’à résultat réel et revue.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "RISQ-01",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Risque identifié : Vérifier le traitement du risque « Studio réduit à un raccourci vers l’Atelier » : Lot I, routes propres, absence de prérequis Parcours et NAV-002. Préparation oracle seulement, traitement produit non démontré.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/REVUE-CLAUDE-REP-A5.json",
+          "exists": true,
+          "sha256": "4ea23df97163186179e86077eaf494e5612a6dffaf015e3cf813bb5e67dc9058",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "A2/A3 lotI après gate/autorisation : contrepreuve ciblée et rejeu oracle existant ; A5 recette sans transformer omission en succès.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "RISQ-02",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Risque identifié : Vérifier le traitement du risque « Barre latérale supprimée par un ancien mode immersif » : Ne pas réutiliser cet effet automatiquement ; NAV-008 et recette mobile. Préparation oracle seulement, traitement produit non démontré. REP05 classeimmersive globale statique, NAV008 ; aucune preuve comportement Studio.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/REVUE-CLAUDE-REP-A5.json",
+          "exists": true,
+          "sha256": "4ea23df97163186179e86077eaf494e5612a6dffaf015e3cf813bb5e67dc9058",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "A2/A3 lotI après gate/autorisation : contrepreuve ciblée et rejeu oracle existant ; A5 recette sans transformer omission en succès.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "RISQ-03",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Risque identifié : Vérifier le traitement du risque « Mauvais projet dans le bandeau ou la commande » : Résolution de contexte partagée ; URL et appartenance vérifiées côté serveur. Préparation oracle seulement, traitement produit non démontré.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/REVUE-CLAUDE-REP-A5.json",
+          "exists": true,
+          "sha256": "4ea23df97163186179e86077eaf494e5612a6dffaf015e3cf813bb5e67dc9058",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "A2/A3 lotI après gate/autorisation : contrepreuve ciblée et rejeu oracle existant ; A5 recette sans transformer omission en succès.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "RISQ-04",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Risque identifié : Vérifier le traitement du risque « Données ou historique dupliqués entre Atelier et Studio » : A.1/A.5 et transfert explicite d’autorité lors de R. Préparation oracle seulement, traitement produit non démontré.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "A2/A3 lotA après gate/autorisation : contrepreuve ciblée et rejeu oracle existant ; A5 recette sans transformer omission en succès.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "RISQ-05",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Risque identifié : Vérifier le traitement du risque « Tous les moteurs téléchargés malgré une barre réduite » : B.3, vérification imports/bundles/précache et TEST-016. Préparation oracle seulement, traitement produit non démontré.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/REVUE-CLAUDE-REP-A5.json",
+          "exists": true,
+          "sha256": "4ea23df97163186179e86077eaf494e5612a6dffaf015e3cf813bb5e67dc9058",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "A2/A3 lotB après gate/autorisation : contrepreuve ciblée et rejeu oracle existant ; A5 recette sans transformer omission en succès.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "RISQ-06",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Risque identifié : Vérifier le traitement du risque « Snapping ou picking altéré par optimisation » : Corpus X et TEST-022/023, comparaison avec oracle. Préparation oracle seulement, traitement produit non démontré.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "A2/A3 lotC après gate/autorisation : contrepreuve ciblée et rejeu oracle existant ; A5 recette sans transformer omission en succès.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "RISQ-07",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Risque identifié : Vérifier le traitement du risque « Worker en échec ou résultat périmé » : Lot D, TEST-014/015/037, pas d’engagement anticipé. Préparation oracle seulement, traitement produit non démontré.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/REVUE-CLAUDE-REP-A5.json",
+          "exists": true,
+          "sha256": "4ea23df97163186179e86077eaf494e5612a6dffaf015e3cf813bb5e67dc9058",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "A2/A3 lotD après gate/autorisation : contrepreuve ciblée et rejeu oracle existant ; A5 recette sans transformer omission en succès.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "RISQ-08",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Risque identifié : Vérifier le traitement du risque « Dossier publié différent du contenu approuvé » : E.4, manifeste immuable, TEST-030/038. Préparation oracle seulement, traitement produit non démontré.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "A2/A3 lotE après gate/autorisation : contrepreuve ciblée et rejeu oracle existant ; A5 recette sans transformer omission en succès.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "RISQ-09",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Risque identifié : Vérifier le traitement du risque « Format promis au-delà de la couverture » : E.6, matrice par sens/version/entité et rapport de pertes. Préparation oracle seulement, traitement produit non démontré. IFC import proxy distinct paramétrique et certification ; matrice sens/version/entité/pertes obligatoire.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "A2/A3 lotE après gate/autorisation : contrepreuve ciblée et rejeu oracle existant ; A5 recette sans transformer omission en succès.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    },
+    {
+      "id": "RISQ-10",
+      "owner": "A5",
+      "observed_current_status": "En cours",
+      "original_preparation_status_proposed": "En cours",
+      "action_already_done": "Risque identifié : Vérifier le traitement du risque « Perte lors de migration ou changement de cache » : R, simulation, TEST-034/036, restauration et gestion des files. Préparation oracle seulement, traitement produit non démontré.",
+      "proofs_reused": [
+        {
+          "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+          "exists": true,
+          "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+          "nature": "Réemploi documentaire candidat, pas preuve réalisation"
+        }
+      ],
+      "prerequisites": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "missing": [
+        "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
+      ],
+      "next_concrete_action": "A2/A3 lotR après gate/autorisation : contrepreuve ciblée et rejeu oracle existant ; A5 recette sans transformer omission en succès.",
+      "local_trigger": {
+        "owner": "A5",
+        "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
+      },
+      "new_delta_here": "Aucun nouveau résultat produit ; réemploi des préparations sans refaire matrices/corpus.",
+      "proposed_status_after": "En cours",
+      "verified_or_accepted_proposed": false
+    }
+  ],
+  "concrete_missing_ready_executed": {
+    "task": "X.1-09 / M15-M26",
+    "nature": "Extraction normative des10définitions REF02§18 et protocole de points d’instrumentation candidat",
+    "source": {
+      "path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "sha256": "98479152a8fd31b5871bc8bb3fe72aeeb5beb5929190b04a0e9ff167dbf91b5d",
+      "blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32"
+    },
+    "definitions_and_protocols": [
+      {
+        "id": "PERF-01",
+        "source_exact_cells": [
+          "PERF-01",
+          "Ouverture de Studio jusqu’à la première action utile.",
+          "Cache froid/chaud, réseau, CPU, appareil.",
+          "p50/p95 avec limite décidée."
+        ],
+        "source_xml_table_row_1based": 222,
+        "instrumentation_candidate_not_implemented": {
+          "start": "navigation/route choisie",
+          "end": "première action métier réellement disponible ; shell peint ne suffit pas",
+          "negative_oracle": "chargement échoué ou droits refusés : erreur récupérable, jamais action utile comptée",
+          "data_fields": [
+            "SHA/build",
+            "runId/date",
+            "fixtureHash/corpusVersion",
+            "contrat/policyVersion",
+            "appareil/OS/navigateur/GPU réellement observés",
+            "réseau/cache réellement observés",
+            "répétitions/protocole",
+            "événements bruts début/fin",
+            "distribution/statistiques prescrites",
+            "résultat géométrique/cible/identités",
+            "erreurs/abandons/skipped séparés"
+          ],
+          "numeric_budget": null,
+          "budget_owner": "A0 pour décisionDEC13 avecA5/A6",
+          "budget_trigger": "Avant verdict performance qui exige limite ; préparation horodatages indépendante continue.",
+          "execution_state": "Non exécuté"
+        }
+      },
+      {
+        "id": "PERF-02",
+        "source_exact_cells": [
+          "PERF-02",
+          "Activation d’outil simple et spécialisé.",
+          "Bundle, dépendances, worker, première réponse.",
+          "Temps d’activation + bytes + mémoire."
+        ],
+        "source_xml_table_row_1based": 223,
+        "instrumentation_candidate_not_implemented": {
+          "start": "demande explicite outil par Registry",
+          "end": "outil prêt ET première réponse valide, transferts et mémoire séparés",
+          "negative_oracle": "worker/bundle absent : échec explicite, aucun état prêt fictif",
+          "data_fields": [
+            "SHA/build",
+            "runId/date",
+            "fixtureHash/corpusVersion",
+            "contrat/policyVersion",
+            "appareil/OS/navigateur/GPU réellement observés",
+            "réseau/cache réellement observés",
+            "répétitions/protocole",
+            "événements bruts début/fin",
+            "distribution/statistiques prescrites",
+            "résultat géométrique/cible/identités",
+            "erreurs/abandons/skipped séparés"
+          ],
+          "numeric_budget": null,
+          "budget_owner": "A0 pour décisionDEC13 avecA5/A6",
+          "budget_trigger": "Avant verdict performance qui exige limite ; préparation horodatages indépendante continue.",
+          "execution_state": "Non exécuté"
+        }
+      },
+      {
+        "id": "PERF-03",
+        "source_exact_cells": [
+          "PERF-03",
+          "Pointeur → preview visible.",
+          "Périphérique, FPS, densité de scène.",
+          "Latence de bout en bout."
+        ],
+        "source_xml_table_row_1based": 224,
+        "instrumentation_candidate_not_implemented": {
+          "start": "événement pointeur horodaté banc",
+          "end": "première frame preview correspondante observée",
+          "negative_oracle": "événement remplacé/périmé : ne pas attribuer preview ancienne au nouveau geste",
+          "data_fields": [
+            "SHA/build",
+            "runId/date",
+            "fixtureHash/corpusVersion",
+            "contrat/policyVersion",
+            "appareil/OS/navigateur/GPU réellement observés",
+            "réseau/cache réellement observés",
+            "répétitions/protocole",
+            "événements bruts début/fin",
+            "distribution/statistiques prescrites",
+            "résultat géométrique/cible/identités",
+            "erreurs/abandons/skipped séparés"
+          ],
+          "numeric_budget": null,
+          "budget_owner": "A0 pour décisionDEC13 avecA5/A6",
+          "budget_trigger": "Avant verdict performance qui exige limite ; préparation horodatages indépendante continue.",
+          "execution_state": "Non exécuté"
+        }
+      },
+      {
+        "id": "PERF-04",
+        "source_exact_cells": [
+          "PERF-04",
+          "Snapping/ciblage correct.",
+          "100 / 10 000 / 100 000 primitives illustratives, densité variable.",
+          "p50/p95/p99 ET conformité géométrique."
+        ],
+        "source_xml_table_row_1based": 225,
+        "instrumentation_candidate_not_implemented": {
+          "start": "requête snapping/picking sur scène versionnée",
+          "end": "résultat comparé oracle cible/identité/coordonnées avant statistiques",
+          "negative_oracle": "cible fausse ou ordre ambigu non décidé : rejet du résultat, pas gain accepté",
+          "data_fields": [
+            "SHA/build",
+            "runId/date",
+            "fixtureHash/corpusVersion",
+            "contrat/policyVersion",
+            "appareil/OS/navigateur/GPU réellement observés",
+            "réseau/cache réellement observés",
+            "répétitions/protocole",
+            "événements bruts début/fin",
+            "distribution/statistiques prescrites",
+            "résultat géométrique/cible/identités",
+            "erreurs/abandons/skipped séparés"
+          ],
+          "numeric_budget": null,
+          "budget_owner": "A0 pour décisionDEC13 avecA5/A6",
+          "budget_trigger": "Avant verdict performance qui exige limite ; préparation horodatages indépendante continue.",
+          "execution_state": "Non exécuté"
+        }
+      },
+      {
+        "id": "PERF-05",
+        "source_exact_cells": [
+          "PERF-05",
+          "Navigation 2D/3D.",
+          "Plans annotés, modèles BIM mixtes, GPU réel.",
+          "CPU/GPU séparés, trames manquées."
+        ],
+        "source_xml_table_row_1based": 226,
+        "instrumentation_candidate_not_implemented": {
+          "start": "geste navigation 2D/3D prescrit",
+          "end": "frames observées avec CPU/GPU séparés et état caméra",
+          "negative_oracle": "WebGL indisponible : état indisponible, aucun FPS0 intégré comme résultat supporté",
+          "data_fields": [
+            "SHA/build",
+            "runId/date",
+            "fixtureHash/corpusVersion",
+            "contrat/policyVersion",
+            "appareil/OS/navigateur/GPU réellement observés",
+            "réseau/cache réellement observés",
+            "répétitions/protocole",
+            "événements bruts début/fin",
+            "distribution/statistiques prescrites",
+            "résultat géométrique/cible/identités",
+            "erreurs/abandons/skipped séparés"
+          ],
+          "numeric_budget": null,
+          "budget_owner": "A0 pour décisionDEC13 avecA5/A6",
+          "budget_trigger": "Avant verdict performance qui exige limite ; préparation horodatages indépendante continue.",
+          "execution_state": "Non exécuté"
+        }
+      },
+      {
+        "id": "PERF-06",
+        "source_exact_cells": [
+          "PERF-06",
+          "Modif. objet architectural.",
+          "Mur hôte, ouvertures, dépendances, index.",
+          "Coût d’invalidation vs reconstruction totale."
+        ],
+        "source_xml_table_row_1based": 227,
+        "instrumentation_candidate_not_implemented": {
+          "start": "commande architecture validée sur hôte et dépendances",
+          "end": "indices/rendu/quantités devenus cohérents à même révision",
+          "negative_oracle": "résultat dépendance ancien : jamais engagé comme révision courante",
+          "data_fields": [
+            "SHA/build",
+            "runId/date",
+            "fixtureHash/corpusVersion",
+            "contrat/policyVersion",
+            "appareil/OS/navigateur/GPU réellement observés",
+            "réseau/cache réellement observés",
+            "répétitions/protocole",
+            "événements bruts début/fin",
+            "distribution/statistiques prescrites",
+            "résultat géométrique/cible/identités",
+            "erreurs/abandons/skipped séparés"
+          ],
+          "numeric_budget": null,
+          "budget_owner": "A0 pour décisionDEC13 avecA5/A6",
+          "budget_trigger": "Avant verdict performance qui exige limite ; préparation horodatages indépendante continue.",
+          "execution_state": "Non exécuté"
+        }
+      },
+      {
+        "id": "PERF-07",
+        "source_exact_cells": [
+          "PERF-07",
+          "Booléen exact.",
+          "Formes simples, cas dégénérés, BRep fournisseurs.",
+          "Chargement, calcul, mémoire, erreurs, précision."
+        ],
+        "source_xml_table_row_1based": 228,
+        "instrumentation_candidate_not_implemented": {
+          "start": "demande noyau exact identifiée",
+          "end": "réponse géométrique validée au contrat et précision annoncée",
+          "negative_oracle": "cas dégénéré/timeout/erreur : refus atomique sans modification du modèle",
+          "data_fields": [
+            "SHA/build",
+            "runId/date",
+            "fixtureHash/corpusVersion",
+            "contrat/policyVersion",
+            "appareil/OS/navigateur/GPU réellement observés",
+            "réseau/cache réellement observés",
+            "répétitions/protocole",
+            "événements bruts début/fin",
+            "distribution/statistiques prescrites",
+            "résultat géométrique/cible/identités",
+            "erreurs/abandons/skipped séparés"
+          ],
+          "numeric_budget": null,
+          "budget_owner": "A0 pour décisionDEC13 avecA5/A6",
+          "budget_trigger": "Avant verdict performance qui exige limite ; préparation horodatages indépendante continue.",
+          "execution_state": "Non exécuté"
+        }
+      },
+      {
+        "id": "PERF-08",
+        "source_exact_cells": [
+          "PERF-08",
+          "Génération documentaire.",
+          "Détails, vues, feuilles multi-sources, PDF/DXF.",
+          "Temps, annulation, export fidèle."
+        ],
+        "source_xml_table_row_1based": 229,
+        "instrumentation_candidate_not_implemented": {
+          "start": "génération d’un manifeste source immuable",
+          "end": "document exporté comparé aux sources/version/oracle",
+          "negative_oracle": "annulation ou révision changée : pas publication/engagement du résultat obsolète",
+          "data_fields": [
+            "SHA/build",
+            "runId/date",
+            "fixtureHash/corpusVersion",
+            "contrat/policyVersion",
+            "appareil/OS/navigateur/GPU réellement observés",
+            "réseau/cache réellement observés",
+            "répétitions/protocole",
+            "événements bruts début/fin",
+            "distribution/statistiques prescrites",
+            "résultat géométrique/cible/identités",
+            "erreurs/abandons/skipped séparés"
+          ],
+          "numeric_budget": null,
+          "budget_owner": "A0 pour décisionDEC13 avecA5/A6",
+          "budget_trigger": "Avant verdict performance qui exige limite ; préparation horodatages indépendante continue.",
+          "execution_state": "Non exécuté"
+        }
+      },
+      {
+        "id": "PERF-09",
+        "source_exact_cells": [
+          "PERF-09",
+          "Mémoire longue session.",
+          "Changement d’outils, fermer/réouvrir.",
+          "Pic, résiduelle, absence de fuite."
+        ],
+        "source_xml_table_row_1based": 230,
+        "instrumentation_candidate_not_implemented": {
+          "start": "séquence outils/fermetures/réouvertures versionnée",
+          "end": "échantillons pic et résiduelle par phase, ressources connues relâchées",
+          "negative_oracle": "ressources retained ou perte données : défaut conservé même moyenne favorable",
+          "data_fields": [
+            "SHA/build",
+            "runId/date",
+            "fixtureHash/corpusVersion",
+            "contrat/policyVersion",
+            "appareil/OS/navigateur/GPU réellement observés",
+            "réseau/cache réellement observés",
+            "répétitions/protocole",
+            "événements bruts début/fin",
+            "distribution/statistiques prescrites",
+            "résultat géométrique/cible/identités",
+            "erreurs/abandons/skipped séparés"
+          ],
+          "numeric_budget": null,
+          "budget_owner": "A0 pour décisionDEC13 avecA5/A6",
+          "budget_trigger": "Avant verdict performance qui exige limite ; préparation horodatages indépendante continue.",
+          "execution_state": "Non exécuté"
+        }
+      },
+      {
+        "id": "PERF-10",
+        "source_exact_cells": [
+          "PERF-10",
+          "Travail hors ligne.",
+          "Profils en cache, interruption/sync.",
+          "Disponibilité réelle et données récupérables."
+        ],
+        "source_xml_table_row_1based": 231,
+        "instrumentation_candidate_not_implemented": {
+          "start": "état cache attesté puis interruption prescrite",
+          "end": "actions réellement disponibles et données récupérées après reprise",
+          "negative_oracle": "profil non cached ou conflit : refus explicite et brouillon conservé, pas offline déclaré par icône",
+          "data_fields": [
+            "SHA/build",
+            "runId/date",
+            "fixtureHash/corpusVersion",
+            "contrat/policyVersion",
+            "appareil/OS/navigateur/GPU réellement observés",
+            "réseau/cache réellement observés",
+            "répétitions/protocole",
+            "événements bruts début/fin",
+            "distribution/statistiques prescrites",
+            "résultat géométrique/cible/identités",
+            "erreurs/abandons/skipped séparés"
+          ],
+          "numeric_budget": null,
+          "budget_owner": "A0 pour décisionDEC13 avecA5/A6",
+          "budget_trigger": "Avant verdict performance qui exige limite ; préparation horodatages indépendante continue.",
+          "execution_state": "Non exécuté"
+        }
+      }
+    ],
+    "done": "Documentation proposée seulement ; aucune instrumentation applicative implémentée, aucun seuil adopté ni mesure exécutée."
+  },
+  "parallel_quality_next": [
+    {
+      "mission": "M02",
+      "already_done": "Spécification DB3 dédiée, garde DB1/2 pure et revues historiques remises ; aucune intégrationDB validée par ces preuves.",
+      "proof": {
+        "path": "/workspace/work/mission004/agents/A5/DB3-CONDITIONS-DE-RECEPTION.md",
+        "sha256": "fa74b659a0ffbb832094439c3a16465ca51f82294e3289f25acff5506f6a493c"
+      },
+      "next": "A5/A6/A3 relire conditionsréception et autoritéissuer ; préparer planexécution ciblejetable attestée ; ne pas exécuter avant accordDB3 et cibleattestée.",
+      "trigger": "Accord distinctDB3 +instance jetable identifiée+identité/roles/cascade/issuer attestés avantSQL."
+    },
+    {
+      "mission": "M09",
+      "already_done": "R4 lie9casKML aux14oraclesCSP/SCANexistants, alertes inconnues et origines réelles non approuvées conservées.",
+      "proof": {
+        "path": "/workspace/work/resume496/agents/A5/R4-M09-RAPPROCHEMENT-A5.json",
+        "sha256": "63b873028405bf565b374b4e462003c8ab9482b069a3e7e591ee8c125e9a01fe"
+      },
+      "next": "A6/A0 obtiennent sourceexport alertes existant si nécessaire ; approbateur ratifie origines finies avant pilote ; aucun scan pour contourner400.",
+      "trigger": "Accord pilote/header/scanner séparé et contrat effectifworker/WASM/styles/SW relu ; RO≠ENF."
+    },
+    {
+      "mission": "M15/M26",
+      "already_done": "45qualifications et7fixtures partielles/38oracles réemployés,10PERF sourceexacts nouvellement transcrits ici.",
+      "proof": {
+        "path": "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+        "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd"
+      },
+      "next": "A2 contrats données/commandes pour adapter premier I/A.1 ; A5 établit témoin validité/négatif des seules fixtures pertinentes.",
+      "trigger": "Contrats applicables adoptés et lot autorisé ; DEC13 uniquement avant conclusion performance dépendante."
+    }
+  ],
+  "constraints": [
+    "Aucun runner/test/helper/API/DB/service/moteur/scan/réseau/admin/fusion.",
+    "Aucun TEST039 ni nouveau corpus complet ;10PERF exacts ne valent10instruments implémentés.",
+    "Aucune qualificationVérifié/Accepté/coche/gate à partir de ce delta.",
+    "Défauts éliminatoires gardés même gainperformance ; journalbrut et contrepreuve exacts requis."
+  ]
+}

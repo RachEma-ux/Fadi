@@ -1,0 +1,356 @@
+{
+  "date_UTC": "2026-10-18",
+  "aliases": {
+    "/workspace/work/resume496/agents/A2/NEXT-READY-POST203-A2.json": {
+      "sha256": "aebe223472c8e61939d495fc0d903f4682e983e014dbda98485026317985ac55",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A2/NEXT-READY-POST203-A2.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A1/source-COEX-01-QUALIFICATION.json": {
+      "sha256": "3801912ae414f1f07d1b5cbd5904f20f928b36470e1b04ee09395996bbcdbdae",
+      "copie_GitHub": "docs/ai-team/reports/claude-m13-coex/COEX-01-QUALIFICATION.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A1/source-ADR-04-REGISTRE-RISQUES.json": {
+      "sha256": "bd8da03b9cdc6b7d671261ae1d65e393c010dd0c331b61cdc42c1b94567175b4",
+      "copie_GitHub": "docs/ai-team/reports/claude-m13-coex/ADR-04-REGISTRE-RISQUES.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1-v2.json": {
+      "sha256": "ea5300f241df47d168b1c3f0fc7180cd189b70d7d6b64e5f299a55522dd52f0c",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1-v2.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission004/agents/A1/studio-18-decisions-v2.json": {
+      "sha256": "f36eed4b8c246387e5fd853eadd1a773bdeeb7e94d32f44f44352ba3b1cbc49e",
+      "copie_GitHub": "docs/ai-team/reports/mission-004/A1/studio-18-decisions-v2.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A2/M05-M17-CHOIX-RESIDUELS-A2.json": {
+      "sha256": "917ac7aa79493d4c8f2302d7b1ec881d3126b865e7b959a36cb9a659b94bc1c6",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A2/M05-M17-CHOIX-RESIDUELS-A2.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A3/DEC18-MOTEURS-PUBLICS-CANDIDATS.json": {
+      "sha256": "24de7c5169d0d1bb5d3f1be2119c5186065ae9f2c5fc45277c6a5318b7164c8b",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A3/DEC18-MOTEURS-PUBLICS-CANDIDATS.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A1/203-QUALIFICATION-A1.json": {
+      "sha256": "5d2c48fba32ab23033f5ba12ae760099d28b93e3f2f627435cb3033d1a091e85",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md": {
+      "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A1/203-DELTA-INSTRUCTION-A1.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md": {
+      "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+      "copie_GitHub": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md": {
+      "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission004/agents/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md": {
+      "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917",
+      "copie_GitHub": "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1-v2-DELTA.json": {
+      "sha256": "a69d50bdc3d269fa98e20c7b6c2840f06b5502c1179e76df207118d8735e8706",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1-v2-DELTA.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission004/agents/A4/M21-CONTRAT-MINIMAL.md": {
+      "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625",
+      "copie_GitHub": "docs/ai-team/reports/mission-004/A4/M21-CONTRAT-MINIMAL.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/decisions-166.json": {
+      "sha256": "f49c1efb921a921b4825d92e4f44f76d1921d10c2e9a3aad0268400442060615",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/decisions-166.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/incoming/docs/ai-team/reports/claude-m13-rep/DELTA-REGISTRE-PROPOSE.json": {
+      "sha256": "53a5d735e9d1b29e79412fcfd6d67db44e888832e85af61286969a47a3a49c51",
+      "copie_GitHub": "docs/ai-team/reports/claude-m13-rep/DELTA-REGISTRE-PROPOSE.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/incoming/docs/ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md": {
+      "sha256": "45847df90a26b94df5eaaa314e0dcbeadf1622751f729dd3b2049fe54b7225c8",
+      "copie_GitHub": "docs/ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/incoming/docs/ai-team/reports/claude-m13-rep/REP-07-ESSAIS.json": {
+      "sha256": "45dbf15dd7092f22c42655c2853ffa42fcae0c05fcd8c5295a2bd524a54a31a8",
+      "copie_GitHub": "docs/ai-team/reports/claude-m13-rep/REP-07-ESSAIS.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/incoming/docs/ai-team/reports/claude-m13-rep/REP-09-REQUALIFICATION.json": {
+      "sha256": "a47c5bfcb91332d7c7dc5b79864f0372491de23df16e6ca25720323f6e378184",
+      "copie_GitHub": "docs/ai-team/reports/claude-m13-rep/REP-09-REQUALIFICATION.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/incoming/docs/ai-team/reports/claude-m13-rep/REP-09-REQUALIFICATION.md": {
+      "sha256": "96b172ede321cfea76185526d144d07378a9ec23989690f51072cf00af29a4ed",
+      "copie_GitHub": "docs/ai-team/reports/claude-m13-rep/REP-09-REQUALIFICATION.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A2/COEX03-COMPLEMENT-A2.json": {
+      "sha256": "eac9b7efbf7623db99ea0fbaef0daa416c53a533581e20dc0c17f615711ddd8a",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A2/COEX03-COMPLEMENT-A2.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A5/REVUE-CLAUDE-REP-A5.json": {
+      "sha256": "4ea23df97163186179e86077eaf494e5612a6dffaf015e3cf813bb5e67dc9058",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-CLAUDE-REP-A5.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A5/R5-M15-M26-LACUNES-CORPUS-A5.json": {
+      "sha256": "0284d6d14452dc88b8eed7b726e946768003b12f7396db357f2ffad06aa554bd",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission004/agents/A1/studio-141-fiches-v2.json": {
+      "sha256": "48c8aa1093bec1fda771961d4d0fb7827ba7e4775f72ed9afe6cf29feada2df3",
+      "copie_GitHub": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission004/agents/A4/NAV-M004.json": {
+      "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2",
+      "copie_GitHub": "docs/ai-team/reports/mission-004/A4/NAV-M004.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission004/agents/A5/REVUE-M17-M21-M24.json": {
+      "sha256": "56565e77aac291e8d3557f31bd0263a1b630ef9611be23ba69923d5ba128006c",
+      "copie_GitHub": "docs/ai-team/reports/mission-004/A5/REVUE-M17-M21-M24.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A5/R4-M09-RAPPROCHEMENT-A5.json": {
+      "sha256": "63b873028405bf565b374b4e462003c8ab9482b069a3e7e591ee8c125e9a01fe",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A5/R4-M09-RAPPROCHEMENT-A5.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A5/M08-UNITE-065-092-QA-RESERVES-A5.json": {
+      "sha256": "30c00d3c485ff3f1bd81740bed2eac96a6ef67ec6e8a2612ac59cb7aec6f0dfa",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A5/M08-UNITE-065-092-QA-RESERVES-A5.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A5/M08-REVUE-ANNOTATIONS-A5.json": {
+      "sha256": "caab70c424f98a510a9d91e29c33c89588bbd4bfbd53f455e53acef1b88c0a9a",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A5/M08-REVUE-ANNOTATIONS-A5.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A5/M08-UNITE-094-124-QA-RESERVES-A5.json": {
+      "sha256": "a080b506052304177e3315ed6759fb2ef51fec457463a30a01df68e6b3d545c8",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A5/M08-UNITE-094-124-QA-RESERVES-A5.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A5/203-QUALIFICATION-A5.json": {
+      "sha256": "bc344feeb6d3656d1ba98812726520259898b00fb624e6e1b34133323351a3d9",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission004/agents/A5/DB3-CONDITIONS-DE-RECEPTION.md": {
+      "sha256": "fa74b659a0ffbb832094439c3a16465ca51f82294e3289f25acff5506f6a493c",
+      "copie_GitHub": "docs/ai-team/reports/mission-004/A5/DB3-CONDITIONS-DE-RECEPTION.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json": {
+      "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission004/agents/A5/studio-38-oracles-M004.csv": {
+      "sha256": "65f599e6645d6a927cc6f114a2d61ce371e814b4e097091120faba49aca89fe4",
+      "copie_GitHub": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A5/NEXT-READY-POST203-A5.json": {
+      "sha256": "8823d852b14ef6b04dd2896419cdebf305757b1913a9adf3017b5d240c3228e6",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A5/NEXT-READY-POST203-A5.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A4/REVUE-PERF-X1-09-A4.json": {
+      "sha256": "40d82a943a9ac72f639a2a61b74d98ff37d3ae018901d8299d9658e830ed24bb",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A4/REVUE-PERF-X1-09-A4.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/repo/docs/ai-team/reports/mission-003/A2/LOT-C.md": {
+      "sha256": "415c97de50efc82801d397532dc98b405bf9a11424db7fafb401b2f04d5619d7",
+      "copie_GitHub": "docs/ai-team/reports/mission-003/A2/LOT-C.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md": {
+      "sha256": "893d4917fe810867b589727e82d1789db56453f86c78fbfab56b294acedac84b",
+      "copie_GitHub": "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/incoming/docs/ai-team/reports/qualification-203/definitions-203.json": {
+      "sha256": "77eb1509451017773e02d767cd1b56e45ccc6dd97f8de28ca9ad00716bfa9038",
+      "copie_GitHub": "docs/ai-team/reports/qualification-203/definitions-203.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/incoming/docs/ai-team/reports/qualification-203/MANUEL-CODEX.md": {
+      "sha256": "6e7ec3977ec0357a0d51cb5db5b4979c378bdda6756432c1205cfecfc050ce5b",
+      "copie_GitHub": "docs/ai-team/reports/qualification-203/MANUEL-CODEX.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A4/NAV-DELTA-G1-v2.json": {
+      "sha256": "ece28669451e2a220172a5562a37bba54de0ef544e95b507623c77dd0429ff2e",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A4/NAV-DELTA-G1-v2.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/NAV-M004.json": {
+      "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2",
+      "copie_GitHub": "docs/ai-team/reports/mission-004/A4/NAV-M004.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md": {
+      "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+      "copie_GitHub": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md": {
+      "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A1/G1-EXEMPLES-DOCUMENTAIRES-2D-IDENTITES-v2.json": {
+      "sha256": "3d29419c227258b60645893340eee9dfbd009c16ec0e0428eb54c6dae729ea11",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A1/G1-EXEMPLES-DOCUMENTAIRES-2D-IDENTITES-v2.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A4/203-DELTA-UX-REGISTRY.json": {
+      "sha256": "5c005dc5a289bbf4f3e438df4d8e98606acbaf7e36205be5b218a1c0ce66e7ad",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A4/203-DELTA-UX-REGISTRY.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A4/203-B3-12-PROTOCOLE-MESURES.json": {
+      "sha256": "d4d1f80623c4101277484f30620a2e5068e28b13d7cc50409cc62ef73e54327c",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A4/203-B3-12-PROTOCOLE-MESURES.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json": {
+      "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A4/203-COORDINATION-A0-PREPARATION.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json": {
+      "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A4/G1-INDEX-REVUE-CIBLEE-A4.json": {
+      "sha256": "b9a5421b6d12de8fcb936da089c2d753db187bd179b1710c7a32a72369b02255",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A4/G1-INDEX-REVUE-CIBLEE-A4.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A5/NEXT-READY-POST203-A5.md": {
+      "sha256": "a1506c1bf5ced2834a6a93f0f1c7ac1d45e53841c7cff92b7df10a9e26338c4e",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A5/NEXT-READY-POST203-A5.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/agents/A2/M05-M07-M08-CONTRATS.md": {
+      "sha256": "925af4ac2c735fc3eaecb639e61e0bf18d2c451f86c848cdc0f439845cf7e35e",
+      "copie_GitHub": "docs/ai-team/reports/mission-003/A2/M05-M07-M08-CONTRATS.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/agents/A2/module-edges.json": {
+      "sha256": "1ee9db84751c568cdb7c6484c6ce5ce6b8dea8398f96f38afacad378392645a7",
+      "copie_GitHub": "docs/ai-team/reports/mission-003/A2/module-edges.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/repo/docs/ai-team/reports/reprise-496dcfc/G2-PERIMETRE-A0-PROPOSE.md": {
+      "sha256": "ac32020d48acef36a470a49b970e81e51eccc8433847737202490cdd4428eed8",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/G2-PERIMETRE-A0-PROPOSE.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission004/agents/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md": {
+      "sha256": "45b5b77923079d12f9dc98a1050a32ed177f74de0243075b2efb041a1585eb3e",
+      "copie_GitHub": "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/agents/A2/LOT-R.md": {
+      "sha256": "0979da3165d0283357b8714272e55070d2699f07befcce506ed9cb5cda2b180d",
+      "copie_GitHub": "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/agents/A1/studio-18-decisions.json": {
+      "sha256": "b83c6a3a17878b00998c8aa28d504b5b904164aade615c50bc0e3bb8e4deb130",
+      "copie_GitHub": "docs/ai-team/reports/mission-003/A1/studio-18-decisions.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/repo/docs/ai-team/reports/reprise-496dcfc/M08-SYNTHESE-A0.md": {
+      "sha256": "71c75f2952e4f84fb7178893a3c40f4be08b70094b0c6d9341fef64257eaf9c1",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/M08-SYNTHESE-A0.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/resume496/agents/A5/REVUE-CLAUDE-REP-A5-DELTA.json": {
+      "sha256": "0cdfa7854d333d98a00c7cc50364752be271a1629df74136d751ff683ab7b08f",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-CLAUDE-REP-A5-DELTA.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/repo/docs/ai-team/reports/reprise-496dcfc/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md": {
+      "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md": {
+      "sha256": "893d4917fe810867b589727e82d1789db56453f86c78fbfab56b294acedac84b",
+      "copie_GitHub": "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/repo/docs/ai-team/reports/reprise-496dcfc/A2/M05-M17-CHOIX-RESIDUELS-A2.json": {
+      "sha256": "917ac7aa79493d4c8f2302d7b1ec881d3126b865e7b959a36cb9a659b94bc1c6",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A2/M05-M17-CHOIX-RESIDUELS-A2.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/repo/docs/ai-team/reports/reprise-496dcfc/A1/G1-SCHEMAS-LOGIQUES-DOCUMENTAIRES-v2.json": {
+      "sha256": "ca552c040a1da0064e63c2a2cf643619fbeee13c53ad9c98d65114376a4a7b0c",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A1/G1-SCHEMAS-LOGIQUES-DOCUMENTAIRES-v2.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/repo/docs/ai-team/reports/mission-003/A2/LOT-I.md": {
+      "sha256": "5cd3c86f26c90a495235c5d35b8c19d698549b285fd0b1c795556369d45eed54",
+      "copie_GitHub": "docs/ai-team/reports/mission-003/A2/LOT-I.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/repo/docs/ai-team/reports/mission-003/A2/LOT-A.1.md": {
+      "sha256": "7b1e77bda632aa63d34596c5c9c98372adf8708065722497d32726f7ad60d30a",
+      "copie_GitHub": "docs/ai-team/reports/mission-003/A2/LOT-A.1.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/repo/docs/ai-team/reports/mission-003/A2/LOT-R.md": {
+      "sha256": "0979da3165d0283357b8714272e55070d2699f07befcce506ed9cb5cda2b180d",
+      "copie_GitHub": "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/repo/docs/ai-team/reports/reprise-496dcfc/A2/G2-GRAPHE-IMPORT-PUBLIC-A2.json": {
+      "sha256": "4f57e852670404cafbbe6942d6d46ab710eb7c9f19a15321739a3b27bd004915",
+      "copie_GitHub": "docs/ai-team/reports/reprise-496dcfc/A2/G2-GRAPHE-IMPORT-PUBLIC-A2.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/repo/docs/ai-team/reports/mission-003/A1/studio-18-decisions.json": {
+      "sha256": "b83c6a3a17878b00998c8aa28d504b5b904164aade615c50bc0e3bb8e4deb130",
+      "copie_GitHub": "docs/ai-team/reports/mission-003/A1/studio-18-decisions.json",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/repo/docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md": {
+      "sha256": "0c8b061a17a635b6ebe9bb3c593d14706489c28f334e4ff45e87a9018f60575b",
+      "copie_GitHub": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    },
+    "/workspace/work/mission003/repo/docs/ai-team/reports/mission-003/A2/LOT-A.3.md": {
+      "sha256": "44a46d3a0b15d752b22ef5ef4d7fca5c737e1262ef58cbabf3717176d6db921b",
+      "copie_GitHub": "docs/ai-team/reports/mission-003/A2/LOT-A.3.md",
+      "note": "Chemin de session conservé dans les originaux ; résoudre la copie publiée par empreinte."
+    }
+  },
+  "limite": "Pas nouveau registre de tâches ; seules copies de pièces identiques. Le registre intermédiaire283a référencé par A5 est une photographie historique traçable dans203-INTEGRATION-A0.json, pas le fichier courant cab841."
+}

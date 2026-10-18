@@ -1,0 +1,378 @@
+{
+  "review": "M05-M17-CHOIX-RESIDUELS-A2",
+  "mode": "DOCUMENTAIRE_NON_EXECUTABLE",
+  "scope": "Seuls choix résiduels compatibilité/versions pour premiers I/A.1. Aucun nouveau schéma, contrat concurrent, package, SQL ou POC.",
+  "sources": [
+    {
+      "id": "M17",
+      "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+      "sha256": "893d4917fe810867b589727e82d1789db56453f86c78fbfab56b294acedac84b",
+      "git_commit": null,
+      "provenance": "Pièce documentaire existante dont empreinte identifie le contenu ; références de code/actes datées conservées dans la pièce, pas inventées comme commit de cet artefact."
+    },
+    {
+      "id": "G1v2",
+      "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+      "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+      "git_commit": null,
+      "provenance": "Pièce documentaire existante dont empreinte identifie le contenu ; références de code/actes datées conservées dans la pièce, pas inventées comme commit de cet artefact."
+    },
+    {
+      "id": "G2",
+      "path": "/workspace/work/resume496/agents/A2/G2-GRAPHE-IMPORT-PUBLIC-A2.json",
+      "sha256": "4f57e852670404cafbbe6942d6d46ab710eb7c9f19a15321739a3b27bd004915",
+      "git_commit": null,
+      "provenance": "Pièce documentaire existante dont empreinte identifie le contenu ; références de code/actes datées conservées dans la pièce, pas inventées comme commit de cet artefact."
+    },
+    {
+      "id": "DEC18",
+      "path": "/workspace/work/resume496/agents/A3/DEC18-MOTEURS-PUBLICS-CANDIDATS.json",
+      "sha256": "24de7c5169d0d1bb5d3f1be2119c5186065ae9f2c5fc45277c6a5318b7164c8b",
+      "git_commit": null,
+      "provenance": "Pièce documentaire existante dont empreinte identifie le contenu ; références de code/actes datées conservées dans la pièce, pas inventées comme commit de cet artefact."
+    }
+  ],
+  "decisions_not_to_reopen": [
+    "6250109830 G0 cadrage documentaire accepté, inconnues conservées.",
+    "6250110124 orientation DEC01 document2D canonique autonome.",
+    "6250110501 orientation DEC03 identités métier propres et révision immuable.",
+    "D07 navigation autonome/quatre domaines/deux planches et conservation Atelier/21étapes ; physique/versionformat non décidés par ce cadrage."
+  ],
+  "interpretation": "Les invariants du contrat M17 non ratifiés physiquement sont conservés comme propositions cohérentes à instruire ; ils ne deviennent pas décisions nouvelles par la colonne « option à conserver ». Les observations de compatibilité Atelier de M17 sont datées63e804b, pas fraîchement revalidées ici. Seul graphepublic G2 est relu à5e0285.",
+  "choices": [
+    {
+      "id": "R3-COMP-01",
+      "choice": "Noms et compatibilité des versions",
+      "already_retained_to_preserve": "DEC01 document2Dautonome et DEC03 identités propres/Révisionimmuable retenus. G1v2 distingue contentVersion du canonique et documentVersion de pièce ; schemaVersion/contractVersion/revisionId/baseRevisionId ne se substituent pas.",
+      "residual_choice_required": "Ratifier représentation/valeurs physiques des versions initiales et politique lecteur pour versions inconnues/plus récentes, sans choisir ici des numéros.",
+      "reader_effect": "Détecter format/version supportés avant reconstruction ; erreur explicite, jamais interprétation sousversion voisine.",
+      "writer_effect": "Émettre version ratifiée et contenu exact ; aucun doublebump modèle/commandes automatique.",
+      "migration_effect": "Conserver version source et rapport de conversion ; ancienne pièce non réécrite.",
+      "evidence": [
+        {
+          "source": "G1v2",
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "line": 34,
+          "exact_line": "Dans les exemples v2 uniquement, `contentVersion` désigne la version illustrative du **contenu canonique** cité par une révision ; `documentVersion` reste la version de **pièce livrée** dans le manifeste M24/IF-009. `revisionId` est l'état historique immuable de la variante, `schemaVersion` le format du contenu et `contractVersion` le contrat de commande. Ces notions ne sont pas interchangeables. Le champ illustratif `contentVersion` ne décide ni nouveau format applicatif, ni stockage, ni allocation d'ID. Il évite seulement l'ambiguïté du premier exemple. Les fichiers initiaux restent historiques ; le v2 est actif pour cette clarification."
+        },
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 11,
+          "exact_line": "`schemaVersion` qualifie chaque document persistant ; `contractVersion` l'opération, `revisionId` un état immuable, `baseRevisionId` la précondition d'écriture, `documentVersion` une version de pièce. Ces cinq notions ne sont pas interchangeables. Une révision inclut contexte, parent(s), transaction et références de contenus versionnés avec empreintes. Un fork produit nouveaux IDs propriétaires et provenance vers la source ; aucune propagation implicite. Un historique consulté est immuable ; modifier signifie nouvelle commande sur tête autorisée ou fork explicite, jamais mutation d'une révision existante."
+        }
+      ],
+      "acceptance_criterion": "Corpus versions supportées/non supportées, même contenu ancien inchangé ; revue A2/A5 et acte canonique avant persistance.",
+      "authority": "Arbitrage technique délégué documenté par A0/ChatGPT ; A1 sémantique, A2 contrats, A5 preuves.",
+      "blocking_boundary": "Avant modèle durable A.1/A.2 ; navigation papier I peut continuer.",
+      "state": "À_DÉFINIR_PHYSIQUEMENT_SANS_CODE"
+    },
+    {
+      "id": "R3-COMP-02",
+      "choice": "Commandes Atelier /1,/2,/3 versus enveloppe Studio",
+      "already_retained_to_preserve": "M17 relève émetteur/3, acceptation/1,/2,/3 et modèle1 ; IF006 demeure interface logique commune. Aucun renommage de constante.",
+      "residual_choice_required": "Fixer matrice opération/version et contrat d’adaptation du contexte Studio/baseRevisionId vers services existants ; ne pas assimiler routeAtelier baseRevision numérique à identités Studio.",
+      "reader_effect": "Lecteur de commandes vérifie opération et paramètres supportés, pas seulement chaîne de contrat acceptée.",
+      "writer_effect": "Adaptateur public autorisé avec contrôle scope/parenté/writer ; pas injection d’enveloppe Studio brute sur route historique.",
+      "migration_effect": "Journal/queue anciens conservés, aucune conversion silencieuse /2→/3 ni modèle1→modèlev3.",
+      "evidence": [
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 52,
+          "exact_line": "| commandes/base.ts | CONTRAT_COMMANDES atelier-commands/3 ; CONTRATS_ACCEPTES /1 /2 /3 | Garder noms/champs existants ; acceptation de chaîne ne prouve pas chaque opération ancienne/nouvelle compatible |"
+        },
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 53,
+          "exact_line": "| routes/atelier-commands.ts | enveloppe requestId, baseRevision numérique >=0, contract enum accepté, label, commands ; 1 MiB, max500 commandes, cibles max5000 | Ne pas envoyer scope/baseRevisionId Studio à cette route comme si compatible ; adaptateur explicite requis |"
+        },
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 31,
+          "exact_line": "L'enveloppe illustrative IF-006 est réutilisée telle quelle : requestId/toolId/contractVersion/actorId/scope(projectId,studyId,variantId,baseRevisionId)/targetIds/operation/parameters/mode. Les variantes de représentation physique restent à ratifier ; aucune route nouvelle annoncée. Les métadonnées writerAuthority, expectedObjectVersions et relationVersions des exemples se trouvent dans une section documentaire `preconditions`, pas ajoutées en prétendant modifier IF-006. Leur emplacement physique est ouvert."
+        }
+      ],
+      "acceptance_criterion": "Table ancien/nouveau opération par opération, cas valide/refusé/undo/replay et zéro effet sur refus ; matrice actuelle relue au SHA cible avant code.",
+      "authority": "A0 arbitre sous délégation, A2 propriétaire interface, A5 corpus ; A3 après autorisation du lot.",
+      "blocking_boundary": "Avant premier écrivain Studio A.1 ; pas nécessaire pour affichage de navigation sans effet.",
+      "state": "À_DÉFINIR_PHYSIQUEMENT_SANS_CODE"
+    },
+    {
+      "id": "R3-COMP-03",
+      "choice": "Archives et propriétés inconnues",
+      "already_retained_to_preserve": "ModèleAtelier1 est distinct de commandes/3. Observation M17 : verifierModele accepte uniquement1 et refuse2 ; ne pas élargir par déduction.",
+      "residual_choice_required": "Décider conservation des champs inconnus ou rapport de pertes/refus selon sens lecture/import/export, et lecteurs Studio initiaux.",
+      "reader_effect": "Aucune promesse sérialiseur transparent ; distinguer import transformant de réouverture native.",
+      "writer_effect": "Écrire format choisi sans écraser archive source ; vérifier ancienne révision.",
+      "migration_effect": "Mapping et rapport nominatif des pertes ; pas migration exécutée dans ce dossier.",
+      "evidence": [
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 56,
+          "exact_line": "| archive.ts verifierModele | accepte uniquement version numérique1, reconstruit via validateurs ; refuse version2 | Pas de lecteurs modèle v2/v3 ni conservation universelle des champs inconnus démontrés ; migration future avec rapport des pertes |"
+        },
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 60,
+          "exact_line": "| import/natif.ts | import design.v13 à sens unique vers modèle1, rapport transformations/restes | design.v13 n'est ni commandes/3 ni archive Studio ; ne prouve pas round-trip ni IFC paramétrique complet |"
+        }
+      ],
+      "acceptance_criterion": "Corpus synthétique archive1 valide/invalide, format futur, champs inconnus et roundtrip borné ; preuve avant/après plus rapport explicite.",
+      "authority": "A2/A1 options ; A5 oracles ; A0 acte délégué. Migration d’exécution nécessite autorisation distincte.",
+      "blocking_boundary": "Avant sauvegarde/réouverture durable, pas blocage des études de navigation I.",
+      "state": "À_DÉFINIR_PHYSIQUEMENT_SANS_CODE"
+    },
+    {
+      "id": "R3-COMP-04",
+      "choice": "Lecture des publications héritées",
+      "already_retained_to_preserve": "IF009/M24 visent ensemble exact, réouverture jamais latest ; observation M17 : refexterne contrat absent ou exactementcourant, plus restrictif que CONTRATS_ACCEPTES.",
+      "residual_choice_required": "Ratifier politique de lecture contrat absent,/1,/2,/3 + version modèle supérieure ; conserver refus actuels tant qu’un élargissement et ses oracles ne sont pas approuvés.",
+      "reader_effect": "Ne pas prendre commande/2 acceptée pour publication/2 lisible ; état nonlisible explicite et conservation pièce.",
+      "writer_effect": "Publication sous contrat effectivement supporté ; approve/publish demeurent distincts.",
+      "migration_effect": "Ancienne publication immuable ; pas réécriture de champcontrat absent ou desempreintes pour la rendre lisible.",
+      "evidence": [
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 59,
+          "exact_line": "| lib/atelier-refexterne.ts lisible | contrat publication absent ou exactement CONTRAT_COMMANDES ; version modèle non supérieure à actuelle | Plus restrictif que CONTRATS_ACCEPTES : publication sous /2 peut être refusée bien que commande /2 acceptée. Ne pas élargir sans oracle |"
+        },
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 45,
+          "exact_line": "IF-009 gouverne le manifeste de publication : identifiant, intention/usage, date/auteur, approbation, documents ordonnés documentId/version/empreinte, modèles/règles, contrôles, observations bloquantes résolues ou dérogées et décision sur cet ensemble exact. Les exemples utilisent des empreintes illustratives explicitement non calculées ; pas de document publiable réel. Changer un document, règle ou observation après approbation exige nouveau manifeste et nouvelle validation adaptée ; publication antérieure immuable. Les blobs héritent des droits de la source et de leur politique de publication ; un hash ne donne pas un droit public. Format de sérialisation canonique pour hash, signature éventuelle, URI des blobs, manifeste de restauration et vérification à ratifier. Aucune seconde base métier ou stockage GPU comme source autoritaire."
+        },
+        {
+          "source": "G1v2",
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "line": 58,
+          "exact_line": "4. Réouverturehistorique : résoudre publication/révision exactes, revalider droits et parenté, vérifier pièces/empreintes/lecteurs compatibles, puis reconstruire les projections. Source manquante/inconnue/divergente → état explicite/récupération, jamais substitutionlatest."
+        }
+      ],
+      "acceptance_criterion": "Matrice contrat absent,/1,/2,/3×modèle1/supérieur, refus explicites et hashes des pièces inchangés ; aucun latest substitué.",
+      "authority": "A0/ChatGPT arbitrage compatible avec IF009 ; A1/A2/A5 revue.",
+      "blocking_boundary": "Avant références/publication du premier parcours terminable ; lecture/navigation seule peut rester explicitement indisponible.",
+      "state": "À_DÉFINIR_PHYSIQUEMENT_SANS_CODE"
+    },
+    {
+      "id": "R3-COMP-05",
+      "choice": "IDs physiques, parenté et coexistence des anciens forks",
+      "already_retained_to_preserve": "DEC03 identités métier propres Étude/Variante/Révision dans Projet transverse retenues ; ancien forkAtelier est unprojet, pas déjà une VarianteStudio.",
+      "residual_choice_required": "Choisir allocation/encodage/longueur/casse des IDs et mapping explicite forkprojet→étude/variante/provenance, avec refus collision/parentmixte ; pas UUID/SQL imposé ici.",
+      "reader_effect": "Lecture garde anciens IDs et origine ; résolution de parenté serveur, aucun « dernier projet ».",
+      "writer_effect": "Un écrivain canonique unique ; pas Studio etAtelier écrivant deuxcopies du mêmeobjet.",
+      "migration_effect": "Décider plan migration/rollback séparé, source intacte ; aucun ID réutilisé ou renommé silencieusement.",
+      "evidence": [
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 9,
+          "exact_line": "Projet → Étude → Variante → Révision. Le projet transverse garde son propriétaire Fadi ; l'étude rattache sources, programme de référence et hypothèses, sans réécrire ces données sources. Créer une étude sans variante est permis ; aucune géométrie persistée n'est éditée sans variante propriétaire. Une variante appartient à exactement une étude, une étude à exactement un projet. Une révision appartient à exactement une variante. Les références croisées sont autorisées et vérifiées serveur ; une combinaison d'identifiants existants mais provenant de parents différents est refusée. IDs opaques stables non réutilisés, sensibilité à la casse conservée ; longueur/encodage transport à ratifier, pas normalisation des anciens IDs Atelier (qui acceptent notamment des noms de calques)."
+        },
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 58,
+          "exact_line": "| lib/atelier-versions.ts | snapshots nommés et publications, cataloguesActuels enregistre CONTRAT_COMMANDES et version modèle ; variantes = projets bifurqués | Réutiliser algorithmes d'inverses/diff et pièces immuables ; pas assimilables à étude/variante Studio sans mapping |"
+        },
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 25,
+          "exact_line": "Atelier et Studio peuvent partager un moteur via adaptateur public, mais une même donnée partagée garde un écrivain unique. Tout mode de coexistence « Studio écrit l'ancien Atelier et sa nouvelle copie » est refusé. La forme physique de l'adaptateur et le choix de réutiliser un document existant demeurent DEC-18/01 ; le champ candidat writerAuthority n'est pas une colonne existante. Une transition d'autorité serait une opération explicite, atomique, auditée, avec refus si commandes hors ligne en attente et restauration prouvée ; aucune migration proposée ici n'est autorisée."
+        },
+        {
+          "source": "G1v2",
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "line": 46,
+          "exact_line": "| Fork | Nouvelles identités propriétaires et provenance verssource selon contrat ; paspropagation implicite d'une copie. | Mapping explicite des anciennes variantes-projets ; pas renommer/copier/migrer silencieusement les données existantes |"
+        },
+        {
+          "source": "G1v2",
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "line": 48,
+          "exact_line": "| WriterAuthority | Un écrivain unique pour chaque donnée canonique2D/3Dlibre/associée ; vues/scènes ne sont pas écrivains. | Deux planches ne fabriquent pas deux copiesautoritaires du même mur ; migration d'autorité distincte et non autorisée ici |"
+        }
+      ],
+      "acceptance_criterion": "Cas parentsdifférents/IDinvalide/collision/fork, conservation de tous IDs sources, preuve de propriétaire/writer ; migration et restauration hors cette préparation.",
+      "authority": "A2/A1 dossier et A0 arbitrage délégué ; toute migration/transition autorité réelle requiert autorisation sensible distincte.",
+      "blocking_boundary": "Avant persistance ou adaptation de données héritées ; première navigation sans données inventées reste préparatoire.",
+      "state": "À_DÉFINIR_PHYSIQUEMENT_SANS_CODE"
+    },
+    {
+      "id": "R3-COMP-06",
+      "choice": "Déduplication et expiration des résultats durables",
+      "already_retained_to_preserve": "IF006 requestId et préconditiondebase sont conservés ; mêmecontenu rejoué ne doit pas doubler l’effet. PropositionM17 portée serveur et empreinte sémantique reste candidate.",
+      "residual_choice_required": "Ratifier clé/portée authentifiée, canonicalisation du contenu de déduplication, durée du résultat et comportement aprèsexpiration ; aucun changement rétention décidé ici.",
+      "reader_effect": "Après timeout, requête de résultat parrequestId ; pas annulationaffirmée sans preuve.",
+      "writer_effect": "Mêmeclé/contenu même résultat durable ; autrecontenu refus ; preview→commit ne réutilise pas illicitement mêmeclé.",
+      "migration_effect": "Résultats/queue anciens : stratégiecompatibilité explicite ; ne pas supprimer une preuve historique pour simplifier.",
+      "evidence": [
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 35,
+          "exact_line": "Proposition de déduplication : clé serveur de portée tenant/projet/étude/variante + identité authentifiée + requestId, conservant empreinte sémantique du message et résultat durable. Même clé et contenu identique retourne le même résultat sans nouvel effet, même si la tête a avancé ; même clé et autre contenu refuse REQUEST_ID_REUSED. La durée de rétention et le traitement après expiration restent à décider avant production, sans changer silencieusement la rétention des sauvegardes. Une nouvelle commande reçoit nouvel ID. Preview ne confirme pas de sauvegarde ; passage preview→commit n'est pas un replay de contenu différent sous même clé."
+        },
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 39,
+          "exact_line": "Codes d'erreurs **candidats**, pas codes API actuels : UNAUTHENTICATED, INVALID_IDENTIFIER, FORBIDDEN_SCOPE, CONTEXT_PARENT_MISMATCH, SCHEMA_UNSUPPORTED, CONTRACT_UNSUPPORTED, REVISION_CONFLICT, OBJECT_VERSION_CONFLICT, WRITER_MISMATCH, REQUEST_ID_REUSED, AMBIGUOUS_REFERENCE, IMMUTABLE_REVISION, INPUT_LIMIT, DURABILITY_FAILED, PUBLICATION_INCOMPLETE, APPROVAL_MISMATCH. Chaque refus produit zéro effet canonique et trace de refus sans secret. Ne pas révéler l'existence d'une ressource interdite ; mapping HTTP/masquage 403/404 à décider. Timeout réseau après commit peut donner résultat indéterminé côté navigateur : réinterroger par requestId, jamais annoncer l'annulation du commit sans preuve."
+        }
+      ],
+      "acceptance_criterion": "Corpus replay identique/différent/têteavancée/expiration/ACKperdu, zéro nouvel effet et résultat cohérent. POC pur ne prouve pas transactions serveur.",
+      "authority": "A0 délégué avec A2/A5 ; A6 limites opératoires. Changement effectif rétention/sauvegarde exige accord distinct.",
+      "blocking_boundary": "Avant writer durable A.1 et production ; pas précondition de simple lecture I.",
+      "state": "À_DÉFINIR_PHYSIQUEMENT_SANS_CODE"
+    },
+    {
+      "id": "R3-COMP-07",
+      "choice": "Snapshot cohérent et frontière de commit/version",
+      "already_retained_to_preserve": "Révisionhistorique immuable et coupe logique cohérente requises par G1v2/M17 ; succès de sauvegarde ≠ image dessinée.",
+      "residual_choice_required": "Choisir mécanisme transaction/isolement ou ensembles de versions pour lire et engager canonique/révision/journal/outbox de même coupe ; format physique ouvert.",
+      "reader_effect": "Interdire assemblage de plusieurs GET hétérogènes présenté comme snapshot ; anciennes sourcesexactes vérifiées.",
+      "writer_effect": "Commit atomique avec une autorité par donnée ; statutlocal/pending ne confirme pas durabilité.",
+      "migration_effect": "Rollback conserve nouvellesécritures ; aucune restauration en place de données inconnues.",
+      "evidence": [
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 37,
+          "exact_line": "Commit : engagement atomique de toutes données canoniques touchées, révision de sortie, journal IF-011 et événement/outbox durable. La notification seule ne confirme rien. Succès expose résultat/revision/event/transaction/effets/portées invalidées ; caches restent reconstruisibles. Job IF-003 renvoie sa révision source ; résultat périmé, annulé ou sans droit renouvelé ne s'engage pas automatiquement. Undo/redo est une nouvelle opération contrôlée sur tête courante, pas déplacement destructif d'un pointeur historique. Un rebase incompatible refuse et présente résolution/recalcul, pas écrasement."
+        },
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 43,
+          "exact_line": "Candidat snapshot : identifiant/version de schéma/contexte complet/révision/parents/transaction/auteur et heure serveur ; liste des trois autorités présentes et références immuables de leurs documents, versions, empreintes, unités/repères ; sources et règles versionnées ; associations et leur état ; journal et observations référencés. Une branche A peut contenir seulement le dessin2D ; B seulement le modèle3D ; C l'autorité associée et ses projections. Aucun snapshot n'exige un sous-modèle absent pour simuler la conformité. Manifeste et contenus doivent constituer une même coupe logique, protégée contre lectures entrelacées : le défaut potentiel GET Atelier décrit dans CI154-SNAPSHOT-CONTRAT n'est pas une recette de snapshot cohérent. Choix transaction/isolement/version-set à ratifier et éprouver."
+        },
+        {
+          "source": "G1v2",
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "line": 56,
+          "exact_line": "2. Le dossier candidat est une **coupe logique cohérente** des références versionnées/empreintées. Pièces, règles, contrôles, observations et sources citées doivent correspondre à l'ensemble effectivement examiné ; une série de GET ne prouve pas cette cohérence."
+        }
+      ],
+      "acceptance_criterion": "Cas interleaving, commitpartiel, échec/ACKperdu, vieille révision ; cohérence démontrée selon mécanisme adopté et autorisation d’essai applicable.",
+      "authority": "A2/A6 proposent ; A5 preuves ; A0 acte technique délégué. DB/migration/restauration à autorisation distincte.",
+      "blocking_boundary": "Avant sauvegarde durable et publication A.1 ; ne bloque pas schémas/documentation I.",
+      "state": "À_DÉFINIR_PHYSIQUEMENT_SANS_CODE"
+    },
+    {
+      "id": "R3-COMP-08",
+      "choice": "Canonicalisation et versions de contenu/publication",
+      "already_retained_to_preserve": "contentVersion canonique et documentVersion pièce restent distinctes ; les hashesJSON G1v2/M24 sont démonstratifs, pas format ratifié.",
+      "residual_choice_required": "Ratifier octets canoniques, encodage/données nonfinies/ordre des pièces, version du procédé et traitement des anciens lecteurs ; signature/URI seulement si retenues.",
+      "reader_effect": "Comparer empreintes au procédé/version annoncé ; inconnu/divergent = état explicite, pas reconstruction silencieuse.",
+      "writer_effect": "Empreinte sur contenu approuvé exact ; aucune décisionauto de signature ou stockage blob.",
+      "migration_effect": "Anciennes empreintes ne sont pas recalculées puis réécrites ; nouvelle version documentée ou refus.",
+      "evidence": [
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 45,
+          "exact_line": "IF-009 gouverne le manifeste de publication : identifiant, intention/usage, date/auteur, approbation, documents ordonnés documentId/version/empreinte, modèles/règles, contrôles, observations bloquantes résolues ou dérogées et décision sur cet ensemble exact. Les exemples utilisent des empreintes illustratives explicitement non calculées ; pas de document publiable réel. Changer un document, règle ou observation après approbation exige nouveau manifeste et nouvelle validation adaptée ; publication antérieure immuable. Les blobs héritent des droits de la source et de leur politique de publication ; un hash ne donne pas un droit public. Format de sérialisation canonique pour hash, signature éventuelle, URI des blobs, manifeste de restauration et vérification à ratifier. Aucune seconde base métier ou stockage GPU comme source autoritaire."
+        },
+        {
+          "source": "G1v2",
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "line": 60,
+          "exact_line": "6. La méthode de hash des exemplesJSON M24 ne décide pas la canonicalisation de production ; DEC16 reste ouverte. IFC en proxies/représentations ne prouve pas sourcecanonique paramétrique ni certification ; matrice par sens/version/entité et pertes reste requise."
+        }
+      ],
+      "acceptance_criterion": "Cas mêmecontenu/mêmep procédé, ordre modifié, pièce changée, nonfinitude et format inconnu ; ancienne pièce conservée et décision traçable.",
+      "authority": "DEC16 préparée avec A1/A2/A5/A6, arbitrage délégué A0/ChatGPT ; pas fermetureDEC par ce tableau.",
+      "blocking_boundary": "Avant identité de contenu durable et publication ; pas bloquant pour maquettes/navigation sans persistance.",
+      "state": "À_DÉFINIR_PHYSIQUEMENT_SANS_CODE"
+    },
+    {
+      "id": "R3-COMP-09",
+      "choice": "Loader de l’export public polygonArea",
+      "already_retained_to_preserve": "Réemploi des noyaux par entréespubliques retenu DEC01 ; DEC18 inventorie sans ratifier toute réutilisation ; aucun import profond de contournement. GrapheA2 code5e0285 lu statiquement.",
+      "residual_choice_required": "Éprouver sous autorisation le runner existant exact, résolution workspace/TS ESM exports src/index.ts et spécificateurs .js→.ts, hooks et confinement ; décider compatible ou souspointbloqué.",
+      "reader_effect": "Sans runnercompatible, pas importeffectif/lecteur expérimental présenté fonctionnel.",
+      "writer_effect": "Moteur n’écrit pas stockage ; polygonArea reçoit données contrôlées via adaptateur candidat.",
+      "migration_effect": "Pas nouveau package, script, copie moteur ou modificationapplication pour contourner résolution. Toute extension de périmètre doit être approuvée.",
+      "evidence": [
+        {
+          "source": "G2",
+          "path": "/workspace/work/resume496/agents/A2/G2-GRAPHE-IMPORT-PUBLIC-A2.json",
+          "line": 154,
+          "exact_line": "    \"loader_condition\": \"Le futur runner autorisé doit déjà gérer source TypeScript ESM et résolution des spécificateurs relatifs .js vers sources .ts. moduleResolution Bundler est un choix de résolution de compilation, pas un chargeur runtime. Aucun import exécuté ici ; commande/loader futur à faire relire A5/A6. Ni compatibilité plain node ni disponibilité de dist/index.js déduites.\""
+        },
+        {
+          "source": "G2",
+          "path": "/workspace/work/resume496/agents/A2/G2-GRAPHE-IMPORT-PUBLIC-A2.json",
+          "line": 157,
+          "exact_line": "    \"runtime_nodes\": ["
+        },
+        {
+          "source": "G2",
+          "path": "/workspace/work/resume496/agents/A2/G2-GRAPHE-IMPORT-PUBLIC-A2.json",
+          "line": 249,
+          "exact_line": "    \"evaluation_order_for_unbundled_esm\": \"Dépendances évaluées avant entrée : geometry puis parcel-geometry puis site-zoning puis index selon ordre de réexportations, chaque module une fois par instance ESM. Pas une observation runtime.\","
+        }
+      ],
+      "acceptance_criterion": "Commande/runner figés A5/A6, SHA final/graph identiques, aucune dépendance/service/network imprévu ; test futur seulement autorisé. Échec bloque ce souspoint, pas les autres READY.",
+      "authority": "A2 graphe ; A5/A6 revue runtime/confinement ; A0 soumet autorisation POC applicable.",
+      "blocking_boundary": "Avant tout import exécuté G2 ; statique viable n’est pas une autorisation ni preuve de runtime.",
+      "state": "À_DÉFINIR_PHYSIQUEMENT_SANS_CODE"
+    },
+    {
+      "id": "R3-COMP-10",
+      "choice": "Compatibilité des clients/offline et transition de versions",
+      "already_retained_to_preserve": "Undo/redo nouvelle opération contrôlée, copie/fork explicite, données historiques immuables ; R17 pas fusion silencieuse.",
+      "residual_choice_required": "Fixer capacitédeclaredclient/version supportée, refus ou miseenrésolution des anciennes commandes offline et procédure de reprise avant changement d’autorité.",
+      "reader_effect": "Client ancien montre état explicite sans perdre champs ou appeler une opération inconnue ; réouvertureexacte préservée.",
+      "writer_effect": "Refuser commit ancien/incompatible et doublewriter ; aucune purge silencieuse de file.",
+      "migration_effect": "Rapport des commandes enattente, migration d’autorité explicite et retourarrière conservant source/nouvellesécritures, pas exécution ici.",
+      "evidence": [
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 25,
+          "exact_line": "Atelier et Studio peuvent partager un moteur via adaptateur public, mais une même donnée partagée garde un écrivain unique. Tout mode de coexistence « Studio écrit l'ancien Atelier et sa nouvelle copie » est refusé. La forme physique de l'adaptateur et le choix de réutiliser un document existant demeurent DEC-18/01 ; le champ candidat writerAuthority n'est pas une colonne existante. Une transition d'autorité serait une opération explicite, atomique, auditée, avec refus si commandes hors ligne en attente et restauration prouvée ; aucune migration proposée ici n'est autorisée."
+        },
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 62,
+          "exact_line": "Acceptation future M05 : matrice distincte **commandes /1,/2,/3**, modèle1/archive valide-invalide, publications contrat absent,/1,/2,/3 et modèle supérieur ; vieux journals/profils/queue offline ; undo/redo ; mêmes requestId ; données inconnues/conservation ou rapport de pertes ; comparaison modèle/journal/outbox avant-après refus. Corpus synthétique et versionné, tests purs puis DB3 distincte pour intégration. Aucun auto-bump, renommage de constante, migration ou conversion d'archives par ce document."
+        },
+        {
+          "source": "M17",
+          "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+          "line": 37,
+          "exact_line": "Commit : engagement atomique de toutes données canoniques touchées, révision de sortie, journal IF-011 et événement/outbox durable. La notification seule ne confirme rien. Succès expose résultat/revision/event/transaction/effets/portées invalidées ; caches restent reconstruisibles. Job IF-003 renvoie sa révision source ; résultat périmé, annulé ou sans droit renouvelé ne s'engage pas automatiquement. Undo/redo est une nouvelle opération contrôlée sur tête courante, pas déplacement destructif d'un pointeur historique. Un rebase incompatible refuse et présente résolution/recalcul, pas écrasement."
+        }
+      ],
+      "acceptance_criterion": "Corpus queueancienne/nouvelle, conflitbase, commandeinconnue, rebase explicite, annulationinverse et intégritéhistoriquepreuves ; essais intégration seulement autorisés.",
+      "authority": "A2/A5/A6 préparent, A0 arbitre la politique déléguée ; migration sensible séparée.",
+      "blocking_boundary": "Avant transition ou coexistence d’écrivains ; I sanswriter peut être étudié indépendamment.",
+      "state": "À_DÉFINIR_PHYSIQUEMENT_SANS_CODE"
+    }
+  ],
+  "choice_count": 10,
+  "sequence": [
+    "I : contexte/navigation et états lecture/indisponibilité selon NAV existant ; aucun loader effectif ou writer ajouté.",
+    "A.1 préparatoire : fixer versions/parenté/propriétaires/matrice sans redéfinirIF006 ; premiers choix R3-COMP01/02/05/07.",
+    "G2 import pur : R3-COMP09 après préconditions/autorisation propres ; aucun package ou runtime exécuté maintenant.",
+    "Avant sauvegarde/réouverture/publication : R3-COMP03/04/06/08/10 et preuves adaptées ; pas blocage artificiel des études indépendantes."
+  ],
+  "human_or_delegated_decisions": "A0 soumet seulement les choix bornés encore ouverts, avec options/preuves/risques. Ne pas redemander document2Dautonome ou identitéÉtude/Variante déjà retenus. Les opérations sensibles restent autorisations séparées, même si un choix technique est délégué.",
+  "limits": [
+    "Ni versions physiques, IDs, tables, routes, format de hash ou lecteur Studio adoptés par cette pièce.",
+    "Aucun succès runtime/algorithme, test nouveau, CI actuelle ou fermetureDEC/G1/G2 affirmé.",
+    "Aucune réécriture d’actes historiques, code, mapping, package ou sourceA1/A4/A5/A6.",
+    "Graphe statique public limité à quatre sources : ne prouve ni comportement du loader/hooks, ni confinement réseau/IO du runner, ni validité générale des fonctions."
+  ],
+  "next_action": "A0 intègre au dossier des choix ; revue ciblée indexG1 si A4 demande arbitrage architectural précis, sans reprendre schémas ou inventaire.",
+  "citation_count": 28
+}

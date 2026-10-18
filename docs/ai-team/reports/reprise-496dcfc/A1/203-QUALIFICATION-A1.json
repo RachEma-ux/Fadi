@@ -1,0 +1,2065 @@
+{
+  "objet": "Qualification individuelle partition exacte32IDs A1, sans nouvelle extraction203/630",
+  "reference_source": {
+    "schema": "FADI-STUDIO-203-DEFINITIONS-PROPOSEES-v1",
+    "reference_main": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+    "reference_registre_blob": "a460fb315f6c74f6c60797fc2d5e9d7b2d1fbcae",
+    "total_tasks": 630,
+    "undefined_ids_at_reference": 203,
+    "definitions_created": 203,
+    "do_not_replace_canonical_register": true,
+    "all_definitions_require_codex_review": true,
+    "build_date": "2026-10-18",
+    "program_issue": 156,
+    "source_pr_165_merged": true,
+    "categories": {
+      "SRC": 1,
+      "CAD": 1,
+      "REP": 8,
+      "ROUTE": 1,
+      "COEX": 6,
+      "G2": 5,
+      "G3": 4,
+      "G4": 3,
+      "I.4": 1,
+      "A.1": 2,
+      "A.2": 1,
+      "A.3": 1,
+      "A.4": 3,
+      "A.5": 1,
+      "B.1": 2,
+      "B.2": 1,
+      "B.3": 1,
+      "X.1": 10,
+      "X.2": 4,
+      "X.3": 3,
+      "X.4": 3,
+      "X.5": 2,
+      "C.1": 2,
+      "C.2": 3,
+      "D.1": 3,
+      "D.2": 1,
+      "D.3": 4,
+      "E.1": 2,
+      "E.2": 1,
+      "E.4": 1,
+      "E.5": 1,
+      "E.6": 2,
+      "R.1": 3,
+      "R.2": 1,
+      "R.5": 1,
+      "SEQ": 7,
+      "J": 9,
+      "PIL": 5,
+      "EST": 4,
+      "MES": 5,
+      "BLOC": 8,
+      "MIG": 10,
+      "MIG-COEX": 7,
+      "OPS": 9,
+      "SUIVI": 10,
+      "PR": 9,
+      "RESP": 5,
+      "ADR": 5,
+      "RISQ": 10,
+      "PASS": 7,
+      "FIN": 1,
+      "PROV": 3
+    },
+    "queues": {
+      "READY_DOCUMENTATION": 104,
+      "HABILITATION_HUMAINE": 6,
+      "DECISION_BORNEE": 3,
+      "FUTUR_GATE": 43,
+      "PREPARATION_CONTRAT": 36,
+      "EXECUTION_CONDITIONNELLE": 2,
+      "MESURES_A_CADRER": 9
+    },
+    "missions": {
+      "M11": 5,
+      "M13": 20,
+      "M14": 9,
+      "M28": 8,
+      "M16": 1,
+      "M17": 2,
+      "M18": 1,
+      "M19": 1,
+      "M20": 4,
+      "M21": 4,
+      "M15": 37,
+      "M22": 5,
+      "M23": 8,
+      "M24": 7,
+      "M30": 33,
+      "M26": 8,
+      "M27": 26,
+      "M29": 24
+    }
+  },
+  "definitions_sha256": "77eb1509451017773e02d767cd1b56e45ccc6dd97f8de28ca9ad00716bfa9038",
+  "assignments_sha256": "381f4e69a57c395743896963a0ad134d2d2757d721705d3b7ba896f026a636ff",
+  "partition_exacte": [
+    "SRC-06",
+    "CAD-DEC-03",
+    "E.1-02",
+    "E.1-05",
+    "E.2-01",
+    "E.4-03",
+    "E.5-05",
+    "E.6-02",
+    "E.6-03",
+    "PROV-03",
+    "PROV-04",
+    "PROV-05",
+    "SEQ-01",
+    "SEQ-02",
+    "SEQ-03",
+    "SEQ-04",
+    "SEQ-05",
+    "SEQ-06",
+    "SEQ-07",
+    "J0",
+    "J1",
+    "J2",
+    "J3",
+    "J4",
+    "J5",
+    "J6",
+    "J7",
+    "J8",
+    "PIL-01",
+    "PIL-02",
+    "PIL-03",
+    "PIL-04"
+  ],
+  "proprietaires_originaux": {
+    "A1": 12,
+    "A0": 20
+  },
+  "compteurs_statuts_proposes": {
+    "En cours": 18,
+    "À définir": 5,
+    "À faire": 9
+  },
+  "items": [
+    {
+      "id": "SRC-06",
+      "mission": "M11",
+      "proprietaire_original": "A1",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Consigner et faire arbitrer toute contradiction entre sources, sans réduire silencieusement la cible au fonctionnement existant.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 61,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L61"
+      },
+      "definition_source": {
+        "livrable": "Dossier de sources versionné, contradiction et décision liée",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Consigner et faire arbitrer toute contradiction entre sources, sans réduire silencieusement la cible au fonctionnement existant. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Citer les textes et empreintes exactes ; ne jamais substituer le comportement du code à la spécification",
+          "Comparer aux sources normatives et aux dernières décisions effectivement publiées ; signaler tout conflit de source.",
+          "Distinguer preuve de conception, test réellement exécuté et acceptation humaine avant tout changement de statut.",
+          "Fiche datée avec ID SRC-06, agent A1, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "Contradictions identifiées ; arbitrages physiques/format encore ouverts.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 34,
+              "exact": "5. IFC valide/export versus paramétrique : consultation/import en représentations ne prouve ni round-trip paramétrique ni certification ; rapports pertes et statut non natif restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Réalisation/accord aval reste distinct du dossier préparé",
+      "prochaine_action": "Réemployer conflits G0 et M08 cercle, obtenir décisions ciblées sans réécrire sources.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "SRC-06",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "CAD-DEC-03",
+      "mission": "M11",
+      "proprietaire_original": "A1",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Préciser les personnes, leur disponibilité et les règles de cumul des responsabilités.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 81,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L81"
+      },
+      "definition_source": {
+        "livrable": "Fiche de cadrage/autorité, rôle ou arbitrage daté",
+        "ordonnancement": "HABILITATION_HUMAINE",
+        "conditions": [
+          "L'obligation source « Préciser les personnes, leur disponibilité et les règles de cumul des responsabilités. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Conserver objectifs, exclusions, détenteur de décision et preuves ; ne pas inventer personnes ni disponibilité",
+          "A0/A1–A6 sont des rôles d'agents, pas des personnes habilitées ; les disponibilités humaines restent inconnues.",
+          "Indiquer « décision humaine requise » sans nom, disponibilité ou approbation inventés.",
+          "Fiche datée avec ID CAD-DEC-03, agent A1, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Insuffisant : choix/personnes/contenuconcret encore inconnu",
+      "statut_propose": "À définir",
+      "justification": "Personnes, disponibilités et délégations effectives non fournies.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 15,
+              "exact": "| G0 | `docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md` auSHA7b0cca44fa44449cae80785dea078a857be4180c | Cadrage accepté seulement avec réserves explicites, CAD-DEC-03 ouvert |"
+            },
+            {
+              "line": 52,
+              "exact": "Aucun changement de ces quatre statuts n'est appliqué par A1 ; ce n'est pas un nouveau registre. G0-03 accepté n'implique ni G1-03 vérifié ni G1 passé. CAD-DEC-03 noms/disponibilités des personnes demeure ouvert."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Autorité utilisateur sur les personnes et cumul des rôles",
+      "prochaine_action": "Demander noms/disponibilités et cumul autorisé ; A0–A6 ne sont pas habilitations humaines.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "CAD-DEC-03",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "E.1-02",
+      "mission": "M24",
+      "proprietaire_original": "A1",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Conserver les exigences versionnées séparément des résultats dessinés.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 579,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L579"
+      },
+      "definition_source": {
+        "livrable": "Modèle exigence/résultat et règle/version de contrôle",
+        "ordonnancement": "PREPARATION_CONTRAT",
+        "conditions": [
+          "L'obligation source « Conserver les exigences versionnées séparément des résultats dessinés. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Exigence et preuve de résultat séparées, lien à révision exacte",
+          "Ancrer source, révision et autorité d'approbation du livrable concerné.",
+          "Contrôler que modèle, projection/rendu, quantités et manifeste n'attribuent jamais une propriété non prouvée.",
+          "Fiche datée avec ID E.1-02, agent A1, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "Contrat de séparation présent ; conservation réelle exigences/résultats non réalisée.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+          "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917",
+          "citations": [
+            {
+              "line": 109,
+              "exact": "Quantité IF-008 : sourceRevisionSet, ruleId/ruleVersion, sourceObjectIds, unité, rawValue, déductions, valeur affichée et fraîcheur ; ajustement manuel séparé avec auteur/motif, pas écrasement du calcul. Ne pas sommer règles/unités/révisions incompatibles silencieusement. Exigence approuvée reste indépendante du dessin, EX-065."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "DEC/G1/G2/G3 applicables, test sur cible autorisée",
+      "prochaine_action": "Revoir lien requirementId/version distinct de resultId/sourceRevision/ruleVersion, puis réalisationE autorisée.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "E.1-02",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true,
+      "rapprochement_normatif_existant": [
+        {
+          "id": "EX-065",
+          "texte_exact": "EX-065 — Exigence vs mesure. Une exigence versionnée (ex. surface programmée de 28 m²) ne change pas lorsque la surface modélisée devient 26 m² ; l’interface présente explicitement l’écart. La modification d’exigence passe par sa propre commande, avec permission et provenance.",
+          "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+          "source_paragraphs": [
+            674
+          ],
+          "nature": "Source normative existante, rapprochement de préparation sans preuve implémentation"
+        },
+        {
+          "id": "INV-004",
+          "texte_exact": "Une exigence approuvée reste distincte du résultat de conception.",
+          "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+          "source_paragraphs": [
+            213,
+            214
+          ],
+          "nature": "Source normative existante, rapprochement de préparation sans preuve implémentation"
+        }
+      ]
+    },
+    {
+      "id": "E.1-05",
+      "mission": "M24",
+      "proprietaire_original": "A1",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Associer les règles de contrôle aux contenus et révisions examinés.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 582,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L582"
+      },
+      "definition_source": {
+        "livrable": "Modèle exigence/résultat et règle/version de contrôle",
+        "ordonnancement": "PREPARATION_CONTRAT",
+        "conditions": [
+          "L'obligation source « Associer les règles de contrôle aux contenus et révisions examinés. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Exigence et preuve de résultat séparées, lien à révision exacte",
+          "Ancrer source, révision et autorité d'approbation du livrable concerné.",
+          "Contrôler que modèle, projection/rendu, quantités et manifeste n'attribuent jamais une propriété non prouvée.",
+          "Fiche datée avec ID E.1-05, agent A1, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "Règle/version/source révisée spécifiées ; aucune exécution contrôleStudio.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+          "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917",
+          "citations": [
+            {
+              "line": 109,
+              "exact": "Quantité IF-008 : sourceRevisionSet, ruleId/ruleVersion, sourceObjectIds, unité, rawValue, déductions, valeur affichée et fraîcheur ; ajustement manuel séparé avec auteur/motif, pas écrasement du calcul. Ne pas sommer règles/unités/révisions incompatibles silencieusement. Exigence approuvée reste indépendante du dessin, EX-065."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "DEC/G1/G2/G3 applicables, test sur cible autorisée",
+      "prochaine_action": "Revoir association ensemble sources exact/règle/version/tolérance et refus d’un résultat périmé.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "E.1-05",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true,
+      "rapprochement_normatif_existant": [
+        {
+          "id": "EX-068",
+          "texte_exact": "EX-068 — Conclusion normative. Les valeurs de contrôle sont conforme, non conforme, non testé, non applicable justifié. Le statut d’exécution (en attente, échec technique) ne doit jamais être interprété comme conforme.",
+          "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+          "source_paragraphs": [
+            695
+          ],
+          "nature": "Source normative existante, rapprochement de préparation sans preuve implémentation"
+        },
+        {
+          "id": "IF-008",
+          "texte_exact": "IF-008 — Résultat quantitatif. quantityId + sourceRevisionSet + ruleId + ruleVersion + sourceObjectIds + unit + rawValue + deductions + displayValue + freshnessStatus ; manualAdjustment est facultatif, distinct, motivé et attribué. La décision de structure physique reste ouverte.",
+          "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+          "source_paragraphs": [
+            731
+          ],
+          "nature": "Source normative existante, rapprochement de préparation sans preuve implémentation"
+        }
+      ]
+    },
+    {
+      "id": "E.2-01",
+      "mission": "M24",
+      "proprietaire_original": "A1",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Conserver une identité unique d’observation lorsqu’elle est utilisée dans plusieurs domaines.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 589,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L589"
+      },
+      "definition_source": {
+        "livrable": "Identité d'observation et workflow de recontrôle transversal",
+        "ordonnancement": "PREPARATION_CONTRAT",
+        "conditions": [
+          "L'obligation source « Conserver une identité unique d’observation lorsqu’elle est utilisée dans plusieurs domaines. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Une observation reste unique entre domaines et liée à objet/source/révision",
+          "Ancrer source, révision et autorité d'approbation du livrable concerné.",
+          "Contrôler que modèle, projection/rendu, quantités et manifeste n'attribuent jamais une propriété non prouvée.",
+          "Fiche datée avec ID E.2-01, agent A1, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "Recontrôle mentionné, identité observation transdomaines/interfacephysique pas décidée.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+          "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917",
+          "citations": [
+            {
+              "line": 45,
+              "exact": "Entrées : ensemble de sources canoniques révisées, dessins libres ou associés, références versionnées acceptées, vues/feuilles/quantités/documents, contrôles et observations. Toutes les références doivent former une coupe logique cohérente : interdiction d'assembler une ancienne pièce et une nouvelle géométrie après lectures entrelacées sans signalement."
+            },
+            {
+              "line": 47,
+              "exact": "Sortie : manifeste candidat IF-009 avec identifiant, usage, auteur/date, documents ordonnés (ID/version/empreinte), révisions/empreintes sources, règles/versions, rapports de contrôle et décisions sur observations bloquantes. Une pièce non générée, manquante, périmée, inaccessible ou de source ambiguë ne devient pas prête par présence d'une ligne de catalogue."
+            },
+            {
+              "line": 51,
+              "exact": "Le contrôle distingue **état d'exécution** (non lancé/en cours/terminé/échec) et **conclusion** (conforme/non conforme/non testé/non applicable justifié). Un échec technique ne signifie jamais conforme. Un contrôleur habilité recontrôle les corrections ; une observation ne se clôt pas parce que son concepteur la dit corrigée ou supprime l'objet. Une dérogation, si permise, est une décision tracée sur la bonne source et le bon usage, pas une fermeture silencieuse."
+            },
+            {
+              "line": 57,
+              "exact": "Entrées : droit d'approbation effectif, ensemble figé exact, contrôles requis et observations bloquantes traitées selon politique, usage et décision. Sortie : approbation liée à **l'empreinte du manifeste et à ses pièces**, acteur et date serveur, portée/usage et journal. L'ancienne décision reste liée à son ancien ensemble lorsque le travail continue."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "DEC/G1/G2/G3 applicables, test sur cible autorisée",
+      "prochaine_action": "Réemployer IF010/EX069 ; définir observationId unique, liens objets/révisions et états sans dupliquer Collaboration.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "E.2-01",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true,
+      "rapprochement_normatif_existant": [
+        {
+          "id": "EX-069",
+          "texte_exact": "EX-069 — Observation unique. Une anomalie issue d’un contrôle possède un issueId réutilisé par le suivi documentaire. Le réexamen d’une même anomalie sur une nouvelle révision rapproche les observations existantes selon une règle explicite, pas par création systématique de doublons.",
+          "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+          "source_paragraphs": [
+            696
+          ],
+          "nature": "Source normative existante, rapprochement de préparation sans preuve implémentation"
+        },
+        {
+          "id": "IF-010",
+          "texte_exact": "IF-010 — Observation. Champs : issueId, catégorie, source du contrôle, révisions examinées, objets/vues, auteur, gravité selon règles décidées, description et pièces justificatives, responsable éventuel, état, journal de décisions, références des recontrôles et condition de clôture. Les identifiants BCF éventuels sont conservés comme références, non assimilés automatiquement aux identifiants internes.",
+          "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+          "source_paragraphs": [
+            819
+          ],
+          "nature": "Source normative existante, rapprochement de préparation sans preuve implémentation"
+        }
+      ]
+    },
+    {
+      "id": "E.4-03",
+      "mission": "M24",
+      "proprietaire_original": "A1",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Figer un manifeste multi-sources des versions coordonnées.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 613,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L613"
+      },
+      "definition_source": {
+        "livrable": "Manifeste immuable multi-sources approuvé et versionné",
+        "ordonnancement": "PREPARATION_CONTRAT",
+        "conditions": [
+          "L'obligation source « Figer un manifeste multi-sources des versions coordonnées. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Contenu publié identique au contenu approuvé, empreintes cohérentes",
+          "Ancrer source, révision et autorité d'approbation du livrable concerné.",
+          "Contrôler que modèle, projection/rendu, quantités et manifeste n'attribuent jamais une propriété non prouvée.",
+          "Fiche datée avec ID E.4-03, agent A1, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "Manifeste candidat exact spécifié ; règles choix intervariantes DEC16 ouvertes.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+          "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917",
+          "citations": [
+            {
+              "line": 33,
+              "exact": "Les exemples utilisent une publication par variante A/B/C d'une même étude synthétique. IF-009 permet un ensemble coordonné multi-sources : un futur dossier peut référencer plusieurs variantes/révisions explicitement autorisées, mais ne mélange jamais implicitement les sources sous un unique faux numéro de révision. Les règles de choix inter-variantes restent à instruire par DEC-16 ; les exemples n'en font pas une API acquise."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "DEC/G1/G2/G3 applicables, test sur cible autorisée",
+      "prochaine_action": "Rapprocher IF009 et exemples M24 existants ; arbitrer ensemble multisources avant implémentation.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "E.4-03",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true,
+      "rapprochement_normatif_existant": [
+        {
+          "id": "EX-081",
+          "texte_exact": "EX-081 — Ensemble coordonné. Plusieurs disciplines peuvent avoir des numéros de révision différents ; l’ensemble doit être explicitement coordonné et figé. Une modification après approbation remet en question l’éligibilité du nouveau dossier, pas l’intégrité de la publication historique.",
+          "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+          "source_paragraphs": [
+            766
+          ],
+          "nature": "Source normative existante, rapprochement de préparation sans preuve implémentation"
+        },
+        {
+          "id": "IF-009",
+          "texte_exact": "IF-009 — Publication. Le manifeste contient : identifiant, intention/usage, date, auteur, état d’approbation, liste ordonnée de documentId + version + empreinte, références de modèles et de règles, rapports de contrôle et observations bloquantes résolues ou dérogées, ainsi que la décision d’approbation sur cet ensemble exact.",
+          "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+          "source_paragraphs": [
+            765
+          ],
+          "nature": "Source normative existante, rapprochement de préparation sans preuve implémentation"
+        }
+      ]
+    },
+    {
+      "id": "E.5-05",
+      "mission": "M24",
+      "proprietaire_original": "A1",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Conserver distincts rendu du modèle, illustration IA contrainte et exploration libre ; ne pas modifier automatiquement le BIM à partir d’une image.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 626,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L626"
+      },
+      "definition_source": {
+        "livrable": "Distinction modèle/rendu/illustration IA/exploration avec provenance",
+        "ordonnancement": "PREPARATION_CONTRAT",
+        "conditions": [
+          "L'obligation source « Conserver distincts rendu du modèle, illustration IA contrainte et exploration libre ; ne pas modifier automatiquement le BIM à partir d’une image. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Une image n'écrit jamais automatiquement le BIM ni les métrés",
+          "Ancrer source, révision et autorité d'approbation du livrable concerné.",
+          "Contrôler que modèle, projection/rendu, quantités et manifeste n'attribuent jamais une propriété non prouvée.",
+          "Fiche datée avec ID E.5-05, agent A1, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "Distinctions métier cadrées ; preuve refus écritureBIM à partir image manquante.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 55,
+              "exact": "| D2BIM et coordination | Propriétés/contrôles/exigences distinctes des résultats ; références externes acceptées | Résultat avec source/règle/révision/conclusion, observation identifiée et recontrôlée |"
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "DEC/G1/G2/G3 applicables, test sur cible autorisée",
+      "prochaine_action": "Conserver trois types de résultat/provenances ; image sans autorité commande ni métrés, testnégatif futur.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "E.5-05",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true,
+      "rapprochement_normatif_existant": [
+        {
+          "id": "EX-072",
+          "texte_exact": "EX-072 — Reproductibilité honnête. Conserver les paramètres et une image historique ne garantit pas la reproduction identique d’une génération IA. Les inconnues du fournisseur sont signalées comme telles.",
+          "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+          "source_paragraphs": [
+            718
+          ],
+          "nature": "Source normative existante, rapprochement de préparation sans preuve implémentation"
+        },
+        {
+          "id": "EX-073",
+          "texte_exact": "EX-073 — Séparation visuel/technique. Les quantités, performances et règles métier se calculent sur les objets et données de référence, jamais sur les pixels d’une illustration. Un matériau apparent ne change pas automatiquement la composition constructive.",
+          "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+          "source_paragraphs": [
+            719
+          ],
+          "nature": "Source normative existante, rapprochement de préparation sans preuve implémentation"
+        }
+      ]
+    },
+    {
+      "id": "E.6-02",
+      "mission": "M24",
+      "proprietaire_original": "A1",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Définir et livrer les données natives, les vues/feuilles et les tableaux du pilote selon leurs contrats.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 633,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L633"
+      },
+      "definition_source": {
+        "livrable": "Matrice format/sens/version/entités, jeu natif et rapport de pertes",
+        "ordonnancement": "PREPARATION_CONTRAT",
+        "conditions": [
+          "L'obligation source « Définir et livrer les données natives, les vues/feuilles et les tableaux du pilote selon leurs contrats. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Ne promettre ni DXF ni IFC au-delà du sous-ensemble validé",
+          "Ancrer source, révision et autorité d'approbation du livrable concerné.",
+          "Contrôler que modèle, projection/rendu, quantités et manifeste n'attribuent jamais une propriété non prouvée.",
+          "Fiche datée avec ID E.6-02, agent A1, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Insuffisant : choix/personnes/contenuconcret encore inconnu",
+      "statut_propose": "À définir",
+      "justification": "Formats natifs/vues/feuilles/tableaux du pilote non ratifiés, exemplesJSON ne sont pas livraisons.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+          "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917",
+          "citations": [
+            {
+              "line": 115,
+              "exact": "`M24-EXEMPLES-MANIFESTES.json` contient trois exemples positifs **documentaires** A/B/C et quinze cas négatifs JSON bien formés. Les noms `illustrative-*`, `fixture-*`, états `expected-*`, contenus et permissions supposées ne sont pas des données/états/contrats réellement enregistrés. Même un exemple appelé positif n'est pas un test Fadi passé. Ses pièces sont des objetsJSON synthétiques de démonstration de manifeste, **pas des exportsPDF/IFC ni un format natif Studio livré** ; il ne couvre pas seul le contenu complet du MVP."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "DEC/G1/G2/G3 applicables, test sur cible autorisée",
+      "prochaine_action": "Décider types/versions/entités et contrats sans promettre exports existants équivalentsStudio.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "E.6-02",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true,
+      "rapprochement_normatif_existant": [
+        {
+          "id": "EX-074",
+          "texte_exact": "EX-074 — Chaîne documentaire. Vue → Feuille → Dossier → Publication constitue le cycle des livrables. Une Planche est un environnement de travail ; une feuille est un assemblage de représentations et annotations à une échelle et un format déclarés.",
+          "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+          "source_paragraphs": [
+            725
+          ],
+          "nature": "Source normative existante, rapprochement de préparation sans preuve implémentation"
+        },
+        {
+          "id": "EX-076",
+          "texte_exact": "EX-076 — Documents indépendants. Un dessin de détail créé directement en 2D peut être publié conjointement avec des documents dérivés d’une maquette sans être présenté comme un extrait automatiquement synchronisé.",
+          "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+          "source_paragraphs": [
+            727
+          ],
+          "nature": "Source normative existante, rapprochement de préparation sans preuve implémentation"
+        }
+      ]
+    },
+    {
+      "id": "E.6-03",
+      "mission": "M24",
+      "proprietaire_original": "A1",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Définir le sous-ensemble DXF/IFC retenu et produire ses rapports de fidélité/pertes.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 634,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L634"
+      },
+      "definition_source": {
+        "livrable": "Matrice format/sens/version/entités, jeu natif et rapport de pertes",
+        "ordonnancement": "PREPARATION_CONTRAT",
+        "conditions": [
+          "L'obligation source « Définir le sous-ensemble DXF/IFC retenu et produire ses rapports de fidélité/pertes. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Ne promettre ni DXF ni IFC au-delà du sous-ensemble validé",
+          "Ancrer source, révision et autorité d'approbation du livrable concerné.",
+          "Contrôler que modèle, projection/rendu, quantités et manifeste n'attribuent jamais une propriété non prouvée.",
+          "Fiche datée avec ID E.6-03, agent A1, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Insuffisant : choix/personnes/contenuconcret encore inconnu",
+      "statut_propose": "À définir",
+      "justification": "Sousensemble sens/version/entités DXF/IFC à décider ; pas roundtripparamétrique prouvé.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+          "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917",
+          "citations": [
+            {
+              "line": 149,
+              "exact": "| IFC/DXF et limites | Adaptateurs existants à qualifier par sens/version/entité | TEST028 ; rapport pertes/proxies/non natif, jamais certification/round-trip supposés |"
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "DEC/G1/G2/G3 applicables, test sur cible autorisée",
+      "prochaine_action": "Proposer matrice par sens/version/entité puis arbitrage ; rapports pertes/proxys obligatoires.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "E.6-03",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true,
+      "rapprochement_normatif_existant": [
+        {
+          "id": "EX-079",
+          "texte_exact": "EX-079 — Capacité par sens d’échange. lecture, consultation, édition, export, aller-retour sont évalués séparément. Aucun simple export IFC ou DXF ne suffit à prouver un round-trip fidèle ; aucune certification n’est affirmée sans audit correspondant.",
+          "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+          "source_paragraphs": [
+            762
+          ],
+          "nature": "Source normative existante, rapprochement de préparation sans preuve implémentation"
+        },
+        {
+          "id": "EX-080",
+          "texte_exact": "EX-080 — Rapport de transformation. Import et export signalent unités et repères, primitives non prises en charge, propriétés perdues, simplifications, conflits d’identifiants et éléments ignorés. Une source non prise en charge ne disparaît pas sans information.",
+          "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+          "source_paragraphs": [
+            763
+          ],
+          "nature": "Source normative existante, rapprochement de préparation sans preuve implémentation"
+        }
+      ]
+    },
+    {
+      "id": "PROV-03",
+      "mission": "M11",
+      "proprietaire_original": "A1",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Conserver REP-01 comme observation du 18/10/2026 au commit 5cf61d1fed9ed523b331228af20bce93a4f2bf63, sans l’assimiler à un HEAD futur.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 1325,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L1325"
+      },
+      "definition_source": {
+        "livrable": "Table d'identifiants, versions et références de comparaison",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Conserver REP-01 comme observation du 18/10/2026 au commit 5cf61d1fed9ed523b331228af20bce93a4f2bf63, sans l’assimiler à un HEAD futur. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Distinguer photographie historique, HEAD actuel et source canonique sans modifier les IDs",
+          "Comparer aux sources normatives et aux dernières décisions effectivement publiées ; signaler tout conflit de source.",
+          "Distinguer preuve de conception, test réellement exécuté et acceptation humaine avant tout changement de statut.",
+          "Fiche datée avec ID PROV-03, agent A1, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "ObservationREP01 figée5cf61 conservée dans source ; HEAD main817 distinct.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 3,
+              "exact": "Programme#156, contribution A1, 18 octobre2026. Cet index **référence** les contrats existants, sans les recopier ni devenir une deuxième norme. G0 documentaire accepté au dossier7b0cca44… par6250109830 ; orientations DEC01/03 retenues pour spécifications par6250110124/0501 ; décisions physiques et G1–G4 encore ouvertes. Aucun nouveau code, POC exécuté, stockage SQL/paquet ou DEV_SCOPE n'est décidé ici."
+            },
+            {
+              "line": 15,
+              "exact": "| G0 | `docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md` auSHA7b0cca44fa44449cae80785dea078a857be4180c | Cadrage accepté seulement avec réserves explicites, CAD-DEC-03 ouvert |"
+            },
+            {
+              "line": 52,
+              "exact": "Aucun changement de ces quatre statuts n'est appliqué par A1 ; ce n'est pas un nouveau registre. G0-03 accepté n'implique ni G1-03 vérifié ni G1 passé. CAD-DEC-03 noms/disponibilités des personnes demeure ouvert."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Réalisation/accord aval reste distinct du dossier préparé",
+      "prochaine_action": "Réemployer table provenance jointe sans présenterREP01 testactuel.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "PROV-03",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "PROV-04",
+      "mission": "M11",
+      "proprietaire_original": "A1",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Conserver les chemins de sources du plan et distinguer les résultats futurs de l’audit historique 3bcda929….",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 1326,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L1326"
+      },
+      "definition_source": {
+        "livrable": "Table d'identifiants, versions et références de comparaison",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Conserver les chemins de sources du plan et distinguer les résultats futurs de l’audit historique 3bcda929…. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Distinguer photographie historique, HEAD actuel et source canonique sans modifier les IDs",
+          "Comparer aux sources normatives et aux dernières décisions effectivement publiées ; signaler tout conflit de source.",
+          "Distinguer preuve de conception, test réellement exécuté et acceptation humaine avant tout changement de statut.",
+          "Fiche datée avec ID PROV-04, agent A1, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "Chemins sources conservés ; audit3bcda historique non converti en preuve courante.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 5,
+              "exact": "## Sources actives uniques et versions"
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Réalisation/accord aval reste distinct du dossier préparé",
+      "prochaine_action": "Joindre couple source/révision à tout futur résultat, sans renommer documents.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "PROV-04",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "PROV-05",
+      "mission": "M11",
+      "proprietaire_original": "A1",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Documenter à chaque révision de la checklist les modifications du découpage, sans renuméroter EX, INV, IF, AC, TEST, NAV ou DEC.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 1327,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L1327"
+      },
+      "definition_source": {
+        "livrable": "Table d'identifiants, versions et références de comparaison",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Documenter à chaque révision de la checklist les modifications du découpage, sans renuméroter EX, INV, IF, AC, TEST, NAV ou DEC. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Distinguer photographie historique, HEAD actuel et source canonique sans modifier les IDs",
+          "Comparer aux sources normatives et aux dernières décisions effectivement publiées ; signaler tout conflit de source.",
+          "Distinguer preuve de conception, test réellement exécuté et acceptation humaine avant tout changement de statut.",
+          "Fiche datée avec ID PROV-05, agent A1, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "Delta versions traçabilité conservé ; aucune révision checklist nouvelle effectuée.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1-v2-DELTA.json",
+          "sha256": "a69d50bdc3d269fa98e20c7b6c2840f06b5502c1179e76df207118d8735e8706",
+          "citations": [
+            {
+              "line": 2,
+              "exact": "  \"v1_sha256\": \"3d212ffb93dc33380ac313556cb36b00302246b82ac7096b466c530b4923c719\","
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Réalisation/accord aval reste distinct du dossier préparé",
+      "prochaine_action": "À chaque future modification autorisée checklist, fournir diff IDs/textes/raisons, sans renuméroter.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "PROV-05",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "SEQ-01",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Enregistrer G0 → G1 → G2 → G3 comme prérequis des lots dépendants.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 728,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L728"
+      },
+      "definition_source": {
+        "livrable": "Graphe de dépendances et critères d'ouverture de sous-lot",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Enregistrer G0 → G1 → G2 → G3 comme prérequis des lots dépendants. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Ne pas ouvrir un lot sans gate ; indépendants poursuivis pendant attente",
+          "Comparer aux sources normatives et aux dernières décisions effectivement publiées ; signaler tout conflit de source.",
+          "Distinguer preuve de conception, test réellement exécuté et acceptation humaine avant tout changement de statut.",
+          "Fiche datée avec ID SEQ-01, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "G0 documentaire accepté6250109830 ; G1/G2/G3 ouverts et accord réalisation par souslot.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 23,
+              "exact": "Exclus de sa réalisation initiale proposée : éditeurs/outils complets A.2/A.3, association topologique A.4, tous moteurs industriels réintégrés dans un nouveau catalogue, Registry/Manager completB, optimisationC/ordonnanceurD, revue/publication métier complèteE, migration de données existantesR et optionsF reportées. Leurs **interfaces** utiles restent prises en compte pour ne pas créer un contrat incompatible. Une intégration I/A.1 livrée ne serait pas le MVP A/B/C terminable ; TEST001 complet attend E. Aucun de ces lots n'est ouvert par cet index."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Réalisation/accord aval reste distinct du dossier préparé",
+      "prochaine_action": "Réutiliser séquence et pointeurs lots existants ; A0 consigne contrat/gate/accord précis de chaque ouverture.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "SEQ-01",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "SEQ-02",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Planifier I et X avec les fondations A.1 après les décisions applicables.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 729,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L729"
+      },
+      "definition_source": {
+        "livrable": "Graphe de dépendances et critères d'ouverture de sous-lot",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Planifier I et X avec les fondations A.1 après les décisions applicables. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Ne pas ouvrir un lot sans gate ; indépendants poursuivis pendant attente",
+          "Comparer aux sources normatives et aux dernières décisions effectivement publiées ; signaler tout conflit de source.",
+          "Distinguer preuve de conception, test réellement exécuté et acceptation humaine avant tout changement de statut.",
+          "Fiche datée avec ID SEQ-02, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "I/X/A.1 premiers, contratsG1 et preuvesG2/G3 applicables avantcode ; aucun ordre global fictif.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 23,
+              "exact": "Exclus de sa réalisation initiale proposée : éditeurs/outils complets A.2/A.3, association topologique A.4, tous moteurs industriels réintégrés dans un nouveau catalogue, Registry/Manager completB, optimisationC/ordonnanceurD, revue/publication métier complèteE, migration de données existantesR et optionsF reportées. Leurs **interfaces** utiles restent prises en compte pour ne pas créer un contrat incompatible. Une intégration I/A.1 livrée ne serait pas le MVP A/B/C terminable ; TEST001 complet attend E. Aucun de ces lots n'est ouvert par cet index."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Réalisation/accord aval reste distinct du dossier préparé",
+      "prochaine_action": "Réutiliser séquence et pointeurs lots existants ; A0 consigne contrat/gate/accord précis de chaque ouverture.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "SEQ-02",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "SEQ-03",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Planifier B en parallèle uniquement sur des contrats stables et compatibles avec A.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 730,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L730"
+      },
+      "definition_source": {
+        "livrable": "Graphe de dépendances et critères d'ouverture de sous-lot",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Planifier B en parallèle uniquement sur des contrats stables et compatibles avec A. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Ne pas ouvrir un lot sans gate ; indépendants poursuivis pendant attente",
+          "Comparer aux sources normatives et aux dernières décisions effectivement publiées ; signaler tout conflit de source.",
+          "Distinguer preuve de conception, test réellement exécuté et acceptation humaine avant tout changement de statut.",
+          "Fiche datée avec ID SEQ-03, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "B peut préparer interfaces/catalogue en parallèle, réalisation seulement contratsA stables et accord propre.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 23,
+              "exact": "Exclus de sa réalisation initiale proposée : éditeurs/outils complets A.2/A.3, association topologique A.4, tous moteurs industriels réintégrés dans un nouveau catalogue, Registry/Manager completB, optimisationC/ordonnanceurD, revue/publication métier complèteE, migration de données existantesR et optionsF reportées. Leurs **interfaces** utiles restent prises en compte pour ne pas créer un contrat incompatible. Une intégration I/A.1 livrée ne serait pas le MVP A/B/C terminable ; TEST001 complet attend E. Aucun de ces lots n'est ouvert par cet index."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Réalisation/accord aval reste distinct du dossier préparé",
+      "prochaine_action": "Réutiliser séquence et pointeurs lots existants ; A0 consigne contrat/gate/accord précis de chaque ouverture.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "SEQ-03",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "SEQ-04",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Planifier A.2/A.3 avant la démonstration associée A.4/A.5.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 731,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L731"
+      },
+      "definition_source": {
+        "livrable": "Graphe de dépendances et critères d'ouverture de sous-lot",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Planifier A.2/A.3 avant la démonstration associée A.4/A.5. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Ne pas ouvrir un lot sans gate ; indépendants poursuivis pendant attente",
+          "Comparer aux sources normatives et aux dernières décisions effectivement publiées ; signaler tout conflit de source.",
+          "Distinguer preuve de conception, test réellement exécuté et acceptation humaine avant tout changement de statut.",
+          "Fiche datée avec ID SEQ-04, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "A.2 etA.3 autonomes avant démonstration associéeA.4/A.5, sans exigerqu’un éditeursoit complet pourspécifier contrat.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 23,
+              "exact": "Exclus de sa réalisation initiale proposée : éditeurs/outils complets A.2/A.3, association topologique A.4, tous moteurs industriels réintégrés dans un nouveau catalogue, Registry/Manager completB, optimisationC/ordonnanceurD, revue/publication métier complèteE, migration de données existantesR et optionsF reportées. Leurs **interfaces** utiles restent prises en compte pour ne pas créer un contrat incompatible. Une intégration I/A.1 livrée ne serait pas le MVP A/B/C terminable ; TEST001 complet attend E. Aucun de ces lots n'est ouvert par cet index."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Réalisation/accord aval reste distinct du dossier préparé",
+      "prochaine_action": "Réutiliser séquence et pointeurs lots existants ; A0 consigne contrat/gate/accord précis de chaque ouverture.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "SEQ-04",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "SEQ-05",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Positionner C et D avant l’exposition des charges ou traitements qui les exigent.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 732,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L732"
+      },
+      "definition_source": {
+        "livrable": "Graphe de dépendances et critères d'ouverture de sous-lot",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Positionner C et D avant l’exposition des charges ou traitements qui les exigent. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Ne pas ouvrir un lot sans gate ; indépendants poursuivis pendant attente",
+          "Comparer aux sources normatives et aux dernières décisions effectivement publiées ; signaler tout conflit de source.",
+          "Distinguer preuve de conception, test réellement exécuté et acceptation humaine avant tout changement de statut.",
+          "Fiche datée avec ID SEQ-05, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "C/D requis uniquement avant charges/traitements qui en dépendent ; coûts/seuilsDEC13 inconnus.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 23,
+              "exact": "Exclus de sa réalisation initiale proposée : éditeurs/outils complets A.2/A.3, association topologique A.4, tous moteurs industriels réintégrés dans un nouveau catalogue, Registry/Manager completB, optimisationC/ordonnanceurD, revue/publication métier complèteE, migration de données existantesR et optionsF reportées. Leurs **interfaces** utiles restent prises en compte pour ne pas créer un contrat incompatible. Une intégration I/A.1 livrée ne serait pas le MVP A/B/C terminable ; TEST001 complet attend E. Aucun de ces lots n'est ouvert par cet index."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Réalisation/accord aval reste distinct du dossier préparé",
+      "prochaine_action": "Réutiliser séquence et pointeurs lots existants ; A0 consigne contrat/gate/accord précis de chaque ouverture.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "SEQ-05",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "SEQ-06",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Positionner E avant la déclaration d’un pilote métier complet, puis R avant généralisation.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 733,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L733"
+      },
+      "definition_source": {
+        "livrable": "Graphe de dépendances et critères d'ouverture de sous-lot",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Positionner E avant la déclaration d’un pilote métier complet, puis R avant généralisation. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Ne pas ouvrir un lot sans gate ; indépendants poursuivis pendant attente",
+          "Comparer aux sources normatives et aux dernières décisions effectivement publiées ; signaler tout conflit de source.",
+          "Distinguer preuve de conception, test réellement exécuté et acceptation humaine avant tout changement de statut.",
+          "Fiche datée avec ID SEQ-06, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "E avant pilote métiercomplet ; R/restauration prouvée avant généralisation, déploiement accorddistinct.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 23,
+              "exact": "Exclus de sa réalisation initiale proposée : éditeurs/outils complets A.2/A.3, association topologique A.4, tous moteurs industriels réintégrés dans un nouveau catalogue, Registry/Manager completB, optimisationC/ordonnanceurD, revue/publication métier complèteE, migration de données existantesR et optionsF reportées. Leurs **interfaces** utiles restent prises en compte pour ne pas créer un contrat incompatible. Une intégration I/A.1 livrée ne serait pas le MVP A/B/C terminable ; TEST001 complet attend E. Aucun de ces lots n'est ouvert par cet index."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Réalisation/accord aval reste distinct du dossier préparé",
+      "prochaine_action": "Réutiliser séquence et pointeurs lots existants ; A0 consigne contrat/gate/accord précis de chaque ouverture.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "SEQ-06",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "SEQ-07",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Maintenir F sous ses arbitrages propres, sans l’imposer au périmètre pilote qui l’exclut.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 734,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L734"
+      },
+      "definition_source": {
+        "livrable": "Graphe de dépendances et critères d'ouverture de sous-lot",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Maintenir F sous ses arbitrages propres, sans l’imposer au périmètre pilote qui l’exclut. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Ne pas ouvrir un lot sans gate ; indépendants poursuivis pendant attente",
+          "Comparer aux sources normatives et aux dernières décisions effectivement publiées ; signaler tout conflit de source.",
+          "Distinguer preuve de conception, test réellement exécuté et acceptation humaine avant tout changement de statut.",
+          "Fiche datée avec ID SEQ-07, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "F reporté MVP parD02 ; décisions optionnelles propres, pas blocageartificiel premierslots.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "citations": [
+            {
+              "line": 23,
+              "exact": "Exclus de sa réalisation initiale proposée : éditeurs/outils complets A.2/A.3, association topologique A.4, tous moteurs industriels réintégrés dans un nouveau catalogue, Registry/Manager completB, optimisationC/ordonnanceurD, revue/publication métier complèteE, migration de données existantesR et optionsF reportées. Leurs **interfaces** utiles restent prises en compte pour ne pas créer un contrat incompatible. Une intégration I/A.1 livrée ne serait pas le MVP A/B/C terminable ; TEST001 complet attend E. Aucun de ces lots n'est ouvert par cet index."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Réalisation/accord aval reste distinct du dossier préparé",
+      "prochaine_action": "Réutiliser séquence et pointeurs lots existants ; A0 consigne contrat/gate/accord précis de chaque ouverture.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "SEQ-07",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "J0",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Vérifier « Cible et décisions » : Périmètre, traçabilité et décisions nécessaires au premier lot. Ce jalon ne prouve pas : La faisabilité des moteurs.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 740,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L740"
+      },
+      "definition_source": {
+        "livrable": "Fiche de jalon, preuve positive et limites/non-preuve du jalon",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Vérifier « Cible et décisions » : Périmètre, traçabilité et décisions nécessaires au premier lot. Ce jalon ne prouve pas : La faisabilité des moteurs. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Pas de jalon accepté depuis une maquette, un test isolé ou une CI incomplète",
+          "Documenter séparément la preuve que ce jalon apporte et ce qu'il ne prouve pas, comme indiqué dans le libellé normatif.",
+          "Inscrire le lien vers gate et démonstration complète avant d'autoriser l'étape suivante.",
+          "Fiche datée avec ID J0, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "À faire",
+      "justification": "Critère jalon défini, aucune vérification complète J0 du buildStudio disponible. G0 documentaire ne vaut pas J0 entier si décisions premierlot manquantes.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Aucune autorisation applicative déduite de la fiche",
+      "prochaine_action": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "J0",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "J1",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Vérifier « Accès autonome » : Studio dans la barre, routes et contexte corrects, NAV de base. Ce jalon ne prouve pas : Un éditeur utilisable ou une version métier livrée.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 741,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L741"
+      },
+      "definition_source": {
+        "livrable": "Fiche de jalon, preuve positive et limites/non-preuve du jalon",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Vérifier « Accès autonome » : Studio dans la barre, routes et contexte corrects, NAV de base. Ce jalon ne prouve pas : Un éditeur utilisable ou une version métier livrée. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Pas de jalon accepté depuis une maquette, un test isolé ou une CI incomplète",
+          "Documenter séparément la preuve que ce jalon apporte et ce qu'il ne prouve pas, comme indiqué dans le libellé normatif.",
+          "Inscrire le lien vers gate et démonstration complète avant d'autoriser l'étape suivante.",
+          "Fiche datée avec ID J1, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "À faire",
+      "justification": "Critère jalon défini, aucune vérification complète J1 du buildStudio disponible. G0 documentaire ne vaut pas J0 entier si décisions premierlot manquantes.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Aucune autorisation applicative déduite de la fiche",
+      "prochaine_action": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "J1",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "J2",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Vérifier « Données durables » : Étude/variante, commandes, sauvegarde et réouverture. Ce jalon ne prouve pas : La bidirectionnalité ou la publication.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 742,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L742"
+      },
+      "definition_source": {
+        "livrable": "Fiche de jalon, preuve positive et limites/non-preuve du jalon",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Vérifier « Données durables » : Étude/variante, commandes, sauvegarde et réouverture. Ce jalon ne prouve pas : La bidirectionnalité ou la publication. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Pas de jalon accepté depuis une maquette, un test isolé ou une CI incomplète",
+          "Documenter séparément la preuve que ce jalon apporte et ce qu'il ne prouve pas, comme indiqué dans le libellé normatif.",
+          "Inscrire le lien vers gate et démonstration complète avant d'autoriser l'étape suivante.",
+          "Fiche datée avec ID J2, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "À faire",
+      "justification": "Critère jalon défini, aucune vérification complète J2 du buildStudio disponible. G0 documentaire ne vaut pas J0 entier si décisions premierlot manquantes.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Aucune autorisation applicative déduite de la fiche",
+      "prochaine_action": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "J2",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "J3",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Vérifier « Deux planches » : Création/modification indépendantes en 2D et 3D ; profils utilisables. Ce jalon ne prouve pas : TEST-001 complet tant que la publication manque.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 743,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L743"
+      },
+      "definition_source": {
+        "livrable": "Fiche de jalon, preuve positive et limites/non-preuve du jalon",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Vérifier « Deux planches » : Création/modification indépendantes en 2D et 3D ; profils utilisables. Ce jalon ne prouve pas : TEST-001 complet tant que la publication manque. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Pas de jalon accepté depuis une maquette, un test isolé ou une CI incomplète",
+          "Documenter séparément la preuve que ce jalon apporte et ce qu'il ne prouve pas, comme indiqué dans le libellé normatif.",
+          "Inscrire le lien vers gate et démonstration complète avant d'autoriser l'étape suivante.",
+          "Fiche datée avec ID J3, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "À faire",
+      "justification": "Critère jalon défini, aucune vérification complète J3 du buildStudio disponible. G0 documentaire ne vaut pas J0 entier si décisions premierlot manquantes.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Aucune autorisation applicative déduite de la fiche",
+      "prochaine_action": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "J3",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "J4",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Vérifier « Association fiable » : Mur/ouverture, hôtes, copie indépendante, conflits et historique. Ce jalon ne prouve pas : Le fonctionnement de tous les outils du catalogue.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 744,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L744"
+      },
+      "definition_source": {
+        "livrable": "Fiche de jalon, preuve positive et limites/non-preuve du jalon",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Vérifier « Association fiable » : Mur/ouverture, hôtes, copie indépendante, conflits et historique. Ce jalon ne prouve pas : Le fonctionnement de tous les outils du catalogue. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Pas de jalon accepté depuis une maquette, un test isolé ou une CI incomplète",
+          "Documenter séparément la preuve que ce jalon apporte et ce qu'il ne prouve pas, comme indiqué dans le libellé normatif.",
+          "Inscrire le lien vers gate et démonstration complète avant d'autoriser l'étape suivante.",
+          "Fiche datée avec ID J4, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "À faire",
+      "justification": "Critère jalon défini, aucune vérification complète J4 du buildStudio disponible. G0 documentaire ne vaut pas J0 entier si décisions premierlot manquantes.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Aucune autorisation applicative déduite de la fiche",
+      "prochaine_action": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "J4",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "J5",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Vérifier « Exécution qualifiée » : Chargement sélectif, offline préparé, index/rendu et workers selon budgets. Ce jalon ne prouve pas : Une performance universelle sur tout appareil.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 745,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L745"
+      },
+      "definition_source": {
+        "livrable": "Fiche de jalon, preuve positive et limites/non-preuve du jalon",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Vérifier « Exécution qualifiée » : Chargement sélectif, offline préparé, index/rendu et workers selon budgets. Ce jalon ne prouve pas : Une performance universelle sur tout appareil. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Pas de jalon accepté depuis une maquette, un test isolé ou une CI incomplète",
+          "Documenter séparément la preuve que ce jalon apporte et ce qu'il ne prouve pas, comme indiqué dans le libellé normatif.",
+          "Inscrire le lien vers gate et démonstration complète avant d'autoriser l'étape suivante.",
+          "Fiche datée avec ID J5, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "À faire",
+      "justification": "Critère jalon défini, aucune vérification complète J5 du buildStudio disponible. G0 documentaire ne vaut pas J0 entier si décisions premierlot manquantes.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Aucune autorisation applicative déduite de la fiche",
+      "prochaine_action": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "J5",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "J6",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Vérifier « Dossier métier » : BIM, visualisation de base, métrés, observations, revue et publication cohérents. Ce jalon ne prouve pas : La couverture de tous les formats et extensions.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 746,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L746"
+      },
+      "definition_source": {
+        "livrable": "Fiche de jalon, preuve positive et limites/non-preuve du jalon",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Vérifier « Dossier métier » : BIM, visualisation de base, métrés, observations, revue et publication cohérents. Ce jalon ne prouve pas : La couverture de tous les formats et extensions. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Pas de jalon accepté depuis une maquette, un test isolé ou une CI incomplète",
+          "Documenter séparément la preuve que ce jalon apporte et ce qu'il ne prouve pas, comme indiqué dans le libellé normatif.",
+          "Inscrire le lien vers gate et démonstration complète avant d'autoriser l'étape suivante.",
+          "Fiche datée avec ID J6, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "À faire",
+      "justification": "Critère jalon défini, aucune vérification complète J6 du buildStudio disponible. G0 documentaire ne vaut pas J0 entier si décisions premierlot manquantes.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Aucune autorisation applicative déduite de la fiche",
+      "prochaine_action": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "J6",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "J7",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Vérifier « Pilote accepté » : Migration/restauration et recette des trois parcours sur le build candidat. Ce jalon ne prouve pas : L’autorisation automatique de généralisation.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 747,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L747"
+      },
+      "definition_source": {
+        "livrable": "Fiche de jalon, preuve positive et limites/non-preuve du jalon",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Vérifier « Pilote accepté » : Migration/restauration et recette des trois parcours sur le build candidat. Ce jalon ne prouve pas : L’autorisation automatique de généralisation. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Pas de jalon accepté depuis une maquette, un test isolé ou une CI incomplète",
+          "Documenter séparément la preuve que ce jalon apporte et ce qu'il ne prouve pas, comme indiqué dans le libellé normatif.",
+          "Inscrire le lien vers gate et démonstration complète avant d'autoriser l'étape suivante.",
+          "Fiche datée avec ID J7, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "À faire",
+      "justification": "Critère jalon défini, aucune vérification complète J7 du buildStudio disponible. G0 documentaire ne vaut pas J0 entier si décisions premierlot manquantes.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Aucune autorisation applicative déduite de la fiche",
+      "prochaine_action": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "J7",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "J8",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Vérifier « Mise en service » : Déploiement autorisé, vérification utilisateur et exploitation documentée. Ce jalon ne prouve pas : La livraison des options P2 non retenues.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 748,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L748"
+      },
+      "definition_source": {
+        "livrable": "Fiche de jalon, preuve positive et limites/non-preuve du jalon",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Vérifier « Mise en service » : Déploiement autorisé, vérification utilisateur et exploitation documentée. Ce jalon ne prouve pas : La livraison des options P2 non retenues. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Pas de jalon accepté depuis une maquette, un test isolé ou une CI incomplète",
+          "Documenter séparément la preuve que ce jalon apporte et ce qu'il ne prouve pas, comme indiqué dans le libellé normatif.",
+          "Inscrire le lien vers gate et démonstration complète avant d'autoriser l'étape suivante.",
+          "Fiche datée avec ID J8, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "À faire",
+      "justification": "Critère jalon défini, aucune vérification complète J8 du buildStudio disponible. G0 documentaire ne vaut pas J0 entier si décisions premierlot manquantes.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 12,
+              "exact": "- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés."
+            },
+            {
+              "line": 91,
+              "exact": "### Reports MVP retenus et obligations conservées"
+            },
+            {
+              "line": 93,
+              "exact": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires."
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Aucune autorisation applicative déduite de la fiche",
+      "prochaine_action": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "J8",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "PIL-01",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Vérifier que le périmètre ratifié inclut les quatre domaines, les trois parcours, sauvegarde/reprise, outils usuels, contrôle d’exigence, observation et publication à manifeste.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 754,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L754"
+      },
+      "definition_source": {
+        "livrable": "Matrice de parcours A/B/C, outils usuels et exclusions",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Vérifier que le périmètre ratifié inclut les quatre domaines, les trois parcours, sauvegarde/reprise, outils usuels, contrôle d’exigence, observation et publication à manifeste. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Étude complète avec sauvegarde/reprise/approbation/publication, pas simple bouton",
+          "Comparer aux sources normatives et aux dernières décisions effectivement publiées ; signaler tout conflit de source.",
+          "Distinguer preuve de conception, test réellement exécuté et acceptation humaine avant tout changement de statut.",
+          "Fiche datée avec ID PIL-01, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "G0 accepte cadrage quatre domaines/troisparcours, pas pilote réellement terminable.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "citations": [
+            {
+              "line": 55,
+              "exact": "| D2BIM et coordination | Propriétés/contrôles/exigences distinctes des résultats ; références externes acceptées | Résultat avec source/règle/révision/conclusion, observation identifiée et recontrôlée |"
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Réalisation/accord aval reste distinct du dossier préparé",
+      "prochaine_action": "Réemployer tableMVP G0 et exigences ; conserver publication/observation/reprise comme critères éliminatoires.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "PIL-01",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "PIL-02",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Choisir les outils usuels selon le travail métier et leurs contrats de dessin, édition, précision, annotation, architecture et modélisation.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 755,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L755"
+      },
+      "definition_source": {
+        "livrable": "Matrice de parcours A/B/C, outils usuels et exclusions",
+        "ordonnancement": "DECISION_BORNEE",
+        "conditions": [
+          "L'obligation source « Choisir les outils usuels selon le travail métier et leurs contrats de dessin, édition, précision, annotation, architecture et modélisation. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Étude complète avec sauvegarde/reprise/approbation/publication, pas simple bouton",
+          "Comparer aux sources normatives et aux dernières décisions effectivement publiées ; signaler tout conflit de source.",
+          "Distinguer preuve de conception, test réellement exécuté et acceptation humaine avant tout changement de statut.",
+          "Fiche datée avec ID PIL-02, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Insuffisant : choix/personnes/contenuconcret encore inconnu",
+      "statut_propose": "À définir",
+      "justification": "Catalogue8exemples préparé ne constitue pas sélection ratifiée outils usuels.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/M21-CONTRAT-MINIMAL.md",
+          "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625",
+          "citations": [
+            {
+              "line": 5,
+              "exact": "18 octobre2026 ; référence d’instructions `301a4fa8f2594fa1c8f0317c18085b5ae22ac7a3`. Reprise de M003 `M21-MANAGER-PREPARATION.md`, lotB A2, NAV et fiches normatives141, sans modifier les originaux ni les sources. **Préparation documentaire non exécutable**, aucune application/POC/loader/moteur/API/DB créé. Catalogue JSON de huit exemples, pas un catalogue industriel exhaustif ni un profil pilote accepté. PDEV N/D, G1/G3 non passés par cet artefact."
+            },
+            {
+              "line": 9,
+              "exact": "EX-026..031 catalogue/gouvernance ; EX-032..037 Manager/préférences/recherche/accessibilité/gestes ; EX-038..044 chargement/cache/offline ; IF-005 activation ; IF-004/006/011 commandes/révisions/journal ; INV-009/014/015 profil/offline/découverte. D07 retient placement/navigation/droits pour spécifications, pas la forme physique du Registry. DEC-04 profils, DEC-05 manifests, DEC-06 Manager, DEC-07 chunks, DEC-14 offline et DEC-18 réutilisation restent à instruire au périmètre concerné. Les choix d’IDs, touches, modules et télémétrie ci-dessous ne sont pas approuvés par leur présence dans JSON."
+            },
+            {
+              "line": 21,
+              "exact": "Les deux `echelle` de la palette Atelier n’ont pas le même sens. Exemple alias scoping catalogue+version+fiche distingue DA-07-13 objet et DA-02-05 homothétie ; historique version «à qualifier». Sans discriminateur, résultat **ambigu** : aucune activation/migration automatique, présenter choix nommé. Table proposée ne renomme pas commandes, favoris ni historique persistés. A2 doit identifier stockage et compatibilité avant tout sous-lot de correction autorisé."
+            },
+            {
+              "line": 44,
+              "exact": "| Ressources | non chargées/chargement/prêtes/échec ; cache compatible/incomplet | Progression/retry ; catalogue seul ≠ outiloffline utilisable. |"
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Arbitrage publié et daté via #166 ou autorité humaine selon portée",
+      "prochaine_action": "Soumettre sélection métier par fonction A/B/C avec contrats et exclusions, sans réduire au profil20.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "PIL-02",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "PIL-03",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Distinguer le profil d’essai de vingt outils du catalogue complet et d’un éventuel maximum du produit.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 756,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L756"
+      },
+      "definition_source": {
+        "livrable": "Matrice de parcours A/B/C, outils usuels et exclusions",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Distinguer le profil d’essai de vingt outils du catalogue complet et d’un éventuel maximum du produit. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Étude complète avec sauvegarde/reprise/approbation/publication, pas simple bouton",
+          "Comparer aux sources normatives et aux dernières décisions effectivement publiées ; signaler tout conflit de source.",
+          "Distinguer preuve de conception, test réellement exécuté et acceptation humaine avant tout changement de statut.",
+          "Fiche datée avec ID PIL-03, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Suffisant pour instruction bornée ; pas preuve de réalisation",
+      "statut_propose": "En cours",
+      "justification": "Distinction profil/calogue proposée ; aucun maximum produit déduit20.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/M21-CONTRAT-MINIMAL.md",
+          "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625",
+          "citations": [
+            {
+              "line": 5,
+              "exact": "18 octobre2026 ; référence d’instructions `301a4fa8f2594fa1c8f0317c18085b5ae22ac7a3`. Reprise de M003 `M21-MANAGER-PREPARATION.md`, lotB A2, NAV et fiches normatives141, sans modifier les originaux ni les sources. **Préparation documentaire non exécutable**, aucune application/POC/loader/moteur/API/DB créé. Catalogue JSON de huit exemples, pas un catalogue industriel exhaustif ni un profil pilote accepté. PDEV N/D, G1/G3 non passés par cet artefact."
+            },
+            {
+              "line": 9,
+              "exact": "EX-026..031 catalogue/gouvernance ; EX-032..037 Manager/préférences/recherche/accessibilité/gestes ; EX-038..044 chargement/cache/offline ; IF-005 activation ; IF-004/006/011 commandes/révisions/journal ; INV-009/014/015 profil/offline/découverte. D07 retient placement/navigation/droits pour spécifications, pas la forme physique du Registry. DEC-04 profils, DEC-05 manifests, DEC-06 Manager, DEC-07 chunks, DEC-14 offline et DEC-18 réutilisation restent à instruire au périmètre concerné. Les choix d’IDs, touches, modules et télémétrie ci-dessous ne sont pas approuvés par leur présence dans JSON."
+            },
+            {
+              "line": 21,
+              "exact": "Les deux `echelle` de la palette Atelier n’ont pas le même sens. Exemple alias scoping catalogue+version+fiche distingue DA-07-13 objet et DA-02-05 homothétie ; historique version «à qualifier». Sans discriminateur, résultat **ambigu** : aucune activation/migration automatique, présenter choix nommé. Table proposée ne renomme pas commandes, favoris ni historique persistés. A2 doit identifier stockage et compatibilité avant tout sous-lot de correction autorisé."
+            },
+            {
+              "line": 44,
+              "exact": "| Ressources | non chargées/chargement/prêtes/échec ; cache compatible/incomplet | Progression/retry ; catalogue seul ≠ outiloffline utilisable. |"
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Réalisation/accord aval reste distinct du dossier préparé",
+      "prochaine_action": "Consigner explicitement20=profil d’essai non plafond dans delta ciblé joint.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "PIL-03",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    },
+    {
+      "id": "PIL-04",
+      "mission": "M30",
+      "proprietaire_original": "A0",
+      "agent_qualification": "A1 (coordinationA0 préparée, propriétaire inchangé)",
+      "obligation_source_exacte": "Qualifier les outils non retenus comme futurs, expérimentaux ou indisponibles selon décision.",
+      "source": {
+        "blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+        "line": 757,
+        "url": "https://github.com/RachEma-ux/Fadi/blob/27c0c5a35e2f116752a83a9c66459484488a1975/Studio/Fadi_Studio_Checklist_Execution_V1_0.md#L757"
+      },
+      "definition_source": {
+        "livrable": "Matrice de parcours A/B/C, outils usuels et exclusions",
+        "ordonnancement": "READY_DOCUMENTATION",
+        "conditions": [
+          "L'obligation source « Qualifier les outils non retenus comme futurs, expérimentaux ou indisponibles selon décision. » est traitée au périmètre déclaré, sans réduction silencieuse.",
+          "Étude complète avec sauvegarde/reprise/approbation/publication, pas simple bouton",
+          "Comparer aux sources normatives et aux dernières décisions effectivement publiées ; signaler tout conflit de source.",
+          "Distinguer preuve de conception, test réellement exécuté et acceptation humaine avant tout changement de statut.",
+          "Fiche datée avec ID PIL-04, agent A0, décision applicable, URL/commit exacts et prochaine action ; verdict réel signé/revu sans cocher automatiquement la checklist."
+        ]
+      },
+      "suffisance_definition": "Insuffisant : choix/personnes/contenuconcret encore inconnu",
+      "statut_propose": "À définir",
+      "justification": "Qualification de chaque outil nonretenu dépend de sélection PIL02 et décisionsoptions.",
+      "preuve_exacte": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/M21-CONTRAT-MINIMAL.md",
+          "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625",
+          "citations": [
+            {
+              "line": 5,
+              "exact": "18 octobre2026 ; référence d’instructions `301a4fa8f2594fa1c8f0317c18085b5ae22ac7a3`. Reprise de M003 `M21-MANAGER-PREPARATION.md`, lotB A2, NAV et fiches normatives141, sans modifier les originaux ni les sources. **Préparation documentaire non exécutable**, aucune application/POC/loader/moteur/API/DB créé. Catalogue JSON de huit exemples, pas un catalogue industriel exhaustif ni un profil pilote accepté. PDEV N/D, G1/G3 non passés par cet artefact."
+            },
+            {
+              "line": 9,
+              "exact": "EX-026..031 catalogue/gouvernance ; EX-032..037 Manager/préférences/recherche/accessibilité/gestes ; EX-038..044 chargement/cache/offline ; IF-005 activation ; IF-004/006/011 commandes/révisions/journal ; INV-009/014/015 profil/offline/découverte. D07 retient placement/navigation/droits pour spécifications, pas la forme physique du Registry. DEC-04 profils, DEC-05 manifests, DEC-06 Manager, DEC-07 chunks, DEC-14 offline et DEC-18 réutilisation restent à instruire au périmètre concerné. Les choix d’IDs, touches, modules et télémétrie ci-dessous ne sont pas approuvés par leur présence dans JSON."
+            },
+            {
+              "line": 21,
+              "exact": "Les deux `echelle` de la palette Atelier n’ont pas le même sens. Exemple alias scoping catalogue+version+fiche distingue DA-07-13 objet et DA-02-05 homothétie ; historique version «à qualifier». Sans discriminateur, résultat **ambigu** : aucune activation/migration automatique, présenter choix nommé. Table proposée ne renomme pas commandes, favoris ni historique persistés. A2 doit identifier stockage et compatibilité avant tout sous-lot de correction autorisé."
+            },
+            {
+              "line": 44,
+              "exact": "| Ressources | non chargées/chargement/prêtes/échec ; cache compatible/incomplet | Progression/retry ; catalogue seul ≠ outiloffline utilisable. |"
+            }
+          ],
+          "limite": "Preuve de contenu documentaire, pas capacité runtime ou décision physique."
+        }
+      ],
+      "suffisance_preuve_realisation": "Insuffisante pour clôture de l’obligation source ; préparation documentaire seulement",
+      "blocage_local": "Aucune autorisation applicative déduite de la fiche",
+      "prochaine_action": "Conserver candidats nonretenus « à qualifier », F reporté D02, pas tous indisponibles par déduction.",
+      "livrable_documentaire_realise": {
+        "path": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+        "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+        "section": "PIL-04",
+        "nature": "Delta utile de préparation/reemploi, non exécution du verbe métier"
+      },
+      "acceptation_metier": false,
+      "case_checklist_a_cocher": false,
+      "appariement_subset_main817": true
+    }
+  ],
+  "limites": [
+    "G0 documentaire seulement accepté ; G1–G4 ouverts.",
+    "Aucun Vérifié/Accepté proposé, aucun registre/coches/code/test/service/API/DB/PR/fusion/admin modifié.",
+    "READY_DOCUMENTATION dans définition ne signifie pas vérificationfutureJ réalisable maintenant. Préparation seulement exécutée.",
+    "Main817bd36 fusion externe165 est donnéeA0 ; aucune lectureGitHub autonome ni fusionA1 revendiquée.",
+    "Pièces sources antérieures conservées ; aucune substitutionlivrable par clone."
+  ],
+  "verification_subset32": {
+    "path": "/workspace/work/resume496/incoming/snapshots/task-register-main817.json",
+    "sha256": "7c5da578b34f775329e40827d8b99b6b7796d2055f9a1151725140c0013e686b",
+    "IDs": 32,
+    "ecarts": [],
+    "aucune_reextraction_globale": true
+  }
+}

@@ -5,10 +5,10 @@
   "compteurs": {
     "total": 125,
     "analyses_avec_historiques": 125,
-    "revues_avec_historiques": 87,
+    "revues_avec_historiques": 125,
     "reste_a_analyser": 0,
     "nouvelles_analyses": 117,
-    "nouvelles_revues": 79
+    "nouvelles_revues": 117
   },
   "limites": "Équivalence complète non démontrée par les cohortes ; aucun scénario exécuté. Les huit historiques gardent leur preuve antérieure, non réexécutée.",
   "entries": [
@@ -655,12 +655,14 @@
     {
       "id": "M08-PATH-065",
       "analyse": "A2/M08-UNITE-065-092.json",
-      "revue_independante": null,
+      "revue_independante": "A3/M08-UNITE-065-092-REVUE-A3.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-065-092-DELTA-REVUE-A3-A2.json",
+      "controle_qualite": "A5/M08-UNITE-065-092-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-066",
@@ -675,12 +677,14 @@
     {
       "id": "M08-PATH-067",
       "analyse": "A2/M08-UNITE-065-092.json",
-      "revue_independante": null,
+      "revue_independante": "A3/M08-UNITE-065-092-REVUE-A3.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-065-092-DELTA-REVUE-A3-A2.json",
+      "controle_qualite": "A5/M08-UNITE-065-092-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-068",
@@ -695,12 +699,14 @@
     {
       "id": "M08-PATH-069",
       "analyse": "A2/M08-UNITE-065-092.json",
-      "revue_independante": null,
+      "revue_independante": "A3/M08-UNITE-065-092-REVUE-A3.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-065-092-DELTA-REVUE-A3-A2.json",
+      "controle_qualite": "A5/M08-UNITE-065-092-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-070",
@@ -715,12 +721,14 @@
     {
       "id": "M08-PATH-071",
       "analyse": "A2/M08-UNITE-065-092.json",
-      "revue_independante": null,
+      "revue_independante": "A3/M08-UNITE-065-092-REVUE-A3.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-065-092-DELTA-REVUE-A3-A2.json",
+      "controle_qualite": "A5/M08-UNITE-065-092-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-072",
@@ -735,62 +743,68 @@
     {
       "id": "M08-PATH-073",
       "analyse": "A2/M08-UNITE-065-092.json",
-      "revue_independante": null,
+      "revue_independante": "A3/M08-UNITE-065-092-REVUE-A3.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-065-092-DELTA-REVUE-A3-A2.json",
+      "controle_qualite": "A5/M08-UNITE-065-092-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-074",
       "analyse": "A4/M08-E2E-074-103.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-074-103-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-075",
       "analyse": "A2/M08-UNITE-065-092.json",
-      "revue_independante": null,
+      "revue_independante": "A3/M08-UNITE-065-092-REVUE-A3.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-065-092-DELTA-REVUE-A3-A2.json",
+      "controle_qualite": "A5/M08-UNITE-065-092-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-076",
       "analyse": "A4/M08-E2E-074-103.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-074-103-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-077",
       "analyse": "A4/M08-E2E-074-103.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-074-103-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-078",
       "analyse": "A2/M08-UNITE-065-092.json",
-      "revue_independante": null,
+      "revue_independante": "A3/M08-UNITE-065-092-REVUE-A3.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-065-092-DELTA-REVUE-A3-A2.json",
+      "controle_qualite": "A5/M08-UNITE-065-092-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-079",
@@ -815,82 +829,90 @@
     {
       "id": "M08-PATH-081",
       "analyse": "A4/M08-E2E-074-103.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-074-103-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-082",
       "analyse": "A2/M08-UNITE-065-092.json",
-      "revue_independante": null,
+      "revue_independante": "A3/M08-UNITE-065-092-REVUE-A3.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-065-092-DELTA-REVUE-A3-A2.json",
+      "controle_qualite": "A5/M08-UNITE-065-092-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-083",
       "analyse": "A4/M08-E2E-074-103.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-074-103-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-084",
       "analyse": "A2/M08-UNITE-065-092.json",
-      "revue_independante": null,
+      "revue_independante": "A3/M08-UNITE-065-092-REVUE-A3.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-065-092-DELTA-REVUE-A3-A2.json",
+      "controle_qualite": "A5/M08-UNITE-065-092-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-085",
       "analyse": "A4/M08-E2E-074-103.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-074-103-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-086",
       "analyse": "A2/M08-UNITE-065-092.json",
-      "revue_independante": null,
+      "revue_independante": "A3/M08-UNITE-065-092-REVUE-A3.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-065-092-DELTA-REVUE-A3-A2.json",
+      "controle_qualite": "A5/M08-UNITE-065-092-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-087",
       "analyse": "A4/M08-E2E-074-103.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-074-103-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-088",
       "analyse": "A2/M08-UNITE-065-092.json",
-      "revue_independante": null,
+      "revue_independante": "A3/M08-UNITE-065-092-REVUE-A3.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-065-092-DELTA-REVUE-A3-A2.json",
+      "controle_qualite": "A5/M08-UNITE-065-092-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-089",
@@ -905,12 +927,14 @@
     {
       "id": "M08-PATH-090",
       "analyse": "A2/M08-UNITE-065-092.json",
-      "revue_independante": null,
+      "revue_independante": "A3/M08-UNITE-065-092-REVUE-A3.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-065-092-DELTA-REVUE-A3-A2.json",
+      "controle_qualite": "A5/M08-UNITE-065-092-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-091",
@@ -925,247 +949,261 @@
     {
       "id": "M08-PATH-092",
       "analyse": "A2/M08-UNITE-065-092.json",
-      "revue_independante": null,
+      "revue_independante": "A3/M08-UNITE-065-092-REVUE-A3.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-065-092-DELTA-REVUE-A3-A2.json",
+      "controle_qualite": "A5/M08-UNITE-065-092-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-093",
       "analyse": "A4/M08-E2E-074-103.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-074-103-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-094",
       "analyse": "A2/M08-UNITE-094-124.json",
-      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1.json",
+      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1-v2.json",
       "historique_checkpoint496": false,
       "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-094-124-DELTA-REVUE-A1-A2.json",
+      "controle_qualite": "A5/M08-UNITE-094-124-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-095",
       "analyse": "A4/M08-E2E-074-103.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-074-103-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-096",
       "analyse": "A2/M08-UNITE-094-124.json",
-      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1.json",
+      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1-v2.json",
       "historique_checkpoint496": false,
       "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-094-124-DELTA-REVUE-A1-A2.json",
+      "controle_qualite": "A5/M08-UNITE-094-124-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-097",
       "analyse": "A4/M08-E2E-074-103.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-074-103-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-098",
       "analyse": "A2/M08-UNITE-094-124.json",
-      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1.json",
+      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1-v2.json",
       "historique_checkpoint496": false,
       "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-094-124-DELTA-REVUE-A1-A2.json",
+      "controle_qualite": "A5/M08-UNITE-094-124-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-099",
       "analyse": "A4/M08-E2E-074-103.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-074-103-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-100",
       "analyse": "A2/M08-UNITE-094-124.json",
-      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1.json",
+      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1-v2.json",
       "historique_checkpoint496": false,
       "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-094-124-DELTA-REVUE-A1-A2.json",
+      "controle_qualite": "A5/M08-UNITE-094-124-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-101",
       "analyse": "A4/M08-E2E-074-103.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-074-103-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-102",
       "analyse": "A2/M08-UNITE-094-124.json",
-      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1.json",
+      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1-v2.json",
       "historique_checkpoint496": false,
       "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-094-124-DELTA-REVUE-A1-A2.json",
+      "controle_qualite": "A5/M08-UNITE-094-124-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-103",
       "analyse": "A4/M08-E2E-074-103.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-074-103-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-104",
       "analyse": "A2/M08-UNITE-094-124.json",
-      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1.json",
+      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1-v2.json",
       "historique_checkpoint496": false,
       "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-094-124-DELTA-REVUE-A1-A2.json",
+      "controle_qualite": "A5/M08-UNITE-094-124-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-105",
       "analyse": "A4/M08-E2E-105-125.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-105-125-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-106",
       "analyse": "A2/M08-UNITE-094-124.json",
-      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1.json",
+      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1-v2.json",
       "historique_checkpoint496": false,
       "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-094-124-DELTA-REVUE-A1-A2.json",
+      "controle_qualite": "A5/M08-UNITE-094-124-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-107",
       "analyse": "A4/M08-E2E-105-125.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-105-125-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-108",
       "analyse": "A2/M08-UNITE-094-124.json",
-      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1.json",
+      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1-v2.json",
       "historique_checkpoint496": false,
       "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-094-124-DELTA-REVUE-A1-A2.json",
+      "controle_qualite": "A5/M08-UNITE-094-124-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-109",
       "analyse": "A4/M08-E2E-105-125.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-105-125-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-110",
       "analyse": "A2/M08-UNITE-094-124.json",
-      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1.json",
+      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1-v2.json",
       "historique_checkpoint496": false,
       "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-094-124-DELTA-REVUE-A1-A2.json",
+      "controle_qualite": "A5/M08-UNITE-094-124-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-111",
       "analyse": "A4/M08-E2E-105-125.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-105-125-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-112",
       "analyse": "A2/M08-UNITE-094-124.json",
-      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1.json",
+      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1-v2.json",
       "historique_checkpoint496": false,
       "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-094-124-DELTA-REVUE-A1-A2.json",
+      "controle_qualite": "A5/M08-UNITE-094-124-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-113",
       "analyse": "A4/M08-E2E-105-125.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-105-125-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-114",
       "analyse": "A2/M08-UNITE-094-124.json",
-      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1.json",
+      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1-v2.json",
       "historique_checkpoint496": false,
       "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-094-124-DELTA-REVUE-A1-A2.json",
+      "controle_qualite": "A5/M08-UNITE-094-124-QA-RESERVES-A5.json"
     },
     {
       "id": "M08-PATH-115",
       "analyse": "A4/M08-E2E-105-125.json",
-      "revue_independante": null,
-      "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
-      "equivalence_complete": false,
-      "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
-    },
-    {
-      "id": "M08-PATH-116",
-      "analyse": "A2/M08-UNITE-094-124.json",
-      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1.json",
+      "revue_independante": "A5/M08-E2E-105-125-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
       "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
@@ -1173,54 +1211,66 @@
       "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
-      "id": "M08-PATH-117",
-      "analyse": "A4/M08-E2E-105-125.json",
-      "revue_independante": null,
+      "id": "M08-PATH-116",
+      "analyse": "A2/M08-UNITE-094-124.json",
+      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1-v2.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-094-124-DELTA-REVUE-A1-A2.json",
+      "controle_qualite": "A5/M08-UNITE-094-124-QA-RESERVES-A5.json"
+    },
+    {
+      "id": "M08-PATH-117",
+      "analyse": "A4/M08-E2E-105-125.json",
+      "revue_independante": "A5/M08-E2E-105-125-CONFRONTATION-A5.json",
+      "historique_checkpoint496": false,
+      "statut_documentaire": "Analyse et revue documentaires produites",
+      "equivalence_complete": false,
+      "test_execution": "Non exécuté dans cette reprise",
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-118",
       "analyse": "A4/M08-E2E-105-125.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-105-125-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-119",
       "analyse": "A4/M08-E2E-105-125.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-105-125-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-120",
       "analyse": "A4/M08-E2E-105-125.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-105-125-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-121",
       "analyse": "A4/M08-E2E-105-125.json",
-      "revue_independante": null,
+      "revue_independante": "A5/M08-E2E-105-125-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
+      "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
     },
     {
       "id": "M08-PATH-122",
@@ -1245,22 +1295,49 @@
     {
       "id": "M08-PATH-124",
       "analyse": "A2/M08-UNITE-094-124.json",
-      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1.json",
+      "revue_independante": "A1/M08-UNITE-094-124-REVUE-A1-v2.json",
+      "historique_checkpoint496": false,
+      "statut_documentaire": "Analyse et revue documentaires produites",
+      "equivalence_complete": false,
+      "test_execution": "Non exécuté dans cette reprise",
+      "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite",
+      "delta_qualification": "A2/M08-094-124-DELTA-REVUE-A1-A2.json",
+      "controle_qualite": "A5/M08-UNITE-094-124-QA-RESERVES-A5.json"
+    },
+    {
+      "id": "M08-PATH-125",
+      "analyse": "A4/M08-E2E-105-125.json",
+      "revue_independante": "A5/M08-E2E-105-125-CONFRONTATION-A5.json",
       "historique_checkpoint496": false,
       "statut_documentaire": "Analyse et revue documentaires produites",
       "equivalence_complete": false,
       "test_execution": "Non exécuté dans cette reprise",
       "prochaine_action": "Conserver écarts et réserves, préparer la suite ciblée ; aucune équivalence runtime déduite"
+    }
+  ],
+  "doublons_normatifs_a_ne_pas_sommer": [
+    {
+      "ids": [
+        "M08-PATH-049",
+        "M08-PATH-050"
+      ],
+      "nature": "Même ligne de validation, deux chemins cités, neuf sous-attendus communs ;112occurrences mais103attendus distincts dans cette cohorte"
     },
     {
-      "id": "M08-PATH-125",
-      "analyse": "A4/M08-E2E-105-125.json",
-      "revue_independante": null,
-      "historique_checkpoint496": false,
-      "statut_documentaire": "Analyse produite, revue en cours",
-      "equivalence_complete": false,
-      "test_execution": "Non exécuté dans cette reprise",
-      "prochaine_action": "Terminer la revue indépendante"
+      "ids": [
+        "M08-PATH-064",
+        "M08-PATH-065"
+      ],
+      "nature": "Même ligne normative reprise dans deux cohortes ; pas deux preuves indépendantes"
     }
-  ]
+  ],
+  "etat_consolidation": "125analyses et125revues documentaires disponibles, dont8historiques conservées. M08 reste ouverte pour les écarts et le périmètre au-delà de ces125.",
+  "preuve_absence_litterale": {
+    "code_sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+    "paths_uniques": 33,
+    "occurrences": 125,
+    "fiches": 69,
+    "controle": "git cat-file -e en lecture seule, tous les chemins littéraux demeurent absents à ce SHA ; candidats examinés séparément, aucune équivalence imposée",
+    "paths_redevenus_presents": []
+  }
 }

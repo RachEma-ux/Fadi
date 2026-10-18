@@ -8,6 +8,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import { ajouterRectangle, differencePlanche, empreintePlanche, grouper, modeleVide as plancheVide, pousserTirer, volume, type Modele as ModelePlanche } from "@parcours/planche-model";
 import { createApp } from "../app.js";
+import { resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { pool } from "../db/client.js";
 import { lireIfc } from "../lib/atelier-ifc.js";
 
@@ -15,9 +16,7 @@ const app = createApp();
 const CONTRAT = "atelier-commands/3";
 
 async function resetDb() {
-  await pool.query(
-    "TRUNCATE volumes, atelier_outbox, atelier_commands, atelier_site, atelier_problemes, atelier_references, atelier_groupes, atelier_calques, atelier_definitions, atelier_relations, atelier_objets, atelier_niveaux, parcels, produced_documents, project_comments, project_members, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE",
-  );
+  await resetTestDatabase(pool, ["volumes", "atelier_outbox", "atelier_commands", "atelier_site", "atelier_problemes", "atelier_references", "atelier_groupes", "atelier_calques", "atelier_definitions", "atelier_relations", "atelier_objets", "atelier_niveaux", "parcels", "produced_documents", "project_comments", "project_members", "programme_cases", "programme_repartitions", "project_steps", "step_files", "projects", "sessions", "users"]);
 }
 beforeAll(resetDb);
 beforeEach(resetDb);
