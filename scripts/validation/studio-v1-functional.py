@@ -5,11 +5,13 @@ import json
 import os
 import signal
 import socket
+import stat
 import subprocess
 import sys
 import time
 import urllib.request
 from pathlib import Path
+from studio_profile_guard import validate_database_url
 
 ROOT = Path(__file__).resolve().parents[2]
 DOCKER = ['docker', '--host=unix:///var/run/docker.sock']
@@ -88,6 +90,17 @@ def main():
         return process
 
     def start_api():
+        current_manifest = json.loads(path.read_text())
+        runtime_file = Path(current_manifest['runtimeEnvFile'])
+        if runtime_file.is_symlink() or stat.S_IMODE(runtime_file.stat().st_mode) != 0o600:
+            raise RuntimeError('Disposable runtime file permissions refused')
+        values = {}
+        for line in runtime_file.read_text().splitlines():
+            key, value = line.split('=', 1)
+            if key in values:
+                raise RuntimeError('Duplicate runtime setting refused')
+            values[key] = value
+        env['DATABASE_URL'] = validate_database_url(values.get('DATABASE_URL'), current_manifest)
         preflight()  # Recheck labels, image, volume, marker and role before EVERY launch.
         return launch(['node', 'apps/api/dist/server.js'], 'api.log')
 
