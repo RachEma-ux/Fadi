@@ -64,3 +64,13 @@ Spécifications intégrées au commit `dcf29af87e9a3673c062cc95d44cec32fa8e2902`
 ## Poursuite M08 après dcf29af
 
 Cohortes code176/fiches269/supplément449 effectivement reçues ; réconciliation1887/1887 paires uniques sur488 fichiers, zéro doublon/manque du scan initial (preuve validation-M08-A0.json dans index A0). Qualification contextualisée assistée, aucune validation technique globale.125 chemins littéraux absents/69 fiches, un abrégé et DA-09-09 prospectif sont conservés ouverts. M06 ajoute note C1 FR/EN selon D-163, sans réécrire D-156. Les autres limites hors scanner/licences restent ouvertes ; aucun lot de code ni opération sensible engagé.
+
+## Dernier contrôle GitHub — réserve CI154
+
+PR165 publiée au commit `da7f3d2ef8974040641bd2566a0d6466d9961eb1`, main inchangé27c0c5a, dépôts locaux propres après publication. Sur da7f3d2 : couverture39118392102, continuité39118392083, isolation39118392055 et inventaire39118392067 réussis ; CI39118392070 en attente au relevé. Aucun résultat global vert déduit ni transféré au commit porteur suivant.
+
+PR154 tête76e43d1 : CI39117137782 maintenant **échec**, validate/image réussis, e2e117645106144 échoue dans atelier-complements (raccord multiple : quatre arcs créés, révision90 relue au lieu de91). [Diagnostic A6 et preuve expurgée](../../ai-team/reports/mission-003/A6/CI-PR154-76e43d1.md). Cause racine non démontrée ; possibilité de lecture modèle/révision non atomique à instruire, pas résultat d’un test de concurrence. Aucun rerun, délai augmenté ou assertion affaiblie. Responsable A5/A2, suivi M04/M05 et D06 ; code/scénario mutateur restent soumis à M02 et autorisation. Le relevé antérieur « en cours » reste son instant historique, pas la conclusion actuelle.
+
+Questions Q-M003-D01..D07 toujours ouvertes sans réponse au dernier relevé. Prochaine reprise : lire #166/HEAD/CI puis contrats et125 références à rapprocher ; sur accord explicite seulement, engager le sous-lot borné. Aucun déploiement, migration, service, règle administrative ou fusion exécuté.
+
+Le suivi de cette réserve a été poursuivi : [contrat A2](../../ai-team/reports/mission-003/A2/CI154-SNAPSHOT-CONTRAT.md) et [protocole A5](../../ai-team/reports/mission-003/A5/CI154-NON-REGRESSION.md) effectivement livrés. Lecture non atomique possible statiquement, cause runtime non démontrée. Aucun scénario/simulation exécuté ; prochaine étape mutatrice uniquement après accord de lot/M02, sans modifier l’oracle+1.

@@ -150,10 +150,12 @@
       "execution": {
         "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
         "statut": "En cours",
-        "constat": "A6 contribue preuves CI exactes et écarts Node/Chromium ; A5 conserve propriété qualité.",
+        "constat": "A6 contribue preuves CI exactes et écarts Node/Chromium ; A5 conserve propriété qualité. Nouvelle réserve CI15439117137782 : raccord multiple, arcs0→4 mais révision90 relue au lieu de91 ; cause racine inconnue.",
         "responsable": "A5",
         "preuves": [
-          "docs/ai-team/reports/mission-003/A6/RAPPORT-A6-M01-M03-M04-M10.md"
+          "docs/ai-team/reports/mission-003/A6/RAPPORT-A6-M01-M03-M04-M10.md",
+          "docs/ai-team/reports/mission-003/A6/CI-PR154-76e43d1.md",
+          "docs/ai-team/reports/mission-003/A5/CI154-NON-REGRESSION.md"
         ],
         "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
         "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
@@ -163,9 +165,9 @@
           "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
           "responsable": "A5",
           "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
-          "prochaine_action": "Relever CI au SHA documentaire final ; séparer reproduction locale sûre de CI distante."
+          "prochaine_action": "Conserver échec CI154 ; contrat de snapshot et protocole déterministe préparés. Après accord de lot et M02/cible sûre, distinguer défaut serveur/snapshot/cache/corrélation sans affaiblir+1."
         },
-        "suite": "Relever CI au SHA documentaire final ; séparer reproduction locale sûre de CI distante."
+        "suite": "Conserver échec CI154 ; contrat de snapshot et protocole déterministe préparés. Après accord de lot et M02/cible sûre, distinguer défaut serveur/snapshot/cache/corrélation sans affaiblir+1."
       }
     },
     {
@@ -181,10 +183,11 @@
       "execution": {
         "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
         "statut": "En cours",
-        "constat": "Contrats v2/v3 et collision echelle qualifiés statiquement ; résolution non codée.",
+        "constat": "Contrats v2/v3 et collision echelle qualifiés statiquement ; résolution non codée. Lecture modèle/révision séparée qualifiée statiquement, interleaving possible non prouvé dans le run ; contrat cohérent à démontrer.",
         "responsable": "A2",
         "preuves": [
-          "docs/ai-team/reports/mission-003/A2/M05-M07-M08-CONTRATS.md"
+          "docs/ai-team/reports/mission-003/A2/M05-M07-M08-CONTRATS.md",
+          "docs/ai-team/reports/mission-003/A2/CI154-SNAPSHOT-CONTRAT.md"
         ],
         "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
         "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",

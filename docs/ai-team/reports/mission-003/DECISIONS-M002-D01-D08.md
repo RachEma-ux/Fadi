@@ -67,3 +67,7 @@ Canal unique #166 :
 - [Q-M003-D07](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6248570129) : dossier M002-D07, ouvert sans autorisation implicite.
 
 D08 documentaire est déjà autorisé ; aucune question supplémentaire. Les réponses sont à relire et attribuer avant résolution ; aucun accord produit/sensible reçu au relevé du18/10/2026.
+
+## Complément D06 — échec nouveau
+
+La CI15439117137782 est maintenant en échec (atelier-complements, révision90/91), diagnostic A6 lié dans index A0. L’ordre proposé reste conditionné aux contrôles/revues, sans fusion autorisée. Une réponse à Q-M003-D06 doit tenir compte de cette réserve et du contrôle de contrat snapshot ; aucun simple rerun proposé pour rechercher un vert.

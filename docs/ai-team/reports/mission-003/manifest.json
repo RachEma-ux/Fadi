@@ -284,6 +284,30 @@
       "agent": "A2",
       "bytes": 1211721,
       "sha256": "e9ad75d2c17e9f1ac41bf7c4137dad2b9b4755956f36ee1dc44d54004d79ca07"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A6/CI-PR154-76e43d1.md",
+      "agent": "A6",
+      "bytes": 4027,
+      "sha256": "f2839d9947a1258b37fa92f6fae85ecb7e08dd85fb621a757246581f35abd604"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A6/CI-PR154-76e43d1-preuves.json",
+      "agent": "A6",
+      "bytes": 1693,
+      "sha256": "9890bc2e36968272c9092b49563638ae4c64b5709af193d3375c14783f4b737d"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/CI154-SNAPSHOT-CONTRAT.md",
+      "agent": "A2",
+      "bytes": 5788,
+      "sha256": "f04310a4d5cae1df6cc4629e82602cf35fe945b502585cbfa2bbef5f430d6b80"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A5/CI154-NON-REGRESSION.md",
+      "agent": "A5",
+      "bytes": 7075,
+      "sha256": "3430d3f4ce2b11b2dda6a7bcfb0b9a9b22f93abfc45847d84e6ee53fac18f4c1"
     }
   ],
   "reference_instructions_actualisee": "a3cc3c32cfcaa38d9d3117f63644499f9f061f4b"

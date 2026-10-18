@@ -23,3 +23,7 @@ Retour arrière documentaire : rétablir les versions antérieures par commit ci
 ## Complément après revue M08
 
 `docs/planche/cahier-planche.md` reçoit une note applicable FR/EN (D-163/AGENTS) au-dessus de C1 ; traitement D-156 historique conservé. Aucun changement de traduction/interface, aucun test bilingue exécuté. Les20 documents,176 fichiers code,269 fiches et449 lignes restantes sont désormais contextualisés dans les rapports A2, avec les limites/125 chemins à rapprocher conservés ; voir index A0.
+
+## Conclusion CI154 actualisée
+
+Le relevé initial «CI en cours» est désormais remplacé par l’échec39117137782 sur76e43d1 : voir [diagnostic A6](A6/CI-PR154-76e43d1.md). Correction documentaire enregistrée ne signifie pas PR prête à fusionner ; aucun résultat antérieur ni causalité de l’échec transférés.

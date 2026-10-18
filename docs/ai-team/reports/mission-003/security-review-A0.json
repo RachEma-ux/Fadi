@@ -18,8 +18,8 @@
     },
     {
       "fichier": "docs/ai-team/missions.json",
-      "sha256": "257e3a460a3b177e3304084985265b41c6c451afcdef1429dfbe3902afee8d3c",
-      "octets": 48340
+      "sha256": "3930d5f812a2f5d2f002f8cfa4392b17f351afae96d5710dcae306580d2bb2be",
+      "octets": 49041
     },
     {
       "fichier": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
@@ -55,6 +55,11 @@
       "fichier": "docs/ai-team/reports/mission-003/A1/validation-141-fiches.json",
       "sha256": "84647284d1c8bb9cee476f24960040edd8e838203703ae82e61c5c082edcca57",
       "octets": 978
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-003/A2/CI154-SNAPSHOT-CONTRAT.md",
+      "sha256": "f04310a4d5cae1df6cc4629e82602cf35fe945b502585cbfa2bbef5f430d6b80",
+      "octets": 5788
     },
     {
       "fichier": "docs/ai-team/reports/mission-003/A2/LOT-A.1.md",
@@ -207,6 +212,11 @@
       "octets": 27327
     },
     {
+      "fichier": "docs/ai-team/reports/mission-003/A5/CI154-NON-REGRESSION.md",
+      "sha256": "3430d3f4ce2b11b2dda6a7bcfb0b9a9b22f93abfc45847d84e6ee53fac18f4c1",
+      "octets": 7075
+    },
+    {
       "fichier": "docs/ai-team/reports/mission-003/A5/corpus-S1-S7.csv",
       "sha256": "7806bf187a95021daa5b99174a2482dc9031824c0feaa37d27e272ae059ffbd9",
       "octets": 3776
@@ -242,6 +252,16 @@
       "octets": 36739
     },
     {
+      "fichier": "docs/ai-team/reports/mission-003/A6/CI-PR154-76e43d1-preuves.json",
+      "sha256": "9890bc2e36968272c9092b49563638ae4c64b5709af193d3375c14783f4b737d",
+      "octets": 1693
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-003/A6/CI-PR154-76e43d1.md",
+      "sha256": "f2839d9947a1258b37fa92f6fae85ecb7e08dd85fb621a757246581f35abd604",
+      "octets": 4027
+    },
+    {
       "fichier": "docs/ai-team/reports/mission-003/A6/RAPPORT-A6-M01-M03-M04-M10.md",
       "sha256": "bc323c573abcdd52157b6a91c81ac2da377bd68664daf0ed98e3f4295ec0c869",
       "octets": 12520
@@ -263,18 +283,18 @@
     },
     {
       "fichier": "docs/ai-team/reports/mission-003/DECISIONS-M002-D01-D08.md",
-      "sha256": "b5c8befe57fc9aa626e95a62e4785f843780848355c5d42e9077fe000da48a1e",
-      "octets": 9966
+      "sha256": "d0aeed57b3f380100ea81fd7a570071bb4af9b628e94a67603d7c1d4aed76f1d",
+      "octets": 10363
     },
     {
       "fichier": "docs/ai-team/reports/mission-003/M06-DOCUMENTATION.md",
-      "sha256": "72b84fd0520a4017699416c7e1b853ab57b469170e6631d7fbe32a13789341e3",
-      "octets": 3819
+      "sha256": "c559f1fd24a5162fc184228b4b352c339ecd9ef6b7d4b38f4cce370a5feaaa31",
+      "octets": 4145
     },
     {
       "fichier": "docs/ai-team/reports/mission-003/README.md",
-      "sha256": "e17155350c896a28058c392d3fd2bd0f8bbce6a69d9ff0ed80f0d7daa0f7008e",
-      "octets": 18662
+      "sha256": "78d04ea9986c20c655444675620b317290d54101cf41f17034f9d4e9d05fd0fe",
+      "octets": 20313
     },
     {
       "fichier": "docs/ai-team/reports/mission-003/github-checkpoint.json",
@@ -288,13 +308,13 @@
     },
     {
       "fichier": "docs/ai-team/reports/mission-003/link-review-A0.json",
-      "sha256": "46bc7cabb497d6ac926e7bb599ecae48abc3915e6da363c2683d47850800b2f0",
+      "sha256": "914d21e98a17affb04d1ebd19ed8b0d17d0725691db54232f9b1fa7fd7a3ad20",
       "octets": 206
     },
     {
       "fichier": "docs/ai-team/reports/mission-003/manifest.json",
-      "sha256": "92515c2074df8992f440a62d34120a17ef7e6b89fdf38f9548279ba85c06f76b",
-      "octets": 10333
+      "sha256": "d79843eac9702463a01d4220b778631ae93e3d90829827cbca22c109c9441856",
+      "octets": 11197
     },
     {
       "fichier": "docs/ai-team/reports/mission-003/validation-A0.json",
@@ -338,13 +358,13 @@
     },
     {
       "fichier": "docs/workstreams/ai-team/HANDOFF.md",
-      "sha256": "0f6489e253964e95941e537bc15cc0ee804da04b0523706972832ec7610c26b1",
-      "octets": 9415
+      "sha256": "6f3e00366120184d02916a6f1b434649cada9e9f2b3a59e602b9d6b7b1de6ba7",
+      "octets": 11274
     },
     {
       "fichier": "docs/workstreams/ai-team/STATUS.md",
-      "sha256": "42fc133d14b859a666260eb17b838c984c5f962c6147763e6950fc14eb54a28c",
-      "octets": 9239
+      "sha256": "8d56cd90d01631a67ec6abfbd11a0ebe450f04c20c512b0dcb035e9c4c67472a",
+      "octets": 11098
     },
     {
       "fichier": "docs/workstreams/ai-team/TASKS.md",
@@ -373,13 +393,13 @@
     },
     {
       "fichier": "docs/workstreams/studio/HANDOFF.md",
-      "sha256": "580affb0ff6db5754da040b546c4e29b42cffc0c7b33dd51aecb7c71cf96b983",
-      "octets": 9403
+      "sha256": "8de5638a2f65c25419b7df69d7f3fdab63238a1289c09439b880feeebfcdbc3d",
+      "octets": 11262
     },
     {
       "fichier": "docs/workstreams/studio/STATUS.md",
-      "sha256": "5950620baf1134079308e7c7ed8668d8a14cd947178790a43b1d41b8da21b7a5",
-      "octets": 9227
+      "sha256": "26f836bd0f376686243de0e1b31a1ab0ebb0b5e969506ed638ec3c5ed0dbeea4",
+      "octets": 11086
     },
     {
       "fichier": "docs/workstreams/studio/TASKS.md",
