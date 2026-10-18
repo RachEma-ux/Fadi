@@ -1,0 +1,2756 @@
+{
+  "review": "M08-UNITE-065-092 — revue indépendante A3",
+  "reference_commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "agent": "A3",
+  "timestamp_utc": "2026-10-18 13:32:21 UTC",
+  "mode": "Lecture seule de sources Git ; aucun code, test produit, module importé, DB/API/E2E/service ou migration exécuté/modifié.",
+  "source_first_notes": {
+    "frozen_before_detailed_A2_confrontation": true,
+    "frozen_at_utc": "2026-10-18 13:28:48 UTC",
+    "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+    "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4",
+    "method": "Fiches/unités/Suivi et fixtures/assertions des candidats lus avant les qualifications détaillées A2; compteurs agrégés reçus par message reconnus, pas de prétention aveugle totale."
+  },
+  "independence": "Notes de clauses/Suivi/fixtures et assertions figées avant ouverture des qualifications détaillées A2. Compteurs agrégés reçus par message avant gel explicitement reconnus. L’ancien auteur CLASSIF1 A3 ne transfère ni son correctif5e ni ses492tests àa15. La QA A5 est distincte de cette lecture.",
+  "A2_original": {
+    "path": "/workspace/work/resume496/agents/A2/M08-UNITE-065-092.json",
+    "sha256": "4a8a727b60e6e0c370ee2b17a3ca5389abc734feb1a6d6ba011aedd9cd0ee6ef",
+    "qualifications": {
+      "absent": 90,
+      "partiel": 25,
+      "present": 17
+    },
+    "preserved": true
+  },
+  "agreed_delta": {
+    "path": "/workspace/work/resume496/agents/A2/M08-065-092-DELTA-REVUE-A3-A2.json",
+    "sha256": "dba807126ad73746ce0c61f6d4ae3ede60a7450c9ff3f2e63ef6b336f6613b7f",
+    "corrections": [
+      {
+        "entry_id": "M08-PATH-078",
+        "expected": "Recherchenature",
+        "previous_classification": "partiel",
+        "corrected_classification": "absent",
+        "support_type": "socle_generique_indirect_oracle_cible_absent",
+        "reason": "Métadonnées retournées ne testent pas recherche/filtre ; refus statutcertifiee ne teste pas interdiction propriété dérivée. Citation reste exacte mais oracle ciblé absent.",
+        "evidence": [
+          {
+            "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+            "line": 39,
+            "exact_line": "    expect(bibliotheques(r)).toEqual([{ nom: \"Mobilier\", definitions: [{ id: \"b\", nom: \"Table\", nature: \"bloc\", version: 1, occurrences: 2 }] }]);",
+            "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+          }
+        ]
+      },
+      {
+        "entry_id": "M08-PATH-078",
+        "expected": "Rechercheversion",
+        "previous_classification": "partiel",
+        "corrected_classification": "absent",
+        "support_type": "socle_generique_indirect_oracle_cible_absent",
+        "reason": "Métadonnées retournées ne testent pas recherche/filtre ; refus statutcertifiee ne teste pas interdiction propriété dérivée. Citation reste exacte mais oracle ciblé absent.",
+        "evidence": [
+          {
+            "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+            "line": 39,
+            "exact_line": "    expect(bibliotheques(r)).toEqual([{ nom: \"Mobilier\", definitions: [{ id: \"b\", nom: \"Table\", nature: \"bloc\", version: 1, occurrences: 2 }] }]);",
+            "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+          }
+        ]
+      },
+      {
+        "entry_id": "M08-PATH-088",
+        "expected": "Propriétédérivée refusée",
+        "previous_classification": "partiel",
+        "corrected_classification": "absent",
+        "support_type": "socle_generique_indirect_oracle_cible_absent",
+        "reason": "Métadonnées retournées ne testent pas recherche/filtre ; refus statutcertifiee ne teste pas interdiction propriété dérivée. Citation reste exacte mais oracle ciblé absent.",
+        "evidence": [
+          {
+            "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+            "line": 275,
+            "exact_line": "    expect(() => appliquer(e, [{ type: \"propriete.definir\", params: { id: \"w\", nom: \"x\", valeur: 1, statut: \"certifiee\" } }])).toThrow(ErreurCommande);",
+            "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+          }
+        ]
+      }
+    ],
+    "qualifications": {
+      "absent": 93,
+      "partiel": 22,
+      "present": 17
+    }
+  },
+  "entry_count": 13,
+  "assertions_reviewed": 132,
+  "integrity": {
+    "sources_checked": 18,
+    "source_errors": [],
+    "citation_occurrences": 521,
+    "unique_citations": 468,
+    "citation_errors": [],
+    "meaning": "Contrôle de provenance complémentaire, pas validation fonctionnelle."
+  },
+  "entries": [
+    {
+      "entry_id": "M08-PATH-065",
+      "fiche": "docs/atelier/fiches/DA-04-07.md",
+      "candidates": [
+        "packages/atelier-model/src/projection/maillage.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-065-A01",
+          "expected": "Facehaute hauteurmodifiée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Facehaute hauteurmodifiée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 5,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-065-A02",
+          "expected": "Facehaute basefixe",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Facehaute basefixe. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 5,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-065-A03",
+          "expected": "Facebasse sommetfixe",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Facebasse sommetfixe. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 5,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-065-A04",
+          "expected": "Facelatéralerectangle emprise modifiée",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Le complément web D125 compare le contour d’une dalle poussée. Ce n’est ni un solide ni le fichier maillage prescrit ; sa proximité demeure un support partiel explicitement extérieur au candidat principal.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 5,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 781,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-065-A05",
+          "expected": "Sommetslatéraux intersections recalculées",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Le passage de x=4 à4,5 est comparé sur les coins de dalle. Aucun oracle général d’intersection recalculée ni d’arête de solide dans le candidat maillage.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 5,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 781,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-065-A06",
+          "expected": "Hauteur résultante0 refusée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Hauteur résultante0 refusée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 5,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-065-A07",
+          "expected": "Arêteannulée refusée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Arêteannulée refusée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 5,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-065-A08",
+          "expected": "Auto-intersection refusée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Auto-intersection refusée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 5,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-065-A09",
+          "expected": "Trousortant refusé",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Trousortant refusé. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 5,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-065-A10",
+          "expected": "Contouropen facelatéralerefusée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Contouropen facelatéralerefusée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 5,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-065-A11",
+          "expected": "Représentationimportée refusée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Représentationimportée refusée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 5,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-065-A12",
+          "expected": "Inverse valeursbitàbit",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Inverse valeursbitàbit. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 5,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        }
+      ],
+      "historical_acceptance_preserved": true,
+      "duplicate_notice": "Même ligne de validation que M08-PATH-064, pas preuve indépendante supplémentaire."
+    },
+    {
+      "entry_id": "M08-PATH-067",
+      "fiche": "docs/atelier/fiches/DA-05-01.md",
+      "candidates": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-067-A01",
+          "expected": "Création calque",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Les calques sont créés dans le socle utilisé ensuite, mais aucune assertion ne compare directement l’état d’un calque nouvellement créé.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 6,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 14,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 15,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-067-A02",
+          "expected": "Nom double refusé",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Nom double refusé. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 6,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-067-A03",
+          "expected": "Verrou activé mur.modifier refusé",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Le mur refusé est une création sur un calque déjà verrouillé ; modifier un mur après activation du verrou n’est pas exercé. Ce n’est pas le refus atomique d’un lot mixte.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 6,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 96,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-067-A04",
+          "expected": "Lot mixte entier refusé",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "socle_generique_indirect_oracle_cible_absent",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "L’assertion voisine ne soumet pas cette opération et sa sortie précise : Lot mixte entier refusé. Le mécanisme générique ne remplace pas l’oracle ciblé ; les notes de source de cette entrée en précisent la frontière.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 6,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 197,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-067-A05",
+          "expected": "Suppression calque nonvide sansdestination refusée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Suppression calque nonvide sansdestination refusée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 6,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-067-A06",
+          "expected": "Avecdestination objets réaffectés",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Avecdestination objets réaffectés. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 6,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-067-A07",
+          "expected": "Objets réaffectés listés",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Objets réaffectés listés. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 6,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-067-A08",
+          "expected": "Visible modifié révision+1",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Visible modifié révision+1. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 6,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-067-A09",
+          "expected": "Vues àrecalculer aprèsvisible",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Vues àrecalculer aprèsvisible. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 6,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-067-A10",
+          "expected": "Inverse calques exacts",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Inverse calques exacts. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 6,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-067-A11",
+          "expected": "Inverse calqueId exacts",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Inverse calqueId exacts. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 6,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-067-A12",
+          "expected": "Calque actif aucunecommande",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Calque actif aucunecommande. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 6,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-067-A13",
+          "expected": "Filtres aucunecommande",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "La visibilité locale retourne trois booléens attendus. Aucune commande émise ni révision n’est observée ; la pureté déclarée ne remplace pas cet oracle.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 6,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 509,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        }
+      ],
+      "historical_acceptance_preserved": true,
+      "duplicate_notice": null
+    },
+    {
+      "entry_id": "M08-PATH-069",
+      "fiche": "docs/atelier/fiches/DA-05-02.md",
+      "candidates": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-069-A01",
+          "expected": "Registre contient chaqueclasse5.2",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Registre contient chaqueclasse5.2. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 7,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-069-A02",
+          "expected": "Ontologie de chaqueclasse exacte",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Ontologie de chaqueclasse exacte. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 7,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-069-A03",
+          "expected": "Chaqueclasse admisecommande existe registre",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Chaqueclasse admisecommande existe registre. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 7,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-069-A04",
+          "expected": "Filtre P118 comptesexacts",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Le panneau compte quatre murs synthétiques. Aucun import P.118 ni filtre produisant ses comptes exacts n’est comparé.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 7,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 885,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-069-A05",
+          "expected": "Filtre aucunecommande",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Le filtre reçoit seulement les attributs classe/calque d’objets synthétiques et retourne un booléen. L’absence de commande n’est pas enregistrée par le test.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 7,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 509,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-069-A06",
+          "expected": "Filtre aucune révision",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Filtre aucune révision. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 7,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        }
+      ],
+      "historical_acceptance_preserved": true,
+      "duplicate_notice": null
+    },
+    {
+      "entry_id": "M08-PATH-071",
+      "fiche": "docs/atelier/fiches/DA-05-03.md",
+      "candidates": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-071-A01",
+          "expected": "Calque masqué modèle reste masqué quelsque ensembles",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Masquage local de calque et fusion de préférences sont testés séparément ; priorité du visible=false porté par le modèle sur tout ensemble non exercée.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 8,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 507,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 510,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-071-A02",
+          "expected": "EnsembleP118 listevisible attendue",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : EnsembleP118 listevisible attendue. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 8,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-071-A03",
+          "expected": "État modèle strictementidentique avant/après",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : État modèle strictementidentique avant/après. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 8,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-071-A04",
+          "expected": "Aucune révision",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Aucune révision. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 8,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        }
+      ],
+      "historical_acceptance_preserved": true,
+      "duplicate_notice": null
+    },
+    {
+      "entry_id": "M08-PATH-073",
+      "fiche": "docs/atelier/fiches/DA-05-04.md",
+      "candidates": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-073-A01",
+          "expected": "Création niveau",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "La fixture crée deux niveaux, mais les propriétés exactes de la création ne font pas l’objet d’un oracle propre à cette clause.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 9,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 180,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-073-A02",
+          "expected": "Elevationdécimale sérialisation exacte",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Elevationdécimale sérialisation exacte. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 9,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-073-A03",
+          "expected": "Unité≠m refusée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Unité≠m refusée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 9,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-073-A04",
+          "expected": "Hauteur0 refusée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Hauteur0 refusée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 9,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-073-A05",
+          "expected": "Hauteurnégative refusée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Hauteurnégative refusée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 9,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-073-A06",
+          "expected": "Insertionrang décaleordre",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Insertionrang décaleordre. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 9,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-073-A07",
+          "expected": "Effets insertionlistés",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Effets insertionlistés. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 9,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-073-A08",
+          "expected": "Suppressionniveaunonvide refusée",
+          "A2_original_classification": "present",
+          "A3_classification": "present",
+          "support_type": "oracle_cible",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Le test soumet niveau.supprimer sans avecObjets sur RDC portant un mur et attend le refus. La liste exacte d’objets et l’atomicité ne sont pas prouvées par ce seul toThrow.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 9,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 219,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-073-A09",
+          "expected": "Listeobjetssuppression fournie",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Listeobjetssuppression fournie. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 9,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-073-A10",
+          "expected": "Elevationchange objetslistés",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Elevationchange objetslistés. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 9,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-073-A11",
+          "expected": "Elevationchange escalierslistés",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Elevationchange escalierslistés. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 9,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-073-A12",
+          "expected": "Aucunparamètreobjet modifié aprèsélévation",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Aucunparamètreobjet modifié aprèsélévation. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 9,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-073-A13",
+          "expected": "Inverse état exact",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "socle_generique_indirect_oracle_cible_absent",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "L’assertion voisine ne soumet pas cette opération et sa sortie précise : Inverse état exact. Le mécanisme générique ne remplace pas l’oracle ciblé ; les notes de source de cette entrée en précisent la frontière.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 9,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        }
+      ],
+      "historical_acceptance_preserved": true,
+      "duplicate_notice": null
+    },
+    {
+      "entry_id": "M08-PATH-075",
+      "fiche": "docs/atelier/fiches/DA-05-05.md",
+      "candidates": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-075-A01",
+          "expected": "Groupecréé avec2membres",
+          "A2_original_classification": "present",
+          "A3_classification": "present",
+          "support_type": "oracle_cible",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Les deux occurrences s1/s2 portent explicitement groupeId=g après groupe.creer ; l’appartenance demandée de deux membres est comparée.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 10,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 286,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 287,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-075-A02",
+          "expected": "Membreautreniveau refusé",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Membreautreniveau refusé. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 10,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-075-A03",
+          "expected": "Ouverturemembre refusée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Ouverturemembre refusée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 10,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-075-A04",
+          "expected": "Objetdéjàgroupé refusé",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Objetdéjàgroupé refusé. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 10,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-075-A05",
+          "expected": "Cyclegroupes refusé",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Cyclegroupes refusé. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 10,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-075-A06",
+          "expected": "Dissolutionmembres bitàbit identiques",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Dissoudre supprime g et remet s1.groupeId ànull. L’égalité profonde des deux membres, hors appartenance retirée, n’est pas comparée.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 10,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 291,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 292,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-075-A07",
+          "expected": "Déplacergroupe tousmembres",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "La commande cible s1/s2 explicitement, pas une identité de groupe. Un seul point de s2 est comparé ; les deux déplacements complets ne sont pas assertés.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 10,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 288,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 289,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-075-A08",
+          "expected": "Déplacergroupe unlot",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "L’appel contient une commande sur la sélection de membres. Cela ne compare ni expansion d’une cible groupe ni un journal contenant exactement un lot.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 10,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 288,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-075-A09",
+          "expected": "Inversedéplacementgroupe",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "socle_generique_indirect_oracle_cible_absent",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "L’assertion voisine ne soumet pas cette opération et sa sortie précise : Inversedéplacementgroupe. Le mécanisme générique ne remplace pas l’oracle ciblé ; les notes de source de cette entrée en précisent la frontière.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 10,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-075-A10",
+          "expected": "Calqueverrouillé entierrefusé",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "socle_generique_indirect_oracle_cible_absent",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "L’assertion voisine ne soumet pas cette opération et sa sortie précise : Calqueverrouillé entierrefusé. Le mécanisme générique ne remplace pas l’oracle ciblé ; les notes de source de cette entrée en précisent la frontière.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 10,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 96,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-075-A11",
+          "expected": "Suppressionmembre effetlisté",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Suppressionmembre effetlisté. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 10,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        }
+      ],
+      "historical_acceptance_preserved": true,
+      "duplicate_notice": null
+    },
+    {
+      "entry_id": "M08-PATH-078",
+      "fiche": "docs/atelier/fiches/DA-05-07.md",
+      "candidates": [
+        "packages/atelier-model/src/commandes/bloc.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-078-A01",
+          "expected": "Regroupement parbibliotheque depuisétat",
+          "A2_original_classification": "present",
+          "A3_classification": "present",
+          "support_type": "oracle_cible",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "L’égalité exacte de bibliotheques(r) contrôle Mobilier et la définition Table avec nature/version/occurrences. Oracle direct du regroupement, pas de recherche.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 11,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "line": 39,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-078-A02",
+          "expected": "Recherchetexte",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Recherchetexte. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 11,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-078-A03",
+          "expected": "Recherchenature",
+          "A2_original_classification": "partiel",
+          "A3_classification": "absent",
+          "support_type": "socle_generique_indirect_oracle_cible_absent",
+          "review_verdict": "Précision acceptée dans delta A2",
+          "A3_semantic_analysis": "Correction A3 acceptée par A2 : nature=bloc est une métadonnée retournée par le regroupement, aucun filtre/requête de recherche par nature n’est exercé. Oracle ciblé absent.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 11,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "line": 39,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-078-A04",
+          "expected": "Rechercheversion",
+          "A2_original_classification": "partiel",
+          "A3_classification": "absent",
+          "support_type": "socle_generique_indirect_oracle_cible_absent",
+          "review_verdict": "Précision acceptée dans delta A2",
+          "A3_semantic_analysis": "Correction A3 acceptée par A2 : version=1 est une métadonnée retournée, pas une recherche filtrée par version. Oracle ciblé absent.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 11,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "line": 39,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-078-A05",
+          "expected": "Consultation sanscommande",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Consultation sanscommande. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 11,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-078-A06",
+          "expected": "Consultation sansrévision",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Consultation sansrévision. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 11,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-078-A07",
+          "expected": "Nom bibliothèque cassesimple refusé",
+          "A2_original_classification": "present",
+          "A3_classification": "present",
+          "support_type": "oracle_cible",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Le second bloc déclare mobilier après Mobilier et toThrow vise seule la casse diffère. Cas précis du nom de bibliothèque effectivement contrôlé.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 11,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+              "line": 40,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        }
+      ],
+      "historical_acceptance_preserved": true,
+      "duplicate_notice": null
+    },
+    {
+      "entry_id": "M08-PATH-082",
+      "fiche": "docs/atelier/fiches/DA-05-12.md",
+      "candidates": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-082-A01",
+          "expected": "IDs jamaisréutilisés aprèssuppression",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : IDs jamaisréutilisés aprèssuppression. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 12,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-082-A02",
+          "expected": "Copienouvellesidentités",
+          "A2_original_classification": "present",
+          "A3_classification": "present",
+          "support_type": "oracle_cible",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Les effets de copie comparent mur-c-1 et porte-c-2, distincts des identités d’origine. Ne pas en déduire non-réutilisation après suppression ou idempotence serveur.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 12,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 121,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-082-A03",
+          "expected": "RejeumêmerequestId mêmesIDs",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Deux applications pures de création avec le même requestId donnent même ID/JSON. Pas de passage par service/enregistrement de requête ni compteur de révision serveur.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 12,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 29,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-082-A04",
+          "expected": "Champdérivé modificationrefusée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Champdérivé modificationrefusée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 12,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-082-A05",
+          "expected": "Valeurabsente nonévaluée distincte0",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Omettre la valeur de propriete.definir retire cette propriété. Il n’y a ni paramètre constructif inconnu ni comparaison explicite à0.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 12,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 273,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-082-A06",
+          "expected": "Valeurabsente distinctevide",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Valeurabsente distinctevide. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 12,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-082-A07",
+          "expected": "Suppressionobjetréférencé référencesàréparer",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Une scission remplace un mur et marque une référence àréparer ; ce n’est pas une suppression explicite de l’objet référencé via sa commande propre.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 12,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 74,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-082-A08",
+          "expected": "Inverse recréeobjet mêmesIDs",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "socle_generique_indirect_oracle_cible_absent",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "L’assertion voisine ne soumet pas cette opération et sa sortie précise : Inverse recréeobjet mêmesIDs. Le mécanisme générique ne remplace pas l’oracle ciblé ; les notes de source de cette entrée en précisent la frontière.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 12,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        }
+      ],
+      "historical_acceptance_preserved": true,
+      "duplicate_notice": null
+    },
+    {
+      "entry_id": "M08-PATH-084",
+      "fiche": "docs/atelier/fiches/DA-05-14.md",
+      "candidates": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-084-A01",
+          "expected": "Type.definir",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Type Cloison dans le socle et Béton20 dans le panneau sont créés et consommés ; aucune assertion dédiée définition/version/type.modifier ne s’y ajoute.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 13,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 890,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-084-A02",
+          "expected": "Typedupliqué refusé",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Typedupliqué refusé. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 13,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-084-A03",
+          "expected": "Type.modifier version+1",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Type.modifier version+1. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 13,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-084-A04",
+          "expected": "Sanspropager mursinchangés",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Sanspropager mursinchangés. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 13,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-084-A05",
+          "expected": "Propager seuls murscités changent",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Propager seuls murscités changent. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 13,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-084-A06",
+          "expected": "Effetspropagation listés",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Effetspropagation listés. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 13,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-084-A07",
+          "expected": "Unité≠m refusée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Unité≠m refusée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 13,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-084-A08",
+          "expected": "Murtypeinconnu refusé",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Murtypeinconnu refusé. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 13,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-084-A09",
+          "expected": "Typesimportés identiques",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Typesimportés identiques. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 13,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-084-A10",
+          "expected": "Inverse typeetmurs",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "socle_generique_indirect_oracle_cible_absent",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "L’assertion voisine ne soumet pas cette opération et sa sortie précise : Inverse typeetmurs. Le mécanisme générique ne remplace pas l’oracle ciblé ; les notes de source de cette entrée en précisent la frontière.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 13,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        }
+      ],
+      "historical_acceptance_preserved": true,
+      "duplicate_notice": null
+    },
+    {
+      "entry_id": "M08-PATH-086",
+      "fiche": "docs/atelier/fiches/DA-05-15.md",
+      "candidates": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-086-A01",
+          "expected": "Typeporte défini",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Typeporte défini. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 14,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-086-A02",
+          "expected": "Typeporte appliquéàporte",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Typeporte appliquéàporte. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 14,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-086-A03",
+          "expected": "Sanspropager portesinchangées",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Sanspropager portesinchangées. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 14,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-086-A04",
+          "expected": "Propager seuleportecitéechange",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Propager seuleportecitéechange. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 14,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-086-A05",
+          "expected": "Propagationhorsemprise refusée pourporte",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Propagationhorsemprise refusée pourporte. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 14,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-086-A06",
+          "expected": "Typeportesurfenêtre refusé",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Typeportesurfenêtre refusé. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 14,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-086-A07",
+          "expected": "Inverse typeetportes",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "socle_generique_indirect_oracle_cible_absent",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "L’assertion voisine ne soumet pas cette opération et sa sortie précise : Inverse typeetportes. Le mécanisme générique ne remplace pas l’oracle ciblé ; les notes de source de cette entrée en précisent la frontière.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 14,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        }
+      ],
+      "historical_acceptance_preserved": true,
+      "duplicate_notice": null
+    },
+    {
+      "entry_id": "M08-PATH-088",
+      "fiche": "docs/atelier/fiches/DA-06-07.md",
+      "candidates": [
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-088-A01",
+          "expected": "Propriété définiesurobjet",
+          "A2_original_classification": "present",
+          "A3_classification": "present",
+          "support_type": "oracle_cible",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Le test compare toute la propriété résistance thermique avec valeur2,5, unité, provenance saisie et statut à-vérifier. Cas d’occurrence effectivement asserté.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 15,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 272,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-088-A02",
+          "expected": "Propriété définiesurtype",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Propriété définiesurtype. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 15,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-088-A03",
+          "expected": "Héritagepropriété",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Héritagepropriété. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 15,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-088-A04",
+          "expected": "Surchargeconservée aprèsmodificationtype",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Surchargeconservée aprèsmodificationtype. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 15,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-088-A05",
+          "expected": "Null nonévaluée",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Le retrait observé utilise une valeur omise, pas null explicite ; il ne distingue pas null, zéro et chaîne vide.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 15,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 273,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-088-A06",
+          "expected": "Null distincte0",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Null distincte0. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 15,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-088-A07",
+          "expected": "Nombre sansunité refusé",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Nombre sansunité refusé. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 15,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-088-A08",
+          "expected": "Provenance fixée origine lot",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "La provenance saisie est comparée pour une commande normale ; origine du lot importé et falsification de provenance ne sont pas exercées.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 15,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 272,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-088-A09",
+          "expected": "Propriétédérivée refusée",
+          "A2_original_classification": "partiel",
+          "A3_classification": "absent",
+          "support_type": "socle_generique_indirect_oracle_cible_absent",
+          "review_verdict": "Précision acceptée dans delta A2",
+          "A3_semantic_analysis": "Correction A3 acceptée par A2 : statut certifiee est invalide mais la propriété x n’est pas déclarée dérivée. De plus, valeur numérique sans unité constitue une autre faute possible. Le rejet générique ne prouve pas le refus de propriété dérivée.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 15,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 275,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-088-A10",
+          "expected": "Inverse propriété",
+          "A2_original_classification": "present",
+          "A3_classification": "present",
+          "support_type": "oracle_cible",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "L’inverse du lot qui ajoute la propriété est appliqué et le modèle complet est comparé à l’entrée ; ce n’est pas un inverse générique d’un autre lot.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 15,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 274,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        }
+      ],
+      "historical_acceptance_preserved": true,
+      "duplicate_notice": null
+    },
+    {
+      "entry_id": "M08-PATH-090",
+      "fiche": "docs/atelier/fiches/DA-06-08.md",
+      "candidates": [
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-090-A01",
+          "expected": "Classification affectéeobjet",
+          "A2_original_classification": "present",
+          "A3_classification": "present",
+          "support_type": "oracle_cible",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Le code externe Uniclass de w est comparé avec sa provenance/statut. L’oracle distinct qui fabrique classeIfc àa15 reste une contradiction conservée, pas conformité IFC.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 16,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 280,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-090-A02",
+          "expected": "Classification affectéedéfinition",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Classification affectéedéfinition. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 16,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-090-A03",
+          "expected": "Héritageclassification",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Héritageclassification. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 16,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-090-A04",
+          "expected": "Surchargeclassification",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Surchargeclassification. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 16,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-090-A05",
+          "expected": "ClasseIFCinconnue refusée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : ClasseIFCinconnue refusée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 16,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-090-A06",
+          "expected": "Codesanssystème refusé",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Codesanssystème refusé. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 16,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-090-A07",
+          "expected": "P118 aucunclassésanscommande",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : P118 aucunclassésanscommande. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 16,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-090-A08",
+          "expected": "Retraitclassification",
+          "A2_original_classification": "present",
+          "A3_classification": "present",
+          "support_type": "oracle_cible",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Retirer le code rend la propriété classification:Uniclass undefined. La déclaration IFC n’est pas comparée après retrait dans ce scénario.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 16,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 282,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-090-A09",
+          "expected": "Inverseclassification",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "socle_generique_indirect_oracle_cible_absent",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "L’assertion voisine ne soumet pas cette opération et sa sortie précise : Inverseclassification. Le mécanisme générique ne remplace pas l’oracle ciblé ; les notes de source de cette entrée en précisent la frontière.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 16,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 274,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        }
+      ],
+      "historical_acceptance_preserved": true,
+      "duplicate_notice": null
+    },
+    {
+      "entry_id": "M08-PATH-092",
+      "fiche": "docs/atelier/fiches/DA-07-01.md",
+      "candidates": [
+        "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts"
+      ],
+      "reviewed_assertions": [
+        {
+          "review_id": "M08-PATH-092-A01",
+          "expected": "Murtracé coordonnéesexactes",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Alignement/hauteur et répétabilité sont comparés, pas toutes les coordonnées d’entrée du mur. Des coordonnées présentes dans la fixture ne sont pas une assertion du résultat.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 31,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A02",
+          "expected": "Paramètrestypés conservés",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "La hauteur typée{3,2,m} est comparée. Tous les paramètres typés du mur ne sont pas pour autant contrôlés.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 32,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A03",
+          "expected": "Longueurnulle refusée",
+          "A2_original_classification": "present",
+          "A3_classification": "present",
+          "support_type": "oracle_cible",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "La commande trace un mur de deux points confondus et attend une erreur longueur nulle. Cas négatif direct, sans preuve de lot mixte.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 39,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A04",
+          "expected": "Épaisseur0 refusée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Épaisseur0 refusée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A05",
+          "expected": "Épaisseurnégative refusée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Épaisseurnégative refusée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A06",
+          "expected": "Unité≠m refusée",
+          "A2_original_classification": "present",
+          "A3_classification": "present",
+          "support_type": "oracle_cible",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Épaisseur numérique sans unité et épaisseur en cm sont refusées par les deux assertions ; le cas unité différente de m est effectivement exercé.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 37,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 38,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A07",
+          "expected": "NiveauHautinvalide refusé",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : NiveauHautinvalide refusé. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A08",
+          "expected": "JonctionL détectée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : JonctionL détectée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A09",
+          "expected": "JonctionT détectée",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : JonctionT détectée. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A10",
+          "expected": "Axesinchangés détectionjonctions",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Axesinchangés détectionjonctions. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A11",
+          "expected": "Mur.joindre intersection",
+          "A2_original_classification": "present",
+          "A3_classification": "present",
+          "support_type": "oracle_cible",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Le web joint deux murs et compare les extrémités à(4,0) dans1e-6. Aucune attribution au détecteur L/T ni à des parallèles.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 551,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+              "line": 552,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A12",
+          "expected": "Mur.joindre parallèlesrefusés",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "aucun_oracle_cible_identifie",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Garantie ciblée non observée : Mur.joindre parallèlesrefusés. Les fixtures et assertions des candidats ont été confrontées à la clause unité ; ni un titre, ni les valeurs d’entrée, ni une autre opération ne constituent cette comparaison. Absence bornée aux candidats, pas au produit entier.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A13",
+          "expected": "Scission deuxmurs",
+          "A2_original_classification": "present",
+          "A3_classification": "present",
+          "support_type": "oracle_cible",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Les effets créés sont exactement mur-s-1/mur-s-2 et l’ancien mur est dans les effets supprimés. Oracle ciblé des effets de scission, pas de toutes leurs géométries.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 64,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 65,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A14",
+          "expected": "Scission portes/fenêtres réaffectées",
+          "A2_original_classification": "present",
+          "A3_classification": "present",
+          "support_type": "oracle_cible",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Les champs murHoteId de la porte et de la fenêtre sont comparés aux deux hôtes issus de la scission.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 68,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 70,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A15",
+          "expected": "Scission t recalculé",
+          "A2_original_classification": "present",
+          "A3_classification": "present",
+          "support_type": "oracle_cible",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Les deux positions t sont comparées à0,5 après réaffectation à leurs nouveaux hôtes, à12décimales.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 69,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 71,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A16",
+          "expected": "Scission positionplan inchangée",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Le centre final de la porte vaut(1,0) ; ni centre de fenêtre après opération ni paire avant/après de toutes les ouvertures n’est comparée.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 72,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 155,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A17",
+          "expected": "Scissionempriseouverture refusée",
+          "A2_original_classification": "present",
+          "A3_classification": "present",
+          "support_type": "oracle_cible",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Scinder àt=0,3 dans l’emprise de la porte est explicitement refusé ; la comparaison de modèle après refus reste une autre obligation.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 62,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A18",
+          "expected": "Cotationfacegauche àréparer",
+          "A2_original_classification": "partiel",
+          "A3_classification": "partiel",
+          "support_type": "oracle_cible_incomplet",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "La fixture de scission rattache arete-fin, pas face-gauche ; face-gauche àréparer appartient au miroir. Ne pas fusionner les deux scénarios.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 59,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 74,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            },
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 79,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A19",
+          "expected": "Propositionsréparation",
+          "A2_original_classification": "present",
+          "A3_classification": "present",
+          "support_type": "oracle_cible",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "Les propositions de la référence après scission sont comparées aux deux nouveaux murs. Le statut et la présence des propositions sont assertés.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 75,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A20",
+          "expected": "Inverserestitue mur",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "socle_generique_indirect_oracle_cible_absent",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "L’assertion voisine ne soumet pas cette opération et sa sortie précise : Inverserestitue mur. Le mécanisme générique ne remplace pas l’oracle ciblé ; les notes de source de cette entrée en précisent la frontière.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A21",
+          "expected": "Inverserestitue ouvertures",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "socle_generique_indirect_oracle_cible_absent",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "L’assertion voisine ne soumet pas cette opération et sa sortie précise : Inverserestitue ouvertures. Le mécanisme générique ne remplace pas l’oracle ciblé ; les notes de source de cette entrée en précisent la frontière.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        },
+        {
+          "review_id": "M08-PATH-092-A22",
+          "expected": "Inverserestitue références",
+          "A2_original_classification": "absent",
+          "A3_classification": "absent",
+          "support_type": "socle_generique_indirect_oracle_cible_absent",
+          "review_verdict": "Confirmé dans la portée du rapprochement",
+          "A3_semantic_analysis": "L’assertion voisine ne soumet pas cette opération et sa sortie précise : Inverserestitue références. Le mécanisme générique ne remplace pas l’oracle ciblé ; les notes de source de cette entrée en précisent la frontière.",
+          "notes_before_detailed_comparison": {
+            "path": "M08-UNITE-065-092-NOTES-SOURCES-A3.md",
+            "line": 17,
+            "sha256": "bd6dd1335a1b1e70b838087ce62804f03ed2fe718df2f0ec1d0f50722e9c00e4"
+          },
+          "evidence_checked": [
+            {
+              "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+              "line": 205,
+              "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+            }
+          ],
+          "product_test_executed": false
+        }
+      ],
+      "historical_acceptance_preserved": true,
+      "duplicate_notice": null
+    }
+  ],
+  "reservations": [
+    "Métadonnées nature/version présentes ne démontrent pas une recherche par nature/version ; rejet de statut invalide ne démontre pas interdiction d’une propriété dérivée. Trois supports indirects désormais absent pour l’oracle ciblé, original A2 conservé.",
+    "Les22partiels ne sont pas22obligations partiellement acceptées ; plusieurs scénarios/adaptateurs/fixtures ou règles métier précises restent manquants.",
+    "Les17présents signifient des assertions ciblées constatées, pas exécution récente, exhaustivité ou conformité d’une fiche entière.",
+    "065 duplique la ligne de validation064 ; ne pas sommer deux preuves indépendantes ou deux capacités réalisées.",
+    "L’absence de test ciblé est bornée aux candidats ; les suites nommées dans Suivi et les capacités du reste de Fadi ne sont pas déclarées absentes du dépôt.",
+    "Contradiction classeIfc dans oracle a15 conservée à090. PR1715e est une correction séparée, pas une réécriture de la source historique.",
+    "toThrow seul ne démontre pas atomicité ; fixture de création ne prouve pas la modification/inverse ; requête pure répétée ne prouve pas idempotence serveur.",
+    "Cotation arete-fin après scission et cotation face-gauche après miroir restent distinctes ; ne pas fabriquer une couverture en fusionnant les deux.",
+    "Acceptation D174 et décisions historiques conservées. Aucune fonctionnalité nouvelle acceptée, aucune case source cochée."
+  ],
+  "verdict": "Revue des132 qualifications terminée en lecture seule avec trois précisions sémantiques convenues ; 17présents22partiels93absents bornés, aucun résultat produit nouvellement exécuté.",
+  "next_action": "A5 QA des trois corrections, indépendance et limites ; A0 intègre original+delta+revue sans perte d’ID, puis prochaine sous-tâche READY. Toute correction de test/source requiert son périmètre autorisé distinct."
+}

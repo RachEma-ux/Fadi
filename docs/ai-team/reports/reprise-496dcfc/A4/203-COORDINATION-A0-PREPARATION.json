@@ -1,0 +1,184 @@
+{
+  "document": "203 — préparation coordination pour A0",
+  "owner": "A0 conservé ; A4 rédacteur/relecteur documentaire seulement",
+  "ids": [
+    "PIL-05",
+    "EST-01",
+    "EST-02",
+    "EST-03",
+    "EST-04",
+    "SUIVI-01",
+    "SUIVI-02",
+    "SUIVI-03",
+    "SUIVI-04",
+    "SUIVI-05",
+    "SUIVI-06",
+    "SUIVI-07",
+    "SUIVI-08",
+    "SUIVI-09",
+    "SUIVI-10",
+    "PR-01",
+    "PR-02",
+    "PR-03",
+    "PR-04"
+  ],
+  "pilot_guard": {
+    "id": "PIL-05",
+    "reuse": [
+      {
+        "path": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+        "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+        "blob_sha1": "d78f71f381ab4cd9758d61ff58a651ca8b980ae7",
+        "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+        "lines": [
+          38,
+          46
+        ],
+        "exact_excerpt": "**Objectif :** terminer une petite étude synthétique local/pavillon, depuis entrée autonome Studio jusqu'à réouverture et livrables identifiés. Aucun jeu client/production. L'étude porte trois variantes pédagogiques distinctes pour séparer dessin2D libre, géométrie3D libre et conception architecturale associée, avec provenances explicites ; une copie indépendante ne propage jamais vers sa source.\n\n**Contexte minimal :** un projet synthétique autorisé, étude cadrée avant géométrie possible, variantes propriétaires nommées, révisions identifiées et immuables comme références. Utiliser services Fadi comptes/projets/données/stockage/documents, sans seconde application/base métier/identité concurrente. Les variants actuels par projets bifurqués ne valent pas implémentation de cette hiérarchie : DEC03 doit préciser le modèle physique.\n\n**Minimum fonctionnel de la spécification pilote**, sans affirmer la disponibilité du code :\n\n- A : créer ligne/contour fermé indépendant, sélectionner/modifier/déplacer, gérer calques, coter et annoter ; sauvegarder/fermer/rouvrir, composer vue/feuille et publier. Précision/saisie numérique/annulation font partie du contrat, pas une démonstration de boutons.\n- B : créer une géométrie spatiale directement sans dessin préalable, sélectionner/éditer des faces et transformer le volume, grouper selon besoin ; naviguer, sauvegarder/rouvrir puis produire vue ou coupe dérivée.\n- C : mur/ouverture communs aux deux planches, hôtes/contraintes et métrés sourcés ; annuler/rétablir, copie indépendante, conflit deux sessions/rejeu, contrôle d'une exigence, observation/correction/recontrôle, approbation et publication du dossier exact."
+      },
+      {
+        "path": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+        "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+        "blob_sha1": "d78f71f381ab4cd9758d61ff58a651ca8b980ae7",
+        "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+        "lines": [
+          81,
+          89
+        ],
+        "exact_excerpt": "### Critères des trois parcours, pas démonstration partielle\n\n| Parcours | Acceptation fonctionnelle future | Preuve exigée |\n|---|---|---|\n| A2Dindépendante | Édition/calques/cotes/annotation/sauvegarde/fermeture/réouverture/feuille/publication sans modèle3D requis/créé implicitement | TEST001 complet + permissions018/035, source dessin/revisions, manifeste et empreintes ; capture de bouton insuffisante |\n| B3Ddirecte | Création spatiale/édition face/volume/transformation/sauvegarde/réouverture/vue ou coupe sans esquisse2D ni BIM implicite | TEST002 + sélections/topologie pertinentes, source modèle/vue, réouverture fidèle |\n| Cassociée | Même mur/hôte depuis2D/3D, volumes exacts du casRT, undo/redo/conflit/rejeu/copie, observation/correction/recontrôle/approbation/publication | TEST003–014,027,029–031,038,018/035 selon exigences ; révisions/sources exactes et refus négatifs |\n\nTransversaux éliminatoires : double autorité, corruption de référence, accès interprojets, doublon de commande, écrasement de conflit, résultat périmé engagé courant, publication sous approbation d'un autre contenu. Gain performance/CI verte ne compense jamais un de ces défauts. Même snapping/picking/cotes/volumes/export dans tolérances contractuelles avant/après optimisation ; aucune tolérance inventée pour passer."
+      }
+    ],
+    "complete_paths": [
+      {
+        "path": "A",
+        "chain": "Dessin2D indépendant → modifier/coter/annoter → sauver/fermer/rouvrir → feuille/publication sans3D",
+        "proof_missing": "recette terminable/permissions/manifeste, aucun runtime fourni"
+      },
+      {
+        "path": "B",
+        "chain": "Créer/modifier géométrie3D directe → sauver/rouvrir → vue/coupe sansesquisse2D",
+        "proof_missing": "recette/identités/topologie/réouverture, aucun runtime fourni"
+      },
+      {
+        "path": "C",
+        "chain": "Objetsassociés/hôtes/quantités → undo/conflit/rejeu → observation/correction/recontrôle → approbation/publication",
+        "proof_missing": "ensembleexact/droits distincts et preuves métier, aucun runtime fourni"
+      }
+    ],
+    "rule": "Mur/ouverture reste un cas synthétique géométrique ciblé ; il ne remplace ni A ni B ni une étude C terminable."
+  },
+  "estimation_intake": {
+    "ids": [
+      "EST-01",
+      "EST-02",
+      "EST-03",
+      "EST-04"
+    ],
+    "availability": {
+      "actual_people": null,
+      "committed_capacity_per_period": null,
+      "leave_or_constraints": null,
+      "source_and_confirmation_date": null
+    },
+    "workload": {
+      "project_count": null,
+      "complexity_distribution": null,
+      "formats_versions_volumes": null,
+      "migration_inventory": null,
+      "review_cadence": null
+    },
+    "per_sublot_template": {
+      "id": null,
+      "scope_hash": null,
+      "reuse_audit": null,
+      "gaps": null,
+      "contracts": null,
+      "tests": null,
+      "migration": null,
+      "reviews": null,
+      "risk_margin_basis": null,
+      "effort_range_and_unit": null,
+      "estimator_and_date": null,
+      "critical_dependencies": null,
+      "authorized_scope": null
+    },
+    "calendar_rule": "Ne pas convertir charge en délai sans disponibilité engagée et dépendances ; G3 décidera le calendrier applicable. Un temps libre ne lève pas un contrat/gate critique.",
+    "ready_method": "Collecter d’abord les données humaines et volumes ; préparer la structure ne requiert pas automatiquement DEC13. DEC13 borne les budgets appareil/mesures concernés, pas toute définition de planning.",
+    "values": "Inconnues maintenues, zéro chiffre de disponibilité/délai/gain inventé."
+  },
+  "canonical_paths": {
+    "direction": "Studio/ documents directeurs et source normative originale",
+    "context": "docs/workstreams/studio/CONTEXT.md",
+    "tasks": "docs/workstreams/studio/TASKS.md",
+    "status": "docs/workstreams/studio/STATUS.md",
+    "handoff": "docs/workstreams/studio/HANDOFF.md",
+    "register": "docs/workstreams/studio/task-register.json",
+    "assignments": "docs/ai-team/missions.json",
+    "decisions": "journaux existants Atelier/Planche/ADR selon sujet ; aucune renumérotation",
+    "program": "https://github.com/RachEma-ux/Fadi/issues/156",
+    "questions": "https://github.com/RachEma-ux/Fadi/issues/166"
+  },
+  "targeted_checkpoint_delta_for_A0": {
+    "observed_base": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+    "git_merge": "Merge commit817bd36 (#165), parentsa4caaab/fa9f0db, observé en lecture locale de références fournies ; pas une fusion exécutée par A4.",
+    "stale_text": "STATUS/HANDOFF/TASKS de main817 décrivent encore165ouverte/maina4caaab/aucunefusion ; conserver comme fait historique et ajouter nouvelétat daté.",
+    "ci_for_817": "Non consultée ici ; ne pas transférer CIb102360 ou autres SHA.",
+    "next_authorized_action": "A0 réserve branche documentaire courte et cheminCI sûr, intègre revues parID, actualise STATUS/HANDOFF ensemble ; aucun code/service/DB/administration."
+  },
+  "tracking_record_template": {
+    "task_id": "IDsource inchangé",
+    "mission_and_original_owner": "missions.json/registre, pas A4 par défaut",
+    "normative_ids": "EX/INV/IF/AC exacts + pointeurs vers source",
+    "component_or_contract": "candidat distinct de composant livré",
+    "TEST_NAV": "IDs existants, aucun doublon pour chaque citation",
+    "evidence": "type,sha,artifact_hash,path,lines,env,observed,limits",
+    "decision_ADR": "journal existant, auteur/date/portée, pas avis converti en autorisation",
+    "next_action": "opération concrète autorisée ou blocage local"
+  },
+  "public_artifact_policy": {
+    "manifest": "Référence stable + SHA256 + SHA source + rôle de la preuve + limites, éviter copie volumineuse dans STATUS",
+    "privacy": "Synthétique/public uniquement ; expurger secrets, géométrie privée client, URLs signées et données personnelles avant publication ; ne pas prétendre scansecret exécuté",
+    "validations": [
+      "Code",
+      "Review ChatGPT",
+      "Review Admin"
+    ],
+    "not_allowed": "Aucune coche auto ou preuve métier déduite de qualification203/P630/CI."
+  },
+  "work_units_prepared": [
+    {
+      "label": "Delta navigation I.4-03",
+      "issue_existing": 160,
+      "source_mission": "M16",
+      "requirements": "Conserver sourceI.4-03 et NAV004–008 existants",
+      "scope_in": "contratURL/contextes/transitions documentaire",
+      "scope_out": "routes/codeUI/POC",
+      "contracts": "M17 contexte, NAV, DEC07principes ; routes physiques candidates",
+      "positive_negative": "Voir NAV-DELTA-G1-v2 : URLs exactes, parenté étrangère, résultat tardif etpending",
+      "rollback": "Refuser une intégration documentaire incohérente ; conserver fichiers antérieurs et traces, aucune opération de données."
+    },
+    {
+      "label": "Delta Registry/profil et mesure20",
+      "issue_existing": 160,
+      "source_mission": "M21",
+      "requirements": "B.1-02/B.1-04/B.2-08/B.3-12 +EX026–044,IF005 existants",
+      "scope_in": "catalogue candidat lié, aliasambiguïté, optionprofiléquipe, protocolemesures",
+      "scope_out": "catalogue industriel ratifié, loader, migrationprofil, télémétrie oumesureréelle",
+      "contracts": "M21,M17 etDEC04/05/06/07/14/18 pertinents",
+      "positive_negative": "alias complet/ambigu/cibleabsente ; profil sansélévationdroits ; cache froid/chaud défini",
+      "rollback": "Aucune migration effectuée ; garderversionsexemplesetmapping, retourdocumentaire explicite."
+    },
+    {
+      "label": "Coordination et estimations",
+      "issue_existing": 156,
+      "source_mission": "M29/M30",
+      "requirements": "19IDsA0inchangés",
+      "scope_in": "instrumentscollecte,deltaCHECKPOINT etprochainesactions",
+      "scope_out": "vraiesdisponibilitésinventées,calendrierG3accepté,créationIssue/PR oufusion",
+      "contracts": "protocolecontinuité,registreunique,G0acceptédoc,G1ouvert",
+      "positive_negative": "sourcesetpreuvesliées ; ancienSHA/CIetstatutsnontransférés",
+      "rollback": "Conserverhistoriques,nepasécraser630IDs,nouveaucheckpoint réversible sousA0."
+    }
+  ],
+  "issue_action": "Réemploi Issues160/156 observées dans missions.json ; aucun étatGitHubcourant decesIssues ni créationcommentaire/PR parA4."
+}

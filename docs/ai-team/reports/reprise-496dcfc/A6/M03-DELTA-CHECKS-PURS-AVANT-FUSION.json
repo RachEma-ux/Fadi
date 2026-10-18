@@ -1,0 +1,283 @@
+{
+  "type": "M03 additive analysis to existing issue146/PR152 candidate, no new ruleset",
+  "observed_utc": "2026-10-18 13:40:25 UTC",
+  "main_protected": false,
+  "references": [
+    {
+      "reference": "main",
+      "sha": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "checks": [
+        {
+          "name": "e2e",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39119236553/job/117651235060"
+        },
+        {
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39119236553/job/117651235057"
+        },
+        {
+          "name": "Continuité — docs, checkpoints et tests",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39119236605/job/117651235052"
+        },
+        {
+          "name": "image",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39119236553/job/117651234864"
+        },
+        {
+          "name": "no-foreign-app-reference",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39119236516/job/117651234531"
+        }
+      ]
+    },
+    {
+      "reference": "pr165",
+      "sha": "fa9f0db232f49007c5a8bebded4ffce530a5bf8f",
+      "checks": [
+        {
+          "name": "Codex — 31 missions et 630 tâches",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39131919052/job/117688660246"
+        },
+        {
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "skipped",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39131918789/job/117688660190"
+        },
+        {
+          "name": "inventory",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39131919051/job/117688660093"
+        },
+        {
+          "name": "e2e",
+          "status": "completed",
+          "conclusion": "skipped",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39131918789/job/117688659994"
+        },
+        {
+          "name": "image",
+          "status": "completed",
+          "conclusion": "skipped",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39131918789/job/117688659965"
+        },
+        {
+          "name": "Continuité — docs, checkpoints et tests",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39131919001/job/117688659949"
+        },
+        {
+          "name": "no-foreign-app-reference",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39131918896/job/117688659411"
+        },
+        {
+          "name": "Mission 004 — documentation sans base (intégration non exécutée)",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39131918789/job/117688658959"
+        }
+      ]
+    },
+    {
+      "reference": "pr169",
+      "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "checks": [
+        {
+          "name": "no-foreign-app-reference",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959914/job/117671024069"
+        },
+        {
+          "name": "e2e",
+          "status": "completed",
+          "conclusion": "skipped",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959694/job/117671024060"
+        },
+        {
+          "name": "image",
+          "status": "completed",
+          "conclusion": "skipped",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959694/job/117671023934"
+        },
+        {
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "skipped",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959694/job/117671023828"
+        },
+        {
+          "name": "Continuité — docs, checkpoints et tests",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959712/job/117671023058"
+        },
+        {
+          "name": "DB1/2 — tests simulés sans base (DB3 non validée)",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959694/job/117671022920"
+        }
+      ]
+    },
+    {
+      "reference": "pr171",
+      "sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "checks": [
+        {
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "skipped",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39130408506/job/117684236645"
+        },
+        {
+          "name": "image",
+          "status": "completed",
+          "conclusion": "skipped",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39130408506/job/117684236606"
+        },
+        {
+          "name": "e2e",
+          "status": "completed",
+          "conclusion": "skipped",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39130408506/job/117684236342"
+        },
+        {
+          "name": "Continuité — docs, checkpoints et tests",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39130408553/job/117684235596"
+        },
+        {
+          "name": "no-foreign-app-reference",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39130408504/job/117684235591"
+        },
+        {
+          "name": "Classification — modèle pur sans base (intégration non exécutée)",
+          "status": "completed",
+          "conclusion": "success",
+          "app_id": 15368,
+          "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39130408506/job/117684235447"
+        }
+      ]
+    }
+  ],
+  "existing_tracking": {
+    "issue": 146,
+    "candidate_pr": 152,
+    "candidate_ruleset": "docs/continuity/main-ruleset.proposed.json",
+    "existing_policy": "D05 solo retained; D06 review154→152→142 unchanged"
+  },
+  "global_existing_main_checks": [
+    "validate",
+    "e2e",
+    "image",
+    "Continuité — docs, checkpoints et tests",
+    "no-foreign-app-reference"
+  ],
+  "per_route_evidence_not_global_required_checks": [
+    {
+      "route": "docs/156-codex-missions-completes→main",
+      "active_required_for_review": [
+        "Mission 004 — documentation sans base (intégration non exécutée)",
+        "Codex — 31 missions et 630 tâches",
+        "Continuité — docs, checkpoints et tests",
+        "no-foreign-app-reference"
+      ],
+      "skipped_integration": [
+        "validate",
+        "e2e",
+        "image"
+      ],
+      "limits": "Pure documentation only, including early diff allowlist; no application validation or merge approval"
+    },
+    {
+      "route": "fix/157-test-database-guard→main",
+      "active_required_for_review": [
+        "DB1/2 — tests simulés sans base (DB3 non validée)",
+        "Continuité — docs, checkpoints et tests",
+        "no-foreign-app-reference"
+      ],
+      "skipped_integration": [
+        "validate",
+        "e2e",
+        "image"
+      ],
+      "limits": "129 simulated tests; no DB3, runtime trust registry deliberately empty"
+    },
+    {
+      "route": "fix/156-classification-no-ifc-inference→main",
+      "active_required_for_review": [
+        "Classification — modèle pur sans base (intégration non exécutée)",
+        "Continuité — docs, checkpoints et tests",
+        "no-foreign-app-reference"
+      ],
+      "skipped_integration": [
+        "validate",
+        "e2e",
+        "image"
+      ],
+      "limits": "492 pure model tests, not API/E2E/history-data migration validation"
+    }
+  ],
+  "not_global_requirements": [
+    "inventory (path-filtered)",
+    "three mutually conditional pure jobs",
+    "Codex coverage before integration into main",
+    "Architecture guard before PR152 integrated/observed"
+  ],
+  "important_limits": [
+    "GitHub may count skipped checks as satisfied; required checks alone do not enforce non-skipped integration",
+    "A main-target ruleset does not infer per-head-route semantic requirements; use explicit human review by type, no false claim of admin conditional configuration",
+    "On any eventual main push the exact pull_request tuples are false, so PostgreSQL/migrations/API/E2E/image become eligible; separate authorization and DB3 readiness required before an action causing that push"
+  ],
+  "actions": {
+    "activation": false,
+    "permission_change": false,
+    "rerun": false,
+    "merge": false,
+    "db": false
+  },
+  "no_new_check_or_ruleset_invented": true
+}

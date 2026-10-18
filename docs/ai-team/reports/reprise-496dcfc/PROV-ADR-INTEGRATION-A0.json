@@ -1,0 +1,84 @@
+{
+  "date_UTC": "2026-10-18",
+  "base_doc_SHA": "0e0b386b4ac2711ee394d9907da943f050600b42",
+  "source_commit": "b6794c64c7ff98fadf62868331f4297631201069",
+  "base_register_sha256": "d60edc05392b39d05d9b7db702fed496a13146cacf7e10bdb09f077cbbeb2b1e",
+  "result_register_sha256": "6ab6c3a4bb59ff6fa1ec0f5d35ed4fca7f41c09d903cad32a7c4a251a815f8de",
+  "changes": [
+    {
+      "id": "ADR-01",
+      "ancien_statut_reel": "À faire",
+      "statut_amont_historique": "À définir",
+      "statut": "Vérifié",
+      "revues": [
+        "A5/REVUE-CLAUDE-PROV-ADR-A5.json",
+        "A2/REVUE-CLAUDE-ADR-NAV-A2.json",
+        "A4/REVUE-CLAUDE-ADR-NAV-A4.json"
+      ]
+    },
+    {
+      "id": "ADR-02",
+      "ancien_statut_reel": "En cours",
+      "statut_amont_historique": "À définir",
+      "statut": "Vérifié",
+      "revues": [
+        "A5/REVUE-CLAUDE-PROV-ADR-A5.json",
+        "A2/REVUE-CLAUDE-ADR-NAV-A2.json",
+        "A4/REVUE-CLAUDE-ADR-NAV-A4.json"
+      ]
+    },
+    {
+      "id": "PROV-03",
+      "ancien_statut_reel": "En cours",
+      "statut_amont_historique": "À définir",
+      "statut": "Vérifié",
+      "revues": [
+        "A5/REVUE-CLAUDE-PROV-ADR-A5.json",
+        "A1/REVUE-CLAUDE-PROV-A1.json"
+      ]
+    },
+    {
+      "id": "PROV-04",
+      "ancien_statut_reel": "En cours",
+      "statut_amont_historique": "À définir",
+      "statut": "Vérifié",
+      "revues": [
+        "A5/REVUE-CLAUDE-PROV-ADR-A5.json",
+        "A1/REVUE-CLAUDE-PROV-A1.json"
+      ]
+    },
+    {
+      "id": "PROV-05",
+      "ancien_statut_reel": "En cours",
+      "statut_amont_historique": "À définir",
+      "statut": "Vérifié",
+      "revues": [
+        "A5/REVUE-CLAUDE-PROV-ADR-A5.json",
+        "A1/REVUE-CLAUDE-PROV-A1.json"
+      ]
+    }
+  ],
+  "counts": {
+    "Vérifié": 47,
+    "En cours": 292,
+    "Accepté": 2,
+    "À définir": 22,
+    "À faire": 58,
+    "Bloqué": 209
+  },
+  "P630": 49,
+  "PDEV": null,
+  "ADR_statut": "Proposé",
+  "ADR03_accepte": false,
+  "G1_G4_acceptes": false,
+  "tests_runtime_executés_Codex": 0,
+  "helper_delta_execute": false,
+  "reserves": [
+    "Extension de la règle Planche à toute commande Studio seulement candidate",
+    "Client UI distinct de l’autorité serveur",
+    "Raccourci E-B(c) distinct de l’optionC de report : ne peut remplacer un module autonome",
+    "Droits/permissions, routes et choix physiques encore à arbitrer",
+    "Contrôle documentaire MD/HTML daté, pas garantie automatique future"
+  ],
+  "suite": "Dossier ADR03 borné et revue des résolutions CI169/171 actuelles ; continuer sans accepter les propositions par leur simple enregistrement."
+}

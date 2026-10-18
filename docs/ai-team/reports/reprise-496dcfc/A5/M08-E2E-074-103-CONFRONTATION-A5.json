@@ -1,0 +1,1314 @@
+{
+  "review": "A5 confrontation indépendanteE2E074-103",
+  "reference": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "A4_input": "/workspace/work/resume496/agents/A4/M08-E2E-074-103.json",
+  "A4_sha256": "ac81ecb19c2859bf0fb76041afa3a783385df8dfd32dfb0b75252cfdba565b09",
+  "A5_original": "M08-E2E-074-103-LECTURE-INDEPENDANTE-A5.json",
+  "A5_original_sha256": "d9e1a4af5284bf3428d58ab61936d04ab2295b90d30decc6ef03c2aadb313c91",
+  "A5_original_atoms": 73,
+  "A5_original_counts": {
+    "partiel": 19,
+    "présent": 10,
+    "absent": 44
+  },
+  "entries_reviewed": 13,
+  "clauses_reviewed": 74,
+  "A4_counts": {
+    "partiel": 22,
+    "présent": 5,
+    "absent": 34,
+    "non conclu": 13
+  },
+  "excerpt_occurrences_verified": 54,
+  "unique_excerpts": 39,
+  "source_hashes_verified": {
+    "apps/web/e2e/atelier-complements.mjs": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+    "apps/web/e2e/atelier-documents.mjs": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+    "apps/web/e2e/atelier-nouveau.mjs": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+    "docs/atelier/fiches/DA-05-04.md": "34828dd2108f0a54e2c13d57ba23a12cb6292b025afed5b2080ce197c74d74f2",
+    "docs/atelier/fiches/DA-05-05.md": "e341252f6e59cbc46f0aad3f86169537011c958a91863820abdd2046a636223c",
+    "docs/atelier/fiches/DA-05-06.md": "691255c6b91ef3a7d9927afe713d83a763df8f9293c711ae806f51e94ebb361a",
+    "docs/atelier/fiches/DA-05-11.md": "408d9c7163fb42390224cb3eb14b32866ad40716bff3c23459ad55c3ddbbc9a2",
+    "docs/atelier/fiches/DA-05-12.md": "2387adc4b6ecb004e327dc7d7cd75e4d515cfd364e22a4c2fbce3d819f34c9c9",
+    "docs/atelier/fiches/DA-05-14.md": "7cf75ebe199f44d5f78c11b0079a745b22f6ee9c2bbc63b2da1c9a366483f6c3",
+    "docs/atelier/fiches/DA-05-15.md": "32bca130d0ccd93d23bed006dbb1979b38495cc02906c6b9ba59aba20a7d7979",
+    "docs/atelier/fiches/DA-07-01.md": "059106c28c8c4bca9343a09b3d70d5e0df4cbfed52f3d4721dba43be03162400",
+    "docs/atelier/fiches/DA-07-02.md": "6e63d08f66d225d1492c5d185b5a69b5ff4f9bd8eb3a51fbf660cd317b387416",
+    "docs/atelier/fiches/DA-07-03.md": "2d8371422677c24e12d24d23341c329ae191510f9fa74ecdd7a1e0ef4f9c9065",
+    "docs/atelier/fiches/DA-07-04.md": "51ac54638553277baebf79fdeb4d72a0f9afbb88062acb51725782582b773e38",
+    "docs/atelier/fiches/DA-07-05.md": "c53730714d36f5363ccb240e6e94b4eb15da3a9c13756e4e60923d39f3f42474",
+    "docs/atelier/fiches/DA-07-06.md": "de44c1f35222493c5bf8de6cb66cf65b8010347ead78557711ea1de0aa06d6bf"
+  },
+  "source_errors": [],
+  "matrix": [
+    {
+      "entry_id": "M08-PATH-074",
+      "ordinal": 1,
+      "expected": "6niveaux et élévations exactes du rapport",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Candidat ne vérifie que niveaux≥3, pas6 ni élévations décimales.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            69,
+            74
+          ],
+          "exact_excerpt": "const niveaux = await page.locator(\".nav-niveaux li\").count();\ncheck(\"navigateur : niveaux du P.118\", niveaux >= 3, String(niveaux));\nawait page.screenshot({ path: `${OUT}/3a-p118-desktop.png` });\nawait axe(\"bureau\");\n\n// Changer de niveau.",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-074",
+      "ordinal": 2,
+      "expected": "Changementniveauactif sansrévision",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Un seul bouton aria-pressed est asserté après changement ; pascomparaison révisionavant/après.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            78,
+            81
+          ],
+          "exact_excerpt": "\n// Nouveau niveau vierge pour tracer.\nawait page.locator(\".nav-ajout\").click();\nawait page.locator(\".navigateur .nav-formulaire input\").first().fill(\"Essai lot 3a\");",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-074",
+      "ordinal": 3,
+      "expected": "Ajouter niveau",
+      "A4_status": "présent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "présent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Essai lot3a élévation20 ajouté, copieprojet puis nomniveau attendu. Présent dans code, aucun résultat runtime.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            85,
+            98
+          ],
+          "exact_excerpt": "// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus.\nawait page.waitForURL((u) => /\\/projets\\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });\nurl = page.url().split(\"?\")[0];\nawait page.waitForFunction(() => [...document.querySelectorAll(\".nav-niveaux li\")].some((e) => e.textContent.includes(\"Essai lot 3a\")), null, { timeout: 30000 });\nconst copieInfo = await (await page.request.get(`${BASE}/projects/${url.split(\"/\").pop()}`)).json();\nconst referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split(\"/\").pop()}/atelier/model`)).json();\ncheck(\"copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau\", copieInfo.name === \"copie de travail · Atelier\" && copieInfo.exampleMode === \"editable\" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === \"Essai lot 3a\") && (await page.locator(\".atelier-n-reference\").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));\ncheck(\"site : CRS, aire de la parcelle et origine du repère local affichés\", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator(\"#atelier-site-info\").textContent()));\nawait page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page.waitForTimeout(200);\n\nconst svg = page.locator(\".plan2d\");\nconst box = await svg.boundingBox();\nconst cx = box.x + box.width / 2;",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-074",
+      "ordinal": 4,
+      "expected": "Annuler/rétablir ajoutniveau",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Undo/redo lus concernent renommagepièce, pascréationniveau.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            142,
+            152
+          ],
+          "exact_excerpt": "await page.keyboard.press(\"Enter\");\nawait page.waitForTimeout(200);\ncheck(\"inspecteur : renommer → commande appliquée\", (await page.locator(\".inspecteur h3\").textContent()).includes(\"Bureau\"));\n// Annuler / rétablir.\nawait page.locator(\".plan2d\").click({ position: { x: 5, y: 5 } }).catch(() => {});\nawait page.keyboard.press(\"Escape\");\nconst navTexte = () => page.evaluate(() => document.querySelector(\".nav-objets\").textContent);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction(() => !document.querySelector(\".nav-objets\").textContent.includes(\"Bureau\"), null, { timeout: 10000 }).catch(() => {});\ncheck(\"Ctrl Z annule le renommage\", !(await navTexte()).includes(\"Bureau\"));",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-074",
+      "ordinal": 5,
+      "expected": "Second navigateur même révision après cycle",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Mêmesync/3murs/Bureau, sanscycle ajoutniveauundo/redo.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-074",
+      "ordinal": 6,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-076",
+      "ordinal": 1,
+      "expected": "Grouper EX118-mezz-W-009 et autre murmezzanine",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Aucun groupe dans candidat nommé.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-076",
+      "ordinal": 2,
+      "expected": "Déplacer groupe : porteEX118-mezz-D-001 t0,5conservé",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Glisser unmur synthétique après suppressionporte ne couvre pasgroupe/hébergement.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            183,
+            193
+          ],
+          "exact_excerpt": "// Sélection par cadre et suppression.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"Escape\");\nawait page.mouse.move(sx(0) - 30, sy(0) + 30);\nawait page.mouse.down();\nawait page.mouse.move(sx(1) + 30, sy(0.1), { steps: 5 });\nawait page.mouse.up();\nawait page.waitForTimeout(200);\ncheck(\"cadre : le mur du bas sélectionné\", (await page.locator(\".etat-selection\").textContent()).length > 0);\nawait page.keyboard.press(\"Delete\");\nawait page.waitForTimeout(400);",
+          "level": "E2E assertions lues, non exécutées"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            288,
+            321
+          ],
+          "exact_excerpt": "// Manipulation directe en plan (DA-02-17) : sélectionner un mur, le glisser d'un mètre.\nawait page.keyboard.press(\"Escape\");\nconst murPlan = page.locator(`.plan2d [data-objet=\"${murId}\"]`);\nconst bMur = await murPlan.boundingBox();\nconst ech2 = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nawait mesurer(\"sélection d'un mur au clic → inspecteur affiché\", async () => {\n  const selectionne = () => page.waitForFunction((id) => document.querySelector(\".inspecteur-meta\")?.textContent?.includes(id), murId, { timeout: 5000 });\n  await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  // Un rendu du plan peut être en cours au moment du clic (retour de la 3D) : un second clic, une seule fois.\n  if (!(await selectionne().then(() => true, () => false))) {\n    // Le plan peut s'être recadré après le retour de la 3D : la boîte du mur est relue avant le second clic.\n    await page.keyboard.press(\"Escape\");\n    await page.waitForTimeout(800);\n    const b2 = (await murPlan.boundingBox()) ?? bMur;\n    Object.assign(bMur, b2);\n    await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n    if (!(await selectionne().then(() => true, () => false))) {\n      const sous = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute(\"class\") ?? \"\"} objet=${e?.closest(\"[data-objet]\")?.getAttribute(\"data-objet\") ?? \"-\"}`; }, [bMur.x + bMur.width / 2, bMur.y + bMur.height / 2]);\n      check(\"sélection d'un mur au clic\", false, `sous le pointeur : ${sous} ; boîte ${JSON.stringify(bMur)} ; inspecteur : ${(await page.locator(\".inspecteur\").textContent())?.slice(0, 160)}`);\n      await page.screenshot({ path: `${OUT}/3b-selection-echec.png` });\n    }\n  }\n});\nconst avantDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait mesurer(\"glisser un mur d'un mètre → déplacement enregistré\", async () => {\n  await page.mouse.move(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  await page.mouse.down();\n  for (let k = 1; k <= 10; k++) await page.mouse.move(bMur.x + bMur.width / 2 + (k * ech2) / 10, bMur.y + bMur.height / 2 + 0.3);\n  await page.mouse.up();\n  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 10000 });\n});\nconst apresDeplacement = await page.locator(\".inspecteur .champ-lecture\").first().textContent();\nawait page.waitForFunction(() => document.querySelector(\".mod-journal\")?.textContent?.includes(\"Déplacer\"), null, { timeout: 5000 }).catch(() => {});\ncheck(\"manipulation directe : le mur glissé a bougé et c'est enregistré\", avantDeplacement !== apresDeplacement && (await page.locator(\".mod-journal\").textContent()).includes(\"Déplacer\"), `${avantDeplacement} → ${apresDeplacement}`);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-076",
+      "ordinal": 3,
+      "expected": "Annuler puis dissoudre : identités/positions conservées",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Aucun grouper/déplacer/annuler/dissoudre.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-076",
+      "ordinal": 4,
+      "expected": "Second navigateur même révision du groupe",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Égalité sync générique, pasgroupe niporte.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-076",
+      "ordinal": 5,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-077",
+      "ordinal": 1,
+      "expected": "Définir bloc depuisquelquessolides",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Deuxoccurrences observées après remplacementesquisse+placement ; ne prouvent ni sourceplusieurssolides ni redéfinitionavecpropagation/version/inverse.",
+      "source_reason_reviewed": "BlocBanc issu d’une polylignecontrainte, remplacéeparoccurrence ; pasquelquessolides.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "lines": [
+            170,
+            208
+          ],
+          "exact_excerpt": "await outil(\"Polyligne\");\nawait page.mouse.click(cx + 120, cy - 150);\nfor (const s of [\"3;0,5\", \"0;2\"]) {\n  await page.keyboard.type(s);\n  await page.keyboard.press(\"Enter\");\n}\nawait page.keyboard.press(\"Enter\");\nawait enregistre();\nawait page.keyboard.press(\"Escape\");\nconst esq = await attendreObjet((o) => o.classe === \"esquisse\" && o.params.forme === \"polyligne\", \"polyligne\");\nawait page.locator(`.nav-objets button[data-objet=\"${esq.id}\"]`).click();\nawait page.locator(\".inspecteur-contraintes > summary\").click();\nawait page.locator(\".ajout-contrainte select\").first().selectOption(\"horizontal\");\nawait page.locator('.ajout-contrainte button:has-text(\"Ajouter la contrainte\")').click();\nawait enregistre();\nconst esqApres = (await modele()).objets[esq.id];\ncheck(\"contrainte « horizontal » : premier segment rendu horizontal, contrainte listée avec les degrés de liberté\", Math.abs(esqApres.params.points[0].y - esqApres.params.points[1].y) < 1e-6 && (await page.locator(\".liste-contraintes li\").count()) === 1 && /degré\\(s\\) de liberté/.test(await page.locator(\".inspecteur-contraintes > summary\").textContent()), JSON.stringify(esqApres.params.points.slice(0, 2).map((p) => [p.x, p.y])));\n// Angle (D-051) : 90° du premier au second segment, saisi dans l'inspecteur.\nawait page.locator(\".ajout-contrainte select\").first().selectOption(\"angle\");\nawait page.locator(\".ajout-contrainte select\").nth(2).selectOption({ label: \"2\" });\nawait page.locator(\".ajout-contrainte input\").first().fill(\"90\");\nawait page.locator('.ajout-contrainte button:has-text(\"Ajouter la contrainte\")').click();\nawait enregistre();\nconst esqAngle = (await modele()).objets[esq.id].params.points;\nconst prodScal = (esqAngle[1].x - esqAngle[0].x) * (esqAngle[2].x - esqAngle[1].x) + (esqAngle[1].y - esqAngle[0].y) * (esqAngle[2].y - esqAngle[1].y);\ncheck(\"contrainte « angle » 90° : second segment perpendiculaire au premier, deux contraintes listées\", Math.abs(prodScal) < 1e-4 && (await page.locator(\".liste-contraintes li\").count()) === 2, JSON.stringify(esqAngle.map((p) => [p.x, p.y])));\n\n// Bloc : depuis l'esquisse (remplacée par une occurrence), puis une seconde occurrence placée.\nawait page.locator(\".inspecteur-bloc > summary\").click();\nawait page.locator('.inspecteur-bloc input').first().fill(\"Banc\");\nawait page.locator('.inspecteur-bloc button[type=\"submit\"]').click();\nawait enregistre();\nawait outil(\"Placer un bloc\");\nawait page.locator('input[name=\"definition-bloc\"]').first().check();\nawait page.mouse.click(cx + 250, cy - 150);\nawait enregistre();\nconst m1 = await modele();\nconst occ = Object.values(m1.objets).filter((o) => o.classe === \"bloc-occurrence\");\ncheck(\"bloc « Banc » : définition au catalogue, esquisse remplacée par une occurrence, seconde occurrence placée\", Object.values(m1.definitions).some((d) => d.classe === \"bloc\" && d.nom === \"Banc\") && occ.length === 2 && !m1.objets[esq.id] && (await page.locator(\".plan2d .obj-bloc\").count()) === 2);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-077",
+      "ordinal": 2,
+      "expected": "Placer2occurrences",
+      "A4_status": "présent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "présent",
+      "A5_reason": "Deuxoccurrences observées après remplacementesquisse+placement ; ne prouvent ni sourceplusieurssolides ni redéfinitionavecpropagation/version/inverse.",
+      "source_reason_reviewed": "CatalogueBanc, occ.length===2, esquissesourceabsente et2obj-bloc explicites ; présent statique.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-documents.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b43544614b414597fd6107d4fcf6134a9e1b4789d9910ac6ec7d3417512580db",
+          "lines": [
+            195,
+            208
+          ],
+          "exact_excerpt": "check(\"contrainte « angle » 90° : second segment perpendiculaire au premier, deux contraintes listées\", Math.abs(prodScal) < 1e-4 && (await page.locator(\".liste-contraintes li\").count()) === 2, JSON.stringify(esqAngle.map((p) => [p.x, p.y])));\n\n// Bloc : depuis l'esquisse (remplacée par une occurrence), puis une seconde occurrence placée.\nawait page.locator(\".inspecteur-bloc > summary\").click();\nawait page.locator('.inspecteur-bloc input').first().fill(\"Banc\");\nawait page.locator('.inspecteur-bloc button[type=\"submit\"]').click();\nawait enregistre();\nawait outil(\"Placer un bloc\");\nawait page.locator('input[name=\"definition-bloc\"]').first().check();\nawait page.mouse.click(cx + 250, cy - 150);\nawait enregistre();\nconst m1 = await modele();\nconst occ = Object.values(m1.objets).filter((o) => o.classe === \"bloc-occurrence\");\ncheck(\"bloc « Banc » : définition au catalogue, esquisse remplacée par une occurrence, seconde occurrence placée\", Object.values(m1.definitions).some((d) => d.classe === \"bloc\" && d.nom === \"Banc\") && occ.length === 2 && !m1.objets[esq.id] && (await page.locator(\".plan2d .obj-bloc\").count()) === 2);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-077",
+      "ordinal": 3,
+      "expected": "Redéfinir : les2suivent mêmeidentité/nouvelleversion/représentation",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Deuxoccurrences observées après remplacementesquisse+placement ; ne prouvent ni sourceplusieurssolides ni redéfinitionavecpropagation/version/inverse.",
+      "source_reason_reviewed": "Aucune redéfinition ni comparaisondesdeuxoccurrences aprèsversion.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-077",
+      "ordinal": 4,
+      "expected": "Annuler redéfinition",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Deuxoccurrences observées après remplacementesquisse+placement ; ne prouvent ni sourceplusieurssolides ni redéfinitionavecpropagation/version/inverse.",
+      "source_reason_reviewed": "Pascycle redéfinitionundo.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-077",
+      "ordinal": 5,
+      "expected": "Second navigateur mêmerévision",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Deuxoccurrences observées après remplacementesquisse+placement ; ne prouvent ni sourceplusieurssolides ni redéfinitionavecpropagation/version/inverse.",
+      "source_reason_reviewed": "Candidatdocuments a un seulcontexte etaucunsecondnavigateur.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-077",
+      "ordinal": 6,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Deuxoccurrences observées après remplacementesquisse+placement ; ne prouvent ni sourceplusieurssolides ni redéfinitionavecpropagation/version/inverse.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-081",
+      "ordinal": 1,
+      "expected": "Deuxprojets : publier second puis référencer depuiscopieP118",
+      "A4_status": "présent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "présent",
+      "A5_reason": "Préfixe publication/rattachement/republikation/miseàjour réellement asserté, mais détacher/undo et écranautrecompte sansdroits manquent. Secondctxdesensembles mêmecompte ne couvre pas ce refus.",
+      "source_reason_reviewed": "Deuxcopies créées, voisinpublié201, référenceUI etsuperpositionassertées sanscopieobjets.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+          "lines": [
+            110,
+            112
+          ],
+          "exact_excerpt": "const pid = (await api(\"post\", `/projects/${reference}/copies`, { name: \"P.118 · compléments\" })).body.id;\nconst voisin = (await api(\"post\", `/projects/${reference}/copies`, { name: \"P.118 · voisin\" })).body.id;\n",
+          "level": "E2E assertions lues, non exécutées"
+        },
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+          "lines": [
+            217,
+            241
+          ],
+          "exact_excerpt": "// 4. Référence externe : la publication du voisin, superposée en gris sur le RDC du projet.\nconst pub1 = await api(\"post\", `/projects/${voisin}/atelier/publications`, { nom: \"Voisin v1\" });\ncheck(\"publication du projet voisin\", pub1.status === 201);\nawait ouvrir(pid);\nawait page.locator(\"details.refext summary\").click();\nawait page.locator('[data-refext=\"source\"]').selectOption(voisin);\nawait page.locator('[data-refext=\"publication\"]').selectOption(pub1.body.id);\nawait page.waitForSelector('[data-refext=\"niveau-source\"]', { timeout: 15000 });\nawait page.locator('[data-refext=\"niveau-source\"]').selectOption({ index: 1 });\n// Calage par le repère cadastral (D-138) : le voisin est une copie de P.118 (même parcelle, même système) → 0 ; 0.\nawait page.locator(\"[data-refext-caler]\").click();\ncheck(\"calage cadastral : position déduite des deux origines locales (même système)\", (await page.locator('[data-refext=\"position\"]').inputValue()) === \"0;0\", await page.locator('[data-refext=\"position\"]').inputValue());\nawait page.locator('[data-refext=\"position\"]').fill(\"25;0\");\nawait page.locator('[data-refext=\"angle\"]').fill(\"0\");\nawait axe(\"références externes\", \"details.refext\");\nawait page.locator('[data-refext=\"rattacher\"]').click();\nawait page.waitForFunction(() => /Référence rattachée|refus|inconnu/i.test(document.querySelector(\"details.refext\")?.textContent ?? \"\"), null, { timeout: 30000 }).catch(() => {});\nawait page.waitForSelector(\".plan2d .plan-externes path\", { timeout: 20000 }).catch(() => {});\nconst apresRef = await modele(pid);\ncheck(\n  \"référence rattachée : superposition grise dessinée, rien copié dans le modèle\",\n  (await page.locator(\".plan2d .plan-externes path\").count()) === 1 && Object.keys(apresRef.modele.objets).length === Object.keys(depart.modele.objets).length && Object.values(apresRef.modele.definitions).some((d) => d.classe === \"reference-externe\"),\n  (await page.locator(\"details.refext\").textContent())?.slice(0, 200),\n);\ncheck(\"référence : état « à jour »\", (await page.locator('.refext-liste [data-etat=\"a-jour\"]').count()) === 1);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-081",
+      "ordinal": 2,
+      "expected": "Republier et étatplusrécente",
+      "A4_status": "présent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "présent",
+      "A5_reason": "Préfixe publication/rattachement/republikation/miseàjour réellement asserté, mais détacher/undo et écranautrecompte sansdroits manquent. Secondctxdesensembles mêmecompte ne couvre pas ce refus.",
+      "source_reason_reviewed": "Murvoisin modifié200, publication201 puis data-etatplus-recente===1.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+          "lines": [
+            256,
+            263
+          ],
+          "exact_excerpt": "// Le voisin publie une nouvelle révision : signalée, différences consultables, épinglage.\nconst v = await modele(voisin);\nconst murVoisin = Object.values(v.modele.objets).find((o) => o.classe === \"mur\");\ncheck(\"le voisin modifie puis publie « Voisin v2 »\", (await lot(voisin, `v-${Date.now()}`, v.revision, [{ type: \"objet.modifier\", params: { id: murVoisin.id, params: { epaisseur: m(0.5) } } }])).status === 200 && (await api(\"post\", `/projects/${voisin}/atelier/publications`, { nom: \"Voisin v2\" })).status === 201);\nawait ouvrir(pid);\nawait page.locator(\"details.refext summary\").click();\nawait page.waitForSelector('.refext-liste [data-etat=\"plus-recente\"]', { timeout: 20000 }).catch(() => {});\ncheck(\"publication plus récente signalée\", (await page.locator('.refext-liste [data-etat=\"plus-recente\"]').count()) === 1);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-081",
+      "ordinal": 3,
+      "expected": "Mettreàjour : différencespuisépingler",
+      "A4_status": "présent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "présent",
+      "A5_reason": "Préfixe publication/rattachement/republikation/miseàjour réellement asserté, mais détacher/undo et écranautrecompte sansdroits manquent. Secondctxdesensembles mêmecompte ne couvre pas ce refus.",
+      "source_reason_reviewed": "Diff1modifié puis dernièrepublicationépinglée et étatàjourassertés.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+          "lines": [
+            264,
+            269
+          ],
+          "exact_excerpt": "await page.locator('.refext-liste button:has-text(\"Différences\")').click();\nawait page.waitForFunction(() => /1 modifié/.test(document.querySelector(\".refext-liste\")?.textContent ?? \"\"), null, { timeout: 15000 }).catch(() => {});\ncheck(\"différences avant d'épingler : 1 objet modifié\", /1 modifié\\(s\\)/.test((await page.locator(\".refext-liste\").textContent()) ?? \"\"));\nawait page.locator(\"[data-epingler]\").click();\nawait page.waitForSelector('.refext-liste [data-etat=\"a-jour\"]', { timeout: 20000 }).catch(() => {});\ncheck(\"dernière publication épinglée : de nouveau « à jour »\", (await page.locator('.refext-liste [data-etat=\"a-jour\"]').count()) === 1);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-081",
+      "ordinal": 4,
+      "expected": "Détacher puisannuler restaure ancienne référence",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Préfixe publication/rattachement/republikation/miseàjour réellement asserté, mais détacher/undo et écranautrecompte sansdroits manquent. Secondctxdesensembles mêmecompte ne couvre pas ce refus.",
+      "source_reason_reviewed": "Aucun refexterne.detacher/Détacher ouundo de référence dansinventairecomplet desassertions ; cyclefinal est refuscirculaire.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+          "lines": [
+            2585,
+            2589
+          ],
+          "exact_excerpt": "// Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.\nconst pubA = (await api(\"post\", `/projects/${pid}/atelier/publications`, { nom: \"Compléments v1\" })).body;\nconst niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];\nconst cycle = await lot(voisin, `c-${Date.now()}`, (await modele(voisin)).revision, [{ type: \"refexterne.rattacher\", params: { nom: \"retour\", projetSourceId: pid, publicationId: pubA.id, revisionSource: pubA.revision, empreinteSource: pubA.empreinte, niveauSourceId: niveauA, niveauId: niveauA, position: { x: 0, y: 0, frame: \"local\", unit: \"m\" }, calqueId: null } }]);\ncheck(\"référence circulaire refusée (409)\", cycle.status === 409 && cycle.body?.motif === \"reference-circulaire\", JSON.stringify(cycle.body).slice(0, 160));",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-081",
+      "ordinal": 5,
+      "expected": "Second navigateur sansdroitsource : inaccessible",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Préfixe publication/rattachement/republikation/miseàjour réellement asserté, mais détacher/undo et écranautrecompte sansdroits manquent. Secondctxdesensembles mêmecompte ne couvre pas ce refus.",
+      "source_reason_reviewed": "Secondcontexte présent seulementpourensemblepersonnel du mêmecompte ; pasretraitdroits ni état inaccessible référence.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+          "lines": [
+            1872,
+            1889
+          ],
+          "exact_excerpt": "  const ctx2 = await browser.newContext({ viewport: { width: 1440, height: 900 } });\n  const page2 = await ctx2.newPage();\n  await page2.goto(`${BASE}/connexion`);\n  await page2.fill('input[name=\"email\"]', email);\n  await page2.fill('input[name=\"password\"]', \"complements-pass-123\");\n  await page2.click('button[type=\"submit\"]');\n  await page2.waitForURL(/\\/(projets|accueil)/);\n  await page2.goto(`${BASE}/projets/${pid}?module=atelier`);\n  const vu = await page2.waitForSelector('[data-ensemble-local=\"Perso e2e\"]', { state: \"attached\", timeout: 20000 }).then(() => true, () => false);\n  // Supprimé sur le second appareil : le serveur ne l'a plus.\n  if (vu) await page2.locator('[data-ensemble-local=\"Perso e2e\"] button.lien').click();\n  let retire = false;\n  for (let k = 0; k < 30 && vu && !retire; k++) {\n    retire = !(await api(\"get\", \"/preferences/atelier-ensembles\")).body?.ensembles?.some((e) => e.nom === \"Perso e2e\");\n    if (!retire) await page.waitForTimeout(500);\n  }\n  await ctx2.close();\n  check(\"ensembles personnels : enregistrés sur un appareil, retrouvés et supprimés sur un autre du même compte\", !!serveur?.version && vu && retire, `${JSON.stringify(serveur).slice(0, 120)} · ${vu} · ${retire}`);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-081",
+      "ordinal": 6,
+      "expected": "Objets source noncopiés et répères explicites",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Préfixe publication/rattachement/republikation/miseàjour réellement asserté, mais détacher/undo et écranautrecompte sansdroits manquent. Secondctxdesensembles mêmecompte ne couvre pas ce refus.",
+      "source_reason_reviewed": "Nombreobjetsidentique, position25;0 angle0 etcalagecadastral assertés ; pasoraclesgéométriquescompletsrotation/accrochage/étatcache/droits.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+          "lines": [
+            227,
+            241
+          ],
+          "exact_excerpt": "await page.locator(\"[data-refext-caler]\").click();\ncheck(\"calage cadastral : position déduite des deux origines locales (même système)\", (await page.locator('[data-refext=\"position\"]').inputValue()) === \"0;0\", await page.locator('[data-refext=\"position\"]').inputValue());\nawait page.locator('[data-refext=\"position\"]').fill(\"25;0\");\nawait page.locator('[data-refext=\"angle\"]').fill(\"0\");\nawait axe(\"références externes\", \"details.refext\");\nawait page.locator('[data-refext=\"rattacher\"]').click();\nawait page.waitForFunction(() => /Référence rattachée|refus|inconnu/i.test(document.querySelector(\"details.refext\")?.textContent ?? \"\"), null, { timeout: 30000 }).catch(() => {});\nawait page.waitForSelector(\".plan2d .plan-externes path\", { timeout: 20000 }).catch(() => {});\nconst apresRef = await modele(pid);\ncheck(\n  \"référence rattachée : superposition grise dessinée, rien copié dans le modèle\",\n  (await page.locator(\".plan2d .plan-externes path\").count()) === 1 && Object.keys(apresRef.modele.objets).length === Object.keys(depart.modele.objets).length && Object.values(apresRef.modele.definitions).some((d) => d.classe === \"reference-externe\"),\n  (await page.locator(\"details.refext\").textContent())?.slice(0, 200),\n);\ncheck(\"référence : état « à jour »\", (await page.locator('.refext-liste [data-etat=\"a-jour\"]').count()) === 1);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-081",
+      "ordinal": 7,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Préfixe publication/rattachement/republikation/miseàjour réellement asserté, mais détacher/undo et écranautrecompte sansdroits manquent. Secondctxdesensembles mêmecompte ne couvre pas ce refus.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-083",
+      "ordinal": 1,
+      "expected": "Inspecter mur/porte importés : classe/niveau/unités/représentations",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Inspecteurmur synthétique sélectionné etpiècerenommée ; paschampscomplets des2IDs ni autorité/moteur/empreinte.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            133,
+            141
+          ],
+          "exact_excerpt": "// Pièce par clic dans la boucle.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"r\");\nawait page.mouse.click(sx(0.5), sy(0.5));\nawait page.waitForTimeout(300);\nconst pieces = await page.locator(\".plan2d [data-objet^='piece-']\").count();\ncheck(\"outil Pièce : clic dans la boucle → pièce de 16 m² créée et sélectionnée\", pieces === 1 && (await page.locator(\".inspecteur h3\").textContent()).includes(\"Pièce\"), `${pieces} pièce(s) · inspecteur « ${await page.locator(\".inspecteur h3\").textContent()} » · aide « ${await page.locator(\".atelier-n-etat\").textContent()} »`);\n// Inspecteur : renommer la pièce.\nawait page.locator('.inspecteur input[id$=\"-nom\"]').fill(\"Bureau\");",
+          "level": "E2E assertions lues, non exécutées"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            288,
+            310
+          ],
+          "exact_excerpt": "// Manipulation directe en plan (DA-02-17) : sélectionner un mur, le glisser d'un mètre.\nawait page.keyboard.press(\"Escape\");\nconst murPlan = page.locator(`.plan2d [data-objet=\"${murId}\"]`);\nconst bMur = await murPlan.boundingBox();\nconst ech2 = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nawait mesurer(\"sélection d'un mur au clic → inspecteur affiché\", async () => {\n  const selectionne = () => page.waitForFunction((id) => document.querySelector(\".inspecteur-meta\")?.textContent?.includes(id), murId, { timeout: 5000 });\n  await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n  // Un rendu du plan peut être en cours au moment du clic (retour de la 3D) : un second clic, une seule fois.\n  if (!(await selectionne().then(() => true, () => false))) {\n    // Le plan peut s'être recadré après le retour de la 3D : la boîte du mur est relue avant le second clic.\n    await page.keyboard.press(\"Escape\");\n    await page.waitForTimeout(800);\n    const b2 = (await murPlan.boundingBox()) ?? bMur;\n    Object.assign(bMur, b2);\n    await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);\n    if (!(await selectionne().then(() => true, () => false))) {\n      const sous = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute(\"class\") ?? \"\"} objet=${e?.closest(\"[data-objet]\")?.getAttribute(\"data-objet\") ?? \"-\"}`; }, [bMur.x + bMur.width / 2, bMur.y + bMur.height / 2]);\n      check(\"sélection d'un mur au clic\", false, `sous le pointeur : ${sous} ; boîte ${JSON.stringify(bMur)} ; inspecteur : ${(await page.locator(\".inspecteur\").textContent())?.slice(0, 160)}`);\n      await page.screenshot({ path: `${OUT}/3b-selection-echec.png` });\n    }\n  }\n});",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-083",
+      "ordinal": 2,
+      "expected": "Renommer annuler rétablir",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Bureau renommé puisCtrlZ/ShiftZ assertés, autreclasse/objet quecasimporté.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            138,
+            152
+          ],
+          "exact_excerpt": "const pieces = await page.locator(\".plan2d [data-objet^='piece-']\").count();\ncheck(\"outil Pièce : clic dans la boucle → pièce de 16 m² créée et sélectionnée\", pieces === 1 && (await page.locator(\".inspecteur h3\").textContent()).includes(\"Pièce\"), `${pieces} pièce(s) · inspecteur « ${await page.locator(\".inspecteur h3\").textContent()} » · aide « ${await page.locator(\".atelier-n-etat\").textContent()} »`);\n// Inspecteur : renommer la pièce.\nawait page.locator('.inspecteur input[id$=\"-nom\"]').fill(\"Bureau\");\nawait page.keyboard.press(\"Enter\");\nawait page.waitForTimeout(200);\ncheck(\"inspecteur : renommer → commande appliquée\", (await page.locator(\".inspecteur h3\").textContent()).includes(\"Bureau\"));\n// Annuler / rétablir.\nawait page.locator(\".plan2d\").click({ position: { x: 5, y: 5 } }).catch(() => {});\nawait page.keyboard.press(\"Escape\");\nconst navTexte = () => page.evaluate(() => document.querySelector(\".nav-objets\").textContent);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction(() => !document.querySelector(\".nav-objets\").textContent.includes(\"Bureau\"), null, { timeout: 10000 }).catch(() => {});\ncheck(\"Ctrl Z annule le renommage\", !(await navTexte()).includes(\"Bureau\"));",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-083",
+      "ordinal": 3,
+      "expected": "Dupliquer : nouvelleidentité",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Copieprojet automatique n’estpasduplicationobjet ; aucun nouvelIDobjetasserté.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-083",
+      "ordinal": 4,
+      "expected": "Secondnavigateur même révision",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Mêmesync générique sansinspectionduplicationdesIDs.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-083",
+      "ordinal": 5,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-085",
+      "ordinal": 1,
+      "expected": "Cataloguecloison/mur/non-type, usages etbasic-square120",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Aucun cataloguecomptesrapport/120poteauxasserté.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-085",
+      "ordinal": 2,
+      "expected": "Définir type ettracer murdecetype",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "A5 isolait positifs créerType/tracerMur/poserPorte ; A4 regroupe avec tracétypé ouundo/redo, donc blocpartiel cohérent. Création ne disparaît pas, cycleentier nonprouvé.",
+      "source_reason_reviewed": "Créertype depuismur déjàtracé, appliquer àautremur déjàtracé ; pasmurcréédecetype.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            169,
+            181
+          ],
+          "exact_excerpt": "// Type : créer un type depuis un mur, puis l'affecter à un autre.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"Escape\");\nawait page.mouse.click(sx(0.99), sy(0.5));\nawait page.waitForTimeout(150);\nawait page.locator('.inspecteur button[title=\"Créer un type à partir de cet objet\"]').click();\nawait page.waitForTimeout(300);\nconst typeCree = await page.locator('.inspecteur select[id^=\"type-\"] option:checked').textContent();\nawait page.mouse.click(sx(0.01), sy(0.5));\nawait page.waitForTimeout(150);\nawait page.locator('.inspecteur select[id^=\"type-\"]').selectOption({ label: typeCree });\nawait page.waitForTimeout(200);\ncheck(\"type : créé depuis un mur puis affecté à un autre mur\", typeCree.startsWith(\"Mur\") && (await page.locator('.inspecteur select[id^=\"type-\"] option:checked').textContent()) === typeCree);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-085",
+      "ordinal": 3,
+      "expected": "Modifiertype avecetsanspropagation : seulscochéschangent",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Aucune modificationversion/propagerlistecomparée.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-085",
+      "ordinal": 4,
+      "expected": "Annuler version/propagation",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Undo porte surautreopération.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-085",
+      "ordinal": 5,
+      "expected": "Secondnavigateur même révision avecusages",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "A5 isolait positifs créerType/tracerMur/poserPorte ; A4 regroupe avec tracétypé ouundo/redo, donc blocpartiel cohérent. Création ne disparaît pas, cycleentier nonprouvé.",
+      "source_reason_reviewed": "Mêmesync générique, pascatalogue/type/versions.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-085",
+      "ordinal": 6,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-087",
+      "ordinal": 1,
+      "expected": "PorteimportéeEX118-mezz-D-001 t0,5initial",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Portecrééesurcarrésynthétique, pasIDimporté ni t exact.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-087",
+      "ordinal": 2,
+      "expected": "Définir typeporte etappliquer ànouvelleportemezz libre",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Définitiontype candidat concerne mur, pasporte.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            169,
+            181
+          ],
+          "exact_excerpt": "// Type : créer un type depuis un mur, puis l'affecter à un autre.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"Escape\");\nawait page.mouse.click(sx(0.99), sy(0.5));\nawait page.waitForTimeout(150);\nawait page.locator('.inspecteur button[title=\"Créer un type à partir de cet objet\"]').click();\nawait page.waitForTimeout(300);\nconst typeCree = await page.locator('.inspecteur select[id^=\"type-\"] option:checked').textContent();\nawait page.mouse.click(sx(0.01), sy(0.5));\nawait page.waitForTimeout(150);\nawait page.locator('.inspecteur select[id^=\"type-\"]').selectOption({ label: typeCree });\nawait page.waitForTimeout(200);\ncheck(\"type : créé depuis un mur puis affecté à un autre mur\", typeCree.startsWith(\"Mur\") && (await page.locator('.inspecteur select[id^=\"type-\"] option:checked').textContent()) === typeCree);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-087",
+      "ordinal": 3,
+      "expected": "Modifiertype propagationnouvelleporteseulement",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Aucun propagerporte ni sélectionbornée.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-087",
+      "ordinal": 4,
+      "expected": "Porteimportéeinchangée",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Aucun before/afterEX118-mezz-D-001.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-087",
+      "ordinal": 5,
+      "expected": "Annuler restitue typeetporte",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Pascycle typeouvertureundo.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-087",
+      "ordinal": 6,
+      "expected": "Secondnavigateur aprèscycle",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Mêmesync générique aprèsporte synthétiquesupprimée.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-087",
+      "ordinal": 7,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-093",
+      "ordinal": 1,
+      "expected": "Comptes220murs84portes126fenêtres",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "A5 isolait positifs créerType/tracerMur/poserPorte ; A4 regroupe avec tracétypé ouundo/redo, donc blocpartiel cohérent. Création ne disparaît pas, cycleentier nonprouvé.",
+      "source_reason_reviewed": "Nombreobjets>50/niveaux≥3, pascescomptesparclasse.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            69,
+            74
+          ],
+          "exact_excerpt": "const niveaux = await page.locator(\".nav-niveaux li\").count();\ncheck(\"navigateur : niveaux du P.118\", niveaux >= 3, String(niveaux));\nawait page.screenshot({ path: `${OUT}/3a-p118-desktop.png` });\nawait axe(\"bureau\");\n\n// Changer de niveau.",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-093",
+      "ordinal": 2,
+      "expected": "Tracer mur puisannuler/rétablir",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "A5 isolait positifs créerType/tracerMur/poserPorte ; A4 regroupe avec tracétypé ouundo/redo, donc blocpartiel cohérent. Création ne disparaît pas, cycleentier nonprouvé.",
+      "source_reason_reviewed": "4murstracés maisundo/redo renommageBureau, pascycletracé.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            101,
+            131
+          ],
+          "exact_excerpt": "// Mur au clavier : M, clic, saisie 4, Entrée → un mur de 4 m.\nawait page.keyboard.press(\"m\");\ncheck(\"raccourci M → outil Mur\", (await page.locator('.atelier-n-outils .outil.est-actif').textContent()).includes(\"Mur\"));\nawait mesurer(\"tracer un mur (clic + saisie 4 + Entrée) → mur affiché\", async () => {\n  await page.mouse.move(cx - 100, cy);\n  await page.mouse.click(cx - 100, cy);\n  await page.mouse.move(cx + 50, cy);\n  await page.keyboard.type(\"4;0\");\n  await page.keyboard.press(\"Enter\");\n  await page.waitForSelector(\".plan2d .obj-mur, .plan2d [data-objet^='mur-']\", { timeout: 5000 }).catch(async (err) => {\n    await page.screenshot({ path: `${OUT}/echec-mur.png` });\n    console.log(\"diagnostic :\", await page.evaluate(() => ({ etat: document.querySelector(\".atelier-n-etat\")?.textContent, niveau: document.querySelector(\".nav-niveaux [aria-pressed=true]\")?.textContent, outil: document.querySelector(\".atelier-n-outils .est-actif\")?.textContent, saisie: document.querySelector(\"#saisie-precision\")?.value, actif: document.activeElement?.outerHTML.slice(0, 80) })));\n    throw err;\n  });\n});\n// Trois murs de plus en saisie de précision « dx;dy » pour fermer le carré.\nconst echelle = await page.evaluate(() => Number(document.querySelector(\".etat-echelle\").textContent.replace(/[^0-9]/g, \"\")));\nconst pas = 4 * echelle;\nfor (const saisie of [\"0;4\", \"-4;0\", \"0;-4\"]) {\n  await page.keyboard.type(saisie);\n  await page.keyboard.press(\"Enter\");\n  await page.waitForTimeout(100);\n}\n// Les gestes suivants se placent sur le carré tel qu'il est affiché (boîte des quatre murs, épaisseur comprise).\nconst B = await page.evaluate(() => { const bs = [...document.querySelectorAll(\".plan2d [data-objet^='mur-']\")].map((e) => e.getBoundingClientRect()); return { left: Math.min(...bs.map((b) => b.left)), right: Math.max(...bs.map((b) => b.right)), top: Math.min(...bs.map((b) => b.top)), bottom: Math.max(...bs.map((b) => b.bottom)) }; });\nconst sx = (t) => B.left + t * (B.right - B.left);\nconst sy = (t) => B.bottom - t * (B.bottom - B.top);\nawait page.keyboard.press(\"Escape\");\nawait page.waitForTimeout(300);\nconst murs = await page.locator(\".plan2d [data-objet^='mur-']\").count();\ncheck(\"quatre murs tracés (saisie de précision + accrochage aux extrémités)\", murs === 4, String(murs));",
+          "level": "E2E assertions lues, non exécutées"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            142,
+            152
+          ],
+          "exact_excerpt": "await page.keyboard.press(\"Enter\");\nawait page.waitForTimeout(200);\ncheck(\"inspecteur : renommer → commande appliquée\", (await page.locator(\".inspecteur h3\").textContent()).includes(\"Bureau\"));\n// Annuler / rétablir.\nawait page.locator(\".plan2d\").click({ position: { x: 5, y: 5 } }).catch(() => {});\nawait page.keyboard.press(\"Escape\");\nconst navTexte = () => page.evaluate(() => document.querySelector(\".nav-objets\").textContent);\nawait page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});\nawait page.keyboard.press(\"Control+z\");\nawait page.waitForFunction(() => !document.querySelector(\".nav-objets\").textContent.includes(\"Bureau\"), null, { timeout: 10000 }).catch(() => {});\ncheck(\"Ctrl Z annule le renommage\", !(await navTexte()).includes(\"Bureau\"));",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-093",
+      "ordinal": 3,
+      "expected": "ScinderEX118-mezz-W-009 hors empriseporte",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Aucune action scinder danscandidatnommé ; scissionautremurdocuments horsmapping n’estpastransférée.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-093",
+      "ordinal": 4,
+      "expected": "Porte réaffectée positionpl aninchangée ; undo murorigine t0,5",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Aucun host/t/positiongéométriquebeforeafter/inverse decesIDs.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-093",
+      "ordinal": 5,
+      "expected": "Secondnavigateur mêmerévision aprèsscission",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "A5 isolait positifs créerType/tracerMur/poserPorte ; A4 regroupe avec tracétypé ouundo/redo, donc blocpartiel cohérent. Création ne disparaît pas, cycleentier nonprouvé.",
+      "source_reason_reviewed": "Mêmesync générique sansscission.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-093",
+      "ordinal": 6,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-095",
+      "ordinal": 1,
+      "expected": "84portes etaucuneorpheline nonlistée",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Pasinventaire84/hôtesni panneauproblèmes.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-095",
+      "ordinal": 2,
+      "expected": "Poserporte puisannuler/rétablir",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "A5 isolait positifs créerType/tracerMur/poserPorte ; A4 regroupe avec tracétypé ouundo/redo, donc blocpartiel cohérent. Création ne disparaît pas, cycleentier nonprouvé.",
+      "source_reason_reviewed": "PoseUI etcompte1 explicites, undo/redo concernentrenommageantérieur ; suppressionavechôte autreopération.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            155,
+            167
+          ],
+          "exact_excerpt": "check(\"Ctrl Maj Z le rétablit\", (await navTexte()).includes(\"Bureau\"));\n\n// Palette.\nawait page.keyboard.press(\"Control+k\");\nawait page.locator(\".palette-champ\").fill(\"wall\");\ncheck(\"palette : « wall » → Mur en premier\", (await page.locator(\".palette-resultats li\").first().textContent()).includes(\"Mur\"));\nawait page.locator(\".palette-champ\").fill(\"door\");\nawait page.keyboard.press(\"Enter\");\ncheck(\"palette : Entrée choisit l'outil (Porte)\", (await page.locator('.atelier-n-outils .outil.est-actif').textContent()).includes(\"Porte\"));\n// Porte sur le premier mur (milieu).\nawait page.mouse.click(sx(0.5), sy(0.01));\nawait page.waitForTimeout(300);\ncheck(\"porte posée sur le mur cliqué\", (await page.locator(\".plan2d [data-objet^='porte-']\").count()) === 1);",
+          "level": "E2E assertions lues, non exécutées"
+        },
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            183,
+            193
+          ],
+          "exact_excerpt": "// Sélection par cadre et suppression.\nawait page.keyboard.press(\"Escape\");\nawait page.keyboard.press(\"Escape\");\nawait page.mouse.move(sx(0) - 30, sy(0) + 30);\nawait page.mouse.down();\nawait page.mouse.move(sx(1) + 30, sy(0.1), { steps: 5 });\nawait page.mouse.up();\nawait page.waitForTimeout(200);\ncheck(\"cadre : le mur du bas sélectionné\", (await page.locator(\".etat-selection\").textContent()).length > 0);\nawait page.keyboard.press(\"Delete\");\nawait page.waitForTimeout(400);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-095",
+      "ordinal": 3,
+      "expected": "ModifierrepèreEX118-mezz-D-001 puisundo valeursidentiques",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Aucune saisie repère ni comparaisontoutesvaleurs deporteimportée.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-095",
+      "ordinal": 4,
+      "expected": "Secondnavigateur mêmerévision",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "A5 isolait positifs créerType/tracerMur/poserPorte ; A4 regroupe avec tracétypé ouundo/redo, donc blocpartiel cohérent. Création ne disparaît pas, cycleentier nonprouvé.",
+      "source_reason_reviewed": "Contrôlefinal3murs/Bureau, porte supprimée ; pascycleporte.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-095",
+      "ordinal": 5,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-097",
+      "ordinal": 1,
+      "expected": "126fenêtres etorphelineslistées",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Aucun inventaire126 oucontrôledeshôtes.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-097",
+      "ordinal": 2,
+      "expected": "Déplacerfenêtresurhôte puisundo tinit exact",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Glissemurentier≠ouverture.deplacer ; aucunefenêtre/tassertés.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-097",
+      "ordinal": 3,
+      "expected": "Poserfenêtre puisannuler/rétablir",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "OutilPorte≠Fenêtre, aucunecyclefenêtre.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-097",
+      "ordinal": 4,
+      "expected": "Secondnavigateur aprèscycle",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Mêmesync générique sansfenêtre.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-097",
+      "ordinal": 5,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-099",
+      "ordinal": 1,
+      "expected": "EX118-mezz-D-001 glisséesurEX118-mezz-W-009 puisundo t0,5exact",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Glissermur synthétique ne vautpasdéplacerporte lelonghôte ; pas tasserté.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-099",
+      "ordinal": 2,
+      "expected": "Poseouverturegénériquesurmêmemur",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Poseporteautremur etclasseporte ne prouvepasouverturegénérique.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            161,
+            167
+          ],
+          "exact_excerpt": "await page.locator(\".palette-champ\").fill(\"door\");\nawait page.keyboard.press(\"Enter\");\ncheck(\"palette : Entrée choisit l'outil (Porte)\", (await page.locator('.atelier-n-outils .outil.est-actif').textContent()).includes(\"Porte\"));\n// Porte sur le premier mur (milieu).\nawait page.mouse.click(sx(0.5), sy(0.01));\nawait page.waitForTimeout(300);\ncheck(\"porte posée sur le mur cliqué\", (await page.locator(\".plan2d [data-objet^='porte-']\").count()) === 1);",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-099",
+      "ordinal": 3,
+      "expected": "Emprisehorsmur refuséeave cmessage",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Aucunessaipositioninvalide ni message/refuszéroeffet.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-099",
+      "ordinal": 4,
+      "expected": "Secondnavigateur aprèscycle",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Syncgénérique, pasporte/ouverturecible.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-099",
+      "ordinal": 5,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-101",
+      "ordinal": 1,
+      "expected": "Niveauactifchangérévisioninchangée",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "aria-pressedunique vérifié, pasrévisionavant/après.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            78,
+            81
+          ],
+          "exact_excerpt": "\n// Nouveau niveau vierge pour tracer.\nawait page.locator(\".nav-ajout\").click();\nawait page.locator(\".navigateur .nav-formulaire input\").first().fill(\"Essai lot 3a\");",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-101",
+      "ordinal": 2,
+      "expected": "Contour/trémiesproposés sansécriture/révisioninchangée",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Candidat nechoisitpasoutilPlancher ni propositions ; pièceautreprimitive.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-101",
+      "ordinal": 3,
+      "expected": "Accepterplancher : révisionexactement+1",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Aucun dalle.creer ni acceptanceproposal/révision+1.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-101",
+      "ordinal": 4,
+      "expected": "Annuler/rétablir plancher",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Renommagepièceundo/redo nonéquivalent.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-101",
+      "ordinal": 5,
+      "expected": "Secondnavigateur aprèscycle",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Syncgénérique sansplancher.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-101",
+      "ordinal": 6,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-103",
+      "ordinal": 1,
+      "expected": "Dallesfloor-slab parniveau : épaisseur/base/trous égauxrapport",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Aucune inspectiondalle oucomparaisonparamètresimportés.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-103",
+      "ordinal": 2,
+      "expected": "Créerdalle etpercertrou : contourgéométrie/trouscontenus",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Aucune dallecréée/percement ni oraclegéométriquedecontour/trous.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-103",
+      "ordinal": 3,
+      "expected": "Annuler/rétablir dalle/trou",
+      "A4_status": "absent",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "absent",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Aucuncycledalleundo/redo.",
+      "evidence_verified": []
+    },
+    {
+      "entry_id": "M08-PATH-103",
+      "ordinal": 4,
+      "expected": "Secondnavigateur mêmerévision aprèscycle",
+      "A4_status": "partiel",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "partiel",
+      "A5_reason": "Concorde avec lecture propre du prédicat ; absence bornée au candidat, aucun succès runtime ni preuve d’autreobjet transférée.",
+      "source_reason_reviewed": "Mêmesync générique sansdalle/trous.",
+      "evidence_verified": [
+        {
+          "path": "apps/web/e2e/atelier-nouveau.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+          "lines": [
+            346,
+            354
+          ],
+          "exact_excerpt": "// Second navigateur (même compte) : il lit les mêmes révisions.\nconst ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });\nconst page2 = await ctx2.newPage();\nawait page2.goto(`${url}?module=atelier`);\nawait page2.waitForSelector(\".plan2d\");\nawait page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();\nawait page2.waitForTimeout(300);\ncheck(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));\nawait ctx2.close();",
+          "level": "E2E assertions lues, non exécutées"
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-103",
+      "ordinal": 5,
+      "expected": "Autres garantiesfichecomplète : identité/effets/inverse/conflits/réseau/droits/accessibilité",
+      "A4_status": "non conclu",
+      "A5_review": "Accepté dans portée bornée sous notequalité",
+      "A5_qualification": "non conclu",
+      "A5_reason": "Contexte complet non démontré : conserver tous invariants/refus, sans transformer nonconclu en fonctionabsente ou nouvelaccord.",
+      "source_reason_reviewed": "Les sous-oracles ci-dessus ne démontrentpaslesgarantiescomplètes. Unitaire/API de lafiche restent niveauxdistincts nonexécutés ; pasdéductiondepuispréparationfixtureoucontrôleindirect.",
+      "evidence_verified": []
+    }
+  ],
+  "grain_note": "Grains différents : originalA5 sépare créationspositives/cibles/gestes, A4 groupecycles etajoute contextesnonconclus. Aucune somme/équivalence/couverture calculée depuis ces compteurs. Touspartiels ne valent pas prédicatciblé.",
+  "full_equivalences": 0,
+  "execution": "LectureGit/source et générationJSONdocumentaire seulement, aucun test/app/browser/API/DB/service/réseau",
+  "historical": "Fiches entières et Suivi lus, D174/limites/décisions conservés. Aucun changement historique/case/gate/registre."
+}

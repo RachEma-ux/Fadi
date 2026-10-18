@@ -73,8 +73,8 @@ export function lockedMessage(lock: EditingLock): string {
 }
 
 /** Le projet et le rôle de l'utilisateur, en une requête ; `null` quand il n'y a aucun accès. */
-export async function loadProjectAccess(projectId: string, userId: string): Promise<AccessibleProject | null> {
-  const rows = await db
+export async function loadProjectAccess(projectId: string, userId: string, executor: Pick<typeof db, "select"> = db): Promise<AccessibleProject | null> {
+  const rows = await executor
     .select({ project: projects, memberRole: projectMembers.role })
     .from(projects)
     .leftJoin(projectMembers, and(eq(projectMembers.projectId, projects.id), eq(projectMembers.userId, userId)))
@@ -109,25 +109,25 @@ export type OwnedProject = AccessibleProject;
 export async function projectOr404(req: Request, res: Response, need: ProjectNeed): Promise<AccessibleProject | null> {
   const projectId = (req.params as Record<string, string>)["projectId"] ?? "";
   const access = await loadProjectAccess(projectId, req.user!.id);
-  if (!access) {
-    res.status(404).json({ error: "not_found" });
+  const refusal = projectAccessRefusal(access, req.user!.id, need);
+  if (refusal) {
+    res.status(refusal.status).json(refusal.body);
     return null;
   }
-  if (!roleAllows(access.role, need)) {
-    res.status(403).json({ error: "forbidden", message: FORBIDDEN_MESSAGE[need], role: access.role });
-    return null;
-  }
-  // La référence protégée d'abord : son refus est inconditionnel, il ne dépend pas d'un verrou passager (423).
+  return access;
+}
+
+
+/** Même verdict pour les routes historiques et les écritures relues sous transaction. */
+export function projectAccessRefusal(access: AccessibleProject | null, userId: string, need: ProjectNeed): { status: number; body: Record<string, unknown> } | null {
+  if (!access) return { status: 404, body: { error: "not_found" } };
+  if (!roleAllows(access.role, need)) return { status: 403, body: { error: "forbidden", message: FORBIDDEN_MESSAGE[need], role: access.role } };
   if (need === "modify" && estReferenceProtegee(access)) {
-    res.status(403).json({ error: "forbidden", motif: "reference-protegee", message: REFERENCE_PROTEGEE_MESSAGE, role: access.role });
-    return null;
+    return { status: 403, body: { error: "forbidden", motif: "reference-protegee", message: REFERENCE_PROTEGEE_MESSAGE, role: access.role } };
   }
   if (need === "write" || need === "modify") {
     const lock = activeLock(access);
-    if (lock && lock.userId !== req.user!.id) {
-      res.status(423).json({ error: "locked", message: lockedMessage(lock), lock });
-      return null;
-    }
+    if (lock && lock.userId !== userId) return { status: 423, body: { error: "locked", message: lockedMessage(lock), lock } };
   }
-  return access;
+  return null;
 }

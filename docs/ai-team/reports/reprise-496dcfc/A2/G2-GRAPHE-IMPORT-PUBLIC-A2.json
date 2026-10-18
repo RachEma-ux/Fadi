@@ -1,0 +1,781 @@
+{
+  "review": "G2-GRAPHE-IMPORT-PUBLIC-A2",
+  "mode": "LECTURE_SEULE_SANS_IMPORT_EXECUTE",
+  "code_reference": "5e0285d37f23c7c539502664036f0a2ff0986409",
+  "code_reference_meaning": "Référence PR171 utilisée par DEC18 A3/A6 ; aucune affirmation de main distant courant. Diff a4caaab→5e0285 sur packages/core-geometry vide.",
+  "document_reference": null,
+  "document_worktree_baseline": "b1023605b965b27ff56fabf179756592673c98d4",
+  "requested_import": "import { polygonArea } from \"@parcours/core-geometry\"",
+  "status": "IMPORT_PUBLIC_VIABLE_STATIQUEMENT_SOUS_CONDITIONS",
+  "gate_status": "Aucune autorisation POC, G1/G2/G3 ni choix physique acquis par cette revue.",
+  "sources": [
+    {
+      "path": "packages/core-geometry/src/index.ts",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "50694182121b7005044d67204bd157966e5ed45e",
+      "sha256": "7e02df528d83c7c6fcc8ad3a038901915b9826438153505778036e4156090e67",
+      "lines": 3
+    },
+    {
+      "path": "packages/core-geometry/src/geometry.ts",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "babfeaa7683a891244c7aad4e15d21ebac2a3984",
+      "sha256": "7bf209c60bed52f18c56112df45f738b30c9966fa2ab929495ef5605b357f280",
+      "lines": 528
+    },
+    {
+      "path": "packages/core-geometry/src/parcel-geometry.ts",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "662007e0423a1207edf053b4ea7d3d8fde07954f",
+      "sha256": "63fd3e8efd912acec5e8a0c74fc6768e05b769e1a5ef28fe5e5a9b5a80a2643a",
+      "lines": 154
+    },
+    {
+      "path": "packages/core-geometry/src/site-zoning.ts",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "3eaaf891865367d0d33bfa17cd6949e8bdd55976",
+      "sha256": "b107dfa0f72de8e7943a06bd53e1835deea442aa1a68dfbde82bb50de7d2fc7f",
+      "lines": 163
+    },
+    {
+      "path": "packages/core-geometry/package.json",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "9be6f4bf2f711bdda59cd70434d98717f93bca37",
+      "sha256": "229bc46d4ea297389e0e8f39288f1a2e3a38c98f021269a2f49811aeccc82636",
+      "lines": 17
+    },
+    {
+      "path": "packages/core-geometry/tsconfig.json",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "0d69275a4fb85c6433c69a4a6791db32b9a0142b",
+      "sha256": "019967f6ac7f30c1146a6283514ef72292426fecfce9327e4ebb9ea6767a0a35",
+      "lines": 21
+    },
+    {
+      "path": "packages/core-geometry/README.md",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "40e3ed5699e74aee939fff67bf66ffa5e73aad54",
+      "sha256": "13ff111540dbb6cccc6872b37482b7abfee00f3edc50daf7d75c9ee2c6b16dc4",
+      "lines": 63
+    },
+    {
+      "path": "package.json",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "7e3f73e2226193dae30838944ef4ab6baa7ebbcd",
+      "sha256": "abf927865c7607250f4c0db2962a1e99a50afd34eb18b34565aa447eee72e931",
+      "lines": 22
+    },
+    {
+      "path": "package-lock.json",
+      "commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "3801bea00d04cd4aa816356d950e461304dfa3e3",
+      "sha256": "7506e0ae6075d622a1d8ee6835bc2411316c8915f279c4aea06c12b1144df6f3",
+      "lines": 4934
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/G2-PERIMETRE-A0-PROPOSE.md",
+      "commit": null,
+      "git_blob": null,
+      "worktree_baseline": "b1023605b965b27ff56fabf179756592673c98d4",
+      "sha256": "3de688104e96a64d4126f4dca1320dc6b07eca008aa6ae0df65a881ff9a86d75",
+      "lines": 39,
+      "provenance": "Annexe de travail A0 non présente dans le commit baseline ; artefact lu seulement, aucune provenance Git inventée."
+    }
+  ],
+  "comparison_reports": [
+    {
+      "path": "/workspace/work/resume496/agents/A3/DEC18-MOTEURS-PUBLICS-CANDIDATS.json",
+      "sha256": "24de7c5169d0d1bb5d3f1be2119c5186065ae9f2c5fc45277c6a5318b7164c8b",
+      "read_scope": "MTR01 entier et limites transverses, entrées/sources rapprochées."
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A6/REVUE-DEC18-A6.md",
+      "sha256": "e5058c39f515c1fed092658b4fbf91f5a3f5ac3e57278052c5f2af791546c771",
+      "read_scope": "Rapport entier, frontière publique/provenance/effets transitifs non encore prouvés lus."
+    }
+  ],
+  "public_resolution": {
+    "package": "@parcours/core-geometry",
+    "version": "0.1.0",
+    "esm": true,
+    "exports": {
+      ".": "./src/index.ts"
+    },
+    "runtime_dependencies_declared": [],
+    "dev_dependencies_only": [
+      "typescript ~5.9.3",
+      "vitest 5.0.3"
+    ],
+    "evidence": [
+      {
+        "path": "packages/core-geometry/package.json",
+        "line": 2,
+        "exact_line": "  \"name\": \"@parcours/core-geometry\",",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      {
+        "path": "packages/core-geometry/package.json",
+        "line": 5,
+        "exact_line": "  \"type\": \"module\",",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      {
+        "path": "packages/core-geometry/package.json",
+        "line": 6,
+        "exact_line": "  \"exports\": {",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      {
+        "path": "packages/core-geometry/package.json",
+        "line": 7,
+        "exact_line": "    \".\": \"./src/index.ts\"",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      {
+        "path": "packages/core-geometry/package.json",
+        "line": 13,
+        "exact_line": "  \"devDependencies\": {",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      {
+        "path": "package-lock.json",
+        "line": 1619,
+        "exact_line": "    \"node_modules/@parcours/core-geometry\": {",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      {
+        "path": "package-lock.json",
+        "line": 4895,
+        "exact_line": "    \"packages/core-geometry\": {",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      }
+    ],
+    "forbidden_workaround": "Aucun import profond du sous-module parcel-geometry ; aucune copie silencieuse de polygonArea.",
+    "loader_condition": "Le futur runner autorisé doit déjà gérer source TypeScript ESM et résolution des spécificateurs relatifs .js vers sources .ts. moduleResolution Bundler est un choix de résolution de compilation, pas un chargeur runtime. Aucun import exécuté ici ; commande/loader futur à faire relire A5/A6. Ni compatibilité plain node ni disponibilité de dist/index.js déduites."
+  },
+  "graph": {
+    "runtime_nodes": [
+      "packages/core-geometry/src/index.ts",
+      "packages/core-geometry/src/geometry.ts",
+      "packages/core-geometry/src/parcel-geometry.ts",
+      "packages/core-geometry/src/site-zoning.ts"
+    ],
+    "runtime_edges": [
+      {
+        "from": "packages/core-geometry/src/index.ts",
+        "to": "packages/core-geometry/src/geometry.ts",
+        "kind": "export_star_static",
+        "evidence": [
+          {
+            "path": "packages/core-geometry/src/index.ts",
+            "line": 1,
+            "exact_line": "export * from \"./geometry.js\";",
+            "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+          }
+        ]
+      },
+      {
+        "from": "packages/core-geometry/src/index.ts",
+        "to": "packages/core-geometry/src/parcel-geometry.ts",
+        "kind": "export_star_static",
+        "evidence": [
+          {
+            "path": "packages/core-geometry/src/index.ts",
+            "line": 2,
+            "exact_line": "export * from \"./parcel-geometry.js\";",
+            "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+          }
+        ]
+      },
+      {
+        "from": "packages/core-geometry/src/index.ts",
+        "to": "packages/core-geometry/src/site-zoning.ts",
+        "kind": "export_star_static",
+        "evidence": [
+          {
+            "path": "packages/core-geometry/src/index.ts",
+            "line": 3,
+            "exact_line": "export * from \"./site-zoning.js\";",
+            "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+          }
+        ]
+      },
+      {
+        "from": "packages/core-geometry/src/site-zoning.ts",
+        "to": "packages/core-geometry/src/parcel-geometry.ts",
+        "kind": "import_named_static",
+        "evidence": [
+          {
+            "path": "packages/core-geometry/src/site-zoning.ts",
+            "line": 18,
+            "exact_line": "import { polygonArea, signedArea } from \"./parcel-geometry.js\";",
+            "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+          }
+        ]
+      }
+    ],
+    "type_only_edges": [
+      {
+        "from": "packages/core-geometry/src/parcel-geometry.ts",
+        "to": "packages/core-geometry/src/geometry.ts",
+        "kind": "import_type_erased",
+        "evidence": [
+          {
+            "path": "packages/core-geometry/src/parcel-geometry.ts",
+            "line": 17,
+            "exact_line": "import type { Point2 } from \"./geometry.js\";",
+            "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+          }
+        ]
+      },
+      {
+        "from": "packages/core-geometry/src/site-zoning.ts",
+        "to": "packages/core-geometry/src/geometry.ts",
+        "kind": "import_type_erased",
+        "evidence": [
+          {
+            "path": "packages/core-geometry/src/site-zoning.ts",
+            "line": 17,
+            "exact_line": "import type { Point2 } from \"./geometry.js\";",
+            "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+          }
+        ]
+      }
+    ],
+    "runtime_external_modules": [],
+    "dynamic_imports": [],
+    "requires": [],
+    "cycles_runtime": [],
+    "evaluation_order_for_unbundled_esm": "Dépendances évaluées avant entrée : geometry puis parcel-geometry puis site-zoning puis index selon ordre de réexportations, chaque module une fois par instance ESM. Pas une observation runtime.",
+    "tree_shaking_assumption": "Aucune : import nommé polygonArea considère tout le graphe de réexportation chargé/évalué ; aucun champ sideEffects présent dans package.json ne sert de raccourci."
+  },
+  "complete_import_export_declarations": [
+    {
+      "module": "packages/core-geometry/src/index.ts",
+      "declaration": {
+        "path": "packages/core-geometry/src/index.ts",
+        "line": 1,
+        "exact_line": "export * from \"./geometry.js\";",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      "kind": "runtime_static"
+    },
+    {
+      "module": "packages/core-geometry/src/index.ts",
+      "declaration": {
+        "path": "packages/core-geometry/src/index.ts",
+        "line": 2,
+        "exact_line": "export * from \"./parcel-geometry.js\";",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      "kind": "runtime_static"
+    },
+    {
+      "module": "packages/core-geometry/src/index.ts",
+      "declaration": {
+        "path": "packages/core-geometry/src/index.ts",
+        "line": 3,
+        "exact_line": "export * from \"./site-zoning.js\";",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      "kind": "runtime_static"
+    },
+    {
+      "module": "packages/core-geometry/src/parcel-geometry.ts",
+      "declaration": {
+        "path": "packages/core-geometry/src/parcel-geometry.ts",
+        "line": 17,
+        "exact_line": "import type { Point2 } from \"./geometry.js\";",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      "kind": "type_only_erased"
+    },
+    {
+      "module": "packages/core-geometry/src/site-zoning.ts",
+      "declaration": {
+        "path": "packages/core-geometry/src/site-zoning.ts",
+        "line": 17,
+        "exact_line": "import type { Point2 } from \"./geometry.js\";",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      "kind": "type_only_erased"
+    },
+    {
+      "module": "packages/core-geometry/src/site-zoning.ts",
+      "declaration": {
+        "path": "packages/core-geometry/src/site-zoning.ts",
+        "line": 18,
+        "exact_line": "import { polygonArea, signedArea } from \"./parcel-geometry.js\";",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      "kind": "runtime_static"
+    }
+  ],
+  "module_evaluation_inventory": [
+    {
+      "module": "packages/core-geometry/src/index.ts",
+      "entire_source_read": true,
+      "top_level": "Trois réexportations statiques seulement ; aucun appel, await ou initialisation applicative.",
+      "evidence": [
+        {
+          "path": "packages/core-geometry/src/index.ts",
+          "line": 1,
+          "exact_line": "export * from \"./geometry.js\";",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/index.ts",
+          "line": 2,
+          "exact_line": "export * from \"./parcel-geometry.js\";",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/index.ts",
+          "line": 3,
+          "exact_line": "export * from \"./site-zoning.js\";",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ]
+    },
+    {
+      "module": "packages/core-geometry/src/geometry.ts",
+      "entire_source_read": true,
+      "top_level": "Types/interfaces effacés ; déclarations de fonctions non appelées ; PRISM_FILL_BY_KIND objet littéral trois chaînes et DEFAULT_PRISM_FILL chaîne.",
+      "initializations": [
+        {
+          "path": "packages/core-geometry/src/geometry.ts",
+          "line": 388,
+          "exact_line": "const PRISM_FILL_BY_KIND: Record<string, string> = {",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.ts",
+          "line": 389,
+          "exact_line": "  wall: \"#607c69\",",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.ts",
+          "line": 390,
+          "exact_line": "  column: \"#8da27f\",",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.ts",
+          "line": 391,
+          "exact_line": "  stairs: \"#b8b68a\",",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.ts",
+          "line": 393,
+          "exact_line": "const DEFAULT_PRISM_FILL = \"#849880\";",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ],
+      "deferred_effects": "drawFaces appelle des méthodes du contexte fourni et trie/mute le tableau faces seulement si appelé ; buildModelGeometry appelle un résolveur fourni seulement si appelé. Aucune de ces fonctions n’est appelée à l’import.",
+      "evidence": [
+        {
+          "path": "packages/core-geometry/src/geometry.ts",
+          "line": 360,
+          "exact_line": "export function drawFaces(",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.ts",
+          "line": 365,
+          "exact_line": "  faces.sort(",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.ts",
+          "line": 371,
+          "exact_line": "    ctx.beginPath();",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.ts",
+          "line": 403,
+          "exact_line": "export function buildModelGeometry(",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.ts",
+          "line": 488,
+          "exact_line": "      const shape = columnShapeResolver(col);",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ]
+    },
+    {
+      "module": "packages/core-geometry/src/parcel-geometry.ts",
+      "entire_source_read": true,
+      "top_level": "Import type Point2 seulement ; déclarations de fonctions ; pas valeur initialisée ou fonction appelée au niveau module.",
+      "evidence": [
+        {
+          "path": "packages/core-geometry/src/parcel-geometry.ts",
+          "line": 17,
+          "exact_line": "import type { Point2 } from \"./geometry.js\";",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/parcel-geometry.ts",
+          "line": 20,
+          "exact_line": "export function signedArea(poly: readonly Point2[]): number {",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/parcel-geometry.ts",
+          "line": 30,
+          "exact_line": "export function polygonArea(poly: readonly Point2[]): number {",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/parcel-geometry.ts",
+          "line": 31,
+          "exact_line": "  return Math.abs(signedArea(poly));",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ]
+    },
+    {
+      "module": "packages/core-geometry/src/site-zoning.ts",
+      "entire_source_read": true,
+      "top_level": "Import type Point2 effacé ; import runtime polygonArea/signedArea ; cross et sumArea créent des fermetures sans les appeler ; SITE_ZONING_RATES crée un objet littéral A/B/C avec tableaux numériques. Autres fonctions seulement déclarées.",
+      "initializations": [
+        {
+          "path": "packages/core-geometry/src/site-zoning.ts",
+          "line": 22,
+          "exact_line": "const cross = (a: Point2, b: Point2, c: Point2) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/site-zoning.ts",
+          "line": 71,
+          "exact_line": "export const sumArea = (polys: readonly (readonly Point2[])[]): number => polys.reduce((s, p) => s + polygonArea(p), 0);",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/site-zoning.ts",
+          "line": 113,
+          "exact_line": "export const SITE_ZONING_RATES: Record<SiteVariant, [number, number, number, number]> = {",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/site-zoning.ts",
+          "line": 114,
+          "exact_line": "  A: [0.15, 0.5, 0.25, 0.1],",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/site-zoning.ts",
+          "line": 115,
+          "exact_line": "  B: [0.1, 0.45, 0.35, 0.1],",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/site-zoning.ts",
+          "line": 116,
+          "exact_line": "  C: [0.12, 0.43, 0.2, 0.25],",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ],
+      "limit": "Ces taux sont chargés comme données de module mais polygonArea ne les lit pas. Ils ne sont pas critères normatifs du POC ni données à copier dans Studio."
+    }
+  ],
+  "capability_assessment": [
+    {
+      "capability": "React/UI/DOM global",
+      "import_time": "Aucun import React ni accès à window/document/canvas global dans le graphe runtime.",
+      "nuance": "Les mentions window.V14Geometry sont commentaires de provenance. FaceCanvas est interface structurelle effacée, drawFaces est fonction de rendu différée ; ne pas présenter tout le package comme sans effet à l’appel de toute fonction.",
+      "evidence": [
+        {
+          "path": "packages/core-geometry/src/geometry.ts",
+          "line": 6,
+          "exact_line": " * `window.V14Geometry` dans le fichier source (recherche exacte :",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.ts",
+          "line": 7,
+          "exact_line": " * `window.V14Geometry={model:modelGeometry,faces:prismFaces,draw:drawFaces,",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.ts",
+          "line": 344,
+          "exact_line": "export interface FaceCanvas {",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.ts",
+          "line": 360,
+          "exact_line": "export function drawFaces(",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/tsconfig.json",
+          "line": 6,
+          "exact_line": "    \"lib\": [\"ES2022\", \"DOM\"],",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ]
+    },
+    {
+      "capability": "WASM/Workers/OCCT/Manifold",
+      "import_time": "Aucun import, initialisation ou chargement dans les quatre sources. Le point public core-geometry n’atteint pas geometry-exact, atelier-model ou planche-model."
+    },
+    {
+      "capability": "DB/network/IO/storage/process",
+      "import_time": "Aucun import externe, fs/path/net/pg/http, fetch/XHR, localStorage, accès process/env, timer, listener, transport ou persistance dans les déclarations/initialisations de ce graphe.",
+      "nuance": "Cela borne le code lu au SHA, ne prouve pas confinement réseau du futur runner ni ses hooks/plugins/globals."
+    },
+    {
+      "capability": "TypeScript configuration",
+      "import_time": "tsconfig ne s’évalue pas comme module ; DOM lib et declaration/outDir ne font ni charger navigateur ni construire dist.",
+      "evidence": [
+        {
+          "path": "packages/core-geometry/tsconfig.json",
+          "line": 4,
+          "exact_line": "    \"module\": \"ESNext\",",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/tsconfig.json",
+          "line": 5,
+          "exact_line": "    \"moduleResolution\": \"Bundler\",",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/tsconfig.json",
+          "line": 6,
+          "exact_line": "    \"lib\": [\"ES2022\", \"DOM\"],",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/tsconfig.json",
+          "line": 17,
+          "exact_line": "    \"outDir\": \"dist\",",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/tsconfig.json",
+          "line": 18,
+          "exact_line": "    \"rootDir\": \"src\"",
+          "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ]
+    },
+    {
+      "capability": "Allocation au niveau module",
+      "import_time": "Fonctions/fermetures, objet couleurs et objet taux/tableaux locaux uniquement. Pas appel calcul géométrique ni initialisation service.",
+      "nuance": "Const ne gèle pas les objets exportés ; aucune promesse de scellement/freeze/runtime contre code hostile."
+    }
+  ],
+  "polygon_area_call_boundary": {
+    "public_symbol_unique_origin": "packages/core-geometry/src/parcel-geometry.ts",
+    "static_call_chain": [
+      "polygonArea(poly)",
+      "signedArea(poly)",
+      "poly.reduce callback",
+      "Math.abs(result)"
+    ],
+    "input_type": "readonly Point2[] ; Point2 = readonly [number, number] — nombres nus sans tags unité/CRS.",
+    "evidence": [
+      {
+        "path": "packages/core-geometry/src/parcel-geometry.ts",
+        "line": 20,
+        "exact_line": "export function signedArea(poly: readonly Point2[]): number {",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      {
+        "path": "packages/core-geometry/src/parcel-geometry.ts",
+        "line": 22,
+        "exact_line": "    poly.reduce((s, p, i) => {",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      {
+        "path": "packages/core-geometry/src/parcel-geometry.ts",
+        "line": 30,
+        "exact_line": "export function polygonArea(poly: readonly Point2[]): number {",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      {
+        "path": "packages/core-geometry/src/parcel-geometry.ts",
+        "line": 31,
+        "exact_line": "  return Math.abs(signedArea(poly));",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      {
+        "path": "packages/core-geometry/src/geometry.ts",
+        "line": 25,
+        "exact_line": "export type Point2 = readonly [number, number];",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      }
+    ],
+    "conditions": [
+      "Pour le POC proposé, uniquement tableau ordinaire synthétique de points finis, au moins3, repère local mètres explicitement contrôlé par le harness candidat avant appel ; aucun Proxy/getter/objet personnalisé fourni par fixture.",
+      "Le wrapper proposé conserve unités/identités/versions/immuabilité ; polygonArea ne valide ni autorité d’écriture, ni hiérarchie Projet/Étude/Variante/Révision.",
+      "Fonction d’aire signée absolue ne démontre pas simplicité, absence auto-intersection, aire nette avec trous, précision générale, sûreté algorithmique ni certification normative. Rectangle6×2 et7×2 resteraient deux oracles analytiques à exécuter seulement après autorisation.",
+      "polygonArea n’appelle pas drawFaces/buildModelGeometry/siteZoning et ne lit pas leurs tables. Aucune licence du package ne peut être inférée de son usage interne."
+    ]
+  },
+  "dec18_confrontation": {
+    "A3_MTR01": {
+      "id": "MTR-01",
+      "name": "Géométrie de parcelle et extraction du prototype Fadi",
+      "state": "En cours — candidat de réemploi documenté, intégration Studio non implémentée/non acceptée",
+      "package": {
+        "name": "@parcours/core-geometry",
+        "version": "0.1.0",
+        "entry": "./src/index.ts",
+        "private": true,
+        "react_declared_dependency": false,
+        "license_declared": null,
+        "runtime_dependencies": {},
+        "evidence": {
+          "path": "packages/core-geometry/package.json",
+          "line": 6,
+          "excerpt": "  \"exports\": {"
+        }
+      },
+      "public_entry_chain": [
+        "@parcours/core-geometry",
+        "src/index.ts export * geometry/parcel-geometry/site-zoning"
+      ],
+      "api_and_types": [
+        "Point2=readonly[number,number]",
+        "BuildingModel",
+        "ModelGeometryResult",
+        "ColumnShapeResolver",
+        "buildModelGeometry",
+        "inwardOffset",
+        "buildingFootprint"
+      ],
+      "evidence": [
+        {
+          "path": "packages/core-geometry/src/index.ts",
+          "line": 1,
+          "excerpt": "export * from \"./geometry.js\";"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.ts",
+          "line": 123,
+          "excerpt": "export interface ModelGeometryResult {"
+        },
+        {
+          "path": "packages/core-geometry/README.md",
+          "line": 7,
+          "excerpt": "Toutes les fonctions ci-dessous sont un portage fidèle — pas une réécriture — du code trouvé dans `EMB.designer` (module `designer` / Atelier) de `Parcours_V8_19_Escalier_B_Mezzanine.html`, assignées "
+        },
+        {
+          "path": "packages/core-geometry/src/parcel-geometry.ts",
+          "line": 67,
+          "excerpt": "export function inwardOffset(poly: readonly Point2[], distance: number): Point2[] | null {"
+        }
+      ],
+      "studio_paths": [
+        "A",
+        "B",
+        "C"
+      ],
+      "public_surface_verdict": "Exports publics existants, à qualifier par primitive ; ne pas rétablir le magasin ou moteur monolithique historique.",
+      "react": "Aucun import React dans le noyau ciblé, vérification statique ; les modules UI cités comme manques ne sont pas une API publique Studio.",
+      "writer_ownership": "Fonctions pures : retour de données, aucune persistance. A2 fixe le contrat adaptateur, A3 implémente seulement après autorisation ; autorité serveur Studio et writer unique restent à décider physiquement en M17/DEC03/DEC12.",
+      "license_provenance": "README trace EMB.designer/Parcours_V8_19_Escalier_B_Mezzanine.html. Aucun champ license dans package ; droits propres à confirmer, autonomie opérationnelle distincte de propriété intellectuelle.",
+      "limits": [
+        "README documente une extraction tracée du prototype Parcours, pas preuve de correction ni de droits externes.",
+        "ColumnShapeResolver est un contrat explicite ; warnings de formes non prises en charge à conserver.",
+        "Recul/offset et tolérances historiques ne deviennent pas normes Studio par supposition."
+      ],
+      "missing_adapters": [
+        "Conversion explicite tuples/local/cadastral/unités vers document2D et contexte Projet ; aucune unité déduite de pixels.",
+        "Choisir entre primitive réutilisable et contrat historique BuildingModel, sans créer un modèle3D obligatoire pour A."
+      ],
+      "costs_to_measure": [
+        "Nombre de sommets, contours concaves/trous, précision/écart et coût des conversions",
+        "Chargement/tree-shaking de l’entrée publique et coût mémoire par primitive"
+      ],
+      "tests": {
+        "present_sources": [
+          {
+            "path": "packages/core-geometry/src/geometry.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          },
+          {
+            "path": "packages/core-geometry/src/parcel-geometry.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          },
+          {
+            "path": "packages/core-geometry/src/site-zoning.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          }
+        ],
+        "newly_executed": [],
+        "result": "Présence/statique seulement dans ce lot DEC18, aucun import ni test exécuté. Le passage pur CLASSIF1 antérieur reste sa preuve datée distincte."
+      },
+      "next_action": "Revue A2 des contrats puis A6 licences/provenance et coûts ; préparer la fiche DEC18 sans la clore. Aucun code/POC/nouveau paquet autorisé par cet inventaire."
+    },
+    "verdict": "CONFIRME_ET_PRECISION_TRANSITIVE_BORNEE",
+    "reason": "Chaîne publique core→index→geometry/parcel/site correspond à A3/A6. Cette revue complète la lecture du graphe et des initialisations qui restait une limite explicite ; ne valide pas les onze autres moteurs ni leurs effets.",
+    "provenance": "README/headers attribuent extraction EMB.designer/prototype ; pas accès au dépôt DrawAll ou au prototype ici, pas preuve de droits ou conformité de redistribution. package sans license : réserve A6 conservée.",
+    "evidence": [
+      {
+        "path": "packages/core-geometry/README.md",
+        "line": 7,
+        "exact_line": "Toutes les fonctions ci-dessous sont un portage fidèle — pas une réécriture — du code trouvé dans `EMB.designer` (module `designer` / Atelier) de `Parcours_V8_19_Escalier_B_Mezzanine.html`, assignées dans le source à `window.V14Geometry` :",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      {
+        "path": "packages/core-geometry/README.md",
+        "line": 39,
+        "exact_line": "Également extrait de `EMB.designer` (moteur du prototype), utilisé pour les calculs de centre/emprise de parcelle : `signedArea`, `polygonArea`, `isConvexPolygon`, `intersectLines`, `inwardOffset` (recul de parcelle), `parcelCenter`, `buildingFootprint`, `projectCode`.",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      },
+      {
+        "path": "packages/core-geometry/README.md",
+        "line": 63,
+        "exact_line": "Zéro dépendance runtime : ce paquet n'importe que le DOM `CanvasRenderingContext2D` (type uniquement, pour `drawFaces`), aucune bibliothèque tierce.",
+        "commit": "5e0285d37f23c7c539502664036f0a2ff0986409"
+      }
+    ]
+  },
+  "G2_annexe_confrontation": {
+    "path": "docs/ai-team/reports/reprise-496dcfc/G2-PERIMETRE-A0-PROPOSE.md",
+    "evidence": [
+      {
+        "path": "docs/ai-team/reports/reprise-496dcfc/G2-PERIMETRE-A0-PROPOSE.md",
+        "line": 13,
+        "exact_line": "Seul candidat produit : export public `polygonArea` de `@parcours/core-geometry`. Aucun import profond depuis `apps/web`, moteur 3D, WASM, worker, client DB ou module UI. Le [dossier DEC18](A3/DEC18-MOTEURS-PUBLICS-CANDIDATS.json) constate des exports et leurs limites, sans prouver encore l'absence d'effets de toutes les réexportations transitives du point d'entrée public. A2 doit attester ce graphe précis au SHA retenu avant tout import exécuté. À défaut, ce sous-point reste bloqué : pas de copie silencieuse du moteur ni de contournement par import interne.",
+        "commit": null
+      },
+      {
+        "path": "docs/ai-team/reports/reprise-496dcfc/G2-PERIMETRE-A0-PROPOSE.md",
+        "line": 21,
+        "exact_line": "Environnement enfant minimal explicite : exécutable et arguments fixes sans shell, aucun héritage de secrets, credential, `DATABASE_URL` ou `TEST_DATABASE_URL`. L'absence de variable ne prouve pas une interdiction réseau : le futur environnement doit effectivement refuser le réseau pendant les essais, et A6 doit le constater avant exécution. Aucun serveur, URL distante, installation, script lifecycle, navigateur, DB, API, migration ou reprise de service. Fixtures exclusivement synthétiques. Aucune écriture dans le dépôt hors des cinq sources autorisées ; rapports documentaires relus séparément par A0.",
+        "commit": null
+      }
+    ],
+    "verdict": "CANDIDAT_PUBLIC_CONSERVE_AUCUN_CONTOURNEMENT",
+    "remaining_preconditions": [
+      "Autorisation humaine/déléguée applicable au POC et préconditions G1 ; cette lecture n’autorise aucun import exécuté.",
+      "A5/A6 relisent runner/commande exacts, fixtures, confinement et réseau effectivement refusé ; toutes initialisations du runner restent hors ce graphe.",
+      "Vérifier au SHA finalement choisi que package, quatre modules, config et résolution workspace correspondent ; tout changement entraîne nouvelle revue delta avant exécution.",
+      "Si le chargeur autorisé ne peut résoudre l’export public sans dépendance nouvelle/installation : ce seul sous-point reste bloqué, aucune deep import ou copie de contournement."
+    ]
+  },
+  "limits": [
+    "Aucun import TS/JS évalué, module construit/transpilé, test ou POC exécuté ; aucun nouveau résultat de performance/runtime annoncé.",
+    "Les hooks de chargeur, compilateur, plugins, résolution workspace réelle, symlinks et environnement d’exécution ne sont pas attestés par code Git seul.",
+    "Pas audit de validité des algorithmes, licences complètes, ressources tiers, ensemble du dépôt ou autres moteurs.",
+    "Absence de tsconfig.json racine constatée au SHA ; config propre package ne possède pas extends. Cela ne sélectionne pas la config du futur harness.",
+    "Aucune fermeture G1/G2/G3, DEC18 ni autorisation de correction, DB, migration, réseau, admin ou déploiement."
+  ],
+  "citation_counts": {
+    "occurrences": 62,
+    "unique": 47
+  }
+}
