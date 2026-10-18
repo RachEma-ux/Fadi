@@ -9057,5 +9057,12 @@
 "Lecture seule : les liens vers le Parcours sont réservés aux membres autorisés à modifier ce projet.": "Read-only: links to the Parcours are reserved for members allowed to edit this project.",
 "Étape(s) absente(s) du Parcours de ce projet.": "Step(s) missing from this project’s Parcours.",
 "Commentaire Studio": "Studio comment",
-"{0} a commenté la variante « {1} » de l’étude Studio « {2} » ({3}) : « {4} »": "{0} commented on variant “{1}” of Studio study “{2}” ({3}): “{4}”"
+"{0} a commenté la variante « {1} » de l’étude Studio « {2} » ({3}) : « {4} »": "{0} commented on variant “{1}” of Studio study “{2}” ({3}): “{4}”",
+"Enregistrement partiel : {0} lot(s) sur {1} enregistré(s), puis une autre révision est devenue la version courante. Les {2} commande(s) non envoyée(s) restent dans ce brouillon, sur votre dernière révision enregistrée ; recharger la version serveur les perdra.": "Partial save: {0} of {1} batch(es) saved, then another revision became the current version. The {2} unsent command(s) remain in this draft, on your last saved revision; reloading the server version will lose them.",
+"Enregistrement partiel : {0} lot(s) sur {1} enregistré(s), la suite est refusée. Les {2} commande(s) non envoyée(s) restent en attente dans le brouillon, sur la dernière révision enregistrée.": "Partial save: {0} of {1} batch(es) saved, the rest was refused. The {2} unsent command(s) remain pending in the draft, on the last saved revision.",
+"coordonnées manquantes": "missing coordinates",
+"largeur ignorée": "width ignored",
+"épaisseur ignorée": "thickness ignored",
+"coordonnée au-delà de 10⁹ m": "coordinate beyond 10⁹ m",
+"longueur nulle après conversion": "zero length after conversion"
 }

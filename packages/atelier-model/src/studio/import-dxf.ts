@@ -41,8 +41,11 @@ export type StudioDxfUnite = keyof typeof STUDIO_DXF_UNITES;
 /** Unités proposées au choix quand le fichier n'en déclare pas (les plus courantes en dessin). */
 export const STUDIO_DXF_UNITES_CHOIX: readonly StudioDxfUnite[] = Object.freeze(["mm", "cm", "m", "in", "ft"] as const);
 
-/** Bornes techniques de l'import (le document garde les siennes, `STUDIO_LIMITS`) : au-delà, refus, jamais troncature. */
-export const STUDIO_DXF_LIMITES = Object.freeze({ octets: 5 * 1024 * 1024 } as const);
+/**
+ * Bornes techniques de l'import (le document garde les siennes, `STUDIO_LIMITS`) : fichier de 5 Mo au plus (refus) ;
+ * coordonnée convertie de ±1e9 m au plus (pas une valeur métier : la forme au-delà n'est pas prise, elle est comptée).
+ */
+export const STUDIO_DXF_LIMITES = Object.freeze({ octets: 5 * 1024 * 1024, coordonnee: 1e9 } as const);
 
 export interface StudioDxfOptions {
   /** Document qui recevra l'import : identifiants déjà pris, calques existants, limites. Vide par défaut. */
@@ -65,6 +68,8 @@ export interface StudioDxfCalque {
   objets: number;
   /** Nom raccourci à `STUDIO_LIMITS.layerName` caractères pour le calque créé. */
   nomRaccourci?: boolean;
+  /** Nom Studio retenu quand il diffère du nom du fichier (raccourci, suffixe « (2) » pour rester unique). */
+  nomStudio?: string;
 }
 export interface StudioDxfRapport {
   unite: { code: number | null; valeur: StudioDxfUnite | null; origine: "fichier" | "choix" | "inconnue" };
@@ -234,7 +239,16 @@ function entites(corps: Paire[]): Entite[] {
       k = j - 1;
       continue;
     }
-    // VERTEX ou SEQEND hors d'une POLYLINE : comptés par leur type, comme toute entité non prise.
+    if (e.type === "INSERT" && e.champs.some((p) => p.code === 66 && p.valeur.trim() === "1")) {
+      // Attributs d'un bloc inséré (66 = 1) : ATTRIB… SEQEND appartiennent à l'INSERT, compté une seule fois.
+      let j = k + 1;
+      while (j < brutes.length && brutes[j]!.type === "ATTRIB") j++;
+      if (brutes[j]?.type === "SEQEND") j++;
+      out.push(e);
+      k = j - 1;
+      continue;
+    }
+    // VERTEX, ATTRIB ou SEQEND isolés : comptés par leur type, comme toute entité non prise.
     out.push(e);
   }
   return out;
@@ -257,7 +271,10 @@ interface Segment {
   a: StudioPoint;
   b: StudioPoint;
 }
-type Forme = { type: "ligne"; calque: string; a: StudioPoint; b: StudioPoint; segment: boolean } | { type: "rectangle"; calque: string; min: StudioPoint; max: StudioPoint };
+/** `source` : type DXF de l'entité d'origine (pour compter un refus après conversion). */
+type Forme =
+  | { type: "ligne"; source: string; calque: string; a: StudioPoint; b: StudioPoint; segment: boolean }
+  | { type: "rectangle"; source: string; calque: string; min: StudioPoint; max: StudioPoint };
 
 /** Rectangle parallèle aux axes : 4 sommets distincts, chaque côté horizontal ou vertical, coins exacts. */
 function rectangle(pts: StudioPoint[]): { min: StudioPoint; max: StudioPoint } | null {
@@ -302,12 +319,12 @@ function lire(ents: Entite[]): Lecture {
       continue;
     }
     const calque = calqueDe(e);
-    calquesEntites.push(calque);
     let z = false;
+    const avant = formes.length;
     const poser = (pts: StudioPoint[], ferme: boolean, courbes: boolean[]) => {
       const r = ferme && !courbes.some(Boolean) ? rectangle(pts) : null;
       if (r) {
-        formes.push({ type: "rectangle", calque, ...r });
+        formes.push({ type: "rectangle", source: e.type, calque, ...r });
         return;
       }
       const segs: Segment[] = [];
@@ -318,24 +335,46 @@ function lire(ents: Entite[]): Lecture {
         else if (a.x === b.x && a.y === b.y) compter(`${e.type} (segment de longueur nulle)`);
         else segs.push({ a, b });
       }
-      for (const s of segs) formes.push({ type: "ligne", calque, a: s.a, b: s.b, segment: true });
+      for (const s of segs) formes.push({ type: "ligne", source: e.type, calque, a: s.a, b: s.b, segment: true });
     };
+    /** Coordonnée lue seulement si elle est présente : une coordonnée absente n'est jamais remplacée par 0. */
+    const coord = (src: Entite | Paire[], code: number): number | null => {
+      const p = champ(src, code);
+      return p ? nombre(p) : null;
+    };
+    const nonNul = (src: Entite | Paire[], ...codes: number[]) => codes.some((c) => valeur(src, c, 0) !== 0);
+    // Largeurs (40, 41, 43) et épaisseur (39) ne sont pas représentables : la géométrie est prise, l'attribut compté.
+    let largeur = false;
     if (e.type === "LINE") {
-      const a = { x: valeur(e, 10, 0), y: valeur(e, 20, 0) }, b = { x: valeur(e, 11, 0), y: valeur(e, 21, 0) };
+      const x1 = coord(e, 10), y1 = coord(e, 20), x2 = coord(e, 11), y2 = coord(e, 21);
+      if (x1 === null || y1 === null || x2 === null || y2 === null) {
+        compter("LINE (coordonnées manquantes)");
+        continue;
+      }
       z = valeur(e, 30, 0) !== 0 || valeur(e, 31, 0) !== 0;
-      if (a.x === b.x && a.y === b.y) compter("LINE (longueur nulle)");
-      else formes.push({ type: "ligne", calque, a, b, segment: false });
+      if (x1 === x2 && y1 === y2) compter("LINE (longueur nulle)");
+      else formes.push({ type: "ligne", source: e.type, calque, a: { x: x1, y: y1 }, b: { x: x2, y: y2 }, segment: false });
     } else if (e.type === "LWPOLYLINE") {
       const pts: StudioPoint[] = [], courbes: boolean[] = [];
-      let x: number | null = null;
+      let x: number | null = null, incomplet = false;
       for (const p of e.champs) {
-        if (p.code === 10) x = nombre(p);
-        else if (p.code === 20) {
-          if (x === null) fail("dxf", `ligne ${p.ligne} : LWPOLYLINE, X attendu avant Y`);
+        if (p.code === 10) {
+          if (x !== null) incomplet = true;
+          x = nombre(p);
+        } else if (p.code === 20) {
+          if (x === null) {
+            incomplet = true;
+            continue;
+          }
           pts.push({ x, y: nombre(p) });
           courbes.push(false);
           x = null;
         } else if (p.code === 42 && pts.length) courbes[pts.length - 1] = nombre(p) !== 0;
+        else if ((p.code === 40 || p.code === 41 || p.code === 43) && nombre(p) !== 0) largeur = true;
+      }
+      if (incomplet || x !== null) {
+        compter("LWPOLYLINE (coordonnées manquantes)");
+        continue;
       }
       z = valeur(e, 38, 0) !== 0;
       const ferme = (entier(champ(e, 70) ?? { code: 70, valeur: "0", ligne: 0 }) & 1) === 1;
@@ -352,15 +391,31 @@ function lire(ents: Entite[]): Lecture {
         continue;
       }
       const pts: StudioPoint[] = [], courbes: boolean[] = [];
+      let incomplet = false;
+      largeur = nonNul(e, 40, 41);
       for (const v of e.sommets ?? []) {
-        pts.push({ x: valeur(v, 10, 0), y: valeur(v, 20, 0) });
+        const x = coord(v, 10), y = coord(v, 20);
+        if (x === null || y === null) {
+          incomplet = true;
+          break;
+        }
+        pts.push({ x, y });
         courbes.push(valeur(v, 42, 0) !== 0);
         if (valeur(v, 30, 0) !== 0) z = true;
+        if (nonNul(v, 40, 41)) largeur = true;
+      }
+      if (incomplet) {
+        compter("POLYLINE (coordonnées manquantes)");
+        continue;
       }
       if (valeur(e, 30, 0) !== 0) z = true;
       if (pts.length < 2) compter("POLYLINE (moins de deux sommets)");
       else poser(pts, (flags & 1) === 1, courbes);
     }
+    if (formes.length === avant) continue;
+    calquesEntites.push(calque);
+    if (largeur) compter(`${e.type} (largeur ignorée)`);
+    if (nonNul(e, 39)) compter(`${e.type} (épaisseur ignorée)`);
     if (z) zIgnores++;
   }
   return { formes, nonPris, calquesEntites, zIgnores };
@@ -419,18 +474,35 @@ export function lireDxfStudio(texte: string, options: StudioDxfOptions = {}): St
   if (options.unite !== undefined && !Object.hasOwn(STUDIO_DXF_UNITES, options.unite)) fail("dxf.unite", "unité non prise en charge");
   const s = sections(paires(texte));
   const lecture = lire(s.entites);
+  const nonPris = new Map(lecture.nonPris);
+  const compter = (type: string) => nonPris.set(type, (nonPris.get(type) ?? 0) + 1);
 
   const deFichier = uniteDuCode(s.insunits === 0 ? null : s.insunits);
   const unite = deFichier ?? options.unite ?? null;
   const origine: StudioDxfRapport["unite"]["origine"] = deFichier ? "fichier" : unite ? "choix" : "inconnue";
   const conv = unite ? convertisseur(unite) : null;
 
+  // Conversion en mètres : une forme hors de ±1e9 m ou devenue nulle (arrondi au nanomètre) n'est pas prise, elle est comptée.
+  const retenues: { forme: Forme; geo: Geometrie | null }[] = [];
+  for (const forme of lecture.formes) {
+    if (!conv) {
+      retenues.push({ forme, geo: null });
+      continue;
+    }
+    const geo = convertir(forme, conv);
+    if (geo === "hors-limites") compter(`${forme.source} (coordonnée au-delà de 10⁹ m)`);
+    else if (geo === "nulle") compter(`${forme.source} (longueur nulle après conversion)`);
+    else retenues.push({ forme, geo });
+  }
+
   // Calques : table LAYER d'abord (ordre du fichier), puis noms portés seulement par des entités (ordre d'apparition).
+  // Comparaison sans casse (« Murs » = « MURS »), dans le fichier comme avec les calques du document.
   const parCle = new Map<string, { nom: string; visible: boolean; verrouille: boolean }>();
   for (const c of s.calques) if (!parCle.has(cleCalque(c.nom))) parCle.set(cleCalque(c.nom), c);
   for (const nom of lecture.calquesEntites) if (!parCle.has(cleCalque(nom))) parCle.set(cleCalque(nom), { nom, visible: true, verrouille: false });
   const objetsParCalque = new Map<string, number>();
-  for (const f of lecture.formes) objetsParCalque.set(cleCalque(f.calque), (objetsParCalque.get(cleCalque(f.calque)) ?? 0) + 1);
+  for (const { forme } of retenues) objetsParCalque.set(cleCalque(forme.calque), (objetsParCalque.get(cleCalque(forme.calque)) ?? 0) + 1);
+  const nomsStudio = nomsDeCalques([...parCle].filter(([, c]) => c.nom !== "0"));
 
   const existants = doc?.layers ?? [];
   const pris = new Set<string>([...(doc?.objects ?? []).map((o) => o.id), ...(doc?.dimensions ?? []).map((d) => d.id), ...existants.map((l) => l.id)]);
@@ -449,63 +521,58 @@ export function lireDxfStudio(texte: string, options: StudioDxfOptions = {}): St
       cible.set(cle, undefined);
       continue;
     }
-    const meme = existants.find((l) => l.id !== STUDIO_DEFAULT_LAYER_ID && l.name === c.nom);
+    const nom = nomsStudio.get(cle)!;
+    const raccourci = nom !== c.nom ? { nomStudio: nom, nomRaccourci: true as const } : {};
+    const meme = existants.find((l) => l.id !== STUDIO_DEFAULT_LAYER_ID && cleCalque(l.name) === cleCalque(nom));
     if (meme) {
-      if (objets && meme.locked) fail("dxf.calques", `calque verrouillé dans le document : ${c.nom}`);
-      calques.push({ nom: c.nom, cible: "existant", id: meme.id, objets });
+      if (objets && meme.locked) fail("dxf.calques", `calque verrouillé dans le document : ${meme.name}`);
+      calques.push({ nom: c.nom, cible: "existant", id: meme.id, objets, ...raccourci });
       cible.set(cle, meme.id);
       continue;
     }
     if (!objets) {
-      calques.push({ nom: c.nom, cible: "sans-objet", objets });
+      calques.push({ nom: c.nom, cible: "sans-objet", objets, ...raccourci });
       continue;
     }
-    const nom = c.nom.slice(0, STUDIO_LIMITS.layerName);
     const id = idCalque();
     creer.push({ id, name: nom, visible: c.visible, locked: false });
     if (c.verrouille) verrouiller.push({ id, name: nom, visible: c.visible, locked: true });
-    calques.push({ nom: c.nom, cible: "cree", id, objets, ...(nom.length < c.nom.length ? { nomRaccourci: true } : {}) });
+    calques.push({ nom: c.nom, cible: "cree", id, objets, ...raccourci });
     cible.set(cle, id);
   }
 
-  const lignes = lecture.formes.filter((f) => f.type === "ligne").length;
+  const lignes = retenues.filter(({ forme }) => forme.type === "ligne");
   const rapport: StudioDxfRapport = {
     unite: { code: s.insunits, valeur: unite, origine },
     facteur: unite ? STUDIO_DXF_UNITES[unite].mul / STUDIO_DXF_UNITES[unite].div : null,
     entites: {
-      lignes: lecture.formes.filter((f) => f.type === "ligne" && !f.segment).length,
-      rectangles: lecture.formes.length - lignes,
-      segments: lecture.formes.filter((f) => f.type === "ligne" && f.segment).length,
-      total: lecture.formes.length,
+      lignes: lignes.filter(({ forme }) => forme.type === "ligne" && !forme.segment).length,
+      rectangles: retenues.length - lignes.length,
+      segments: lignes.filter(({ forme }) => forme.type === "ligne" && forme.segment).length,
+      total: retenues.length,
     },
-    nonPris: [...lecture.nonPris].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([type, nombre]) => ({ type, nombre })),
+    nonPris: [...nonPris].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([type, nombre]) => ({ type, nombre })),
     calques,
     bornes: null,
-    bornesFichier: bornesDe(lecture.formes.flatMap((f) => (f.type === "ligne" ? [f.a, f.b] : [f.min, f.max]))),
+    bornesFichier: bornesDe(retenues.flatMap(({ forme: f }) => (f.type === "ligne" ? [f.a, f.b] : [f.min, f.max]))),
     zIgnores: lecture.zIgnores,
   };
   if (!conv) return { statut: "unite-inconnue", commandes: [], rapport };
 
   const objetsAvant = (doc?.objects.length ?? 0) + (doc?.dimensions?.length ?? 0);
-  if (objetsAvant + lecture.formes.length > STUDIO_LIMITS.objects) fail("dxf.objets", `${STUDIO_LIMITS.objects} objets au plus par document : l’import en ajouterait ${lecture.formes.length} aux ${objetsAvant} existants`);
+  if (objetsAvant + retenues.length > STUDIO_LIMITS.objects) fail("dxf.objets", `${STUDIO_LIMITS.objects} objets au plus par document : l’import en ajouterait ${retenues.length} aux ${objetsAvant} existants`);
   if (existants.length + creer.length > STUDIO_LIMITS.layers) fail("dxf.calques", `${STUDIO_LIMITS.layers} calques au plus par document`);
 
   const commandes: StudioCommand[] = creer.map((l) => ({ toolId: "studio.calque.creer", params: l }));
   const pts: StudioPoint[] = [];
-  const point = (p: StudioPoint): StudioPoint => ({ x: conv(p.x), y: conv(p.y) });
-  for (const f of lecture.formes) {
-    const layerId = cible.get(cleCalque(f.calque));
+  for (const { forme, geo } of retenues) {
+    const layerId = cible.get(cleCalque(forme.calque));
     const calque = layerId === undefined ? {} : { layerId };
-    if (f.type === "ligne") {
-      const start = point(f.a), end = point(f.b);
-      // Deux points distincts dans le fichier peuvent se confondre une fois arrondis au nanomètre.
-      if (start.x === end.x && start.y === end.y) fail("dxf.objets", "segment plus court qu’un nanomètre après conversion");
-      commandes.push({ toolId: "studio.dessin.ligne", params: { id: idObjet(), type: "line", ...calque, start, end } });
-      pts.push(start, end);
+    if (geo!.type === "line") {
+      commandes.push({ toolId: "studio.dessin.ligne", params: { id: idObjet(), type: "line", ...calque, start: geo!.start, end: geo!.end } });
+      pts.push(geo!.start, geo!.end);
     } else {
-      const origin = point(f.min), max = point(f.max);
-      const width = Math.round((max.x - origin.x) * 1e9) / 1e9, height = Math.round((max.y - origin.y) * 1e9) / 1e9;
-      if (!(width > 0 && height > 0)) fail("dxf.objets", "rectangle plus étroit qu’un nanomètre après conversion");
+      const { origin, width, height } = geo!;
       commandes.push({ toolId: "studio.dessin.rectangle", params: { id: idObjet(), type: "rectangle", ...calque, origin, width, height } });
       pts.push(origin, { x: origin.x + width, y: origin.y + height });
     }
@@ -513,4 +580,47 @@ export function lireDxfStudio(texte: string, options: StudioDxfOptions = {}): St
   for (const l of verrouiller) commandes.push({ toolId: "studio.calque.modifier", params: l });
   rapport.bornes = bornesDe(pts);
   return { statut: "pret", commandes, rapport };
+}
+
+type Geometrie = { type: "line"; start: StudioPoint; end: StudioPoint } | { type: "rectangle"; origin: StudioPoint; width: number; height: number };
+
+function convertir(f: Forme, conv: (v: number) => number): Geometrie | "hors-limites" | "nulle" {
+  const point = (p: StudioPoint): StudioPoint => ({ x: conv(p.x), y: conv(p.y) });
+  const dehors = (...ps: StudioPoint[]) => ps.some((p) => !(Math.abs(p.x) <= STUDIO_DXF_LIMITES.coordonnee && Math.abs(p.y) <= STUDIO_DXF_LIMITES.coordonnee));
+  if (f.type === "ligne") {
+    const start = point(f.a), end = point(f.b);
+    if (dehors(start, end)) return "hors-limites";
+    // Deux points distincts dans le fichier peuvent se confondre une fois arrondis au nanomètre.
+    return start.x === end.x && start.y === end.y ? "nulle" : { type: "line", start, end };
+  }
+  const origin = point(f.min), max = point(f.max);
+  if (dehors(origin, max)) return "hors-limites";
+  const width = Math.round((max.x - origin.x) * 1e9) / 1e9, height = Math.round((max.y - origin.y) * 1e9) / 1e9;
+  return width > 0 && height > 0 ? { type: "rectangle", origin, width, height } : "nulle";
+}
+
+/**
+ * Noms Studio des calques du fichier (hors « 0 »), déterministes à partir du seul fichier : un nom au-delà de
+ * `STUDIO_LIMITS.layerName` caractères est raccourci, puis rendu unique (sans casse) par un suffixe « (2) », « (3) »…
+ * Un nouvel import du même fichier retrouve donc les mêmes noms, et reprend les calques créés la première fois.
+ */
+function nomsDeCalques(entrees: [string, { nom: string }][]): Map<string, string> {
+  const max = STUDIO_LIMITS.layerName;
+  const out = new Map<string, string>();
+  const utilises = new Set<string>();
+  for (const [cle, c] of entrees) if (c.nom.length <= max) {
+    out.set(cle, c.nom);
+    utilises.add(cle);
+  }
+  for (const [cle, c] of entrees) {
+    if (c.nom.length <= max) continue;
+    let nom = c.nom.slice(0, max);
+    for (let n = 2; utilises.has(cleCalque(nom)); n++) {
+      const suffixe = ` (${n})`;
+      nom = c.nom.slice(0, max - suffixe.length) + suffixe;
+    }
+    utilises.add(cleCalque(nom));
+    out.set(cle, nom);
+  }
+  return out;
 }

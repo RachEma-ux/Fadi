@@ -60,6 +60,9 @@ export function accuserLot(plan: PlanEnvoi, revisionId: string): PlanEnvoi {
   return { ...plan, envoyes: plan.envoyes + 1, base: revisionId };
 }
 
-export const envoiTermine = (plan: PlanEnvoi): boolean => plan.envoyes >= plan.lots.length;
+/** Commandes des lots non confirmés, dans l'ordre : ce qui reste à enregistrer après un refus en cours d'envoi. */
+export const commandesNonEnvoyees = (plan: PlanEnvoi): StudioCommand[] => plan.lots.slice(plan.envoyes).flat();
+
+export const envoiTermine =(plan: PlanEnvoi): boolean => plan.envoyes >= plan.lots.length;
 /** Une partie seulement est enregistrée : la tête serveur contient les premiers lots, pas les suivants. */
 export const envoiPartiel = (plan: PlanEnvoi): boolean => plan.envoyes > 0 && plan.envoyes < plan.lots.length;

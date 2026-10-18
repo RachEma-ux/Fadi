@@ -52,7 +52,7 @@ import { cartoucheInitial } from "./feuille/feuille-ui";
 import { PanneauFeuille } from "./feuille/PanneauFeuille";
 import { PanneauCommentaires } from "./commentaires/PanneauCommentaires";
 import { DialogueImportDxf } from "./import/DialogueImportDxf";
-import { accuserLot, enveloppeSuivante, envoiPartiel, planEnvoi, type PlanEnvoi } from "./import/envoi";
+import { accuserLot, commandesNonEnvoyees, enveloppeSuivante, envoiPartiel, planEnvoi, type PlanEnvoi } from "./import/envoi";
 import "./studio.css";
 import "./planche2d/planche2d.css";
 
@@ -124,6 +124,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [vue3d, setVue3d] = useState(false);
   const [commentaires, setCommentaires] = useState(commentairesOuverts);
   const envelope = useRef<PlanEnvoi | null>(null);
+  // Contexte rendu par le dernier lot confirmé : base du brouillon si un lot suivant est refusé.
+  const dernierAccuse = useRef<StudioContext | null>(null);
   const alive = useRef(true), dirty = useRef(false), saving = useRef(false);
   const clavier = useRef<(e: KeyboardEvent) => void>(() => {});
   const relacher = useRef<(e: KeyboardEvent) => void>(() => {});
@@ -559,12 +561,13 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     saving.current = true;
     // Un nouvel essai après une erreur réseau rejoue le même lot (même requestId) : jamais de double effet. Au-delà de
     // 500 commandes, les lots partent dans l'ordre, chacun sur la révision produite par le précédent.
-    envelope.current ??= planEnvoi(commandesEnAttente(brouillon), context.revision.id, () => crypto.randomUUID());
+    if (!envelope.current) { envelope.current = planEnvoi(commandesEnAttente(brouillon), context.revision.id, () => crypto.randomUUID()); dernierAccuse.current = null; }
     setPending(true); setError(""); setInfo("");
     try {
       for (let lot = enveloppeSuivante(envelope.current); lot; lot = enveloppeSuivante(envelope.current)) {
         const accuse = await api.studioCommands(projectId, studyId, variantId, lot);
         envelope.current = accuserLot(envelope.current, accuse.revision.id);
+        dernierAccuse.current = accuse;
         if (!alive.current) return;
       }
       // L'historique et la tête ont changé côté serveur : les listes affichées sont relues.
@@ -589,10 +592,25 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     catch (e) {
       if (!alive.current) return;
       if (e instanceof ApiError && e.status < 500 && e.status !== 408) {
-        const partiel = !!envelope.current && envoiPartiel(envelope.current);
-        const [faits, total] = [envelope.current?.envoyes ?? 0, envelope.current?.lots.length ?? 0];
-        setBlocked(partiel || e.status === 409 || e.status === 403 || e.status === 401); setUncertain(false); envelope.current = null;
-        if (partiel) { setError(`Enregistrement partiel : ${faits} lot(s) sur ${total} enregistré(s), la suite est refusée. Le brouillon restant est conservé ; rechargez la version serveur.`); return; }
+        const plan = envelope.current, accuse = dernierAccuse.current;
+        setUncertain(false); envelope.current = null; dernierAccuse.current = null;
+        if (plan && accuse && envoiPartiel(plan)) {
+          // Les premiers lots sont enregistrés : le brouillon repart de la dernière révision confirmée, avec les seules
+          // commandes non envoyées en attente (un pas annulable). Rien n'est envoyé de nouveau sans « Enregistrer ».
+          const reste = commandesNonEnvoyees(plan);
+          let rebase = creerBrouillon(accuse.revision.document);
+          try { rebase = appliquerBrouillon(rebase, reste); } catch { /* impossible en pratique : mêmes commandes, même ordre */ }
+          setContext(accuse); setBrouillon(rebase); cancelTrace();
+          void client.invalidateQueries({ queryKey: ["studio-revisions", projectId, studyId, variantId] });
+          void client.invalidateQueries({ queryKey: ["studio-study", projectId, studyId] });
+          const conflit = e.status === 409;
+          setBlocked(conflit || e.status === 403 || e.status === 401);
+          setError(conflit
+            ? `Enregistrement partiel : ${plan.envoyes} lot(s) sur ${plan.lots.length} enregistré(s), puis une autre révision est devenue la version courante. Les ${reste.length} commande(s) non envoyée(s) restent dans ce brouillon, sur votre dernière révision enregistrée ; recharger la version serveur les perdra.`
+            : `Enregistrement partiel : ${plan.envoyes} lot(s) sur ${plan.lots.length} enregistré(s), la suite est refusée. Les ${reste.length} commande(s) non envoyée(s) restent en attente dans le brouillon, sur la dernière révision enregistrée.`);
+          return;
+        }
+        setBlocked(e.status === 409 || e.status === 403 || e.status === 401);
         setError(e.status === 409
           ? (e.code === "stale_revision" ? "Conflit de révision : une autre révision est devenue la version courante. Votre brouillon est conservé et n’a rien écrasé." : "Conflit de révision. Le brouillon est conservé.")
           : "Enregistrement refusé. Le brouillon reste non enregistré.");

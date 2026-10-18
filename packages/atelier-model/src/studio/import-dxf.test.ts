@@ -287,3 +287,111 @@ describe("lireDxfStudio — fichiers refusés et limites", () => {
     expect(r.rapport.unite.valeur).toBe("cm");
   });
 });
+
+describe("lireDxfStudio — corrections de revue (#193)", () => {
+  it("coordonnée absente : jamais remplacée par 0, l'entité est comptée « coordonnées manquantes »", () => {
+    const r = lireDxfStudio(dxf({
+      insunits: 6,
+      entites: [
+        "0\r\nLINE\r\n8\r\n0\r\n10\r\n1\r\n20\r\n1\r\n11\r\n5", // 21 absent
+        "0\r\nLINE\r\n8\r\n0\r\n11\r\n5\r\n21\r\n5", // 10 / 20 absents
+        "0\r\nLWPOLYLINE\r\n8\r\n0\r\n90\r\n2\r\n70\r\n0\r\n10\r\n0\r\n20\r\n0\r\n10\r\n4", // dernier Y absent
+        "0\r\nLWPOLYLINE\r\n8\r\n0\r\n90\r\n2\r\n70\r\n0\r\n20\r\n0\r\n10\r\n4\r\n20\r\n0", // Y sans X
+        "0\r\nPOLYLINE\r\n8\r\n0\r\n66\r\n1\r\n70\r\n0\r\n0\r\nVERTEX\r\n8\r\n0\r\n10\r\n0\r\n20\r\n0\r\n0\r\nVERTEX\r\n8\r\n0\r\n10\r\n3\r\n0\r\nSEQEND",
+        ligne(0, 0, 1, 0),
+      ],
+    }));
+    expect(r.rapport.entites.total).toBe(1);
+    expect(r.rapport.nonPris).toEqual([
+      { type: "LINE (coordonnées manquantes)", nombre: 2 },
+      { type: "LWPOLYLINE (coordonnées manquantes)", nombre: 2 },
+      { type: "POLYLINE (coordonnées manquantes)", nombre: 1 },
+    ]);
+    // Seuls les défauts DXF documentés restent (Z, élévation, direction d'extrusion).
+    expect(appliquer(r).objects.map(sansId)).toEqual([{ type: "line", start: { x: 0, y: 0 }, end: { x: 1, y: 0 } }]);
+  });
+
+  it("calque du document repris sans tenir compte de la casse (« murs » ↔ « MURS »), jamais dupliqué", () => {
+    const base = applyStudioCommands(newStudioDocument("d"), [{ toolId: "studio.calque.creer", params: { id: "m", name: "murs", visible: true, locked: false } }]);
+    const r = lireDxfStudio(dxf({ insunits: 6, entites: [ligne(0, 0, 1, 0, "MURS"), ligne(0, 1, 1, 1, "Murs")] }), { document: base });
+    expect(r.rapport.calques).toEqual([{ nom: "MURS", cible: "existant", id: "m", objets: 2 }]);
+    expect(appliquer(r, base).layers).toEqual([{ id: "m", name: "murs", visible: true, locked: false }]);
+    const verrou = applyStudioCommands(newStudioDocument("d"), [{ toolId: "studio.calque.creer", params: { id: "m", name: "Murs", visible: true, locked: true } }]);
+    expect(() => lireDxfStudio(dxf({ insunits: 6, entites: [ligne(0, 0, 1, 0, "MURS")] }), { document: verrou })).toThrow(/calque verrouillé dans le document : Murs/);
+  });
+
+  it("noms raccourcis à 80 caractères : uniques (suffixe « (2) »), et un nouvel import retrouve les mêmes calques", () => {
+    const long = "C".repeat(STUDIO_LIMITS.layerName);
+    const fichier = dxf({ insunits: 6, entites: [ligne(0, 0, 1, 0, `${long}-A`), ligne(0, 1, 1, 1, `${long}-B`), ligne(0, 2, 1, 2, `${long}-c`)] });
+    const r = lireDxfStudio(fichier);
+    const doc = appliquer(r);
+    const noms = doc.layers!.map((l) => l.name);
+    expect(noms).toEqual([long, `${"C".repeat(STUDIO_LIMITS.layerName - 4)} (2)`, `${"C".repeat(STUDIO_LIMITS.layerName - 4)} (3)`]);
+    expect(noms.every((n) => n.length <= STUDIO_LIMITS.layerName)).toBe(true);
+    expect(r.rapport.calques.map((c) => [c.cible, c.nomStudio, c.nomRaccourci])).toEqual(noms.map((n) => ["cree", n, true]));
+    // Nouvel import du même fichier : chaque calque est repris par son nom raccourci, aucun n'est recréé.
+    const encore = lireDxfStudio(fichier, { document: doc });
+    expect(encore.rapport.calques.map((c) => [c.cible, c.id])).toEqual(doc.layers!.map((l) => ["existant", l.id]));
+    expect(encore.commandes.every((c) => c.toolId === "studio.dessin.ligne")).toBe(true);
+    const relu = appliquer(encore, doc);
+    expect(relu.layers).toHaveLength(3);
+    expect(relu.objects.filter((o) => o.layerId === doc.layers![1]!.id)).toHaveLength(2);
+  });
+
+  it("largeur (40, 41, 43) et épaisseur (39) non représentables : géométrie prise, attribut compté", () => {
+    const r = lireDxfStudio(dxf({
+      insunits: 6,
+      entites: [
+        "0\r\nLWPOLYLINE\r\n8\r\n0\r\n90\r\n2\r\n70\r\n0\r\n43\r\n0.2\r\n10\r\n0\r\n20\r\n0\r\n10\r\n4\r\n20\r\n0",
+        "0\r\nLWPOLYLINE\r\n8\r\n0\r\n90\r\n2\r\n70\r\n0\r\n39\r\n3\r\n10\r\n0\r\n20\r\n1\r\n40\r\n0.1\r\n41\r\n0.1\r\n10\r\n4\r\n20\r\n1",
+        polyligne([[0, 2], [4, 2]]).replace("70\r\n0", "70\r\n0\r\n40\r\n0.5\r\n41\r\n0.5"),
+        ligne(0, 3, 4, 3, "0", ["39", "2.5"]),
+        lwpolyligne([[0, 4], [4, 4]]).replace("70\r\n0", "70\r\n0\r\n43\r\n0"),
+      ],
+    }));
+    expect(r.rapport.entites.total).toBe(5);
+    expect(r.rapport.nonPris).toEqual([
+      { type: "LINE (épaisseur ignorée)", nombre: 1 },
+      { type: "LWPOLYLINE (largeur ignorée)", nombre: 2 },
+      { type: "LWPOLYLINE (épaisseur ignorée)", nombre: 1 },
+      { type: "POLYLINE (largeur ignorée)", nombre: 1 },
+    ]);
+  });
+
+  it("INSERT avec attributs (66 = 1) : ATTRIB et SEQEND appartiennent au bloc, un seul INSERT compté", () => {
+    const insert = "0\r\nINSERT\r\n8\r\n0\r\n66\r\n1\r\n2\r\nB1\r\n10\r\n0\r\n20\r\n0\r\n0\r\nATTRIB\r\n8\r\n0\r\n1\r\nA\r\n0\r\nATTRIB\r\n8\r\n0\r\n1\r\nB\r\n0\r\nSEQEND\r\n8\r\n0";
+    const r = lireDxfStudio(dxf({ insunits: 6, entites: [insert, ligne(0, 0, 1, 0), "0\r\nSEQEND\r\n8\r\n0"] }));
+    expect(r.rapport.nonPris).toEqual([{ type: "INSERT", nombre: 1 }, { type: "SEQEND", nombre: 1 }]);
+    expect(r.rapport.entites.total).toBe(1);
+    // Sans 66 = 1, un ATTRIB qui suit n'est pas rattaché : il reste compté.
+    const sans = lireDxfStudio(dxf({ insunits: 6, entites: ["0\r\nINSERT\r\n8\r\n0\r\n2\r\nB1", "0\r\nATTRIB\r\n8\r\n0"] }));
+    expect(sans.rapport.nonPris).toEqual([{ type: "ATTRIB", nombre: 1 }, { type: "INSERT", nombre: 1 }]);
+  });
+
+  it("coordonnée convertie au-delà de 1e9 m : forme non prise, comptée ; les autres restent", () => {
+    const r = lireDxfStudio(dxf({ insunits: 7, entites: [ligne(0, 0, 2e6, 0), lwpolyligne([[0, 0], [1, 0], [1, 1], [0, 1]], { ferme: true }), ligne(-1e6, 0, 0, 1)] }));
+    expect(STUDIO_DXF_LIMITES.coordonnee).toBe(1e9);
+    expect(r.rapport.nonPris).toEqual([{ type: "LINE (coordonnée au-delà de 10⁹ m)", nombre: 1 }]);
+    expect(r.rapport.entites).toEqual({ lignes: 1, rectangles: 1, segments: 0, total: 2 });
+    expect(appliquer(r).objects.map(sansId)).toEqual([
+      { type: "rectangle", origin: { x: 0, y: 0 }, width: 1000, height: 1000 },
+      { type: "line", start: { x: -1e9, y: 0 }, end: { x: 0, y: 1000 } },
+    ]);
+    // Une forme réduite à rien par l'arrondi au nanomètre est comptée, sans refuser tout le fichier.
+    const nul = lireDxfStudio(dxf({ insunits: 13, entites: [ligne(0, 0, 0.0001, 0), ligne(0, 0, 1, 0)] }));
+    expect(nul.rapport.nonPris).toEqual([{ type: "LINE (longueur nulle après conversion)", nombre: 1 }]);
+    expect(nul.commandes).toHaveLength(1);
+  });
+
+  it("import de 20 000 lignes : unicité des identifiants contrôlée par un index (pas de coût quadratique)", () => {
+    const entites = Array.from({ length: STUDIO_LIMITS.objects }, (_, i) => ligne(0, i, 1, i));
+    const r = lireDxfStudio(dxf({ insunits: 6, entites }));
+    const doc = appliquer(r);
+    expect(doc.objects).toHaveLength(STUDIO_LIMITS.objects);
+    expect(new Set(doc.objects.map((o) => o.id)).size).toBe(STUDIO_LIMITS.objects);
+    // Une collision reste refusée ; un identifiant supprimé redevient libre dans le même lot.
+    expect(() => applyStudioCommands(doc, [r.commandes[0]!])).toThrow(/identifiant déjà utilisé/);
+    const supprime = applyStudioCommands(doc, [{ toolId: "studio.dessin.supprimer", params: { ids: ["dxf-1"] } }, r.commandes[0]!]);
+    expect(supprime.objects).toHaveLength(STUDIO_LIMITS.objects);
+  });
+});
