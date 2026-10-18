@@ -48,6 +48,7 @@ import { commandesAplatir, commandesExtrusion, formesSelectionnees, valeursDe, V
 import { FormulaireExtrusion } from "./vue3d/FormulaireExtrusion";
 import { cartoucheInitial } from "./feuille/feuille-ui";
 import { PanneauFeuille } from "./feuille/PanneauFeuille";
+import { PanneauCommentaires } from "./commentaires/PanneauCommentaires";
 import "./studio.css";
 import "./planche2d/planche2d.css";
 
@@ -116,6 +117,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
   const [values, setValues] = useState<Valeurs>({ x: 0, y: 0, a: 4, b: 3, dx: 1, dy: 0, offset: 0.5 });
   const [extrusion, setExtrusion] = useState<ValeursExtrusion>(VALEURS_VIDES);
   const [vue3d, setVue3d] = useState(false);
+  const [commentaires, setCommentaires] = useState(false);
   const envelope = useRef<StudioEnvelope | null>(null);
   const alive = useRef(true), dirty = useRef(false), saving = useRef(false);
   const clavier = useRef<(e: KeyboardEvent) => void>(() => {});
@@ -605,7 +607,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
     <header className="studio-heading"><div><p className="studio-eyebrow">FADI / STUDIO</p><h1>{context ? <span translate="no">{context.study.name}</span> : "Votre espace de dessin"}</h1><p>Dessin 2D · Repère local · Mètres</p></div><span className="studio-badge">Planche 2D</span></header>
     {error && <div className="studio-alert" role="alert" data-studio-erreur-planche>{error}{blocked && <button onClick={() => { if (window.confirm(warning())) window.location.reload(); }}>Recharger la version serveur</button>}</div>}
     {loading && <p role="status">Chargement de la planche…</p>}
-    {context && drawing && <>{historical && <div className="studio-alert studio-history-banner" data-studio-lecture-seule-revision><span>Révision historique en lecture seule. Aucune modification n’est possible ici.</span><Link to={cheminVarianteStudio(projectId, studyId, variantId)}>Revenir à la version courante</Link></div>}<div className="studio-context"><Link to={cheminProjetStudio(projectId)}>Études</Link><span translate="no">{context.variant.name}</span><span>Révision <span translate="no" title={context.revision.id}>{context.revision.id.slice(-8)}</span></span><span role="status" data-studio-etat>{historical ? "Révision historique" : pending ? "Sauvegarde en cours…" : uncertain ? "Sauvegarde non confirmée" : commands.length ? "Brouillon non enregistré" : saved ? "Enregistré sur le serveur" : "Version serveur chargée"}</span></div>{!context.canWrite && <p role="status" data-studio-lecture-seule>Lecture seule</p>}
+    {context && drawing && <>{historical && <div className="studio-alert studio-history-banner" data-studio-lecture-seule-revision><span>Révision historique en lecture seule. Aucune modification n’est possible ici.</span><Link to={cheminVarianteStudio(projectId, studyId, variantId)}>Revenir à la version courante</Link></div>}<div className="studio-context"><Link to={cheminProjetStudio(projectId)}>Études</Link><span translate="no">{context.variant.name}</span><span>Révision <span translate="no" title={context.revision.id}>{context.revision.id.slice(-8)}</span></span><span role="status" data-studio-etat>{historical ? "Révision historique" : pending ? "Sauvegarde en cours…" : uncertain ? "Sauvegarde non confirmée" : commands.length ? "Brouillon non enregistré" : saved ? "Enregistré sur le serveur" : "Version serveur chargée"}</span><button type="button" aria-pressed={commentaires} onClick={() => setCommentaires(v => !v)} data-studio-basculer-commentaires>Commentaires</button></div>{!context.canWrite && <p role="status" data-studio-lecture-seule>Lecture seule</p>}
     <BarreOutils outil={tool} outilDisponible={toolAvailable} commandeDisponible={commandAvailable} libelleCommande={uncertain ? { enregistrer: "Réessayer la sauvegarde" } : undefined}
       basculeActive={{ "accrochage-sommets": accrocheSommets, "accrochage-grille": accrocheGrille, "vue-3d": vue3d }} lienCommande={liens} surOutil={runTool} surCommande={runCommand} surLien={surLien} />
     <p className="studio-undo-scope" data-studio-annuler-portee>{`Annuler et Rétablir ne portent que sur les modifications non enregistrées (${commands.length} commande(s) en attente) ; une révision enregistrée ne s’annule pas ici.`}</p>
@@ -633,6 +635,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
       {form && <form onSubmit={numeric}><fieldset disabled={!writable || formDisabled || (tool === "studio.dessin.modifier" && selected?.type === "dimension" && selected.toResolve)}><legend>Valeurs en mètres</legend>{fields.map(k => <label key={k}>{label(k)}<input type="number" step="any" required value={Number.isFinite(values[k]) ? values[k] : ""} onChange={e => setValues(v => ({ ...v, [k]: e.target.valueAsNumber }))} /></label>)}<button type="submit">{tool === "studio.dessin.deplacer" ? "Déplacer la sélection" : tool === "studio.dessin.modifier" ? "Modifier la sélection" : "Ajouter au dessin"}</button></fieldset></form>}
       <PanneauCalques doc={drawing} actif={actif?.id ?? STUDIO_DEFAULT_LAYER_ID} modifiable={writable} nom={nomCalque} nomRef={nomRef} surActif={id => setCalqueActif(id)} surNom={setNomCalque} surReglage={setLayer} surRenommer={renameLayer} />
       <div className="studio-note"><strong>Une planche autonome</strong><p>Les tracés restent en brouillon jusqu’à la confirmation du serveur. Aucun modèle 3D n’est nécessaire.</p></div></aside></div>
+    {commentaires && <div id="studio-commentaires"><PanneauCommentaires projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} revision={context.revision.document} dessin={drawing}
+      selection={selectionIds} canWrite={!historical && context.canWrite} surSelection={ids => { setTool("studio.dessin.selection"); cancelTrace(); select(ids); }} /></div>}
     <RevisionsPanel projectId={projectId} studyId={studyId} variantId={variantId} headRevisionId={context.variant.headRevisionId} shownRevisionId={context.revision.id} />
     {dialogue === "outils" && <GestionnaireOutils disponible={entreeDisponible} surExecuter={executerEntree} surFermer={() => setDialogue(null)} />}
     {dialogue === "palette" && <PaletteCommandes disponible={entreeDisponible} surExecuter={executerEntree} surFermer={() => setDialogue(null)} />}

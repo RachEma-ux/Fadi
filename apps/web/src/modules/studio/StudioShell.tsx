@@ -57,6 +57,7 @@ export function StudioShell() {
             {(route.vue === "etude" || route.vue === "variante" || route.vue === "comparer") && <FilEtude projectId={route.projectId} studyId={route.studyId} lien={route.vue !== "etude"} />}
             {route.vue === "comparer" && <span aria-current="page"> / {"Comparer"}</span>}
             {route.vue === "variante" && <FilVariante projectId={route.projectId} studyId={route.studyId} variantId={route.variantId} />}
+            {route.vue !== "inconnue" && <BadgeRole projectId={route.projectId} />}
           </nav>
         )}
         {route.vue === "accueil" && <StudioAccueil />}
@@ -84,6 +85,14 @@ function FilProjet({ projectId, lien }: { projectId: string; lien: boolean }) {
   // Tant que l'accès n'est pas confirmé, le fil ne nomme pas le projet.
   const nom = projet.data && !refused(projet.error) ? <span translate="no">{projet.data.code}</span> : "Projet";
   return <span> / {lien ? <Link to={cheminProjetStudio(projectId)}>{nom}</Link> : <span aria-current="page">{nom}</span>}</span>;
+}
+
+/** Rôle de l'utilisateur sur le projet, tel que le serveur le renvoie avec le projet (jamais déduit côté client). */
+function BadgeRole({ projectId }: { projectId: string }) {
+  const projet = useProjet(projectId);
+  if (!projet.data || refused(projet.error)) return null;
+  const role = projet.data.role ?? "proprietaire";
+  return <span className="studio-revision-tag studio-role" style={{ marginLeft: "auto" }} data-studio-role={role}>{`Votre rôle : ${ROLE_LABEL[role]}`}</span>;
 }
 
 function FilEtude({ projectId, studyId, lien }: { projectId: string; studyId: string; lien: boolean }) {

@@ -536,3 +536,28 @@ END;
 $$;
 CREATE OR REPLACE TRIGGER studio_revisions_no_update BEFORE UPDATE ON studio_revisions
   FOR EACH ROW EXECUTE FUNCTION studio_v1_immutable_revision();
+-- Commentaires d'une variante Studio (mêmes règles que la Collaboration : tout membre du projet commente, l'auteur
+-- seul supprime — ici en suppression douce, `deleted_at`, pour garder le fil lisible). Ancrage facultatif à une
+-- révision et à des objets du document ; la révision et le commentaire parent sont de la même variante (FK
+-- composites). Table nouvelle, additive : aucune ligne Studio existante n'est réécrite.
+CREATE TABLE IF NOT EXISTS studio_comments (
+  id text PRIMARY KEY,
+  variant_id text NOT NULL REFERENCES studio_variants(id) ON DELETE CASCADE,
+  revision_id text,
+  object_ids jsonb NOT NULL DEFAULT '[]'::jsonb CONSTRAINT studio_comments_object_ids_array CHECK (jsonb_typeof(object_ids) = 'array'),
+  parent_id text,
+  author_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  body text NOT NULL CONSTRAINT studio_comments_body_length CHECK (length(body) BETWEEN 1 AND 4000),
+  request_id text,
+  payload_hash text CONSTRAINT studio_comments_payload_hash_check CHECK (payload_hash IS NULL OR payload_hash ~ '^[0-9a-f]{64}$'),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  deleted_at timestamptz,
+  CONSTRAINT studio_comments_variant_id_unique UNIQUE(variant_id, id),
+  CONSTRAINT studio_comments_revision_same_variant FOREIGN KEY(variant_id, revision_id)
+    REFERENCES studio_revisions(variant_id, id) ON DELETE CASCADE,
+  CONSTRAINT studio_comments_parent_same_variant FOREIGN KEY(variant_id, parent_id)
+    REFERENCES studio_comments(variant_id, id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS studio_comments_variant_idx ON studio_comments(variant_id, created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_comments_request_unique ON studio_comments(variant_id, request_id)
+  WHERE request_id IS NOT NULL;
