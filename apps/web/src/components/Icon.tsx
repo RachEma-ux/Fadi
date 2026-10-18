@@ -54,7 +54,10 @@ export type IconName =
   | "studio-export-svg"
   | "studio-export-dxf"
   | "studio-catalog"
-  | "studio-palette";
+  | "studio-palette"
+  | "studio-extrude"
+  | "studio-flatten"
+  | "studio-view-3d";
 
 const PATHS: Record<IconName, string> = {
   search: "M10.5 3.5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 5 5",
@@ -109,6 +112,9 @@ const PATHS: Record<IconName, string> = {
   "studio-export-dxf": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M8 9h6M8 12h3M11 9v6M17 15v6M14 18l3 3 3-3",
   "studio-catalog": "M4 4h7v7H4ZM13 4h7v7h-7ZM4 13h7v7H4ZM13 16.5h7M16.5 13v7",
   "studio-palette": "M3 5h18v14H3ZM3 9h18M6 13l3 2-3 2M11 17h5",
+  "studio-extrude": "M4 20h11l5-4H9l-5 4ZM9 16V6M12 3 9 6 6 3M15 20V10M20 16V6",
+  "studio-flatten": "M4 18h11l5-3H9l-5 3ZM12 4v8M9 9l3 3 3-3",
+  "studio-view-3d": "M12 3 4 7.5v9L12 21l8-4.5v-9L12 3ZM4 7.5 12 12l8-4.5M12 12v9",
 };
 
 export function Icon({ name, size = 20, className }: { name: IconName; size?: number; className?: string }) {

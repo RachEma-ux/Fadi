@@ -15,12 +15,24 @@ export const STUDIO_DEFAULT_LAYER_ID = "default" as const;
 /** Limites reprises de la Planche 2D de la pile (calques, objets) ; un document au-delà est refusé, jamais tronqué. */
 export const STUDIO_LIMITS = Object.freeze({ layers: 200, objects: 20_000, layerName: 80 } as const);
 
+/**
+ * Déclaration d'extrusion d'un objet (extension additive, facultative), en mètres : `base` = cote du bas, `height` =
+ * hauteur strictement positive, `thickness` = largeur de mur centrée sur la ligne (lignes seulement ; strictement
+ * positive). Seules les valeurs saisies par l'utilisateur sont stockées : aucune valeur par défaut n'est inventée, un
+ * objet sans extrusion est « non extrudé ». La géométrie 3D est dérivée (`studioMesh3d`), jamais stockée.
+ */
+export interface StudioExtrusion {
+  base: number;
+  height: number;
+  thickness?: number;
+}
 export interface StudioLine {
   id: string;
   type: "line";
   layerId?: string;
   start: StudioPoint;
   end: StudioPoint;
+  extrusion?: StudioExtrusion;
 }
 export interface StudioRectangle {
   id: string;
@@ -29,6 +41,8 @@ export interface StudioRectangle {
   origin: StudioPoint;
   width: number;
   height: number;
+  /** Un rectangle s'extrude en prisme sur son emprise : `thickness` y est refusée. */
+  extrusion?: Omit<StudioExtrusion, "thickness">;
 }
 export type StudioShape = StudioLine | StudioRectangle;
 
@@ -89,7 +103,9 @@ export type StudioCommand =
   | { toolId: "studio.dessin.supprimer"; params: { ids: string[] } }
   | { toolId: "studio.calque.creer"; params: StudioLayer }
   | { toolId: "studio.calque.modifier"; params: StudioLayer }
-  | { toolId: "studio.objet.calque"; params: { ids: string[]; layerId: string } };
+  | { toolId: "studio.objet.calque"; params: { ids: string[]; layerId: string } }
+  | { toolId: "studio.objet.extruder"; params: { ids: string[]; base: number; height: number; thickness?: number } }
+  | { toolId: "studio.objet.aplatir"; params: { ids: string[] } };
 export type StudioCommandToolId = StudioCommand["toolId"];
 export interface StudioEnvelope {
   contractVersion: typeof STUDIO_CONTRACT;
@@ -175,24 +191,43 @@ function discriminator(value: unknown, path: string): unknown {
   return Object.getOwnPropertyDescriptor(value, "type")?.value;
 }
 
+/** Valeurs d'extrusion saisies : base finie, hauteur et épaisseur strictement positives, sommet fini. */
+function extrusionValues(o: Record<string, unknown>, path: string, thicknessAllowed: boolean): StudioExtrusion {
+  const base = finite(o.base, `${path}.base`);
+  const height = finite(o.height, `${path}.height`);
+  if (height <= 0) fail(`${path}.height`, "hauteur strictement positive attendue");
+  finite(base + height, `${path}.top`);
+  if (!Object.hasOwn(o, "thickness")) return { base, height };
+  if (!thicknessAllowed) fail(`${path}.thickness`, "l’épaisseur ne s’applique qu’aux lignes (un rectangle s’extrude sur son emprise)");
+  const thickness = finite(o.thickness, `${path}.thickness`);
+  if (thickness <= 0) fail(`${path}.thickness`, "épaisseur strictement positive attendue");
+  return { base, height, thickness };
+}
+
+function extrusionRef(o: Record<string, unknown>, path: string, thicknessAllowed: boolean): { extrusion?: StudioExtrusion } {
+  if (!Object.hasOwn(o, "extrusion")) return {};
+  const e = record(o.extrusion, ["base", "height"], `${path}.extrusion`, ["thickness"]);
+  return { extrusion: extrusionValues(e, `${path}.extrusion`, thicknessAllowed) };
+}
+
 function shape(value: unknown, path: string): StudioShape {
   const type = discriminator(value, path);
   if (type === "line") {
-    const o = record(value, ["id", "type", "start", "end"], path, ["layerId"]);
+    const o = record(value, ["id", "type", "start", "end"], path, ["layerId", "extrusion"]);
     const start = point(o.start, `${path}.start`);
     const end = point(o.end, `${path}.end`);
     if (same(start, end)) fail(path, "la ligne doit avoir deux points distincts");
-    return { id: identifier(o.id, `${path}.id`), type, ...layerRef(o, path), start, end };
+    return { id: identifier(o.id, `${path}.id`), type, ...layerRef(o, path), start, end, ...extrusionRef(o, path, true) };
   }
   if (type === "rectangle") {
-    const o = record(value, ["id", "type", "origin", "width", "height"], path, ["layerId"]);
+    const o = record(value, ["id", "type", "origin", "width", "height"], path, ["layerId", "extrusion"]);
     const origin = point(o.origin, `${path}.origin`);
     const width = finite(o.width, `${path}.width`);
     const height = finite(o.height, `${path}.height`);
     if (width <= 0 || height <= 0) fail(path, "dimensions strictement positives attendues");
     finite(origin.x + width, `${path}.right`);
     finite(origin.y + height, `${path}.top`);
-    return { id: identifier(o.id, `${path}.id`), type, ...layerRef(o, path), origin, width, height };
+    return { id: identifier(o.id, `${path}.id`), type, ...layerRef(o, path), origin, width, height, ...extrusionRef(o, path, false) };
   }
   return fail(`${path}.type`, "type de géométrie non pris en charge");
 }
@@ -480,6 +515,34 @@ const HANDLERS: Record<StudioCommandToolId, Handler> = {
       editable(state, o, path);
       if (o.type === "dimension") state.dimensions[dIndex] = move(o);
       else state.objects[index] = move(o);
+    }
+  },
+  "studio.objet.extruder": (state, params, path) => {
+    const p = record(params, ["ids", "base", "height"], `${path}.params`, ["thickness"]);
+    const ids = idList(p.ids, `${path}.params.ids`);
+    const values = extrusionValues(p, `${path}.params`, true);
+    const index = new Map(state.objects.map((o, i) => [o.id, i]));
+    for (const id of ids) {
+      const i = index.get(id);
+      if (i === undefined) fail(path, state.dimensions.some((d) => d.id === id) ? `une cote ne s’extrude pas : ${id}` : `objet introuvable : ${id}`);
+      const o = state.objects[i]!;
+      editable(state, o, path);
+      if (o.type === "rectangle" && values.thickness !== undefined) fail(`${path}.params.thickness`, `l’épaisseur ne s’applique qu’aux lignes : ${id}`);
+      state.objects[i] = { ...o, extrusion: { ...values } } as StudioShape;
+    }
+  },
+  "studio.objet.aplatir": (state, params, path) => {
+    const p = record(params, ["ids"], `${path}.params`);
+    const ids = idList(p.ids, `${path}.params.ids`);
+    const index = new Map(state.objects.map((o, i) => [o.id, i]));
+    for (const id of ids) {
+      const i = index.get(id);
+      if (i === undefined) fail(path, `objet introuvable : ${id}`);
+      const o = state.objects[i]!;
+      editable(state, o, path);
+      if (!o.extrusion) fail(path, `objet non extrudé : ${id}`);
+      const { extrusion: _removed, ...flat } = o;
+      state.objects[i] = flat as StudioShape;
     }
   },
 };

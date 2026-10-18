@@ -6,8 +6,12 @@ const number = { type: "number" } as const;
 const point = { type: "object", additionalProperties: false, required: ["x", "y"], properties: { x: number, y: number } } as const;
 /** `layerId` absent = calque implicite ; son identifiant réservé ne s'écrit jamais explicitement. */
 const layerId = { ...id, not: { const: STUDIO_DEFAULT_LAYER_ID } } as const;
-const line = { type: "object", additionalProperties: false, required: ["id", "type", "start", "end"], properties: { id, type: { const: "line" }, layerId, start: point, end: point } } as const;
-const rectangle = { type: "object", additionalProperties: false, required: ["id", "type", "origin", "width", "height"], properties: { id, type: { const: "rectangle" }, layerId, origin: point, width: { type: "number", exclusiveMinimum: 0 }, height: { type: "number", exclusiveMinimum: 0 } } } as const;
+const positive = { type: "number", exclusiveMinimum: 0 } as const;
+/** Extrusion déclarée (facultative, mètres) : épaisseur pour les lignes seulement ; aucune valeur par défaut. */
+const lineExtrusion = { type: "object", additionalProperties: false, required: ["base", "height"], properties: { base: number, height: positive, thickness: positive } } as const;
+const rectangleExtrusion = { type: "object", additionalProperties: false, required: ["base", "height"], properties: { base: number, height: positive } } as const;
+const line = { type: "object", additionalProperties: false, required: ["id", "type", "start", "end"], properties: { id, type: { const: "line" }, layerId, start: point, end: point, extrusion: lineExtrusion } } as const;
+const rectangle = { type: "object", additionalProperties: false, required: ["id", "type", "origin", "width", "height"], properties: { id, type: { const: "rectangle" }, layerId, origin: point, width: positive, height: positive, extrusion: rectangleExtrusion } } as const;
 const shape = { oneOf: [line, rectangle] } as const;
 const anchor = { enum: ["start", "end", "corner-origin", "corner-width", "corner-height", "corner-opposite"] } as const;
 const link = { oneOf: [{ type: "null" }, { type: "object", additionalProperties: false, required: ["objectId", "anchor"], properties: { objectId: id, anchor } }] } as const;
@@ -38,7 +42,7 @@ export const STUDIO_DOCUMENT_SCHEMA = {
   },
 } as const;
 
-export type StudioToolGroup = "dessin" | "modification" | "calques";
+export type StudioToolGroup = "dessin" | "modification" | "calques" | "volume";
 export interface StudioToolDescriptor {
   readonly toolId: string;
   readonly contractVersion: typeof STUDIO_CONTRACT;
@@ -79,6 +83,8 @@ export const STUDIO_TOOLS = freezeTree([
   { ...mutation, toolId: "studio.calque.creer", libelleFR: "Nouveau calque", raccourci: "Shift+N", iconeSymbolique: "studio-layer-add", groupe: "calques", inputSchema: layer },
   { ...mutation, toolId: "studio.calque.modifier", libelleFR: "Régler le calque", raccourci: "Shift+L", iconeSymbolique: "studio-layer-edit", groupe: "calques", inputSchema: layer },
   { ...mutation, toolId: "studio.objet.calque", libelleFR: "Placer sur un calque", raccourci: "Shift+M", iconeSymbolique: "studio-layer-assign", groupe: "calques", inputSchema: { type: "object", additionalProperties: false, required: ["ids", "layerId"], properties: { ids, layerId: id } } },
+  { ...mutation, toolId: "studio.objet.extruder", libelleFR: "Extruder", raccourci: "Shift+E", iconeSymbolique: "studio-extrude", groupe: "volume", inputSchema: { type: "object", additionalProperties: false, required: ["ids", "base", "height"], properties: { ids, base: number, height: positive, thickness: positive } } },
+  { ...mutation, toolId: "studio.objet.aplatir", libelleFR: "Aplatir", raccourci: "Shift+F", iconeSymbolique: "studio-flatten", groupe: "volume", inputSchema: { type: "object", additionalProperties: false, required: ["ids"], properties: { ids } } },
 ] as const) satisfies readonly StudioToolDescriptor[];
 
 type ToolIdsOf<T extends readonly { readonly toolId: string }[]> = { readonly [K in keyof T]: T[K] extends { readonly toolId: infer I } ? I : never };
