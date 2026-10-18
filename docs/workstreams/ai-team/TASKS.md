@@ -2,20 +2,22 @@
 
 ## À faire
 
-Toutes les missions M00–M30 sont enregistrées dans docs/ai-team/MISSIONS.md et missions.json. L'état opérationnel doit être qualifié, pas déduit de cette inscription. M00 commence par vérifier SHA, sources, couverture et autorisations ; M01/M02/M03/M04 traitent les réserves P1 ; M05–M10 les autres contrôles Fadi ; M11–M30 la trajectoire Studio. Les groupes #157–#164 et les suivis #146/#147/#149/#151/#153 sont les lieux de travail.
+Les 31 missions M00–M30 restent dans docs/ai-team/MISSIONS.md et missions.json. Leur périmètre n’est pas réduit par le retour de Mission 002. Prochaine sous-tâche M00/M29 : récupérer les cinq rapports, registre 630 lignes et fiches annoncés, puis les rapprocher des fichiers existants sur la branche de #165. Ne pas créer de second programme ou de dossiers concurrents.
+
+Compléter les préparations de M01–M09 et M11–M15/M26, par livrables disponibles. Préparer les demandes d’accord garde DB/reprise Cloud, la politique de revue et les décisions produit, sans les auto-approuver. Voir [retour Mission 002](../../ai-team/reports/MISSION-002-RECEPTION.md).
 
 ## En cours
 
-Préparation documentaire du programme sur docs/156-codex-missions-completes. Aucun agent de correction n'est déclaré actif par ce checkpoint.
+M00 coordination et M29 suivi : synthèse du compte rendu intégrée, originaux non versés. M01/M02/M03/M05–M09 et M11/M12/M13/M14/M15/M26 : contributions de préparation annoncées par Mission 002, à rapprocher de leurs pièces avant clôture de sous-tâches. A3 déclaré inactif ; aucune nouvelle activation prétendue ici.
 
 ## Terminé
 
-Aucune mission applicative ou métier n'est déclarée terminée. La création des contrats de mission constitue un livrable documentaire, non leur acceptation ou exécution.
+Livrables documentaires enregistrés : catalogue 31 missions, affectation 630/630 et réception structurée de Mission 002. Ils ne ferment aucune mission applicative, gate ou obligation métier. Main dispose maintenant d’une CI réussie sur 27c0c5a… ; ce fait ne clôt ni reproduction Cloud ni sécurisation des tests.
 
 ## Bloqué
 
-Les POC, correctifs, arbitrages, protections administratives et déploiements sans autorisation/capacité restent bloqués individuellement. A0 doit renseigner cause, responsable, essais, préconditions et prochaine action sans bloquer les analyses indépendantes.
+Pièces originales à récupérer ; code/POC et essais mutateurs en attente d’accord applicable ; protections/admin et production en attente d’accord distinct. Le compte rendu propose des choix (pilote, sources, exclusions, navigation), il ne les ratifie pas. A0 conserve chaque blocage avec responsable et prochaine action, puis poursuit les travaux indépendants.
 
 ## Critères de sortie
 
-Couverture exacte des 630 tâches, contrats des 31 missions, preuves par SHA, décisions et acceptations effectives ; options reportées/exclues visibles. Ne pas clore le programme au premier résultat ou à la première PR. STATUS/HANDOFF mis à jour dans chaque PR qui touche ce chantier.
+Toutes les missions gardent leurs critères. Chaque ID Studio a ses états de travail/conformité/test distincts, preuve, décision et prochaine action. Aucune case cochée ni mission close par dérivation depuis les 630 affectations ou L1–L6. STATUS/HANDOFF mis à jour ensemble ; pas de nouvel audit général à la place de l’exploitation des pièces existantes.

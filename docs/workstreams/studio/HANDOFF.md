@@ -4,24 +4,26 @@ Mis à jour : 2026-10-18 (UTC).
 
 ## Point de reprise
 
-Lire ce HANDOFF puis STATUS, TASKS, CONTEXT après AGENTS.md et docs/continuity/README.md. Lire le contrat d'exécution docs/ai-team/CODEX-START-HERE.md et les missions M11–M30. Retrouver la branche et la PR du programme #156 ; ne pas présumer une fusion dans main.
+Lire AGENTS.md, docs/continuity/README.md, ce HANDOFF puis STATUS, TASKS et CONTEXT. Lire docs/ai-team/CODEX-START-HERE.md, les missions M11–M30 et [MISSION-002-RECEPTION.md](../../ai-team/reports/MISSION-002-RECEPTION.md). Utiliser la branche de #165 tant que la fusion n’est pas confirmée.
 
 ## Dernier état vérifié
 
-La présente livraison initialise le suivi ; la checklist source reste inchangée. Le SHA de départ documentaire est 27c0c5a35e2f116752a83a9c66459484488a1975 ; source Studio identifiée et Issues #159–#164 créées. Aucun G0–G4 ni correctif Studio exécuté ou accepté ici.
+Chantier initialisé dans #165 depuis main 27c0c5a35e2f116752a83a9c66459484488a1975 ; source et groupes #159–#164 existants. Couverture initiale réussie, pas de réalisation Studio déduite. Qualification et cinq rapports annoncés par Mission 002 ; seule leur synthèse reçue est archivée ici. Les originaux restent à retrouver. Aucun G0–G4 accepté ni case de checklist cochée par ce checkpoint.
 
 ## Prochaine action
 
-M11 identifie les sources et prépare G0 ; M12 extrait les libellés exacts REF-02 ; M13 prépare intégration/navigation ; M15 prépare corpus/mesures ; M29 initialise le registre individuel des 630 tâches à partir de l'export du validateur sans écraser un suivi existant. A0 organise les analyses indépendantes et les validations réellement nécessaires.
+**Ne pas recréer les quatre fichiers de chantier proposés par Mission 002 : ils existent sur cette branche.** M29/A0 récupère le registre enrichi et les rapports depuis la session Codex, compare les 630 IDs aux affectations canoniques et enrichit les documents sans écraser leurs preuves. Pièce introuvable : blocage précis, pas fichier inventé.
+
+M11 complète le dossier des sources/pilote et les divergences ; M12 rapproche les libellés exacts et complète les 141 fiches ; M13 complète navigation/autorités/contrats ; M15/M26 complètent corpus et oracles. Préparer les décisions G0/G1 et sous-lots, sans implémenter I/A/B ou accepter les gates automatiquement. Les propositions DWG/IA/MCP/extensions et placement Studio restent proposées. Continuer les qualifications indépendantes.
 
 ## Tests et preuves
 
-Contrôler python3 docs/ai-team/check_missions.py --check et l'artefact CI contenant les affectations JSON/CSV. Relier ensuite les preuves de chaque tâche au SHA testé ; ne pas réutiliser les succès anciens Fadi comme acceptation Studio.
+Exécuter les seuls contrôles documentaires autorisés : python3 docs/ai-team/check_missions.py --check ; node scripts/check-continuity.mjs. Vérifier les artefacts au SHA exact. Les succès Fadi/IFC historiques, la CI main et les 630 affectations ne valident pas les parcours Studio. Aucun test API/E2E mutateur avant garde/cible jetable et autorisation.
 
 ## Risques et blocages
 
-Contrats détaillés, décisions et permissions restent à qualifier. Ne pas inventer un modèle, supprimer Atelier, imposer une route candidate ou déclarer les 141 qualifications conformes par leur seule rédaction. Ne pas tester sur une base inconnue.
+Pièces originales non versées ; 141 fiches non démontrées individuellement complètes ; G0–G3/DEC non ratifiés ; autorités/profils/publication à stabiliser ; #142 recouvre navigation. M002-D01/D02/D06/D07 consignent les décisions demandées. Un seul propriétaire des fichiers communs ; conserver Atelier, normes/fonctions industrielles et 21 étapes.
 
 ## Arrêt sûr
 
-Sauvegarder STATUS/HANDOFF ensemble avec les IDs traités, preuves, décisions manquantes, propriétaire des blocages et prochaine action précise. Une interruption ne supprime aucune tâche ; une option non décidée reste visible, sans cocher sa réalisation.
+Mettre à jour STATUS/HANDOFF ensemble avec IDs réellement traités, preuve, version, blocage et prochaine action. Aucun identifiant abandonné, aucune option effacée ; un compte rendu de préparation ne vaut pas acceptation métier. Ne pas attendre une décision indépendante pour poursuivre une documentation autorisée.

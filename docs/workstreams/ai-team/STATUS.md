@@ -4,20 +4,30 @@ Mis à jour : 2026-10-18 (UTC).
 
 ## État
 
-Programme documentaire préparé sur branche dédiée ; exécution des missions et acceptations non attestées par cette création.
+Programme documentaire en PR #165, non fusionné au contrôle. Compte rendu de préparation Mission 002 reçu ; synthèse et rapprochement enregistrés dans [MISSION-002-RECEPTION.md](../../ai-team/reports/MISSION-002-RECEPTION.md). Les rapports spécialisés et registres originaux restent à récupérer dans la session Codex. Aucune mission applicative ou acceptation métier déduite de cette réception.
 
 ## Faits vérifiés
 
-Référence de préparation main : 27c0c5a35e2f116752a83a9c66459484488a1975, issue de la fusion documentaire #155. Issues #156–#164 créées pour ce programme. Source Studio identifiée par blob 24a5e04346ed7605b82b7079d6259b378ca6bf64. Les 14 tests unitaires du validateur documentaire ont été exécutés localement sur fixtures avec succès ; le contrôle sur la source complète est à consulter dans la CI de cette PR.
+Référence main relue : 27c0c5a35e2f116752a83a9c66459484488a1975, protected=false. La [CI 39095745108](https://github.com/RachEma-ux/Fadi/actions/runs/39095745108) est maintenant terminée avec succès : validate/e2e/image ; le relevé Mission 002 indiquait encore E2E en cours. Ce contrôle CI ne prouve pas le démarrage du runtime Codex personnel.
+
+Programme #156 et groupes #157–#164 présents ; PR #165 ouverte. Tête précédente du programme : c1c0f7f3ad3a1720e8c64252eea89823351f0b88. Contrôle de couverture réussi sur cette tête : [run 39097792250](https://github.com/RachEma-ux/Fadi/actions/runs/39097792250). Couverture des 31 missions/630 affectations, pas exécution métier. Les résultats propres au nouveau checkpoint sont à relever séparément.
+
+## Résultats rapportés, non exécutés par ce rapprochement
+
+Mission 002 annonce A0 avec A1/A2/A4/A5/A6 réellement exécutés ; A3 inactif. Préparation L1–L6, garde DB couvrant 12 suites, diagnostic Cloud révision 10 avec base arrêtée, registre initial 630 IDs, 104 EX et 18 DEC. Les pièces originales ne sont pas jointes ; ne pas transformer l’annonce en preuve de versement ou de qualification individuelle complète. Aucun test applicatif local relancé ici ; nombres 1 757/47/3 historiques.
 
 ## Points ouverts
 
-CI de la tête de cette PR à contrôler, couverture 630/630 à confirmer dans le workflow dédié, revue documentaire. Corrections applicatives, activation des agents, autorisations G0–G4 et opérations sensibles ne sont pas réalisées ici.
+Récupération des originaux et enrichissement du suivi ; reproduction Cloud, garde DB, protections administratives et décisions G0–G4. Collision echelle et modèle de variantes à qualifier dans M05/M21 et M13/M17. Les huit décisions du compte rendu restent proposées sauf l’enregistrement documentaire déjà couvert par #156. CI de la nouvelle tête de #165 à vérifier sans transfert de résultats.
 
 ## Liens de suivi
 
-Programme #156 ; missions #157–#164 ; suivis existants #146/#147/#149/#151/#153. Contrats : docs/ai-team/CODEX-START-HERE.md et MISSIONS.md. La branche du programme est docs/156-codex-missions-completes.
+Programme #156 ; missions #157–#164 ; suivis #146/#147/#149/#151/#153. Contrats : docs/ai-team/CODEX-START-HERE.md et MISSIONS.md. Branche : docs/156-codex-missions-completes. Mission 002 (vague de préparation) n’est pas M02 (garde DB).
 
 ## Préconditions de clôture
 
-Ne pas confondre livraison de ce plan avec clôture des missions. Requalifier les preuves sur chaque SHA ; conserver tous les blocages et décisions restantes. Fusion et production restent distinctes et non autorisées par ce checkpoint.
+Ne pas confondre remise L1–L6, enregistrement documentaire, réalisation et acceptation. Aucune tâche source cochée ; préserver blocages et décisions. Poursuivre préparations indépendantes autorisées ; corrections/POC, fusions, administration et production gardent leurs accords distincts.
+
+## Historique
+
+Le checkpoint initial du programme sur c1c0f7f3… enregistrait la création des missions et 14 tests sur fixtures ; la couverture complète a ensuite été vérifiée dans le run cité. Le présent retour enrichit ce suivi sans effacer les réserves ni refaire Mission 002.
