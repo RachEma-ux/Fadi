@@ -279,6 +279,12 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
     geste.current = { type: "rectangle", id: e.pointerId, debut, ecran, ajouter: e.shiftKey, actif: false };
   }
   function pointerMove(e: PointerEvent<SVGSVGElement>) {
+    // Bouton relâché hors de la planche avant le seuil : le geste en attente et son pointeur sont oubliés (jamais de cadre fantôme).
+    if (e.pointerType !== "touch" && e.buttons === 0) {
+      pointeurs.current.delete(e.pointerId);
+      if (geste.current && "id" in geste.current && geste.current.id === e.pointerId && !("actif" in geste.current && geste.current.actif)) geste.current = null;
+      return;
+    }
     if (pointeurs.current.has(e.pointerId)) pointeurs.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     const g = geste.current;
     if (g?.type === "vue") {
@@ -465,9 +471,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
     executer(e.cible, true);
   }
   clavier.current = (e: KeyboardEvent) => {
-    // Une boîte de dialogue ouverte (Outils, palette) garde le clavier pour elle.
-    if (dialogue) return;
     const c = combinaison(e);
+    // Une boîte de dialogue ouverte (Outils, palette) garde le clavier pour elle ; Ctrl+S / Ctrl+K n'atteignent pas le navigateur.
+    if (dialogue) { if (c === "Ctrl+S" || c === "Ctrl+K") e.preventDefault(); return; }
     const field = (e.target as Element | null)?.closest?.("input,textarea,select,[contenteditable=true]");
     if (field && !actifDansUnChamp(c)) return;
     const cible = cibleRaccourci(c);

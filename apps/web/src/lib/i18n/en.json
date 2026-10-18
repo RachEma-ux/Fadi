@@ -8734,6 +8734,7 @@
 "Enregistrement refusé. Le brouillon reste non enregistré.": "Save refused. Your draft remains unsaved.",
 "Confirmation serveur indisponible. Réessayez la même sauvegarde avant de continuer.": "Server confirmation unavailable. Retry the same save before continuing.",
 "Création non confirmée. Actualisez la liste avant de réessayer.": "Creation unconfirmed. Refresh the list before retrying.",
+"Création non confirmée. Réessayez : la même demande sera rejouée sans doublon.": "Creation unconfirmed. Retry: the same request will be replayed without creating a duplicate.",
 "Recharger la version serveur": "Reload the server version",
 "Ouvrez une étude ou créez une nouvelle planche indépendante du Parcours.": "Open a study or create a new board independently of the Journey.",
 "Ouvrir les études →": "Open studies →",

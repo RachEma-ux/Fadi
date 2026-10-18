@@ -49,7 +49,7 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "annuler-trace", libelleFR: "Annuler / Désélectionner", raccourci: "Escape", iconeSymbolique: "studio-cancel", groupe: "edition", ecrit: false },
   { id: "enregistrer", libelleFR: "Enregistrer", raccourci: "Ctrl+S", iconeSymbolique: "studio-save", groupe: "edition", ecrit: true, dansUnChamp: true },
   { id: "tout-selectionner", libelleFR: "Tout sélectionner", raccourci: "Ctrl+A", iconeSymbolique: "studio-select-all", groupe: "edition", ecrit: false },
-  { id: "zoom-avant", libelleFR: "Zoom avant", raccourci: "=", iconeSymbolique: "studio-zoom-in", groupe: "vue", ecrit: false },
+  { id: "zoom-avant", libelleFR: "Zoom avant", raccourci: "=", autres: ["Shift+=", "+", "Shift++"], iconeSymbolique: "studio-zoom-in", groupe: "vue", ecrit: false },
   { id: "zoom-arriere", libelleFR: "Zoom arrière", raccourci: "-", iconeSymbolique: "studio-zoom-out", groupe: "vue", ecrit: false },
   { id: "cadrer", libelleFR: "Cadrer", raccourci: "Shift+Z", iconeSymbolique: "studio-frame", groupe: "vue", ecrit: false },
   { id: "plein-ecran", libelleFR: "Plein écran / Quitter", raccourci: "Ctrl+Shift+F", iconeSymbolique: "studio-fullscreen", groupe: "vue", ecrit: false },

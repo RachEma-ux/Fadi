@@ -50,7 +50,8 @@ async function shell(request) {
   const cache = await caches.open(CACHE);
   try {
     const response = await fetch(request);
-    if (response.ok) cache.put("/index.html", response.clone());
+    // Seule une page HTML peut devenir la coquille hors ligne (jamais un export SVG / DXF ouvert en navigation).
+    if (response.ok && (response.headers.get("content-type") ?? "").includes("text/html")) cache.put("/index.html", response.clone());
     return response;
   } catch (err) {
     const cached = await cache.match("/index.html");

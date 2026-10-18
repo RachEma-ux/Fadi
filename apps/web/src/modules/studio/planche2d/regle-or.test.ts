@@ -28,7 +28,8 @@ const echapper = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** Événement clavier qui produit le raccourci (lettre en minuscule sans Maj, comme un vrai clavier). */
 function evenement(r: string) {
-  const parts = r === "-" ? ["-"] : r.split("+");
+  // Une touche « + » finale (« + », « Shift++ ») n'est pas un séparateur.
+  const parts = r === "-" ? ["-"] : r.endsWith("+") ? [...r.slice(0, -1).split("+").filter(Boolean), "+"] : r.split("+");
   const touche = parts[parts.length - 1]!;
   const shiftKey = parts.includes("Shift");
   const key = touche === "Space" ? " " : touche.length === 1 ? (shiftKey ? touche.toUpperCase() : touche.toLowerCase()) : touche;
