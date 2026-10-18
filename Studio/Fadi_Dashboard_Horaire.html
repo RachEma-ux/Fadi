@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fadi — Tableau de bord horaire</title><style>
+:root{--bg:#f5f7fa;--ink:#1c2b3e;--muted:#6d798a;--border:#dfe6ec;--blue:#4086b8;--green:#2b936e;--orange:#d9a043}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:white;border-bottom:1px solid var(--border)}.head,main{max-width:920px;margin:auto;padding:16px 20px}.head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.logo{font-weight:800;font-size:20px}.logo small{display:block;font-size:10px;color:var(--muted);letter-spacing:.1em}
+button{background:white;border:1px solid var(--border);padding:9px 12px;border-radius:9px;font:inherit;cursor:pointer}button:disabled{opacity:.5}
+main{display:grid;gap:16px;padding-top:24px}h1{font-size:clamp(23px,4.5vw,31px);line-height:1.25;margin:4px 0}h2{font-size:16px;margin:0 0 14px}.sub{font-size:12px;color:var(--muted)}
+.card{background:white;border:1px solid var(--border);border-radius:15px;padding:18px;box-shadow:0 6px 20px rgba(18,41,65,.035)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}.stat{background:#f3f5f7;border-radius:12px;padding:15px}
+.stat label{display:block;font-size:12px;color:var(--muted);min-height:34px}.stat strong{font-size:clamp(22px,6vw,35px);display:block;letter-spacing:-.7px;line-height:1.2;margin:7px 0}
+hr{border:0;border-top:1px solid var(--border);margin:20px 0}.bar{display:flex;gap:2px;height:13px;border-radius:9px;background:#e7ebef;overflow:hidden}.legend{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:15px}
+.legend>div{display:flex;align-items:center;gap:8px}.dot{display:inline-block;width:10px;height:10px;border-radius:100%;flex:none}.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.mini div{border:1px solid var(--border);border-radius:9px;padding:10px 4px;text-align:center}.mini b{display:block;font-size:22px}.mini span{font-size:11px;color:var(--muted)}
+p{margin:7px 0}a{color:#265d96;text-decoration:none}a:hover{text-decoration:underline}.links{display:flex;flex-wrap:wrap;gap:8px}.links a{border:1px solid var(--border);background:white;border-radius:9px;padding:10px 12px;font-weight:650}
+.note{padding:12px;border-radius:10px;background:#edf4fa;color:#395a79;font-size:12px;margin-top:16px}
+.q{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--border);padding:7px 0}.q small{color:var(--muted)}
+#notice{font-size:12px;background:#fff6e6;color:#7d622e;border-radius:9px;padding:11px}.foot{color:var(--muted);font-size:11px}
+@media(max-width:620px){.two{grid-template-columns:1fr}main{padding:18px 15px}.head{padding:12px 15px}.card{padding:15px}.stat{padding:13px 10px}.stat strong{font-size:clamp(21px,6.7vw,29px)}.stat label{font-size:11px}}
+</style></head><body>
+<header><div class="head"><div class="logo">FADI <small>PILOTAGE DES MISSIONS</small></div><button id="refresh" type="button">↻ Actualiser</button></div></header>
+<main>
+<section><div class="sub">Programme #156 · 31 missions Codex · Studio</div><h1>Avancement total Fadi / Studio</h1><div id="stamp" class="sub">Chargement des données GitHub…</div></section>
+<section class="card"><div class="stats">
+<div class="stat"><label>Tâches Studio vérifiées</label><strong id="done">— / 630</strong><span class="sub" id="donecaption">Contrôle en cours</span></div>
+<div class="stat"><label>Développement total</label><strong>N/D %</strong><span class="sub">Baseline DEV_SCOPE à établir</span></div></div>
+<hr><h2>État des 630 tâches</h2><div id="bar" class="bar" role="img" aria-label="Répartition des tâches en cours de chargement"></div>
+<div class="legend"><div><span class="dot" style="background:#8390a1"></span>À définir : <b id="undef">—</b></div><div><span class="dot" style="background:#4086b8"></span>En cours : <b id="progress">—</b></div>
+<div><span class="dot" style="background:#d9a043"></span>Bloquées : <b id="blocked">—</b></div><div><span class="dot" style="background:#2b936e"></span>Vérifiées : <b id="verified">—</b></div></div>
+<div class="note" id="evidence">Une affectation des 630 tâches ne prouve pas leur réalisation.</div></section>
+<div class="two"><section class="card"><h2>Missions Codex</h2><div class="mini"><div><b id="mprog">—</b><span>En cours</span></div><div><b id="mblock">—</b><span>Bloquées</span></div><div><b id="mother">—</b><span>Autres</span></div></div><p id="activity" class="sub">Activité à vérifier…</p></section>
+<section class="card"><h2>GitHub &amp; CI</h2><p id="pr">PR #165 : vérification…</p><p id="ci">CI : vérification…</p><p id="sha" class="sub">SHA : —</p></section></div>
+<section class="card"><h2>Questions et décisions · <span id="qcount">—</span></h2><div id="questions" class="sub">Chargement du canal #166…</div></section>
+<div id="notice" role="status" aria-live="polite">Lecture des sources publiques GitHub…</div>
+<nav class="links" aria-label="Accès directs"><a href="https://github.com/RachEma-ux/Fadi/issues/166" target="_blank" rel="noopener noreferrer">Questions ↗</a><a href="https://github.com/RachEma-ux/Fadi/pull/165" target="_blank" rel="noopener noreferrer">Missions ↗</a><a href="Fadi_Studio_Checklist_Interactive_V1_1.html">Checklist ↗</a><a href="https://github.com/RachEma-ux/Fadi/actions" target="_blank" rel="noopener noreferrer">Tests CI ↗</a></nav>
+<div class="foot">Lecture seule. Données publiques GitHub actualisées à l'ouverture ou sur demande. Aucun changement de tâches ou d'approbations.</div></main>
+<script>
+(function(){'use strict';
+const BASE='https://api.github.com/repos/RachEma-ux/Fadi',HIST={undef:258,progress:159,blocked:207,verified:6},MH={progress:18,blocked:12,other:1};
+const getId=id=>document.getElementById(id),set=(id,t)=>getId(id).textContent=String(t);
+async function request(url){const r=await fetch(url,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});if(!r.ok)throw new Error('GitHub '+r.status);return r.json()}
+function counts(b){const re=/(\d+)\s*[ÀA]\s*d[ée]finir\s*[,;·|]\s*(\d+)\s*[Ee]n\s*cours\s*[,;·|]\s*(\d+)\s*[Bb]loqu[ée]es?\s*[,;·|]\s*(\d+)\s*[Vv][ée]rifi[ée]es?/i;const m=(b||'').match(re);if(!m)return null;const [undef,progress,blocked,verified]=m.slice(1).map(Number);return undef+progress+blocked+verified===630?{undef,progress,blocked,verified}:null}
+function mission(b){const re=/Missions(?:\s*M00[–-]M30)?\s*[:–-]?\s*(\d+)\s*[Ee]n\s*cours\s*[,;·|]\s*(\d+)\s*[Bb]loqu[ée]es?\s*[,;·|]\s*(\d+)\s*[ÀA]\s*d[ée]finir/i;const m=(b||'').match(re);if(!m)return null;const [progress,blocked,other]=m.slice(1).map(Number);return progress+blocked+other===31?{progress,blocked,other}:null}
+function draw(n,source){set('done',n.verified+' / 630');set('donecaption',(100*n.verified/630).toFixed(1).replace('.',',')+' % · vérifications, pas nécessairement du code');for(const k of Object.keys(n))set(k,n[k]);const bar=getId('bar');bar.replaceChildren();for(const [k,c] of [['undef','#8390a1'],['progress','#4086b8'],['blocked','#d9a043'],['verified','#2b936e']]){const d=document.createElement('div');d.style.flex=String(n[k]);d.style.background=c;bar.append(d)}bar.setAttribute('aria-label',Object.entries(n).map(x=>x.join(': ')).join(', '));set('evidence',source+' · Ce sont des statuts de tâches ; le pourcentage du développement fonctionnel reste N/D sans DEV_SCOPE approuvé.')}
+function renderQuestions(cs){const open=new Map(),answers=new Set(),dec=new Set();for(const c of cs){const b=c.body||'';for(const m of b.matchAll(/\[CODEX-QUESTION\]\[(Q-[\w-]+)\]\[OPEN\]/g))open.set(m[1],c.html_url);for(const m of b.matchAll(/\[(?:CHATGPT-ANSWER|CHATGPT-DECISION)\]\[(Q-[\w-]+)\]/g))answers.add(m[1]);for(const m of b.matchAll(/\[CHATGPT-DECISION\]\[(Q-[\w-]+)\]/g))dec.add(m[1])}set('qcount',open.size);const box=getId('questions');box.replaceChildren();for(const [id,url] of [...open].slice(-5).reverse()){const row=document.createElement('div');row.className='q';const a=document.createElement('a');a.href=url||'https://github.com/RachEma-ux/Fadi/issues/166';a.target='_blank';a.rel='noopener noreferrer';a.textContent=id;const s=document.createElement('small');s.textContent=dec.has(id)?'Décision publiée':answers.has(id)?'Réponse publiée':'À répondre';row.append(a,s);box.append(row)}if(!open.size)box.textContent='Aucune question trouvée.'}
+async function refresh(){getId('refresh').disabled=true;set('stamp','Mise à jour en cours…');const list=await Promise.allSettled([request(BASE+'/issues/166/comments?per_page=100'),request(BASE+'/pulls/165'),request(BASE+'/branches/main'),request(BASE+'/actions/runs?branch=main&per_page=20')]);const [a,b,c,d]=list;let task=HIST,missions=MH,source='Snapshot historique Mission 003, 18/10/2026 (non rafraîchi)';
+if(a.status==='fulfilled'){const cs=a.value,reports=cs.filter(x=>(x.body||'').includes('[CODEX-PROGRESS]')).sort((x,y)=>(y.created_at||'').localeCompare(x.created_at||''));for(const r of reports){const n=counts(r.body);if(n){task=n;source='Dernier rapport Codex structuré du '+(r.created_at||'date indisponible');break}}for(const r of reports){const m=mission(r.body);if(m){missions=m;break}}renderQuestions(cs);set('activity',cs.some(x=>(x.body||'').includes('[CODEX-ACK]'))?'ACK Codex publié · activité à confirmer par les commits':'Aucun accusé Codex détecté dans GitHub');}else{set('questions','Canal indisponible');set('qcount','—');set('activity','Activité Codex non vérifiable')}
+draw(task,source);set('mprog',missions.progress);set('mblock',missions.blocked);set('mother',missions.other);
+set('pr',b.status==='fulfilled'?'PR #165 : '+(b.value.merged?'fusionnée':b.value.state==='open'?'ouverte':'fermée'):'PR #165 : état inaccessible');
+const sha=c.status==='fulfilled'?c.value.commit?.sha:null;set('sha','main : '+(sha?sha.slice(0,12):'indisponible'));if(d.status==='fulfilled'){const run=(d.value.workflow_runs||[]).find(x=>x.name==='CI'&&x.head_sha===sha);set('ci',run?('CI main : '+(run.status==='completed'?run.conclusion:'en cours')):'CI main : non établie')}else set('ci','CI : données indisponibles');
+const errors=list.filter(x=>x.status==='rejected').length;set('notice',errors?'Lecture GitHub partielle : '+errors+' source(s) indisponible(s). Les valeurs historiques sont signalées.':'Lecture GitHub effectuée. Les statuts viennent des rapports d’agents et ne sont pas des approbations automatiques.');set('stamp','Dernière consultation : '+new Date().toLocaleString('fr-CH',{timeZone:'Europe/Zurich'}));getId('refresh').disabled=false}
+getId('refresh').addEventListener('click',refresh);refresh();
+})();
+</script></body></html>
