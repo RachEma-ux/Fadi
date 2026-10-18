@@ -18,6 +18,7 @@
     "typecheck": "node scripts/check-module-deps.mjs && npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/api --workspace=@fadi/web",
     "test:db-guard": "npm run test:db-guard --workspace=@fadi/api",
-    "check:deps": "node scripts/check-module-deps.mjs"
+    "check:deps": "node scripts/check-module-deps.mjs",
+    "test:scripts": "node --test scripts/check-continuity.test.mjs scripts/check-module-deps.test.mjs"
   }
 }
