@@ -74,3 +74,12 @@ M10 vérifie les jalons #149 sans les présumer ni les répéter. M14 instruit G
 Rapporter : travaux terminés avec preuves, tâches en cours, blocages, décisions requises, agents réellement exécutés, couverture du registre et prochaine action. Ne dire « tout terminé » que lorsque toutes les obligations du périmètre accepté disposent de leur preuve et acceptation ; publier séparément les options reportées/exclues et les blocages résiduels. Une couverture **630/630** prouve l’affectation documentaire, jamais 630 réalisations.
 
 **Instruction courte :** « Reprends #156 dans RachEma-ux/Fadi. Lis AGENTS.md, docs/ai-team/CODEX-START-HERE.md et le HANDOFF du chantier. Vérifie la branche du plan, le HEAD réel, les permissions et le registre. Exécute toutes les sous-tâches autorisées prêtes, sans abandon, avec preuves et checkpoints. Préserve les tâches bloquées et continue les indépendantes ; soumets uniquement les décisions effectivement nécessaires. »
+
+## 11. Contrôle horaire, questions et accusé de lecture
+
+L'utilisateur demande une vérification et un rapport **chaque heure**, ainsi que des questions Codex **directement dans GitHub**. Lire et appliquer [CODEX-HOURLY-OPERATIONS.md](CODEX-HOURLY-OPERATIONS.md) avant la prochaine sous-tâche.
+
+- Canal obligatoire : [Issue #166](https://github.com/RachEma-ux/Fadi/issues/166). Poster `[CODEX-ACK]` avec SHA/branche/documents lus et la sous-tâche active **dès lecture**, puis `[CODEX-PROGRESS]` avec preuves lorsque le travail avance ; poser les questions sous `[CODEX-QUESTION][Q-ID][OPEN]` dans la même Issue.
+- Les réponses techniques et les décisions en attente seront contrôlées à cadence horaire par ChatGPT, **si l'accès GitHub est disponible**. Ne pas supposer une réponse ou un accord tant qu'ils ne sont pas visibles et attribués.
+- Chaque rapport distingue **PDEV (développement fonctionnel, calculable uniquement après baseline vérifiée)** et **P630 (IDs de checklist réellement terminés sur 630)** ; jamais 630/630 d'affectation présentés comme 100 % d'exécution.
+- Une tâche active Codex ou un mécanisme d'exécution réellement configuré est nécessaire : GitHub et l'automatisation de contrôle n'exécutent pas le code par eux-mêmes. Si aucun `CODEX-ACK` n'apparaît, la mise en route doit être considérée **non confirmée** et non réussie.
