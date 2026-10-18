@@ -31,6 +31,21 @@ class DailyChecklistTest(unittest.TestCase):
         self.assertIsNone(s["progress"]["pdev_verified"])
         self.assertEqual(s["questions"]["unanswered"],["Q-TEST"])
 
+    def test_answer_does_not_close_owner_decision(self):
+        comments=[
+            {"created_at":"2026-10-18T09:00:00Z","html_url":daily.ISSUE,
+             "body":"[CODEX-QUESTION][Q-D07][OPEN] accord de l'administrateur ?"},
+            {"created_at":"2026-10-18T09:10:00Z","html_url":daily.ISSUE,
+             "body":"[CHATGPT-ANSWER][Q-D07] Recommandation documentée. [NEEDS-USER-DECISION] pour l'accord."}
+        ]
+        p={"comments":comments,"main_sha":None,"pr_sha":None,"github_status":"ok"}
+        state=daily.parse_data(p,self.ids,"2026-10-18T10:00:00Z")
+        self.assertEqual(state["questions"]["unanswered_count"],0)
+        self.assertEqual(state["questions"]["answered_count"],1)
+        self.assertEqual(state["questions"]["owner_decision_pending"],["Q-D07"])
+        self.assertEqual(state["questions"]["owner_decision_pending_count"],1)
+        self.assertIn("Décisions utilisateur encore nécessaires",daily.update_html(self.source,state))
+
     def test_untrusted_link_rejected(self):
         test_id=sorted(self.ids)[0]
         p={"comments":[{"created_at":"2026-10-18T09:30:00Z","html_url":daily.ISSUE,
