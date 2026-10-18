@@ -15,7 +15,7 @@ def main():
  def sql(s):return docker('exec','-i',m['container'],'psql','-X','-v','ON_ERROR_STOP=1','-U','postgres','-d',m['database'],'-At',input=s)
  assert sql('SELECT current_database();')==m['database'];assert sql('SELECT run_id FROM studio_validation.identity;')==run;assert sql("SELECT rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication FROM pg_roles WHERE rolname='studio_app';")=='f'
  if len(sys.argv)>2:
-  schema=Path(sys.argv[2]);text=schema.read_text();assert hashlib.sha256(schema.read_bytes()).hexdigest()=='30cab9f6ca32bb7196378734c71c3b2d99b2752af25fd969fa2333bf89fd196c', 'Unreviewed Studio SQL refused'
+  schema=Path(sys.argv[2]);text=schema.read_text();assert hashlib.sha256(schema.read_bytes()).hexdigest()=='67653e6b33a2b4312bd1a4d4f658105a46601ff26f5b70f0a30eabe5094717e0', 'Unreviewed Studio SQL refused'
   digest=hashlib.sha256(text.encode()).hexdigest()
   if m.get('studioSchemaApplied'):
    assert m.get('studioSchemaSha256')==digest, 'Applied Studio schema hash mismatch'
