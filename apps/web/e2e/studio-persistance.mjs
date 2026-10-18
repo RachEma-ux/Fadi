@@ -54,6 +54,10 @@ if (PHASE === 'reopen') {
   check('réouverture : historique identique, plus récente d\'abord', history.status === 200 && JSON.stringify(history.body.revisions.map((x) => x.id)) === JSON.stringify(s.revisionIds));
   const reExport = await owner('GET', `${variantPath(s)}/export?format=dxf`);
   check('réouverture : export DXF de la tête après redémarrage', reExport.status === 200 && reExport.headers.get('content-type') === 'application/dxf' && count(reExport.text, /\r\nLINE\r\n/g) === 1 && count(reExport.text, /\r\nPOLYLINE\r\n/g) === 1 && reExport.headers.get('content-disposition')?.endsWith(`-${s.headRevisionId.slice(-8)}.dxf"`), `${reExport.status} ${reExport.headers.get('content-disposition')}`);
+  if (s.commentIds) {
+    const reComments = await owner('GET', `${variantPath(s)}/comments`);
+    check('réouverture : fils de commentaires identiques', reComments.status === 200 && JSON.stringify(reComments.body.comments.map((x) => x.id)) === JSON.stringify(s.commentIds));
+  }
   if (s.exportStudy) {
     const owner2 = await owner('GET', `/projects/${s.projectId}/studio/studies/${s.exportStudy.studyId}/variants/${s.exportStudy.variantId}/export?format=svg`);
     check('réouverture : export SVG de l\'étude idempotente identique', owner2.status === 200 && digest(owner2.text) === s.exportStudy.svgSha256);
@@ -281,7 +285,65 @@ if (PHASE === 'reopen') {
   const oldIfc = await owner('GET', `${exportPath}?format=ifc&revision=${drawn.body.revision.id}`);
   check('export IFC d\'une révision sans extrusion : aucun élément 3D', oldIfc.status === 200 && count(oldIfc.text, /=IFCWALL\(/g) === 0 && count(oldIfc.text, /=IFCBUILDINGELEMENTPROXY\(/g) === 0 && oldIfc.text.includes("IFCPROPERTYSINGLEVALUE('NonExtrudedObjects',$,IFCINTEGER(2),$)"));
 
-  if (STATE) writeFileSync(STATE, JSON.stringify({ ...s, owner: ownerCredentials, headRevisionId: head.body.revision.id, initialRevisionId: created.body.revision.id, documentSha256: digest(head.body.revision.document), variantIds: expectedOrder, revisionIds: ids, exportStudy: { studyId: ev.studyId, variantId: ev.variantId, svgSha256: digest(svg.text) } }), { mode: 0o600 });
+  // Commentaires d'une variante : règles de la Collaboration (tout membre commente, lecteur compris ; l'auteur seul
+  // supprime, ici en suppression douce), ancrage à une révision et à des objets, réponses en fil, rejeu idempotent.
+  const commentsPath = `${variantPath(s)}/comments`;
+  const reader = client();
+  const readerCredentials = credentials();
+  check('compte lecteur créé', (await reader('POST', '/auth/register', readerCredentials)).status === 201);
+  check('lecteur ajouté au projet', (await owner('POST', `/projects/${projectId}/members`, { email: readerCredentials.email, role: 'lecteur' })).status === 201);
+  const emptyComments = await owner('GET', commentsPath);
+  check('commentaires : liste vide au départ', emptyComments.status === 200 && Array.isArray(emptyComments.body?.comments) && emptyComments.body.comments.length === 0, JSON.stringify(emptyComments.body));
+  const commentRequestId = `commentaire-${randomUUID()}`;
+  const anchored = await owner('POST', commentsPath, { body: '  Vérifier la ligne et le rectangle  ', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId });
+  check('commentaire ancré (201) : texte épuré, révision et objets cités', anchored.status === 201 && anchored.body.replayed === false && anchored.body.body === 'Vérifier la ligne et le rectangle' && anchored.body.revisionId === saved.body.revision.id && JSON.stringify(anchored.body.objectIds) === JSON.stringify(['ligne-1', 'rect-1']) && anchored.body.mine === true && anchored.body.parentId === null && anchored.body.deletedAt === null && isIso(anchored.body.createdAt), `${anchored.status} ${JSON.stringify(anchored.body)}`);
+  const anchoredAgain = await owner('POST', commentsPath, { body: '  Vérifier la ligne et le rectangle  ', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId });
+  check('commentaire : rejeu du même requestId (201, même commentaire, replayed=true)', anchoredAgain.status === 201 && anchoredAgain.body.replayed === true && anchoredAgain.headers.get('idempotent-replayed') === 'true' && anchoredAgain.body.id === anchored.body.id, `${anchoredAgain.status} ${JSON.stringify(anchoredAgain.body)}`);
+  check('commentaire : requestId réutilisé avec un autre texte → 409', (await owner('POST', commentsPath, { body: 'Autre texte', requestId: commentRequestId })).body?.error === 'request_conflict');
+  check('commentaire : requestId réutilisé par un autre auteur → 409', (await editor('POST', commentsPath, { body: 'Vérifier la ligne et le rectangle', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId })).status === 409);
+  const headAnchored = await owner('POST', commentsPath, { body: 'Ancré à la tête', objectIds: ['ligne-1'] });
+  check('commentaire : objets sans révision ancrés à la tête vérifiée', headAnchored.status === 201 && headAnchored.body.revisionId === moved.body.revision.id, JSON.stringify(headAnchored.body));
+  const unknownObjects = await owner('POST', commentsPath, { body: 'Objet inconnu', objectIds: ['ligne-1', 'objet-inconnu'] });
+  check('commentaire : objet absent de la tête → 400', unknownObjects.status === 400 && unknownObjects.body?.code === 'unknown_objects' && JSON.stringify(unknownObjects.body.objectIds) === JSON.stringify(['objet-inconnu']), `${unknownObjects.status} ${JSON.stringify(unknownObjects.body)}`);
+  check('commentaire : objet absent de la révision citée → 400', (await owner('POST', commentsPath, { body: 'Révision vide', objectIds: ['ligne-1'], revisionId: created.body.revision.id })).status === 400);
+  check('commentaire : révision d\'une autre variante → 404', (await owner('POST', commentsPath, { body: 'Ailleurs', revisionId: variantB.body.revision.id })).status === 404);
+  check('commentaire : vide → 400', (await owner('POST', commentsPath, { body: '   ' })).status === 400);
+  check('commentaire : trop long → 400', (await owner('POST', commentsPath, { body: 'x'.repeat(4001) })).status === 400);
+  check('commentaire : objet cité deux fois → 400', (await owner('POST', commentsPath, { body: 'Doublon', objectIds: ['ligne-1', 'ligne-1'] })).status === 400);
+  check('commentaire : champ inconnu → 400 (schéma strict)', (await owner('POST', commentsPath, { body: 'X', extra: 1 })).status === 400);
+  const readerComment = await reader('POST', commentsPath, { body: 'Remarque du lecteur' });
+  check('lecteur : commente (règle de la Collaboration), sans écrire le dessin', readerComment.status === 201 && readerComment.body.mine === true, `${readerComment.status} ${JSON.stringify(readerComment.body)}`);
+  check('lecteur : écriture du dessin toujours refusée (403)', (await reader('POST', `${variantPath(s)}/commands`, { contractVersion: 'studio-commands/1', requestId: `recette-${randomUUID()}`, baseRevisionId: moved.body.revision.id, commands: [{ toolId: 'studio.dessin.deplacer', params: { id: 'ligne-1', dx: 1, dy: 0 } }] })).status === 403);
+  const reply = await editor('POST', commentsPath, { body: 'Réponse de l’éditeur', parentId: anchored.body.id });
+  check('éditeur : répond en fil', reply.status === 201 && reply.body.parentId === anchored.body.id, JSON.stringify(reply.body));
+  const replyToReply = await reader('POST', commentsPath, { body: 'Réponse à la réponse', parentId: reply.body?.id });
+  check('réponse à une réponse : rattachée au commentaire d\'origine (un seul niveau)', replyToReply.status === 201 && replyToReply.body.parentId === anchored.body.id);
+  check('réponse à un commentaire inconnu → 404', (await owner('POST', commentsPath, { body: 'Perdue', parentId: 'studio_comment_inconnu' })).status === 404);
+  const otherVariantComment = await owner('POST', `${studyPath}/variants/${bId}/comments`, { body: 'Sur la variante B' });
+  check('réponse à un commentaire d\'une autre variante → 404', otherVariantComment.status === 201 && (await owner('POST', commentsPath, { body: 'Croisée', parentId: otherVariantComment.body.id })).status === 404);
+  const thread = await reader('GET', commentsPath);
+  const threadIds = thread.body?.comments?.map((x) => x.id);
+  check('lecture des fils : origine puis ses réponses, dans l\'ordre', thread.status === 200 && JSON.stringify(threadIds) === JSON.stringify([anchored.body.id, reply.body.id, replyToReply.body.id, headAnchored.body.id, readerComment.body.id]), JSON.stringify(threadIds));
+  check('lecture des fils : auteur et « mine » relus par le serveur', thread.body?.comments?.[0]?.mine === false && thread.body.comments[0].authorEmail === ownerCredentials.email && thread.body.comments[2].mine === true);
+  check('autre compte : commentaires refusés (lecture, écriture, suppression)', [403, 404].includes((await foreign('GET', commentsPath)).status) && [403, 404].includes((await foreign('POST', commentsPath, { body: 'Intrus' })).status) && [403, 404].includes((await foreign('DELETE', `${commentsPath}/${anchored.body.id}`)).status));
+  check('anonyme : commentaires 401', (await anonymous('GET', commentsPath)).status === 401 && (await anonymous('POST', commentsPath, { body: 'Anonyme' })).status === 401);
+  check('commentaires d\'un autre projet → 404', (await owner('GET', `${elsewhere}/variants/${foreignStudy.body?.variant?.id}/comments`)).status === 404);
+  const notMine = await reader('DELETE', `${commentsPath}/${anchored.body.id}`);
+  check('suppression du commentaire d\'un autre → 403', notMine.status === 403 && notMine.body?.error === 'forbidden', `${notMine.status} ${JSON.stringify(notMine.body)}`);
+  check('suppression par un éditeur du commentaire du propriétaire → 403', (await editor('DELETE', `${commentsPath}/${anchored.body.id}`)).status === 403);
+  check('suppression d\'un commentaire inconnu → 404', (await owner('DELETE', `${commentsPath}/studio_comment_inconnu`)).status === 404);
+  check('suppression de son propre commentaire → 204', (await owner('DELETE', `${commentsPath}/${anchored.body.id}`)).status === 204);
+  check('suppression répétée par l\'auteur → 204 (déjà supprimé)', (await owner('DELETE', `${commentsPath}/${anchored.body.id}`)).status === 204);
+  const afterDelete = await owner('GET', commentsPath);
+  const deletedView = afterDelete.body?.comments?.find((x) => x.id === anchored.body.id);
+  check('suppression douce : fil conservé, texte et objets retirés, date de suppression', deletedView && deletedView.body === null && deletedView.objectIds.length === 0 && isIso(deletedView.deletedAt) && afterDelete.body.comments.length === 5 && afterDelete.body.comments[1].id === reply.body.id, JSON.stringify(deletedView));
+  check('réponse à un commentaire supprimé → 404', (await editor('POST', commentsPath, { body: 'Trop tard', parentId: anchored.body.id })).status === 404);
+  const deletedReplay = await owner('POST', commentsPath, { body: '  Vérifier la ligne et le rectangle  ', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId });
+  check('rejeu après suppression : même commentaire, toujours supprimé, aucun doublon', deletedReplay.status === 201 && deletedReplay.body.replayed === true && deletedReplay.body.id === anchored.body.id && deletedReplay.body.deletedAt !== null && (await owner('GET', commentsPath)).body?.comments?.length === 5);
+  check('commentaires : la tête du dessin n\'est pas modifiée', (await owner('GET', variantPath(s))).body?.revision?.id === moved.body.revision.id);
+  const commentIds = (await owner('GET', commentsPath)).body?.comments?.map((x) => x.id);
+
+  if (STATE) writeFileSync(STATE, JSON.stringify({ ...s, commentIds, owner: ownerCredentials, headRevisionId: head.body.revision.id, initialRevisionId: created.body.revision.id, documentSha256: digest(head.body.revision.document), variantIds: expectedOrder, revisionIds: ids, exportStudy: { studyId: ev.studyId, variantId: ev.variantId, svgSha256: digest(svg.text) } }), { mode: 0o600 });
 }
 if (failures) { console.log(`${failures} vérification(s) en échec`); process.exit(1); }
 console.log(`Studio (${PHASE}) : toutes les vérifications réussies.`);

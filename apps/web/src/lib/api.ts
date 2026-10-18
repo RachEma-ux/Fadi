@@ -751,6 +751,23 @@ const studioVariantPath = (p: string, s: string, v: string) => `${studioStudyPat
 export function studioExportUrl(p: string, s: string, v: string, format: "svg" | "dxf" | "ifc", revisionId?: string | null): string {
   return `${studioVariantPath(p, s, v)}/export?format=${format}${revisionId ? `&revision=${encodeURIComponent(revisionId)}` : ""}`;
 }
+/** Commentaire d'une variante (règles de la Collaboration : tout membre commente, l'auteur seul supprime). */
+export interface StudioComment {
+  id: string;
+  variantId: string;
+  parentId: string | null;
+  /** Révision d'ancrage (citée, ou tête contre laquelle les objets ont été vérifiés), null sinon. */
+  revisionId: string | null;
+  objectIds: string[];
+  authorId: string;
+  authorEmail: string;
+  /** null : supprimé par son auteur (le fil reste lisible). */
+  body: string | null;
+  createdAt: string;
+  deletedAt: string | null;
+  mine: boolean;
+}
+export interface StudioCommentInput { body: string; revisionId?: string; objectIds?: string[]; parentId?: string; requestId?: string }
 export const api = {
   studioStudies: (p: string) => request<{ studies: StudioStudySummary[] }>(studioRoot(p)),
   createStudioStudy: (p: string, name: string, requestId?: string) => request<StudioContext>(studioRoot(p), { method: "POST", body: JSON.stringify(requestId ? { name, requestId } : { name }) }),
@@ -764,6 +781,11 @@ export const api = {
   studioRevision: (p: string, s: string, v: string, r: string) => request<StudioContext>(`${studioVariantPath(p, s, v)}/revisions/${encodeURIComponent(r)}`),
   /** Comparaison lecture seule de deux côtés de la même étude (`variantId` ou `variantId:revisionId`), calculée par le serveur. */
   studioCompare: (p: string, s: string, from: string, to: string) => request<StudioComparison>(`${studioStudyPath(p, s)}/compare?${new URLSearchParams({ from, to })}`),
+  /** Fils de commentaires de la variante, dans l'ordre des fils (origine puis réponses). */
+  studioComments: (p: string, s: string, v: string) => request<{ comments: StudioComment[] }>(`${studioVariantPath(p, s, v)}/comments`),
+  /** Nouveau commentaire ou réponse ; `requestId` : un renvoi rend le même commentaire, sans doublon. */
+  createStudioComment: (p: string, s: string, v: string, input: StudioCommentInput) => request<StudioComment & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/comments`, { method: "POST", body: JSON.stringify(input) }),
+  deleteStudioComment: (p: string, s: string, v: string, id: string) => request<void>(`${studioVariantPath(p, s, v)}/comments/${encodeURIComponent(id)}`, { method: "DELETE" }),
   studioCommands: (p: string, s: string, v: string, envelope: StudioEnvelope) => request<StudioContext & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/commands`, { method: "POST", body: JSON.stringify(envelope) }),
   register: (email: string, password: string) =>
     request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),

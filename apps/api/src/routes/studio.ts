@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioStudy, STUDIO_EXPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
+import { createStudioComment, deleteStudioComment, listStudioComments, studioCommentSchema } from "../lib/studio-commentaires.js";
 
 export const studioRouter = Router({ mergeParams: true });
 studioRouter.use(requireAuth);
@@ -89,4 +90,24 @@ studioRouter.get("/studies/:studyId/variants/:variantId/export", endpoint(async 
 }));
 studioRouter.post("/studies/:studyId/variants/:variantId/commands", endpoint(async (req, res) => {
   res.json(await submitStudioCommands(scope(req), req.user!.id, req.body));
+}));
+/**
+ * Commentaires d'une variante (règles de la Collaboration) : lecture `read`, écriture `comment` (tout membre),
+ * suppression douce par l'auteur seul. POST idempotent par `requestId` : 201, rejeu = `replayed: true`.
+ */
+const commentsPath = "/studies/:studyId/variants/:variantId/comments";
+studioRouter.get(commentsPath, endpoint(async (req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await listStudioComments(scope(req), req.user!.id));
+}));
+studioRouter.post(commentsPath, endpoint(async (req, res) => {
+  const parsed = studioCommentSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
+  const comment = await createStudioComment(scope(req), req.user!.id, parsed.data);
+  res.setHeader("Idempotent-Replayed", String(comment.replayed));
+  res.status(201).json(comment);
+}));
+studioRouter.delete(`${commentsPath}/:commentId`, endpoint(async (req, res) => {
+  await deleteStudioComment(scope(req), req.user!.id, req.params["commentId"] as string);
+  res.status(204).end();
 }));
