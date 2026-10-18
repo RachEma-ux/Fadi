@@ -28,7 +28,8 @@ export type IconName =
   | "stairs"
   | "drop"
   | "search"
-  | "people";
+  | "people"
+  | "studio";
 
 const PATHS: Record<IconName, string> = {
   search: "M10.5 3.5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 5 5",
@@ -56,6 +57,7 @@ const PATHS: Record<IconName, string> = {
   flag: "M5 21V4m0 0h11l-2 4 2 4H5",
   stairs: "M4 20h4v-4h4v-4h4V8h4M4 20V8",
   drop: "M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z",
+  studio: "M3 6h11v11H3V6Zm7 4h11v11H10V10Z",
 };
 
 export function Icon({ name, size = 20, className }: { name: IconName; size?: number; className?: string }) {

@@ -111,6 +111,8 @@ const ecrans = [
   ["analyses", `/projets/${pid}?module=analyses`],
   ["documents", `/projets/${pid}?module=documents`],
   ["collaboration", `/projets/${pid}?module=collaboration`],
+  ["studio", "/studio"],
+  ["studio-projet", `/studio/projets/${pid}`],
   ["atelier", `/projets/${pid}?module=atelier`],
 ];
 for (const [nom, url] of ecrans) {

@@ -1,0 +1,16 @@
+/* Studio (lot I) : reprend la mise en page des projets ; seuls le fil d'Ariane et la suggestion lui sont propres. */
+.studio-fil {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+}
+.studio-fil [aria-current="page"] {
+  font-weight: 600;
+}
+.studio-suggestion {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border-left: 3px solid currentColor;
+}

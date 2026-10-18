@@ -17,6 +17,7 @@ import { CollaborationPage } from "./routes/CollaborationPage";
 const ProjectShell = lazy(() => import("./routes/ProjectShell").then((m) => ({ default: m.ProjectShell })));
 const ProjectCockpitPage = lazy(() => import("./modules/pilotage/ProjectCockpitPage").then((m) => ({ default: m.ProjectCockpitPage })));
 const BuildingLibraryPage = lazy(() => import("./modules/bibliotheque/BuildingLibraryPage").then((m) => ({ default: m.BuildingLibraryPage })));
+const StudioShell = lazy(() => import("./modules/studio/StudioShell").then((m) => ({ default: m.StudioShell })));
 const BuildingCasePage = lazy(() => import("./modules/bibliotheque/BuildingLibraryPage").then((m) => ({ default: m.BuildingCasePage })));
 
 const Loading = () => (
@@ -63,6 +64,14 @@ export function App() {
             }
           />
           <Route path="/projets/:projectId/pilotage" element={<Suspense fallback={<Loading />}><ProjectCockpitPage /></Suspense>} />
+          <Route
+            path="/studio/*"
+            element={
+              <Suspense fallback={<Loading />}>
+                <StudioShell />
+              </Suspense>
+            }
+          />
           <Route path="/harmonie" element={<HarmoniePage />} />
           <Route
             path="/bibliotheque/batiments"

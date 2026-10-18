@@ -8719,5 +8719,21 @@
 "Vérifier les documents du dossier →": "Review project documents →",
 "Source : Parcours, planning R2 et catalogue Documents. Le statut « terminé » n'atteste pas à lui seul la validité technique du livrable.": "Source: Parcours, R2 planning and Documents catalogue. A completed status alone does not establish technical validity of a deliverable.",
 "Indicateurs de l'étape non évalués : lecture Parcours incomplète.": "Step indicators not evaluated: incomplete Parcours data.",
-"Feuille de route": "Roadmap"
+"Feuille de route": "Roadmap",
+"Studio": "Studio",
+"Studio n’a pas pu afficher cet écran.": "Studio could not display this screen.",
+"La navigation de Fadi reste disponible ; aucune donnée n’a été modifiée.": "Fadi navigation remains available; no data has been changed.",
+"Fil d’Ariane Studio": "Studio breadcrumb",
+"Adresse Studio non reconnue": "Unrecognised Studio address",
+"Cette adresse ne correspond à aucun écran de Studio.": "This address does not match any Studio screen.",
+"Revenir à l’accueil de Studio": "Back to the Studio home",
+"Studio s’ouvre sur un projet que vous êtes autorisé à consulter ; rien n’est créé à l’ouverture.": "Studio opens on a project you are allowed to view; nothing is created on opening.",
+"Créer un projet": "Create a project",
+"Dernier projet ouvert :": "Last opened project:",
+"Projet introuvable, ou vous n’y avez pas accès.": "Project not found, or you do not have access to it.",
+"Choisir un autre projet": "Choose another project",
+"Études": "Studies",
+"Votre rôle :": "Your role:",
+"Les études de Studio ne sont pas encore disponibles : leur création arrivera avec le lot suivant.": "Studio studies are not available yet: creating them will come with the next lot.",
+"lecteur": "reader"
 }

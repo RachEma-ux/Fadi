@@ -173,6 +173,10 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/accueils-design node apps/web/e2e/accueils-design.mjs 2>&1 | tee e2e.log
+      - name: Recette de Studio, lot I — entrée, routes, refus, adresse inconnue (apps/web/e2e/studio-navigation.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio node apps/web/e2e/studio-navigation.mjs 2>&1 | tee -a e2e.log
       - name: Scénario Playwright
         run: |
           set -o pipefail
