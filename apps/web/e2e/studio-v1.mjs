@@ -174,6 +174,48 @@ try {
     const readable = await getState(foreign, s);
     check('reader may read but cannot write', () => assert.equal(readable.canWrite, false));
     await refused(foreign, owner, s, path, envelope(stateAfterCommit.revision.id, [cmd]), 403, 'reader mutation');
+    const beforeRace = await getState(owner, s);
+    const raceLine = beforeRace.revision.document.objects.find((x) => x.id === line.id);
+    const distinctRequests = [2, 3].map((dx) => envelope(beforeRace.revision.id, [{ toolId: 'studio.dessin.deplacer', params: { id: line.id, dx, dy: 0 } }]));
+    const raced = await Promise.all(distinctRequests.map((body) => api(owner, 'post', path, body)));
+    check('two distinct concurrent commands on one base yield exactly one success and one conflict', () => assert.deepEqual(raced.map((r) => r.status).sort(), [200, 409]));
+    const winner = raced.findIndex((r) => r.status === 200);
+    const won = raced[winner].body;
+    const afterRace = await getState(owner, s);
+    check('concurrent distinct requests apply only the winning translation', () => {
+      const moved = afterRace.revision.document.objects.find((x) => x.id === line.id);
+      const dx = distinctRequests[winner].commands[0].params.dx;
+      assert.equal(afterRace.revision.id, won.revision.id);
+      assert.equal(afterRace.revision.parentRevisionId, beforeRace.revision.id);
+      assert.deepEqual(moved.start, { x: raceLine.start.x + dx, y: raceLine.start.y });
+      assert.deepEqual(moved.end, { x: raceLine.end.x + dx, y: raceLine.end.y });
+    });
+    const shared = envelope(afterRace.revision.id, [{ toolId: 'studio.dessin.deplacer', params: { id: line.id, dx: 4, dy: 0 } }]);
+    const duplicates = await Promise.all([api(owner, 'post', path, shared), api(owner, 'post', path, shared)]);
+    check('two parallel identical envelopes are accepted once and replayed once', () => {
+      assert.deepEqual(duplicates.map((r) => r.status), [200, 200]);
+      assert.deepEqual(duplicates.map((r) => r.body.replayed).sort(), [false, true]);
+      assert.equal(duplicates[0].body.revision.id, duplicates[1].body.revision.id);
+    });
+    const afterDuplicates = await getState(owner, s);
+    check('parallel replay advances one revision and translates geometry once', () => {
+      const oldLine = afterRace.revision.document.objects.find((x) => x.id === line.id);
+      const moved = afterDuplicates.revision.document.objects.find((x) => x.id === line.id);
+      assert.equal(afterDuplicates.revision.id, duplicates[0].body.revision.id);
+      assert.equal(afterDuplicates.revision.parentRevisionId, afterRace.revision.id);
+      assert.deepEqual(moved.start, { x: oldLine.start.x + 4, y: oldLine.start.y });
+      assert.deepEqual(moved.end, { x: oldLine.end.x + 4, y: oldLine.end.y });
+    });
+    const replayAgain = await api(owner, 'post', path, shared);
+    check('parallel envelope replay remains the same durable result', () => { assert.equal(replayAgain.status, 200); assert.equal(replayAgain.body.replayed, true); assert.equal(replayAgain.body.revision.id, afterDuplicates.revision.id); });
+    await unchanged(owner, s, afterDuplicates, 'head remains unchanged after replay of the concurrent envelope');
+    const historical = await api(owner, 'get', `${variantPath(s)}/revisions/${initial.revision.id}`);
+    check('old revision stays intact and read-only after concurrent commands', () => {
+      assert.equal(historical.status, 200);
+      assert.equal(historical.body.canWrite, false);
+      assert.deepEqual(historical.body.revision, initial.revision);
+      assert.equal(historical.body.variant.headRevisionId, afterDuplicates.revision.id);
+    });
     s.expected = await getState(owner, s);
     writeFileSync(statePath, JSON.stringify(s), { mode: 0o600 });
     await owner.close();
