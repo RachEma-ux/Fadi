@@ -75,7 +75,7 @@ export function checkModuleDependencies(root = DEFAULT_ROOT) {
     return { moduleResolution: ts.ModuleResolutionKind.Bundler, module: ts.ModuleKind.ESNext, allowJs: true };
   }
   function resolveFile(spec, file, unit) {
-    const clean = spec.split(/[?#]/)[0];
+    const clean = spec.startsWith('#') ? spec : spec.split(/[?#]/)[0];
     const result = ts.resolveModuleName(clean, file, options(file, unit), ts.sys).resolvedModule;
     let target = result?.resolvedFileName;
     if (!target && (clean.startsWith('.') || path.isAbsolute(clean))) {
@@ -96,7 +96,7 @@ export function checkModuleDependencies(root = DEFAULT_ROOT) {
     importsChecked++;
     if (/^(?:https?:|data:|file:)/i.test(spec)) { fail(file, 'REMOTE_IMPORT', spec); return; }
     const target = resolveFile(spec, file, unit);
-    const peer = target ? owner(target) : null;
+    const peer = target && !target.includes(path.sep + 'node_modules' + path.sep) ? owner(target) : null;
     if (target && target.includes(path.sep + 'node_modules' + path.sep) && !peer) {
       // Paquet tiers : son contenu transitoire n'est pas analysé par ce contrôle de frontières.
     } else if (target && !inside(root, target)) {

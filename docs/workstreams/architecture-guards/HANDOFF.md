@@ -4,19 +4,19 @@ Mis à jour : 2026-10-18 (UTC).
 
 ## Point de reprise
 
-Issue #151, branche `fix/151-native-architecture-guards`, base `5cf61d1fed9ed523b331228af20bce93a4f2bf63`. Lire STATUS et la PR rattachée avant toute suite ; ne pas utiliser les résultats de l’ancienne PR #148 comme CI de L1.
+Issue #151, PR #152, branche `fix/151-native-architecture-guards`, base `5cf61d1fed9ed523b331228af20bce93a4f2bf63`. Lire STATUS et vérifier le dernier HEAD avant toute suite.
 
 ## Dernier état vérifié
 
-Garde-fous et 49 tests locaux sur fixtures implémentés et passés. main reste non protégée selon l’API ; l’administration renvoie 403. Le workflow dédié doit maintenant vérifier le dépôt réel.
+52 tests locaux sur fixtures réussis. Premier run GitHub 39082923421 réussi sur le HEAD initial 14f040731e8421fa578d3a42eb504f8824690ffd : 49 tests et contrôles du dépôt réel (654 fichiers, 3706 imports ; isolation 772 fichiers). Des tests complémentaires et corrections du classement des dépendances non hissées/alias # ont été ajoutés ensuite : revalider leur HEAD. main reste non protégée ; administration 403.
 
 ## Prochaine action
 
-Lire les résultats des nouveaux workflows sur le HEAD exact, analyser leurs éventuels échecs et compléter le checkpoint dans la PR. Demander la revue avant fusion ; aucune opération sur Fadi-Serv. La protection administrative est séparée (#146).
+Lire les nouveaux workflows sur le HEAD exact, analyser leurs éventuels échecs et enregistrer le résultat dans la PR. Demander la revue avant fusion ; aucune opération sur Fadi-Serv. Protection administrative séparée dans #146.
 
 ## Tests et preuves
 
-`node --check` sur les scripts ; `node --test scripts/architecture-guards.test.mjs` : 49/49 localement, Node 22.16.0 et TypeScript 5.8.3. Pas de npm test/build/typecheck complet local : clone complet indisponible ; ces contrôles doivent être prouvés par GitHub Actions sur le HEAD.
+`node --check` sur les scripts ; `node --test scripts/architecture-guards*.test.mjs` : 52/52 localement, Node 22.16.0 et TypeScript 5.8.3. Résultats du premier run réel consignés dans STATUS. Pas de npm test/build/typecheck complet local : ces contrôles doivent être prouvés par GitHub Actions sur le dernier HEAD.
 
 ## Risques et blocages
 
@@ -24,4 +24,4 @@ Une analyse statique bornée ne certifie ni tous les actifs/transitifs ni l’in
 
 ## Arrêt sûr
 
-Pousser la branche et sa PR avec ces deux checkpoints, sans toucher main ni la production. Le canal SSH permanent reste différé. Aucun détail privé ni sauvegarde utilisateur à publier.
+Conserver la branche et la PR avec checkpoints, sans toucher main ni la production. Canal SSH permanent différé. Aucun détail privé ni sauvegarde utilisateur à publier.
