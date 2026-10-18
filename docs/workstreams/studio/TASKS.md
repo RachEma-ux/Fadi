@@ -10,6 +10,8 @@
 
 ## En cours
 
+- STUDIO-V1 — [PR #181](https://github.com/RachEma-ux/Fadi/pull/181) : parcours 2D persistant vérifié par recette réelle ; validation personnelle en attente. Voir STATUS/HANDOFF ; aucune clôture globale des missions ou cases source.
+
 | Sous-tâche | Propriétaire / état | Suite exacte |
 |---|---|---|
 | M08,125 entrées | A2/A4 analyses, A1/A3/A5 revues, A0 consolidation — En cours | Terminer les revues restantes des125 analyses, conserver chaque ID et les limites |
