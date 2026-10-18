@@ -170,7 +170,7 @@ try {
 
   // Révision passée : lecture seule par ?revision=, aucun enregistrement possible, retour à la version courante.
   const ancienne = revisions.revisions[1].id;
-  await historique.nth(1).getByRole("link").click();
+  await historique.nth(1).locator("a:not([data-studio-comparer-tete])").click();
   await page.waitForURL(`${BASE}/studio/projets/${pA.id}/etudes/${studyId}/variantes/${variantId}?revision=${encodeURIComponent(ancienne)}`);
   await page.locator("[data-studio-lecture-seule-revision]").waitFor();
   check("révision passée : document d'origine (vide), lecture seule, enregistrement désactivé", (await page.locator('svg [role="button"]').count()) === 0 && (await outils.getByRole("button", { name: "Enregistrer", exact: true }).isDisabled()));
