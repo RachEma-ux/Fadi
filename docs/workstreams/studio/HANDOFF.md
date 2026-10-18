@@ -8,7 +8,7 @@ Reprendre [PR #181](https://github.com/RachEma-ux/Fadi/pull/181), branche `feat/
 
 ## Dernier état vérifié
 
-Au code `754382d97107e5a60cb4376050f45dfbf52ee72c`, recette sur PostGIS neuf : 44 contrôles initiaux, 5 après redémarrage API/DB sur le même volume et 3 de non-régression réussis. Révision et géométrie exactes conservées ; conflits, permissions et rejeux vérifiés. Les changements suivants concernent la CI et ce checkpoint. Acceptation utilisateur non acquise.
+Au code `3b7fb25d2ae8f78682c09cad5b935f0937dae4a5`, recette sur PostGIS neuf : 44 contrôles initiaux, 5 après redémarrage API/DB sur le même volume et 3 de non-régression réussis. Révision et géométrie exactes conservées ; conflits, permissions et rejeux vérifiés. Le profil neuf corrigé a été exercé intégralement ; les changements suivants concernent ce checkpoint et une fin de fichier de recette, sans changement de comportement applicatif. Acceptation utilisateur non acquise.
 
 ## Prochaine action
 

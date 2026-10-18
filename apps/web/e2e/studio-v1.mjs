@@ -310,4 +310,3 @@ async function exerciseStudioUI(page, projectId) {
   await page.screenshot({ path: resolve(OUT, 'studio-initial-reloaded.png') });
   return { lineId, rectangleId };
 }
-

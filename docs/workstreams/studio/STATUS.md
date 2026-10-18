@@ -10,7 +10,7 @@ La priorité est fonctionnelle : Fadi → Studio → projet autorisé → étude
 
 ## Faits vérifiés
 
-- Recette réelle au [code 754382d](https://github.com/RachEma-ux/Fadi/commit/754382d97107e5a60cb4376050f45dfbf52ee72c) : **44 contrôles initiaux + 5 après redémarrage API/PostgreSQL + 3 de non-régression réussis**. Même document et même révision après redémarrage sur le même volume ; refus 401/403/404/409/400, concurrence, rejeu idempotent et instantané historique vérifiés. Ce sont des contrôles de recette, pas 52 fonctionnalités acceptées.
+- Recette réelle au [code 3b7fb25](https://github.com/RachEma-ux/Fadi/commit/3b7fb25d2ae8f78682c09cad5b935f0937dae4a5) : **44 contrôles initiaux + 5 après redémarrage API/PostgreSQL + 3 de non-régression réussis**. Même document et même révision après redémarrage sur le même volume ; refus 401/403/404/409/400, concurrence, rejeu idempotent et instantané historique vérifiés. Ce sont des contrôles de recette, pas 52 fonctionnalités acceptées.
 - UI réellement exercée : tracé à deux clics, rectangle numérique, sélection clavier, édition/déplacement, confirmation serveur, nouvelle session, mobile FR/EN. Le niveau Atelier est réellement persisté et son interface synchronisée ; Parcours conserve ses 21 étapes. Revues indépendantes A2/A5 favorables, captures inspectées par A5.
 - TypeScript et builds réussis ; suites pures/web **1 691 tests réussis, un ignoré**, garde DB/orchestrateur **138 tests simulés réussis**. La suite API historique avec remise à zéro de base n'a pas été exécutée ; DB3 reste distinct.
 - Profil local : PostgreSQL16/PostGIS3.4 neuf, rôle applicatif non administrateur, Node24/Chromium154. Identité/labels/volume/repère/endpoint vérifiés avant connexion ; reprise après changement de port Docker contrôlée. Secrets et état des comptes de recette hors Git. Les artifacts CI sont limités aux rapports expurgés et captures synthétiques.
@@ -18,7 +18,7 @@ La priorité est fonctionnelle : Fadi → Studio → projet autorisé → étude
 
 ## Points ouverts
 
-**Coordination d’intégration nouvelle :** #178/#179/#180 ont été créées en parallèle après le démarrage autorisé de ce lot. Elles proposent navigation/études/variantes avec tables et routes différentes de #181. Ne pas fusionner cumulativement deux hiérarchies Studio. A2 qualifie seulement le raccord de code ; arbitrage de socle dans #166, sans bloquer la CI ni les preuves #181.
+**Coordination d’intégration nouvelle :** #178/#179/#180 ont été créées en parallèle après le démarrage autorisé de ce lot. Elles proposent navigation/études/variantes avec tables et routes différentes de #181. Ne pas fusionner cumulativement deux hiérarchies Studio. A2 qualifie seulement le raccord de code ; [arbitrage Q-STUDIO-SINGLE-SOURCE-01](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6252110312), sans bloquer la CI ni les preuves #181.
 
 La validation personnelle et l'accès distant à la démo ne sont pas acquis. L'application locale est conservée sur la boucle locale du Cloud ; aucun tunnel public n'a été ouvert. Le périmètre suivant (2D pilote complet, 3D, association, Tool Manager, approbation/publication) n'est pas livré par cette tranche. Les preuves de ce lot ne ratifient pas les portes globales G1–G4 ni le MVP complet.
 
