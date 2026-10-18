@@ -1,0 +1,1261 @@
+{
+  "observed_at": "2026-10-18 14:23:26 UTC",
+  "method": "GET GitHub branches/main, pulls/{172,169,171}, commits/{sha}/check-runs?per_page=100; une observation bornée, aucun rerun",
+  "main": {
+    "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+    "protected": false
+  },
+  "prs": [
+    {
+      "number": 172,
+      "state": "open",
+      "draft": true,
+      "head_sha": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "base_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "merged": false
+    },
+    {
+      "number": 169,
+      "state": "open",
+      "draft": true,
+      "head_sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "base_sha": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "merged": false
+    },
+    {
+      "number": 171,
+      "state": "open",
+      "draft": true,
+      "head_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "base_sha": "a4caaab0e6665480f09febe3914c960b424b6b47",
+      "merged": false
+    }
+  ],
+  "checks": [
+    {
+      "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "total_count": 7,
+      "checks": [
+        {
+          "id": 117690746150,
+          "name": "Mission 004 — documentation sans base (intégration non exécutée)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "head_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39132634345/job/117690746150"
+        },
+        {
+          "id": 117690745390,
+          "name": "Continuité — docs, checkpoints et tests",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39132634427/job/117690745390"
+        },
+        {
+          "id": 117690745230,
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39132634345/job/117690745230"
+        },
+        {
+          "id": 117690745208,
+          "name": "e2e",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39132634345/job/117690745208"
+        },
+        {
+          "id": 117690745135,
+          "name": "Codex — 31 missions et 630 tâches",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39132634373/job/117690745135"
+        },
+        {
+          "id": 117690745102,
+          "name": "no-foreign-app-reference",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39132634386/job/117690745102"
+        },
+        {
+          "id": 117690745060,
+          "name": "image",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39132634345/job/117690745060"
+        }
+      ]
+    },
+    {
+      "sha": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+      "total_count": 7,
+      "checks": [
+        {
+          "id": 117696760250,
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "skipped",
+          "head_sha": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39134707994/job/117696760250"
+        },
+        {
+          "id": 117696760112,
+          "name": "image",
+          "status": "completed",
+          "conclusion": "skipped",
+          "head_sha": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39134707994/job/117696760112"
+        },
+        {
+          "id": 117696759887,
+          "name": "e2e",
+          "status": "completed",
+          "conclusion": "skipped",
+          "head_sha": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39134707994/job/117696759887"
+        },
+        {
+          "id": 117696758630,
+          "name": "Codex — 31 missions et 630 tâches",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39134708017/job/117696758630"
+        },
+        {
+          "id": 117696758628,
+          "name": "Continuité — docs, checkpoints et tests",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39134707960/job/117696758628"
+        },
+        {
+          "id": 117696758601,
+          "name": "Mission 004 — documentation sans base (intégration non exécutée)",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39134707994/job/117696758601"
+        },
+        {
+          "id": 117696758538,
+          "name": "no-foreign-app-reference",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39134708025/job/117696758538"
+        }
+      ]
+    },
+    {
+      "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "total_count": 6,
+      "checks": [
+        {
+          "id": 117671024069,
+          "name": "no-foreign-app-reference",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959914/job/117671024069"
+        },
+        {
+          "id": 117671024060,
+          "name": "e2e",
+          "status": "completed",
+          "conclusion": "skipped",
+          "head_sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959694/job/117671024060"
+        },
+        {
+          "id": 117671023934,
+          "name": "image",
+          "status": "completed",
+          "conclusion": "skipped",
+          "head_sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959694/job/117671023934"
+        },
+        {
+          "id": 117671023828,
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "skipped",
+          "head_sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959694/job/117671023828"
+        },
+        {
+          "id": 117671023058,
+          "name": "Continuité — docs, checkpoints et tests",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959712/job/117671023058"
+        },
+        {
+          "id": 117671022920,
+          "name": "DB1/2 — tests simulés sans base (DB3 non validée)",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39125959694/job/117671022920"
+        }
+      ]
+    },
+    {
+      "sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "total_count": 6,
+      "checks": [
+        {
+          "id": 117684236645,
+          "name": "validate",
+          "status": "completed",
+          "conclusion": "skipped",
+          "head_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39130408506/job/117684236645"
+        },
+        {
+          "id": 117684236606,
+          "name": "image",
+          "status": "completed",
+          "conclusion": "skipped",
+          "head_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39130408506/job/117684236606"
+        },
+        {
+          "id": 117684236342,
+          "name": "e2e",
+          "status": "completed",
+          "conclusion": "skipped",
+          "head_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39130408506/job/117684236342"
+        },
+        {
+          "id": 117684235596,
+          "name": "Continuité — docs, checkpoints et tests",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39130408553/job/117684235596"
+        },
+        {
+          "id": 117684235591,
+          "name": "no-foreign-app-reference",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39130408504/job/117684235591"
+        },
+        {
+          "id": 117684235447,
+          "name": "Classification — modèle pur sans base (intégration non exécutée)",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+          "details_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39130408506/job/117684235447"
+        }
+      ]
+    }
+  ],
+  "scope": "Matrice finie de reprise documentaire des 42 IDs ; aucun gate ni opération technique exécuté.",
+  "reused_qualification": {
+    "path": "203-QUALIFICATION-A6.json",
+    "sha256": "6f44ddbe820ca355850bb0d804e2fd502a6f78def26869a7b1d95e46fb7ebc47",
+    "counts_proposed": {
+      "À faire": 34,
+      "En cours": 3,
+      "À définir": 5
+    },
+    "canonical_register_status": "À définir pour les 42 à la dernière lecture locale ; propositions distinctes, aucune mutation ici"
+  },
+  "finite_next_actions": [
+    {
+      "id": "G4-01",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Index de livraison immuable par build/SHA/contrats/corpus/pièces et journal de réserves",
+      "missing": "Build candidat, résultats M24/M26/M27 et recette humaine non disponibles",
+      "dependencies": [
+        "M24:dossier métier candidat",
+        "M26:recettes applicables",
+        "M27:restauration prouvée",
+        "M00:acceptation G4 et déploiement distinct"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Chaque scénario A/B/C pointe son résultat exact ; recette utilisateur et procédure exploitation sont deux pièces distinctes",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "G4-02",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Grille éliminatoire versionnée associée au build candidat",
+      "missing": "Périmètre final, critères applicables et résultats futurs inconnus",
+      "dependencies": [
+        "M24:dossier métier candidat",
+        "M26:recettes applicables",
+        "M27:restauration prouvée",
+        "M00:acceptation G4 et déploiement distinct"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Toute condition non testée/échouée reste visible ; absence défaut ne se déduit pas du taux global ni de CI",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "G4-03",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Deux décisions signées distinctes : acceptation produit et autorisation de déploiement",
+      "missing": "Décideurs habilités et leurs décisions effectives non fournis",
+      "dependencies": [
+        "M24:dossier métier candidat",
+        "M26:recettes applicables",
+        "M27:restauration prouvée",
+        "M00:acceptation G4 et déploiement distinct"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Chaque décision cite acteur habilité, date, SHA/périmètre/réserves ; aucune autorisation implicite depuis une CI",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "D.1-01",
+      "proposed_status": "En cours",
+      "existing_deliverable": "Table classes de jobs interactif/calcul/export/indexation et règles de priorité à ratifier",
+      "missing": "Ordre définitif et protocole équité/anti-famine à arbitrer",
+      "dependencies": [
+        "M17/M20:job et révision",
+        "M21:chargement",
+        "M15:instrumentation",
+        "M14:DEC-11/13 applicables"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-D.md"
+      ],
+      "trigger": "Revue documentaire A0/A2/A5 du contrat existant ; toute implémentation nécessite mandat applicable",
+      "acceptance_oracle": "Chaque classe possède domaine/source/annulation et politique explicite ; pas priorité chiffrée ni worker par cœur présumé",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "D.1-02",
+      "proposed_status": "À définir",
+      "existing_deliverable": "Fiche de choix des quotas : scénarios de charge et budgets de mesure à recevoir",
+      "missing": "Concurrence et budgets DEC11/13 non décidés",
+      "dependencies": [
+        "M17/M20:job et révision",
+        "M21:chargement",
+        "M15:instrumentation",
+        "M14:DEC-11/13 applicables"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-D.md"
+      ],
+      "trigger": "Arbitrage documentaire A0/A2/A5 sur les entrées manquantes ; aucune valeur inventée",
+      "acceptance_oracle": "Quota seulement après corpus/matériel/versions/mesure et décision ; aucune valeur par défaut inventée",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "D.1-03",
+      "proposed_status": "En cours",
+      "existing_deliverable": "Contrat jobId/attempt/sourceRevisionSet/inputFingerprint/états et éligibilité commit",
+      "missing": "Représentation physique/canonicalisation et journal runtime à ratifier",
+      "dependencies": [
+        "M17/M20:job et révision",
+        "M21:chargement",
+        "M15:instrumentation",
+        "M14:DEC-11/13 applicables"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-D.md"
+      ],
+      "trigger": "Revue documentaire A0/A2/A5 du contrat existant ; toute implémentation nécessite mandat applicable",
+      "acceptance_oracle": "Ancienne source/tentative ou mauvais droit refuse sans effet ; completed ne signifie pas appliqué",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "D.2-04",
+      "proposed_status": "En cours",
+      "existing_deliverable": "Protocole crash→rejet pending→nouvelle génération→revalidation avant retry",
+      "missing": "Mécanisme concret de redémarrage non implémenté ni autorisé",
+      "dependencies": [
+        "M17/M20:job et révision",
+        "M21:chargement",
+        "M15:instrumentation",
+        "M14:DEC-11/13 applicables"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-D.md"
+      ],
+      "trigger": "Revue documentaire A0/A2/A5 du contrat existant ; toute implémentation nécessite mandat applicable",
+      "acceptance_oracle": "Chaque attente se termine explicitement ; ancien worker ne peut engager ; rejeu même intention sans doublon",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "D.3-01",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Table ownership buffers et scénarios de transfert/détachement",
+      "missing": "Implémentation et essais de transfert non réalisés",
+      "dependencies": [
+        "M17/M20:job et révision",
+        "M21:chargement",
+        "M15:instrumentation",
+        "M14:DEC-11/13 applicables"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-D.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Producteur ne réutilise pas buffer transféré ; messages validés ; résultat annulé ne remonte pas comme état courant",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "D.3-02",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Inventaire lifecycle des ressources GPU/WASM et événements de libération",
+      "missing": "Mesures GPU/WASM et stratégie concrète non disponibles",
+      "dependencies": [
+        "M17/M20:job et révision",
+        "M21:chargement",
+        "M15:instrumentation",
+        "M14:DEC-11/13 applicables"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-D.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Créer/charger/garder/détruire corrélés par job/génération ; pas moteur par outil ni cache traité comme canonique",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "D.3-03",
+      "proposed_status": "À définir",
+      "existing_deliverable": "Protocole mémoire résiduelle longue session : corpus, matériel, versions et répétitions à arrêter",
+      "missing": "Durée, corpus de charge et métriques de référence à cadrer ; aucune mesure exécutée",
+      "dependencies": [
+        "M17/M20:job et révision",
+        "M21:chargement",
+        "M15:instrumentation",
+        "M14:DEC-11/13 applicables"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-D.md"
+      ],
+      "trigger": "Arbitrage documentaire A0/A2/A5 sur les entrées manquantes ; aucune valeur inventée",
+      "acceptance_oracle": "Distinguer WASM alloué/résident/GPU et effet cache ; ne pas publier une mesure ou seuil absent",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "D.3-04",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Matrice réutilisation instance versus recréation par usage",
+      "missing": "Preuves de gain/mémoire et décision réutilisation non acquises",
+      "dependencies": [
+        "M17/M20:job et révision",
+        "M21:chargement",
+        "M15:instrumentation",
+        "M14:DEC-11/13 applicables"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-D.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Comparer isolation/état/versions/coûts sans présumer optimum ; conserver résultat avant choix",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "R.1-01",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Manifeste de candidat build/SHA/schéma/contrats/périmètre et empreintes pièces",
+      "missing": "Build/perimètre de livraison non choisi",
+      "dependencies": [
+        "M24:dossier métier candidat",
+        "M26:recettes applicables",
+        "M27:restauration prouvée",
+        "M00:acceptation G4 et déploiement distinct"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Références exactes sans latest ; modifications après gel créent nouveau candidat",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "R.1-02",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Matrice avant/après par propriété/ID/unité/relation sur copie isolée",
+      "missing": "Migration et cible de validation non autorisées ; corpus réel non fourni",
+      "dependencies": [
+        "M24:dossier métier candidat",
+        "M26:recettes applicables",
+        "M27:restauration prouvée",
+        "M00:acceptation G4 et déploiement distinct"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Comparer aussi historiques/associations/droits, pas seules quantités ou captures",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "R.1-03",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Rapport différentiel avec anomalies/owner/décision/point de reprise",
+      "missing": "Résultats avant/après futurs inexistants",
+      "dependencies": [
+        "M24:dossier métier candidat",
+        "M26:recettes applicables",
+        "M27:restauration prouvée",
+        "M00:acceptation G4 et déploiement distinct"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Toute perte ou ambiguïté reste explicite ; pas passage bascule par pourcentage global",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "R.2-02",
+      "proposed_status": "À faire",
+      "existing_deliverable": "PV de restauration complète sur cible autorisée avant ouverture",
+      "missing": "Restauration réelle et environnement dédiés non autorisés",
+      "dependencies": [
+        "M24:dossier métier candidat",
+        "M26:recettes applicables",
+        "M27:restauration prouvée",
+        "M00:acceptation G4 et déploiement distinct"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Modèles+pièces+manifestes+droits/associations vérifiés par identités/hashes, pas simple dump présent",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "R.5-02",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Dossier sauvegarde post-acceptation distincte du point préalable",
+      "missing": "Acceptation/déploiement et nouvelle sauvegarde Studio non faits",
+      "dependencies": [
+        "M24:dossier métier candidat",
+        "M26:recettes applicables",
+        "M27:restauration prouvée",
+        "M00:acceptation G4 et déploiement distinct"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Lier nouvel état accepté, horodatage/identité archive et contrôles ; preuve future, pas réemploi snapshot ancien",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "MIG-01",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Schéma inventaire projets/objets/formes/unités/niveaux avec provenance",
+      "missing": "Accès données réelles non autorisé, inventaire réel non fourni",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Chaque objet et repère possède identité/version ; valeurs inconnues non devinées",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "MIG-02",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Inventaire graphe associations/cotes/composants et références topologiques",
+      "missing": "Graphe réel et topologie après transformations non disponibles",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Relations ambiguës signalées, conservation hôtes/cibles/versions, pas rattachement par proximité",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "MIG-03",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Inventaire journaux/profils/queue locale et request-results",
+      "missing": "Données historiques et queues utilisateurs non lues",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Distinguer pending/confirmé/rejeté/conflit ; aucune purge assimilée à migration",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "MIG-04",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Inventaire références externes/publications et toutes pièces/version/empreinte",
+      "missing": "Pièces/rights et références réelles non accessibles dans mandat",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Pas substitution latest ni omission d’une restriction/ressource manquante",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "MIG-05",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Taxonomie compatible/convertible/ambigu/non convertible avec motif et preuve",
+      "missing": "Corpus réel et transformations physiques non décidés",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Classer par contrat/version/champ ; absence de convertisseur ne signifie pas objet supprimable",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "MIG-06",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Contrat corpus avant quantités/propriétés expurgé ou synthétique, avec provenance",
+      "missing": "Accès/choix corpus et règles chiffrées non fournis",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Aucune donnée client en dépôt public ; unités/règles/source et empreintes identifiables",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "MIG-07",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Table correspondance anciennes/nouvelles identités et filiation par transformation",
+      "missing": "Choix physiques DEC01/02/03/18 et transformations non ratifiés",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Aucun ID réutilisé ambigu ; mapping bijectif ou split/merge explicite et vérifié",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "MIG-08",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Registre pertes/ambiguïtés/conservation/instruction/accord",
+      "missing": "Aucune simulation réelle et aucun accord de perte enregistré",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Chaque champ non restitué porte motif, source et décision ; zéro perte silencieuse",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "MIG-09",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Politique conservation/quarantaine objets non convertibles",
+      "missing": "Formats/lecteurs et stockage de récupération à définir",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Objets source et provenance conservés en lecture bornée, état incomplet visible ; pas suppression pour taux de succès",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "MIG-10",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Rapport résultats par objet/autorité/champ, incluant erreurs partielles",
+      "missing": "Résultats de migration non exécutés",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Global success interdit si obligatoire incomplet ; compteurs ne masquent pas les pertes",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "MIG-COEX-01",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Dossier de première répétition sur copie isolée attestée",
+      "missing": "Préproduction/copie/autorisation absentes",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Aucune cible productive ; garde M02/DB3 et accord migration séparé avant exécution",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "MIG-COEX-02",
+      "proposed_status": "À définir",
+      "existing_deliverable": "Dossier alternatives continuité IDs versus mapping, impacts et choix à soumettre",
+      "missing": "Décision physique des identités ouverte",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Arbitrage documentaire A0/A2/A5 sur les entrées manquantes ; aucune valeur inventée",
+      "acceptance_oracle": "Décision explicite par périmètre sur contraintes DEC01/02/03/18, pas héritage silencieux des variantes-projets",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "MIG-COEX-03",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Index immuable publication→manifeste→pièces originales",
+      "missing": "Restauration pièces et test réel non réalisés",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Même ID/version/hash/pièce après migration ; indisponibilité explicite sans remplacement silencieux",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "MIG-COEX-04",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Protocole queue pendante synchronisée/migrée/résolution avant bascule",
+      "missing": "Queues réelles non accessibles et format de migration non décidé",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Même contexte/requestId/contrat conservé ; lostACK interrogé ; aucune suppression/rejeu double",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "MIG-COEX-05",
+      "proposed_status": "À définir",
+      "existing_deliverable": "Dossier transfert writerAuthority par objet/variante et conditions de bascule",
+      "missing": "Contrat physique et décision de transfert Atelier/Studio ouverts",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Arbitrage documentaire A0/A2/A5 sur les entrées manquantes ; aucune valeur inventée",
+      "acceptance_oracle": "Un seul writer, changement epoch explicite, requêtes anciennes refusées ; acceptation sur périmètre identifié",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "MIG-COEX-06",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Table droits écriture/lecture par ancien/nouveau client et état de coexistence",
+      "missing": "Mécanisme de coexistence et essais concurrents non réalisés",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Deux surfaces ne donnent pas deux écrivains ; historique reste accessible selon droits",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "MIG-COEX-07",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Périmètre futur de retrait routes/écrans/stocks séparé du lot I",
+      "missing": "Aucun retrait autorisé ni route désignée pour suppression",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Aucun retrait depuis la simple entrée Studio ; dépendances et retour de consultation tracés",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "OPS-01",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Chaîne bascule→build/schéma/migrations/backup exacts et journal d’actes",
+      "missing": "Bascule Studio et références d’exploitation futures absentes",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Aucune référence flottante ; pré/post-acceptation distingués ; sources et permissions archivées sans secret",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "OPS-02",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Runbook déclencheurs techniques/métier et décideur du rollback",
+      "missing": "Responsable humain habilité et valeurs de seuil non attribués",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Déclencheur mène à constat et décision datée, pas action automatique de destruction",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "OPS-03",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Stratégie préservation/rejeu/résolution nouvelles écritures après bascule",
+      "missing": "Écritures réelles et choix de récupération non connus",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Ancien backup ne remplace pas R12/R13 ; garder queue et événements ; accord explicite avant perte/bascule",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "OPS-04",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Matrice compatibilité anciens clients/build/toolContract/schema et refus",
+      "missing": "Versions clients à maintenir et mécanisme d’upgrade non décidés",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Client ancien reçoit refus/lecture bornée selon contrat ; aucune mutation sur mauvaise version",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "OPS-05",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Protocole upgrade SW conservant queue non synchronisée et son contexte",
+      "missing": "Essais SW et stockage réel non autorisés/exécutés",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Cache évictable distinct queue métier ; aucun nettoyage IndexedDB pour obtenir succès",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "OPS-06",
+      "proposed_status": "À faire",
+      "existing_deliverable": "PV restauration avant ouverture avec modèles et pièces de publication",
+      "missing": "Sauvegarde/cible/accord restauration à obtenir",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Restauration isolée vérifie identités/hashes/droits/associations ; cache reconstruit non autoritaire",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "OPS-07",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Plan recette post-déploiement A/B/C et accès/publications, distinct accord produit",
+      "missing": "Aucun déploiement autorisé, pilote non livré",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Les trois parcours aboutissent ; URL/permissions/publication exacte vérifiées ; réserves et validation humaine tracées",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "OPS-08",
+      "proposed_status": "À faire",
+      "existing_deliverable": "Plan observabilité post-déploiement jobs/workers/WASM/GPU et incidents",
+      "missing": "Déploiement, métriques réelles, règles alertes et seuils non définis",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Réception des dépendances et autorisation propre au gate/opération ; préparation de son dossier seulement avant cela",
+      "acceptance_oracle": "Latence/mémoire/erreurs corrélées sans données géométriques/secrets ; alertes et absence de preuve distinguées",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    },
+    {
+      "id": "OPS-09",
+      "proposed_status": "À définir",
+      "existing_deliverable": "Fiche objectifs RPO/RTO/conservation/coûts à faire décider",
+      "missing": "Objectifs et décideur réellement habilité non fournis",
+      "dependencies": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "reuse": [
+        "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+        "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+        "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+        "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md"
+      ],
+      "trigger": "Arbitrage documentaire A0/A2/A5 sur les entrées manquantes ; aucune valeur inventée",
+      "acceptance_oracle": "Valeurs/auteur/date/portée/justification explicitement obtenus ; aucun timer/rétention changé par défaut",
+      "next_permitted_now": "Compléter les références et faire revoir le critère existant, sans créer de registre concurrent ni de fausse preuve",
+      "runtime_execution": false
+    }
+  ],
+  "resumption_operations": [
+    {
+      "operation": "Reprise documentaire A0",
+      "authorized_now": true,
+      "sequence": [
+        "Relire décisions #166 et checkpoints au SHA courant",
+        "Revalider head/base exacts et diff documentaire complet",
+        "Intégrer les propositions par ID dans le registre existant après revue, conserver les inconnues",
+        "Contrôles documentaires purs autorisés puis checkpoint STATUS/HANDOFF"
+      ],
+      "limit": "A6 ne modifie pas les fichiers partagés ; aucune réalisation ni acceptation déduite de la qualification"
+    },
+    {
+      "operation": "Protection GitHub #146/#152",
+      "authorized_now": false,
+      "trigger": "Accord administratif explicite et validation du candidat existant, profil solo D05 et ordre de revue D06 conservés",
+      "sequence": [
+        "Réconcilier les noms et routes de checks des trois PR",
+        "Vérifier required checks réellement présents et limites des skips",
+        "Préparer recette puis faire appliquer uniquement sous mandat administratif"
+      ],
+      "limit": "main protected=false ; aucune activation ici"
+    },
+    {
+      "operation": "DB3/services/migration/restauration",
+      "authorized_now": false,
+      "trigger": "Autorisation distincte, cible jetable attestée, garde validée et plan borné ; restauration et migrations autorisées séparément",
+      "sequence": [
+        "Identifier cible/autorité/SHA et périmètre",
+        "Établir critères de refus et arrêt avant connexion",
+        "Faire approuver les opérations exactes avant toute exécution"
+      ],
+      "limit": "Aucune connexion DB ni démarrage ; aucun RPO/RTO/quota/rétention inventé"
+    },
+    {
+      "operation": "Fusion ou push main",
+      "authorized_now": false,
+      "trigger": "Autorisation de fusion distincte et disponibilité explicitement autorisée de la CI intégrale",
+      "sequence": [
+        "Revue et réconciliation des workflows immuables",
+        "Simuler les tuples positifs et négatifs",
+        "Vérifier que push main rend les jobs DB éligibles ; ne pas le déclencher ici"
+      ],
+      "limit": "Succès des jobs purs ne valide ni DB3 ni API/E2E/migration ni métier"
+    },
+    {
+      "operation": "G2/worker/mesures longues/migration/coexistence/G4",
+      "authorized_now": false,
+      "trigger": "Porte et mandat applicables, données/corpus/budgets/décideurs manquants fournis",
+      "sequence": [
+        "Réutiliser les contrats M23/M27 et LOT-D/R existants",
+        "Faire accepter les préconditions propres à chaque ID",
+        "Conserver non testés les résultats non exécutés"
+      ],
+      "limit": "Pas de nouveau POC ou gate par cette matrice"
+    }
+  ],
+  "evidence_semantics": {
+    "newly_attested": "Métadonnées GitHub et conclusions des check-runs exacts seulement ; aucun log de test relu dans cette étape",
+    "previously_attested": "129 tests purs DB1/2 et 492 tests purs classification : preuves antérieures dédiées aux SHAs a15 et 5e ; aucun nouveau test ici",
+    "declared_not_attested_here": "Contenus métier des tests, 1757/47/3 historiques, conformité Studio, restaurations et migrations",
+    "main_external": "CI main817 observée completed/success pour validate/image/e2e ; exécution externe, pas lancée par A6, ne vaut pas autorisation DB locale ni validation métier",
+    "pr172": "Job documentaire pur success ; validate/e2e/image skipped. Pas CI intégrale ni contrôle métier."
+  },
+  "ready_residual_conclusion": "La suite documentaire indépendante est la revue/intégration du dossier existant et la résolution des cinq entrées encore À définir. Les 34 futurs gates ne deviennent pas exécutables. Cette matrice clôt le recensement A6 borné sans dupliquer M23/M27.",
+  "mutations": {
+    "scratch_files_only": true,
+    "source_or_workflow_changes": false,
+    "github_writes": false,
+    "tests_or_services_or_database_connections": false,
+    "rerun_or_poll_loop": false
+  }
+}

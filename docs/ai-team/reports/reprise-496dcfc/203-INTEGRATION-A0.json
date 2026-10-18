@@ -1,0 +1,1921 @@
+{
+  "date_UTC": "2026-10-18",
+  "base_SHA": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+  "main_SHA": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "base_register_sha256": "01e6e4a794653d9bca770b9152d3c7cca9159e893b7e56b4d16551da0a1e578f",
+  "result_register_sha256": "283a2b5a8a21e4ad358b697d18c9cf97c02859ec4f69f1f7d953fd3afa7c8778",
+  "definition_source_commit": "6b6139007c532d06a54ca99578967c7a451c321b",
+  "definitions_revues": 203,
+  "revues_sans_cloture": 195,
+  "REP_documentaires_verifies": [
+    "REP-02",
+    "REP-03",
+    "REP-04",
+    "REP-05",
+    "REP-06",
+    "REP-07",
+    "REP-08",
+    "REP-09"
+  ],
+  "tests_applicatifs_executés": false,
+  "counts_apres_203_et_REP": {
+    "Vérifié": 40,
+    "En cours": 295,
+    "Accepté": 2,
+    "À définir": 24,
+    "À faire": 60,
+    "Bloqué": 209
+  },
+  "P630": {
+    "V630": 42,
+    "denominateur": 630,
+    "pourcentage": 6.7,
+    "IDs": [
+      "SRC-01",
+      "SRC-02",
+      "SRC-03",
+      "SRC-04",
+      "SRC-05",
+      "CAD-01",
+      "CAD-02",
+      "CAD-03",
+      "CAD-06",
+      "CAD-DEC-01",
+      "CAD-DEC-04",
+      "REP-01",
+      "REP-02",
+      "REP-03",
+      "REP-04",
+      "REP-05",
+      "REP-06",
+      "REP-07",
+      "REP-08",
+      "REP-09",
+      "UX-01",
+      "UX-02",
+      "UX-03",
+      "UX-04",
+      "UX-05",
+      "UX-06",
+      "UX-07",
+      "UX-08",
+      "UX-09",
+      "ROUTE-01",
+      "ROUTE-02",
+      "ROUTE-03",
+      "ROUTE-04",
+      "ROUTE-05",
+      "ROUTE-06",
+      "ROUTE-07",
+      "ROUTE-08",
+      "G0-01",
+      "G0-02",
+      "G0-03",
+      "PROV-01",
+      "PROV-02"
+    ],
+    "limite": "40 obligations documentaires Vérifié et2Accepté cadrageG0 seulement ; aucune fonctionnalité Studio acceptée. Pas un taux de développement.",
+    "mapping_barre": {
+      "Vérifié documentaire": 40,
+      "Accepté cadrage documentaire G0": 2
+    }
+  },
+  "delta_203": [
+    {
+      "id": "SRC-06",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A1",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/0"
+    },
+    {
+      "id": "CAD-DEC-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A1",
+      "proprietaire": "A1",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/1"
+    },
+    {
+      "id": "E.1-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A1",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/2"
+    },
+    {
+      "id": "E.1-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A1",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/3"
+    },
+    {
+      "id": "E.2-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A1",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/4"
+    },
+    {
+      "id": "E.4-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A1",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/5"
+    },
+    {
+      "id": "E.5-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A1",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/6"
+    },
+    {
+      "id": "E.6-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A1",
+      "proprietaire": "A1",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/7"
+    },
+    {
+      "id": "E.6-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A1",
+      "proprietaire": "A1",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/8"
+    },
+    {
+      "id": "PROV-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A1",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/9"
+    },
+    {
+      "id": "PROV-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A1",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/10"
+    },
+    {
+      "id": "PROV-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A1",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/11"
+    },
+    {
+      "id": "SEQ-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/12"
+    },
+    {
+      "id": "SEQ-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/13"
+    },
+    {
+      "id": "SEQ-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/14"
+    },
+    {
+      "id": "SEQ-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/15"
+    },
+    {
+      "id": "SEQ-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/16"
+    },
+    {
+      "id": "SEQ-06",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/17"
+    },
+    {
+      "id": "SEQ-07",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/18"
+    },
+    {
+      "id": "J0",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/19"
+    },
+    {
+      "id": "J1",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/20"
+    },
+    {
+      "id": "J2",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/21"
+    },
+    {
+      "id": "J3",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/22"
+    },
+    {
+      "id": "J4",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/23"
+    },
+    {
+      "id": "J5",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/24"
+    },
+    {
+      "id": "J6",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/25"
+    },
+    {
+      "id": "J7",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/26"
+    },
+    {
+      "id": "J8",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/27"
+    },
+    {
+      "id": "PIL-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/28"
+    },
+    {
+      "id": "PIL-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/29"
+    },
+    {
+      "id": "PIL-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/30"
+    },
+    {
+      "id": "PIL-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A1",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "pointer": "/items/31"
+    },
+    {
+      "id": "REP-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/0"
+    },
+    {
+      "id": "REP-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/1"
+    },
+    {
+      "id": "REP-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/2"
+    },
+    {
+      "id": "REP-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/3"
+    },
+    {
+      "id": "REP-06",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/4"
+    },
+    {
+      "id": "REP-07",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/5"
+    },
+    {
+      "id": "REP-08",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/6"
+    },
+    {
+      "id": "REP-09",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/7"
+    },
+    {
+      "id": "ROUTE-09",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/8"
+    },
+    {
+      "id": "COEX-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/9"
+    },
+    {
+      "id": "COEX-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/10"
+    },
+    {
+      "id": "COEX-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/11"
+    },
+    {
+      "id": "COEX-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/12"
+    },
+    {
+      "id": "COEX-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/13"
+    },
+    {
+      "id": "COEX-06",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/14"
+    },
+    {
+      "id": "G2-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/15"
+    },
+    {
+      "id": "G2-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/16"
+    },
+    {
+      "id": "G2-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "Bloqué",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/17"
+    },
+    {
+      "id": "G2-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/18"
+    },
+    {
+      "id": "G2-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/19"
+    },
+    {
+      "id": "G3-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/20"
+    },
+    {
+      "id": "G3-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/21"
+    },
+    {
+      "id": "G3-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/22"
+    },
+    {
+      "id": "G3-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "Bloqué",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/23"
+    },
+    {
+      "id": "A.1-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/24"
+    },
+    {
+      "id": "A.1-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/25"
+    },
+    {
+      "id": "A.4-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/26"
+    },
+    {
+      "id": "A.4-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/27"
+    },
+    {
+      "id": "A.4-07",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/28"
+    },
+    {
+      "id": "A.5-09",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/29"
+    },
+    {
+      "id": "C.1-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/30"
+    },
+    {
+      "id": "C.1-07",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/31"
+    },
+    {
+      "id": "C.2-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/32"
+    },
+    {
+      "id": "C.2-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/33"
+    },
+    {
+      "id": "C.2-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/34"
+    },
+    {
+      "id": "ADR-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/35"
+    },
+    {
+      "id": "ADR-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/36"
+    },
+    {
+      "id": "ADR-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/37"
+    },
+    {
+      "id": "ADR-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/38"
+    },
+    {
+      "id": "ADR-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A2",
+      "proprietaire": "A2",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "pointer": "/items/39"
+    },
+    {
+      "id": "A.2-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A3",
+      "proprietaire": "A3",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/0"
+    },
+    {
+      "id": "A.3-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A3",
+      "proprietaire": "A3",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/1"
+    },
+    {
+      "id": "PR-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/2"
+    },
+    {
+      "id": "PR-06",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/3"
+    },
+    {
+      "id": "PR-07",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/4"
+    },
+    {
+      "id": "PR-08",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/5"
+    },
+    {
+      "id": "PR-09",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/6"
+    },
+    {
+      "id": "RESP-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/7"
+    },
+    {
+      "id": "RESP-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/8"
+    },
+    {
+      "id": "RESP-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/9"
+    },
+    {
+      "id": "RESP-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/10"
+    },
+    {
+      "id": "RESP-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/11"
+    },
+    {
+      "id": "PASS-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/12"
+    },
+    {
+      "id": "PASS-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/13"
+    },
+    {
+      "id": "PASS-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/14"
+    },
+    {
+      "id": "PASS-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/15"
+    },
+    {
+      "id": "PASS-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/16"
+    },
+    {
+      "id": "PASS-06",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/17"
+    },
+    {
+      "id": "PASS-07",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/18"
+    },
+    {
+      "id": "FIN-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A3",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "pointer": "/entries/19"
+    },
+    {
+      "id": "I.4-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A4",
+      "proprietaire": "A4",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/0"
+    },
+    {
+      "id": "B.1-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A4",
+      "proprietaire": "A4",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/1"
+    },
+    {
+      "id": "B.1-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A4",
+      "proprietaire": "A4",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/2"
+    },
+    {
+      "id": "B.2-08",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A4",
+      "proprietaire": "A4",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/3"
+    },
+    {
+      "id": "B.3-12",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A4",
+      "proprietaire": "A4",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/4"
+    },
+    {
+      "id": "PIL-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/5"
+    },
+    {
+      "id": "EST-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/6"
+    },
+    {
+      "id": "EST-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/7"
+    },
+    {
+      "id": "EST-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/8"
+    },
+    {
+      "id": "EST-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/9"
+    },
+    {
+      "id": "SUIVI-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/10"
+    },
+    {
+      "id": "SUIVI-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/11"
+    },
+    {
+      "id": "SUIVI-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/12"
+    },
+    {
+      "id": "SUIVI-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/13"
+    },
+    {
+      "id": "SUIVI-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/14"
+    },
+    {
+      "id": "SUIVI-06",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/15"
+    },
+    {
+      "id": "SUIVI-07",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/16"
+    },
+    {
+      "id": "SUIVI-08",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/17"
+    },
+    {
+      "id": "SUIVI-09",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/18"
+    },
+    {
+      "id": "SUIVI-10",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/19"
+    },
+    {
+      "id": "PR-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/20"
+    },
+    {
+      "id": "PR-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/21"
+    },
+    {
+      "id": "PR-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/22"
+    },
+    {
+      "id": "PR-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A4",
+      "proprietaire": "A0",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "pointer": "/items/23"
+    },
+    {
+      "id": "X.1-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/0"
+    },
+    {
+      "id": "X.1-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/1"
+    },
+    {
+      "id": "X.1-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/2"
+    },
+    {
+      "id": "X.1-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/3"
+    },
+    {
+      "id": "X.1-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/4"
+    },
+    {
+      "id": "X.1-06",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/5"
+    },
+    {
+      "id": "X.1-07",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/6"
+    },
+    {
+      "id": "X.1-08",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/7"
+    },
+    {
+      "id": "X.1-09",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/8"
+    },
+    {
+      "id": "X.1-10",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/9"
+    },
+    {
+      "id": "X.2-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/10"
+    },
+    {
+      "id": "X.2-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/11"
+    },
+    {
+      "id": "X.2-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/12"
+    },
+    {
+      "id": "X.2-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/13"
+    },
+    {
+      "id": "X.3-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/14"
+    },
+    {
+      "id": "X.3-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/15"
+    },
+    {
+      "id": "X.3-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/16"
+    },
+    {
+      "id": "X.4-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/17"
+    },
+    {
+      "id": "X.4-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/18"
+    },
+    {
+      "id": "X.4-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/19"
+    },
+    {
+      "id": "X.5-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/20"
+    },
+    {
+      "id": "X.5-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/21"
+    },
+    {
+      "id": "MES-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/22"
+    },
+    {
+      "id": "MES-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/23"
+    },
+    {
+      "id": "MES-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/24"
+    },
+    {
+      "id": "MES-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/25"
+    },
+    {
+      "id": "MES-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/26"
+    },
+    {
+      "id": "BLOC-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/27"
+    },
+    {
+      "id": "BLOC-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/28"
+    },
+    {
+      "id": "BLOC-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/29"
+    },
+    {
+      "id": "BLOC-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/30"
+    },
+    {
+      "id": "BLOC-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/31"
+    },
+    {
+      "id": "BLOC-06",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/32"
+    },
+    {
+      "id": "BLOC-07",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/33"
+    },
+    {
+      "id": "BLOC-08",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/34"
+    },
+    {
+      "id": "RISQ-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/35"
+    },
+    {
+      "id": "RISQ-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/36"
+    },
+    {
+      "id": "RISQ-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/37"
+    },
+    {
+      "id": "RISQ-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/38"
+    },
+    {
+      "id": "RISQ-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/39"
+    },
+    {
+      "id": "RISQ-06",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/40"
+    },
+    {
+      "id": "RISQ-07",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/41"
+    },
+    {
+      "id": "RISQ-08",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/42"
+    },
+    {
+      "id": "RISQ-09",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/43"
+    },
+    {
+      "id": "RISQ-10",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A5",
+      "proprietaire": "A5",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "pointer": "/items/44"
+    },
+    {
+      "id": "G4-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/0"
+    },
+    {
+      "id": "G4-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/1"
+    },
+    {
+      "id": "G4-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/2"
+    },
+    {
+      "id": "D.1-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/3"
+    },
+    {
+      "id": "D.1-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/4"
+    },
+    {
+      "id": "D.1-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/5"
+    },
+    {
+      "id": "D.2-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "En cours",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/6"
+    },
+    {
+      "id": "D.3-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/7"
+    },
+    {
+      "id": "D.3-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/8"
+    },
+    {
+      "id": "D.3-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/9"
+    },
+    {
+      "id": "D.3-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/10"
+    },
+    {
+      "id": "R.1-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/11"
+    },
+    {
+      "id": "R.1-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/12"
+    },
+    {
+      "id": "R.1-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/13"
+    },
+    {
+      "id": "R.2-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/14"
+    },
+    {
+      "id": "R.5-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/15"
+    },
+    {
+      "id": "MIG-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/16"
+    },
+    {
+      "id": "MIG-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/17"
+    },
+    {
+      "id": "MIG-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/18"
+    },
+    {
+      "id": "MIG-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/19"
+    },
+    {
+      "id": "MIG-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/20"
+    },
+    {
+      "id": "MIG-06",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/21"
+    },
+    {
+      "id": "MIG-07",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/22"
+    },
+    {
+      "id": "MIG-08",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/23"
+    },
+    {
+      "id": "MIG-09",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/24"
+    },
+    {
+      "id": "MIG-10",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/25"
+    },
+    {
+      "id": "MIG-COEX-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/26"
+    },
+    {
+      "id": "MIG-COEX-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/27"
+    },
+    {
+      "id": "MIG-COEX-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/28"
+    },
+    {
+      "id": "MIG-COEX-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/29"
+    },
+    {
+      "id": "MIG-COEX-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/30"
+    },
+    {
+      "id": "MIG-COEX-06",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/31"
+    },
+    {
+      "id": "MIG-COEX-07",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/32"
+    },
+    {
+      "id": "OPS-01",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/33"
+    },
+    {
+      "id": "OPS-02",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/34"
+    },
+    {
+      "id": "OPS-03",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/35"
+    },
+    {
+      "id": "OPS-04",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/36"
+    },
+    {
+      "id": "OPS-05",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/37"
+    },
+    {
+      "id": "OPS-06",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/38"
+    },
+    {
+      "id": "OPS-07",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/39"
+    },
+    {
+      "id": "OPS-08",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À faire",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/40"
+    },
+    {
+      "id": "OPS-09",
+      "ancien_statut": "À définir",
+      "statut_propose_revu": "À définir",
+      "agent_revue": "A6",
+      "proprietaire": "A6",
+      "preuve": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "pointer": "/records/41"
+    }
+  ],
+  "protections": {
+    "427_autres_lignes_inchangees": true,
+    "IDs_textes_proprietaires_conserves": true,
+    "source_blob_inchange": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+    "acceptations_G0_preexistantes_conservees": true,
+    "source_HTML_non_coches": true,
+    "helper_amont_non_execute": true
+  },
+  "suite": "Revue A0 de la remise COEX/ADR après avis indépendants ; ne pas appliquer ses deltas avant cette revue."
+}

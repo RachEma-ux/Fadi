@@ -1,0 +1,362 @@
+{
+  "date_UTC": "2026-10-18",
+  "main_SHA": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "PR_continuation": 172,
+  "missions": [
+    {
+      "id": "M00",
+      "agent": "A0",
+      "priorite": "P1",
+      "statut": "En cours",
+      "suite": "203 définitions revues/intégrées,20 compléments ciblés et2rapprochementsM05/M07 disponibles. Vérifier nouvelles pièces/décisions166 puis prochaine action indépendante ; checkpoints sur172, pas165 close.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M00"
+      }
+    },
+    {
+      "id": "M01",
+      "agent": "A6",
+      "priorite": "P1",
+      "statut": "En cours",
+      "suite": "Attendre une cible explicitement attestée et un accord de reprise applicable ; aucun service, SQL ou DB réelle. Runtime43 ne prouve pas la santé applicative.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M01"
+      }
+    },
+    {
+      "id": "M02",
+      "agent": "A5",
+      "priorite": "P1",
+      "statut": "En cours",
+      "suite": "Réutiliser conditions DB3 et garde DB1/2 ; préparer réception de la cible seulement lorsqu’elle est identifiée.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M02"
+      }
+    },
+    {
+      "id": "M03",
+      "agent": "A6",
+      "priorite": "P1",
+      "statut": "Bloqué",
+      "suite": "Soumettre configuration administrative existante avec noms de checks au SHA cible, sans la réécrire.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M03"
+      }
+    },
+    {
+      "id": "M04",
+      "agent": "A5",
+      "priorite": "P1/P3",
+      "statut": "En cours",
+      "suite": "Consigner les conclusions des CI au SHA exact et conserver les skips ; avant toute fusion, satisfaire les conditions DB/services distinctes décrites par A6.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M04"
+      }
+    },
+    {
+      "id": "M05",
+      "agent": "A2",
+      "priorite": "P2",
+      "statut": "En cours",
+      "suite": "Rapprochement dixchoix↔onzegroupes COEX03 préparé ; faire arbitrer seulement les choix physiques applicables, sans renommer versions ou migrer.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M05"
+      }
+    },
+    {
+      "id": "M06",
+      "agent": "A0",
+      "priorite": "P2",
+      "statut": "En cours",
+      "suite": "Conserver l’historique des suites remplacées ; prochains deltas seulement après nouvelle preuve ou décision, pas de réécriture historique.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M06"
+      }
+    },
+    {
+      "id": "M07",
+      "agent": "A2",
+      "priorite": "P2",
+      "statut": "En cours",
+      "suite": "Règles candidates septmodules/type-only/runtime/API publique reliées aux25arêtes historiques et152 ; faire adopter les frontières avant correctif, pas refaire carte ni garde152.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M07"
+      }
+    },
+    {
+      "id": "M08",
+      "agent": "A2",
+      "priorite": "P2",
+      "statut": "En cours",
+      "suite": "125analyses et revues disponibles. Conserver trois contradictions et écarts par attendu ; préparer les lots de clarification ou de tests réellement autorisés, sans recommencer les125 lectures.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M08"
+      }
+    },
+    {
+      "id": "M09",
+      "agent": "A5",
+      "priorite": "P2",
+      "statut": "En cours",
+      "suite": "R4 rapprochementCSP/observabilité remis ; attendre fournisseur/origines approuvés et accès de lecture approprié aux alertes. Aucun scan/enforcement sans lot autorisé.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M09"
+      }
+    },
+    {
+      "id": "M10",
+      "agent": "A6",
+      "priorite": "P1",
+      "statut": "En cours",
+      "suite": "Réutiliser preuves du jalon149 et sauvegarde déjà relues ; documenter seulement nouvelle pièce réellement reçue.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M10"
+      }
+    },
+    {
+      "id": "M11",
+      "agent": "A1",
+      "priorite": "P0 Studio",
+      "statut": "En cours",
+      "suite": "Ne pas refaire G0 : acte6250109830 et delta4 existent ; conserver CADDEC03 personnes inconnues.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M11"
+      }
+    },
+    {
+      "id": "M12",
+      "agent": "A1",
+      "priorite": "P0 Studio",
+      "statut": "En cours",
+      "suite": "Rattacher un delta de contrat validé à ses seules fiches141 affectées, en conservant texte exact et En cours.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M12"
+      }
+    },
+    {
+      "id": "M13",
+      "agent": "A2",
+      "priorite": "P0 Studio",
+      "statut": "En cours",
+      "suite": "REP02..09/ADR04/COEX02 vérifiés documentairement ; cinqCOEX restent En cours. Recevoir propositionADR01/02 annoncée Claude6251022689, rapprocher addendumA4 et réservesA2/A5 avant décision.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M13"
+      }
+    },
+    {
+      "id": "M14",
+      "agent": "A2",
+      "priorite": "P0 Studio",
+      "statut": "En cours",
+      "suite": "G2-01/G2-05 etG3-01/G3-03 complétés ; lire réponses6250904693/5795, préconditions par preuve, pas de G1–G4 accepté ni codePOC implicite.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M14"
+      }
+    },
+    {
+      "id": "M15",
+      "agent": "A5",
+      "priorite": "P0 transversal",
+      "statut": "En cours",
+      "suite": "10PERF source exacts et protocole revusA4,13cas spatial/rendu ajoutés comme déclinaisons candidates aux mêmes38oracles ; fixer contrats/corpus/budgets avant exécution.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M15"
+      }
+    },
+    {
+      "id": "M16",
+      "agent": "A4",
+      "priorite": "P0 Studio",
+      "statut": "En cours",
+      "suite": "NAVdeltaG1v2 remis,16cas proposés sous9NAV existants ; réalisationI attend contrats/gates/accord code applicables, pas de nouveaux styles/routes.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M16"
+      }
+    },
+    {
+      "id": "M17",
+      "agent": "A2",
+      "priorite": "P0 Studio",
+      "statut": "En cours",
+      "suite": "Modèleslogiquesv2, DEC18 et graphepublic statique remis ; décisions physiques et politique versions restent à arbitrer, aucune implémentationA.1.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M17"
+      }
+    },
+    {
+      "id": "M18",
+      "agent": "A3",
+      "priorite": "P0 Studio",
+      "statut": "Bloqué",
+      "suite": "Conserver A.2 déjà spécifiée ; ne pas construire planche2D ni nouveau dossier clone.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M18"
+      }
+    },
+    {
+      "id": "M19",
+      "agent": "A3",
+      "priorite": "P0 Studio",
+      "statut": "Bloqué",
+      "suite": "Conserver A.3 déjà spécifiée ; ne pas construire planche3D ni nouveau dossier clone.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M19"
+      }
+    },
+    {
+      "id": "M20",
+      "agent": "A2",
+      "priorite": "P0 Studio",
+      "statut": "Bloqué",
+      "suite": "Quatre compléments association/historique A3 disponibles,20souscas proposés/reliés auxTEST existants et revusA2/A5. Décisions physiques et autorisation du lot restent nécessaires ; aucune exécution.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M20"
+      }
+    },
+    {
+      "id": "M21",
+      "agent": "A4",
+      "priorite": "P0 Studio",
+      "statut": "En cours",
+      "suite": "Réutiliser8exemples Registry/Manager, droits et alias ; aucun nouveau catalogue identique.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M21"
+      }
+    },
+    {
+      "id": "M22",
+      "agent": "A2",
+      "priorite": "P1 Studio",
+      "statut": "Bloqué",
+      "suite": "C.1-01/C.1-07/C.2-02/C.2-03/C.2-05 ont leurs protocoles/cas candidats ; contrats, corpus, cible, budgets pertinents et accord du lot avant toute mesure ou code.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M22"
+      }
+    },
+    {
+      "id": "M23",
+      "agent": "A6",
+      "priorite": "P1 Studio",
+      "statut": "En cours",
+      "suite": "Réutiliser contrat jobs et manifeste illustratif ; enrichir delta epoch/coupe/commit après réponse G1.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M23"
+      }
+    },
+    {
+      "id": "M24",
+      "agent": "A1",
+      "priorite": "P1 Studio",
+      "statut": "En cours",
+      "suite": "IF009/publication/réouverture et complémentsv2 déjà remis/revus ; rattacher seulement un nouveau choixG1 réellement adopté, pas refaire le contrat.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M24"
+      }
+    },
+    {
+      "id": "M25",
+      "agent": "A2",
+      "priorite": "P2 conditionnel",
+      "statut": "En cours",
+      "suite": "Conserver options F reportées D02 ; aucune nouvelle étude spéculative sans besoin explicite.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M25"
+      }
+    },
+    {
+      "id": "M26",
+      "agent": "A5",
+      "priorite": "P0/P1 Studio",
+      "statut": "En cours",
+      "suite": "Réemployer38oracles,13cas spatial/rendu,8picking et20association comme déclinaisons documentaires ; tests restent non exécutés, pas de nouveauxTEST normatifs.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M26"
+      }
+    },
+    {
+      "id": "M27",
+      "agent": "A6",
+      "priorite": "P1 Studio",
+      "statut": "En cours",
+      "suite": "Réutiliser contrat migration/restauration ; pointer choix physiques encore requis, aucun second mécanisme.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M27"
+      }
+    },
+    {
+      "id": "M28",
+      "agent": "A6",
+      "priorite": "Livraison",
+      "statut": "Bloqué",
+      "suite": "Conserver conditionsR/G4 ; pas nouveau plan de déploiement prétendu prêt sans candidat.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M28"
+      }
+    },
+    {
+      "id": "M29",
+      "agent": "A0",
+      "priorite": "Transversal",
+      "statut": "En cours",
+      "suite": "Conserver provenance16copies upstream, revues203 et chaîne42→44→44 ; helper amont non exécuté et deux liens README normalisés vers source322. Recevoir nouvelles pièces plutôt que recréer des originaux.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M29"
+      }
+    },
+    {
+      "id": "M30",
+      "agent": "A0",
+      "priorite": "Transversal",
+      "statut": "En cours",
+      "suite": "Suites documentaires recensées exécutées ; lire nouvelles réponses/livrables166 puis agir selon déclencheurs exacts du registre.31 missions restent ouvertes, aucun travail automatique en arrière-plan.",
+      "preuve": {
+        "fichier": "docs/ai-team/missions.json",
+        "ID": "M30"
+      }
+    }
+  ],
+  "file_ids203": "Les six matrices NEXT-READY-POST203 puis RESIDUELS-CONSOLIDATION-A0 font foi ; propositions documentaires reçues, opérations dépendantes conservent leurs préconditions.",
+  "questions_A0_deja_publiees": [
+    6250904693,
+    6250905795,
+    6250906743
+  ],
+  "questions_Claude_deja_publiees": [
+    6250995231,
+    6250996328,
+    6250997313,
+    6250998834
+  ],
+  "prochaine_operation": "Revalider166 au checkpoint ; recevoir une pièce réellement publiée ou une réponse pertinente et exécuter son delta autorisé. Aucune nouvelle correction applicative READY constatée hors lots déjà livrés169/171 ; pas de relance fictive.",
+  "coordination_Claude": 6251022689
+}

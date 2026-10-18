@@ -35,3 +35,7 @@ Après7b0cca4 :32qualifications individuelles sansclôture, huitcomparaisonsM08,
 ## Reprise effective496dcfc — décisions nouvelles
 
 G0 accepté pour cadrage documentaire uniquement ; orientationsDEC01/03 retenues, contrats physiques ouverts. CI165pure autorisée et implémentée, à contrôler au SHA exact après publication. CLASSIF1 pur autorisé après inventaireA2/A5, codebranche distincte ; aucun codeStudio/DB3/service/fusion/admin implicite. M08-PATH-001..007 analysés/revus sans testapp ; la prochaine cohorte non traitée continue. Registre630unique :203Àdéfinir/186Encours/207Bloqué/32Vérifié/2Acceptédocumentaires, P63034/630=5,4%, PDEVN/D. Les versions précédentes ci-dessus sont des checkpoints historiques ; état actuel dans STATUS/HANDOFF.
+
+## Continuation après fusion externe165
+
+Main817bd36 intègre la documentation165 par une autre session ; continuation sur la même branche, PR172 en brouillon. Le checkpoint courant remplace les chiffres historiques précédents :203 définitions revues, dix obligations documentaires REP/COEX/ADR supplémentaires vérifiées, P63044/630=7,0%, PDEVN/D.42 Vérifié documentaire et2 Accepté G0 uniquement ; G1–G4 ouverts. Les réserves COEX et propositions ne deviennent pas décisions. Lire STATUS/HANDOFF ensemble pour les comptes et prochaines opérations exacts.

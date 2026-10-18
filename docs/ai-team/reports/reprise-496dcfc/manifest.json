@@ -17,6 +17,27 @@
       "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
     },
     {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A1/203-DELTA-INSTRUCTION-A1.md",
+      "source_session": "/workspace/work/resume496/agents/A1/203-DELTA-INSTRUCTION-A1.md",
+      "sha256": "644fb606a82448124b8a617f71d06192f8f991660768ac234729990afba50715",
+      "bytes": 6626,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
+      "source_session": "/workspace/work/resume496/agents/A1/203-QUALIFICATION-A1.json",
+      "sha256": "5d2c48fba32ab23033f5ba12ae760099d28b93e3f2f627435cb3033d1a091e85",
+      "bytes": 136364,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.md",
+      "source_session": "/workspace/work/resume496/agents/A1/203-QUALIFICATION-A1.md",
+      "sha256": "768ce577929ed61499806ebdec66eb1140e007ec7852211ff7fe04bd9b9f7280",
+      "bytes": 10816,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
       "path": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
       "source_session": "/workspace/work/resume496/agents/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
       "sha256": "a5dec6aa0afbbe56f7f5bdebb9a3397b70a991bae352d4c93d6ef45d9719adba",
@@ -220,6 +241,48 @@
       "note": "Original figé publié à fa9f0db ; scratch ultérieurement actualisé. Résultat actif dans -REVUE-A1-v2 et annexe A2, original non écrasé."
     },
     {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A1/NEXT-READY-POST203-A1.json",
+      "source_session": "/workspace/work/resume496/agents/A1/NEXT-READY-POST203-A1.json",
+      "sha256": "607609fd2e45b302503afabe092d5e853482bf77e7eb39fe41463da9708c9845",
+      "bytes": 80708,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A1/NEXT-READY-POST203-A1.md",
+      "source_session": "/workspace/work/resume496/agents/A1/NEXT-READY-POST203-A1.md",
+      "sha256": "094d6e3540b1cdd3d4fbec3b0a32f9a2205fdd057a56081d1fb58fd59a790fd9",
+      "bytes": 10626,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A1/RESIDUEL-COEX-G3-ADR05-A1.json",
+      "source_session": "/workspace/work/resume496/agents/A1/RESIDUEL-COEX-G3-ADR05-A1.json",
+      "sha256": "18293a6e6d35966b033ffc8513bf713a3f0750c9072cdc3cd82a8aab2b6ffc95",
+      "bytes": 96880,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A1/RESIDUEL-COEX-G3-ADR05-A1.md",
+      "source_session": "/workspace/work/resume496/agents/A1/RESIDUEL-COEX-G3-ADR05-A1.md",
+      "sha256": "ffbe12caabdb38fc1b6508ca2af26c0f416eaa0b57587a572dc44355b4de02f8",
+      "bytes": 3004,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.json",
+      "source_session": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+      "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e",
+      "bytes": 254592,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/203-QUALIFICATION-A2.md",
+      "source_session": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.md",
+      "sha256": "0148d29a293c45cd4342016728efaafb724463e0d88c791a9d3923723809925b",
+      "bytes": 13876,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
       "path": "docs/ai-team/reports/reprise-496dcfc/A2/CLASSIF1-INVENTAIRE-A2.json",
       "source_session": "/workspace/work/resume496/agents/A2/CLASSIF1-INVENTAIRE-A2.json",
       "sha256": "fac54baa0b0268dc998fe4ebcf62c9a47335096591da8ee278b1b6afb52f7d39",
@@ -231,6 +294,20 @@
       "source_session": "/workspace/work/resume496/agents/A2/CLASSIF1-INVENTAIRE-A2.md",
       "sha256": "4ee7f1a641fa421c17e3df5b7d4f6a137c044afc25c32a158cee3008005aa525",
       "bytes": 5270,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/COEX03-COMPLEMENT-A2.json",
+      "source_session": "/workspace/work/resume496/agents/A2/COEX03-COMPLEMENT-A2.json",
+      "sha256": "eac9b7efbf7623db99ea0fbaef0daa416c53a533581e20dc0c17f615711ddd8a",
+      "bytes": 24819,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/COEX03-COMPLEMENT-A2.md",
+      "source_session": "/workspace/work/resume496/agents/A2/COEX03-COMPLEMENT-A2.md",
+      "sha256": "64ade3fbef8925b3c21a07254d2c16d3b6e8cd9848b6ca8e6d95f52d934b574f",
+      "bytes": 5826,
       "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
     },
     {
@@ -388,10 +465,66 @@
       "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
     },
     {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/NEXT-READY-POST203-A2.json",
+      "source_session": "/workspace/work/resume496/agents/A2/NEXT-READY-POST203-A2.json",
+      "sha256": "aebe223472c8e61939d495fc0d903f4682e983e014dbda98485026317985ac55",
+      "bytes": 27908,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/NEXT-READY-POST203-A2.md",
+      "source_session": "/workspace/work/resume496/agents/A2/NEXT-READY-POST203-A2.md",
+      "sha256": "0de054a2517b93ff0c9a6d2b6972c6a75c15fc323283df28c763890889712185",
+      "bytes": 10471,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/RESIDUEL-M05-M07-G2-COEX06-A2.json",
+      "source_session": "/workspace/work/resume496/agents/A2/RESIDUEL-M05-M07-G2-COEX06-A2.json",
+      "sha256": "6c810dba9ad6aabd71693b6c7d20cbc4a99f22822387069a16e59c45ad583a4e",
+      "bytes": 58601,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/RESIDUEL-M05-M07-G2-COEX06-A2.md",
+      "source_session": "/workspace/work/resume496/agents/A2/RESIDUEL-M05-M07-G2-COEX06-A2.md",
+      "sha256": "526c74e1ad88403972bc65308970d35e23dfc2ab4e83985e8e9125689fe5becb",
+      "bytes": 1806,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
       "path": "docs/ai-team/reports/reprise-496dcfc/A2/REVUE-CLASSIF1-FINALE-A2.json",
       "source_session": "/workspace/work/resume496/agents/A2/REVUE-CLASSIF1-FINALE-A2.json",
       "sha256": "07247a0491cbef932b24b82a52f618db6f8775aa53cddb4209164cef7646ce2b",
       "bytes": 3291,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/REVUE-CLAUDE-COEX-A2.json",
+      "source_session": "/workspace/work/resume496/agents/A2/REVUE-CLAUDE-COEX-A2.json",
+      "sha256": "73e2dfcd8a1b5c6cb4e6b5ddacd276acc944691b405da8a033df3ed8b9e68da1",
+      "bytes": 16107,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/REVUE-CLAUDE-COEX-A2.md",
+      "source_session": "/workspace/work/resume496/agents/A2/REVUE-CLAUDE-COEX-A2.md",
+      "sha256": "c540dc3117875d771342a75cd2049af163499d1006aeb92445d399d43925bf68",
+      "bytes": 3052,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/REVUE-CLAUDE-REP-A2.json",
+      "source_session": "/workspace/work/resume496/agents/A2/REVUE-CLAUDE-REP-A2.json",
+      "sha256": "c3322ef6a42e81ddf844715248526c6272a804c560bb379f0e862aa59b97b5e0",
+      "bytes": 46588,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/REVUE-CLAUDE-REP-A2.md",
+      "source_session": "/workspace/work/resume496/agents/A2/REVUE-CLAUDE-REP-A2.md",
+      "sha256": "ea7d5240fb30b61a9a1e700fbd8714e869651c61f92eae01920c75d4f1910a3d",
+      "bytes": 1250,
       "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
     },
     {
@@ -406,6 +539,34 @@
       "source_session": "/workspace/work/resume496/agents/A2/REVUE-G1-DEC01-DEC03-V2-A2.json",
       "sha256": "206584d26ce3665e5937e6565e0affeaa170226b014393979fa99a23cab905f6",
       "bytes": 10367,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/REVUE-RESIDUEL-ASSOCIATION-A2.json",
+      "source_session": "/workspace/work/resume496/agents/A2/REVUE-RESIDUEL-ASSOCIATION-A2.json",
+      "sha256": "2cf75f74e2c3aac7b7f72d772f61df55db8f73bc864e1ecbd4134156af826ca3",
+      "bytes": 20886,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A2/REVUE-RESIDUEL-ASSOCIATION-A2.md",
+      "source_session": "/workspace/work/resume496/agents/A2/REVUE-RESIDUEL-ASSOCIATION-A2.md",
+      "sha256": "9530379e050e9965f4b2a34b350b11c91750e013c53c59b99ed0d611b56389a9",
+      "bytes": 928,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.json",
+      "source_session": "/workspace/work/resume496/agents/A3/203-QUALIFICATION-A3.json",
+      "sha256": "b90a7d7e99ef4e8bfbeba1a2489995dc491e76cfbe91594939004f0af28bc166",
+      "bytes": 95185,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A3/203-QUALIFICATION-A3.md",
+      "source_session": "/workspace/work/resume496/agents/A3/203-QUALIFICATION-A3.md",
+      "sha256": "2e5ab49adb0b466e3c7094e640d461bfee92b5edbe51381eb9db078fe8eff82c",
+      "bytes": 45139,
       "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
     },
     {
@@ -490,6 +651,83 @@
       "source_session": "/workspace/work/resume496/agents/A3/M08-UNITE-065-092-REVUE-A3.md",
       "sha256": "fc3bb233bacb192fb57aa453b63b171d9ed5b1be85fca430c346b88f9a8a6ed7",
       "bytes": 45785,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A3/NEXT-READY-POST203-A3.json",
+      "source_session": "/workspace/work/resume496/agents/A3/NEXT-READY-POST203-A3.json",
+      "sha256": "c8e69e5fbbddecd447e1f15372e85d2742d2ca1d4b9a6b35027e8358b89bff81",
+      "bytes": 54371,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A3/NEXT-READY-POST203-A3.md",
+      "source_session": "/workspace/work/resume496/agents/A3/NEXT-READY-POST203-A3.md",
+      "sha256": "36c3f8ce910428b1db8e594448d54441115cc8c0472448362a426826d52eccaf",
+      "bytes": 13812,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A3/RESIDUEL-ASSOCIATION-HISTORIQUE-A3.json",
+      "source_session": "/workspace/work/resume496/agents/A3/RESIDUEL-ASSOCIATION-HISTORIQUE-A3.json",
+      "sha256": "c44c067f379edc1063320cab66246c3bfee49de93ec9eb915a19963960af662e",
+      "bytes": 98672,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A3/RESIDUEL-ASSOCIATION-HISTORIQUE-A3.md",
+      "source_session": "/workspace/work/resume496/agents/A3/RESIDUEL-ASSOCIATION-HISTORIQUE-A3.md",
+      "sha256": "7e35475be922ef342823c5c816d46f33f0d5500e0b475ef57bf32509dec94d52",
+      "bytes": 35483,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A3/REVUE-OUTIL-REGISTRE-A3.json",
+      "source_session": "/workspace/work/resume496/agents/A3/REVUE-OUTIL-REGISTRE-A3.json",
+      "sha256": "6b84a91daf3fc264f672e11c19ab00a8570439f077a4dd63898141a642617a78",
+      "bytes": 25651,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A3/REVUE-OUTIL-REGISTRE-A3.md",
+      "source_session": "/workspace/work/resume496/agents/A3/REVUE-OUTIL-REGISTRE-A3.md",
+      "sha256": "a221adcf3f42f01a59d893835a17de924ae3dd51a0d2a314ec0992eccf696334",
+      "bytes": 12142,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A4/203-B3-12-PROTOCOLE-MESURES.json",
+      "source_session": "/workspace/work/resume496/agents/A4/203-B3-12-PROTOCOLE-MESURES.json",
+      "sha256": "d4d1f80623c4101277484f30620a2e5068e28b13d7cc50409cc62ef73e54327c",
+      "bytes": 7976,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A4/203-COORDINATION-A0-PREPARATION.json",
+      "source_session": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+      "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+      "bytes": 11387,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A4/203-DELTA-UX-REGISTRY.json",
+      "source_session": "/workspace/work/resume496/agents/A4/203-DELTA-UX-REGISTRY.json",
+      "sha256": "5c005dc5a289bbf4f3e438df4d8e98606acbaf7e36205be5b218a1c0ce66e7ad",
+      "bytes": 18538,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.json",
+      "source_session": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+      "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+      "bytes": 256944,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A4/203-QUALIFICATION-A4.md",
+      "source_session": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.md",
+      "sha256": "cb7273f518a583b4e5dac49265ccae65406a9a4a9c008ebfefb8666ed297cb63",
+      "bytes": 8957,
       "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
     },
     {
@@ -605,6 +843,34 @@
       "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
     },
     {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A4/NEXT-READY-POST203-A4.json",
+      "source_session": "/workspace/work/resume496/agents/A4/NEXT-READY-POST203-A4.json",
+      "sha256": "2d05016c708a3f24ec99c330e23d31d54259d92db642ea3a667fbec74184a1f5",
+      "bytes": 79972,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A4/NEXT-READY-POST203-A4.md",
+      "source_session": "/workspace/work/resume496/agents/A4/NEXT-READY-POST203-A4.md",
+      "sha256": "61c408bed9a992b83a38e35430c5126fad20e40e5a5f85bc6800bbd1aaa5ee37",
+      "bytes": 8181,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A4/RESIDUEL-PICKING-ADR-NAV-A4.json",
+      "source_session": "/workspace/work/resume496/agents/A4/RESIDUEL-PICKING-ADR-NAV-A4.json",
+      "sha256": "107e22d547abe2fd0dcf3c4127351e11aa444ebfb8923c47e6e6e1a99ff9ecfa",
+      "bytes": 27661,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A4/RESIDUEL-PICKING-ADR-NAV-A4.md",
+      "source_session": "/workspace/work/resume496/agents/A4/RESIDUEL-PICKING-ADR-NAV-A4.md",
+      "sha256": "fb431a29a4d576c4ba0885adce5c8ae1cb259bc9ffdbd2eef7031569af14fb5c",
+      "bytes": 5571,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
       "path": "docs/ai-team/reports/reprise-496dcfc/A4/REVUE-G0-ACTE-DELTA4.json",
       "source_session": "/workspace/work/resume496/agents/A4/REVUE-G0-ACTE-DELTA4.json",
       "sha256": "21bfe3ad4acac34985dd2c88e672d35098fa704a3507fba167cde2015aaf44c7",
@@ -623,6 +889,34 @@
       "source_session": "/workspace/work/resume496/agents/A4/REVUE-G1-COMPLEMENTS.json",
       "sha256": "755a6abc1fbfa3f9f9cd58358969fc95347a043ba2822ee7797073cc1a53568e",
       "bytes": 8299,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A4/REVUE-PERF-X1-09-A4.json",
+      "source_session": "/workspace/work/resume496/agents/A4/REVUE-PERF-X1-09-A4.json",
+      "sha256": "40d82a943a9ac72f639a2a61b74d98ff37d3ae018901d8299d9658e830ed24bb",
+      "bytes": 18001,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A4/REVUE-PERF-X1-09-A4.md",
+      "source_session": "/workspace/work/resume496/agents/A4/REVUE-PERF-X1-09-A4.md",
+      "sha256": "7b804ff7ce1309703f1c931317254d0f908d22a2040eac8f2a455b7c890e452a",
+      "bytes": 4512,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.json",
+      "source_session": "/workspace/work/resume496/agents/A5/203-QUALIFICATION-A5.json",
+      "sha256": "bc344feeb6d3656d1ba98812726520259898b00fb624e6e1b34133323351a3d9",
+      "bytes": 283088,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/203-QUALIFICATION-A5.md",
+      "source_session": "/workspace/work/resume496/agents/A5/203-QUALIFICATION-A5.md",
+      "sha256": "84b6063c3918c312df36d3e4ff0713ba691fd4eb9c1b0a36d2e0d730be0fe1c2",
+      "bytes": 637,
       "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
     },
     {
@@ -913,6 +1207,20 @@
       "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
     },
     {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/NEXT-READY-POST203-A5.json",
+      "source_session": "/workspace/work/resume496/agents/A5/NEXT-READY-POST203-A5.json",
+      "sha256": "8823d852b14ef6b04dd2896419cdebf305757b1913a9adf3017b5d240c3228e6",
+      "bytes": 84542,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/NEXT-READY-POST203-A5.md",
+      "source_session": "/workspace/work/resume496/agents/A5/NEXT-READY-POST203-A5.md",
+      "sha256": "a1506c1bf5ced2834a6a93f0f1c7ac1d45e53841c7cff92b7df10a9e26338c4e",
+      "bytes": 13564,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
       "path": "docs/ai-team/reports/reprise-496dcfc/A5/R4-M09-RAPPROCHEMENT-A5.json",
       "source_session": "/workspace/work/resume496/agents/A5/R4-M09-RAPPROCHEMENT-A5.json",
       "sha256": "63b873028405bf565b374b4e462003c8ab9482b069a3e7e591ee8c125e9a01fe",
@@ -955,6 +1263,104 @@
       "note": "Snapshot initial figé à fa9f0db ; remise finale active dans REMISE-A5-v2.json."
     },
     {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/RESIDUEL-SPATIAL-RENDU-A5.json",
+      "source_session": "/workspace/work/resume496/agents/A5/RESIDUEL-SPATIAL-RENDU-A5.json",
+      "sha256": "4c737ab2dd80f7e6d472647e9eefb59690f7668a6d9602c516449b722231a056",
+      "bytes": 37409,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/RESIDUEL-SPATIAL-RENDU-A5.md",
+      "source_session": "/workspace/work/resume496/agents/A5/RESIDUEL-SPATIAL-RENDU-A5.md",
+      "sha256": "00c18afc058a40de18e8d0a610d813b08137fa443e3129cca9ee9ec3f13ee2c9",
+      "bytes": 6353,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-CLAUDE-COEX-A5.json",
+      "source_session": "/workspace/work/resume496/agents/A5/REVUE-CLAUDE-COEX-A5.json",
+      "sha256": "141e8ce83abab7b4f025fa97bddb8feeb653379e40fab8bda3929b42a3a70df5",
+      "bytes": 63638,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-CLAUDE-COEX-A5.md",
+      "source_session": "/workspace/work/resume496/agents/A5/REVUE-CLAUDE-COEX-A5.md",
+      "sha256": "74c2b7a80324555fd1ddaa57a84e4b319a6ce442467b75f6f4a1550236b925df",
+      "bytes": 1196,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-CLAUDE-REP-A5-DELTA.json",
+      "source_session": "/workspace/work/resume496/agents/A5/REVUE-CLAUDE-REP-A5-DELTA.json",
+      "sha256": "0cdfa7854d333d98a00c7cc50364752be271a1629df74136d751ff683ab7b08f",
+      "bytes": 3758,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-CLAUDE-REP-A5-DELTA.md",
+      "source_session": "/workspace/work/resume496/agents/A5/REVUE-CLAUDE-REP-A5-DELTA.md",
+      "sha256": "8026403586a0ca37b3937e551e982e84524f82fbbfc2ae958e2a72c4aed20799",
+      "bytes": 802,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-CLAUDE-REP-A5.json",
+      "source_session": "/workspace/work/resume496/agents/A5/REVUE-CLAUDE-REP-A5.json",
+      "sha256": "4ea23df97163186179e86077eaf494e5612a6dffaf015e3cf813bb5e67dc9058",
+      "bytes": 58830,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-CLAUDE-REP-A5.md",
+      "source_session": "/workspace/work/resume496/agents/A5/REVUE-CLAUDE-REP-A5.md",
+      "sha256": "4b2e7e8336a349d8d2358eb32494c02f0a4ded96128a860c22314c723b78b1e4",
+      "bytes": 1093,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-COEX03-COMPLEMENT-A5.json",
+      "source_session": "/workspace/work/resume496/agents/A5/REVUE-COEX03-COMPLEMENT-A5.json",
+      "sha256": "b225a38b9f63c493c8d088177999dd40bf24603b7a5e076e7ee2ee97eb0a009c",
+      "bytes": 19614,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-COEX03-COMPLEMENT-A5.md",
+      "source_session": "/workspace/work/resume496/agents/A5/REVUE-COEX03-COMPLEMENT-A5.md",
+      "sha256": "ae9cfc7b685f8c73061250465d559237476355a9a0cb07f66f3c029350a56012",
+      "bytes": 1041,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-RESIDUEL-ASSOCIATION-A5.json",
+      "source_session": "/workspace/work/resume496/agents/A5/REVUE-RESIDUEL-ASSOCIATION-A5.json",
+      "sha256": "86864752f4ffb3355193ee73c3f2b5b5fceb529f4194d7c691cb46c355777d19",
+      "bytes": 39955,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-RESIDUEL-ASSOCIATION-A5.md",
+      "source_session": "/workspace/work/resume496/agents/A5/REVUE-RESIDUEL-ASSOCIATION-A5.md",
+      "sha256": "f73170124190362d7ab5b18e31323ee7ac5ba6f91381ad790b4ee8186b20b043",
+      "bytes": 4432,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.json",
+      "source_session": "/workspace/work/resume496/agents/A6/203-QUALIFICATION-A6.json",
+      "sha256": "6f44ddbe820ca355850bb0d804e2fd502a6f78def26869a7b1d95e46fb7ebc47",
+      "bytes": 98609,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A6/203-QUALIFICATION-A6.md",
+      "source_session": "/workspace/work/resume496/agents/A6/203-QUALIFICATION-A6.md",
+      "sha256": "9b55960581c3ce829a13373faaac65447663672459bebfc58cf81e7716cb652f",
+      "bytes": 12370,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
       "path": "docs/ai-team/reports/reprise-496dcfc/A6/CI-171-observation.json",
       "source_session": "/workspace/work/resume496/agents/A6/CI-171-observation.json",
       "sha256": "7fd1fc6c7fe6645ba225f6cd42bee3a3bbec8389943d6ae6c5dc5586e89fc995",
@@ -980,6 +1386,27 @@
       "source_session": "/workspace/work/resume496/agents/A6/CI-CLASSIF-IMPLEMENTATION.md",
       "sha256": "d3c4d0f23032dff4cdd3f1db70fce31965a903b98e8d07f9ebb426d079e25863",
       "bytes": 3471,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A6/CI-CONTINUATION-POST165-A6.json",
+      "source_session": "/workspace/work/resume496/agents/A6/CI-CONTINUATION-POST165-A6.json",
+      "sha256": "b6ef2eeee137f166247c650ae6b87276906a36b86dfcb6b536eceeef6446afc3",
+      "bytes": 7761,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A6/CI-CONTINUATION-POST165-A6.md",
+      "source_session": "/workspace/work/resume496/agents/A6/CI-CONTINUATION-POST165-A6.md",
+      "sha256": "86bcb3a1cf87bfa21ae7ad96e614f0b9e98231ef0141ed5c58b28f239b9fb3f6",
+      "bytes": 3322,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A6/CI-CONTINUATION-POST165-MAIN-EXTERNE.json",
+      "source_session": "/workspace/work/resume496/agents/A6/CI-CONTINUATION-POST165-MAIN-EXTERNE.json",
+      "sha256": "776ee0a24e56b1f46bcc873c9c25f89d353f10850568775e10a070d5e6708bea",
+      "bytes": 1583,
       "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
     },
     {
@@ -1039,6 +1466,20 @@
       "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
     },
     {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A6/NEXT-READY-POST203-A6.json",
+      "source_session": "/workspace/work/resume496/agents/A6/NEXT-READY-POST203-A6.json",
+      "sha256": "77e8f0789f414fa81016fdc7235827f7926a7615cde0acdfff504b9fa5064e11",
+      "bytes": 65765,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A6/NEXT-READY-POST203-A6.md",
+      "source_session": "/workspace/work/resume496/agents/A6/NEXT-READY-POST203-A6.md",
+      "sha256": "01e6f859fcca988ee3c3c72ef70a0e5d35ed34ceb5d19a5f077b91aad9f9c407",
+      "bytes": 3410,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
       "path": "docs/ai-team/reports/reprise-496dcfc/A6/REVUE-DEC18-A6.json",
       "source_session": "/workspace/work/resume496/agents/A6/REVUE-DEC18-A6.json",
       "sha256": "34a67e96d9e9c013ae428a1d568b570f006e5907aa7a8f578359af55240df5d9",
@@ -1078,6 +1519,20 @@
       "source_session": "/workspace/work/resume496/agents/A6/REVUE-G2-SECURITE.json",
       "sha256": "bfe8a38a84f80133c3c6493b9c452b8b5f34d4c92a49d430cf47507dc8a4c585",
       "bytes": 2872,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A6/REVUE-INTEGRATION-203-A6.json",
+      "source_session": "/workspace/work/resume496/agents/A6/REVUE-INTEGRATION-203-A6.json",
+      "sha256": "299d83316483805125378792c90a4682e9a58139241f7f802578009b024e29ac",
+      "bytes": 2827,
+      "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
+    },
+    {
+      "path": "docs/ai-team/reports/reprise-496dcfc/A6/REVUE-INTEGRATION-203-A6.md",
+      "source_session": "/workspace/work/resume496/agents/A6/REVUE-INTEGRATION-203-A6.md",
+      "sha256": "f469e3f35eacddfcd4f01dfb6e8e875ffbd04775394b4a15e019a0c9b8943fe0",
+      "bytes": 1527,
       "note": "Copie à octets identiques. État daté propre au rapport ; synthèse courante dans README et STATUS/HANDOFF."
     },
     {

@@ -29,7 +29,8 @@
           "docs/ai-team/reports/mission-003/README.md",
           "docs/ai-team/reports/mission-004/README.md",
           "docs/ai-team/reports/reprise-496dcfc/README.md",
-          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json"
+          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json",
+          "docs/ai-team/reports/reprise-496dcfc/RESIDUELS-CONSOLIDATION-A0.json"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -41,7 +42,7 @@
           "essais_effectues": "Coordination des sept rôles réellement exécutée ; code DB et preuves documentaires consolidés, aucun programme clos.",
           "prochaine_action": "Intégrer les nouvelles pièces stabilisées, contrôler les décisions166 puis publier checkpoint et CI au SHA exact ; aucune clôture globale."
         },
-        "suite": "Intégrer les nouvelles pièces stabilisées, contrôler les décisions166 puis publier checkpoint et CI au SHA exact ; aucune clôture globale.",
+        "suite": "203 définitions revues/intégrées,20 compléments ciblés et2rapprochementsM05/M07 disponibles. Vérifier nouvelles pièces/décisions166 puis prochaine action indépendante ; checkpoints sur172, pas165 close.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -522,7 +523,8 @@
           "docs/ai-team/reports/mission-003/A2/CI154-SNAPSHOT-CONTRAT.md",
           "docs/ai-team/reports/mission-004/README.md",
           "docs/ai-team/reports/reprise-496dcfc/README.md",
-          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json"
+          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json",
+          "docs/ai-team/reports/reprise-496dcfc/RESIDUELS-CONSOLIDATION-A0.json"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -534,7 +536,7 @@
           "essais_effectues": "Contrats DB revus ; matrice manifeste2/commandes3/modèle1/archive1/lecteur publication documentée sans modification applicative.",
           "prochaine_action": "Instruire les dix choix résiduels M05/M17 avec l’autorité déléguée ; aucune modification de versions/lecteurs avant accord et preuve ciblée."
         },
-        "suite": "Instruire les dix choix résiduels M05/M17 avec l’autorité déléguée ; aucune modification de versions/lecteurs avant accord et preuve ciblée.",
+        "suite": "Rapprochement dixchoix↔onzegroupes COEX03 préparé ; faire arbitrer seulement les choix physiques applicables, sans renommer versions ou migrer.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -691,7 +693,8 @@
           "docs/ai-team/reports/mission-003/A2/M05-M07-M08-CONTRATS.md",
           "docs/ai-team/reports/mission-004/README.md",
           "docs/ai-team/reports/reprise-496dcfc/README.md",
-          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json"
+          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json",
+          "docs/ai-team/reports/reprise-496dcfc/RESIDUELS-CONSOLIDATION-A0.json"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -703,7 +706,7 @@
           "essais_effectues": "25 arêtes existantes réutilisées ; proposition de façades publiques et autorités uniques documentée, pas garde applicative supplémentaire.",
           "prochaine_action": "Inventaire DEC18 et revue A6 reçus ; confirmer droits et distribution réellement prévus, puis contrat/adaptation autorisés. Aucun nouvel audit25arêtes."
         },
-        "suite": "Inventaire DEC18 et revue A6 reçus ; confirmer droits et distribution réellement prévus, puis contrat/adaptation autorisés. Aucun nouvel audit25arêtes.",
+        "suite": "Règles candidates septmodules/type-only/runtime/API publique reliées aux25arêtes historiques et152 ; faire adopter les frontières avant correctif, pas refaire carte ni garde152.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -1314,7 +1317,8 @@
           "docs/ai-team/reports/mission-004/A4/NAV-M004.json",
           "docs/ai-team/reports/mission-004/README.md",
           "docs/ai-team/reports/reprise-496dcfc/README.md",
-          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json"
+          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json",
+          "docs/ai-team/reports/reprise-496dcfc/RESIDUELS-CONSOLIDATION-A0.json"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -1326,7 +1330,7 @@
           "essais_effectues": "D07 retenu pour spécifications, NAV et maquettes desktop/mobile/états sources complétés ;24conditions documentaires revues, aucune route réalisée.",
           "prochaine_action": "Revue indexG1-01..04 reçue, rattacher le résultat délégué au dossier exact lorsqu’il arrive ; pas de gate accepté par existence de pièces."
         },
-        "suite": "Revue indexG1-01..04 reçue, rattacher le résultat délégué au dossier exact lorsqu’il arrive ; pas de gate accepté par existence de pièces.",
+        "suite": "REP02..09/ADR04/COEX02 vérifiés documentairement ; cinqCOEX restent En cours. Recevoir propositionADR01/02 annoncée Claude6251022689, rapprocher addendumA4 et réservesA2/A5 avant décision.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -1410,7 +1414,8 @@
           "docs/ai-team/reports/mission-003/A1/studio-18-decisions.json",
           "docs/ai-team/reports/mission-004/README.md",
           "docs/ai-team/reports/reprise-496dcfc/README.md",
-          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json"
+          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json",
+          "docs/ai-team/reports/reprise-496dcfc/RESIDUELS-CONSOLIDATION-A0.json"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -1422,7 +1427,7 @@
           "essais_effectues": "18 décisions physiques priorisées, exemples durables préparés ; DEC01/03/18 puis02/12 ; aucun POC/G2/G3 exécuté ou accepté.",
           "prochaine_action": "Soumettre G1 et le POC expérimental borné après faisabilité/contrôles de périmètre ; décisions effectives séparées et G1–G4 restent ouverts."
         },
-        "suite": "Soumettre G1 et le POC expérimental borné après faisabilité/contrôles de périmètre ; décisions effectives séparées et G1–G4 restent ouverts.",
+        "suite": "G2-01/G2-05 etG3-01/G3-03 complétés ; lire réponses6250904693/5795, préconditions par preuve, pas de G1–G4 accepté ni codePOC implicite.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -1529,7 +1534,8 @@
           "docs/ai-team/reports/mission-003/A5/corpus-S1-S7.csv",
           "docs/ai-team/reports/mission-004/README.md",
           "docs/ai-team/reports/reprise-496dcfc/README.md",
-          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json"
+          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json",
+          "docs/ai-team/reports/reprise-496dcfc/RESIDUELS-CONSOLIDATION-A0.json"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -1541,7 +1547,7 @@
           "essais_effectues": "7fixtures synthétiques documentaires partielles constituées,8cohérences arithmétiques documentaires contrôlées ; corpusRT complets encore ouverts.",
           "prochaine_action": "R5 lacunesS1–S7 remis : choisir uniquement les données/oracles indispensables au sous-lot ratifié et seuilsDEC13 nécessaires, sans inventer corpus complet ou budget."
         },
-        "suite": "R5 lacunesS1–S7 remis : choisir uniquement les données/oracles indispensables au sous-lot ratifié et seuilsDEC13 nécessaires, sans inventer corpus complet ou budget.",
+        "suite": "10PERF source exacts et protocole revusA4,13cas spatial/rendu ajoutés comme déclinaisons candidates aux mêmes38oracles ; fixer contrats/corpus/budgets avant exécution.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -1938,7 +1944,8 @@
         "preuves": [
           "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
           "docs/ai-team/reports/reprise-496dcfc/README.md",
-          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json"
+          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json",
+          "docs/ai-team/reports/reprise-496dcfc/RESIDUELS-CONSOLIDATION-A0.json"
         ],
         "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
         "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
@@ -1950,7 +1957,7 @@
           "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
           "prochaine_action": "Revue du contrat association/historique existant seulement si delta des identités est adopté."
         },
-        "suite": "Revue du contrat association/historique existant seulement si delta des identités est adopté.",
+        "suite": "Quatre compléments association/historique A3 disponibles,20souscas proposés/reliés auxTEST existants et revusA2/A5. Décisions physiques et autorisation du lot restent nécessaires ; aucune exécution.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -2098,7 +2105,8 @@
         "preuves": [
           "docs/ai-team/reports/mission-003/A2/LOT-C.md",
           "docs/ai-team/reports/reprise-496dcfc/README.md",
-          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json"
+          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json",
+          "docs/ai-team/reports/reprise-496dcfc/RESIDUELS-CONSOLIDATION-A0.json"
         ],
         "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
         "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
@@ -2110,7 +2118,7 @@
           "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
           "prochaine_action": "Conserver lotC ; préparer choix d’oracle seulement après contrat et charge identifiés."
         },
-        "suite": "Conserver lotC ; préparer choix d’oracle seulement après contrat et charge identifiés.",
+        "suite": "C.1-01/C.1-07/C.2-02/C.2-03/C.2-05 ont leurs protocoles/cas candidats ; contrats, corpus, cible, budgets pertinents et accord du lot avant toute mesure ou code.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -2454,7 +2462,8 @@
           "docs/ai-team/reports/mission-004/A5/CORPUS-LIMITES-P630.md",
           "docs/ai-team/reports/mission-004/README.md",
           "docs/ai-team/reports/reprise-496dcfc/README.md",
-          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json"
+          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json",
+          "docs/ai-team/reports/reprise-496dcfc/RESIDUELS-CONSOLIDATION-A0.json"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -2466,7 +2475,7 @@
           "essais_effectues": "38oracles requalifiés sans exécution ;7fixtures partielles et9liensNAV décrits ; aucun scénario Studio réussi.",
           "prochaine_action": "Lacunes corpus reliées aux38oracles existants ; essais attendent capacité/corpus/cible autorisés, pas de39eoracle ni de résultat runtime fictif."
         },
-        "suite": "Lacunes corpus reliées aux38oracles existants ; essais attendent capacité/corpus/cible autorisés, pas de39eoracle ni de résultat runtime fictif.",
+        "suite": "Réemployer38oracles,13cas spatial/rendu,8picking et20association comme déclinaisons documentaires ; tests restent non exécutés, pas de nouveauxTEST normatifs.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -2713,7 +2722,8 @@
           "docs/ai-team/reports/mission-003/README.md",
           "docs/ai-team/reports/mission-004/README.md",
           "docs/ai-team/reports/reprise-496dcfc/README.md",
-          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json"
+          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json",
+          "docs/ai-team/reports/reprise-496dcfc/RESIDUELS-CONSOLIDATION-A0.json"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -2725,7 +2735,7 @@
           "essais_effectues": "Checkpoints et registre uniques maintenus ;30conditions documentaires vérifiées, branche temporaire de sauvegarde si165CI incompatible.",
           "prochaine_action": "Consigner les remises au checkpoint unique. Mission002 :19inventoriés,14archivés ;5référencés sans duplication. Anciens fichiers autonomesINV/IF/AC/DEC non retrouvés, aucune information déclarée perdue par simple soustraction."
         },
-        "suite": "Consigner les remises au checkpoint unique. Mission002 :19inventoriés,14archivés ;5référencés sans duplication. Anciens fichiers autonomesINV/IF/AC/DEC non retrouvés, aucune information déclarée perdue par simple soustraction.",
+        "suite": "Conserver provenance16copies upstream, revues203 et chaîne42→44→44 ; helper amont non exécuté et deux liens README normalisés vers source322. Recevoir nouvelles pièces plutôt que recréer des originaux.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -2829,7 +2839,8 @@
           "docs/ai-team/reports/mission-003/DECISIONS-M002-D01-D08.md",
           "docs/ai-team/reports/mission-004/README.md",
           "docs/ai-team/reports/reprise-496dcfc/README.md",
-          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json"
+          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json",
+          "docs/ai-team/reports/reprise-496dcfc/RESIDUELS-CONSOLIDATION-A0.json"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -2841,7 +2852,7 @@
           "essais_effectues": "31missions et630IDs conservés ; file READY/WAITING explicite, zéro mission entière close.",
           "prochaine_action": "File de préparation revue et consolidée ; reprendre la prochaine sous-tâche devenueREADY après décision/pièce nouvelle, sans promettre de relance automatique."
         },
-        "suite": "File de préparation revue et consolidée ; reprendre la prochaine sous-tâche devenueREADY après décision/pièce nouvelle, sans promettre de relance automatique.",
+        "suite": "Suites documentaires recensées exécutées ; lire nouvelles réponses/livrables166 puis agir selon déclencheurs exacts du registre.31 missions restent ouvertes, aucun travail automatique en arrière-plan.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -2895,5 +2906,23 @@
     }
   ],
   "tracking_registry": "docs/workstreams/studio/task-register.json",
-  "execution_note": "Champs execution ajoutés sans changement des31 IDs, propriétaires, plages, dépendances ou textes de référence ; aucune mission close."
+  "execution_note": "Champs execution ajoutés sans changement des31 IDs, propriétaires, plages, dépendances ou textes de référence ; aucune mission close.",
+  "checkpoint_203": {
+    "reference_main": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+    "checkpoint_documentaire_precedent": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+    "PR_continuation": 172,
+    "registre_unique": "docs/workstreams/studio/task-register.json",
+    "definitions_revues": 203,
+    "clotures_documentaires_supplementaires": 10,
+    "missions_ouvertes": 31,
+    "P630": 44,
+    "PDEV": null,
+    "preuves": [
+      "docs/ai-team/reports/reprise-496dcfc/203-INTEGRATION-A0.json",
+      "docs/ai-team/reports/reprise-496dcfc/COEX-INTEGRATION-A0.json",
+      "docs/ai-team/reports/reprise-496dcfc/RESIDUELS-CONSOLIDATION-A0.json"
+    ],
+    "limite": "Les états globaux des31 missions et les anciennes références de preuve restent conservés ; aucune mission close.",
+    "preparations_residuelles": 22
+  }
 }
