@@ -9,7 +9,7 @@
  * sur le dessin —, et en pied « ⚙ Barres d'outils » (barres affichées, « Réinitialiser la disposition »). Clavier :
  * flèches haut / bas (Début, Fin) d'un élément à l'autre, flèche droite / gauche pour déplier / replier, Entrée, Échap.
  */
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { outilParId, type FamilleOutil, type Outil } from "@parcours/planche-model";
 import { barreDe, groupesOutils, libelleOperation, premierOutil, type SectionBarre } from "./barres-outils";
 import type { EtatBarresOutils } from "./barres-outils-disposition";
@@ -46,6 +46,15 @@ export interface CommandeListe {
 /** Bouton d'une opération : pictogramme propre à l'outil, « Nom — raccourci » en infobulle et en nom accessible. */
 export function titreOperation(o: Outil, raison: string | null): string {
   return `${libelleOperation(o)}${raison ? ` — ${raison}` : ""}`;
+}
+
+/**
+ * Placement de la liste « Outils » (pur, testé) : au téléphone, surcouche fixe 4 px sous le bouton ; partout, hauteur
+ * maximale bornée au bas de la Planche et de la fenêtre (8 px de marge), jamais moins de 88 px.
+ */
+export function placementListeOutils(basBouton: number, basZone: number | null, hauteurFenetre: number, telephone: boolean): { haut: number | null; hauteurMax: number } {
+  const bas = Math.min(hauteurFenetre, basZone ?? hauteurFenetre);
+  return { haut: telephone ? Math.round(basBouton + 4) : null, hauteurMax: Math.max(88, Math.floor(bas - basBouton - 12)) };
 }
 
 export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBarre, onReinitialiser, commandes = [] }: PropsBoutonOutils) {
@@ -98,31 +107,44 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
     };
   }, [ouvert]);
 
-  // Bounds are relative to the actual embedded drawing, not an assumed
-  // fullscreen window. Keep the last menu commands reachable by local scroll.
-  useEffect(() => {
+  // Position et hauteur de la liste, toujours mesurées ensemble à partir du bouton et de la zone réelle de la Planche
+  // (pas d'une fenêtre plein écran supposée) : les dernières commandes restent atteignables par défilement local.
+  const positionner = () => {
+    const w = racine.current?.ownerDocument.defaultView ?? window;
+    const b = bouton.current?.getBoundingClientRect();
+    if (!b) return;
+    const zone = racine.current?.closest(".planche")?.getBoundingClientRect();
+    const p = placementListeOutils(b.bottom, zone?.bottom ?? null, w.innerHeight, w.matchMedia("(max-width: 760px)").matches);
+    setHautTelephone(p.haut);
+    setHauteurListe(p.hauteurMax);
+  };
+
+  // Avant la peinture (useLayoutEffect) puis à chaque défilement, y compris celui d'un conteneur interne : depuis la mise
+  // en page pleine largeur (#142), la page du projet défile dans un conteneur, dont le `scroll` ne remonte pas à la
+  // fenêtre — d'où l'écoute en capture sur le document.
+  useLayoutEffect(() => {
     if (!ouvert) return;
     const w = racine.current?.ownerDocument.defaultView ?? window;
-    const positionner = () => {
-      const b = bouton.current?.getBoundingClientRect();
-      const zone = racine.current?.closest(".planche")?.getBoundingClientRect();
-      if (!b) return;
-      setHautTelephone(w.matchMedia("(max-width: 760px)").matches ? Math.round(b.bottom + 4) : null);
-      setHauteurListe(Math.max(88, Math.floor(Math.min(w.innerHeight, zone?.bottom ?? w.innerHeight) - b.bottom - 12)));
-    };
+    const d = w.document;
     positionner();
     w.addEventListener("resize", positionner);
-    w.addEventListener("scroll", positionner, { passive: true });
-    return () => { w.removeEventListener("resize", positionner); w.removeEventListener("scroll", positionner); };
+    w.visualViewport?.addEventListener("resize", positionner);
+    d.addEventListener("scroll", positionner, { capture: true, passive: true });
+    return () => {
+      w.removeEventListener("resize", positionner);
+      w.visualViewport?.removeEventListener("resize", positionner);
+      d.removeEventListener("scroll", positionner, { capture: true });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ouvert]);
 
   const ouvrir = (clavier: boolean) => {
     // Famille de l'outil actif dépliée à l'ouverture (les autres repliées, chacune avec sa flèche).
     const f = outilParId(outilId)?.famille;
     setFamilles((s) => (f && !s.has(f) ? new Set([...s, f]) : s));
-    const w = racine.current?.ownerDocument.defaultView ?? window;
-    const r = bouton.current?.getBoundingClientRect();
-    setHautTelephone(r && w.matchMedia("(max-width: 760px)").matches ? Math.round(r.bottom + 4) : null);
+    // Haut et hauteur maximale fixés dans le même rendu que l'ouverture : la liste n'est jamais peinte avec la hauteur
+    // de repli de la feuille de style (100vh − 7rem au téléphone), qui ignore où se trouve le bouton.
+    positionner();
     setOuvert(true);
     if (clavier) requestAnimationFrame(() => champ.current?.focus());
   };

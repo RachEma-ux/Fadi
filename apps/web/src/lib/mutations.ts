@@ -60,6 +60,26 @@ export interface CommentVars {
   parentId?: string | null;
 }
 
+/**
+ * Commentaire accepté par le serveur : fils de l'étape et de la collaboration relus APRÈS l'écriture.
+ *
+ * Une première lecture partie avant la publication (pli ouvert puis publié aussitôt) peut avoir été servie avant
+ * l'insertion. Tant que la requête n'a encore aucune donnée, `invalidateQueries` ne l'annule pas : TanStack Query
+ * réutilise la lecture en vol (`cancelRefetch` ne s'applique qu'à une requête qui a déjà des données), qui rendait
+ * alors une liste sans le commentaire, sans autre relecture. Ces lectures sont donc annulées d'abord ; le
+ * commentaire est ajouté au fil déjà lu de son étape, puis tout est relu.
+ */
+export async function adoptComment(queryClient: QueryClient, created: ProjectComment, v: CommentVars): Promise<void> {
+  const keys = [["comments", v.projectId], ["collaboration", v.projectId]] as const;
+  await Promise.all(keys.map((queryKey) => queryClient.cancelQueries({ queryKey })));
+  if (v.stepNumber !== null) {
+    queryClient.setQueryData<ProjectComment[]>(["comments", v.projectId, v.stepNumber], (existing) =>
+      existing ? (existing.some((c) => c.id === created.id) ? existing : [...existing, created]) : existing,
+    );
+  }
+  await Promise.all(keys.map((queryKey) => queryClient.invalidateQueries({ queryKey })));
+}
+
 export interface SyncConflict {
   id: string;
   at: string;
@@ -217,9 +237,8 @@ export function registerMutationDefaults(queryClient: QueryClient) {
   queryClient.setMutationDefaults(MUTATION_KEYS.comment, {
     ...RETRY_NETWORK,
     mutationFn: (v: CommentVars) => api.addComment(v.projectId, v.body, v.stepNumber, v.parentId ?? null),
-    onSuccess: (_c: ProjectComment, v: CommentVars) => {
-      void queryClient.invalidateQueries({ queryKey: ["collaboration", v.projectId] });
-      void queryClient.invalidateQueries({ queryKey: ["comments", v.projectId] });
+    onSuccess: (created: ProjectComment, v: CommentVars) => {
+      void adoptComment(queryClient, created, v);
     },
   });
 }
