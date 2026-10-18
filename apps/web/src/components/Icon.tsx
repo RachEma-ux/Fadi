@@ -58,7 +58,11 @@ export type IconName =
   | "studio-palette"
   | "studio-extrude"
   | "studio-flatten"
-  | "studio-view-3d";
+  | "studio-view-3d"
+  | "studio-sheet"
+  | "studio-print"
+  | "studio-sheet-svg"
+  | "studio-sheet-pdf";
 
 const PATHS: Record<IconName, string> = {
   search: "M10.5 3.5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 5 5",
@@ -118,6 +122,11 @@ const PATHS: Record<IconName, string> = {
   "studio-extrude": "M4 20h11l5-4H9l-5 4ZM9 16V6M12 3 9 6 6 3M15 20V10M20 16V6",
   "studio-flatten": "M4 18h11l5-3H9l-5 3ZM12 4v8M9 9l3 3 3-3",
   "studio-view-3d": "M12 3 4 7.5v9L12 21l8-4.5v-9L12 3ZM4 7.5 12 12l8-4.5M12 12v9",
+  // Feuille de présentation : cadre de la feuille, dessin et cartouche en bas à droite.
+  "studio-sheet": "M3 5h18v14H3ZM5 7h14v6H5ZM12 15h7v4M12 17h7M7 11l3-2 3 2",
+  "studio-print": "M7 9V3h10v6M7 17H4v-8h16v8h-3M7 14h10v7H7ZM17 12h1",
+  "studio-sheet-svg": "M3 4h14v10H3ZM9 11h8M9 11v3M6 9c2-3 4 2 6-1M19 14v7M16 18l3 3 3-3",
+  "studio-sheet-pdf": "M3 4h14v10H3ZM9 11h8M9 11v3M6 7h3v3H6M19 14v7M16 18l3 3 3-3",
 };
 
 export function Icon({ name, size = 20, className }: { name: IconName; size?: number; className?: string }) {

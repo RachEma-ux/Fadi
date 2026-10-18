@@ -12,15 +12,15 @@ export type IdCommandeEditeur =
   | "annuler" | "retablir" | "annuler-trace" | "enregistrer" | "tout-selectionner"
   | "zoom-avant" | "zoom-arriere" | "cadrer" | "plein-ecran" | "vue-3d"
   | "accrochage-sommets" | "accrochage-grille"
-  | "exporter-svg" | "exporter-dxf" | "exporter-ifc"
+  | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille"
   | "outils" | "palette";
-export type GroupeCommande = "edition" | "vue" | "accrochage" | "export" | "catalogue";
+export type GroupeCommande = "edition" | "vue" | "accrochage" | "export" | "presentation" | "catalogue";
 export type BarreStudio = StudioToolGroup | GroupeCommande;
 export type IconeCommande =
   | "studio-undo" | "studio-redo" | "studio-cancel" | "studio-save" | "studio-select-all"
   | "studio-zoom-in" | "studio-zoom-out" | "studio-frame" | "studio-fullscreen" | "studio-view-3d"
   | "studio-snap-vertex" | "studio-snap-grid"
-  | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc"
+  | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet"
   | "studio-catalog" | "studio-palette";
 
 export interface CommandeEditeur {
@@ -61,6 +61,8 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "exporter-dxf", libelleFR: "Exporter DXF", raccourci: "Shift+X", iconeSymbolique: "studio-export-dxf", groupe: "export", ecrit: false, telechargement: "dxf" },
   // IFC4X3 des seuls objets extrudés (Maj+I : I comme IFC, libre et non réservé).
   { id: "exporter-ifc", libelleFR: "Exporter IFC", raccourci: "Shift+I", iconeSymbolique: "studio-export-ifc", groupe: "export", ecrit: false, telechargement: "ifc" },
+  // Feuille de présentation (format, échelle, cartouche) : Maj+P (P comme page) ; Ctrl+P reste l'impression du navigateur.
+  { id: "feuille", libelleFR: "Feuille", raccourci: "Shift+P", iconeSymbolique: "studio-sheet", groupe: "presentation", ecrit: false },
   { id: "outils", libelleFR: "Outils", raccourci: "Shift+O", iconeSymbolique: "studio-catalog", groupe: "catalogue", ecrit: false },
   { id: "palette", libelleFR: "Palette de commandes", raccourci: "Ctrl+K", iconeSymbolique: "studio-palette", groupe: "catalogue", ecrit: false, dansUnChamp: true },
 ] as const);
@@ -75,6 +77,7 @@ export const BARRES_STUDIO: readonly { id: BarreStudio; libelleFR: string }[] = 
   { id: "vue", libelleFR: "Vue" },
   { id: "accrochage", libelleFR: "Accrochage" },
   { id: "export", libelleFR: "Exporter" },
+  { id: "presentation", libelleFR: "Présentation" },
   { id: "catalogue", libelleFR: "Catalogue" },
 ]);
 

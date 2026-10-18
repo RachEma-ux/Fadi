@@ -60,7 +60,7 @@ describe("Planche 2D de Studio — règle d'or", () => {
     for (const b of BARRES_STUDIO) expect(outilsDeBarre(b.id).length + commandesDeBarre(b.id).length, b.id).toBeGreaterThan(0);
     expect(STUDIO_TOOLS.filter((t) => t.nature === "mutation").map((t) => t.toolId)).toEqual([...STUDIO_COMMAND_TOOL_IDS]);
     // Vue, accrochage, exports et catalogue : les commandes livrées avec la sélection multiple et le zoom.
-    for (const id of ["tout-selectionner", "zoom-avant", "zoom-arriere", "accrochage-sommets", "accrochage-grille", "exporter-svg", "exporter-dxf", "exporter-ifc", "outils", "palette"]) {
+    for (const id of ["tout-selectionner", "zoom-avant", "zoom-arriere", "accrochage-sommets", "accrochage-grille", "exporter-svg", "exporter-dxf", "exporter-ifc", "feuille", "outils", "palette"]) {
       expect(COMMANDES_EDITEUR.some((c) => c.id === id), id).toBe(true);
     }
   });
@@ -102,6 +102,12 @@ describe("Planche 2D de Studio — règle d'or", () => {
     expect(COMMANDES_EDITEUR.find((c) => c.id === "exporter-ifc")).toMatchObject({ groupe: "export", ecrit: false, telechargement: "ifc", iconeSymbolique: "studio-export-ifc" });
     expect(outilsDeBarre("volume").map((t) => t.toolId)).toEqual(["studio.objet.extruder", "studio.objet.aplatir"]);
     expect(COMMANDES_EDITEUR.find((c) => c.id === "vue-3d")).toMatchObject({ groupe: "vue", bascule: true, ecrit: false, iconeSymbolique: "studio-view-3d" });
+    // Feuille de présentation : Maj+P, barre Présentation, icône propre ; Ctrl+P (impression) reste au navigateur.
+    expect(cibleRaccourci("Shift+P")).toEqual({ type: "commande", id: "feuille" });
+    expect(cibleRaccourci("Ctrl+P")).toBeNull();
+    expect(RACCOURCIS_RESERVES).toContain("Ctrl+P");
+    expect(COMMANDES_EDITEUR.find((c) => c.id === "feuille")).toMatchObject({ groupe: "presentation", ecrit: false, iconeSymbolique: "studio-sheet" });
+    expect(commandesDeBarre("presentation").map((c) => c.id)).toEqual(["feuille"]);
     // Dans un champ de saisie, seuls Enregistrer et la palette restent actifs.
     expect(actifDansUnChamp("Ctrl+S")).toBe(true);
     expect(actifDansUnChamp("Ctrl+K")).toBe(true);

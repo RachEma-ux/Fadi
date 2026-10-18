@@ -11,6 +11,8 @@
  * enregistrées : aucune annulation côté serveur n'est simulée. La vue n'est jamais une donnée du document.
  * Volume : extrusion déclarée de la sélection (`studio.objet.extruder` / `studio.objet.aplatir`, valeurs saisies
  * seulement) et « Vue 3D » (Maj+D), chargée à la demande, du brouillon courant.
+ * Présentation : « Feuille » (Maj+P) compose la révision affichée sur une feuille ISO (format, échelle, cartouche
+ * prérempli par les données réelles), l'imprime à sa taille réelle ou la télécharge en SVG / PDF ; lecture seule admise.
  */
 import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type PointerEvent } from "react";
 import { Link } from "react-router-dom";
@@ -44,6 +46,8 @@ import { ajouter, basculer, commandesDeplacement, modeRectangle, selectionParRec
 import { ecranVersPlanche, facteurMolette, glisserVue, LARGEUR_VUE, pasGrille, pincer, surGrille, zoomer, zoomerAuCentre, type Rect } from "./planche2d/vue";
 import { commandesAplatir, commandesExtrusion, formesSelectionnees, valeursDe, VALEURS_VIDES, type ValeursExtrusion } from "./vue3d/extrusion";
 import { FormulaireExtrusion } from "./vue3d/FormulaireExtrusion";
+import { cartoucheInitial } from "./feuille/feuille-ui";
+import { PanneauFeuille } from "./feuille/PanneauFeuille";
 import "./studio.css";
 import "./planche2d/planche2d.css";
 
@@ -97,7 +101,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
   const [accrocheGrille, setAccrocheGrille] = useState(false);
   const [rectangle, setRectangle] = useState<RectangleSelection | null>(null);
   const [apercu, setApercu] = useState<{ ids: string[]; dx: number; dy: number } | null>(null);
-  const [dialogue, setDialogue] = useState<"outils" | "palette" | null>(null);
+  const [dialogue, setDialogue] = useState<"outils" | "palette" | "feuille" | null>(null);
+  const { user } = useAuth();
   const [calqueActif, setCalqueActif] = useState<string>(STUDIO_DEFAULT_LAYER_ID);
   const [nomCalque, setNomCalque] = useState("");
   const [pending, setPending] = useState(false);
@@ -127,6 +132,10 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
   const commands = brouillon ? commandesEnAttente(brouillon) : [];
   dirty.current = commands.length > 0 || !!trace || pending || uncertain;
   const writable = !historical && !!context?.canWrite && !pending && !uncertain && !blocked;
+  // Données réelles du cartouche de la feuille (mêmes clés que le fil d'Ariane et l'historique : cache partagé).
+  const projet = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId), staleTime: 30_000, retry: (n, e) => !refused(e) && n < 1, enabled: !!context });
+  const revisionsFeuille = useQuery({ queryKey: ["studio-revisions", projectId, studyId, variantId], queryFn: () => api.studioRevisions(projectId, studyId, variantId), retry: (n, e) => !refused(e) && n < 1, enabled: dialogue === "feuille" });
+  const revisionAffichee = revisionsFeuille.data?.revisions.find(r => r.id === context?.revision.id);
 
   useEffect(() => {
     alive.current = true;
@@ -473,6 +482,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
         // Le lien de la barre télécharge (même origine, cookie de session) : le raccourci le suit.
         shell.current?.querySelector<HTMLAnchorElement>(`a[data-studio-commande="${id}"][href]`)?.click();
         return;
+      case "feuille": return setDialogue("feuille");
       case "outils": return setDialogue("outils");
       case "palette": return setDialogue("palette");
     }
@@ -625,7 +635,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
       <div className="studio-note"><strong>Une planche autonome</strong><p>Les tracés restent en brouillon jusqu’à la confirmation du serveur. Aucun modèle 3D n’est nécessaire.</p></div></aside></div>
     <RevisionsPanel projectId={projectId} studyId={studyId} variantId={variantId} headRevisionId={context.variant.headRevisionId} shownRevisionId={context.revision.id} />
     {dialogue === "outils" && <GestionnaireOutils disponible={entreeDisponible} surExecuter={executerEntree} surFermer={() => setDialogue(null)} />}
-    {dialogue === "palette" && <PaletteCommandes disponible={entreeDisponible} surExecuter={executerEntree} surFermer={() => setDialogue(null)} />}</>}
+    {dialogue === "palette" && <PaletteCommandes disponible={entreeDisponible} surExecuter={executerEntree} surFermer={() => setDialogue(null)} />}
+    {dialogue === "feuille" && <PanneauFeuille doc={context.revision.document} brouillonNonEnregistre={commands.length > 0} surFermer={() => setDialogue(null)}
+      cartouche={cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })} />}</>}
   </section>;
 }
 
