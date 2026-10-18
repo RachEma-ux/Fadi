@@ -37,6 +37,9 @@ def main():
     args = parser.parse_args()
     for port in (3001, 5173):
         with socket.socket() as sock:
+            # Match Node's listener semantics: closed connections in TIME_WAIT
+            # are safe to reuse, while an actual listener still refuses the bind.
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.bind(('127.0.0.1', port))
 
     path = args.profile.resolve() if args.profile else Path(checked(
