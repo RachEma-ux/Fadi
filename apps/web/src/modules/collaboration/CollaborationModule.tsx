@@ -11,7 +11,7 @@ import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { api, ApiError, ROLE_LABEL, type MemberRole, type ProjectComment } from "../../lib/api";
-import { MUTATION_KEYS, type CommentVars } from "../../lib/mutations";
+import { MUTATION_KEYS, adoptComment, type CommentVars } from "../../lib/mutations";
 import { LOCALE } from "../../lib/i18n";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -42,20 +42,14 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
     mutationKey: MUTATION_KEYS.comment,
     mutationFn: (v: CommentVars) => api.addComment(v.projectId, v.body, v.stepNumber, v.parentId ?? null),
     onSuccess: (created, v) => {
-      // Afficher uniquement le commentaire réellement accepté par l'API.
-      // L'invalidation réseau reste nécessaire pour synchroniser les autres fils,
-      // mais ne doit pas retarder l'affichage du commentaire sur son étape.
-      if (v.stepNumber !== null) {
-        queryClient.setQueryData<ProjectComment[]>(["comments", v.projectId, v.stepNumber], (existing) =>
-          existing ? (existing.some((c) => c.id === created.id) ? existing : [...existing, created]) : existing,
-        );
-      }
+      // Afficher uniquement le commentaire réellement accepté par l'API, puis relire les fils après l'écriture
+      // (une lecture partie avant la publication est annulée, `adoptComment`).
       if (v.parentId) {
         setReplyDraft("");
         setReplyTo(null);
       } else setDraft("");
       setError(null);
-      refresh();
+      void adoptComment(queryClient, created, v);
     },
     onError: (err) => setError(err instanceof ApiError && err.serverMessage ? err.serverMessage : "Le commentaire n’a pas pu être enregistré."),
   });
