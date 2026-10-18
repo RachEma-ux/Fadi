@@ -6,7 +6,7 @@ L'automatisation met à jour la **checklist HTML interactive existante** :
 [Studio/Fadi_Studio_Checklist_Interactive_V1_1.html](Fadi_Studio_Checklist_Interactive_V1_1.html).
 
 Sources :
-- [Issue #166](https://github.com/RachEma-ux/Fadi/issues/166) : commentaires horaires `[CODEX-ACK]`, `[CODEX-PROGRESS]`, `[CODEX-QUESTION]` et réponses ;
+- [Issue #166](https://github.com/RachEma-ux/Fadi/issues/166) : commentaires horaires `[CODEX-ACK]`, `[CODEX-PROGRESS]`, `[CHATGPT-HOURLY]`, `[CODEX-QUESTION]` et réponses ;
 - [Programme #156](https://github.com/RachEma-ux/Fadi/issues/156) : 31 missions et 630 affectations ;
 - le référentiel `Fadi_Studio_Checklist_Execution_V1_0.md`, qui contient **630 tâches**.
 
