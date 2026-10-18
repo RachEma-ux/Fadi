@@ -21,13 +21,20 @@ def main():
   reservation.bind(('127.0.0.1',0)); fixed_port=reservation.getsockname()[1]
  docker('run','-d','--name',name,'--label','fadi.programme=156','--label','fadi.validation=studio-v1','--label','fadi.run='+run,'--env-file',str(envfile),'-p','127.0.0.1:'+str(fixed_port)+':5432','-v',vol+':/var/lib/postgresql/data',image)
  for _ in range(45):
-  try:docker('exec',name,'pg_isready','-U','postgres','-d',db);break
+  try:docker('exec',name,'pg_isready','-h','127.0.0.1','-U','postgres','-d',db);break
   except RuntimeError:time.sleep(1)
  else:raise RuntimeError('New database did not become ready')
  info=json.loads(docker('inspect',name))[0];binding=info['NetworkSettings']['Ports']['5432/tcp'];assert len(binding)==1 and binding[0]['HostIp']=='127.0.0.1';port=int(binding[0]['HostPort']);assert info['Config']['Labels']['fadi.run']==run and info['Config']['Labels']['fadi.programme']=='156' and info['Config']['Labels']['fadi.validation']=='studio-v1'; assert any(m.get('Name')==vol and m['Destination']=='/var/lib/postgresql/data' for m in info['Mounts'])
- def sql(text):return docker('exec','-i',name,'psql','-X','-v','ON_ERROR_STOP=1','-U','postgres','-d',db,'-At',input=text)
+ def sql(text):
+  result=subprocess.run(D+['exec','-i',name,'psql','-X','-v','ON_ERROR_STOP=1','-U','postgres','-d',db,'-At'],env=ENV,input=text,text=True,capture_output=True,timeout=120)
+  if result.returncode:
+   diagnostic=state/'bootstrap-diagnostic.log'; diagnostic.write_text(result.stderr); os.chmod(diagnostic,0o600)
+   raise RuntimeError('New disposable bootstrap SQL failed; protected bootstrap-diagnostic.log contains details')
+  return result.stdout.strip()
  assert sql("SELECT current_database();")==db
- assert sql("SELECT count(*) FROM pg_tables WHERE schemaname='public';")=='0'
+ # The official PostGIS entrypoint creates spatial_ref_sys; refuse any non-extension table.
+ assert sql("SELECT count(*) FROM pg_tables t WHERE t.schemaname='public' AND NOT (t.tablename='spatial_ref_sys' AND EXISTS (SELECT 1 FROM pg_depend d JOIN pg_extension e ON e.oid=d.refobjid WHERE d.classid='pg_class'::regclass AND d.objid='public.spatial_ref_sys'::regclass AND d.deptype='e' AND e.extname='postgis'));")=='0'
+ assert sql("SELECT count(*) FROM pg_extension WHERE extname='postgis';")=='1'
  # Owner is distinct from runtime app role; bootstrap superuser remains container-local.
  sql("CREATE ROLE studio_owner NOLOGIN; CREATE ROLE studio_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD '"+appsecret+"';")
  init=(ROOT/'apps/api/src/db/init.sql').read_text()
