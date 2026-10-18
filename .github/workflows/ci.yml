@@ -265,6 +265,11 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/parcours-scenario.mjs 2>&1 | tee -a e2e.log
+      # Studio (D-0/D-A, #166) : schéma créé par db:migrate ; étude, commandes, rejeu, refus et historique par l'API réelle.
+      - name: Recette Studio par l'API — étude, commandes, rejeu, conflits, droits, historique (apps/web/e2e/studio-persistance.mjs)
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-persistance.mjs 2>&1 | tee -a e2e.log
       - name: Recette du nouvel Atelier (apps/web/e2e/atelier-nouveau.mjs)
         run: |
           set -o pipefail

@@ -617,7 +617,7 @@ export const studioStudies = pgTable("studio_studies", {
   id: text("id").primaryKey(),
   projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  // Les FK cycliques initialVariant/head sont différées dans studio-v1.sql.
+  // Les FK cycliques initialVariant/head sont différées dans init.sql (section Studio).
   initialVariantId: text("initial_variant_id").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("studio_studies_project_idx").on(t.projectId)]);
