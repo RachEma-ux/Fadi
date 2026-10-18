@@ -88,3 +88,14 @@ Si aucun progrès vérifiable : **indiquer « aucun progrès nouveau attesté »
 - Conserver les 21 étapes Parcours et l'architecture modulaire ; Studio ne doit ni écraser Atelier ni créer une seconde autorité de données.
 - Jamais de secrets dans le dépôt public ; pas de fusion de #165, ni d'activation de règle GitHub, ni de déploiement sur fadimmo.com par ce protocole.
 - Au moindre conflit documentaire, consigner les deux sources, leur statut et la décision requise. Les réussites de 1 757 tests, 47 scénarios et 3 IFC de Mission 001/002 sont **historiques** tant qu'elles ne sont pas reproduites au SHA retenu.
+
+## 6. Reprise sans attente, réponses et décisions encore ouvertes
+
+Lire impérativement [CODEX-NONBLOCKING-EXECUTION.md](CODEX-NONBLOCKING-EXECUTION.md). Les sept réponses techniques/de cadrage [Q-M003-D01 à D07](https://github.com/RachEma-ux/Fadi/issues/166) sont publiées et **exploitables pour les tâches de préparation**. Elles n'autorisent pas les opérations sensibles et ne ratifient pas automatiquement G0/G1/G3.
+
+- **Réponse ChatGPT reçue** : question analysée, direction ou méthode de préparation fournie ; la session Codex ne doit pas attendre pour travailler sur les sous-tâches sans dépendance.
+- **Décision utilisateur encore requise** : seule l'opération dont l'autorisation manque demeure bloquée, avec l'ID et la cause ; poursuivre les tâches indépendantes.
+- **Résolution complète** : preuve explicite de l'accord requis et de l'exécution/acceptation correspondante, pas simplement un commentaire `[CHATGPT-ANSWER]`.
+- Le tableau quotidien et le rapport horaire doivent distinguer `answered_count` de `owner_decision_pending_count`; ne pas afficher « plus aucune question bloquante » si des arbitrages restent ouverts.
+
+La surveillance horaire ne lance pas Codex en arrière-plan. Codex signale son activité réelle par `[CODEX-ACK]` et `[CODEX-PROGRESS]`, puis enregistre un HANDOFF utilisable avant interruption.
