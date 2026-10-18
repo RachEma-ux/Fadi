@@ -1,0 +1,1385 @@
+{
+  "report": "RECONCILIATION-169-171-PREPARATION-A3",
+  "date": "2026-10-18",
+  "agent": "A3",
+  "state": "Préparation documentaire vérifiée ; exécution locale distincte autorisée ensuite par A0",
+  "scope": "Réconciliation de ci.yml uniquement dans les lots DB1/2 et CLASSIF1 ; aucune nouvelle correction applicative",
+  "references": {
+    "base": "a4caaab0e6665480f09febe3914c960b424b6b47",
+    "main_cached_ref": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+    "pr169": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+    "pr171": "5e0285d37f23c7c539502664036f0a2ff0986409",
+    "claude_piece": "b6794c64c7ff98fadf62868331f4297631201069",
+    "main_ref": "refs/remotes/fadi/main",
+    "live_github_checked_by_A3": false
+  },
+  "facts": {
+    "common_mergebase": "a4caaab0e6665480f09febe3914c960b424b6b47",
+    "shared_changed_path_only": ".github/workflows/ci.yml",
+    "local_conflict_later_reproduced": true,
+    "application_changes_in_main_since_base": false,
+    "upstream_piece_execution_claims": "Attestation Claude structurée ; pas de journaux bruts, arbre fusionné publié ou CI SHA fusionné dans cette pièce",
+    "original_template_hashes": {
+      "169": "ecb2902742ea20d7187bf440cd94917039035019f861de23b4bf57edd3701590",
+      "171": "beca2dea96a0cef5dd027b16fe6bbcf5099b3b73c196210ca2f02ca47ad618b9",
+      "169-171": "eccb5d87a6083b3ec1a261658d12e6bfbf2426e7db8d0cdbb70ea9703878e209"
+    },
+    "templates_must_remain_in_docs_until_explicit_reconciliation": true,
+    "template_169_repository_guard_missing": true,
+    "normalization_required": "Ajouter github.repository exact au job db-guard-pure et aux trois exclusions169 ; restriction supplémentaire, pas élargissement de la route pure",
+    "drizzle_precision": "client-integration simule Drizzle ; trois cas review utilisent le vrai ORM sur transport pg simulé. Pas de PostgreSQL réel."
+  },
+  "helper_review": {
+    "ci_merge.py": "Ne pas importer : main() inconditionnel. Transformation de texte dépendant de forme exacte ; pas un merge YAML général ; corps normaux repris de BASE seulement, pas détection générale de collisions de jobs. Aucun appel par A3.",
+    "ci_eval.py": "Ne pas importer/exécuter : dépendance PyYAML et eval textuel. Matrice finie, pas moteur Actions/validation triggers/needs/statuts/permissions/services ; aucune preuve de confinement. Aucun appel par A3.",
+    "routing_txt": "Résultat déclaré par Claude sur sept contextes ; cas manque repository exécutant différent, champs absents, mauvais événement pour chaque branche et spécificités de chaînes Actions. A5/A6 examinent les fichiers finaux indépendamment."
+  },
+  "required_reconciliation_steps": [
+    {
+      "step": 1,
+      "owner": "A0",
+      "action": "Épingler de nouveau main et les deux têtes PR, relire les derniers commentaires166 et runs ; cette revue locale ne vérifie pas GitHub vivant."
+    },
+    {
+      "step": 2,
+      "owner": "A3",
+      "action": "Créer deux worktrees détachés distincts aux têtes existantes ; hooks neutralisés par commande ; merge --no-commit --no-ff de main817, jamais vers main."
+    },
+    {
+      "step": 3,
+      "owner": "A3 avec revue A6",
+      "action": "Exiger conflit ci.yml uniquement. Choisir variante main+169 ou main+171 correspondante ; pas template combiné tant que les deux lots restent des PR distinctes. Ajouter repository aux quatre conditions169 seulement."
+    },
+    {
+      "step": 4,
+      "owner": "A3",
+      "action": "Conserver en entier tous les blobs du lot et ceux de main non chevauchants ; vérifier index=union attendue, zéro conflit/marqueur/écart du workflow, diff-check du diff contre main."
+    },
+    {
+      "step": 5,
+      "owner": "A5/A6",
+      "action": "Revoir de manière indépendante les fichiers figés, prédicats event/repository/head.repo/head/base, union négative sur les trois jobs à services, corps des jobs purs et inventaire de tous les workflows."
+    },
+    {
+      "step": 6,
+      "owner": "A3 autorisé localement par A0",
+      "action": "Seulement après avis statique favorable, produire deux commits de merge locaux avec parents [lot,main] et identité Codex publique ; aucun push par A3."
+    },
+    {
+      "step": 7,
+      "owner": "A0",
+      "action": "Après relecture finale, publier au besoin par avance rapide sur les branches exactes des PR169/171 existantes, sans force. Un nouveau nom de branche distante ne bénéficie pas de la route pure et pourrait rendre les jobs DB éligibles."
+    },
+    {
+      "step": 8,
+      "owner": "A0/A6",
+      "action": "Observer les CI au SHA exact publié ; réussite ancienne, simulation et skip ne se transfèrent pas. Ne jamais fusionner vers main, démarrer service, remplir ancre vide, faire migration, déployer ou lancer DB3 au titre de cette réconciliation."
+    }
+  ],
+  "future_commands_only_not_run_here": {
+    "169": [
+      "npm ci --ignore-scripts --no-audit --no-fund",
+      "npm run typecheck",
+      "npm run test:db-guard",
+      "npm run build"
+    ],
+    "171": [
+      "npm ci --ignore-scripts --no-audit --no-fund",
+      "npm run typecheck",
+      "npm run test --workspace=@parcours/atelier-model",
+      "npm run build"
+    ],
+    "never_for_this_lot": [
+      "npm test",
+      "npm run db:migrate",
+      "E2E/API/server/start",
+      "builder-deploy workflow_dispatch"
+    ]
+  },
+  "permissions": {
+    "local_reconciliation_A0_authorized": true,
+    "push_by_A3": false,
+    "merge_pr_into_main": false,
+    "administration": false,
+    "real_db_or_services": false,
+    "app_code_change": false
+  },
+  "checks_executed_here": [
+    "Lecture statique Git immuable et comparaison de blobs/texte",
+    "Réconciliation locale --no-commit ensuite autorisée par A0 : rapport EXECUTION distinct",
+    "Aucun npm/install/build/typecheck/test applicatif, helper Claude, service, SQL ou réseau effectué par A3"
+  ],
+  "sources": [
+    {
+      "id": "SRC-01",
+      "sha": "b6794c64c7ff98fadf62868331f4297631201069",
+      "path": "docs/ai-team/reports/claude-verif-169-171/README.md",
+      "git_blob": "ce6fae2b425ba3de721d5a57a9c3e23743c966c1",
+      "sha256": "8a5bc77b44d2fe1886304872cae2fde8b5532113e9160f53c8e86de5be413757",
+      "lines": 77
+    },
+    {
+      "id": "SRC-02",
+      "sha": "b6794c64c7ff98fadf62868331f4297631201069",
+      "path": "docs/ai-team/reports/claude-verif-169-171/ci-resolu-169.yml",
+      "git_blob": "94c3bebf6cd39f349f7185e8043c27f621972215",
+      "sha256": "ecb2902742ea20d7187bf440cd94917039035019f861de23b4bf57edd3701590",
+      "lines": 459
+    },
+    {
+      "id": "SRC-03",
+      "sha": "b6794c64c7ff98fadf62868331f4297631201069",
+      "path": "docs/ai-team/reports/claude-verif-169-171/ci-resolu-171.yml",
+      "git_blob": "6ae27db91c2e01f57fccf6cf7fc6cedbfbf437fd",
+      "sha256": "beca2dea96a0cef5dd027b16fe6bbcf5099b3b73c196210ca2f02ca47ad618b9",
+      "lines": 460
+    },
+    {
+      "id": "SRC-04",
+      "sha": "b6794c64c7ff98fadf62868331f4297631201069",
+      "path": "docs/ai-team/reports/claude-verif-169-171/ci-resolu-169-171.yml",
+      "git_blob": "6d6b8805d188e5872051f0a74f92116447a0ebf1",
+      "sha256": "eccb5d87a6083b3ec1a261658d12e6bfbf2426e7db8d0cdbb70ea9703878e209",
+      "lines": 496
+    },
+    {
+      "id": "SRC-05",
+      "sha": "b6794c64c7ff98fadf62868331f4297631201069",
+      "path": "docs/ai-team/reports/claude-verif-169-171/ci_merge.py",
+      "git_blob": "5b5c3bc342a5da1e23fceef69826f59f11668e92",
+      "sha256": "076cda5afb87e8e51c8c478e69cb00c8f0bab660c61671209172ea65932c6424",
+      "lines": 71
+    },
+    {
+      "id": "SRC-06",
+      "sha": "b6794c64c7ff98fadf62868331f4297631201069",
+      "path": "docs/ai-team/reports/claude-verif-169-171/ci_eval.py",
+      "git_blob": "f71ddf39608f5886c82c4191e4c80a98c9c36a4e",
+      "sha256": "b39be37ac447997103137c03d21bd5a84576f62607b8f3a40a2b7386c8f9c246",
+      "lines": 45
+    },
+    {
+      "id": "SRC-07",
+      "sha": "b6794c64c7ff98fadf62868331f4297631201069",
+      "path": "docs/ai-team/reports/claude-verif-169-171/routage.txt",
+      "git_blob": "16b2afdbe9778ac4e96b8619b4b45de24059396e",
+      "sha256": "7d58a200412e12256faacdde65d69e797cd94a2899f5a0f2ff27f6601f2cdc30",
+      "lines": 24
+    },
+    {
+      "id": "SRC-08",
+      "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "path": ".github/workflows/ci.yml",
+      "git_blob": "2c0c2c9198f3ebc70f6bb006f3fa1f59ce2b4c7c",
+      "sha256": "9542a7ca056edcb50f3ecb1892b47e242dc45aa9589c3d7463a4f93a31e9f7ec",
+      "lines": 423
+    },
+    {
+      "id": "SRC-09",
+      "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": ".github/workflows/ci.yml",
+      "git_blob": "a1021924a6caae14ef52163f9a1e3b5d54ab530d",
+      "sha256": "dca3828656e941b090ad8f971e857f499a3ef31397d307ee4350d0b6f45070da",
+      "lines": 400
+    },
+    {
+      "id": "SRC-10",
+      "sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "path": ".github/workflows/ci.yml",
+      "git_blob": "655d7b76a83f541062dbcfacd5c4b97edc1c4542",
+      "sha256": "cb3cc0beba7eb213a961056c7c3d58c6b4f64f409f385814568fc5680ab75819",
+      "lines": 401
+    },
+    {
+      "id": "SRC-11",
+      "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "apps/api/vitest.guard.config.ts",
+      "git_blob": "004cd7e5a18cb2c1fdbd4ae395a79f0acc0f6372",
+      "sha256": "9dc56ffd7ebed043c0a3014bbd9c6f84c815e623b9b86c880df7382626d184fd",
+      "lines": 6
+    },
+    {
+      "id": "SRC-12",
+      "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "apps/api/vitest.guard.setup.ts",
+      "git_blob": "a8234323ec316a174b92025a06b04bf4cd2b93e2",
+      "sha256": "d672443a75efc66639b904415e05f20d49213c7fdb360c1cca44d331f93df9b7",
+      "lines": 16
+    },
+    {
+      "id": "SRC-13",
+      "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "apps/api/src/testing/approved-test-authorities.ts",
+      "git_blob": "f1a5bc4dab2e12c674f46d929d56bc3ac2097d82",
+      "sha256": "8e277b41e222d4bd0fbaa8431a6b99923367dc44f946dfbd571a00822fe92cf9",
+      "lines": 6
+    },
+    {
+      "id": "SRC-14",
+      "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "apps/api/src/testing/client-integration.test.ts",
+      "git_blob": "bcb9adcffb079bf16bd4dbe4c77fdf4eb54d8443",
+      "sha256": "ec952d98dca71dbd12ffc2bc802e938577d348737e6fdb71089be624033c1e2c",
+      "lines": 61
+    },
+    {
+      "id": "SRC-15",
+      "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "path": "apps/api/src/testing/test-target.review.test.ts",
+      "git_blob": "414339d459ef471cf8ee5bdae2ec684c1a71a528",
+      "sha256": "ece5c61626a665ea1fef0812b21a46e4b37d62a5ccc0f2ca2e3c9f47324b8c8c",
+      "lines": 371
+    },
+    {
+      "id": "SRC-16",
+      "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "path": ".github/workflows/codex-missions.yml",
+      "git_blob": "ecc7e3a1b5a9c84d5db30e356d8662185b48d760",
+      "sha256": "a9001f9777603d031d0f0ff82195f0f3bbb00e281989a0e3302e3ef5b4965143",
+      "lines": 37
+    },
+    {
+      "id": "SRC-17",
+      "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "path": ".github/workflows/continuity.yml",
+      "git_blob": "5c6bc7002de47f6b39be0caa88688d34e1b6ca14",
+      "sha256": "b9386c3801a6067412ec6f9ff8c60ff9adc5967dabc30220d8a3515593f3e721",
+      "lines": 40
+    },
+    {
+      "id": "SRC-18",
+      "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "path": ".github/workflows/fadi-isolation.yml",
+      "git_blob": "3c70238dbfe4488b1d8d3ff39c3cadcb15f0e4b6",
+      "sha256": "9ebe99c16b94a3d5e0f67c9f8df645673a97215f7445f05d106e0f29c4955202",
+      "lines": 24
+    },
+    {
+      "id": "SRC-19",
+      "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "path": ".github/workflows/audit-drawall.yml",
+      "git_blob": "ccfb63fa8dbaa05a048f30a1e1bc58c17fba6475",
+      "sha256": "3d30cf39f4180f79ca131db072b1c3fad2624009f6f3e737f3908ad96fb6448a",
+      "lines": 32
+    },
+    {
+      "id": "SRC-20",
+      "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "path": ".github/workflows/builder-deploy.yml",
+      "git_blob": "3dbb71528143744a7a53054a0ff0c406a62f8c7d",
+      "sha256": "44f7e4938a65c0bd12c4320f1de98fb6da0f07a9247faac9b450670f6a420b89",
+      "lines": 286
+    }
+  ],
+  "citations": [
+    {
+      "id": "CIT-001",
+      "source": "SRC-01",
+      "line": 3,
+      "text": "**Exécutant :** Claude Code, session distincte de l'équipe Codex ; ce n'est ni la revue d'A2, ni celle d'A5 ou d'A6. [Annonce #166](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6251022689). **Date :** 18 octobre 2026 (UTC)."
+    },
+    {
+      "id": "CIT-002",
+      "source": "SRC-01",
+      "line": 4,
+      "text": "**Méthode :** arbres de travail détachés, hors du dépôt, aux SHA exacts ; `npm ci --ignore-scripts` comme la CI. Des fusions **locales** avec `main@817bd36` ont été faites pour l'essai. **Aucun push sur `fix/156-*` ni sur `fix/157-*`**, aucune base, API, E2E ni service lancés. Les variables `DATABASE_URL` et `TEST_DATABASE_URL` ont été retirées de l'environnement pour les tests de garde."
+    },
+    {
+      "id": "CIT-003",
+      "source": "SRC-01",
+      "line": 19,
+      "text": "| Tests du lot au SHA exact | atelier-model **492/492** (107 fichiers) | `test:db-guard` **129/129** (3 fichiers) |"
+    },
+    {
+      "id": "CIT-004",
+      "source": "SRC-01",
+      "line": 22,
+      "text": "| **Contre-épreuve** (correctif ou garde neutralisé localement, puis restauré) | Ligne `classeIfc` remise : **20 cas visibles en échec** (sortie tronquée à 20 lignes), dont le test d'oracle actualisé et les cas indépendants A5 | Garde `VITEST/NODE_ENV` retirée de `db/client.ts` : **2 tests en échec** (DB-N01 et « NODE_ENV=test alone… »). La garde est bien détectée. |"
+    },
+    {
+      "id": "CIT-005",
+      "source": "SRC-01",
+      "line": 24,
+      "text": "| Après résolution (fichier ci-dessous) | 492 atelier-model ; core 47, domain 95, planche 744 (+1 skip déjà présent sur `main`), exact 22, web 273 ; types et build réussis ; couverture 630, continuité et isolation OK | 129 garde ; atelier-model 468 ; web 273 ; types et build réussis ; couverture 630, continuité et isolation OK |"
+    },
+    {
+      "id": "CIT-006",
+      "source": "SRC-01",
+      "line": 25,
+      "text": "| `main` + #171 + #169 fusionnés ensemble | 129 garde ; core 47, domain 95, atelier-model 492, planche 744, exact 22, web 273 ; types et build réussis | (même arbre) |"
+    },
+    {
+      "id": "CIT-007",
+      "source": "SRC-01",
+      "line": 40,
+      "text": "- `pg` et `drizzle` sont simulés."
+    },
+    {
+      "id": "CIT-008",
+      "source": "SRC-01",
+      "line": 47,
+      "text": "Les deux PR sont `mergeable_state: dirty` depuis la fusion de #165. #165 a ajouté sur `main` sa propre exception, le job `mission-docs-pure`. Chaque PR a ajouté la sienne au même endroit : `classification-pure` pour #171, `db-guard-pure` pour #169."
+    },
+    {
+      "id": "CIT-009",
+      "source": "SRC-01",
+      "line": 69,
+      "text": "**Observation mineure pour A6.** La condition de #169 ne teste pas `github.repository == 'RachEma-ux/Fadi'`, contrairement aux deux autres. Le test sur `head.repo.full_name` suffit à exclure les forks ; l'écart est seulement d'homogénéité."
+    },
+    {
+      "id": "CIT-010",
+      "source": "SRC-01",
+      "line": 71,
+      "text": "**Suite proposée (propriétaires A3 et A6).** Fusionner `main` dans chaque branche, sans rebase ni force-push, avec le fichier correspondant. On obtient alors une CI au nouveau SHA, sans PostgreSQL. La fusion vers `main` reste une **décision du propriétaire**."
+    },
+    {
+      "id": "CIT-011",
+      "source": "SRC-01",
+      "line": 77,
+      "text": "- Les fusions locales ont été jetées. Aucun commit de vérification n'est publié."
+    },
+    {
+      "id": "CIT-012",
+      "source": "SRC-02",
+      "line": 14,
+      "text": "  mission-docs-pure:"
+    },
+    {
+      "id": "CIT-013",
+      "source": "SRC-02",
+      "line": 73,
+      "text": "  db-guard-pure:"
+    },
+    {
+      "id": "CIT-014",
+      "source": "SRC-02",
+      "line": 109,
+      "text": "  validate:"
+    },
+    {
+      "id": "CIT-015",
+      "source": "SRC-02",
+      "line": 162,
+      "text": "  e2e:"
+    },
+    {
+      "id": "CIT-016",
+      "source": "SRC-02",
+      "line": 419,
+      "text": "  image:"
+    },
+    {
+      "id": "CIT-017",
+      "source": "SRC-02",
+      "line": 16,
+      "text": "    if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main' }}"
+    },
+    {
+      "id": "CIT-018",
+      "source": "SRC-02",
+      "line": 75,
+      "text": "    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main' }}"
+    },
+    {
+      "id": "CIT-019",
+      "source": "SRC-02",
+      "line": 111,
+      "text": "    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main')) }}"
+    },
+    {
+      "id": "CIT-020",
+      "source": "SRC-02",
+      "line": 164,
+      "text": "    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main')) }}"
+    },
+    {
+      "id": "CIT-021",
+      "source": "SRC-02",
+      "line": 421,
+      "text": "    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main')) }}"
+    },
+    {
+      "id": "CIT-022",
+      "source": "SRC-02",
+      "line": 113,
+      "text": "    services:"
+    },
+    {
+      "id": "CIT-023",
+      "source": "SRC-02",
+      "line": 167,
+      "text": "    services:"
+    },
+    {
+      "id": "CIT-024",
+      "source": "SRC-02",
+      "line": 424,
+      "text": "    services:"
+    },
+    {
+      "id": "CIT-025",
+      "source": "SRC-02",
+      "line": 91,
+      "text": "        run: npm ci --ignore-scripts --no-audit --no-fund"
+    },
+    {
+      "id": "CIT-026",
+      "source": "SRC-02",
+      "line": 93,
+      "text": "        run: npm run typecheck"
+    },
+    {
+      "id": "CIT-027",
+      "source": "SRC-02",
+      "line": 95,
+      "text": "        run: npm run test:db-guard"
+    },
+    {
+      "id": "CIT-028",
+      "source": "SRC-02",
+      "line": 97,
+      "text": "        run: npm run build"
+    },
+    {
+      "id": "CIT-029",
+      "source": "SRC-02",
+      "line": 140,
+      "text": "      - run: npm ci --no-audit --no-fund"
+    },
+    {
+      "id": "CIT-030",
+      "source": "SRC-02",
+      "line": 141,
+      "text": "      - run: npm run typecheck"
+    },
+    {
+      "id": "CIT-031",
+      "source": "SRC-02",
+      "line": 142,
+      "text": "      - run: npm run db:migrate"
+    },
+    {
+      "id": "CIT-032",
+      "source": "SRC-02",
+      "line": 143,
+      "text": "      - run: npm test"
+    },
+    {
+      "id": "CIT-033",
+      "source": "SRC-02",
+      "line": 144,
+      "text": "      - run: npm run build"
+    },
+    {
+      "id": "CIT-034",
+      "source": "SRC-02",
+      "line": 195,
+      "text": "      - run: npm ci --no-audit --no-fund"
+    },
+    {
+      "id": "CIT-035",
+      "source": "SRC-02",
+      "line": 197,
+      "text": "      - run: npm run db:migrate"
+    },
+    {
+      "id": "CIT-036",
+      "source": "SRC-02",
+      "line": 198,
+      "text": "      - run: npm run build"
+    },
+    {
+      "id": "CIT-037",
+      "source": "SRC-03",
+      "line": 14,
+      "text": "  mission-docs-pure:"
+    },
+    {
+      "id": "CIT-038",
+      "source": "SRC-03",
+      "line": 73,
+      "text": "  classification-pure:"
+    },
+    {
+      "id": "CIT-039",
+      "source": "SRC-03",
+      "line": 110,
+      "text": "  validate:"
+    },
+    {
+      "id": "CIT-040",
+      "source": "SRC-03",
+      "line": 163,
+      "text": "  e2e:"
+    },
+    {
+      "id": "CIT-041",
+      "source": "SRC-03",
+      "line": 420,
+      "text": "  image:"
+    },
+    {
+      "id": "CIT-042",
+      "source": "SRC-03",
+      "line": 16,
+      "text": "    if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main' }}"
+    },
+    {
+      "id": "CIT-043",
+      "source": "SRC-03",
+      "line": 75,
+      "text": "    if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main' }}"
+    },
+    {
+      "id": "CIT-044",
+      "source": "SRC-03",
+      "line": 112,
+      "text": "    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}"
+    },
+    {
+      "id": "CIT-045",
+      "source": "SRC-03",
+      "line": 165,
+      "text": "    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}"
+    },
+    {
+      "id": "CIT-046",
+      "source": "SRC-03",
+      "line": 422,
+      "text": "    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}"
+    },
+    {
+      "id": "CIT-047",
+      "source": "SRC-03",
+      "line": 114,
+      "text": "    services:"
+    },
+    {
+      "id": "CIT-048",
+      "source": "SRC-03",
+      "line": 168,
+      "text": "    services:"
+    },
+    {
+      "id": "CIT-049",
+      "source": "SRC-03",
+      "line": 425,
+      "text": "    services:"
+    },
+    {
+      "id": "CIT-050",
+      "source": "SRC-03",
+      "line": 91,
+      "text": "        run: npm ci --ignore-scripts --no-audit --no-fund"
+    },
+    {
+      "id": "CIT-051",
+      "source": "SRC-03",
+      "line": 93,
+      "text": "        run: npm run typecheck"
+    },
+    {
+      "id": "CIT-052",
+      "source": "SRC-03",
+      "line": 95,
+      "text": "        run: npm run test --workspace=@parcours/atelier-model"
+    },
+    {
+      "id": "CIT-053",
+      "source": "SRC-03",
+      "line": 97,
+      "text": "        run: npm run build"
+    },
+    {
+      "id": "CIT-054",
+      "source": "SRC-03",
+      "line": 141,
+      "text": "      - run: npm ci --no-audit --no-fund"
+    },
+    {
+      "id": "CIT-055",
+      "source": "SRC-03",
+      "line": 142,
+      "text": "      - run: npm run typecheck"
+    },
+    {
+      "id": "CIT-056",
+      "source": "SRC-03",
+      "line": 143,
+      "text": "      - run: npm run db:migrate"
+    },
+    {
+      "id": "CIT-057",
+      "source": "SRC-03",
+      "line": 144,
+      "text": "      - run: npm test"
+    },
+    {
+      "id": "CIT-058",
+      "source": "SRC-03",
+      "line": 145,
+      "text": "      - run: npm run build"
+    },
+    {
+      "id": "CIT-059",
+      "source": "SRC-03",
+      "line": 196,
+      "text": "      - run: npm ci --no-audit --no-fund"
+    },
+    {
+      "id": "CIT-060",
+      "source": "SRC-03",
+      "line": 198,
+      "text": "      - run: npm run db:migrate"
+    },
+    {
+      "id": "CIT-061",
+      "source": "SRC-03",
+      "line": 199,
+      "text": "      - run: npm run build"
+    },
+    {
+      "id": "CIT-062",
+      "source": "SRC-04",
+      "line": 14,
+      "text": "  mission-docs-pure:"
+    },
+    {
+      "id": "CIT-063",
+      "source": "SRC-04",
+      "line": 73,
+      "text": "  db-guard-pure:"
+    },
+    {
+      "id": "CIT-064",
+      "source": "SRC-04",
+      "line": 109,
+      "text": "  classification-pure:"
+    },
+    {
+      "id": "CIT-065",
+      "source": "SRC-04",
+      "line": 146,
+      "text": "  validate:"
+    },
+    {
+      "id": "CIT-066",
+      "source": "SRC-04",
+      "line": 199,
+      "text": "  e2e:"
+    },
+    {
+      "id": "CIT-067",
+      "source": "SRC-04",
+      "line": 456,
+      "text": "  image:"
+    },
+    {
+      "id": "CIT-068",
+      "source": "SRC-04",
+      "line": 16,
+      "text": "    if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main' }}"
+    },
+    {
+      "id": "CIT-069",
+      "source": "SRC-04",
+      "line": 75,
+      "text": "    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main' }}"
+    },
+    {
+      "id": "CIT-070",
+      "source": "SRC-04",
+      "line": 111,
+      "text": "    if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main' }}"
+    },
+    {
+      "id": "CIT-071",
+      "source": "SRC-04",
+      "line": 148,
+      "text": "    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}"
+    },
+    {
+      "id": "CIT-072",
+      "source": "SRC-04",
+      "line": 201,
+      "text": "    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}"
+    },
+    {
+      "id": "CIT-073",
+      "source": "SRC-04",
+      "line": 458,
+      "text": "    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}"
+    },
+    {
+      "id": "CIT-074",
+      "source": "SRC-04",
+      "line": 150,
+      "text": "    services:"
+    },
+    {
+      "id": "CIT-075",
+      "source": "SRC-04",
+      "line": 204,
+      "text": "    services:"
+    },
+    {
+      "id": "CIT-076",
+      "source": "SRC-04",
+      "line": 461,
+      "text": "    services:"
+    },
+    {
+      "id": "CIT-077",
+      "source": "SRC-04",
+      "line": 91,
+      "text": "        run: npm ci --ignore-scripts --no-audit --no-fund"
+    },
+    {
+      "id": "CIT-078",
+      "source": "SRC-04",
+      "line": 93,
+      "text": "        run: npm run typecheck"
+    },
+    {
+      "id": "CIT-079",
+      "source": "SRC-04",
+      "line": 95,
+      "text": "        run: npm run test:db-guard"
+    },
+    {
+      "id": "CIT-080",
+      "source": "SRC-04",
+      "line": 97,
+      "text": "        run: npm run build"
+    },
+    {
+      "id": "CIT-081",
+      "source": "SRC-04",
+      "line": 127,
+      "text": "        run: npm ci --ignore-scripts --no-audit --no-fund"
+    },
+    {
+      "id": "CIT-082",
+      "source": "SRC-04",
+      "line": 129,
+      "text": "        run: npm run typecheck"
+    },
+    {
+      "id": "CIT-083",
+      "source": "SRC-04",
+      "line": 131,
+      "text": "        run: npm run test --workspace=@parcours/atelier-model"
+    },
+    {
+      "id": "CIT-084",
+      "source": "SRC-04",
+      "line": 133,
+      "text": "        run: npm run build"
+    },
+    {
+      "id": "CIT-085",
+      "source": "SRC-04",
+      "line": 177,
+      "text": "      - run: npm ci --no-audit --no-fund"
+    },
+    {
+      "id": "CIT-086",
+      "source": "SRC-04",
+      "line": 178,
+      "text": "      - run: npm run typecheck"
+    },
+    {
+      "id": "CIT-087",
+      "source": "SRC-04",
+      "line": 179,
+      "text": "      - run: npm run db:migrate"
+    },
+    {
+      "id": "CIT-088",
+      "source": "SRC-04",
+      "line": 180,
+      "text": "      - run: npm test"
+    },
+    {
+      "id": "CIT-089",
+      "source": "SRC-04",
+      "line": 181,
+      "text": "      - run: npm run build"
+    },
+    {
+      "id": "CIT-090",
+      "source": "SRC-04",
+      "line": 232,
+      "text": "      - run: npm ci --no-audit --no-fund"
+    },
+    {
+      "id": "CIT-091",
+      "source": "SRC-04",
+      "line": 234,
+      "text": "      - run: npm run db:migrate"
+    },
+    {
+      "id": "CIT-092",
+      "source": "SRC-04",
+      "line": 235,
+      "text": "      - run: npm run build"
+    },
+    {
+      "id": "CIT-093",
+      "source": "SRC-05",
+      "line": 15,
+      "text": "def analyse(texte):"
+    },
+    {
+      "id": "CIT-094",
+      "source": "SRC-05",
+      "line": 18,
+      "text": "    fin = lignes.index(\"  validate:\")"
+    },
+    {
+      "id": "CIT-095",
+      "source": "SRC-05",
+      "line": 41,
+      "text": "        if c not in conds:"
+    },
+    {
+      "id": "CIT-096",
+      "source": "SRC-05",
+      "line": 71,
+      "text": "main()"
+    },
+    {
+      "id": "CIT-097",
+      "source": "SRC-06",
+      "line": 4,
+      "text": "import yaml"
+    },
+    {
+      "id": "CIT-098",
+      "source": "SRC-06",
+      "line": 7,
+      "text": "def evaluer(expr, ctx):"
+    },
+    {
+      "id": "CIT-099",
+      "source": "SRC-06",
+      "line": 16,
+      "text": "    return bool(eval(e, {\"__builtins__\": {}}, {}))"
+    },
+    {
+      "id": "CIT-100",
+      "source": "SRC-06",
+      "line": 19,
+      "text": "def jobs_actifs(doc, ctx):"
+    },
+    {
+      "id": "CIT-101",
+      "source": "SRC-06",
+      "line": 35,
+      "text": "    cas = {"
+    },
+    {
+      "id": "CIT-102",
+      "source": "SRC-06",
+      "line": 36,
+      "text": "        \"PR docs/156-codex-missions-completes\": contexte(\"pull_request\", \"docs/156-codex-missions-completes\"),"
+    },
+    {
+      "id": "CIT-103",
+      "source": "SRC-06",
+      "line": 37,
+      "text": "        \"PR fix/156-classification-no-ifc-inference\": contexte(\"pull_request\", \"fix/156-classification-no-ifc-inference\"),"
+    },
+    {
+      "id": "CIT-104",
+      "source": "SRC-06",
+      "line": 38,
+      "text": "        \"PR fix/157-test-database-guard\": contexte(\"pull_request\", \"fix/157-test-database-guard\"),"
+    },
+    {
+      "id": "CIT-105",
+      "source": "SRC-06",
+      "line": 39,
+      "text": "        \"PR autre branche\": contexte(\"pull_request\", \"feat/autre\"),"
+    },
+    {
+      "id": "CIT-106",
+      "source": "SRC-06",
+      "line": 40,
+      "text": "        \"PR fork même nom (classif)\": contexte(\"pull_request\", \"fix/156-classification-no-ifc-inference\", head_repo=\"tiers/Fadi\"),"
+    },
+    {
+      "id": "CIT-107",
+      "source": "SRC-06",
+      "line": 41,
+      "text": "        \"PR classif vers autre base\": contexte(\"pull_request\", \"fix/156-classification-no-ifc-inference\", base=\"dev\"),"
+    },
+    {
+      "id": "CIT-108",
+      "source": "SRC-06",
+      "line": 42,
+      "text": "        \"push main\": contexte(\"push\", \"\"),"
+    },
+    {
+      "id": "CIT-109",
+      "source": "SRC-07",
+      "line": 1,
+      "text": "== ci-resolu-169-171.yml"
+    },
+    {
+      "id": "CIT-110",
+      "source": "SRC-07",
+      "line": 9,
+      "text": "== ci-resolu-169.yml"
+    },
+    {
+      "id": "CIT-111",
+      "source": "SRC-07",
+      "line": 17,
+      "text": "== ci-resolu-171.yml"
+    },
+    {
+      "id": "CIT-112",
+      "source": "SRC-07",
+      "line": 4,
+      "text": "PR fix/157-test-database-guard                -> db-guard-pure"
+    },
+    {
+      "id": "CIT-113",
+      "source": "SRC-07",
+      "line": 12,
+      "text": "PR fix/157-test-database-guard                -> db-guard-pure"
+    },
+    {
+      "id": "CIT-114",
+      "source": "SRC-07",
+      "line": 20,
+      "text": "PR fix/157-test-database-guard                -> validate, e2e, image"
+    },
+    {
+      "id": "CIT-115",
+      "source": "SRC-07",
+      "line": 8,
+      "text": "push main                                     -> validate, e2e, image"
+    },
+    {
+      "id": "CIT-116",
+      "source": "SRC-07",
+      "line": 16,
+      "text": "push main                                     -> validate, e2e, image"
+    },
+    {
+      "id": "CIT-117",
+      "source": "SRC-07",
+      "line": 24,
+      "text": "push main                                     -> validate, e2e, image"
+    },
+    {
+      "id": "CIT-118",
+      "source": "SRC-08",
+      "line": 4,
+      "text": "on:"
+    },
+    {
+      "id": "CIT-119",
+      "source": "SRC-08",
+      "line": 5,
+      "text": "  push:"
+    },
+    {
+      "id": "CIT-120",
+      "source": "SRC-08",
+      "line": 7,
+      "text": "  pull_request:"
+    },
+    {
+      "id": "CIT-121",
+      "source": "SRC-08",
+      "line": 14,
+      "text": "  mission-docs-pure:"
+    },
+    {
+      "id": "CIT-122",
+      "source": "SRC-08",
+      "line": 73,
+      "text": "  validate:"
+    },
+    {
+      "id": "CIT-123",
+      "source": "SRC-08",
+      "line": 126,
+      "text": "  e2e:"
+    },
+    {
+      "id": "CIT-124",
+      "source": "SRC-08",
+      "line": 383,
+      "text": "  image:"
+    },
+    {
+      "id": "CIT-125",
+      "source": "SRC-08",
+      "line": 16,
+      "text": "    if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main' }}"
+    },
+    {
+      "id": "CIT-126",
+      "source": "SRC-08",
+      "line": 75,
+      "text": "    if: ${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') }}"
+    },
+    {
+      "id": "CIT-127",
+      "source": "SRC-08",
+      "line": 128,
+      "text": "    if: ${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') }}"
+    },
+    {
+      "id": "CIT-128",
+      "source": "SRC-08",
+      "line": 385,
+      "text": "    if: ${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') }}"
+    },
+    {
+      "id": "CIT-129",
+      "source": "SRC-09",
+      "line": 4,
+      "text": "on:"
+    },
+    {
+      "id": "CIT-130",
+      "source": "SRC-09",
+      "line": 5,
+      "text": "  push:"
+    },
+    {
+      "id": "CIT-131",
+      "source": "SRC-09",
+      "line": 7,
+      "text": "  pull_request:"
+    },
+    {
+      "id": "CIT-132",
+      "source": "SRC-09",
+      "line": 14,
+      "text": "  db-guard-pure:"
+    },
+    {
+      "id": "CIT-133",
+      "source": "SRC-09",
+      "line": 50,
+      "text": "  validate:"
+    },
+    {
+      "id": "CIT-134",
+      "source": "SRC-09",
+      "line": 103,
+      "text": "  e2e:"
+    },
+    {
+      "id": "CIT-135",
+      "source": "SRC-09",
+      "line": 360,
+      "text": "  image:"
+    },
+    {
+      "id": "CIT-136",
+      "source": "SRC-09",
+      "line": 16,
+      "text": "    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main' }}"
+    },
+    {
+      "id": "CIT-137",
+      "source": "SRC-09",
+      "line": 52,
+      "text": "    if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') }}"
+    },
+    {
+      "id": "CIT-138",
+      "source": "SRC-09",
+      "line": 105,
+      "text": "    if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') }}"
+    },
+    {
+      "id": "CIT-139",
+      "source": "SRC-09",
+      "line": 362,
+      "text": "    if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') }}"
+    },
+    {
+      "id": "CIT-140",
+      "source": "SRC-10",
+      "line": 4,
+      "text": "on:"
+    },
+    {
+      "id": "CIT-141",
+      "source": "SRC-10",
+      "line": 5,
+      "text": "  push:"
+    },
+    {
+      "id": "CIT-142",
+      "source": "SRC-10",
+      "line": 7,
+      "text": "  pull_request:"
+    },
+    {
+      "id": "CIT-143",
+      "source": "SRC-10",
+      "line": 14,
+      "text": "  classification-pure:"
+    },
+    {
+      "id": "CIT-144",
+      "source": "SRC-10",
+      "line": 51,
+      "text": "  validate:"
+    },
+    {
+      "id": "CIT-145",
+      "source": "SRC-10",
+      "line": 104,
+      "text": "  e2e:"
+    },
+    {
+      "id": "CIT-146",
+      "source": "SRC-10",
+      "line": 361,
+      "text": "  image:"
+    },
+    {
+      "id": "CIT-147",
+      "source": "SRC-10",
+      "line": 16,
+      "text": "    if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main' }}"
+    },
+    {
+      "id": "CIT-148",
+      "source": "SRC-10",
+      "line": 53,
+      "text": "    if: ${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main') }}"
+    },
+    {
+      "id": "CIT-149",
+      "source": "SRC-10",
+      "line": 106,
+      "text": "    if: ${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main') }}"
+    },
+    {
+      "id": "CIT-150",
+      "source": "SRC-10",
+      "line": 363,
+      "text": "    if: ${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main') }}"
+    },
+    {
+      "id": "CIT-151",
+      "source": "SRC-11",
+      "line": 5,
+      "text": "  test: { include: [\"src/testing/**/*.test.ts\"], setupFiles: [\"./vitest.guard.setup.ts\"], fileParallelism: false },"
+    },
+    {
+      "id": "CIT-152",
+      "source": "SRC-12",
+      "line": 7,
+      "text": "const blocked = () => { throw new Error(\"DB_GUARD_TEST_NETWORK_FORBIDDEN\"); };"
+    },
+    {
+      "id": "CIT-153",
+      "source": "SRC-12",
+      "line": 9,
+      "text": "  vi.spyOn(net.Socket.prototype, \"connect\").mockImplementation(blocked),"
+    },
+    {
+      "id": "CIT-154",
+      "source": "SRC-12",
+      "line": 10,
+      "text": "  vi.spyOn(net, \"createConnection\").mockImplementation(blocked),"
+    },
+    {
+      "id": "CIT-155",
+      "source": "SRC-12",
+      "line": 11,
+      "text": "  vi.spyOn(tls, \"connect\").mockImplementation(blocked),"
+    },
+    {
+      "id": "CIT-156",
+      "source": "SRC-12",
+      "line": 12,
+      "text": "  vi.spyOn(dns, \"lookup\").mockImplementation(blocked),"
+    },
+    {
+      "id": "CIT-157",
+      "source": "SRC-12",
+      "line": 13,
+      "text": "  vi.spyOn(dns, \"resolve\").mockImplementation(blocked),"
+    },
+    {
+      "id": "CIT-158",
+      "source": "SRC-12",
+      "line": 15,
+      "text": "afterEach(() => { for (const sentinel of sentinels) expect(sentinel).not.toHaveBeenCalled(); });"
+    },
+    {
+      "id": "CIT-159",
+      "source": "SRC-13",
+      "line": 6,
+      "text": "export const APPROVED_TEST_AUTHORITIES: Readonly<Record<string, string>> = Object.freeze({});"
+    },
+    {
+      "id": "CIT-160",
+      "source": "SRC-13",
+      "line": 6,
+      "text": "export const APPROVED_TEST_AUTHORITIES: Readonly<Record<string, string>> = Object.freeze({});"
+    },
+    {
+      "id": "CIT-161",
+      "source": "SRC-14",
+      "line": 13,
+      "text": "vi.mock(\"drizzle-orm/node-postgres\", () => ({ drizzle: vi.fn(() => ({ simulated: true })) }));"
+    },
+    {
+      "id": "CIT-162",
+      "source": "SRC-15",
+      "line": 328,
+      "text": "vi.mock(\"pg\", () => {"
+    },
+    {
+      "id": "CIT-163",
+      "source": "SRC-15",
+      "line": 335,
+      "text": "import { drizzle } from \"drizzle-orm/node-postgres\";"
+    },
+    {
+      "id": "CIT-164",
+      "source": "SRC-15",
+      "line": 341,
+      "text": "describe(\"real Drizzle transaction orchestration over a sentinel-only pg module\", () => {"
+    },
+    {
+      "id": "CIT-165",
+      "source": "SRC-15",
+      "line": 358,
+      "text": "describe(\"real Drizzle array rowMode over the same simulated transport\", () => {"
+    },
+    {
+      "id": "CIT-166",
+      "source": "SRC-16",
+      "line": 1,
+      "text": "name: Codex — couverture des missions"
+    },
+    {
+      "id": "CIT-167",
+      "source": "SRC-16",
+      "line": 4,
+      "text": "  pull_request:"
+    },
+    {
+      "id": "CIT-168",
+      "source": "SRC-16",
+      "line": 5,
+      "text": "  push:"
+    },
+    {
+      "id": "CIT-169",
+      "source": "SRC-16",
+      "line": 7,
+      "text": "  workflow_dispatch:"
+    },
+    {
+      "id": "CIT-170",
+      "source": "SRC-17",
+      "line": 1,
+      "text": "name: Continuité de développement"
+    },
+    {
+      "id": "CIT-171",
+      "source": "SRC-17",
+      "line": 6,
+      "text": "  pull_request:"
+    },
+    {
+      "id": "CIT-172",
+      "source": "SRC-17",
+      "line": 7,
+      "text": "  push:"
+    },
+    {
+      "id": "CIT-173",
+      "source": "SRC-17",
+      "line": 9,
+      "text": "  workflow_dispatch:"
+    },
+    {
+      "id": "CIT-174",
+      "source": "SRC-18",
+      "line": 1,
+      "text": "name: Fadi — isolation des autres applications"
+    },
+    {
+      "id": "CIT-175",
+      "source": "SRC-18",
+      "line": 4,
+      "text": "  pull_request:"
+    },
+    {
+      "id": "CIT-176",
+      "source": "SRC-18",
+      "line": 5,
+      "text": "  push:"
+    },
+    {
+      "id": "CIT-177",
+      "source": "SRC-18",
+      "line": 7,
+      "text": "  workflow_dispatch:"
+    },
+    {
+      "id": "CIT-178",
+      "source": "SRC-19",
+      "line": 1,
+      "text": "name: Audit isolation DrawAll (Fadi uniquement)"
+    },
+    {
+      "id": "CIT-179",
+      "source": "SRC-19",
+      "line": 4,
+      "text": "  pull_request:"
+    },
+    {
+      "id": "CIT-180",
+      "source": "SRC-19",
+      "line": 9,
+      "text": "  workflow_dispatch:"
+    },
+    {
+      "id": "CIT-181",
+      "source": "SRC-20",
+      "line": 1,
+      "text": "name: Builder Deploy"
+    },
+    {
+      "id": "CIT-182",
+      "source": "SRC-20",
+      "line": 12,
+      "text": "  workflow_dispatch:"
+    }
+  ],
+  "independent_axes": {
+    "Standards": {
+      "agent": "A2",
+      "delivery": "Message de revue statique, quatre constats sous400mots : import ci_merge à effets, évaluation non équivalente Actions, templates inertes sousdocs, preuves au nouveau SHA requises. Aucun test/import/exécution."
+    },
+    "Spec": {
+      "agent": "A5",
+      "delivery": "Message de revue statique sous400mots : portée DB12/CLASSIF1 respectée par attestations, pas DB3/métier/réparation passée ; journaux absents, simulation et CI distinctes, nouvelle preuve SHA requise."
+    }
+  },
+  "stop_conditions": [
+    "Tout conflit autre que ci.yml",
+    "Tout blob applicatif/tests différent des lots autorisés",
+    "Absence de garde préservices pour un job à DB dans contexte de la PR cible",
+    "Main/PR avancée sans requalification",
+    "Besoin de DB3/installation/service/test moteur : rester préparé local et demander l’instruction applicable"
+  ]
+}

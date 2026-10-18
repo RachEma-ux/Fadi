@@ -1,0 +1,2085 @@
+{
+  "review": "A5 lecture indépendante avant confrontation A4",
+  "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "entries": [
+    {
+      "entry_id": "M08-PATH-105",
+      "fiche": "docs/atelier/fiches/DA-07-10.md",
+      "full_fiche": "# DA-07-10 — Stairs / Escaliers (escalier droit) — module M05 → Atelier — lot 3a\n\n**État : disponible (lot 3a) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : recette `apps/web/e2e/atelier-nouveau.mjs`, tests `apps/web/src/modules/atelier/nouveau/nouveau.test.ts` et `packages/atelier-model/src/commandes/commandes.test.ts` ; compte rendu `lots/lot-3a.md`.\n\n| Champ | Contenu |\n| --- | --- |\n| Identité | DA-07-10 (M05, étape cible P2). Reprend la fiche d'exemple de l'Exigences V4 (escalier droit paramétrique reliant deux niveaux, exemple à approuver par les essais métier, qui ne représente pas tous les types d'escaliers visés) et la complète pour Fadi : un escalier est un objet de classe `escalier` (building.architecture), relation `relie` vers un niveau de départ et un niveau d'arrivée. Sous-exigences : -a créer (`escalier.creer`) ; -b modifier (`escalier.modifier`) ; -c supprimer (`escalier.supprimer`) ; -d occurrences et groupe d'un même escalier physique. Référence de comportement : prototype, les 32 occurrences d'escaliers de P.118 (vues par niveau d'escaliers physiques). |\n| Situation utilisateur | Relier deux niveaux par un escalier droit paramétrique, voir les valeurs effectivement retenues et leurs contradictions avec les niveaux, sans qu'aucun objet voisin ne bouge en silence. |\n| Entrées et unités | `niveauDepartId`, `niveauArriveeId` (deux niveaux existants et distincts) ; `axe` `a`, `b` `{ x, y, frame: \"local\", unit: \"m\" }` (longueur supérieure à la tolérance de longueur, DA-01-01) ; `largeur`, `hauteurAFranchir`, `epaisseurPaillasse`, `decalageBase` `{ value, unit: \"m\" }` (largeur et hauteur à franchir > 0 ; décalage signé) ; `contremarches`, `marches` (entiers ≥ 1) ; `groupe` (identifiant de l'escalier physique) ; `referencePlanSeulement` (booléen). Points accrochés (DA-02-15) ou saisis (DA-02-16). |\n| | Au choix, un nombre de contremarches ou une hauteur de contremarche cible (le nombre entier le plus proche est alors proposé). Unité autre que m refusée (T03). Aucune valeur par défaut (R3) : un paramètre absent reste « non évalué » et bloque ce qui en dépend sans rien déduire ; l'écart d'élévations des deux niveaux peut être proposé comme `hauteurAFranchir` candidate, retenue seulement sur validation. |\n| Comportement | **Cycle.** Outil « Escalier » → niveaux de départ (niveau actif) et d'arrivée → paramètres (largeur, hauteur à franchir, contremarches ou hauteur cible, épaisseur de paillasse, décalage de base) → axe par points accrochés ou saisis → aperçu (plan, valeurs retenues, contradictions) → contrôle → validation ; Échap annule sans commande. |\n| | **Proposition de calcul.** Compatible avec les paramètres saisis, jamais appliquée d'office. Avec `hauteurAFranchir` H et `contremarches` n, la hauteur de contremarche retenue vaut H / n (non arrondie) ; avec une hauteur cible, les deux entiers n qui l'encadrent sont proposés avec la hauteur qui en résulte ; giron dérivé = longueur de l'axe / `marches` (convention de décompte à confirmer sur les 32 occurrences de P.118). L'aperçu affiche, par grandeur, valeur saisie, valeur retenue et contradictions (somme des contremarches ≠ H, écart avec la différence d'élévations des niveaux, `marches` incohérent avec `contremarches`), sans rien corriger. Aucune limite de hauteur de marche, de giron ni de largeur n'est appliquée (R3). |\n| | **Niveaux de départ et d'arrivée.** `escalier.creer` refusé si un niveau est absent, inconnu ou si les deux sont identiques (400 avec `chemin`) ; à l'import, un niveau d'arrivée absent ou inconnu laisse l'escalier en place avec le problème « niveau d'arrivée introuvable » (jamais supprimé, jamais deviné). Changer l'élévation d'un des deux niveaux (`niveau.modifier`, DA-05-04) ne modifie pas l'escalier : la contradiction est listée avec les valeurs retenues et une proposition d'`escalier.modifier`. Trémie : l'aperçu signale une dalle du niveau supérieur sans trou à l'emprise de l'escalier, avec proposition de `dalle.modifier` (DA-07-06), jamais appliquée sans accord. |\n| | **Occurrences et groupe.** Un escalier physique peut avoir une occurrence par niveau (vue par niveau) ; `groupe` les relie sans les fusionner. `referencePlanSeulement` vrai : occurrence conservée et affichée en plan comme référence, valeur importée telle quelle ; son effet sur les quantités et la 3D n'est pas interprété ici (Extensions). `escalier.modifier` sur une occurrence ne change aucune autre occurrence du même `groupe` : l'aperçu les liste avec les écarts créés et propose « ajouter au lot » ; avec accord, une `escalier.modifier` par occurrence, dans un seul lot. |\n| | **Palette (UX2) et aide (UX4).** « escalier » ; synonymes « stair », « escalier droit » ; actif si le modèle compte au moins deux niveaux ; exemple court : relier deux niveaux par un escalier de 1,00 m de large (exemple, jamais valeur par défaut). |\n| Données et dépendances | Classe `escalier` ; relation `relie` → `niveau` (départ, arrivée) ; `groupe` ; caractéristiques `escalier:depart`, `escalier:arrivee` (cotations) ; trémie = `trous` d'une `dalle` (DA-07-06) ; garde-corps : DA-07-12 (P2), référence créée seulement lorsqu'il existera. Dépendances : M02 (géométrie), M03 (contraintes, lot 5), M11 (vues et quantités, lot 5), objets hébergés coordonnés explicitement. |\n| | `core-geometry` ; événement `atelier.commande.validee` : vues, quantités et bilan Harmonie « à recalculer » (R11, T07) ; microversion +1. |\n| Résultats | Escalier créé, modifié ou supprimé ; valeurs retenues, contradictions, trémie absente et occurrences divergentes listées dans le panneau des modifications ; aucun objet adjacent déplacé ; documents et quantités « à recalculer » ; inverse = valeurs précédentes enregistrées. |\n| Cas limites | **Valeurs.** Niveau de départ ou d'arrivée absent, inconnu ou identique ; `hauteurAFranchir` ou `largeur` ≤ 0 ; `contremarches` ou `marches` non entier ou < 1 ; axe de longueur nulle ; arrivée située sous le départ ou écart d'élévations nul : admis, contradiction affichée (sens de montée explicite), rien corrigé. |\n| | **Concurrence, réseau, droits.** `baseRevision` dépassée et escalier, groupe ou niveau modifié depuis → 409 avec `conflits[].objetId` et état serveur ; niveau supprimé par autrui pendant la saisie : refus au rejeu ; même `requestId` → une seule révision (T06) ; hors ligne : réducteur local, file Dexie, rejeu dans l'ordre, brouillon si incompatible ; 403 / 404 / 423 selon R13. |\n| Compatibilité | Import P.118 (section 6) : 32 `escalier` (occurrences) avec `relie` (`sourceLevel`, `targetLevel`), `referencePlanSeulement` (`planReferenceOnly`), `groupe` (`stairGroup`) en propriété sans fusion silencieuse ; `width`, `height`, `baseOffset`, `steps`, `risers`, `waistThickness` conservés exactement ; `designRevision` en propriété de provenance `import`. |\n| | IFC (annexe C, lot 6) : `IfcStair` (+ `IfcStairFlight` si décomposé), paramètres en `Pset_StairCommon` ; une seule `IfcStair` par escalier physique (`groupe`) à l'export, occurrences exclues nommées au rapport d'échange (règle à préciser au lot 6). DXF : aucune sortie propre. |\n| Validation | **Unité** (`packages/atelier-model/src/commandes/escalier.test.ts`) : création avec niveaux de départ et d'arrivée ; niveau absent, inconnu ou identique refusé ; unité ≠ m refusée ; H = 3,00 m et n = 17 (entrées de test sans valeur normative) : hauteur de contremarche = H / n non arrondie, somme des contremarches = H à la tolérance de longueur ; hauteur cible : deux entiers proposés, aucun appliqué ; élévation d'un niveau modifiée : contradiction listée, aucun paramètre de l'escalier modifié ; modification d'une occurrence : autres occurrences du `groupe` listées, non modifiées ; `referencePlanSeulement` conservé après aller-retour ; inverse restitue l'état. |\n| | **API** (`apps/api/src/routes/atelier-commands.test.ts`) : `escalier.creer` → 200, révision +1, `effets` (trémie à examiner, contradictions) ; niveau d'arrivée absent → 400 avec `chemin` ; même `requestId` → même réponse ; `baseRevision` périmée et niveau ou escalier modifié → 409 avec `conflits[].objetId` ; rôle lecture → 403 ; réservation d'autrui → 423. |\n| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · escaliers ») : copie de travail de P.118 : 32 occurrences listées, regroupées par `groupe` sans fusion, occurrences `referencePlanSeulement` repérées ; créer un escalier entre deux niveaux, annuler, rétablir ; changer l'élévation du niveau supérieur : contradiction affichée avec les valeurs retenues, aucun escalier ni objet adjacent déplacé ; second navigateur à la même révision. |\n| Règles métier | Aucune règle réglementaire d'escalier n'est posée (hauteur de marche, giron, largeur, marches par volée, palier, garde-corps, échappement). Les règles applicables selon pays, usage et version identifiés restent à fournir avec leur source ; sans elles, aucune conformité n'est affichée et les grandeurs concernées restent « non évaluées ». R3 : proposition, valeur retenue et contradiction sont trois choses distinctes. R9 : tout par commande ; R10 : niveau actif et sélection hors révision. Le résultat n'est jamais présenté comme conforme sans les contrôles nécessaires (Exigences V4). |\n| Extensions à spécifier | Volées multiples, paliers, escaliers tournants et hélicoïdaux ; détails constructifs, matériaux, méthodes de fabrication (reprise de l'exemple V4) ; garde-corps (DA-07-12) et trémie créée avec l'escalier ; sens exact de `referencePlanSeulement` et décompte des quantités par `groupe` (lot 5), à fixer avec le maître d'ouvrage ; convention de combinaison de `decalageBase` avec les élévations, à vérifier sur P.118. |\n\n## Suivi\n\n- Fait (D-059) : trémie créée depuis l'escalier (`escalier.tremie`, emprise et marge déclarée) ; tests `dalles-pieces.test.ts`, e2e `atelier-complements.mjs`.\n- Fait (D-084) : escaliers à volées multiples et paliers (en L, en U, tournants à paliers) ; tests `escaliers.test.ts`, `nouveau.test.ts`, e2e `atelier-complements.mjs`. Restent : hélicoïdaux, balancement des marches, détails constructifs.\n- Fait (D-092) : escalier hélicoïdal (marches en secteurs) ; tests `escaliers.test.ts`, `nouveau.test.ts`, e2e `atelier-complements.mjs`.\n- Fait (D-123) : balancement des marches (`escalier.balance` : girons égaux sur la ligne de foulée, répartition régulière au limon intérieur dans les tournants) ; outil « Escalier balancé » ; tests `escalier-balance.test.ts`, `nouveau.test.ts`, e2e `atelier-complements.mjs`. Restent : détails constructifs.\n- État au 2026-10-06 : reste : détails constructifs, matériaux et fabrication (module M06, étape P2).\n",
+      "fiche_sha256": "4943273ef4441cd2b45f27e33691e36a68d13fe54f2ba6b136f75a600e1caa76",
+      "prescription": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · escaliers ») : copie de travail de P.118 : 32 occurrences listées, regroupées par `groupe` sans fusion, occurrences `referencePlanSeulement` repérées ; créer un escalier entre deux niveaux, annuler, rétablir ; changer l'élévation du niveau supérieur : contradiction affichée avec les valeurs retenues, aucun escalier ni objet adjacent déplacé ; second navigateur à la même révision. |",
+      "atoms": [
+        {
+          "id": "M08-PATH-105-A01",
+          "expected": "32 occurrences groupées sans fusion",
+          "status": "absent",
+          "reason": "Pas oracle escalier32.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-105-A02",
+          "expected": "créer escalier deux niveaux et inverse",
+          "status": "absent",
+          "reason": "Pas cycle escalier.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-105-A03",
+          "expected": "changement élévation contradiction sans mutation adjacente",
+          "status": "absent",
+          "reason": "Pas escalier haut modifié.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-105-A04",
+          "expected": "second navigateur révision",
+          "status": "partiel",
+          "reason": "Synchronisation autres objets.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 346,
+                  "text": "// Second navigateur (même compte) : il lit les mêmes révisions."
+                },
+                {
+                  "line": 347,
+                  "text": "const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });"
+                },
+                {
+                  "line": 348,
+                  "text": "const page2 = await ctx2.newPage();"
+                },
+                {
+                  "line": 349,
+                  "text": "await page2.goto(`${url}?module=atelier`);"
+                },
+                {
+                  "line": 350,
+                  "text": "await page2.waitForSelector(\".plan2d\");"
+                },
+                {
+                  "line": 351,
+                  "text": "await page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();"
+                },
+                {
+                  "line": 352,
+                  "text": "await page2.waitForTimeout(300);"
+                },
+                {
+                  "line": 353,
+                  "text": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));"
+                },
+                {
+                  "line": 354,
+                  "text": "await ctx2.close();"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-107",
+      "fiche": "docs/atelier/fiches/DA-07-15.md",
+      "full_fiche": "# DA-07-15 — Rooms / Pièces — module M05 → Atelier — lot 3a\n\n**État : disponible (lot 3a) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : recette `apps/web/e2e/atelier-nouveau.mjs`, tests `apps/web/src/modules/atelier/nouveau/nouveau.test.ts` et `packages/atelier-model/src/commandes/commandes.test.ts` ; compte rendu `lots/lot-3a.md`.\n\n| Champ | Contenu |\n| --- | --- |\n| Identité | DA-07-15 (M05, étape cible P1). Une pièce est un objet de classe `piece` (building.architecture) : un ou plusieurs polygones, un code, un nom, une catégorie, une aire déclarée et une aire calculée qui restent deux grandeurs distinctes. Sous-exigences : -a détecter les pièces candidates depuis les murs fermés (`piece.detecter`, proposition) ; -b créer (`piece.creer`) ; -c modifier (`piece.modifier`) ; -d supprimer (`piece.supprimer`). Référence de comportement : prototype, les 45 pièces de P.118 (`polygons`, `code`, `name`, `area`, `category`, `notes`, `label`). |\n| Situation utilisateur | Délimiter les pièces d'un niveau à partir de ses murs fermés ou à la main, les nommer et les coder, et comparer l'aire déclarée à l'aire calculée sans que l'une remplace l'autre. |\n| Entrées et unités | `niveauId` ; `polygones` (un ou plusieurs contours fermés `{ x, y, frame: \"local\", unit: \"m\" }`) ; `code`, `nom`, `categorie` (texte du projet, aucune liste imposée) ; `aireDeclaree` (m², provenance `saisie`, ou `prototype` à l'import) ; `notes` ; `etiquette`. `aireCalculee` est dérivée des `polygones` (m²), jamais saisie. |\n| | Détection : ligne de délimitation (face intérieure des murs ou axe) choisie explicitement, sans valeur par défaut. Unité autre que m ou m² refusée (T03). Aucun code, nom, catégorie ni aire par défaut (R3) : absents, ils restent « non évalués ». |\n| Comportement | **Détection (proposition).** `piece.detecter` calcule, à partir des murs du niveau, les régions fermées par les murs ; pour chacune : polygone, aire calculée, murs délimitants. Elle ne crée ni ne modifie rien : exécutée en aperçu (navigateur) ou à blanc (`POST /commands/essai`, scripts et assistant), elle ne produit ni révision ni entrée de journal. Les régions sont affichées en surimpression, acceptables une à une et modifiables, jamais imposées. |\n| | **Cycle.** Outil « Pièce » → détection proposée ou tracé manuel (polygone, ou clic dans une région fermée) → paramètres (code, nom, catégorie, aire déclarée facultative) → aperçu (polygone, aire calculée, aire déclarée, écart) → contrôle → validation : `piece.creer` (un lot, libellé « Créer N pièces ») ; Échap annule sans commande. |\n| | **Aire déclarée et aire calculée.** Toujours affichées ensemble. Un écart au-delà de la tolérance d'aire (valeur à consigner dans `decisions.md`, non posée ici) est un problème listé ; aucune des deux n'est remplacée en silence. `piece.modifier` peut, sur demande explicite, déclarer l'aire calculée (provenance `calcul`). L'aire calculée est l'aire géométrique des polygones, pas une surface réglementaire. |\n| | **Pièce non fermée et références (R12).** Boucle de murs ouverte : aucune région proposée, interstice listé (extrémités, distance) avec proposition de `mur.joindre` (DA-07-01) ; le tracé manuel reste possible. Murs modifiés après création : la pièce ne bouge pas, sa délimitation différente est un problème listé, `piece.detecter` propose, `piece.modifier` adopte. Liaison `programme` à l'espace programmé (existante) : conservée par `piece.modifier`, « à réparer » avec propositions si la pièce est supprimée. Candidat recouvrant une pièce existante : présenté comme « pièce existante, polygone différent », jamais comme doublon. |\n| | **Palette (UX2) et aide (UX4).** « pièce » ; synonymes « room », « local » ; actif si le niveau actif contient des murs, ou en tracé manuel ; exemple court : détecter les pièces fermées du niveau actif (exemple, jamais valeur par défaut). |\n| Données et dépendances | Classe `piece` ; relation `delimitee-par` → `mur` (dérivée) et `delimite` des murs ; `programme` → espace programmé (liaison existante) ; `niveauId` ; annotation `etiquette` ; zone qui `contient` la pièce (DA-07-17). `core-geometry` (régions fermées, aires, jonctions) ; événement `atelier.commande.validee` : vues, quantités et bilan Harmonie « à recalculer » (R11, T07) ; microversion +1. |\n| Résultats | Pièces créées ou modifiées ; propositions de détection (sans écriture) ; écart d'aire et pièces désalignées listés dans le panneau des modifications ; inverse = valeurs précédentes. |\n| Cas limites | **Géométrie.** Boucle non fermée (interstice listé) ; région d'aire sous la tolérance ; polygone auto-intersecté ou de moins de 3 sommets : refusé (400 avec `chemin`) ; deux pièces de même `code` : signalées, non refusées ; pièce sans mur (tracé manuel) admise ; scission ou déplacement d'un mur : délimitation à revoir, listée ; niveau sans mur : aucune proposition. |\n| | **Concurrence, réseau, droits.** `baseRevision` dépassée et pièce ou mur délimitant modifié ou supprimé depuis → 409 avec `conflits[].objetId` et état serveur ; même `requestId` → réponse enregistrée, aucune seconde révision (T06) ; hors ligne : réducteur local, file Dexie, rejeu dans l'ordre, brouillon si incompatible ; 403 motivé, 404 sans accès, 423 pendant une réservation d'autrui (R13). |\n| Compatibilité | Import P.118 (section 6) : 45 `piece` ; `area` → `aireDeclaree` (provenance `prototype`), aire calculée dérivée, écart > tolérance → problème listé ; `label` → `etiquette` ; tracés `role = room` rattachés à `piece.polygones` si le code correspond, sinon `espace` (DA-07-16) ; jamais une pièce en double. |\n| | IFC (annexe C, lot 6) : `IfcSpace`, aires en `Qto_SpaceBaseQuantities` (aire calculée, source de chaque valeur nommée) ; aire déclarée en propriété distincte. DXF : aucune sortie propre. |\n| Validation | **Unité** (`packages/atelier-model/src/commandes/piece.test.ts`) : détection sur quatre murs fermés : une région, aire calculée à la tolérance, modèle inchangé (empreinte identique avant et après) ; boucle ouverte : aucune région, interstice listé ; deux boucles : deux régions ; `piece.creer` d'une région acceptée ; aire déclarée ≠ calculée : écart listé, aucune valeur remplacée ; candidat recouvrant une pièce existante : « polygone différent », pas de doublon ; mur déplacé : pièce inchangée, désalignement listé ; inverse restitue l'état. |\n| | **API** (`apps/api/src/routes/atelier-commands.test.ts`) : `POST /commands/essai` avec `piece.detecter` → 200, propositions, aucune révision ni entrée de journal ; `piece.creer` → 200, révision +1 ; polygone auto-intersecté → 400 avec `chemin` ; même `requestId` → même réponse ; `baseRevision` périmée et mur délimitant modifié → 409 avec `conflits[].objetId` ; rôle lecture → 403 ; réservation d'autrui → 423. |\n| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · pièces ») : copie de travail de P.118 : 45 pièces listées avec aire déclarée et aire calculée, écarts listés d'après le rapport d'import ; détection lancée sur un niveau : propositions affichées, révision inchangée ; accepter une proposition : révision +1, annuler, rétablir ; second navigateur à la même révision. |\n| Règles métier | Aucune règle de surface ni de pièce (surface minimale, hauteur, éclairement, catégorie réglementaire : non fournies ; règles selon pays, usage et version identifiés, à fournir avec leur source). R3 : aucune aire ni aucun code par défaut ; l'aire déclarée n'est jamais présentée comme vérifiée. R9 : détection = proposition jamais imposée (annexe B), création par commande. R10 : niveau actif et propositions affichées hors révision. R11. |\n| Extensions à spécifier | Détection sur plusieurs niveaux ; pièces à hauteur propre ; règle de mesure des surfaces, à fournir avec sa source ; numérotation automatique des codes ; fusion et scission de pièces ; création de la liaison à l'espace programmé depuis l'Atelier (Programmation). |\n\n## Suivi\n- Fait (D-045) : extension réalisée (voir la décision) ; tests `proprietes-csv.test.ts`, test API (journal.csv), e2e `atelier-complements.mjs`.\n- Fait (D-050) : extension réalisée (voir la décision) ; tests `pieces-plus.test.ts`, `architecture-plus.test.ts`, e2e `atelier-complements.mjs`.\n- Fait (D-059) : pièces à hauteur propre (volume aux quantités et à la nomenclature) ; tests `dalles-pieces.test.ts`, e2e `atelier-complements.mjs`.\n- Fait (D-071) : liaison de la pièce à un espace programmé depuis l'inspecteur (lier, délier ; mêmes routes et règles que la Programmation) ; e2e `atelier-complements.mjs`.\n",
+      "fiche_sha256": "bb3a3087b95750456b7ac003962daab12dbcde9a6b808187d5fafd816f567bd6",
+      "prescription": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · pièces ») : copie de travail de P.118 : 45 pièces listées avec aire déclarée et aire calculée, écarts listés d'après le rapport d'import ; détection lancée sur un niveau : propositions affichées, révision inchangée ; accepter une proposition : révision +1, annuler, rétablir ; second navigateur à la même révision. |",
+      "atoms": [
+        {
+          "id": "M08-PATH-107-A01",
+          "expected": "45 pièces surfaces import distinctes",
+          "status": "absent",
+          "reason": "Pas rapport surfaces45.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-107-A02",
+          "expected": "détection propositions sans révision",
+          "status": "absent",
+          "reason": "Pas détection pièce.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-107-A03",
+          "expected": "accepter+1 annuler rétablir",
+          "status": "absent",
+          "reason": "Renom Bureau ne vaut pas détection acceptée.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 140,
+                  "text": "// Inspecteur : renommer la pièce."
+                },
+                {
+                  "line": 141,
+                  "text": "await page.locator('.inspecteur input[id$=\"-nom\"]').fill(\"Bureau\");"
+                },
+                {
+                  "line": 142,
+                  "text": "await page.keyboard.press(\"Enter\");"
+                },
+                {
+                  "line": 143,
+                  "text": "await page.waitForTimeout(200);"
+                },
+                {
+                  "line": 144,
+                  "text": "check(\"inspecteur : renommer → commande appliquée\", (await page.locator(\".inspecteur h3\").textContent()).includes(\"Bureau\"));"
+                },
+                {
+                  "line": 145,
+                  "text": "// Annuler / rétablir."
+                },
+                {
+                  "line": 146,
+                  "text": "await page.locator(\".plan2d\").click({ position: { x: 5, y: 5 } }).catch(() => {});"
+                },
+                {
+                  "line": 147,
+                  "text": "await page.keyboard.press(\"Escape\");"
+                },
+                {
+                  "line": 148,
+                  "text": "const navTexte = () => page.evaluate(() => document.querySelector(\".nav-objets\").textContent);"
+                },
+                {
+                  "line": 149,
+                  "text": "await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 15000 }).catch(() => {});"
+                },
+                {
+                  "line": 150,
+                  "text": "await page.keyboard.press(\"Control+z\");"
+                },
+                {
+                  "line": 151,
+                  "text": "await page.waitForFunction(() => !document.querySelector(\".nav-objets\").textContent.includes(\"Bureau\"), null, { timeout: 10000 }).catch(() => {});"
+                },
+                {
+                  "line": 152,
+                  "text": "check(\"Ctrl Z annule le renommage\", !(await navTexte()).includes(\"Bureau\"));"
+                },
+                {
+                  "line": 153,
+                  "text": "await page.keyboard.press(\"Control+Shift+z\");"
+                },
+                {
+                  "line": 154,
+                  "text": "await page.waitForFunction(() => document.querySelector(\".nav-objets\").textContent.includes(\"Bureau\"), null, { timeout: 10000 }).catch(() => {});"
+                },
+                {
+                  "line": 155,
+                  "text": "check(\"Ctrl Maj Z le rétablit\", (await navTexte()).includes(\"Bureau\"));"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-107-A04",
+          "expected": "second navigateur",
+          "status": "partiel",
+          "reason": "Bureau autre opération.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 346,
+                  "text": "// Second navigateur (même compte) : il lit les mêmes révisions."
+                },
+                {
+                  "line": 347,
+                  "text": "const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });"
+                },
+                {
+                  "line": 348,
+                  "text": "const page2 = await ctx2.newPage();"
+                },
+                {
+                  "line": 349,
+                  "text": "await page2.goto(`${url}?module=atelier`);"
+                },
+                {
+                  "line": 350,
+                  "text": "await page2.waitForSelector(\".plan2d\");"
+                },
+                {
+                  "line": 351,
+                  "text": "await page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();"
+                },
+                {
+                  "line": 352,
+                  "text": "await page2.waitForTimeout(300);"
+                },
+                {
+                  "line": 353,
+                  "text": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));"
+                },
+                {
+                  "line": 354,
+                  "text": "await ctx2.close();"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-109",
+      "fiche": "docs/atelier/fiches/DA-07-16.md",
+      "full_fiche": "# DA-07-16 — Spaces / Espaces — module M05 → Atelier — lot 3a\n\n**État : disponible (lot 3a) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : recette `apps/web/e2e/atelier-nouveau.mjs`, tests `apps/web/src/modules/atelier/nouveau/nouveau.test.ts` et `packages/atelier-model/src/commandes/commandes.test.ts` ; compte rendu `lots/lot-3a.md`.\n\n| Champ | Contenu |\n| --- | --- |\n| Identité | DA-07-16 (M05, étape cible P1). Un espace est un objet de classe `espace` (building.architecture) : région nommée d'un niveau, délimitée par un ou plusieurs polygones, qui n'est pas une pièce programmée. Il se distingue de la `piece` (DA-07-15) : pas de code, pas d'aire déclarée, pas de liaison `programme`. Sous-exigences : -a créer ; -b modifier ; -c supprimer (famille `espace.*` de l'annexe B) ; -d convertir en pièce. Référence de comportement : prototype, tracés `role = room` de P.118 sans pièce de même code. |\n| Situation utilisateur | Délimiter sur un niveau une région du plan qui n'est pas (ou pas encore) une pièce du programme, la nommer, la classer et en connaître l'aire géométrique. |\n| Entrées et unités | `niveauId` ; `polygones` (un ou plusieurs contours fermés `{ x, y, frame: \"local\", unit: \"m\" }`) ; `nom` ; `categorie` (texte du projet, aucune liste imposée). L'aire calculée est dérivée des `polygones` (m²), jamais saisie. Contour tracé (polygone, rectangle), pris sur une région fermée par les murs proposée par la détection (DA-07-15), ou copié d'un tracé fermé sélectionné (copie, sans lien caché). |\n| | Unité autre que m refusée (T03). Aucun nom ni aucune catégorie par défaut (R3) : absents, ils restent « non évalués ». |\n| Comportement | **Cycle.** Outil « Espace » → contour (tracé, région détectée, tracé fermé existant) → paramètres (nom, catégorie) → aperçu (polygone, aire calculée, recouvrements avec les pièces et espaces du niveau) → contrôle → validation ; Échap annule sans commande. |\n| | **Commandes.** Création, modification (polygones, nom, catégorie) et suppression d'espace (famille `espace.*`). Une région détectée par `piece.detecter` (proposition, jamais imposée) peut être acceptée comme espace au lieu d'une pièce : l'utilisateur choisit la classe. Conversion espace → pièce : un seul lot (`piece.creer` puis suppression de l'espace, identifiant nouveau), jamais un changement de classe silencieux ; l'inverse du lot restitue l'espace. |\n| | **Sans correction silencieuse.** Un espace qui recouvre une pièce ou un autre espace du même niveau est signalé dans l'aperçu (recouvrements listés, aire commune) sans refus ni fusion ; murs modifiés : l'espace ne bouge pas, l'écart éventuel est listé. Supprimer un espace le retire de chaque zone qui le contient dans le même lot (effets listés, inverse restitue l'appartenance). Palette (UX2) : « espace » ; synonymes « space », « région » ; exemple court : délimiter un espace sur le niveau actif (exemple, jamais valeur par défaut) ; aide (UX4). |\n| Données et dépendances | Classe `espace` ; relation `contient` portée par une `zone` (DA-07-17) ; ni `delimitee-par` ni `programme` (propres à la `piece`) ; `niveauId`. `core-geometry` (aires, recouvrements) ; événement `atelier.commande.validee` : vues, quantités et bilan Harmonie « à recalculer » (R11, T07) ; microversion +1. |\n| Résultats | Espace créé, modifié, converti ou supprimé ; aire calculée dérivée ; recouvrements et appartenances de zone listés dans le panneau des modifications ; inverse = valeurs précédentes. |\n| Cas limites | **Géométrie.** Polygone non fermé, auto-intersecté, de moins de 3 sommets ou d'aire sous la tolérance : refusé (400 avec `chemin`) ; niveau absent ; calque verrouillé : lot refusé en entier ; espace identique à une pièce existante : signalé, jamais fusionné. |\n| | **Concurrence, réseau, droits.** `baseRevision` dépassée et espace ou zone modifié ou supprimé depuis → 409 avec `conflits[].objetId` et état serveur ; même `requestId` → réponse enregistrée, aucune seconde révision (T06) ; hors ligne : réducteur local, file Dexie, rejeu dans l'ordre, brouillon si incompatible ; 403 motivé, 404 sans accès, 423 pendant une réservation d'autrui (R13). |\n| Compatibilité | Import P.118 (section 6) : tracés `role = room` dont le code ne correspond à aucune `piece` → `espace` ; jamais une pièce en double ; le rapport d'import nomme chaque espace créé (effectif donné par le rapport). |\n| | IFC (annexe C, lot 6) : `IfcSpace`, aires en `Qto_SpaceBaseQuantities` (aire calculée) ; la règle de reconnaissance pièce / espace au retour d'IFC est à spécifier au lot 6, sans reclassement silencieux. DXF : aucune sortie propre. |\n| Validation | **Unité** (`packages/atelier-model/src/commandes/espace.test.ts`) : création ; aire calculée d'un rectangle de test (4 m sur 5 m : 20 m², entrées de test sans valeur normative) à la tolérance ; polygone auto-intersecté refusé ; recouvrement avec une pièce signalé, rien fusionné ; conversion en pièce en un lot, inverse restitue l'espace ; suppression d'un espace membre d'une zone : appartenance retirée, puis restituée par l'inverse. |\n| | **API** (`apps/api/src/routes/atelier-commands.test.ts`) : création d'espace → 200, révision +1, `effets` ; polygone invalide → 400 avec `chemin` ; même `requestId` → même réponse ; `baseRevision` périmée et espace modifié → 409 avec `conflits[].objetId` ; rôle lecture → 403 ; réservation d'autrui → 423. |\n| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · pièces, espaces, zones ») : copie de travail de P.118 : espaces issus des tracés `role = room` listés comme le rapport d'import, aucune pièce en double ; créer un espace, le convertir en pièce, annuler, rétablir ; second navigateur à la même révision. |\n| Règles métier | Aucune règle réglementaire (surfaces, hauteurs, usages : non fournis ; règles selon pays, usage et version identifiés, à fournir avec leur source). R3 : aucune catégorie ni aire par défaut ; l'aire calculée est géométrique, pas une surface réglementaire. R9 : tout par commande ; R10 : niveau actif et sélection hors révision. |\n| Extensions à spécifier | Espaces tridimensionnels (volume, hauteur propre) ; espaces à plusieurs niveaux (vides, gaines) ; règle de mesure des surfaces, à fournir avec sa source ; reconnaissance pièce / espace à l'import IFC (lot 6). |\n\n## Suivi\n\n- Fait (D-059) : espaces à hauteur propre déclarée ; tests `dalles-pieces.test.ts`.\n- Fait (D-142) : espaces sur plusieurs niveaux (niveau haut), volume, niveaux traversés signalés (plans, quantités), IFC ; tests `espaces-volume.test.ts`, e2e.\n",
+      "fiche_sha256": "ff6a06d16645b06179f07298a1ac53666b35127c4596e1a5b0285adadea923f4",
+      "prescription": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · pièces, espaces, zones ») : copie de travail de P.118 : espaces issus des tracés `role = room` listés comme le rapport d'import, aucune pièce en double ; créer un espace, le convertir en pièce, annuler, rétablir ; second navigateur à la même révision. |",
+      "atoms": [
+        {
+          "id": "M08-PATH-109-A01",
+          "expected": "spaces import sans doublon",
+          "status": "absent",
+          "reason": "Pas oracle spaces.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-109-A02",
+          "expected": "créer espace",
+          "status": "absent",
+          "reason": "Pièce pas espace.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-109-A03",
+          "expected": "conversion pièce inverse",
+          "status": "absent",
+          "reason": "Pas conversion explicite.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-109-A04",
+          "expected": "second navigateur",
+          "status": "partiel",
+          "reason": "Autre objet.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 346,
+                  "text": "// Second navigateur (même compte) : il lit les mêmes révisions."
+                },
+                {
+                  "line": 347,
+                  "text": "const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });"
+                },
+                {
+                  "line": 348,
+                  "text": "const page2 = await ctx2.newPage();"
+                },
+                {
+                  "line": 349,
+                  "text": "await page2.goto(`${url}?module=atelier`);"
+                },
+                {
+                  "line": 350,
+                  "text": "await page2.waitForSelector(\".plan2d\");"
+                },
+                {
+                  "line": 351,
+                  "text": "await page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();"
+                },
+                {
+                  "line": 352,
+                  "text": "await page2.waitForTimeout(300);"
+                },
+                {
+                  "line": 353,
+                  "text": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));"
+                },
+                {
+                  "line": 354,
+                  "text": "await ctx2.close();"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-111",
+      "fiche": "docs/atelier/fiches/DA-07-17.md",
+      "full_fiche": "# DA-07-17 — Zones / Zones — module M05 → Atelier — lot 3a\n\n**État : disponible (lot 3a) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : recette `apps/web/e2e/atelier-nouveau.mjs`, tests `apps/web/src/modules/atelier/nouveau/nouveau.test.ts` et `packages/atelier-model/src/commandes/commandes.test.ts` ; compte rendu `lots/lot-3a.md`.\n\n| Champ | Contenu |\n| --- | --- |\n| Identité | DA-07-17 (M05, étape cible P1). Une zone est un objet de classe `zone` (building.architecture) : contour nommé qui regroupe des pièces et des espaces d'un niveau (relation `contient`). Sous-exigences : -a créer ; -b modifier contour, nom, catégorie et membres ; -c supprimer (famille `zone.*` de l'annexe B). Référence de comportement : prototype, tracés `role = core-zone` de P.118. |\n| Situation utilisateur | Regrouper des pièces et des espaces d'un niveau dans un ensemble nommé (par exemple un noyau) pour les lire, les filtrer et, plus tard, les quantifier ensemble. |\n| Entrées et unités | `niveauId` ; `polygones` (contour de la zone, `{ x, y, frame: \"local\", unit: \"m\" }`) ; `nom` ; `categorie` (texte du projet, aucune liste imposée) ; `contient` (identifiants de pièces et d'espaces du même niveau). Unité autre que m refusée (T03). |\n| | Aucun nom, aucune catégorie ni aucun membre par défaut (R3) : absents, ils restent « non évalués ». L'inclusion géométrique d'une pièce ou d'un espace dans le contour est une proposition, jamais une appartenance déduite en silence. |\n| Comportement | **Cycle.** Outil « Zone » → contour (tracé ou tracé fermé existant) → paramètres (nom, catégorie) → membres : pièces et espaces dont les polygones sont inclus dans le contour sont proposés (cases à cocher, rien de coché d'office) → aperçu (contour, membres, aire géométrique) → contrôle → validation ; Échap annule sans commande. |\n| | **Commandes.** Création (contour, nom, catégorie et membres en un lot), modification (contour, nom, catégorie, ajout ou retrait de membres) et suppression de zone (famille `zone.*`) ; supprimer une zone ne supprime jamais ses membres, listés dans les effets. Appartenance explicite : une pièce ou un espace peut appartenir à plusieurs zones (regroupement, non partition) ; les recouvrements de zones sont signalés, jamais refusés. |\n| | **Sans correction silencieuse (R12).** Membre hors du contour, membre déplacé : écart listé avec proposition (retirer, agrandir le contour). Suppression d'une pièce ou d'un espace : l'appartenance est retirée dans le même lot (effets listés, inverse restitué). Palette (UX2) : « zone » ; synonymes « secteur », « noyau » ; exemple court : regrouper deux pièces dans une zone nommée (exemple, jamais valeur par défaut) ; aide (UX4). |\n| Données et dépendances | Classe `zone` ; relation `contient` (zone → pièces et espaces) ; `niveauId` ; `piece` et `espace` référencés par `objetId`. `core-geometry` (inclusions, aires) ; événement `atelier.commande.validee` : vues, quantités et bilan Harmonie « à recalculer » (R11, T07) ; microversion +1. |\n| Résultats | Zone créée, modifiée ou supprimée ; membres et écarts listés dans le panneau des modifications ; inverse = valeurs et appartenances précédentes. |\n| Cas limites | **Valeurs.** Contour non fermé, auto-intersecté ou d'aire sous la tolérance : refusé (400 avec `chemin`) ; membre d'un autre niveau, inexistant ou d'une classe autre que `piece` ou `espace` : refusé ; zone vide (aucun membre) : admise ; zone dans une zone : refusée (extension). |\n| | **Concurrence, réseau, droits.** `baseRevision` dépassée et zone ou membre modifié ou supprimé depuis → 409 avec `conflits[].objetId` et état serveur ; même `requestId` → réponse enregistrée, aucune seconde révision (T06) ; hors ligne : réducteur local, file Dexie, rejeu dans l'ordre, brouillon si incompatible ; 403 motivé, 404 sans accès, 423 pendant une réservation d'autrui (R13). |\n| Compatibilité | Import P.118 (section 6) : tracés `role = core-zone` → `zone` ; aucune appartenance n'est déduite à l'import (jamais devinée, R3) : `contient` reste vide, l'aperçu propose les pièces incluses ; effectif donné par le rapport d'import. |\n| | IFC (annexe C, lot 6) : `IfcZone` et regroupement des `IfcSpace` par la relation de l'annexe C (`IfcRelAggregates`), à valider par le corpus IFC (R16). DXF : aucune sortie propre. |\n| Validation | **Unité** (`packages/atelier-model/src/commandes/zone.test.ts`) : création avec membres ; membre d'un autre niveau refusé ; inclusion géométrique proposée, rien coché ; suppression d'une pièce membre : appartenance retirée puis restituée par l'inverse ; suppression de la zone : membres intacts ; pièce dans deux zones : recouvrement signalé ; inverse restitue l'état. |\n| | **API** (`apps/api/src/routes/atelier-commands.test.ts`) : création de zone avec membres → 200, révision +1, `effets` ; membre inexistant → 400 avec `chemin` ; même `requestId` → même réponse ; `baseRevision` périmée et zone ou membre modifié → 409 avec `conflits[].objetId` ; rôle lecture → 403 ; réservation d'autrui → 423. |\n| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · pièces, espaces, zones ») : copie de travail de P.118 : zones issues de `core-zone` listées comme le rapport d'import, sans membre déduit ; créer une zone avec deux pièces, annuler, rétablir ; second navigateur à la même révision. |\n| Règles métier | Aucune règle réglementaire (zonage, secteurs d'incendie, affectations : non fournis ; règles selon pays, usage et version identifiés, à fournir avec leur source). R3 : aucune appartenance déduite en silence. R9 : tout par commande ; R10 : niveau actif et sélection hors révision ; R11. |\n| Extensions à spécifier | Zones imbriquées ; zones sur plusieurs niveaux ; propriétés agrégées (aire totale, nombre de pièces) et quantités par zone (lot 5) ; zones issues d'une règle d'affectation (règle à fournir avec sa source). |\n\n## Suivi\n- Fait (D-045) : extension réalisée (voir la décision) ; tests `proprietes-csv.test.ts`, test API (journal.csv), e2e `atelier-complements.mjs`.\n- Fait (D-056) : appartenance déclarée (`zone.affecter`), zones imbriquées et sur plusieurs niveaux, synthèse agrégée (sous-zones, niveaux) ; tests `zones.test.ts`, e2e `atelier-complements.mjs`.\n",
+      "fiche_sha256": "d68e0b0657525d327d86e7fc0c50d3936a507f294fa03bc8365607b8d10cb30a",
+      "prescription": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 2D · pièces, espaces, zones ») : copie de travail de P.118 : zones issues de `core-zone` listées comme le rapport d'import, sans membre déduit ; créer une zone avec deux pièces, annuler, rétablir ; second navigateur à la même révision. |",
+      "atoms": [
+        {
+          "id": "M08-PATH-111-A01",
+          "expected": "zones core-zone sans membres inférés",
+          "status": "absent",
+          "reason": "Pas zone import vérifiée.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-111-A02",
+          "expected": "créer zone deux pièces et inverse",
+          "status": "absent",
+          "reason": "Pas création zone.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-111-A03",
+          "expected": "second navigateur",
+          "status": "partiel",
+          "reason": "Autre objet.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 346,
+                  "text": "// Second navigateur (même compte) : il lit les mêmes révisions."
+                },
+                {
+                  "line": 347,
+                  "text": "const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });"
+                },
+                {
+                  "line": 348,
+                  "text": "const page2 = await ctx2.newPage();"
+                },
+                {
+                  "line": 349,
+                  "text": "await page2.goto(`${url}?module=atelier`);"
+                },
+                {
+                  "line": 350,
+                  "text": "await page2.waitForSelector(\".plan2d\");"
+                },
+                {
+                  "line": 351,
+                  "text": "await page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();"
+                },
+                {
+                  "line": 352,
+                  "text": "await page2.waitForTimeout(300);"
+                },
+                {
+                  "line": 353,
+                  "text": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));"
+                },
+                {
+                  "line": 354,
+                  "text": "await ctx2.close();"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-113",
+      "fiche": "docs/atelier/fiches/DA-17-16.md",
+      "full_fiche": "# DA-17-16 — Digital mock-up review / Revue de maquette numérique — module M12 → Atelier — lot 3b\n\n**État : disponible (lot 3b) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : recette `apps/web/e2e/atelier-nouveau.mjs` (partie 3D), tests `packages/atelier-model/src/projection/maillage.test.ts` ; compte rendu `lots/lot-3b.md`.\n\n| Champ | Contenu |\n| --- | --- |\n| Identité | DA-17-16 (M12, étape cible P1). Revue de la maquette numérique de l'Atelier en 3D : naviguer, sélectionner un objet, en lire les propriétés, y rattacher les commentaires existants de Collaboration. Sous-exigences : -a navigation 3D ; -b sélection et lecture des propriétés ; -c commentaires de Collaboration rattachés à un objet ; -d révision affichée. Référence de comportement : prototype (vue 3D et sélection) ; commentaires : module Collaboration existant. |\n| Situation utilisateur | Parcourir la maquette avec d'autres personnes, désigner un objet précis et en discuter dans les commentaires existants de Collaboration, sans modifier le modèle. |\n| Entrées et unités | Caméra (orbite, panoramique, zoom ; gestes tactiles sur mobile) ; sélection par clic ou toucher (rayon contre les représentations 3D dérivées, résolu en `objetId`), par la liste des objets (niveau, classe) ou par filtre de classe ; `objetId` et, s'il y a lieu, caractéristique nommée (`mur:face-gauche`, `ouverture:centre`, `escalier:depart`…) ; révision affichée ; texte du commentaire (Collaboration). |\n| Comportement | **Revue en lecture seule.** La revue n'émet aucune commande de modèle : caméra, sélection, niveaux visibles, filtres de classe, isolation et mode sont des paramètres d'affichage qui ne touchent jamais la révision (R10). Une personne `write` quitte la revue pour éditer par les outils habituels. |\n| | **Navigation et sélection.** Rendu WebGL2 (three.js) par défaut ; WebGPU seulement derrière un réglage avec repli automatique (R14). Objet sélectionné surligné ; panneau de propriétés : classe, nom, paramètres canoniques avec unités, provenance et statut ; valeur absente « non évaluée » (R3). Tout ce qui se fait à la souris ou au toucher se fait aussi depuis la liste des objets, au clavier et au lecteur d'écran (accessibilité, lot 3b). |\n| | **Commentaires.** Un commentaire de Collaboration peut porter une référence `{ objetId, caracteristique }` (caractéristique facultative) et la révision affichée au moment du commentaire ; il reste un commentaire de Collaboration (même stockage, mêmes droits : `comment` suffit, `read` est refusé en 403) ; l'Atelier n'en crée pas un second. Un repère 3D signale l'objet commenté : sélectionner l'objet ouvre le fil, sélectionner le commentaire cadre l'objet. Commenter n'est pas une commande du modèle : aucune révision. |\n| | **Objet disparu ou remplacé (R12).** Objet supprimé : le commentaire reste lisible, marqué « objet supprimé » ; objet remplacé par une scission (`mur.scinder`) : commentaire « à réparer » avec propositions (rattacher à l'un des nouveaux objets, détacher), jamais rattaché en silence. |\n| Données et dépendances | Aucune classe ni aucun paramètre du modèle modifiés ; lecture de `GET /model` et `GET /model/niveaux/:niveauId` (niveau chargé à la demande) ; commentaires de Collaboration (référence `objetId`) ; représentations `solide-3d` dérivées (autorité `derivee`, `moteur`, `versionMoteur`, R15) ; après un lot validé par autrui, resynchronisation par `GET /journal?apres=n`. |\n| Résultats | Objet sélectionné et ses propriétés ; commentaires rattachés visibles en 3D et en liste ; indication de la révision affichée ; aucune écriture dans le modèle. |\n| Cas limites | **Rendu.** WebGL2 indisponible : repli sur la liste d'objets et le plan 2D avec message (état d'erreur, R20) ; modèle volumineux : chargement par niveau, état de chargement affiché ; objet sans représentation 3D (hauteur « non évaluée ») : listé, non dessiné, signalé. |\n| | **Concurrence, réseau, droits.** La revue n'émet aucune commande : ni `requestId` ni 409 pour elle-même. Objet sélectionné modifié ou supprimé par autrui pendant la revue : bandeau « modèle mis à jour (révision n) », sélection conservée si l'objet existe, sinon libérée avec message ; hors ligne : modèle déjà chargé consultable (Dexie), commentaires selon le comportement existant de Collaboration (inchangé) ; `read` : navigation et sélection seulement ; 404 sans accès. |\n| Compatibilité | Import P.118 (section 6) : tous les objets de la copie de travail sélectionnables (220 murs, 120 poteaux, 84 portes, 126 fenêtres, 32 escaliers, 45 pièces…) ; WebGL2 requis par défaut (R14). |\n| | IFC : aucun commentaire exporté ; la correspondance entre `objetId` et l'identité IFC d'un objet commenté est à spécifier au lot 6 ; échange de commentaires au format BCF : non couvert. DXF : sans objet. |\n| Validation | **Unité** (fonctions pures de sélection, de filtre et de cadrage, `packages/core-geometry/src/revue.test.ts`, nom provisoire) : rayon résolu en `objetId` (objet le plus proche, égalité départagée de façon déterministe) ; filtre de classe ; objet sans représentation ignoré ; empreinte du modèle identique avant et après navigation et sélection. |\n| | **API** (`apps/api/src/routes/atelier-commands.test.ts`, groupe « revue ») : `GET /model` et `GET /model/niveaux/:niveauId` → 200 pour `read`, 404 sans accès ; une session de navigation scriptée n'émet aucune commande, révision inchangée ; commentaire avec `objetId` : créé avec `comment`, 403 avec `read` (route de Collaboration, test dans sa suite, nom à relever au lot 3b) ; objet supprimé : commentaire toujours lisible. |\n| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 3D · revue ») : copie de travail de P.118 : orbite, panoramique, zoom ; sélection de `EX118-mezz-W-009` en 3D puis depuis la liste : mêmes propriétés ; commentaire rattaché par un compte `comment`, visible depuis un second navigateur à la même révision ; modification par autrui : bandeau, révision de la revue inchangée jusqu'à l'actualisation ; compte `read` : pas de champ de commentaire ; temps de première image imprimé, sans seuil (R14). Traçabilité (critère de la section 17) : révision et empreinte du modèle, moteur et version des représentations affichés ; résultats comparés à P.118. |\n| Règles métier | Aucune règle réglementaire. R9 : le modèle ne change que par commande, jamais depuis la revue. R10 : caméra, sélection, filtres et mode ne touchent pas la révision. R11 : représentations dérivées et captures portent la révision et l'empreinte dont elles sont issues. R13 : droits relus par le serveur à chaque requête. R14 : aucun chiffre de performance annoncé avant mesure ; WebGL2 par défaut. R12 : commentaire rattaché à un objet remplacé « à réparer ». R3 : valeurs absentes « non évaluées ». |\n| Extensions à spécifier | Visite à hauteur d'œil, vues enregistrées, plans de coupe, mesures et annotations 3D ; échange BCF ; correspondance `objetId` / identité IFC (lot 6) ; détection de collisions (DA-17-13, P2). |\n\n## Suivi\n- Fait (D-048) : extension réalisée (voir la décision) ; tests `documents/axonometrie.test.ts`, e2e `atelier-complements.mjs`.\n- Fait (D-053) : vues 3D enregistrées (caméra, vue technique, présentation, coupes, niveau actif), partagées par le projet et rejouées ; tests `vues3d.test.ts`, e2e `atelier-complements.mjs`.\n- Fait (D-075) : visite à hauteur d'œil (hauteur saisie, clavier et boutons) ; e2e `atelier-complements.mjs`. Restent : échange BCF, mesures et annotations 3D enregistrées.\n- Fait (D-090) : annotations 3D enregistrées avec la vue ; tests `vues3d.test.ts`, e2e `atelier-complements.mjs`. Reste : échange BCF.\n- Fait (D-097) : échange BCF 2.1 — export des vues 3D (.bcfzip, un sujet par vue, point de vue et annotations, catalogue des documents) et import (une vue 3D par sujet, avertissements pour caméra orthogonale et objets désignés) ; tests `echanges/bcf.test.ts`, e2e `atelier-complements.mjs`. BCF « testé » sur nos propres fichiers et un exemple écrit à la main, pas sur des fichiers d'outils tiers.\n- État au 2026-10-06 : échange BCF réalisé (D-097).\n- Fait (D-156) : disposition Canevas (ergonomie SketchUp pour le Web, tranche 1) ; e2e `atelier-canevas.mjs`.\n- Fait (D-157) : navigation configurable (souris / trackpad, deux doigts, inversions, sensibilités ; 3D : molette maintenue = orbite, Maj = panoramique) ; tests `navigation.test.ts`, e2e `atelier-canevas.mjs`.\n- Fait (D-158) : outils Panoramique, Zoom, Zoom étendu ; raccourcis configurables ; tests `nouveau.test.ts`, e2e `atelier-canevas.mjs`.\n- Fait (D-159) : panneaux Affichage (masquer / réafficher, isolement, ombres d'affichage), Info modèle, Matériaux (lecture), arborescence ; tests `nouveau.test.ts`, e2e `atelier-canevas.mjs`.\n- Fait (D-160) : menu principal (enregistrer maintenant, Ctrl + S, exporter, importer, imprimer, partager après enregistrement confirmé) ; tests `nouveau.test.ts`, e2e `atelier-canevas.mjs`.\n- Fait (D-161) : qualité de l'ergonomie (messages, clavier, cibles, recette mobile) ; compte rendu `ergonomie/compte-rendu.md`.\n- Fait (D-162) : Scènes et Styles accessibles depuis la colonne du Canevas ; e2e `atelier-canevas.mjs`.\n- Fait (D-163) : interface bilingue français / anglais (choix par appareil, dictionnaire, couche de traduction de l'affichage) ; tests `traduire.test.ts`, e2e `interface-anglais.mjs`.\n",
+      "fiche_sha256": "61e23bd37e1fd08865082c18f6274c556927498aff082dc1281c6bd2c937054e",
+      "prescription": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 3D · revue ») : copie de travail de P.118 : orbite, panoramique, zoom ; sélection de `EX118-mezz-W-009` en 3D puis depuis la liste : mêmes propriétés ; commentaire rattaché par un compte `comment`, visible depuis un second navigateur à la même révision ; modification par autrui : bandeau, révision de la revue inchangée jusqu'à l'actualisation ; compte `read` : pas de champ de commentaire ; temps de première image imprimé, sans seuil (R14). Traçabilité (critère de la section 17) : révision et empreinte du modèle, moteur et version des représentations affichés ; résultats comparés à P.118. |",
+      "atoms": [
+        {
+          "id": "M08-PATH-113-A01",
+          "expected": "orbite",
+          "status": "présent",
+          "reason": "Geste rendu mesuré, sans prouver caméra exacte.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 245,
+                  "text": "// Orbite : 60 trames de glisser, budget de trame mesuré."
+                },
+                {
+                  "line": 246,
+                  "text": "const canvas3d = await page.locator(\".vue3d-canevas\").boundingBox();"
+                },
+                {
+                  "line": 247,
+                  "text": "const debutRendus = await rendus();"
+                },
+                {
+                  "line": 248,
+                  "text": "await page.mouse.move(canvas3d.x + canvas3d.width / 2, canvas3d.y + canvas3d.height / 2);"
+                },
+                {
+                  "line": 249,
+                  "text": "await page.mouse.down();"
+                },
+                {
+                  "line": 250,
+                  "text": "for (let k = 0; k < 60; k++) {"
+                },
+                {
+                  "line": 251,
+                  "text": "  await page.mouse.move(canvas3d.x + canvas3d.width / 2 + k * 4, canvas3d.y + canvas3d.height / 2 + Math.sin(k / 6) * 20);"
+                },
+                {
+                  "line": 252,
+                  "text": "  await page.waitForTimeout(16);"
+                },
+                {
+                  "line": 253,
+                  "text": "}"
+                },
+                {
+                  "line": 254,
+                  "text": "await page.mouse.up();"
+                },
+                {
+                  "line": 255,
+                  "text": "await page.waitForTimeout(200);"
+                },
+                {
+                  "line": 256,
+                  "text": "const orbite = await page.evaluate((n0) => window.fadiMesures3D.rendus.slice(n0), debutRendus);"
+                },
+                {
+                  "line": 257,
+                  "text": "const tri = [...orbite].sort((a, b) => a - b);"
+                },
+                {
+                  "line": 258,
+                  "text": "const p95 = tri[Math.floor(tri.length * 0.95)] ?? 0;"
+                },
+                {
+                  "line": 259,
+                  "text": "mesures.push([\"orbite : temps CPU de rendu par image, p95 (ms)\", Math.round(p95 * 100) / 100]);"
+                },
+                {
+                  "line": 260,
+                  "text": "console.log(`⏱ orbite P.118 : ${orbite.length} images, rendu CPU p95 ${p95.toFixed(2)} ms, médiane ${(tri[Math.floor(tri.length / 2)] ?? 0).toFixed(2)} ms`);"
+                },
+                {
+                  "line": 261,
+                  "text": "check(\"orbite : au moins 30 images rendues, p95 du rendu < 16 ms\", orbite.length >= 30 && p95 < 16, `${orbite.length} images, p95 ${p95.toFixed(2)} ms`);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-113-A02",
+          "expected": "panoramique zoom",
+          "status": "absent",
+          "reason": "Pas gestes pan/zoom assertés dans candidat.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-113-A03",
+          "expected": "sélection ID import 3D/liste mêmes propriétés",
+          "status": "partiel",
+          "reason": "Autre mur synthétique sélectionné.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 263,
+                  "text": "// Pousser / tirer la hauteur d'un mur du niveau d'essai."
+                },
+                {
+                  "line": 264,
+                  "text": "await page.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();"
+                },
+                {
+                  "line": 265,
+                  "text": "await page.locator('.vue3d-commandes select[aria-label=\"Présentation\"]').selectOption({ label: \"Niveau actif\" });"
+                },
+                {
+                  "line": 266,
+                  "text": "await page.waitForTimeout(400);"
+                },
+                {
+                  "line": 267,
+                  "text": "const murId = await page.evaluate(() => [...document.querySelectorAll(\".nav-objets button[data-objet]\")].map((b) => b.dataset.objet).find((t) => t.startsWith(\"mur-\")));"
+                },
+                {
+                  "line": 268,
+                  "text": "await page.keyboard.press(\"u\");"
+                },
+                {
+                  "line": 269,
+                  "text": "check(\"raccourci U → Pousser / tirer (reste en 3D)\", (await page.locator('.atelier-n-outils .est-actif, .outils-famille .est-actif').first().textContent().catch(() => \"\")).includes(\"Pousser\") || (await page.locator(\".vue3d\").count()) === 1);"
+                },
+                {
+                  "line": 270,
+                  "text": "const pos = await page.evaluate((id) => window.fadiMesures3D.localiser(id), murId);"
+                },
+                {
+                  "line": 271,
+                  "text": "const c3 = await page.locator(\".vue3d-canevas\").boundingBox();"
+                },
+                {
+                  "line": 272,
+                  "text": "await mesurer(\"pousser / tirer un mur → hauteur enregistrée\", async () => {"
+                },
+                {
+                  "line": 273,
+                  "text": "  await page.mouse.move(c3.x + pos.x, c3.y + pos.y);"
+                },
+                {
+                  "line": 274,
+                  "text": "  await page.mouse.down();"
+                },
+                {
+                  "line": 275,
+                  "text": "  for (let k = 1; k <= 10; k++) await page.mouse.move(c3.x + pos.x, c3.y + pos.y - k * 6);"
+                },
+                {
+                  "line": 276,
+                  "text": "  await page.mouse.up();"
+                },
+                {
+                  "line": 277,
+                  "text": "  // Le geste part en un lot ; sur une machine de CI chargée, l'enregistrement peut dépasser quelques secondes."
+                },
+                {
+                  "line": 278,
+                  "text": "  await page.waitForFunction(() => document.querySelector(\".barre-sync\")?.textContent?.startsWith(\"Enregistré\"), null, { timeout: 30000 });"
+                },
+                {
+                  "line": 279,
+                  "text": "});"
+                },
+                {
+                  "line": 280,
+                  "text": "const hauteurApres = await page.locator('.inspecteur input[id$=\"-hauteur\"]').inputValue().catch(() => \"\");"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-113-A04",
+          "expected": "commentaire rôle commentaire second navigateur",
+          "status": "absent",
+          "reason": "Pas création commentaire.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-113-A05",
+          "expected": "bannière révision puis rafraîchissement explicite",
+          "status": "partiel",
+          "reason": "Barre égale après navigation, pas snapshot viewer conservé.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 346,
+                  "text": "// Second navigateur (même compte) : il lit les mêmes révisions."
+                },
+                {
+                  "line": 347,
+                  "text": "const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });"
+                },
+                {
+                  "line": 348,
+                  "text": "const page2 = await ctx2.newPage();"
+                },
+                {
+                  "line": 349,
+                  "text": "await page2.goto(`${url}?module=atelier`);"
+                },
+                {
+                  "line": 350,
+                  "text": "await page2.waitForSelector(\".plan2d\");"
+                },
+                {
+                  "line": 351,
+                  "text": "await page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();"
+                },
+                {
+                  "line": 352,
+                  "text": "await page2.waitForTimeout(300);"
+                },
+                {
+                  "line": 353,
+                  "text": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));"
+                },
+                {
+                  "line": 354,
+                  "text": "await ctx2.close();"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-113-A06",
+          "expected": "lecture seule champs inactifs",
+          "status": "absent",
+          "reason": "Pas rôle lecture.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-113-A07",
+          "expected": "temps première image",
+          "status": "partiel",
+          "reason": "Mesures rendu présentes, distinguer temps CPU.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 245,
+                  "text": "// Orbite : 60 trames de glisser, budget de trame mesuré."
+                },
+                {
+                  "line": 246,
+                  "text": "const canvas3d = await page.locator(\".vue3d-canevas\").boundingBox();"
+                },
+                {
+                  "line": 247,
+                  "text": "const debutRendus = await rendus();"
+                },
+                {
+                  "line": 248,
+                  "text": "await page.mouse.move(canvas3d.x + canvas3d.width / 2, canvas3d.y + canvas3d.height / 2);"
+                },
+                {
+                  "line": 249,
+                  "text": "await page.mouse.down();"
+                },
+                {
+                  "line": 250,
+                  "text": "for (let k = 0; k < 60; k++) {"
+                },
+                {
+                  "line": 251,
+                  "text": "  await page.mouse.move(canvas3d.x + canvas3d.width / 2 + k * 4, canvas3d.y + canvas3d.height / 2 + Math.sin(k / 6) * 20);"
+                },
+                {
+                  "line": 252,
+                  "text": "  await page.waitForTimeout(16);"
+                },
+                {
+                  "line": 253,
+                  "text": "}"
+                },
+                {
+                  "line": 254,
+                  "text": "await page.mouse.up();"
+                },
+                {
+                  "line": 255,
+                  "text": "await page.waitForTimeout(200);"
+                },
+                {
+                  "line": 256,
+                  "text": "const orbite = await page.evaluate((n0) => window.fadiMesures3D.rendus.slice(n0), debutRendus);"
+                },
+                {
+                  "line": 257,
+                  "text": "const tri = [...orbite].sort((a, b) => a - b);"
+                },
+                {
+                  "line": 258,
+                  "text": "const p95 = tri[Math.floor(tri.length * 0.95)] ?? 0;"
+                },
+                {
+                  "line": 259,
+                  "text": "mesures.push([\"orbite : temps CPU de rendu par image, p95 (ms)\", Math.round(p95 * 100) / 100]);"
+                },
+                {
+                  "line": 260,
+                  "text": "console.log(`⏱ orbite P.118 : ${orbite.length} images, rendu CPU p95 ${p95.toFixed(2)} ms, médiane ${(tri[Math.floor(tri.length / 2)] ?? 0).toFixed(2)} ms`);"
+                },
+                {
+                  "line": 261,
+                  "text": "check(\"orbite : au moins 30 images rendues, p95 du rendu < 16 ms\", orbite.length >= 30 && p95 < 16, `${orbite.length} images, p95 ${p95.toFixed(2)} ms`);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-113-A08",
+          "expected": "révision empreinte moteur version",
+          "status": "absent",
+          "reason": "Pas tous quatre champs assertés.",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-115",
+      "fiche": "docs/atelier/fiches/DA-18-03.md",
+      "full_fiche": "# DA-18-03 — Exploded presentations / Vues éclatées — module M14 → Atelier — lot 3b\n\n**État : disponible (lot 3b) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : recette `apps/web/e2e/atelier-nouveau.mjs` (partie 3D), tests `packages/atelier-model/src/projection/maillage.test.ts` ; compte rendu `lots/lot-3b.md`.\n\n| Champ | Contenu |\n| --- | --- |\n| Identité | DA-18-03 (M14, étape cible P1). Mode « Éclaté » de la vue 3D de l'Atelier : les niveaux sont écartés verticalement pour lire l'empilement du bâtiment. Sous-exigences : -a activer, régler et désactiver l'éclaté ; -b objets multi-niveaux ; -c image ou vue éclatée enregistrée, rattachée à la bonne révision (lot 5, extension). Référence de comportement : prototype, mode « Éclaté » conservé (comportement exact relevé sur la maquette du lot 0). Critère de recette commun de la section 18 : image rattachée à la bonne version, budgets graphiques respectés. |\n| Situation utilisateur | Lire l'empilement des niveaux d'un bâtiment en les écartant, puis revenir à l'assemblé, sans rien modifier dans le modèle. |\n| Entrées et unités | Mode (assemblé, éclaté) ; écart entre niveaux `{ value, unit: \"m\" }` (≥ 0, 0 = assemblé), réglé par l'utilisateur et jamais enregistré dans le modèle ; niveaux visibles (R10) ; sélection et caméra conservées. Aucune valeur d'écart n'est une donnée de projet (R3). |\n| Comportement | **Cycle.** Bouton « Éclaté » de la barre de la vue 3D → réglage de l'écart (curseur, flèches du clavier, saisie numérique) → aperçu immédiat : chaque niveau et les objets qui lui sont rattachés (`contient`) sont translatés verticalement ; désactiver rend l'assemblé. Aucune commande ni validation : le mode est un paramètre d'affichage (R10). |\n| | **Calcul.** Décalage vertical d'un niveau = rang du niveau (selon `ordre`) × écart, le niveau de plus bas rang n'étant pas déplacé ; fonction pure sans `three` ni DOM (R6). Les coordonnées x, y et les altitudes du modèle ne changent pas : l'éclaté n'est qu'une transformation de rendu. Niveaux de même élévation, ou `ordre` incohérent avec les élévations (DA-05-04) : l'éclaté suit `ordre` et le signale, sans rien corriger. |\n| | **Objets multi-niveaux.** Un escalier (`relie` deux niveaux) suit son niveau de départ, un mur à `niveauHaut` son niveau de base ; la relation avec l'autre niveau reste lisible (trait de rappel ou surbrillance, présentation à valider sur la maquette du lot 0). Aucun objet n'est coupé ni dupliqué. |\n| | **Palette (UX2) et aide (UX4).** « éclaté » ; synonymes « explode », « vue éclatée » ; actif si le modèle compte au moins deux niveaux ; exemple court : écarter les niveaux de 1 m (exemple, jamais valeur par défaut). |\n| Données et dépendances | Lecture seule : `niveau` (`ordre`, `elevation`), relations `contient` et `relie`, `niveauHaut` des murs ; aucune commande émise, aucun paramètre du modèle modifié, aucune révision créée (R10) ; réglage d'écart conservé localement (session ou Dexie), jamais dans le modèle ; fonction de décalage dans `packages/core-geometry` (R6). |\n| Résultats | Vue 3D éclatée ; niveaux et objets rattachés écartés ; assemblé restauré sans résidu (écart 0 : coordonnées de rendu identiques) ; aucune écriture. |\n| Cas limites | **Valeurs.** Écart négatif ou non numérique refusé ; un seul niveau : éclaté sans effet, message ; modèle sans niveau : mode inactif ; objets de niveaux non chargés : chargés à la demande ; WebGL2 indisponible : mode non offert, message (R20). |\n| | **Concurrence, réseau, droits.** Niveau ajouté, supprimé ou modifié par autrui pendant l'éclaté : la vue se resynchronise (`GET /journal?apres=n`), l'écart reste ; lecture seule : `read` suffit, aucune requête d'écriture, donc ni 409 ni 423 ; 404 sans accès ; hors ligne : dernier instantané Dexie. |\n| Compatibilité | Import P.118 (section 6) : 6 niveaux, élévations décimales conservées, éclaté fondé sur `ordre` (aucun arrondi, R7). Navigateur : WebGL2 requis par défaut (R14). |\n| | IFC et DXF : l'éclaté n'est pas exporté (affichage seul) ; une image ou une vue éclatée enregistrée portera la révision et l'empreinte dont elle est issue (R11, lot 5). |\n| Validation | **Unité** (`packages/core-geometry/src/eclate.test.ts`, nom provisoire) : écart 0 → décalages nuls ; 6 niveaux et un écart de test : décalage = rang × écart ; `ordre` incohérent : ordre suivi et signalé ; un niveau : aucun décalage ; empreinte du modèle identique avant et après. |\n| | **API** (`apps/api/src/routes/atelier-commands.test.ts`, groupe « affichage ») : activer et régler l'éclaté n'émet aucune requête d'écriture ; `GET /model` : révision inchangée avant et après. |\n| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 3D · éclaté ») : copie de travail de P.118 : 6 niveaux écartés, retour à l'assemblé identique ; révision inchangée (R10) ; sélection conservée ; second navigateur non affecté ; temps d'activation imprimé, sans seuil (R14, critère « budgets graphiques »). |\n| Règles métier | Aucune règle réglementaire. R9 : le modèle ne change que par commande, et le mode éclaté n'en émet aucune. R10 : mode d'affichage, jamais une commande. R11 : toute image ou vue enregistrée porte sa révision et son empreinte. R14 : aucun chiffre de performance annoncé avant mesure. R3 : l'écart n'est pas une donnée de projet. |\n| Extensions à spécifier | Éclaté par classe ou par groupe d'objets ; éclaté horizontal ; animation de l'éclaté (DA-18-02, P2) ; vue éclatée enregistrée comme vue dérivée (lot 5) ; export d'image ; présentation des objets multi-niveaux à valider sur la maquette. |\n\n## Suivi\n\n- Fait (D-053) : éclaté horizontal (niveaux côte à côte au même sol, vus de face) ; vue éclatée enregistrée comme vue 3D ; e2e `atelier-complements.mjs`.\n- Fait (D-068) : écart de l'éclaté réglable (0 à 20 m, réglage d'affichage local, jamais une donnée de projet) ; reste : éclaté par classe ou par groupe.\n- Fait (D-075) : éclaté par classe (écart réglable, ordre fixe, ouvertures avec leurs murs) ; e2e `atelier-complements.mjs`. Reste : éclaté par groupe.\n- Fait (D-087) : éclaté par groupe ; e2e `atelier-complements.mjs`.\n- État au 2026-10-06 : éclaté par groupe réalisé (D-087).\n",
+      "fiche_sha256": "3ce7c26be56aced54d59af5668f1648fc271f5874a86eb30da2dba6fe944313e",
+      "prescription": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 3D · éclaté ») : copie de travail de P.118 : 6 niveaux écartés, retour à l'assemblé identique ; révision inchangée (R10) ; sélection conservée ; second navigateur non affecté ; temps d'activation imprimé, sans seuil (R14, critère « budgets graphiques »). |",
+      "atoms": [
+        {
+          "id": "M08-PATH-115-A01",
+          "expected": "six niveaux éclatés",
+          "status": "partiel",
+          "reason": "Itération présentations triangles>0 pas six offsets.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 220,
+                  "text": "    const n0 = await rendus();"
+                },
+                {
+                  "line": 221,
+                  "text": "    await page.locator(\".nav-niveaux button\").nth(k).click();"
+                },
+                {
+                  "line": 222,
+                  "text": "    await page.locator('.vue3d-commandes select[aria-label=\"Présentation\"]').selectOption({ label: presentation });"
+                },
+                {
+                  "line": 223,
+                  "text": "    await attendreRendu(n0).catch(() => {});"
+                },
+                {
+                  "line": 224,
+                  "text": "    const t = await page.evaluate(() => window.fadiMesures3D.triangles);"
+                },
+                {
+                  "line": 225,
+                  "text": "    const nom = await page.locator(\".nav-niveaux button\").nth(k).textContent();"
+                },
+                {
+                  "line": 226,
+                  "text": "    if (!(t > 0)) videsOuErreurs.push(`${presentation} / ${nom} : ${t} triangles`);"
+                },
+                {
+                  "line": 227,
+                  "text": "  }"
+                },
+                {
+                  "line": 228,
+                  "text": "}"
+                },
+                {
+                  "line": 229,
+                  "text": "check(`3D : ${niveaux3d} niveaux × 3 présentations rendus (aucune vue vide)`, videsOuErreurs.length === 0 && erreursPage.length === 0, videsOuErreurs.join(\" ; \"));"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-115-A02",
+          "expected": "retour assemblé identique",
+          "status": "absent",
+          "reason": "Pas comparaison coordonnées.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-115-A03",
+          "expected": "révision inchangée",
+          "status": "absent",
+          "reason": "Pas comparaison avant/après éclaté.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-115-A04",
+          "expected": "sélection conservée",
+          "status": "absent",
+          "reason": "Pas oracle sélection éclaté.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-115-A05",
+          "expected": "second navigateur non affecté",
+          "status": "absent",
+          "reason": "Barre synchronisée pas caméra indépendante.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-115-A06",
+          "expected": "temps activation",
+          "status": "partiel",
+          "reason": "Mesures 3D pas mesure dédiée éclaté.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 245,
+                  "text": "// Orbite : 60 trames de glisser, budget de trame mesuré."
+                },
+                {
+                  "line": 246,
+                  "text": "const canvas3d = await page.locator(\".vue3d-canevas\").boundingBox();"
+                },
+                {
+                  "line": 247,
+                  "text": "const debutRendus = await rendus();"
+                },
+                {
+                  "line": 248,
+                  "text": "await page.mouse.move(canvas3d.x + canvas3d.width / 2, canvas3d.y + canvas3d.height / 2);"
+                },
+                {
+                  "line": 249,
+                  "text": "await page.mouse.down();"
+                },
+                {
+                  "line": 250,
+                  "text": "for (let k = 0; k < 60; k++) {"
+                },
+                {
+                  "line": 251,
+                  "text": "  await page.mouse.move(canvas3d.x + canvas3d.width / 2 + k * 4, canvas3d.y + canvas3d.height / 2 + Math.sin(k / 6) * 20);"
+                },
+                {
+                  "line": 252,
+                  "text": "  await page.waitForTimeout(16);"
+                },
+                {
+                  "line": 253,
+                  "text": "}"
+                },
+                {
+                  "line": 254,
+                  "text": "await page.mouse.up();"
+                },
+                {
+                  "line": 255,
+                  "text": "await page.waitForTimeout(200);"
+                },
+                {
+                  "line": 256,
+                  "text": "const orbite = await page.evaluate((n0) => window.fadiMesures3D.rendus.slice(n0), debutRendus);"
+                },
+                {
+                  "line": 257,
+                  "text": "const tri = [...orbite].sort((a, b) => a - b);"
+                },
+                {
+                  "line": 258,
+                  "text": "const p95 = tri[Math.floor(tri.length * 0.95)] ?? 0;"
+                },
+                {
+                  "line": 259,
+                  "text": "mesures.push([\"orbite : temps CPU de rendu par image, p95 (ms)\", Math.round(p95 * 100) / 100]);"
+                },
+                {
+                  "line": 260,
+                  "text": "console.log(`⏱ orbite P.118 : ${orbite.length} images, rendu CPU p95 ${p95.toFixed(2)} ms, médiane ${(tri[Math.floor(tri.length / 2)] ?? 0).toFixed(2)} ms`);"
+                },
+                {
+                  "line": 261,
+                  "text": "check(\"orbite : au moins 30 images rendues, p95 du rendu < 16 ms\", orbite.length >= 30 && p95 < 16, `${orbite.length} images, p95 ${p95.toFixed(2)} ms`);"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-117",
+      "fiche": "docs/atelier/fiches/DA-18-04.md",
+      "full_fiche": "# DA-18-04 — Digital mock-up visualization and review / Visualisation et revue de maquette — module M14 → Atelier — lot 3b\n\n**État : disponible (lot 3b) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : recette `apps/web/e2e/atelier-nouveau.mjs` (partie 3D), tests `packages/atelier-model/src/projection/maillage.test.ts` ; compte rendu `lots/lot-3b.md`.\n\n| Champ | Contenu |\n| --- | --- |\n| Identité | DA-18-04 (M14, étape cible P1). Visualisation de la maquette 3D de l'Atelier (niveaux, classes, calques, isolation, transparence) et relecture de ce qui reste à vérifier (problèmes localisés sur leurs objets, révision affichée). Complète DA-17-16 (revue collaborative : sélection et commentaires) et DA-18-03 (éclaté) ; ne couvre ni le rendu (DA-18-01, P2) ni l'animation (DA-18-02, P2). Sous-exigences : -a modes d'affichage et filtres ; -b état de la maquette (problèmes, révision, dérivés périmés) ; -c plans de coupe (extension). Référence de comportement : prototype (vue 3D). Critère de recette commun de la section 18 : image ou animation rattachée à la bonne version, budgets graphiques respectés. |\n| Situation utilisateur | Voir la maquette sous le jour utile à la relecture (par niveau, par classe, par calque, un objet isolé) et repérer en 3D ce qui est incertain : références à réparer, objets sans hauteur, documents périmés. |\n| Entrées et unités | Niveaux visibles ; filtres de classe (`mur`, `dalle`, `escalier`, `piece`…) et de calque ; isolation d'un objet ou d'une sélection ; transparence et mode d'ombrage (réglages d'affichage) ; révision demandée (`GET /model?revision=n`, lecture seule) ; `GET /problemes`. |\n| Comportement | **Visualisation.** Rendu WebGL2 (three.js) des représentations dérivées des objets typés (R15) ; niveaux visibles, filtres de classe et de calque, isolation et transparence sont des paramètres d'affichage (R10), locaux à la session. Ils sont distincts de `calque.visible` et `calque.verrouille`, données du modèle que seules les commandes `calque.*` modifient. |\n| | **Relecture de l'état.** Les entrées de `GET /problemes` (références à réparer, documents périmés, réserves Harmonie, conflits en attente) sont localisées sur leurs objets : repère 3D, liste, saut vers l'objet. Objets de hauteur ou d'épaisseur « non évaluée » : listés, non extrudés, signalés (R3). Aucune correction depuis la vue : `reference.reparer` et les outils d'édition passent par leurs commandes (R9). |\n| | **Révision et version.** La vue affiche toujours la révision du modèle représenté (« révision n ») ; si une révision plus récente existe, bandeau et actualisation par le journal ; une révision antérieure se consulte en lecture seule. Toute image ou capture produite (lot 5) porte la révision et l'empreinte dont elle est issue (R11). |\n| | **Budgets graphiques (R14).** Aucun chiffre annoncé avant mesure ; le scénario imprime les mesures (première image, changement de filtre, nombre d'objets) sur P.118, sans seuil. WebGPU seulement derrière un réglage avec repli automatique. |\n| | **Palette (UX2) et aide (UX4).** « afficher », « filtrer », « isoler » ; synonymes « show », « isolate » ; actif dès qu'un niveau est chargé ; exemple court : isoler les escaliers (exemple, jamais valeur par défaut). |\n| Données et dépendances | Lecture seule : `GET /model`, `GET /model/niveaux/:niveauId`, `GET /problemes`, `GET /journal?apres=n` ; classes et `calque` du modèle non modifiés ; réglages d'affichage locaux ; représentations `solide-3d` et `symbole` dérivées (autorité `derivee`, `moteur`, `versionMoteur`, `empreinteEntrees`, R15) ; événement de commande validée : mise à jour de la vue. |\n| Résultats | Vue 3D filtrée ; problèmes localisés ; révision affichée ; aucune commande émise, aucune écriture ni révision (R10). |\n| Cas limites | **Rendu.** WebGL2 indisponible : repli sur le plan 2D et les listes avec message (R20) ; très grand nombre d'objets : chargement par niveau avec état de chargement ; filtre qui exclut tout : vue vide avec message « aucun objet ne correspond ». |\n| | **Concurrence, réseau, droits.** Modèle modifié pendant la relecture : bandeau, filtres et caméra conservés, problèmes rechargés ; objet d'un problème supprimé : entrée marquée « objet supprimé » ; lecture seule : `read` suffit, ni 409 ni 423 ; 404 sans accès ; hors ligne : dernier instantané Dexie, problèmes affichés avec leur révision. |\n| Compatibilité | Import P.118 (section 6) : la vue montre les 6 niveaux et les familles importées, 20 calques conservés ; les problèmes de l'import (hôte introuvable, aire déclarée ≠ aire calculée, rôle inconnu listé au rapport) sont localisés sur leurs objets. |\n| | IFC : aucune dépendance (visualisation seule) ; images et animations exportées : lot 5, avec révision et empreinte ; navigateur : WebGL2 requis par défaut (R14). |\n| Validation | **Unité** (fonctions pures de filtrage, d'isolation et de localisation des problèmes, `packages/core-geometry/src/vue.test.ts`, nom provisoire) : filtre par niveau, classe et calque ; isolation puis retrait restitue la vue ; problème localisé en `objetId` ; empreinte du modèle identique avant et après. |\n| | **API** (`apps/api/src/routes/atelier-commands.test.ts`, groupe « affichage ») : changer de filtre ou de mode n'émet aucune requête d'écriture, révision inchangée ; `GET /problemes` renvoie l'entrée attendue après un lot qui rend une cotation « à réparer » ; `GET /model?revision=n` : lecture d'une révision antérieure. |\n| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 3D · visualisation et revue ») : copie de travail de P.118 : filtres par niveau, classe et calque ; isolation d'un escalier ; scission d'un mur portant une cotation : entrée « à réparer » localisée en 3D ; bandeau de révision lors d'une modification par un second navigateur ; mesures du temps de première image et du changement de filtre imprimées, sans seuil (R14). |\n| Règles métier | Aucune règle réglementaire. R10 : affichage hors révision. R11 : dérivé rattaché à sa révision. R12 : références incertaines visibles. R14 : WebGL2 par défaut, WebGPU derrière un réglage avec repli, aucun chiffre avant mesure. R3 : valeurs absentes « non évaluées ». |\n| Extensions à spécifier | Plans de coupe et sections 3D ; mesures et annotations 3D ; styles graphiques par classe ; rendu (DA-18-01, P2) et animation (DA-18-02, P2) ; comparaison de deux révisions (DA-21-08, P2) ; export d'images (lot 5). |\n\n## Suivi\n- Fait (D-048) : extension réalisée (voir la décision) ; tests `documents/axonometrie.test.ts`, e2e `atelier-complements.mjs`.\n- Fait (D-068) : isolement de la sélection (« Isoler la sélection » / « Quitter l'isolement », pour soi seulement, plan et 3D, hors révision) ; e2e `atelier-complements.mjs`.\n- Fait (D-090) : boîte de coupe en perspective, enregistrée avec la vue ; e2e `atelier-complements.mjs`.\n- Fait (D-135) : styles graphiques par classe en 3D (couleur, opacité ; pour soi, sur l'appareil) ; e2e `atelier-complements.mjs`.\n",
+      "fiche_sha256": "8e59f24ae60271b25e89e6c739b1b2816a4aa1921936ce7ded7355e9ac7291aa",
+      "prescription": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « 3D · visualisation et revue ») : copie de travail de P.118 : filtres par niveau, classe et calque ; isolation d'un escalier ; scission d'un mur portant une cotation : entrée « à réparer » localisée en 3D ; bandeau de révision lors d'une modification par un second navigateur ; mesures du temps de première image et du changement de filtre imprimées, sans seuil (R14). |",
+      "atoms": [
+        {
+          "id": "M08-PATH-117-A01",
+          "expected": "filtres niveau classe calque",
+          "status": "partiel",
+          "reason": "Navigation niveaux seulement.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 220,
+                  "text": "    const n0 = await rendus();"
+                },
+                {
+                  "line": 221,
+                  "text": "    await page.locator(\".nav-niveaux button\").nth(k).click();"
+                },
+                {
+                  "line": 222,
+                  "text": "    await page.locator('.vue3d-commandes select[aria-label=\"Présentation\"]').selectOption({ label: presentation });"
+                },
+                {
+                  "line": 223,
+                  "text": "    await attendreRendu(n0).catch(() => {});"
+                },
+                {
+                  "line": 224,
+                  "text": "    const t = await page.evaluate(() => window.fadiMesures3D.triangles);"
+                },
+                {
+                  "line": 225,
+                  "text": "    const nom = await page.locator(\".nav-niveaux button\").nth(k).textContent();"
+                },
+                {
+                  "line": 226,
+                  "text": "    if (!(t > 0)) videsOuErreurs.push(`${presentation} / ${nom} : ${t} triangles`);"
+                },
+                {
+                  "line": 227,
+                  "text": "  }"
+                },
+                {
+                  "line": 228,
+                  "text": "}"
+                },
+                {
+                  "line": 229,
+                  "text": "check(`3D : ${niveaux3d} niveaux × 3 présentations rendus (aucune vue vide)`, videsOuErreurs.length === 0 && erreursPage.length === 0, videsOuErreurs.join(\" ; \"));"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-117-A02",
+          "expected": "isoler escalier",
+          "status": "absent",
+          "reason": "Pas isolement escalier.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-117-A03",
+          "expected": "cotation à réparer localisée",
+          "status": "absent",
+          "reason": "Pas split ni localisation.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-117-A04",
+          "expected": "révision externe bannière",
+          "status": "partiel",
+          "reason": "Autre synchronisation.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 346,
+                  "text": "// Second navigateur (même compte) : il lit les mêmes révisions."
+                },
+                {
+                  "line": 347,
+                  "text": "const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });"
+                },
+                {
+                  "line": 348,
+                  "text": "const page2 = await ctx2.newPage();"
+                },
+                {
+                  "line": 349,
+                  "text": "await page2.goto(`${url}?module=atelier`);"
+                },
+                {
+                  "line": 350,
+                  "text": "await page2.waitForSelector(\".plan2d\");"
+                },
+                {
+                  "line": 351,
+                  "text": "await page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();"
+                },
+                {
+                  "line": 352,
+                  "text": "await page2.waitForTimeout(300);"
+                },
+                {
+                  "line": 353,
+                  "text": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));"
+                },
+                {
+                  "line": 354,
+                  "text": "await ctx2.close();"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-117-A05",
+          "expected": "temps première image et filtre",
+          "status": "partiel",
+          "reason": "Mesures orbite autre objectif.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 245,
+                  "text": "// Orbite : 60 trames de glisser, budget de trame mesuré."
+                },
+                {
+                  "line": 246,
+                  "text": "const canvas3d = await page.locator(\".vue3d-canevas\").boundingBox();"
+                },
+                {
+                  "line": 247,
+                  "text": "const debutRendus = await rendus();"
+                },
+                {
+                  "line": 248,
+                  "text": "await page.mouse.move(canvas3d.x + canvas3d.width / 2, canvas3d.y + canvas3d.height / 2);"
+                },
+                {
+                  "line": 249,
+                  "text": "await page.mouse.down();"
+                },
+                {
+                  "line": 250,
+                  "text": "for (let k = 0; k < 60; k++) {"
+                },
+                {
+                  "line": 251,
+                  "text": "  await page.mouse.move(canvas3d.x + canvas3d.width / 2 + k * 4, canvas3d.y + canvas3d.height / 2 + Math.sin(k / 6) * 20);"
+                },
+                {
+                  "line": 252,
+                  "text": "  await page.waitForTimeout(16);"
+                },
+                {
+                  "line": 253,
+                  "text": "}"
+                },
+                {
+                  "line": 254,
+                  "text": "await page.mouse.up();"
+                },
+                {
+                  "line": 255,
+                  "text": "await page.waitForTimeout(200);"
+                },
+                {
+                  "line": 256,
+                  "text": "const orbite = await page.evaluate((n0) => window.fadiMesures3D.rendus.slice(n0), debutRendus);"
+                },
+                {
+                  "line": 257,
+                  "text": "const tri = [...orbite].sort((a, b) => a - b);"
+                },
+                {
+                  "line": 258,
+                  "text": "const p95 = tri[Math.floor(tri.length * 0.95)] ?? 0;"
+                },
+                {
+                  "line": 259,
+                  "text": "mesures.push([\"orbite : temps CPU de rendu par image, p95 (ms)\", Math.round(p95 * 100) / 100]);"
+                },
+                {
+                  "line": 260,
+                  "text": "console.log(`⏱ orbite P.118 : ${orbite.length} images, rendu CPU p95 ${p95.toFixed(2)} ms, médiane ${(tri[Math.floor(tri.length / 2)] ?? 0).toFixed(2)} ms`);"
+                },
+                {
+                  "line": 261,
+                  "text": "check(\"orbite : au moins 30 images rendues, p95 du rendu < 16 ms\", orbite.length >= 30 && p95 < 16, `${orbite.length} images, p95 ${p95.toFixed(2)} ms`);"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-118",
+      "fiche": "docs/atelier/fiches/DA-21-01.md",
+      "full_fiche": "# DA-21-01 — Worksharing / Partage de travail — module M16 → Collaboration et Atelier — lot 2\n\n**État : disponible (lots 2, 7) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : `apps/api/src/routes/atelier-commands.test.ts` (droits 403 / 404 / 423 ; verrous fins par objet et par niveau, lot 7), recette `apps/web/e2e/atelier-versions.mjs` ; comptes rendus `lots/lot-2.md`, `lot-7.md`.\n\n| Champ | Contenu |\n| --- | --- |\n| Identité | DA-21-01 (M16, étape cible P1). Plusieurs personnes travaillent sur le même modèle de l'Atelier avec des droits distincts et une réservation d'édition. Sous-exigences : -a droits par rôle (`read`, `comment`, `write`, `owner`) relus par le serveur à chaque requête ; -b réservation d'édition existante de Collaboration respectée par le service de commandes (423) ; -c réservation par niveau ou par objet, réservation de variante : extension (lot 7). Référence de comportement : réservation existante de Fadi (R13) ; aucun comportement du prototype. |\n| Situation utilisateur | Travailler à plusieurs sur une même maquette sans écraser le travail d'autrui : savoir qui peut écrire, qui détient la réservation, et ce qui est refusé et pourquoi. |\n| Entrées et unités | `projectId` ; rôle de la personne sur le projet (`read`, `comment`, `write`, `owner`) ; état de la réservation d'édition (titulaire, échéance éventuelle : tels que fournis par la réservation existante de Collaboration, que le lot 2 relève sans la modifier) ; enveloppe de commande (section 5.3 : `requestId`, `baseRevision`). Aucune unité propre. |\n| Comportement | **Droits.** Relus par le serveur à chaque requête (R13) : lecture (`GET /model`, `/model/niveaux/:niveauId`, `/journal`, `/problemes`) dès `read` ; commande (`POST /commands`, `/commands/annuler`, `/commands/retablir`) exige `write` ; 404 sans accès au projet ; 403 motivé (rôle insuffisant, rôle exigé nommé) ; jamais contourné par le client : masquer un outil est une aide, pas un contrôle. |\n| | **Réservation.** Tant qu'une autre personne détient la réservation d'édition, `POST /commands`, `/commands/annuler` et `/commands/retablir` répondent 423 motivé et ne changent ni la révision ni le journal ; le lot est refusé en entier. Lecture et exécution à blanc (`/commands/essai`) ne sont pas concernées (rien n'est écrit). Prendre ou libérer une réservation n'est pas une commande du modèle : aucune révision (R10). |\n| | **Réservation et révision.** La réservation ne remplace pas le contrôle de `baseRevision` : son titulaire reçoit 409 si sa `baseRevision` est périmée (par exemple depuis un second navigateur, DA-21-02). Au lot 2, la portée et la durée de la réservation sont celles de Collaboration, relevées et consignées sans être inventées ; réservation par niveau ou par objet : extension. |\n| | **Interface (R20).** États vide, chargement et erreur explicites : bannière « lecture seule : réservation détenue par … » ; messages distincts pour 403 (rôle exigé nommé), 404 (projet introuvable ou sans accès) et 423 ; outils d'édition désactivés avec la raison disponible au survol et au lecteur d'écran ; brouillon en cours conservé. |\n| Données et dépendances | Aucune classe du modèle modifiée ; `projects.model_revision`, journal et boîte de sortie inchangés par un refus 403, 404 ou 423 ; rôles et réservation lus depuis Collaboration (source unique, aucune copie dans le modèle typé) ; événement `atelier.commande.validee` seulement pour un lot validé. |\n| Résultats | Réponse 403 motivé, 404 ou 423 motivé ; bannière de lecture seule avec le titulaire ; brouillon conservé ; aucune écriture partielle (lot atomique). |\n| Cas limites | **Réservation et droits.** Réservation prise par autrui entre l'aperçu et la validation → 423, lot conservé en brouillon ; réservation expirée ou libérée pendant la file hors ligne : rejeu normal, contrôlé par `baseRevision` ; titulaire déconnecté : règle de Collaboration, non modifiée ; rôle abaissé en cours de session : relu à chaque requête, 403 au rejeu, brouillon conservé ; accès retiré : 404. |\n| | **Requête répétée et réseau.** Même `requestId` rejoué après un refus : le refus n'est pas une validation, aucune réponse enregistrée (T06) ; hors ligne : file Dexie (une entrée par lot), rejeu dans l'ordre à la reconnexion ; un 423 ou un 403 au rejeu arrête le rejeu, les lots restants sont conservés en brouillon, sans perte ni réordonnancement. |\n| Compatibilité | Contrat `atelier-commands/1` (versionné) ; API de la section 5.4 ; Express 5 et PostgreSQL (verrou sur la ligne du projet) ; réservation et rôles de Collaboration inchangés. |\n| | Import P.118, IFC, DXF : sans objet (aucune donnée de collaboration dans ces formats). |\n| Validation | **Unité** : sans objet pour la réservation (service existant) ; les réducteurs purs (`packages/atelier-model/src/commandes/*.test.ts`) ne dépendent ni des droits ni de la réservation. |\n| | **API** (`apps/api/src/routes/atelier-commands.test.ts`, groupe « droits et réservation ») : rôle `read` → 403 motivé sur `POST /commands`, 200 sur `GET /model` ; sans accès → 404 ; réservation d'autrui → 423 sur `/commands`, `/commands/annuler` et `/commands/retablir`, révision et journal inchangés ; réservation de la personne → 200 ; titulaire avec `baseRevision` périmée → 409 ; `/commands/essai` → 200 malgré la réservation d'autrui. |\n| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Collaboration · réservation et droits ») : deux navigateurs sur la copie de travail de P.118 : le premier prend la réservation, le second passe en lecture seule (outils désactivés, bannière) et une commande forcée par script reçoit 423 ; libération : le second écrit ; compte en lecture seule : 403 motivé. |\n| Règles métier | Aucune règle réglementaire. R13 : droits relus par le serveur à chaque requête, 404 sans accès, 403 motivé, 423 pendant une réservation d'autrui ; les équipiers et les scripts ne contournent jamais un refus. R9 : seul le service de commandes écrit. R3 : portée et durée de la réservation relevées sur l'existant, jamais inventées. R17 : réservation, variantes et fusion par rejeu validé, pas de CRDT sur la géométrie. Critère B.22 : aucune perte silencieuse de modification validée. |\n| Extensions à spécifier | Réservation par niveau, par objet ou par zone ; réservation de variante et fusion par rejeu validé (lot 7) ; transfert de réservation ; notifications de prise et de libération ; présence des personnes dans la vue. |\n\n## Suivi\n\n- Fait (D-089) : verrou fin transmis à un éditeur, notifié ; test API `atelier-commands.test.ts`.\n- Fait (D-143) : réservation par zone (`zone:<id>`, objets ayant un point dans la zone), notifications de prise et de libération des verrous ; tests `reservations.test.ts`, API `atelier-commands.test.ts`, e2e `atelier-versions.mjs`. Reste : présence des personnes (temps réel).\n- État au 2026-10-06 : reste : présence des personnes dans la vue (temps réel, hors périmètre de la proposition acceptée, R17).\n",
+      "fiche_sha256": "554ef13236e3d633e73179508ba8e4365d364f24af0a09709eae604e9928f1ae",
+      "prescription": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Collaboration · réservation et droits ») : deux navigateurs sur la copie de travail de P.118 : le premier prend la réservation, le second passe en lecture seule (outils désactivés, bannière) et une commande forcée par script reçoit 423 ; libération : le second écrit ; compte en lecture seule : 403 motivé. |",
+      "atoms": [
+        {
+          "id": "M08-PATH-118-A01",
+          "expected": "deux écrans réservation globale lecture seule",
+          "status": "absent",
+          "reason": "Second contexte utilise seulement request.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-versions.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "6de84dca578e591200232c6d7d53ae31fb2e2bc207fd85aa5821dadf1b34ab04",
+              "lines": [
+                {
+                  "line": 119,
+                  "text": "// Un second compte, éditeur du tronc, modifie le mur B : conflit explicite."
+                },
+                {
+                  "line": 120,
+                  "text": "const second = await browser.newContext();"
+                },
+                {
+                  "line": 121,
+                  "text": "const autre = second.request;"
+                },
+                {
+                  "line": 122,
+                  "text": "await autre.post(`${BASE}/auth/register`, { data: { email: `versions-autre-${Date.now()}@example.com`, password: \"versions-pass-456\" } });"
+                },
+                {
+                  "line": 123,
+                  "text": "const moi = (await api(\"get\", \"/auth/me\")).body;"
+                },
+                {
+                  "line": 124,
+                  "text": "void moi;"
+                },
+                {
+                  "line": 125,
+                  "text": "const emailAutre = (await (await autre.get(`${BASE}/auth/me`)).json()).email;"
+                },
+                {
+                  "line": 126,
+                  "text": "check(\"second compte invité éditeur du tronc\", (await api(\"post\", `/projects/${pid}/members`, { email: emailAutre, role: \"editeur\" })).status === 201);"
+                },
+                {
+                  "line": 127,
+                  "text": "const revTronc = (await modele(pid)).revision;"
+                },
+                {
+                  "line": 128,
+                  "text": "check(\"le second compte modifie le mur B dans le tronc\", (await lot(pid, `autre-${Date.now()}`, revTronc, [{ type: \"objet.modifier\", params: { id: murB.id, params: { hauteur: m(3.4) } } }], autre)).status === 200);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-118-A02",
+          "expected": "commande forcée423",
+          "status": "partiel",
+          "reason": "Verrou fin objet, pas réservation globale.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-versions.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "6de84dca578e591200232c6d7d53ae31fb2e2bc207fd85aa5821dadf1b34ab04",
+              "lines": [
+                {
+                  "line": 178,
+                  "text": "// Verrou fin."
+                },
+                {
+                  "line": 179,
+                  "text": "// Le mur A est sur son niveau : on l'active, puis on le choisit dans la liste des objets du niveau."
+                },
+                {
+                  "line": 180,
+                  "text": "await page.locator(`.nav-niveaux button:has-text(\"${depart.modele.niveaux[murA.niveauId].nom}\")`).first().click();"
+                },
+                {
+                  "line": 181,
+                  "text": "await page.waitForSelector(`.nav-objets button[data-objet=\"${murA.id}\"]`, { state: \"attached\", timeout: 15000 });"
+                },
+                {
+                  "line": 182,
+                  "text": "await page.evaluate((id) => document.querySelector(`.nav-objets button[data-objet=\"${id}\"]`)?.click(), murA.id);"
+                },
+                {
+                  "line": 183,
+                  "text": "await page.waitForFunction((id) => (document.querySelector(\".etat-selection\")?.textContent ?? \"\").includes(id), murA.id, { timeout: 10000 });"
+                },
+                {
+                  "line": 184,
+                  "text": "await page.locator('.versions button:has-text(\"Verrouiller la sélection\")').click();"
+                },
+                {
+                  "line": 185,
+                  "text": "check(\"verrou posé sur l'objet sélectionné, listé « vous »\", /1 objet\\(s\\) verrouillé\\(s\\)/.test(await info()) && (await page.locator(`.ver-liste [data-verrou=\"${murA.id}\"]`).textContent()).includes(\"vous\"));"
+                },
+                {
+                  "line": 186,
+                  "text": "const revV = (await modele(pid)).revision;"
+                },
+                {
+                  "line": 187,
+                  "text": "const refus = await lot(pid, `autre-verrou-${Date.now()}`, revV, [{ type: \"objet.modifier\", params: { id: murA.id, params: { epaisseur: m(0.33) } } }], autre);"
+                },
+                {
+                  "line": 188,
+                  "text": "check(\"le second compte est refusé sur l'objet verrouillé (423, auteur et échéance)\", refus.status === 423 && refus.body.erreur === \"verrou\" && refus.body.verrous[0].auteur === email);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-118-A03",
+          "expected": "libération second écrit",
+          "status": "partiel",
+          "reason": "Même objet verrou fin.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-versions.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "6de84dca578e591200232c6d7d53ae31fb2e2bc207fd85aa5821dadf1b34ab04",
+              "lines": [
+                {
+                  "line": 189,
+                  "text": "await page.locator(`.ver-liste [data-verrou=\"${murA.id}\"] button:has-text(\"Lever\")`).click();"
+                },
+                {
+                  "line": 190,
+                  "text": "await page.waitForFunction((id) => !document.querySelector(`.ver-liste [data-verrou=\"${id}\"]`), murA.id, { timeout: 10000 });"
+                },
+                {
+                  "line": 191,
+                  "text": "check(\"verrou levé : le second compte peut modifier\", (await lot(pid, `autre-apres-${Date.now()}`, revV, [{ type: \"objet.modifier\", params: { id: murA.id, params: { epaisseur: m(0.33) } } }], autre)).status === 200);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-118-A04",
+          "expected": "lecteur403 motivé",
+          "status": "absent",
+          "reason": "Deuxième compte éditeur seulement.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-versions.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "6de84dca578e591200232c6d7d53ae31fb2e2bc207fd85aa5821dadf1b34ab04",
+              "lines": [
+                {
+                  "line": 126,
+                  "text": "check(\"second compte invité éditeur du tronc\", (await api(\"post\", `/projects/${pid}/members`, { email: emailAutre, role: \"editeur\" })).status === 201);"
+                },
+                {
+                  "line": 127,
+                  "text": "const revTronc = (await modele(pid)).revision;"
+                },
+                {
+                  "line": 128,
+                  "text": "check(\"le second compte modifie le mur B dans le tronc\", (await lot(pid, `autre-${Date.now()}`, revTronc, [{ type: \"objet.modifier\", params: { id: murB.id, params: { hauteur: m(3.4) } } }], autre)).status === 200);"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-119",
+      "fiche": "docs/atelier/fiches/DA-21-02.md",
+      "full_fiche": "# DA-21-02 — Collaborative editing / Édition collaborative — module M16 → Collaboration et Atelier — lot 2\n\n**État : disponible (lots 2, 7) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : `apps/api/src/routes/atelier-commands.test.ts` (conflits entre deux comptes, T08), recette `apps/web/e2e/atelier-nouveau.mjs` (second navigateur), fusion de variantes (`atelier-versions.mjs`) ; comptes rendus `lots/lot-2.md`, `lot-7.md`.\n\n| Champ | Contenu |\n| --- | --- |\n| Identité | DA-21-02 (M16, étape cible P1). Plusieurs clients modifient le même modèle : chaque lot validé crée une révision, chaque client se resynchronise, chaque conflit est détaillé et résolu explicitement. Sous-exigences : -a concurrence optimiste par `baseRevision` ; -b synchronisation incrémentale par le journal ; -c résolution explicite des conflits (409) ; -d rejeu hors ligne. Pas de CRDT sur la géométrie (R17). Référence de comportement : aucune (nouveau comportement Fadi). |\n| Situation utilisateur | Éditer en même temps qu'une autre personne, voir ses modifications arriver, et ne jamais perdre ni écraser un lot validé sans le savoir. |\n| Entrées et unités | Enveloppe `atelier-commands/1` : `requestId` (UUID, un par lot), `baseRevision` (entier : révision sur laquelle le lot a été préparé), `contract`, `label`, `commands` ; `GET /journal?apres=n` ; `GET /model?revision=n`. Aucune unité propre. |\n| Comportement | **Écriture.** `POST /commands` : transaction avec verrou sur la ligne du projet ; `baseRevision` comparée à la révision courante ; égale : application, journal et boîte de sortie dans la même transaction, révision +1, 200 `{ revision, applique, effets, journalId }` ; différente : 409 `{ erreur: \"conflit\", baseRevision, revisionCourante, conflits: [{ objetId, motif, etatServeur }] }`, où `conflits` liste les objets du lot modifiés ou supprimés depuis `baseRevision` (vide sans recouvrement). Lot atomique : un 400 ou un 409 ne laisse aucune écriture. |\n| | **Rebasage.** 409 à `conflits` vide : le client réexécute le lot sur l'état à jour (mêmes réducteurs) puis le renvoie avec `baseRevision` = révision courante ; le serveur le revalide en entier, rien n'est fusionné côté client. Le `requestId` reste celui du lot tant que son contenu est identique, et un `requestId` n'est jamais réutilisé pour un contenu différent. |\n| | **Synchronisation.** Après chaque réponse 200, à l'ouverture et à la reprise de connexion, le client lit `GET /journal?apres=n` et applique les entrées dans l'ordre à son état local ; un bandeau « modèle mis à jour : révision n » montre l'écart ; la périodicité de rafraîchissement (ou une poussée) est décidée au lot 2 et consignée dans `decisions.md`. Un objet supprimé par autrui ne réapparaît pas ; un brouillon qui le touche est signalé. |\n| | **Conflit.** `conflits` non vide : panneau par `objetId` (motif modifié ou supprimé, état serveur, ma version) ; choix explicites : abandonner mon lot (brouillon conservé) ou le reprendre sur l'état serveur après un nouvel aperçu ; jamais de fusion silencieuse ni de dernier écrit gagnant (R17 : fusion par rejeu validé). |\n| Données et dépendances | Révision courante (`projects.model_revision`), journal (`journalId`, `requestId`, révision, auteur, commandes, effets), boîte de sortie, index unique `(project_id, request_id)` ; copie locale Dexie (lecture et file d'envoi, jamais source de vérité) ; aucune classe du modèle propre à la collaboration. |\n| Résultats | 200 avec `revision`, `applique`, `effets`, `journalId` ; 409 détaillé avec état serveur ; état local resynchronisé ; lot conservé en brouillon en cas d'abandon. |\n| Cas limites | **Concurrence.** Deux lots simultanés sur le même objet : le premier validé l'emporte, le second reçoit 409 avec `conflits[].objetId` ; lot touchant un objet supprimé : 409 (motif « supprimé ») ; niveau supprimé par autrui pendant que j'y ajoute des objets : refus au rejeu ; annulation d'un lot dont un objet a changé depuis : 409 (DA-21-04). **Requête répétée.** Même `requestId` : réponse enregistrée, aucune seconde révision (T06) ; réponse perdue puis renvoi : même résultat. |\n| | **Réseau et droits.** Hors ligne : réducteur local, file Dexie (une entrée par lot), rejeu dans l'ordre à la reconnexion, brouillon si incompatible, rien d'abandonné en silence ; rôle `write` exigé (403 motivé), 404 sans accès, 423 pendant une réservation d'autrui (DA-21-01). |\n| Compatibilité | Enveloppe `contract: \"atelier-commands/1\"`, autre valeur refusée (400) ; PostgreSQL (`SELECT … FOR UPDATE` sur la ligne du projet, index unique `(project_id, request_id)`) ; Dexie côté client. |\n| | Import P.118 : la copie de travail est un modèle comme un autre, éditée par les mêmes commandes. IFC, DXF : sans objet. |\n| Validation | **Unité** (`packages/atelier-model/src/commandes/*.test.ts`) : les réducteurs purs donnent la même sortie (état, inverse, `effets`) côté navigateur et côté serveur pour la même entrée ; un lot rejoué sur un état modifié par autrui produit des conflits détaillés par `objetId`. |\n| | **API** (`apps/api/src/routes/atelier-commands.test.ts`, groupe « concurrence ») : deux requêtes à la même `baseRevision` sur le même objet : une 200, une 409 avec `conflits[].objetId` et état serveur, une seule révision ajoutée ; `baseRevision` périmée sans recouvrement : 409 à `conflits` vide, renvoi sur la révision courante : 200 ; même `requestId` : même réponse sans révision ; lot dont une commande est invalide : 400, rien d'écrit ; `GET /journal?apres=n` : entrées dans l'ordre. |\n| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Collaboration · édition simultanée ») : deux navigateurs à la même révision sur la copie de travail de P.118 ; A modifie `EX118-mezz-W-009`, B tente de le modifier : conflit affiché avec l'état serveur, choix explicite, aucune perte ; B reçoit la modification de A sans recharger ; coupure réseau simulée : lot en file, rejeu à la reconnexion dans l'ordre ; délai de synchronisation imprimé, sans seuil. |\n| Règles métier | Aucune règle réglementaire. R9 : toute modification passe par une commande typée, idempotente, validée par le serveur, journalisée, inversible. R3 : un conflit n'est jamais résolu par une valeur devinée. R10 : bandeau, brouillon et état de synchronisation sont de l'affichage. R11 : après synchronisation, les dérivés concernés sont marqués périmés. R17 : pas de CRDT sur la géométrie ; réservation, variantes et fusion par rejeu validé. Critère B.22 : aucune perte silencieuse de modification validée ; conflits et révisions explicites. |\n| Extensions à spécifier | Édition simultanée du texte d'annotation (Yjs, seulement si le lot 0 l'a retenu, R17) ; présence des personnes et curseurs ; fusion de variantes (lot 7) ; aide à la résolution champ par champ. |\n\n## Suivi\n- Fait (D-128) : aide à la résolution champ par champ d'un lot de modifications en conflit (champs applicables cochés, reprise des seuls champs choisis) ; tests `sync-champs.test.ts`.\n- Fait (D-149) : lot validé dont la réponse s'est perdue retiré de la file à la réouverture (journal par requestId), au lieu d'un faux conflit ; e2e `atelier-complements.mjs`.\n",
+      "fiche_sha256": "820a101ef59a90067fc15799e9aa93a69511301c48338aef72b179b98de6e009",
+      "prescription": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Collaboration · édition simultanée ») : deux navigateurs à la même révision sur la copie de travail de P.118 ; A modifie `EX118-mezz-W-009`, B tente de le modifier : conflit affiché avec l'état serveur, choix explicite, aucune perte ; B reçoit la modification de A sans recharger ; coupure réseau simulée : lot en file, rejeu à la reconnexion dans l'ordre ; délai de synchronisation imprimé, sans seuil. |",
+      "atoms": [
+        {
+          "id": "M08-PATH-119-A01",
+          "expected": "deux navigateurs même révision et mur exact",
+          "status": "partiel",
+          "reason": "Second écran lit après gestes autres objets.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 346,
+                  "text": "// Second navigateur (même compte) : il lit les mêmes révisions."
+                },
+                {
+                  "line": 347,
+                  "text": "const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });"
+                },
+                {
+                  "line": 348,
+                  "text": "const page2 = await ctx2.newPage();"
+                },
+                {
+                  "line": 349,
+                  "text": "await page2.goto(`${url}?module=atelier`);"
+                },
+                {
+                  "line": 350,
+                  "text": "await page2.waitForSelector(\".plan2d\");"
+                },
+                {
+                  "line": 351,
+                  "text": "await page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();"
+                },
+                {
+                  "line": 352,
+                  "text": "await page2.waitForTimeout(300);"
+                },
+                {
+                  "line": 353,
+                  "text": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));"
+                },
+                {
+                  "line": 354,
+                  "text": "await ctx2.close();"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-119-A02",
+          "expected": "conflit état serveur choix explicite",
+          "status": "absent",
+          "reason": "Pas conflit dans candidat.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-119-A03",
+          "expected": "réception sans recharger",
+          "status": "absent",
+          "reason": "Navigation explicite nouveau contexte.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-nouveau.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9da55af6c1cb6ef9b2ef38497ed1a5a51d0a12a9f6f133432e45c8c622fc3681",
+              "lines": [
+                {
+                  "line": 346,
+                  "text": "// Second navigateur (même compte) : il lit les mêmes révisions."
+                },
+                {
+                  "line": 347,
+                  "text": "const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });"
+                },
+                {
+                  "line": 348,
+                  "text": "const page2 = await ctx2.newPage();"
+                },
+                {
+                  "line": 349,
+                  "text": "await page2.goto(`${url}?module=atelier`);"
+                },
+                {
+                  "line": 350,
+                  "text": "await page2.waitForSelector(\".plan2d\");"
+                },
+                {
+                  "line": 351,
+                  "text": "await page2.locator('.nav-niveaux button:has-text(\"Essai lot 3a\")').click();"
+                },
+                {
+                  "line": 352,
+                  "text": "await page2.waitForTimeout(300);"
+                },
+                {
+                  "line": 353,
+                  "text": "check(\"second navigateur : 3 murs, la pièce « Bureau » et la révision du premier\", (await page2.locator(\".plan2d [data-objet^='mur-']\").count()) === 3 && (await page2.locator(\".nav-objets\").textContent()).includes(\"Bureau\") && (await page2.locator(\".barre-sync\").textContent()) === (await page.locator(\".barre-sync\").textContent()));"
+                },
+                {
+                  "line": 354,
+                  "text": "await ctx2.close();"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-119-A04",
+          "expected": "offline ordre rejeu",
+          "status": "absent",
+          "reason": "Pas setOffline candidat.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-119-A05",
+          "expected": "délai synchro imprimé",
+          "status": "absent",
+          "reason": "Pas mesure délai de propagation.",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-120",
+      "fiche": "docs/atelier/fiches/DA-21-04.md",
+      "full_fiche": "# DA-21-04 — Version management / Gestion des versions — module M16 → Collaboration et Atelier — lot 2\n\n**État : disponible (lot 7) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : `packages/atelier-model/src/versions.test.ts`, `apps/api/src/routes/atelier-commands.test.ts` (« lot 7 »), recette `apps/web/e2e/atelier-versions.mjs` ; compte rendu `lots/lot-7.md`.\n\n| Champ | Contenu |\n| --- | --- |\n| Identité | DA-21-04 (M16, étape cible P1). Au lot 2, une version du modèle est une révision numérotée : chaque lot validé, chaque annulation et chaque rétablissement produit une révision (`projects.model_revision` + 1). Sous-exigences : -a consulter l'état du modèle à une révision (`GET /model?revision=n`) ; -b annuler et rétablir (`POST /commands/annuler`, `/commands/retablir`) ; -c versions nommées, variantes, restauration d'une révision : extension (lot 7). Référence de comportement : aucune (nouveau comportement Fadi). |\n| Situation utilisateur | Retrouver l'état du modèle à une révision donnée, annuler une modification validée sans réécrire l'historique, et distinguer la révision courante de celles qui l'ont précédée. |\n| Entrées et unités | `revision` (entier ≥ 0, paramètre de `GET /model?revision=n` ; absent : révision courante) ; entrée du journal visée (`journalId`) pour annuler et rétablir ; enveloppe habituelle (`requestId`, `baseRevision`, `label` du lot, affiché dans l'historique). Aucune unité propre. |\n| Comportement | **Consulter.** `GET /model?revision=n` renvoie l'instantané typé (niveaux, objets, relations, définitions, calques, site, hypothèses, sources) à cette révision, en lecture seule ; révision inexistante ou future : 404 motivé. Le client affiche « révision n, la courante est m » et n'émet aucune commande depuis une révision antérieure ; consulter une révision n'en crée pas (R10). |\n| | **Annuler et rétablir.** `POST /commands/annuler` applique l'inverse enregistré d'une entrée du journal : c'est un nouveau lot, une nouvelle révision (`inverseDe` = entrée annulée), jamais une suppression d'historique ; `POST /commands/retablir` rejoue l'entrée annulée. Si un objet touché par l'entrée a été modifié ou supprimé depuis, 409 avec `conflits[].objetId` : aucune annulation partielle ni forcée. |\n| | **Affichage.** Liste des révisions (numéro, libellé du lot, auteur, date) dans le panneau des modifications ; la révision consultée est toujours nommée ; états vide (aucune révision antérieure), chargement et erreur explicites (R20). |\n| | **Versions nommées et variantes (lot 7).** Jalon nommé, variante, restauration d'une révision antérieure : extension, hors lot 2. Les numéros de révision du lot 2 en sont la base (une version nommée désignera une révision et son empreinte, R11) et ne sont jamais renumérotés ni réutilisés. |\n| Données et dépendances | `projects.model_revision` ; journal (`journalId`, révision, `inverseDe`, `label`, auteur) ; reconstruction de l'état à la révision n par le journal ou par instantanés : choix de stockage du lot 2, consigné dans `decisions.md` ; documents dérivés portant révision et empreinte (R11, DA-21-07). Événement `atelier.commande.validee` après chaque annulation ou rétablissement validé. |\n| Résultats | Instantané en lecture seule à la révision demandée ; nouvelle révision pour chaque annulation ou rétablissement validé ; historique complet conservé ; 409 détaillé si l'inverse n'est plus applicable. |\n| Cas limites | **Valeurs.** Révision négative ou non entière : 400 avec `chemin` ; inexistante ou future : 404 ; annulation d'une entrée déjà annulée : refusée ; rétablissement sans annulation préalable : refusé ; entrée du journal inconnue : 404. |\n| | **Concurrence, réseau, droits.** `baseRevision` périmée : 409 ; annulation d'une entrée dont un objet a été modifié depuis : 409 avec `conflits[].objetId` et état serveur ; même `requestId` → réponse enregistrée, aucune seconde révision (T06) ; hors ligne : annuler et rétablir locaux mis en file avec les lots, rejeu dans l'ordre, brouillon si incompatible ; 403 / 404 / 423 selon R13. |\n| Compatibilité | Contrat `atelier-commands/1` ; format de l'instantané = celui de `GET /model` (section 5.4), identique pour toute révision ; import P.118 : même numérotation que tout modèle, sans règle particulière ; tout export (IFC, DXF, lots 5 et 6) porte la révision et l'empreinte dont il est issu (R11). |\n| Validation | **Unité** (`packages/atelier-model/src/commandes/*.test.ts`) : pour chaque commande, appliquer puis appliquer l'inverse restitue l'état bit à bit ; rétablir après annuler restitue l'état appliqué ; inverse non applicable (objet modifié depuis) : conflit détaillé. |\n| | **API** (`apps/api/src/routes/atelier-commands.test.ts`, groupe « versions ») : `GET /model?revision=n` : instantané identique à l'état de la révision n (empreinte enregistrée) ; révision future : 404 ; `POST /commands/annuler` → 200, révision +1, `inverseDe` renseigné, historique conservé ; annuler une entrée dont l'objet a changé depuis : 409 avec `conflits[].objetId` ; rétablir ; même `requestId` : même réponse ; rôle lecture : 403 sur annuler et rétablir. |\n| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Collaboration · révisions ») : copie de travail de P.118 : trois lots validés, une révision antérieure consultée en lecture seule (aucune commande émise depuis elle), annuler puis rétablir : révision +1 chaque fois, état final identique à celui d'avant l'annulation ; second navigateur à la même révision : mêmes entrées. |\n| Règles métier | Aucune règle réglementaire. R3 : l'état consulté est celui enregistré à la révision demandée, jamais reconstitué par déduction. R9 : commandes inversibles, journalisées. R10 : consulter une révision ne touche pas la révision courante. R11 : un document porte la révision dont il est issu. Critère B.22 : conflits et révisions explicites, aucune perte silencieuse de modification validée. |\n| Extensions à spécifier | Versions nommées (jalons), variantes, restauration d'une révision, publication : lot 7 ; fusion de variantes par rejeu validé (R17) ; comparaison de deux versions (DA-21-08, P2). |\n",
+      "fiche_sha256": "428af7741aabbb0204b9a95758d115590c809f3626d8947af70314e73ca0610d",
+      "prescription": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Collaboration · révisions ») : copie de travail de P.118 : trois lots validés, une révision antérieure consultée en lecture seule (aucune commande émise depuis elle), annuler puis rétablir : révision +1 chaque fois, état final identique à celui d'avant l'annulation ; second navigateur à la même révision : mêmes entrées. |",
+      "atoms": [
+        {
+          "id": "M08-PATH-120-A01",
+          "expected": "trois lots validés",
+          "status": "partiel",
+          "reason": "Lots existent mais scénario distinct variantes/publications.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-versions.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "6de84dca578e591200232c6d7d53ae31fb2e2bc207fd85aa5821dadf1b34ab04",
+              "lines": [
+                {
+                  "line": 92,
+                  "text": "check(\"modification du tronc (épaisseur d'un mur)\", (await lot(pid, `mod-${Date.now()}`, 1, [{ type: \"objet.modifier\", params: { id: murA.id, params: { epaisseur: m(0.42) } } }])).status === 200);"
+                },
+                {
+                  "line": 93,
+                  "text": "await ouvrir(pid);"
+                },
+                {
+                  "line": 94,
+                  "text": "await page.locator('.ver-liste [data-version] button:has-text(\"Comparer\")').first().click();"
+                },
+                {
+                  "line": 95,
+                  "text": "await page.waitForSelector('.ver-diff[data-diff=\"differences\"]', { timeout: 20000 });"
+                },
+                {
+                  "line": 96,
+                  "text": "check(\"comparer à la version : 1 objet modifié (epaisseur)\", /0 ajouté\\(s\\), 1 modifié\\(s\\), 0 supprimé\\(s\\)/.test(await page.locator(\".ver-diff\").textContent()) && (await page.locator(\".ver-diff\").textContent()).includes(\"epaisseur\"));"
+                },
+                {
+                  "line": 97,
+                  "text": "await page.locator(\".ver-diff .ver-evidence\").click();"
+                },
+                {
+                  "line": 98,
+                  "text": "await page.waitForSelector(\".vue3d canvas\", { timeout: 30000 });"
+                },
+                {
+                  "line": 99,
+                  "text": "check(\"mise en évidence en 3D : vue 3D ouverte, l'objet modifié sélectionné\", (await page.locator(\".etat-selection\").textContent()).includes(murA.id));"
+                },
+                {
+                  "line": 100,
+                  "text": "await page.waitForTimeout(800);"
+                },
+                {
+                  "line": 101,
+                  "text": "await page.screenshot({ path: `${OUT}/7-version-evidence-3d.png` });"
+                },
+                {
+                  "line": 102,
+                  "text": "await allerEnPlan(page);"
+                },
+                {
+                  "line": 103,
+                  "text": ""
+                },
+                {
+                  "line": 104,
+                  "text": "// Restaurer la version."
+                },
+                {
+                  "line": 105,
+                  "text": "await page.locator('.ver-liste [data-version] button:has-text(\"Restaurer\")').first().click();"
+                },
+                {
+                  "line": 106,
+                  "text": "check(\"restaurer : nouvelle révision, modèle identique à la version\", /restaurée \\(révision 3\\)/.test(await info()) && (await api(\"get\", `/projects/${pid}/atelier/comparer?de=v:${(await api(\"get\", `/projects/${pid}/atelier/versions`)).body.versions[0].id}`)).body.difference.identiques === true);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-120-A02",
+          "expected": "ancienne révision lecture seule sans commande",
+          "status": "absent",
+          "reason": "Version comparée/restaurée pas vue passée bloquée.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-versions.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "6de84dca578e591200232c6d7d53ae31fb2e2bc207fd85aa5821dadf1b34ab04",
+              "lines": [
+                {
+                  "line": 94,
+                  "text": "await page.locator('.ver-liste [data-version] button:has-text(\"Comparer\")').first().click();"
+                },
+                {
+                  "line": 95,
+                  "text": "await page.waitForSelector('.ver-diff[data-diff=\"differences\"]', { timeout: 20000 });"
+                },
+                {
+                  "line": 96,
+                  "text": "check(\"comparer à la version : 1 objet modifié (epaisseur)\", /0 ajouté\\(s\\), 1 modifié\\(s\\), 0 supprimé\\(s\\)/.test(await page.locator(\".ver-diff\").textContent()) && (await page.locator(\".ver-diff\").textContent()).includes(\"epaisseur\"));"
+                },
+                {
+                  "line": 97,
+                  "text": "await page.locator(\".ver-diff .ver-evidence\").click();"
+                },
+                {
+                  "line": 98,
+                  "text": "await page.waitForSelector(\".vue3d canvas\", { timeout: 30000 });"
+                },
+                {
+                  "line": 99,
+                  "text": "check(\"mise en évidence en 3D : vue 3D ouverte, l'objet modifié sélectionné\", (await page.locator(\".etat-selection\").textContent()).includes(murA.id));"
+                },
+                {
+                  "line": 100,
+                  "text": "await page.waitForTimeout(800);"
+                },
+                {
+                  "line": 101,
+                  "text": "await page.screenshot({ path: `${OUT}/7-version-evidence-3d.png` });"
+                },
+                {
+                  "line": 102,
+                  "text": "await allerEnPlan(page);"
+                },
+                {
+                  "line": 103,
+                  "text": ""
+                },
+                {
+                  "line": 104,
+                  "text": "// Restaurer la version."
+                },
+                {
+                  "line": 105,
+                  "text": "await page.locator('.ver-liste [data-version] button:has-text(\"Restaurer\")').first().click();"
+                },
+                {
+                  "line": 106,
+                  "text": "check(\"restaurer : nouvelle révision, modèle identique à la version\", /restaurée \\(révision 3\\)/.test(await info()) && (await api(\"get\", `/projects/${pid}/atelier/comparer?de=v:${(await api(\"get\", `/projects/${pid}/atelier/versions`)).body.versions[0].id}`)).body.difference.identiques === true);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-120-A03",
+          "expected": "undo redo +1 état final exact",
+          "status": "absent",
+          "reason": "Restaurer une version ne vaut pas annuler/rétablir.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-versions.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "6de84dca578e591200232c6d7d53ae31fb2e2bc207fd85aa5821dadf1b34ab04",
+              "lines": [
+                {
+                  "line": 104,
+                  "text": "// Restaurer la version."
+                },
+                {
+                  "line": 105,
+                  "text": "await page.locator('.ver-liste [data-version] button:has-text(\"Restaurer\")').first().click();"
+                },
+                {
+                  "line": 106,
+                  "text": "check(\"restaurer : nouvelle révision, modèle identique à la version\", /restaurée \\(révision 3\\)/.test(await info()) && (await api(\"get\", `/projects/${pid}/atelier/comparer?de=v:${(await api(\"get\", `/projects/${pid}/atelier/versions`)).body.versions[0].id}`)).body.difference.identiques === true);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-120-A04",
+          "expected": "second navigateur journal identique",
+          "status": "absent",
+          "reason": "Second contexte request sans journal écran.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-versions.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "6de84dca578e591200232c6d7d53ae31fb2e2bc207fd85aa5821dadf1b34ab04",
+              "lines": [
+                {
+                  "line": 119,
+                  "text": "// Un second compte, éditeur du tronc, modifie le mur B : conflit explicite."
+                },
+                {
+                  "line": 120,
+                  "text": "const second = await browser.newContext();"
+                },
+                {
+                  "line": 121,
+                  "text": "const autre = second.request;"
+                },
+                {
+                  "line": 122,
+                  "text": "await autre.post(`${BASE}/auth/register`, { data: { email: `versions-autre-${Date.now()}@example.com`, password: \"versions-pass-456\" } });"
+                },
+                {
+                  "line": 123,
+                  "text": "const moi = (await api(\"get\", \"/auth/me\")).body;"
+                },
+                {
+                  "line": 124,
+                  "text": "void moi;"
+                },
+                {
+                  "line": 125,
+                  "text": "const emailAutre = (await (await autre.get(`${BASE}/auth/me`)).json()).email;"
+                },
+                {
+                  "line": 126,
+                  "text": "check(\"second compte invité éditeur du tronc\", (await api(\"post\", `/projects/${pid}/members`, { email: emailAutre, role: \"editeur\" })).status === 201);"
+                },
+                {
+                  "line": 127,
+                  "text": "const revTronc = (await modele(pid)).revision;"
+                },
+                {
+                  "line": 128,
+                  "text": "check(\"le second compte modifie le mur B dans le tronc\", (await lot(pid, `autre-${Date.now()}`, revTronc, [{ type: \"objet.modifier\", params: { id: murB.id, params: { hauteur: m(3.4) } } }], autre)).status === 200);"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-121",
+      "fiche": "docs/atelier/fiches/DA-21-05.md",
+      "full_fiche": "# DA-21-05 — Integrated data management / Gestion intégrée des données — module M16 → Collaboration et Atelier — lot 2\n\n**État : disponible (lots 2, 4, 5) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : `apps/api/src/routes/atelier-commands.test.ts` (instantané, péremption des documents T07), scénario `apps/web/e2e/parcours-scenario.mjs` ; comptes rendus `lots/lot-2.md`, `lot-4.md`, `lot-5.md`.\n\n| Champ | Contenu |\n| --- | --- |\n| Identité | DA-21-05 (M16, étape cible P1). Le modèle typé de l'Atelier, les données de projet (site, hypothèses, sources, structure déclarée), les liaisons avec les autres modules (Programmation, Harmonie, Documents) et les documents dérivés sont gérés ensemble : une source unique, des liaisons explicites, des dérivés marqués périmés. Sous-exigences : -a instantané complet (`GET /model`) ; -b source unique, écriture par commandes seulement (R9) ; -c événements et péremption des dérivés (R11, T07) ; -d liste unique des problèmes (`GET /problemes`). Référence de comportement : aucune (nouveau comportement Fadi). |\n| Situation utilisateur | Retrouver au même endroit le modèle, ses données de projet et l'état de tout ce qui en dérive, savoir ce qui est à jour, périmé ou à réparer, et ne jamais avoir deux sources pour la même donnée. |\n| Entrées et unités | `GET /model?revision=n`, `GET /model/niveaux/:niveauId` (chargement par niveau), `GET /problemes` ; événements `atelier.commande.validee { projectId, revision, objetIds, types, auteur }` ; propriétés typées `{ nom, valeur, unite, provenance, statut }` (provenance : saisie, import, calcul, regle ; statut : declaree, verifiee, a-verifier). Toute grandeur est `{ value, unit }`, toute coordonnée est taguée (R5). |\n| Comportement | **Instantané.** `GET /model` renvoie, à une révision donnée, niveaux, objets, relations, définitions, calques, site, hypothèses et sources ; une valeur absente est « non évaluée » (R3) ; hypothèses, sources et structure déclarée gardent leur statut explicite (R4), jamais promues en exigences. |\n| | **Source unique.** Aucune écriture directe en base hors du service de commandes (R9) ; la copie locale Dexie est un cache de lecture et une file d'envoi, jamais une source ; les liaisons avec Programmation (`programme`), Harmonie et Documents sont des références explicites vers des `objetId`, jamais des copies de valeurs. |\n| | **Dérivés.** À chaque lot validé, l'événement `atelier.commande.validee` (boîte de sortie, traité dans le processus de l'API, idempotent par identifiant) marque périmés vues, documents et quantités, périme le bilan Harmonie, invalide l'aperçu conceptuel et notifie ; un dérivé périmé reste consultable mais n'est pas présenté comme actuel (R11) ; il porte la révision et l'empreinte dont il est issu. |\n| | **Problèmes.** `GET /problemes` réunit références à réparer (R12), conflits en attente, documents périmés et réserves Harmonie ; chaque entrée nomme l'objet, le motif, la révision et, s'il y a lieu, la proposition de réparation. |\n| Données et dépendances | Classes de la section 5.2 (aucune nouvelle classe) ; `projects.model_revision` ; journal et boîte de sortie ; documents dérivés (révision, empreinte) ; liaison `programme` ; bilan Harmonie ; identifiants stables `${projectId}_${id}` (règle existante). |\n| Résultats | Instantané typé complet ; liste des problèmes ; dérivés marqués à jour ou périmés avec leur révision ; aucun doublon de donnée entre modules. |\n| Cas limites | **Cohérence.** Événement traité deux fois : un seul effet (idempotent par identifiant) ; traitement d'événement en échec : relancé, la validation du lot n'est pas annulée, le dérivé reste « à recalculer » ; objet référencé par un autre module supprimé : référence « à réparer » listée, jamais supprimée en silence ; niveau non chargé référencé par un objet chargé : chargé à la demande, jamais présumé absent. |\n| | **Concurrence, réseau, droits.** `baseRevision` périmée → 409 détaillé ; même `requestId` → réponse enregistrée (T06) ; hors ligne : instantané Dexie lisible, écritures en file, rejeu dans l'ordre, brouillon si incompatible ; 403 motivé, 404 sans accès, 423 pendant une réservation d'autrui (R13). |\n| Compatibilité | Contrat `atelier-commands/1` ; instantané et journal en JSON typé ; import P.118 (section 6) : rapport nominatif de chaque famille (220 murs, 84 portes, 126 fenêtres, 32 escaliers, 45 pièces, 6 niveaux, calques, hypothèses, sources, structure), `ui` hors modèle (R10). |\n| | IFC (annexe C, lot 6) : `Fadi_Hypotheses` et `Fadi_Sources` avec statut explicite ; rapport d'échange par classe. DXF : sans objet. |\n| Validation | **Unité** (tests de l'importeur, lot 1) : effectifs par famille égaux à ceux de R7 ; import idempotent (même modèle, même empreinte) ; le modèle ne contient aucun paramètre d'affichage. |\n| | **API** (`apps/api/src/routes/atelier-commands.test.ts`, groupe « données ») : `GET /model` complet à la révision courante puis à une révision antérieure ; `GET /model/niveaux/:niveauId` : sous-ensemble cohérent ; après un lot validé, l'événement marque un document de test périmé (visible dans `GET /problemes`) ; événement rejoué : un seul marquage ; objet référencé supprimé : référence à réparer listée. |\n| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Collaboration · données ») : copie de travail de P.118 : modifier un mur : le bilan Harmonie passe « à recalculer » et `GET /problemes` liste l'entrée ; recharger hors ligne : instantané lisible ; second navigateur à la même révision. |\n| Règles métier | Aucune règle réglementaire. R3 : valeur absente « non évaluée ». R4 : hypothèse, source et structure déclarée jamais promues en exigence. R5 : coordonnées taguées. R7 : rien d'omis à l'import. R9, R10, R11, R12. Critère B.22 : aucune perte silencieuse de modification validée ; conflits et révisions explicites. |\n| Extensions à spécifier | Export des données en tables (quantités, propriétés) : lot 5 ; échanges IFC et rapport d'échange : lot 6 ; catalogue de définitions partagé entre projets : lot 7 (DA-21-09) ; classification (`classification.affecter`, code optionnel). |\n",
+      "fiche_sha256": "d5b1e0f58d15a2552212159be1bfc4bff7571b21e4f4f69f28e8e322e232c5ce",
+      "prescription": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Collaboration · données ») : copie de travail de P.118 : modifier un mur : le bilan Harmonie passe « à recalculer » et `GET /problemes` liste l'entrée ; recharger hors ligne : instantané lisible ; second navigateur à la même révision. |",
+      "atoms": [
+        {
+          "id": "M08-PATH-121-A01",
+          "expected": "copie P118 mur modifié",
+          "status": "partiel",
+          "reason": "Copie atelierUrl distincte exemple rechargé hors ligne.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/parcours-scenario.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9684822bfc974548b400bed06e9a9ecd5cb34fd95de648e7b3e3d6ef48ef6863",
+              "lines": [
+                {
+                  "line": 1180,
+                  "text": "await waitRevisionAbove(atelierPid, wallsResolved.revision);"
+                },
+                {
+                  "line": 1181,
+                  "text": "const wallsAfterReload = await rdcWallsOf(atelierPid);"
+                },
+                {
+                  "line": 1182,
+                  "text": "check(\"rechargement : la file locale est rejouée à l'ouverture → +1 mur et +1 révision sur le serveur\", wallsAfterReload.walls === wallsResolved.walls + 1 && wallsAfterReload.revision === wallsResolved.revision + 1, JSON.stringify({ wallsResolved, wallsAfterReload }));"
+                },
+                {
+                  "line": 1183,
+                  "text": "// Rechargement complet hors-ligne : l'enveloppe (service worker) sert l'application, le cache persistant (IndexedDB) relit"
+                },
+                {
+                  "line": 1184,
+                  "text": "// les étapes déjà lues, l'Atelier s'ouvre depuis le cache local du modèle."
+                },
+                {
+                  "line": 1185,
+                  "text": "await page.goto(`${exampleUrl}?module=parcours&etape=2`);"
+                },
+                {
+                  "line": 1186,
+                  "text": "await page.waitForSelector(\".reference-answers\");"
+                },
+                {
+                  "line": 1187,
+                  "text": "await page.waitForTimeout(2500); // le cache des requêtes s'écrit avec un délai de regroupement"
+                },
+                {
+                  "line": 1188,
+                  "text": "check(\"hors-ligne : service worker actif et contrôlant la page\", await page.evaluate(async () => !!navigator.serviceWorker.controller && !!(await navigator.serviceWorker.getRegistration())?.active));"
+                },
+                {
+                  "line": 1189,
+                  "text": "await ctx.setOffline(true);"
+                },
+                {
+                  "line": 1190,
+                  "text": "await page.reload();"
+                },
+                {
+                  "line": 1191,
+                  "text": "await page.waitForSelector(\".reference-answers\", { timeout: 20000 });"
+                },
+                {
+                  "line": 1192,
+                  "text": "check(\"rechargement hors-ligne : l'étape 02 se relit depuis le cache persistant, bandeau « Lecture hors-ligne : données lues le … »\", (await page.locator(\".step-detail-title\").textContent()) === \"Réglementation & constructibilité\" && /^Lecture hors-ligne : données lues le/.test(await page.locator(\".offline-banner\").textContent()) && /^Hors-ligne/.test(await page.locator(\".sync-indicator\").textContent()));"
+                },
+                {
+                  "line": 1193,
+                  "text": "await page.locator('.module-nav button:has-text(\"Atelier architectural\")').click();"
+                },
+                {
+                  "line": 1194,
+                  "text": "await page.waitForSelector(\".atelier-n .plan2d [data-objet]\", { timeout: 30000 }).catch(() => {});"
+                },
+                {
+                  "line": 1195,
+                  "text": "check(\"rechargement hors-ligne : l'Atelier s'ouvre depuis le cache local du modèle, 6 niveaux, plan dessiné\", (await page.locator(\".nav-niveaux li\").count()) === 6 && (await page.locator(\".atelier-n .plan2d [data-objet]\").count()) > 10 && /^Hors-ligne/.test(await page.locator(\".barre-sync\").textContent()), await page.locator(\".barre-sync\").textContent().catch(() => \"absent\"));"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-121-A02",
+          "expected": "Harmonie à recalculer lié au mur",
+          "status": "absent",
+          "reason": "Pas chaîne causale mur→bilan assertée.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-121-A03",
+          "expected": "GET problemes entrée",
+          "status": "absent",
+          "reason": "Aucune occurrence problemes dans candidat1755lignes.",
+          "evidence": []
+        },
+        {
+          "id": "M08-PATH-121-A04",
+          "expected": "offline snapshot lisible",
+          "status": "partiel",
+          "reason": "Référence exampleUrl, pas même copie modifiée.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/parcours-scenario.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "9684822bfc974548b400bed06e9a9ecd5cb34fd95de648e7b3e3d6ef48ef6863",
+              "lines": [
+                {
+                  "line": 1183,
+                  "text": "// Rechargement complet hors-ligne : l'enveloppe (service worker) sert l'application, le cache persistant (IndexedDB) relit"
+                },
+                {
+                  "line": 1184,
+                  "text": "// les étapes déjà lues, l'Atelier s'ouvre depuis le cache local du modèle."
+                },
+                {
+                  "line": 1185,
+                  "text": "await page.goto(`${exampleUrl}?module=parcours&etape=2`);"
+                },
+                {
+                  "line": 1186,
+                  "text": "await page.waitForSelector(\".reference-answers\");"
+                },
+                {
+                  "line": 1187,
+                  "text": "await page.waitForTimeout(2500); // le cache des requêtes s'écrit avec un délai de regroupement"
+                },
+                {
+                  "line": 1188,
+                  "text": "check(\"hors-ligne : service worker actif et contrôlant la page\", await page.evaluate(async () => !!navigator.serviceWorker.controller && !!(await navigator.serviceWorker.getRegistration())?.active));"
+                },
+                {
+                  "line": 1189,
+                  "text": "await ctx.setOffline(true);"
+                },
+                {
+                  "line": 1190,
+                  "text": "await page.reload();"
+                },
+                {
+                  "line": 1191,
+                  "text": "await page.waitForSelector(\".reference-answers\", { timeout: 20000 });"
+                },
+                {
+                  "line": 1192,
+                  "text": "check(\"rechargement hors-ligne : l'étape 02 se relit depuis le cache persistant, bandeau « Lecture hors-ligne : données lues le … »\", (await page.locator(\".step-detail-title\").textContent()) === \"Réglementation & constructibilité\" && /^Lecture hors-ligne : données lues le/.test(await page.locator(\".offline-banner\").textContent()) && /^Hors-ligne/.test(await page.locator(\".sync-indicator\").textContent()));"
+                },
+                {
+                  "line": 1193,
+                  "text": "await page.locator('.module-nav button:has-text(\"Atelier architectural\")').click();"
+                },
+                {
+                  "line": 1194,
+                  "text": "await page.waitForSelector(\".atelier-n .plan2d [data-objet]\", { timeout: 30000 }).catch(() => {});"
+                },
+                {
+                  "line": 1195,
+                  "text": "check(\"rechargement hors-ligne : l'Atelier s'ouvre depuis le cache local du modèle, 6 niveaux, plan dessiné\", (await page.locator(\".nav-niveaux li\").count()) === 6 && (await page.locator(\".atelier-n .plan2d [data-objet]\").count()) > 10 && /^Hors-ligne/.test(await page.locator(\".barre-sync\").textContent()), await page.locator(\".barre-sync\").textContent().catch(() => \"absent\"));"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-121-A05",
+          "expected": "second navigateur même révision",
+          "status": "absent",
+          "reason": "Pas oracle même copie ici.",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "entry_id": "M08-PATH-125",
+      "fiche": "docs/atelier/fiches/DA-21-09.md",
+      "full_fiche": "# DA-21-09 — Model reuse / Réutilisation de modèle — module M04 → Atelier — lot 7\n\n**État : disponible (compléments, après le lot 9) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : `packages/atelier-model/src/reprise.test.ts`, `packages/atelier-model/src/commandes/commandes.test.ts` (« modele.reprendre »), `apps/api/src/routes/atelier-commands.test.ts` (« reprise »), `apps/web/e2e/atelier-complements.mjs` ; compte rendu `lots/complements.md` ; décision D-022.\n\n| Champ | Contenu |\n| --- | --- |\n| Identité | DA-21-09 (M04, étape cible P1). Réutiliser un modèle existant (projet, version nommée ou variante) comme point de départ d'un autre, ou réutiliser ses définitions de types, sans jamais transférer de valeur par défaut d'un bâtiment à un autre. Sous-exigences : -a reprendre un modèle ou une version dans un projet cible ; -b réutiliser des définitions (`type.definir`, `type.modifier`, catalogue versionné) ; -c blocs (`bloc.definir`, `bloc.placer`, lot 5, hors de cette fiche). Référence de comportement : aucune ; P.118 est une donnée de projet (R3). Dépend des versions nommées et variantes du lot 7 (DA-21-04). |\n| Situation utilisateur | Démarrer un nouveau modèle à partir d'un modèle existant en choisissant explicitement ce qui est repris, avec la trace de l'origine. |\n| Entrées et unités | Modèle source (`projectId`, `revision`, empreinte), lu avec le droit `read` ; sélection de ce qui est repris : niveaux, objets d'architecture, calques, définitions ; données de projet reprises seulement si elles sont choisies (site : `parcelle`, `emprise` ; `hypothese`, `source`, `structureDeclaree`) ; projet cible ; unités et repères de la source conservés (R5). |\n| Comportement | **Cycle.** Choisir la source (projet, version nommée ou variante) → liste des familles et effectifs repris, avec cases à cocher, rien de coché pour le site, les hypothèses, les sources et la structure déclarée → aperçu du rapport de reprise (par classe : effectifs source et cible, identifiants nouveaux, références remappées, ce qui n'est pas repris et pourquoi) → contrôle → validation : un lot atomique dans le projet cible. |\n| | **Identité et références.** Les objets reçoivent de nouveaux identifiants stables du projet cible (`${projectId}_${id}`) ; les références (hôtes d'ouvertures, `relie`, cotations, étiquettes, appartenances de zone) sont remappées explicitement ; une référence dont la cible n'est pas reprise passe « à réparer » (R12), jamais rattachée en silence. L'origine (projet, révision, empreinte de la source) est enregistrée en propriété de provenance `import` de chaque objet repris. |\n| | **Ce qui n'est jamais repris.** Journal, révisions, documents dérivés et bilans (R11 : ils portent la révision d'un autre projet), réservations, droits et commentaires. Aucune valeur de P.118 ni d'un autre projet n'est une valeur par défaut du projet cible (R3). |\n| | **Écriture.** Rien n'est écrit hors du service de commandes (R9) : le mécanisme (commande dédiée ou lot de commandes existantes) est fixé au lot 7 ; il produit une entrée de journal nommant la source. |\n| Données et dépendances | Classes reprises selon le choix (section 5.2) ; `definition` (catalogue versionné) et `occurrence` ; identifiants `${projectId}_${id}` ; propriétés de provenance `import` (projet, révision et empreinte sources) ; journal du projet cible ; événement `atelier.commande.validee` ; versions nommées et variantes (DA-21-04, lot 7). |\n| Résultats | Nouveau contenu du projet cible (révision +1) ; rapport de reprise nominatif ; références à réparer listées ; définitions réutilisables dans le projet cible. |\n| Cas limites | **Source.** Source sans droit `read` : 404 ; révision source inexistante, ou empreinte changée entre l'aperçu et la validation : 409 ; source vide : refus. **Cible.** Projet cible non vide : reprise ajoutée seulement sur choix explicite ; calque ou définition de même nom déjà présent : proposition (réutiliser, renommer), jamais fusion silencieuse ; unités ou repères incompatibles : refus (T03, R5). |\n| | **Réseau et droits.** Lot atomique, jamais à moitié écrit ; même `requestId` → une seule révision (T06) ; hors ligne : brouillon (la lecture de la source exige le réseau) ; `write` sur la cible, 403 / 404 / 423 selon R13. |\n| Compatibilité | Format : instantané typé de `GET /model` (section 5.4) ; import P.118 : la copie de travail de P.118 peut servir de source comme tout modèle, sans valeur par défaut héritée ; IFC : un modèle importé d'IFC se réutilise comme un autre, sans historique paramétrique inventé (R16) ; DXF : sans objet. |\n| Validation | **Unité** (`packages/atelier-model/src/commandes/reutilisation.test.ts`, nom provisoire) : reprise d'un modèle minimal : identifiants nouveaux, références remappées, hôtes d'ouvertures corrects ; cible de référence non reprise : « à réparer » ; site, hypothèses, sources et structure non repris sans choix ; origine enregistrée ; inverse supprime exactement ce qui a été ajouté. |\n| | **API** (`apps/api/src/routes/atelier-commands.test.ts`, groupe « réutilisation ») : reprise → 200, révision +1 du projet cible, rapport ; source sans accès : 404 ; empreinte source modifiée : 409 ; même `requestId` : même réponse ; rôle lecture sur la cible : 403 ; réservation d'autrui : 423. |\n| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Collaboration · réutilisation », lot 7) : reprise de la copie de travail de P.118 vers un projet vide, sans site ni hypothèses : effectifs du rapport égaux à la sélection, références remappées, aucune valeur de P.118 présentée comme défaut ; annuler : projet cible vide. |\n| Règles métier | Aucune règle réglementaire reprise implicitement : les règles applicables selon pays, usage et version identifiés se choisissent pour le projet cible, avec leur source. R3 : P.118 jamais valeur par défaut. R4 : hypothèses et sources de la source jamais promues en exigences. R5 : repères conservés. R9 : tout par commande. R10 : l'aperçu du rapport de reprise et les cases cochées sont de l'affichage, sans effet sur la révision. Critère B.22 : conflits et révisions explicites. |\n| Extensions à spécifier | Bibliothèques de définitions partagées entre projets, publication de gabarits ; blocs (lot 5) ; mise à jour d'une copie depuis sa source (fusion par rejeu validé, R17) ; reprise partielle par sélection spatiale. |\n\n## Réalisation (compléments) et écarts déclarés\n\n- Fait : `planifierReprise` (pur) + commande `modele.reprendre` (un lot, revalidé par `verifierModele`, inverse\n  exact) ; familles architecture / espaces / dessin / documents, niveaux choisis, niveau apparié à ± 5 mm sinon\n  créé ; homonymes réutilisés ou renommés « (reprise) » ; références remappées, « à réparer » si leur cible n'est\n  pas reprise ; site, hypothèses, sources, structure seulement cochés, une parcelle cible jamais écrasée ;\n  provenance `reprise:origine` (import, déclarée) ; `POST /reprise/apercu` (aucune écriture) et `POST /reprise`\n  (empreinte de l'aperçu exigée : 409 si la source a changé ; 404 source illisible) ; panneau « Reprendre d'un\n  autre projet ».\n- Écart : identifiants `reprise-<id>` au lieu de `${projectId}_${id}` (D-022) — collision refusée (409) plutôt que\n  renommage silencieux.\n- Fait ensuite (D-029) : sélection spatiale (rectangle du repère local de la source).\n- Fait ensuite (D-031) : bibliothèques partagées — famille « définitions » (types, blocs, composants, même sans\n  occurrence ; filtre par bibliothèque) ; un projet sans objet mais avec des définitions sert de bibliothèque.\n- Fait (D-136) : mise à jour d'une copie (variante) depuis sa source par rejeu validé (essai, conflits, reprise) ; tests API `atelier-commands.test.ts`, e2e `atelier-versions.mjs`.\n",
+      "fiche_sha256": "85243980a85319f886901fcf2d5006c81fa0d3491f3f0e9bb0747b8fa845cc0a",
+      "prescription": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Collaboration · réutilisation », lot 7) : reprise de la copie de travail de P.118 vers un projet vide, sans site ni hypothèses : effectifs du rapport égaux à la sélection, références remappées, aucune valeur de P.118 présentée comme défaut ; annuler : projet cible vide. |",
+      "atoms": [
+        {
+          "id": "M08-PATH-125-A01",
+          "expected": "source copie P118 cible vide",
+          "status": "partiel",
+          "reason": "Cible déjà niveau Rez àr1.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "lines": [
+                {
+                  "line": 190,
+                  "text": "// 3. Réutilisation d'une partie d'un autre modèle (dans un projet vide)."
+                },
+                {
+                  "line": 191,
+                  "text": "const cible = (await api(\"post\", \"/projects\", { code: \"P.200\", name: \"Projet repris\" })).body.id;"
+                },
+                {
+                  "line": 192,
+                  "text": "check(\"projet cible : un niveau « Rez »\", (await lot(cible, `n-${Date.now()}`, 0, [{ type: \"niveau.creer\", params: { id: \"rez\", nom: \"Rez\", elevation: 0, hauteur: 3 } }])).status === 200);"
+                },
+                {
+                  "line": 193,
+                  "text": "await ouvrir(cible, false);"
+                },
+                {
+                  "line": 194,
+                  "text": "await page.locator(\"details.reprise summary\").click();"
+                },
+                {
+                  "line": 195,
+                  "text": "await page.locator('[data-reprise=\"source\"]').selectOption(pid);"
+                },
+                {
+                  "line": 196,
+                  "text": "await page.locator('details.reprise button:has-text(\"Aperçu\")').click();"
+                },
+                {
+                  "line": 197,
+                  "text": "await page.waitForSelector(\"[data-reprise-apercu]\", { timeout: 30000 }).catch(() => {});"
+                },
+                {
+                  "line": 198,
+                  "text": "const nApercu = Number((await page.locator(\"[data-reprise-apercu]\").getAttribute(\"data-reprise-apercu\").catch(() => \"0\")) ?? 0);"
+                },
+                {
+                  "line": 199,
+                  "text": "check(\"aperçu de reprise : objets comptés, rien écrit\", nApercu > 0 && (await modele(cible)).revision === 1, `${nApercu} objet(s)`);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-125-A02",
+          "expected": "rapport effectifs égaux sélection",
+          "status": "présent",
+          "reason": "nApercu etobjetsRepris égal.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "lines": [
+                {
+                  "line": 198,
+                  "text": "const nApercu = Number((await page.locator(\"[data-reprise-apercu]\").getAttribute(\"data-reprise-apercu\").catch(() => \"0\")) ?? 0);"
+                },
+                {
+                  "line": 199,
+                  "text": "check(\"aperçu de reprise : objets comptés, rien écrit\", nApercu > 0 && (await modele(cible)).revision === 1, `${nApercu} objet(s)`);"
+                },
+                {
+                  "line": 200,
+                  "text": "await axe(\"réutilisation de modèle\", \"details.reprise\");"
+                },
+                {
+                  "line": 201,
+                  "text": "await page.locator('details.reprise button:has-text(\"Reprendre\")').click();"
+                },
+                {
+                  "line": 202,
+                  "text": "await page.waitForFunction(() => /Reprise effectuée/.test(document.querySelector(\"details.reprise\")?.textContent ?? \"\"), null, { timeout: 60000 }).catch(() => {});"
+                },
+                {
+                  "line": 203,
+                  "text": "const repris = await modele(cible);"
+                },
+                {
+                  "line": 204,
+                  "text": "const objetsRepris = Object.values(repris.modele.objets);"
+                },
+                {
+                  "line": 205,
+                  "text": "check(\"reprise : une révision, objets nouveaux avec leur provenance, aucune donnée de site reprise\", repris.revision === 2 && objetsRepris.length === nApercu && objetsRepris.every((o) => o.proprietes[\"reprise:origine\"]?.provenance === \"import\") && repris.modele.site.parcelle === null, `${objetsRepris.length} objet(s), r${repris.revision}`);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-125-A03",
+          "expected": "références remappées",
+          "status": "absent",
+          "reason": "Aucun pointeur comparé.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "lines": [
+                {
+                  "line": 203,
+                  "text": "const repris = await modele(cible);"
+                },
+                {
+                  "line": 204,
+                  "text": "const objetsRepris = Object.values(repris.modele.objets);"
+                },
+                {
+                  "line": 205,
+                  "text": "check(\"reprise : une révision, objets nouveaux avec leur provenance, aucune donnée de site reprise\", repris.revision === 2 && objetsRepris.length === nApercu && objetsRepris.every((o) => o.proprietes[\"reprise:origine\"]?.provenance === \"import\") && repris.modele.site.parcelle === null, `${objetsRepris.length} objet(s), r${repris.revision}`);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-125-A04",
+          "expected": "sans site ni hypothèses",
+          "status": "partiel",
+          "reason": "parcelle null seule, hypothèses non assertées.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "lines": [
+                {
+                  "line": 205,
+                  "text": "check(\"reprise : une révision, objets nouveaux avec leur provenance, aucune donnée de site reprise\", repris.revision === 2 && objetsRepris.length === nApercu && objetsRepris.every((o) => o.proprietes[\"reprise:origine\"]?.provenance === \"import\") && repris.modele.site.parcelle === null, `${objetsRepris.length} objet(s), r${repris.revision}`);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-125-A05",
+          "expected": "aucune valeur défaut P118",
+          "status": "partiel",
+          "reason": "Provenance import, pas champs defaults comparés.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "lines": [
+                {
+                  "line": 205,
+                  "text": "check(\"reprise : une révision, objets nouveaux avec leur provenance, aucune donnée de site reprise\", repris.revision === 2 && objetsRepris.length === nApercu && objetsRepris.every((o) => o.proprietes[\"reprise:origine\"]?.provenance === \"import\") && repris.modele.site.parcelle === null, `${objetsRepris.length} objet(s), r${repris.revision}`);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M08-PATH-125-A06",
+          "expected": "annuler cible vide",
+          "status": "absent",
+          "reason": "Pas annuler reprise.",
+          "evidence": [
+            {
+              "path": "apps/web/e2e/atelier-complements.mjs",
+              "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+              "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+              "lines": [
+                {
+                  "line": 205,
+                  "text": "check(\"reprise : une révision, objets nouveaux avec leur provenance, aucune donnée de site reprise\", repris.revision === 2 && objetsRepris.length === nApercu && objetsRepris.every((o) => o.proprietes[\"reprise:origine\"]?.provenance === \"import\") && repris.modele.site.parcelle === null, `${objetsRepris.length} objet(s), r${repris.revision}`);"
+                },
+                {
+                  "line": 206,
+                  "text": "await page.waitForSelector(\".plan2d .plan-objets [data-objet]\", { timeout: 15000 }).catch(() => {});"
+                },
+                {
+                  "line": 207,
+                  "text": "check(\"reprise : les objets repris sont dessinés\", (await page.locator(\".plan2d .plan-objets [data-objet]\").count()) > 0);"
+                },
+                {
+                  "line": 208,
+                  "text": "await page.screenshot({ path: `${OUT}/10-reprise.png` });"
+                },
+                {
+                  "line": 209,
+                  "text": "// Bibliothèque partagée (D-031) : la famille « définitions » propose le filtre par bibliothèque, l'aperçu compte les définitions."
+                },
+                {
+                  "line": 210,
+                  "text": "await page.locator('[data-famille=\"architecture\"]').uncheck().catch(() => {});"
+                },
+                {
+                  "line": 211,
+                  "text": "await page.locator('[data-famille=\"definitions\"]').check();"
+                },
+                {
+                  "line": 212,
+                  "text": "const champBib = await page.locator('[data-reprise=\"bibliotheque\"]').isVisible().catch(() => false);"
+                },
+                {
+                  "line": 213,
+                  "text": "await page.locator('details.reprise button:has-text(\"Aperçu\")').click();"
+                },
+                {
+                  "line": 214,
+                  "text": "await page.waitForFunction(() => /définition\\(s\\)/.test(document.querySelector(\"[data-reprise-apercu]\")?.textContent ?? \"\"), null, { timeout: 30000 }).catch(() => {});"
+                },
+                {
+                  "line": 215,
+                  "text": "check(\"bibliothèque de définitions : filtre proposé, aperçu sans écriture\", champBib && /définition\\(s\\)/.test((await page.locator(\"[data-reprise-apercu]\").textContent().catch(() => \"\")) ?? \"\") && (await modele(cible)).revision === 2);"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "entry_count": 12,
+  "atom_count": 58,
+  "counts": {
+    "absent": 35,
+    "partiel": 21,
+    "présent": 2
+  },
+  "full_equivalences": 0,
+  "limits": "Fiches complètes et Suivi lus ; nouveau414 et versions260 complets ; parcours1755 index littéral puis contextes hors-ligne1180–1240 ciblés, complements2594 index antérieur et reprise180–215 relue. Aucune prétention lecture sémantique exhaustive des deux grands fichiers. Absences bornées aux candidats. Aucun test/browser/DB/service."
+}

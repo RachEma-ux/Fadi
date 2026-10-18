@@ -1,0 +1,15 @@
+Extraits sélectionnés du job 117637164835, PR #165 HEAD a09c11d397c8527987c3d1c4410ebb2eb240a819 ; pas un journal intégral.
+2026-10-18T09:12:59.7566117Z node: v22.23.3
+2026-10-18T09:12:59.7566427Z npm: 10.9.9
+2026-10-18T09:13:44.9812680Z \u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m47 passed\u001b[39m\u001b[22m\u001b[90m (47)\u001b[39m
+2026-10-18T09:13:46.5476556Z \u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m95 passed\u001b[39m\u001b[22m\u001b[90m (95)\u001b[39m
+2026-10-18T09:14:05.6298455Z \u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m468 passed\u001b[39m\u001b[22m\u001b[90m (468)\u001b[39m
+2026-10-18T09:14:12.3462983Z  \u001b[2m\u001b[90m↓\u001b[39m\u001b[22m src/mesures-l19.test.ts \u001b[2m(\u001b[22m\u001b[2m1 test\u001b[22m\u001b[2m | \u001b[22m\u001b[33m1 skipped\u001b[39m\u001b[2m)\u001b[22m
+2026-10-18T09:14:13.2831265Z \u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m744 passed\u001b[39m\u001b[22m\u001b[2m | \u001b[22m\u001b[33m1 skipped\u001b[39m\u001b[90m (745)\u001b[39m
+2026-10-18T09:14:14.8995265Z \u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m22 passed\u001b[39m\u001b[22m\u001b[90m (22)\u001b[39m
+2026-10-18T09:16:13.6136175Z \u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m108 passed\u001b[39m\u001b[22m\u001b[90m (108)\u001b[39m
+2026-10-18T09:16:17.6875007Z \u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m273 passed\u001b[39m\u001b[22m\u001b[90m (273)\u001b[39m
+2026-10-18T09:16:44.0804274Z Successfully set up CPython (3.11.17)
+2026-10-18T09:17:02.0316884Z ✓ IFC valide (IfcOpenShell 0.9.0)
+2026-10-18T09:17:09.3926119Z ✓ IFC valide (IfcOpenShell 0.9.0)
+2026-10-18T09:17:15.6245856Z ✓ IFC valide (IfcOpenShell 0.9.0)

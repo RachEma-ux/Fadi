@@ -1,0 +1,64 @@
+{
+  "main_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "external_push_runs": [
+    {
+      "id": 39132634345,
+      "name": "CI",
+      "event": "push",
+      "status": "in_progress",
+      "conclusion": null,
+      "head_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798"
+    },
+    {
+      "id": 39132634427,
+      "name": "Continuité de développement",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798"
+    },
+    {
+      "id": 39132634373,
+      "name": "Codex — couverture des missions",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798"
+    },
+    {
+      "id": 39132634386,
+      "name": "Fadi — isolation des autres applications",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798"
+    }
+  ],
+  "jobs": [
+    {
+      "id": 117690745060,
+      "name": "image",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 117690745208,
+      "name": "e2e",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 117690745230,
+      "name": "validate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 117690746150,
+      "name": "Mission 004 — documentation sans base (intégration non exécutée)",
+      "status": "completed",
+      "conclusion": "skipped"
+    }
+  ],
+  "read_only_by_A6": true
+}

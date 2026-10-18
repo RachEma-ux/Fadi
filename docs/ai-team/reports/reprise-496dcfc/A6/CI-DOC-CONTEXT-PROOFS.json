@@ -1,0 +1,191 @@
+{
+  "head_before_changes": "496dcfc7bf80868ef21216d667187087db32a738",
+  "decision": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250109536",
+  "workflow_sha256": "9542a7ca056edcb50f3ecb1892b47e242dc45aa9589c3d7463a4f93a31e9f7ec",
+  "event_cases": [
+    {
+      "case": "exact",
+      "pure_expected": true,
+      "full_jobs_expected": false,
+      "passed": true
+    },
+    {
+      "case": "github.event_name-different",
+      "pure_expected": false,
+      "full_jobs_expected": true,
+      "passed": true
+    },
+    {
+      "case": "github.repository-different",
+      "pure_expected": false,
+      "full_jobs_expected": true,
+      "passed": true
+    },
+    {
+      "case": "github.event.pull_request.head.repo.full_name-different",
+      "pure_expected": false,
+      "full_jobs_expected": true,
+      "passed": true
+    },
+    {
+      "case": "github.head_ref-different",
+      "pure_expected": false,
+      "full_jobs_expected": true,
+      "passed": true
+    },
+    {
+      "case": "github.base_ref-different",
+      "pure_expected": false,
+      "full_jobs_expected": true,
+      "passed": true
+    },
+    {
+      "case": "github.event_name-missing",
+      "pure_expected": false,
+      "full_jobs_expected": true,
+      "passed": true
+    },
+    {
+      "case": "github.repository-missing",
+      "pure_expected": false,
+      "full_jobs_expected": true,
+      "passed": true
+    },
+    {
+      "case": "github.event.pull_request.head.repo.full_name-missing",
+      "pure_expected": false,
+      "full_jobs_expected": true,
+      "passed": true
+    },
+    {
+      "case": "github.head_ref-missing",
+      "pure_expected": false,
+      "full_jobs_expected": true,
+      "passed": true
+    },
+    {
+      "case": "github.base_ref-missing",
+      "pure_expected": false,
+      "full_jobs_expected": true,
+      "passed": true
+    }
+  ],
+  "scope_cases": [
+    {
+      "case": "allowed",
+      "exit": 0
+    },
+    {
+      "case": "source",
+      "exit": 1
+    },
+    {
+      "case": "package",
+      "exit": 1
+    },
+    {
+      "case": "sql",
+      "exit": 1
+    },
+    {
+      "case": "rename-away-source",
+      "exit": 1
+    },
+    {
+      "case": "other-workflow",
+      "exit": 1
+    }
+  ],
+  "malformed_or_missing_base_cases": 5,
+  "all_tests_passed": true,
+  "all_workflow_triggers": [
+    {
+      "file": "audit-drawall.yml",
+      "on": {
+        "pull_request": {
+          "paths": [
+            "scripts/audit-drawall-in-fadi.mjs",
+            "docs/workstreams/purge-drawall/**",
+            ".github/workflows/audit-drawall.yml"
+          ]
+        },
+        "workflow_dispatch": ""
+      }
+    },
+    {
+      "file": "builder-deploy.yml",
+      "on": {
+        "workflow_dispatch": {
+          "inputs": {
+            "duration": {
+              "description": "Combien de temps garder l'application accessible (minutes)",
+              "required": "true",
+              "default": "15",
+              "type": "choice",
+              "options": [
+                "5",
+                "10",
+                "15",
+                "30"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "file": "ci.yml",
+      "on": {
+        "push": {
+          "branches": [
+            "main"
+          ]
+        },
+        "pull_request": ""
+      }
+    },
+    {
+      "file": "codex-missions.yml",
+      "on": {
+        "pull_request": "",
+        "push": {
+          "branches": [
+            "main"
+          ]
+        },
+        "workflow_dispatch": ""
+      }
+    },
+    {
+      "file": "continuity.yml",
+      "on": {
+        "pull_request": "",
+        "push": {
+          "branches": [
+            "main"
+          ]
+        },
+        "workflow_dispatch": ""
+      }
+    },
+    {
+      "file": "fadi-isolation.yml",
+      "on": {
+        "pull_request": "",
+        "push": {
+          "branches": [
+            "main"
+          ]
+        },
+        "workflow_dispatch": ""
+      }
+    }
+  ],
+  "runtime_database_api_worker_or_service_executed": false,
+  "git_diff_scope_real_head": "passed against a4caaab merge-base",
+  "limitations": [
+    "context test local, not GitHub Actions runner",
+    "pure docs does not validate application or authorize merge",
+    "full jobs unchanged on all other contexts; no other PR pushed by A6"
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "schema": "fixture-documentaire-proposee/1",
+  "provenance": "Création synthétique Mission004 sous délégation D01/D07 ; aucun client/production",
+  "rights": "Contenu original préparé pour Fadi ; aucune ressource externe",
+  "purpose": "Spécification de données, pas format import/API implémenté",
+  "frame": "local",
+  "coordinate_unit": "mm",
+  "execution": "Non exécuté dans Studio",
+  "approval": "Préparation autorisée, gate/réalisation Studio non acceptées",
+  "decisions": [
+    "Q-M003-D01",
+    "Q-M003-D02",
+    "Q-M003-D07"
+  ],
+  "performance_budgets": "À fixer DEC13, aucune capacité/latence garantie",
+  "corpus_id": "S1",
+  "label": "Détail2D indépendant",
+  "context": {
+    "projectId": "syn-pavillon",
+    "studyId": "syn-study-01",
+    "variantId": "syn-variant-A",
+    "revisionId": "syn-revision-01"
+  },
+  "requires_model_3d": false,
+  "entities": [
+    {
+      "id": "line-a",
+      "type": "line",
+      "a": [
+        0,
+        0
+      ],
+      "b": [
+        6000,
+        0
+      ]
+    },
+    {
+      "id": "line-b",
+      "type": "line",
+      "a": [
+        6000,
+        0
+      ],
+      "b": [
+        6000,
+        4000
+      ]
+    },
+    {
+      "id": "circle-a",
+      "type": "circle",
+      "center": [
+        3000,
+        2000
+      ],
+      "radius": 500
+    },
+    {
+      "id": "dim-a",
+      "type": "dimension",
+      "refs": [
+        "line-a"
+      ],
+      "expected_mm": 6000
+    },
+    {
+      "id": "label-a",
+      "type": "text",
+      "position": [
+        0,
+        500
+      ],
+      "text": "Détail synthétique / Synthetic detail"
+    }
+  ],
+  "oracles": {
+    "line_a_length_mm": 6000,
+    "line_b_length_mm": 4000,
+    "circle_radius_mm": 500,
+    "projected_area_rectangle_mm2": 24000000
+  },
+  "negative_variants": [
+    "Supprimer line-a et conserver dim-a : référence à résoudre, jamais cote valide inventée",
+    "Unité absente : refus/invalidation déclarée",
+    "Sauvegarde refusée : pas état enregistré/publication implicitement autorisée"
+  ]
+}

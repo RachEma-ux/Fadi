@@ -2,13 +2,14 @@
  * Tests de routes contre une vraie base Postgres (fadi_test, PostGIS inclus)
  * — pas de mock de la couche base de données : l'objectif inclut vérifier
  * que l'autorisation par ressource (ownerId) fonctionne réellement, ce
- * qu'un mock masquerait. Nécessite DATABASE_URL pointant sur fadi_test et
- * le schéma déjà appliqué (`npm run db:migrate`).
+ * qu'un mock masquerait. Nécessite une TEST_DATABASE_URL attestée et
+ * un schéma déjà provisionné ; essais DB-3 soumis à autorisation distincte.
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import request from "supertest";
 import { createApp } from "./app.js";
+import { resetTestDatabase } from "./testing/guarded-test-pool.js";
 import { pool } from "./db/client.js";
 import { georeferenceFromParcel } from "./lib/site-context.js";
 
@@ -26,7 +27,7 @@ const pt = (x: number, y: number) => ({ x, y, frame: "local", unit: "m" });
 async function resetDb() {
   // L'ordre respecte les clés étrangères (CASCADE serait aussi suffisant,
   // mais l'ordre explicite documente les dépendances).
-  await pool.query("TRUNCATE parcels, produced_documents, project_comments, project_members, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE");
+  await resetTestDatabase(pool, ["parcels", "produced_documents", "project_comments", "project_members", "programme_cases", "programme_repartitions", "project_steps", "step_files", "projects", "sessions", "users"]);
 }
 
 beforeAll(async () => {

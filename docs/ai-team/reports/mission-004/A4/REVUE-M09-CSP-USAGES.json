@@ -1,0 +1,312 @@
+{
+  "review": "A4-M09-CSP-USAGES",
+  "date": "2026-10-18",
+  "reference_sha": "7b0cca44fa44449cae80785dea078a857be4180c",
+  "scope": "Lecture statique indépendante, sans scripts/app/DB/requête réseau/scan externe",
+  "verdict": "Documentation complétée après deltaA5 ; décision icônes et enforcement restent bloqués, aucune compatibilité runtime démontrée",
+  "blocking_for_documentary_publication": false,
+  "blocking_for_enforcement": "ChoixdocumentéicônesHTTPS nonarbitré etaucunerecetteisoléeautoriséeexécutée ; compléterconfigurationworker/styles/cache selonpreuves futures avantENF",
+  "inputs": [
+    {
+      "path": "docs/ai-team/reports/mission-004/A5/M09-LOT-A3-CSP-SCAN-PRET-A-AUTORISER.md",
+      "sha256": "da57f054793927b4c9ef3141fdd6247b64dc2fdc026bf7987c4a6c509c4b3e30"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-004/A5/M09-WORKFLOW-PUR-PROPOSE.md",
+      "sha256": "97d3d667921b035eee226b2d585d243e54b27c2843ee7955d31c8515b8d27eff"
+    },
+    {
+      "path": "apps/api/src/app.ts",
+      "sha256": "1eac74dcb76a60f071d09ada63d9d9d6450f6d5906f3882dd5022f1c465c41a7"
+    },
+    {
+      "path": "apps/web/public/parcelle/index.html",
+      "sha256": "4f6e445eba8cbce2002fd79b96948f1f7b9afa0e88da448a86ab0b7cc8e4982f"
+    },
+    {
+      "path": "apps/web/public/parcelle/parcelle-bridge.js",
+      "sha256": "4fa4b55e1cb0c2b6cf2cc0e6c1650448603012f3c73a9095c573fb9d5c822ec2"
+    },
+    {
+      "path": "apps/web/src/modules/projets-sources/ParcelleTool.tsx",
+      "sha256": "cc392d133f53fff0df1c32efc344135b9b64e13dde9bdf3bbb3056eb21a96393"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts",
+      "sha256": "d3947984643b9d6a8881c52a5b940f2dc60c9aa1f068fcb08f8c4dcba440c8bf"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts",
+      "sha256": "ff535450de7f84ad37bbaab160affe2e67711b161afcf24a038ce20e67402958"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/documents/generation-client.ts",
+      "sha256": "90d5812c373dd0370183c341f9e6aec617e4ea3689312488d03bc0dfa3596bb3"
+    },
+    {
+      "path": "apps/web/src/lib/maptiler.ts",
+      "sha256": "65d6162e9be5e9375e1bb170e042ca95f9dd530ba6207407f4450d5fbcf45f85"
+    },
+    {
+      "path": "apps/web/src/lib/i18n/index.ts",
+      "sha256": "0fee144c8f3137c338791c347c6af721b282d95b736cd8a37ad7d2c02bd7b168"
+    },
+    {
+      "path": "apps/web/public/sw.js",
+      "sha256": "b854c126fa9beb391614bcfc06235e01946227e0eecaabeea3bebe4ba3830482"
+    },
+    {
+      "path": "apps/web/vite.config.ts",
+      "sha256": "97be880a8370cf083ecc7d5acf25600d6d541586f65e62103f6e15bbd506a991"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/exports.ts",
+      "sha256": "609b6c37a1f23771445aae5f4440120304e77ad34e757fdaa8cafe8d84dcc01f"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/planche/Planche.tsx",
+      "sha256": "6a2e1ac3fe0e5f79510e2fd36f11cba7aa1b826cf4a4e430ae2bad7a4d221f48"
+    },
+    {
+      "path": "apps/web/src/modules/documents/DocumentsModule.tsx",
+      "sha256": "9e5e203641b81b5ac385060f7cef3d01d4b5ca92299e76f2076aab657f752691"
+    }
+  ],
+  "A5_inventory_hash_check": [
+    {
+      "path": "apps/api/src/app.ts",
+      "matches_A5_hash": true
+    },
+    {
+      "path": "apps/web/index.html",
+      "matches_A5_hash": true
+    },
+    {
+      "path": "apps/web/vite.config.ts",
+      "matches_A5_hash": true
+    },
+    {
+      "path": "apps/web/public/sw.js",
+      "matches_A5_hash": true
+    },
+    {
+      "path": "apps/web/public/parcelle/index.html",
+      "matches_A5_hash": true
+    },
+    {
+      "path": "apps/web/public/parcelle/parcelle-bridge.js",
+      "matches_A5_hash": true
+    },
+    {
+      "path": "apps/web/public/parcelle/README.md",
+      "matches_A5_hash": true
+    },
+    {
+      "path": "apps/web/src/modules/projets-sources/ParcelleTool.tsx",
+      "matches_A5_hash": true
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts",
+      "matches_A5_hash": true
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts",
+      "matches_A5_hash": true
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/documents/generation-client.ts",
+      "matches_A5_hash": true
+    },
+    {
+      "path": "apps/web/src/lib/maptiler.ts",
+      "matches_A5_hash": true
+    },
+    {
+      "path": "packages/geometry-exact/src/index.ts",
+      "matches_A5_hash": true
+    },
+    {
+      "path": "packages/geometry-exact/package.json",
+      "matches_A5_hash": true
+    },
+    {
+      "path": "package-lock.json",
+      "matches_A5_hash": true
+    },
+    {
+      "path": "Dockerfile",
+      "matches_A5_hash": true
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "matches_A5_hash": false
+    }
+  ],
+  "all_inventory_hashes_match": false,
+  "oracle_review": {
+    "count": 14,
+    "ids": [
+      "CSP01",
+      "CSP02",
+      "CSP03",
+      "CSP04",
+      "CSP05",
+      "CSP06",
+      "CSP07",
+      "CSP08",
+      "CSP09",
+      "CSP10",
+      "SCAN01",
+      "SCAN02",
+      "SCAN03",
+      "SCAN04"
+    ],
+    "status": "Prescrits non exécutés ; 10 CSP +4SCAN, pas14 tests passés",
+    "report_only_to_enforcement": "Progression A/B/C cohérente ; canariRO attendu exécuté/violation, ENF attendu bloqué ; RO vert ne prouve ni blocage ni métier, enforcement sur mêmebuild/banc isolé autorisé seulement ; aucune activationprod/fusion depuis ce rapport"
+  },
+  "findings": [
+    {
+      "id": "CSP-UX-01",
+      "severity": "P2 préparation avant enforcement",
+      "topic": "Icônes KML/KMZ externes HTTPS",
+      "lines": [
+        "apps/web/public/parcelle/index.html:1648",
+        "apps/web/public/parcelle/index.html:1650",
+        "apps/web/public/parcelle/index.html:2103",
+        "apps/web/public/parcelle/index.html:2121"
+      ],
+      "fact": "safeIcon permet data raster borné ou URL HTTPS sans credentials ; img.src reprend icône importée, repli visuel au onerror. Ce besoin dépasse api.maptiler.com.",
+      "gap": "La politique img-src self/blob/data/api.maptiler du tableau bloque une icône HTTPS légitime issue d’import, sans empêcher toute l’importation ; fallback seul ne démontre pas fidélité.",
+      "recommendation": "CSP05/07 doivent tester icônes dataKMZ et HTTPS synthétiques avec interception, expliciter avertissement rapport perte et mécanisme de sources approuvées ou relocalisation contrôlée ; aucun wildcard ou suppression native implicite."
+    },
+    {
+      "id": "CSP-UX-02",
+      "severity": "P2 préparation avant enforcement",
+      "topic": "Styles dynamiques et éléments inline",
+      "lines": [
+        "apps/web/public/parcelle/index.html:1958",
+        "apps/web/public/parcelle/index.html:2054",
+        "apps/web/public/parcelle/index.html:2109",
+        "apps/web/public/parcelle/index.html:2118",
+        "apps/web/public/parcelle/index.html:3340"
+      ],
+      "fact": "Transformations/largeurs/positionnement/couleurs/filtre des étiquettes, marqueurs, panneaux et barre de progression créés via JS/CSSOM.",
+      "gap": "Compter trois attributs style statiques ne couvre pas états dynamiques. Hashes des neuf blocs +nonce ne prouve pas absence de régression ; APIsstyle/propriété/cssText peuvent être traitées différemment selon navigateur.",
+      "recommendation": "Compléter CSP05/09 par actions déplacer/rotationannotation/panneaux/progression/zoomclavier et inspection CSS calculée + cibles réelles, pas seulement logs absence de violation. Exception stylebornée selon preuves ; pas scriptsunsafeinline."
+    },
+    {
+      "id": "CSP-UX-03",
+      "severity": "P2 préparation avant enforcement",
+      "topic": "Worker propre et WASM remplaçable D177",
+      "lines": [
+        "apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts:22",
+        "apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts:29",
+        "apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts:9",
+        "apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts:18",
+        "docs/atelier/decisions.md:181"
+      ],
+      "fact": "Overridefadi.occt.wasm transmis au worker ; compilation dans worker module qui importe WASM URL séparée.",
+      "gap": "Page worker-src self autorise chargement du worker mais ne remplace pas la policy du contexte worker pour fetch/compilation WASM ; en-têtes des réponses worker/build à tester explicitement.",
+      "recommendation": "CSP01/03/04 inclure CSPeffectiveworker, binaire remplaçable sameorigin et source approuvée, redirectrefusé, erreur traduite/récupérable, pas chargementinitial et pas retraitoverride. Aucun besoin unsafe-eval général inféré."
+    },
+    {
+      "id": "CSP-UX-04",
+      "severity": "P3 complément oracle",
+      "topic": "Bridge et sauvegarde Parcelle",
+      "lines": [
+        "apps/web/public/parcelle/parcelle-bridge.js:9",
+        "apps/web/public/parcelle/parcelle-bridge.js:15",
+        "apps/web/src/modules/projets-sources/ParcelleTool.tsx:139",
+        "apps/web/src/modules/projets-sources/ParcelleTool.tsx:157",
+        "apps/web/src/modules/projets-sources/ParcelleTool.tsx:257"
+      ],
+      "fact": "Iframe sandbox sameorigin avec accès contentWindow et pontAPI credentialinclude ; parent vérifie origin des messages.",
+      "gap": "CSP05 doit distinguer rendu iframe/prêt/erreur/bridgecapture et persistance, sans envoyer une vraie API. CSP ne renforce pas automatiquement la vérification source de message ou auth.",
+      "recommendation": "Fixtures doubles mêmesorigines/parent+iframe, messagehostile et échec fetch ; vérifier pas fauxenregistré et aucun élargissementsandbox. Tout effetAPI réel attend lotautorisé."
+    },
+    {
+      "id": "CSP-UX-05",
+      "severity": "P3 complément oracle",
+      "topic": "FR/EN, accessibilité et portée Parcelle",
+      "lines": [
+        "apps/web/src/lib/i18n/index.ts:32",
+        "apps/web/src/lib/i18n/index.ts:40",
+        "AGENTS.md:4",
+        "apps/web/src/modules/atelier/nouveau/documents/generation-client.ts:25"
+      ],
+      "fact": "Langue recharge page ; Parcelle prototype/documentsexportés restent langue propre selonAGENTS. Générationdoc a repli threadprincipal après échecworker.",
+      "gap": "CSP09 deuxlangues ne doit pas imposer traductionParcelle/livrables ni considérerreplisilencieux comme workerOK ; pertefile pendantreload/erreurfocus possible àrecetter.",
+      "recommendation": "CSP09 inclure étatpending/localdurable et choixlangue, alertes accessibles, focus/sortie/panneauretrymobile ; explicitement exclure traductioncontenumétier et langueParcelle inchangée. Workerrepli distingué performance/compatibilité."
+    }
+  ],
+  "confirmed_compatible_in_principle": [
+    "PolicyParcelle distincte et frame-ancestors self nécessaire, topapp none ; headerspasmetaseul.",
+    "Downloadblob par ancre n’exige pas scriptblob ; PDF dans moduleDocuments via hrefdownload, pas vieweriframePDF observé dans ces fichiers.",
+    "MapTilerfetchJSON self/API externe explicite avec clés expurgées ; pas wildcardCDNscript.",
+    "SWbuildcache et indexedDB distincts ; ne pas clearstorage pour réussir CSP ; WASMexcluprécache regex actuelle.",
+    "Scaninventaire/avis/licences distincts et aucunscanner exécuté ; wrapperOCCTlicence ne vaut pas noyauLGPL."
+  ],
+  "limits": [
+    "Aucun en-têteproduction/reverseproxy ou requêteMapTiler réelle observé.",
+    "Aucun navigateur ni parserJS exécuté ; numéroslignesconstatsources exactes, pas preuve de comportement.",
+    "Aucun constructeurpolicy/workflow/CSP/scriptvendor modifié ni sandbox relâché.",
+    "Cette revue ne démontre pas vulnérabilité exploitable, certification/accessibilité globale ou conformitélicence.",
+    "Aucune case/gate/testproduit validé."
+  ],
+  "next_action": "A0 publie complément documentaire ; soumettre décisionbornéeicônes avantENF etaccordsCSP-A/B/C ; A2/A6 revoient cheminWASM/cache, A5 gardeoraclesnonexécutés. Continuerlestravauxindépendants.",
+  "baseline_difference_note": "A5 inventorie checkout code PR169 a15d650 ; A4 relit checkout documentaire7b0cca4. Les différences de hash sont conservées explicitement, pas présentées comme mêmes arbres ; les constats par ligne de cette revue portent sur7b0cca4.",
+  "followup_review": {
+    "date": "2026-10-18",
+    "previous_review_sha256": "bbfc9eb949a7a224de880e18eb2a51bb1bbf90c24b0324b588c459d4095caae4",
+    "previous_verdict": "Dossier correctement borné pour préparation ; compléments UX/ressources requis avant enforcement, pas de compatibilité CSP démontrée",
+    "source_scope": "DeltaA5 fichiersagents ; appendice§8 et tableauimg-src, inventaireA4_review_followup. Sources applicatives anciennes7b0cca4 restent les observations initiales, pas nouvelles exécutions.",
+    "inputs": [
+      {
+        "path": "/workspace/work/mission004/agents/A5/M09-LOT-A3-CSP-SCAN-PRET-A-AUTORISER.md",
+        "sha256": "ef5c0cb3cc46e92617152db305083ab821435ec2561d593f0e10aa29f84f2c76"
+      },
+      {
+        "path": "/workspace/work/mission004/agents/A5/M09-WORKFLOW-PUR-PROPOSE.md",
+        "sha256": "97d3d667921b035eee226b2d585d243e54b27c2843ee7955d31c8515b8d27eff"
+      },
+      {
+        "path": "/workspace/work/mission004/agents/A5/M09-INVENTAIRE-POINTS.json",
+        "sha256": "8b3bb9f5fa492fb010a90b70117b05a95787b554a775c137b7c5c6f7ab2d441e"
+      }
+    ],
+    "content_verdicts": [
+      {
+        "id": "CSP-UX-01",
+        "documentary_state": "Complété",
+        "content": "ImagesHTTPSimportées clairement usage réel ; options sourcesfiniesapprouvées/relocalisationcontrôlée ou perteexpliciteacceptée ; paswildcard, pas suppressionsilencieuse. ProxySSRF constitue nouveausous-lot nonautorisé. Redirections/choixicônes restent àdécideravantENF."
+      },
+      {
+        "id": "CSP-UX-02",
+        "documentary_state": "Complété",
+        "content": "StylesCSSOM/propriétés/cssText/attribut etstylescalculés/ancrage/rotation/progression/focus/tactile inclusCSP05/09 ; aucune preuve exécutée substituée."
+      },
+      {
+        "id": "CSP-UX-03",
+        "documentary_state": "Complété",
+        "content": "Policyworker/fetch/compilation explicitesCSP01/03/04,overrideD177préservé etfallbackdocdistingué workerOK ; méthode remplacement resteàvalider."
+      },
+      {
+        "id": "CSP-UX-04",
+        "documentary_state": "Complété",
+        "content": "Bridgevisible≠capture/persistance ; messagesoriginehostile etfetchrefusé via doublesparentiframe, pas élargissementsandbox."
+      },
+      {
+        "id": "CSP-UX-05",
+        "documentary_state": "Complété",
+        "content": "ReloadFR/ENpending/localdurable eterreurstockage/focus/permissions inclus ; languepropreParcelle/livrables etpasclearIndexedDB explicités."
+      }
+    ],
+    "verdict": "Documentation complétée ; décision icônes et enforcement bloqués pour leur opération seule",
+    "limits": [
+      "14oracles restent prescrits,nonexécutés ; aucunheaderCSP/script/workflow/application/DB/navigateur/réseau modifié ou exécuté.",
+      "Levée du manque documentaire ne prouve ni compatibilitéCSPeffective ni protectionréseau/SSRFeffective.",
+      "Les options techniques sont proposées, aucune allowlist/proxy/perteacceptée décidée parA4.",
+      "Publication documentaire peut continuer ; CSP-A/B/C etactivation restent selonaccords/portes applicables."
+    ]
+  }
+}

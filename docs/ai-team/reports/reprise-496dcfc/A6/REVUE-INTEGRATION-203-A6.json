@@ -1,0 +1,114 @@
+{
+  "scope": "Revue indépendante statique intégration A0 non committée ; aucune écriture canonique ni exécution applicative",
+  "base": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+  "register_sha256": "cab84135db7d65398f2028b929cd89b70ddb43f12b35b238fe83c79f50f0f794",
+  "checks": {
+    "630_unique_ids_same_order": {
+      "pass": true,
+      "details": null
+    },
+    "immutable_id": {
+      "pass": true,
+      "details": []
+    },
+    "immutable_description": {
+      "pass": true,
+      "details": []
+    },
+    "immutable_mission": {
+      "pass": true,
+      "details": []
+    },
+    "immutable_agent": {
+      "pass": true,
+      "details": []
+    },
+    "immutable_source_checked": {
+      "pass": true,
+      "details": []
+    },
+    "427_outside_assignment_unchanged": {
+      "pass": true,
+      "details": null
+    },
+    "accepted_set_preserved": {
+      "pass": true,
+      "details": [
+        "CAD-DEC-01",
+        "G0-03"
+      ]
+    },
+    "ten_documentary_verified_exact": {
+      "pass": true,
+      "details": [
+        "ADR-04",
+        "COEX-02",
+        "REP-02",
+        "REP-03",
+        "REP-04",
+        "REP-05",
+        "REP-06",
+        "REP-07",
+        "REP-08",
+        "REP-09"
+      ]
+    },
+    "other_203_no_fake_closure": {
+      "pass": true,
+      "details": null
+    },
+    "seven_states_only": {
+      "pass": true,
+      "details": null
+    },
+    "no_new_test_executed": {
+      "pass": true,
+      "details": null
+    },
+    "P630_44_42doc_2G0": {
+      "pass": true,
+      "details": null
+    },
+    "PDEV_not_inferred": {
+      "pass": true,
+      "details": null
+    },
+    "relative_proof_files_hashes_pointers": {
+      "pass": true,
+      "details": {
+        "checked": 2819,
+        "failures": []
+      }
+    },
+    "manifest_all_entries_match": {
+      "pass": true,
+      "details": {
+        "count": 205,
+        "failures": []
+      }
+    },
+    "two_stage_hash_chain": {
+      "pass": true,
+      "details": {
+        "phase1": "283a2b5a8a21e4ad358b697d18c9cf97c02859ec4f69f1f7d953fd3afa7c8778",
+        "phase2": "cab84135db7d65398f2028b929cd89b70ddb43f12b35b238fe83c79f50f0f794",
+        "phase1_P630": 42,
+        "phase2_P630": 44
+      }
+    },
+    "phase2_counts_match": {
+      "pass": true
+    },
+    "README_current44": {
+      "pass": true
+    }
+  },
+  "blocking_anomalies": [],
+  "verdict": "PASS statique borné",
+  "limits": [
+    "Contrôle structurel et de références, pas revue sémantique de chaque exigence",
+    "Aucun test réel, service, réseau ou DB",
+    "État non committé susceptible de changer pendant consolidation A0"
+  ],
+  "phase_interpretation": "203-INTEGRATION est le premier étage figé P63042 ; COEX-INTEGRATION prolonge sa même empreinte vers le registre courant P63044. Ne pas écraser la preuve intermédiaire."
+}

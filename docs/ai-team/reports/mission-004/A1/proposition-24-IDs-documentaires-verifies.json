@@ -1,0 +1,965 @@
+{
+  "mission": "004",
+  "auteur": "A1",
+  "date": "2026-10-18",
+  "objet": "Proposition bornée de qualification documentaire individuelle pour revueA5 ; aucun registre/coches modifiés",
+  "source_task_register_sha256": "e8023a990484e4bff52b7ba4a63c8bc95d4d20c78f32125d549f37b8c0b4486f",
+  "source_checklist_blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+  "nouveaux_IDs_proposes": 24,
+  "P630_actuel_non_modifie": {
+    "V630": 6,
+    "D": 630
+  },
+  "aucun_pourcentage_implementation": true,
+  "propositions": [
+    {
+      "id": "SRC-04",
+      "mission": "M11",
+      "texte_source_exact": "Consigner DEM-01 : un module autonome intitulé exactement « Studio », accessible dans la barre latérale verticale de Fadi.",
+      "verbe_source": "Consigner",
+      "condition_cloture_documentaire": "DEM-01 formulé explicitement : titre Studio, autonomie et entrée verticale principale.",
+      "analyse_individuelle_completude": "Le contrat énonce les trois éléments exacts et les distingue de toute iframe/raccourci Atelier.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            7,
+            7
+          ],
+          "contenu_constate": "**Imposé par le mandat et les références :** entrée exactement Studio dans le rail vertical principal ; module natif autonome sans passage Parcours ni simple raccourci/iframe Atelier ; services Fadi communs ; quatre domaines et deux planches 2D/3D indépendantes dans Dessin et modélisation ; Projet→Étude→Variante→Révision ; pas de seconde autorité métier ; droits serveur, traçabilité, sauvegarde et publication ; Atelier et 21 étapes préservés ; interface FR/EN et règle Planche icône/barre/raccourci.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Aucune porte préalable nécessaire pour consigner cette spécification ; G0/G1/G3 et réalisation restent distincts.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "SRC-05",
+      "mission": "M11",
+      "texte_source_exact": "Distinguer dans le dossier les principes de la charte, les contrats du référentiel, les propositions du plan et les observations historiques du dépôt.",
+      "verbe_source": "Distinguer",
+      "condition_cloture_documentaire": "Séparation explicite des principes charte, contrats RT, propositions plan et observations historiques.",
+      "analyse_individuelle_completude": "La table différencie charte/RT/plan ; les observations antérieures et limites IFC sont classées sans devenir preuves actuelles ; M003 précise socles candidats historiques et absence de conformité.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "ancres_lignes": [
+            19,
+            26
+          ],
+          "contenu_constate": "| Source | Portée | Identité immuable |\n|---|---|---|\n| Charte officielleV2.1 | Finalité/quatre domaines/deux planches/invariants, subordination technique | DOCX blob`e1d61ca38809e1faac6111c5ffb0881619b9a6dc` |\n| RT001V1.0 |104EX/15INV/11IF/11AC et38TEST,18DEC | DOCX blob`ce7cf463e34c92c0178fa0c0b495569a13c7fe32` |\n| PlanV1.0 | Découpage/portes/lots/NAV, propositions techniques à instruire | Markdown blob`db5588eca8980efcd7276c1cc2182b9070c6eb38` |\n| ChecklistV1.0 |630 tâches hétérogènes, état de case distinct des preuves | Markdown blob`24a5e04346ed7605b82b7079d6259b378ca6bf64` |\n| Décision déléguée#166 | Cadrage retenu dans limites ci-dessus | commentaire6249520098 + document délégation@301a4fa… ; empreinte export dans141fichesv2 |\n| AGENTS/continuité/architecture/décisions Fadi |21 étapes, monolithe, langues, géométrie pure, fonctions industrielles et normes | Références existantes conservées, pas réécriture de faits historiques |",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "ancres_lignes": [
+            30,
+            34
+          ],
+          "contenu_constate": "1. Ancien renvoi de la charte au ConceptV2 : divergence éditoriale conservée et à synchroniser dans un lot documentaire ; D01 fixe désormais RT001V1.0 comme référence technique de travail. Ce renvoi ne justifie plus une question identique sur le choix de référence.\n2. Architecture sept modules/Planche dans Atelier versus Studio autonome : coexistence/addition de Studio, pas suppression ni refonte implicite ; interfaces/propriétaire d'écriture restent DEC techniques à instruire. La décision produit n'autorise aucun changement applicatif.\n3. DWG conditionnel dans formats cible versus D-179 : D02 maintient renoncement existant ; aucune promesse DWG/DGN dans pilote et pas de réouverture/licence implicite.\n4. Anciennes formulations «candidat» de M003 versus décisions déléguées nouvelles : conserver M003 comme historique daté ; métadonnées M004 enregistrent les choix retenus et leurs limites. Aucun effacement de l'historique.\n5. IFC valide/export versus paramétrique : consultation/import en représentations ne prouve ni round-trip paramétrique ni certification ; rapports pertes et statut non natif restent obligatoires.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
+          "sha256": "6b781c5e2b8e41a874fce28e98b11033cddd7b4e53a3324b479616dede54fba5",
+          "ancres_lignes": [
+            31,
+            31
+          ],
+          "contenu_constate": "Chaque état de capacité décrit des socles **candidats** rapportés par Mission 002 et la présence actuelle des chemins dans la copie fournie. Aucun état « vérifié conforme Studio » n'est attribué ; aucun historique 1 757/47/3, test présent ou CI verte n'est utilisé comme succès d'un scénario Studio. Les liens TEST des fiches sont des propositions de rattachement et non une démonstration de couverture totale ; les cas positifs/négatifs affinent ces scénarios et ne remplacent pas les attendus exacts RT001.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Aucune porte préalable nécessaire pour consigner cette spécification ; G0/G1/G3 et réalisation restent distincts.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "CAD-01",
+      "mission": "M11",
+      "texte_source_exact": "Décrire le premier usage métier : petite étude réellement terminable, de l’entrée dans Studio à la publication.",
+      "verbe_source": "Décrire",
+      "condition_cloture_documentaire": "Premier usage décrit depuis entrée Studio jusqu’à publication, trois résultats utiles réouvrables.",
+      "analyse_individuelle_completude": "Étude synthétique local/pavillon et opérations A/B/C complètes sont définies ; aucune démonstration partielle présentée comme MVP.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "ancres_lignes": [
+            38,
+            46
+          ],
+          "contenu_constate": "**Objectif :** terminer une petite étude synthétique local/pavillon, depuis entrée autonome Studio jusqu'à réouverture et livrables identifiés. Aucun jeu client/production. L'étude porte trois variantes pédagogiques distinctes pour séparer dessin2D libre, géométrie3D libre et conception architecturale associée, avec provenances explicites ; une copie indépendante ne propage jamais vers sa source.\n\n**Contexte minimal :** un projet synthétique autorisé, étude cadrée avant géométrie possible, variantes propriétaires nommées, révisions identifiées et immuables comme références. Utiliser services Fadi comptes/projets/données/stockage/documents, sans seconde application/base métier/identité concurrente. Les variants actuels par projets bifurqués ne valent pas implémentation de cette hiérarchie : DEC03 doit préciser le modèle physique.\n\n**Minimum fonctionnel de la spécification pilote**, sans affirmer la disponibilité du code :\n\n- A : créer ligne/contour fermé indépendant, sélectionner/modifier/déplacer, gérer calques, coter et annoter ; sauvegarder/fermer/rouvrir, composer vue/feuille et publier. Précision/saisie numérique/annulation font partie du contrat, pas une démonstration de boutons.\n- B : créer une géométrie spatiale directement sans dessin préalable, sélectionner/éditer des faces et transformer le volume, grouper selon besoin ; naviguer, sauvegarder/rouvrir puis produire vue ou coupe dérivée.\n- C : mur/ouverture communs aux deux planches, hôtes/contraintes et métrés sourcés ; annuler/rétablir, copie indépendante, conflit deux sessions/rejeu, contrôle d'une exigence, observation/correction/recontrôle, approbation et publication du dossier exact.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "ancres_lignes": [
+            83,
+            89
+          ],
+          "contenu_constate": "| Parcours | Acceptation fonctionnelle future | Preuve exigée |\n|---|---|---|\n| A2Dindépendante | Édition/calques/cotes/annotation/sauvegarde/fermeture/réouverture/feuille/publication sans modèle3D requis/créé implicitement | TEST001 complet + permissions018/035, source dessin/revisions, manifeste et empreintes ; capture de bouton insuffisante |\n| B3Ddirecte | Création spatiale/édition face/volume/transformation/sauvegarde/réouverture/vue ou coupe sans esquisse2D ni BIM implicite | TEST002 + sélections/topologie pertinentes, source modèle/vue, réouverture fidèle |\n| Cassociée | Même mur/hôte depuis2D/3D, volumes exacts du casRT, undo/redo/conflit/rejeu/copie, observation/correction/recontrôle/approbation/publication | TEST003–014,027,029–031,038,018/035 selon exigences ; révisions/sources exactes et refus négatifs |\n\nTransversaux éliminatoires : double autorité, corruption de référence, accès interprojets, doublon de commande, écrasement de conflit, résultat périmé engagé courant, publication sous approbation d'un autre contenu. Gain performance/CI verte ne compense jamais un de ces défauts. Même snapping/picking/cotes/volumes/export dans tolérances contractuelles avant/après optimisation ; aucune tolérance inventée pour passer.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Aucune porte préalable nécessaire pour consigner cette spécification ; G0/G1/G3 et réalisation restent distincts.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "CAD-02",
+      "mission": "M11",
+      "texte_source_exact": "Délimiter le périmètre pilote, ses utilisateurs, ses données et les capacités incluses ou exclues.",
+      "verbe_source": "Délimiter",
+      "condition_cloture_documentaire": "Pilote, utilisateurs, données, capacités incluses et reportées explicités.",
+      "analyse_individuelle_completude": "Projet/étude/variantes synthétiques, quatre domaines/minimumopérations, rôles concepteur/contrôleur/approbateur/publieur et reports D02 sont décrits ; pas attribution compte réelle.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "ancres_lignes": [
+            38,
+            57
+          ],
+          "contenu_constate": "**Objectif :** terminer une petite étude synthétique local/pavillon, depuis entrée autonome Studio jusqu'à réouverture et livrables identifiés. Aucun jeu client/production. L'étude porte trois variantes pédagogiques distinctes pour séparer dessin2D libre, géométrie3D libre et conception architecturale associée, avec provenances explicites ; une copie indépendante ne propage jamais vers sa source.\n\n**Contexte minimal :** un projet synthétique autorisé, étude cadrée avant géométrie possible, variantes propriétaires nommées, révisions identifiées et immuables comme références. Utiliser services Fadi comptes/projets/données/stockage/documents, sans seconde application/base métier/identité concurrente. Les variants actuels par projets bifurqués ne valent pas implémentation de cette hiérarchie : DEC03 doit préciser le modèle physique.\n\n**Minimum fonctionnel de la spécification pilote**, sans affirmer la disponibilité du code :\n\n- A : créer ligne/contour fermé indépendant, sélectionner/modifier/déplacer, gérer calques, coter et annoter ; sauvegarder/fermer/rouvrir, composer vue/feuille et publier. Précision/saisie numérique/annulation font partie du contrat, pas une démonstration de boutons.\n- B : créer une géométrie spatiale directement sans dessin préalable, sélectionner/éditer des faces et transformer le volume, grouper selon besoin ; naviguer, sauvegarder/rouvrir puis produire vue ou coupe dérivée.\n- C : mur/ouverture communs aux deux planches, hôtes/contraintes et métrés sourcés ; annuler/rétablir, copie indépendante, conflit deux sessions/rejeu, contrôle d'une exigence, observation/correction/recontrôle, approbation et publication du dossier exact.\n\nLa liste ci-dessus décrit les capacités minimales du cas métier et non des toolId nouveaux déjà approuvés ; A2/A4 rattachent chaque opération au contrat/version/outil existant ou à l'écart identifié. Aucun remplacement systématique de moteur ni extraction de paquet par bouton.\n\n### Quatre domaines et produits attendus\n\n| Domaine | Usage pilote | Sortie mesurable |\n|---|---|---|\n| D1Dessin et modélisation | Deux planches autonomes, trois relations explicites, mêmes objets associés | Document2D sans3D ; modèle3D sans esquisse obligatoire ; objectId associé commun |\n| D2BIM et coordination | Propriétés/contrôles/exigences distinctes des résultats ; références externes acceptées | Résultat avec source/règle/révision/conclusion, observation identifiée et recontrôlée |\n| D3Visualisation | Caméra/vue/rendu modèle utiles à l'étude | Média/vue avec révision source et provenance, aucun effet implicite sur géométrie/métrés |\n| D4Documentation/métrés/collaboration | Vue→feuille→dossier, quantités, tâches/revue/approbation/publication | Manifeste coordonné immuable, empreintes et permissions distinctes, historique retrouvable |",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "ancres_lignes": [
+            61,
+            63
+          ],
+          "contenu_constate": "Corpus synthétiques S1détail2D, S2plan/mur-ouverture, S3dense seulement si risque étudié, S4multi-niveaux si utile à non-régression native, S5libre3D, S6étude/variantes/révisions/publications, S7offline/reconnexion. A5 est propriétaire de leurs manifestes et empreintes ; A1 ne modifie pas leurs fichiers partagés. La fiche de corpus indique licence/origine synthétique, unités/repères, générateur ou contenu déclaré, oracle et volume ; absence de seuil de charge accepté ≠ capacité promise.\n\nLes dimensions du test murRT001 sont **données synthétiques sources**, pas valeurs de projet ou règles universelles :6×3×0,2m, ouverture1×2,1m→3,600brut/0,420déduction/**3,180net** ; ouverture1,2m→0,504déduction/**3,096net**. Exclure autres déductions/jonctions de ce cas. L'exemple EX065 de28m²/26m² sert à vérifier exigence distincte/écart, pas à imposer un programme réel. Les repères document/local/projet/géographique restent tagués et transformés explicitement.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "ancres_lignes": [
+            79,
+            79
+          ],
+          "contenu_constate": "Rôles fonctionnels de test : concepteur édite, contrôleur constate/recontrôle, approbateur statue sur ensemble figé, publieur diffuse cet ensemble. Il s'agit de fixtures de permissions, pas d'attributions à des comptes réels. Même individu possible seulement via configuration explicite des deux permissions et journal, conformément D07 ; rôle administrateur technique seul ne les confère pas. L'absence d'approbateur ne vaut jamais accord.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "ancres_lignes": [
+            93,
+            93
+          ],
+          "contenu_constate": "IA externe, MCP, extensions tierces, immersion/rendu avancés sont **reportés du MVP** par D02 ; pas supprimés du programme/F, pas tâchesF cochées ni tests réputés réussis/non applicables au produit entier. Une fiche mixte reste applicable au socle (provenance rendus, confidentialité, permissions, séparation visuel/technique). D3Visualisation demeure. DWG/DGN restent renoncés selon D179. Renderer alternatif/index/ordonnanceur complet dépendent des preuves et charges, sans bloquer artificiellement le cadrage ; protections minimales des fonctions exposées restent obligatoires.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Aucune porte préalable nécessaire pour consigner cette spécification ; G0/G1/G3 et réalisation restent distincts.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "CAD-03",
+      "mission": "M11",
+      "texte_source_exact": "Inscrire les quatre domaines, les deux planches autonomes et le parcours associé dans les critères du pilote.",
+      "verbe_source": "Inscrire",
+      "condition_cloture_documentaire": "Quatre domaines, deux planches autonomes et conception associée inscrits dans les critères pilote.",
+      "analyse_individuelle_completude": "Table D1–D4 et critères A/B/C conservent deux autonomies et même objet associé ; pas preuve de disponibilité.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "ancres_lignes": [
+            54,
+            57
+          ],
+          "contenu_constate": "| D1Dessin et modélisation | Deux planches autonomes, trois relations explicites, mêmes objets associés | Document2D sans3D ; modèle3D sans esquisse obligatoire ; objectId associé commun |\n| D2BIM et coordination | Propriétés/contrôles/exigences distinctes des résultats ; références externes acceptées | Résultat avec source/règle/révision/conclusion, observation identifiée et recontrôlée |\n| D3Visualisation | Caméra/vue/rendu modèle utiles à l'étude | Média/vue avec révision source et provenance, aucun effet implicite sur géométrie/métrés |\n| D4Documentation/métrés/collaboration | Vue→feuille→dossier, quantités, tâches/revue/approbation/publication | Manifeste coordonné immuable, empreintes et permissions distinctes, historique retrouvable |",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "ancres_lignes": [
+            85,
+            89
+          ],
+          "contenu_constate": "| A2Dindépendante | Édition/calques/cotes/annotation/sauvegarde/fermeture/réouverture/feuille/publication sans modèle3D requis/créé implicitement | TEST001 complet + permissions018/035, source dessin/revisions, manifeste et empreintes ; capture de bouton insuffisante |\n| B3Ddirecte | Création spatiale/édition face/volume/transformation/sauvegarde/réouverture/vue ou coupe sans esquisse2D ni BIM implicite | TEST002 + sélections/topologie pertinentes, source modèle/vue, réouverture fidèle |\n| Cassociée | Même mur/hôte depuis2D/3D, volumes exacts du casRT, undo/redo/conflit/rejeu/copie, observation/correction/recontrôle/approbation/publication | TEST003–014,027,029–031,038,018/035 selon exigences ; révisions/sources exactes et refus négatifs |\n\nTransversaux éliminatoires : double autorité, corruption de référence, accès interprojets, doublon de commande, écrasement de conflit, résultat périmé engagé courant, publication sous approbation d'un autre contenu. Gain performance/CI verte ne compense jamais un de ces défauts. Même snapping/picking/cotes/volumes/export dans tolérances contractuelles avant/après optimisation ; aucune tolérance inventée pour passer.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Aucune porte préalable nécessaire pour consigner cette spécification ; G0/G1/G3 et réalisation restent distincts.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "CAD-06",
+      "mission": "M11",
+      "texte_source_exact": "Inscrire explicitement l’absence d’autorisation de suppression de l’Atelier, de modification des 21 étapes et de remplacement systématique des moteurs.",
+      "verbe_source": "Inscrire explicitement",
+      "condition_cloture_documentaire": "Absence d’autorisation de suppression Atelier, modification21étapes, remplacement systématique moteurs inscrite.",
+      "analyse_individuelle_completude": "Le dossier maintient l’architecture/21étapes, exclut suppression/refonte implicite et remplacement systématique ; le plan source explicitement incorporé formule les trois interdictions. Il s’agit d’inscrire la limite, pas de prouver l’absence future de régression.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "ancres_lignes": [
+            26,
+            26
+          ],
+          "contenu_constate": "| AGENTS/continuité/architecture/décisions Fadi |21 étapes, monolithe, langues, géométrie pure, fonctions industrielles et normes | Références existantes conservées, pas réécriture de faits historiques |",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "ancres_lignes": [
+            31,
+            31
+          ],
+          "contenu_constate": "2. Architecture sept modules/Planche dans Atelier versus Studio autonome : coexistence/addition de Studio, pas suppression ni refonte implicite ; interfaces/propriétaire d'écriture restent DEC techniques à instruire. La décision produit n'autorise aucun changement applicatif.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "ancres_lignes": [
+            48,
+            48
+          ],
+          "contenu_constate": "La liste ci-dessus décrit les capacités minimales du cas métier et non des toolId nouveaux déjà approuvés ; A2/A4 rattachent chaque opération au contrat/version/outil existant ou à l'écart identifié. Aucun remplacement systématique de moteur ni extraction de paquet par bouton.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission003/repo/Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+          "sha256": "4976191179bafa59cbc3a24fef9c28c9f50dcc7fa9a0bd8573dc075586659ce3",
+          "ancres_lignes": [
+            34,
+            34
+          ],
+          "contenu_constate": "Le plan n’autorise pas la suppression de l’Atelier, la modification des 21 étapes, le remplacement systématique des moteurs ni un déploiement automatique. Les fonctions industrielles utiles doivent être qualifiées dans les catalogues Fadi, non supprimées au seul motif qu’elles sont spécialisées.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Aucune porte préalable nécessaire pour consigner cette spécification ; G0/G1/G3 et réalisation restent distincts.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "CAD-DEC-04",
+      "mission": "M11",
+      "texte_source_exact": "Soumettre le placement du bouton « Studio » à décision ; conserver « après Projets » comme proposition, non comme choix déjà adopté.",
+      "verbe_source": "Soumettre",
+      "condition_cloture_documentaire": "Placement après Projets soumis avec distinction proposition/décision.",
+      "analyse_individuelle_completude": "La soumission M003 a reçu une décision déléguée explicite D07 ; M004 distingue ce choix retenu de la réalisation/porte. La clause source «proposition» est conservée comme historique, non rejouée comme question désormais ouverte.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "ancres_lignes": [
+            9,
+            13
+          ],
+          "contenu_constate": "Lecture réelle : AGENTS, CODEX-MISSION-004-PROMPT, CODEX-DELEGATED-DECISIONS, protocoles et sources M003 ; export réel des commentaires#166 remis par A0 dans `github-166-decisions.json`. Le commentaire [6249520098](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098) porte `[CHATGPT-DECISION][DELEGATED-WORKFLOW]` et remplace les sept anciennes recommandations candidates dans ses seules limites. L'appel réseau est celui d'A0 ; A1 a lu l'export, pas prétendu un accès autonome.\n\n- **M002-D01 retenue pour cadrage :** STUDIO-RT-001 V1.0 référence technique de travail et petite étude synthétique local/pavillon couvrant A2D seule publiable, B3D directe jusqu'à vue/coupe et Cassocié jusqu'à revue/publication. Ces choix ne sont plus des questions à reposer.\n- **M002-D02 retenue pour MVP :** report IA externe, MCP, extensions tierces, immersion/rendu avancés ; Visualisation utile et capacités Fadi natives conservées ; D-179 DWG/DGN maintenue. Les reports restent dans le backlog, jamais cochés comme réalisés.\n- **M002-D07 retenue pour spécifications :** Studio après Projets, quatre domaines/deux planchesD1, URLs complètes/contexte serveur, plein écran explicite réversible, transitions sûres, clavier/mobile/FR-EN ; approbation/publication deux permissions distinctes, cumul configuré et tracé seulement pour rôle habilité.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            9,
+            9
+          ],
+          "contenu_constate": "**D07 RETENU pour spécifications :** Studio après Projets, URLs complètes et contexte hiérarchique vérifié serveur, plein écran explicite réversible, protection des gestes/sauvegardes, UX clavier/mobile/FR–EN, approbation/publication séparées avec cumul explicite traçable. Les chemins physiques et query ci-dessous sont le contrat opérationnel proposé dans ce cadre ; DEC-13 appareils/budgets et mapping des rôles restent à documenter. D01 retient le référentiel et pilote synthétique pour cadrage, D02 les reports du pilote ; ni G0 ni G1 n’est passé par ce seul arbitrage. D06 retient ordre de revue #154→#152→#142, sans autoriser fusion. Les noms d'actions `study.read`, etc. dans cette contribution sont des droits logiques à mapper aux rôles Fadi, pas des permissions déjà implantées.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            37,
+            37
+          ],
+          "contenu_constate": "Rail Fadi persistant hors plein écran explicite ; Studio actif sur toutes ses routes, pas Projets/Collaboration. Placement après Projets retenu pour spécifications par D07 ; ne pas le reposer comme question ouverte. Rail replié : icône dédiée avec accessible name/title Studio ; déplié : texte visible identique. Menu mobile donne la même entrée, pas un raccourci vers Atelier. Navigation commune reste utilisable en loading/erreur.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Décision D07 retenue pour spécifications, commentaire6249520098 ; aucun passageG1 ou codeStudio implicite.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "UX-01",
+      "mission": "M13",
+      "texte_source_exact": "Spécifier l’entrée « Studio » au même niveau de navigation qu’Accueil et Projets.",
+      "verbe_source": "Spécifier",
+      "condition_cloture_documentaire": "Entrée Studio au même niveau navigation Accueil/Projets.",
+      "analyse_individuelle_completude": "Rail principal autonome après Projets, actif global et sans raccourci Atelier.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            7,
+            9
+          ],
+          "contenu_constate": "**Imposé par le mandat et les références :** entrée exactement Studio dans le rail vertical principal ; module natif autonome sans passage Parcours ni simple raccourci/iframe Atelier ; services Fadi communs ; quatre domaines et deux planches 2D/3D indépendantes dans Dessin et modélisation ; Projet→Étude→Variante→Révision ; pas de seconde autorité métier ; droits serveur, traçabilité, sauvegarde et publication ; Atelier et 21 étapes préservés ; interface FR/EN et règle Planche icône/barre/raccourci.\n\n**D07 RETENU pour spécifications :** Studio après Projets, URLs complètes et contexte hiérarchique vérifié serveur, plein écran explicite réversible, protection des gestes/sauvegardes, UX clavier/mobile/FR–EN, approbation/publication séparées avec cumul explicite traçable. Les chemins physiques et query ci-dessous sont le contrat opérationnel proposé dans ce cadre ; DEC-13 appareils/budgets et mapping des rôles restent à documenter. D01 retient le référentiel et pilote synthétique pour cadrage, D02 les reports du pilote ; ni G0 ni G1 n’est passé par ce seul arbitrage. D06 retient ordre de revue #154→#152→#142, sans autoriser fusion. Les noms d'actions `study.read`, etc. dans cette contribution sont des droits logiques à mapper aux rôles Fadi, pas des permissions déjà implantées.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            35,
+            37
+          ],
+          "contenu_constate": "## Surface et navigation\n\nRail Fadi persistant hors plein écran explicite ; Studio actif sur toutes ses routes, pas Projets/Collaboration. Placement après Projets retenu pour spécifications par D07 ; ne pas le reposer comme question ouverte. Rail replié : icône dédiée avec accessible name/title Studio ; déplié : texte visible identique. Menu mobile donne la même entrée, pas un raccourci vers Atelier. Navigation commune reste utilisable en loading/erreur.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Aucune porte préalable nécessaire pour consigner cette spécification ; G0/G1/G3 et réalisation restent distincts.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "UX-02",
+      "mission": "M13",
+      "texte_source_exact": "Spécifier le texte « Studio » dans la barre dépliée et son maintien dans l’état actif du module.",
+      "verbe_source": "Spécifier",
+      "condition_cloture_documentaire": "Texte Studio en rail déplié et état actif maintenu sur routes Studio.",
+      "analyse_individuelle_completude": "Texte visible identique et activation Studio sur toutes ses routes, pas Projets/Collaboration.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            37,
+            37
+          ],
+          "contenu_constate": "Rail Fadi persistant hors plein écran explicite ; Studio actif sur toutes ses routes, pas Projets/Collaboration. Placement après Projets retenu pour spécifications par D07 ; ne pas le reposer comme question ouverte. Rail replié : icône dédiée avec accessible name/title Studio ; déplié : texte visible identique. Menu mobile donne la même entrée, pas un raccourci vers Atelier. Navigation commune reste utilisable en loading/erreur.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Aucune porte préalable nécessaire pour consigner cette spécification ; G0/G1/G3 et réalisation restent distincts.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "UX-03",
+      "mission": "M13",
+      "texte_source_exact": "Spécifier le nom accessible et l’infobulle « Studio » pour l’icône en barre repliée.",
+      "verbe_source": "Spécifier",
+      "condition_cloture_documentaire": "Nom accessible et infobulle Studio en rail replié.",
+      "analyse_individuelle_completude": "Icône dédiée avec accessible name/title Studio explicitement exigés.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            37,
+            37
+          ],
+          "contenu_constate": "Rail Fadi persistant hors plein écran explicite ; Studio actif sur toutes ses routes, pas Projets/Collaboration. Placement après Projets retenu pour spécifications par D07 ; ne pas le reposer comme question ouverte. Rail replié : icône dédiée avec accessible name/title Studio ; déplié : texte visible identique. Menu mobile donne la même entrée, pas un raccourci vers Atelier. Navigation commune reste utilisable en loading/erreur.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Aucune porte préalable nécessaire pour consigner cette spécification ; G0/G1/G3 et réalisation restent distincts.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "UX-04",
+      "mission": "M13",
+      "texte_source_exact": "Spécifier l’accès à la même entrée depuis le menu vertical adaptatif sur mobile.",
+      "verbe_source": "Spécifier",
+      "condition_cloture_documentaire": "Même entrée depuis menu vertical adaptatif mobile.",
+      "analyse_individuelle_completude": "Menu mobile donne même entrée et ne devient pas raccourci Atelier ; contraintes mobile décrites.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            37,
+            37
+          ],
+          "contenu_constate": "Rail Fadi persistant hors plein écran explicite ; Studio actif sur toutes ses routes, pas Projets/Collaboration. Placement après Projets retenu pour spécifications par D07 ; ne pas le reposer comme question ouverte. Rail replié : icône dédiée avec accessible name/title Studio ; déplié : texte visible identique. Menu mobile donne la même entrée, pas un raccourci vers Atelier. Navigation commune reste utilisable en loading/erreur.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            48,
+            48
+          ],
+          "contenu_constate": "Desktop : focus visible, pas de débordement global ; panneaux/outils peuvent défiler localement. Mobile : cibles proposées >=44×44 px, défilement local domaines/outils, panneaux refermables, actions importantes nommées et atteignables sans geste secret. Rotation/clavier virtuel : sortie/validation toujours atteignables. Ces seuils UX candidats ne remplacent pas DEC-13 ni un audit WCAG.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Aucune porte préalable nécessaire pour consigner cette spécification ; G0/G1/G3 et réalisation restent distincts.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "UX-05",
+      "mission": "M13",
+      "texte_source_exact": "Spécifier le plein écran comme action explicite, avec sortie visible, sans masquage automatique de la navigation.",
+      "verbe_source": "Spécifier",
+      "condition_cloture_documentaire": "Plein écran explicite, sortie visible, sans masquage automatique.",
+      "analyse_individuelle_completude": "Boutons entrée/sortie nommés FR/EN, sortie visible, échec API utilisable et atelier-immersive non appliqué automatiquement.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            50,
+            50
+          ],
+          "contenu_constate": "Plein écran : bouton explicite « Plein écran » / « Full screen » et sortie « Quitter le plein écran » / « Exit full screen ». Ne pas appliquer automatiquement `atelier-immersive`. Fullscreen API est facultative : échec/refus laisse le mode normal utilisable. Bouton de sortie visible et clavier utilisable ; Échap ferme d'abord menu/geste selon contrat de l'outil et ne constitue pas l'unique sortie. Événement fullscreenchange synchronise le bouton ; sortie système conserve contexte, file et focus. Navigation Fadi demeure réaccessible via sortie, sans masquer une erreur de sauvegarde.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Aucune porte préalable nécessaire pour consigner cette spécification ; G0/G1/G3 et réalisation restent distincts.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "UX-06",
+      "mission": "M13",
+      "texte_source_exact": "Spécifier l’accueil : projets et études accessibles, sélection et création d’une étude.",
+      "verbe_source": "Spécifier",
+      "condition_cloture_documentaire": "Accueil avec projets/études autorisés, sélection et création étude.",
+      "analyse_individuelle_completude": "Routes accueil/projet/étude décrivent sélection explicite, création sous droit et étude cadrée ; aucune création au GET.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            15,
+            18
+          ],
+          "contenu_constate": "| `/studio` | Accueil global, liste des projets/études autorisés, sélection explicite. Aucun projet fictif, aucune création au GET. |\n| `/studio/projets/:projectId` | Études du projet autorisé, création avec droit explicite ; pas de requête Parcours obligatoire. |\n| `/studio/projets/:projectId/etudes/:studyId` | Cadrage, sources et variantes de l'étude appartenant au projet. Étude sans variante permise, géométrie interdite sans variante. |\n| `/studio/projets/:projectId/etudes/:studyId/variantes/:variantId` | Révision de travail de la variante, contexte actif et droits reçus de la façade autorisée. |",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            55,
+            57
+          ],
+          "contenu_constate": "|---|---|---|\n| Auth en attente/expirée | Chargement de session puis connexion ; retour URL demandé après validation. | Afficher contenu sensible avant session ou envoyer les commandes en tant qu'anonyme. |\n| Aucun projet/étude/variante | Choisir/créer selon droits, liens parents. | Géométrie orpheline, création par simple ouverture. |",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Aucune porte préalable nécessaire pour consigner cette spécification ; G0/G1/G3 et réalisation restent distincts.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "UX-07",
+      "mission": "M13",
+      "texte_source_exact": "Spécifier la reprise d’un contexte projet transmis uniquement lorsqu’il est valide et autorisé.",
+      "verbe_source": "Spécifier",
+      "condition_cloture_documentaire": "Reprise du contexte transmis seulement valide et autorisé.",
+      "analyse_individuelle_completude": "Appartenance hiérarchique et droits vérifiés serveur ; priorité URL autorisée puis choix et contexte obsolète non remplacé.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            21,
+            21
+          ],
+          "contenu_constate": "Tous les identifiants sont opaques, encodés comme segments ; type/longueur admis par contrat A2, jamais interprétés comme noms de fichiers. Résolution serveur vérifie existence **et** projectId↔studyId↔variantId↔revisionId et droits sur chaque ressource. Aucune redirection automatique vers le dernier projet en cas de lien interdit. Un contexte obsolète n'est pas remplacé silencieusement. Ordre de priorité : URL explicite autorisée, puis choix utilisateur ; dernier contexte personnel = suggestion seulement. Aucun paramètre URL ne transmet une permission.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            31,
+            33
+          ],
+          "contenu_constate": "StudioShell autonome sous AppShell/RequireAuth ; aucune dépendance à ProjectShell, aucune iframe. Une façade partagée fournit contexte demandé/validé, droits effectifs, révision de base/courante, métadonnées de bandeau et état de synchronisation. Schéma logique candidat : `{ projectId, studyId?, variantId?, requestedRevisionId?, baseRevisionId?, effectivePermissions, accessState, freshness, writerAuthority, schemaVersion }`. Le champ writerAuthority désigne le propriétaire d’écriture unique décidé pour le jeu de données pendant coexistence ; schemaVersion borne compatibilité/reprise (à définir avec M17/M27). Aucun outil n'est actif avant résolution du propriétaire de sa donnée ; géométrie 2D, géométrie 3D libre et objet associé gardent leurs autorités distinctes.\n\nAppShell doit reconnaître `/studio/...` pour le bandeau, mais n'active pas Projets. HomeTopbar actuel appelle étapes/programme quand projectId existe : adaptation par façade ou contrat de bandeau borné, sans faire de Parcours une dépendance de Studio. Les données d'étapes restent consultables par lien explicite lorsque nécessaire. Switching projet détruit ou isole la scène/caches de l'ancien contexte ; un retour de requête tardive ne remplace pas le nouveau contexte. Droit révoqué invalide les vues sensibles selon politique cache arrêtée par A2/A5, y compris offline.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Aucune porte préalable nécessaire pour consigner cette spécification ; G0/G1/G3 et réalisation restent distincts.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "UX-08",
+      "mission": "M13",
+      "texte_source_exact": "Spécifier le choix explicite du projet en l’absence de contexte, sans projet fictif ni géométrie orpheline.",
+      "verbe_source": "Spécifier",
+      "condition_cloture_documentaire": "Choix explicite projet en absence contexte, aucun projet fictif/objet orphelin.",
+      "analyse_individuelle_completude": "Accueil/sélection, interdiction géométrie sans variante et états contextes partiels prévus sans valeurs inventées.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            15,
+            18
+          ],
+          "contenu_constate": "| `/studio` | Accueil global, liste des projets/études autorisés, sélection explicite. Aucun projet fictif, aucune création au GET. |\n| `/studio/projets/:projectId` | Études du projet autorisé, création avec droit explicite ; pas de requête Parcours obligatoire. |\n| `/studio/projets/:projectId/etudes/:studyId` | Cadrage, sources et variantes de l'étude appartenant au projet. Étude sans variante permise, géométrie interdite sans variante. |\n| `/studio/projets/:projectId/etudes/:studyId/variantes/:variantId` | Révision de travail de la variante, contexte actif et droits reçus de la façade autorisée. |",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            25,
+            25
+          ],
+          "contenu_constate": "Absence de domaine : écran d'accueil de variante, sans créer de planche. Absence de planche en dessin : choix explicite 2D/3D ; reprendre une préférence peut pré-sélectionner le choix sans créer de géométrie. Domaine inconnu/planche inconnue ou `planche` hors dessin : afficher un état URL non reconnue et lien vers contexte parent valide, aucune mutation ; pas de substitution métier silencieuse. Paramètres d'interface sans effet métier (panneau/caméra) restent hors de ce contrat initial. Ne pas coder de données privées dans URL ou analytics.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            39,
+            39
+          ],
+          "contenu_constate": "Bandeau : Projet / Étude / Variante / Révision, raccourcis parents autorisés, statut de travail et synchronisation distincts. Si contexte partiel, indiquer « Choisir une étude/variante » plutôt qu'inventer une valeur. Si accès refusé, aucun nom du projet interdit. Historique : badge consultation et révision source ; les documents dérivés indiquent leur actualité.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Aucune porte préalable nécessaire pour consigner cette spécification ; G0/G1/G3 et réalisation restent distincts.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "UX-09",
+      "mission": "M13",
+      "texte_source_exact": "Limiter le dernier contexte personnel à une suggestion : il ne remplace ni une permission ni le contexte demandé dans l’URL.",
+      "verbe_source": "Limiter",
+      "condition_cloture_documentaire": "Dernier contexte personnel = suggestion, jamais permission/substitution URL.",
+      "analyse_individuelle_completude": "Ordre URL explicite autorisée puis choix ; derniercontexte suggestion, aucun paramètreURL ne transmet permission.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            21,
+            21
+          ],
+          "contenu_constate": "Tous les identifiants sont opaques, encodés comme segments ; type/longueur admis par contrat A2, jamais interprétés comme noms de fichiers. Résolution serveur vérifie existence **et** projectId↔studyId↔variantId↔revisionId et droits sur chaque ressource. Aucune redirection automatique vers le dernier projet en cas de lien interdit. Un contexte obsolète n'est pas remplacé silencieusement. Ordre de priorité : URL explicite autorisée, puis choix utilisateur ; dernier contexte personnel = suggestion seulement. Aucun paramètre URL ne transmet une permission.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Aucune porte préalable nécessaire pour consigner cette spécification ; G0/G1/G3 et réalisation restent distincts.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "ROUTE-01",
+      "mission": "M13",
+      "texte_source_exact": "Décrire dans la décision d’intégration l’option /studio pour l’accueil Studio.",
+      "verbe_source": "Décrire",
+      "condition_cloture_documentaire": "Option /studio et préconditions accueil décrites.",
+      "analyse_individuelle_completude": "Contrat d’intégration décrit le chemin/comportement et ses préconditions de manière opérationnelle, sans présenter route comme implantée ni contrat final arbitré.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            15,
+            15
+          ],
+          "contenu_constate": "| `/studio` | Accueil global, liste des projets/études autorisés, sélection explicite. Aucun projet fictif, aucune création au GET. |",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Décrire/définir cette option ne nécessite ni fermetureG1 ni implantation ; ROUTE-09 arbitragefinal reste distinct non proposé Vérifié.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "ROUTE-02",
+      "mission": "M13",
+      "texte_source_exact": "Décrire l’option /studio/projets/:projectId pour les études du projet autorisé.",
+      "verbe_source": "Décrire",
+      "condition_cloture_documentaire": "Option /studio/projets/:projectId et droits étude décrits.",
+      "analyse_individuelle_completude": "Contrat d’intégration décrit le chemin/comportement et ses préconditions de manière opérationnelle, sans présenter route comme implantée ni contrat final arbitré.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            16,
+            16
+          ],
+          "contenu_constate": "| `/studio/projets/:projectId` | Études du projet autorisé, création avec droit explicite ; pas de requête Parcours obligatoire. |",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Décrire/définir cette option ne nécessite ni fermetureG1 ni implantation ; ROUTE-09 arbitragefinal reste distinct non proposé Vérifié.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "ROUTE-03",
+      "mission": "M13",
+      "texte_source_exact": "Décrire l’option /studio/projets/:projectId/etudes/:studyId pour le cadrage, les sources et les variantes.",
+      "verbe_source": "Décrire",
+      "condition_cloture_documentaire": "Option /studio/projets/:projectId/etudes/:studyId et contexte cadrage définis.",
+      "analyse_individuelle_completude": "Route étude et section complémentaire décrivent explicitement Cadrage/Sources/Variantes, provenance et droits par pièce, rattachement/import intentionnel sans conversion native/BIM, états source et variantes même vides ; maquette8 les présente. Réserve A5 initiale sur Sources levée par correction documentaire A4, pas une preuve applicative.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            17,
+            17
+          ],
+          "contenu_constate": "| `/studio/projets/:projectId/etudes/:studyId` | Cadrage, sources et variantes de l'étude appartenant au projet. Étude sans variante permise, géométrie interdite sans variante. |",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            121,
+            132
+          ],
+          "contenu_constate": "## Complément documentaire ROUTE-03 — étude : cadrage, sources et variantes\n\nLibellé source conservé sans réécriture : **« Décrire l’option `/studio/projets/:projectId/etudes/:studyId` pour le cadrage, les sources et les variantes. »** Le registre canonique conserve son texte exact source ; cette section précise sa conception, sans cocher sa réalisation.\n\nÀ l’URL d’étude, afficher trois zones nommées **Cadrage**, **Sources de l’étude**, **Variantes**. Les sources sont des références au catalogue/stockage Fadi commun, jamais une seconde base documentaire. L’étude peut déjà référencer des sources avant sa première variante ; ouvrir la page ou une source ne crée aucune géométrie.\n\n- **Lecture :** lister uniquement les références autorisées de cette étude, avec titre, type/format, auteur/fournisseur si connu, date, version et état de disponibilité ; afficher provenance, unités/repère/transformation et restrictions lorsqu’applicables (EX-014/IF-001). Une information absente reste non renseignée ; pas d’auteur ou de validation inventés. Consultation/téléchargement de chaque pièce revérifie les droits de sa ressource ; un titre ou aperçu interdit ne fuit pas depuis une ancienne étude en cache.\n- **Rattachement/import :** actions explicites distinctes « Lier une source existante » et « Importer une source », offertes seulement selon autorisation. L’import n’est pas une conversion native/BIM automatique : choix de fichier, métadonnées/provenance et restrictions, contrôles de type/taille/sanitation, rapport d’incompatibilités/pertes puis confirmation de rattachement au contexte exact selon contrat A2/API. Aucun téléversement réel ni import n’est effectué par cette spécification. Les données inconnues ne sont pas silencieusement ignorées.\n- **État :** aucune source → message et action autorisée ; lecture seule → liste/consultation autorisées, mutation refusée avec motif ; chargement/erreur → état récupérable ; source retirée/indisponible → référence explicitement indisponible, sans substitution ni effacement des versions historiques. Changement d’étude pendant import/pending suit la garde NAV-007 ; aucune pièce n’est réadressée à la nouvelle étude.\n- **Variantes :** la zone reste accessible même vide, avec « Aucune variante » et « Créer une variante » selon droit. La liste permet ouvrir une variante existante ; la création intentionnelle fournit son propriétaire studyId/projectId vérifié serveur. Sans droit, lecture selon autorisation et motif du refus. Une source liée à l’étude n’est pas copiée/convertie implicitement lors de la création ; les références/versionnements et la politique d’évolution sont explicités par M17. Aucun modèle 2D/3D n’est créé par simple navigation.\n\nOracles documentaires proposés : URL étude vide expose les trois zones sans variante fictive ; source autorisée consultable avec provenance ; pièce d’autre étude/projet refusée sans fuite ; import non autorisé/refusé n’engendre ni référence partielle ni objet ; variante créée seulement par intention autorisée, source immuable conservée. Exécution future : NAV-003/004/006/007, TEST-028/035 selon capacités ; la description seule ne les déclare pas réussis et ne passe pas G1.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/MAQUETTES-DOCUMENTAIRES.md",
+          "sha256": "911a0721ed0a72ecf48478c63b635efd5dbe9c112d1de08e18fdd8c56f06baab",
+          "ancres_lignes": [
+            108,
+            121
+          ],
+          "contenu_constate": "## 8. Étude sans variante — cadrage, sources et variantes (ROUTE-03)\n\n```text\nProjet P / Étude S                          [Retour au projet]\n[Cadrage]  [Sources de l’étude]  [Variantes]\n\nCadrage : objet / hypothèses / référents / contexte autorisé\nSources : liste des pièces autorisées, version et disponibilité\n          [Consulter] [Provenance] [Lier une source] [Importer une source]\nVariantes : Aucune variante pour cette étude\n            [Créer une variante]  (si droit ; sinon motif de lecture seule)\n```\n\nLes sources réutilisent le catalogue Fadi ; provenance et permissions de chaque pièce sont visibles/vérifiées selon contrat. Une pièce inaccessible n’expose ni nom ni aperçu. Les boutons rattachement/import sont des intentions explicitement confirmées ; aucun import réel exécuté ici, aucune conversion BIM implicite. Source indisponible reste identifiée, pas remplacée silencieusement. La zone Variantes reste navigable dès l’état vide, sans création de géométrie. Pending d’import suit la garde de transition de l’étude d’origine. Cette maquette est descriptive, pas une fonctionnalité livrée ni une preuve de G1.",
+          "portee": "Maquette documentaire trois zones étude, aucune UI exécutée"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Décrire/définir cette option ne nécessite ni fermetureG1 ni implantation ; ROUTE-09 arbitragefinal reste distinct non proposé Vérifié.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "ROUTE-04",
+      "mission": "M13",
+      "texte_source_exact": "Décrire l’option /studio/projets/:projectId/etudes/:studyId/variantes/:variantId pour l’espace de conception.",
+      "verbe_source": "Décrire",
+      "condition_cloture_documentaire": "Option espace /studio/projets/:projectId/etudes/:studyId/variantes/:variantId définie.",
+      "analyse_individuelle_completude": "Contrat d’intégration décrit le chemin/comportement et ses préconditions de manière opérationnelle, sans présenter route comme implantée ni contrat final arbitré.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            18,
+            18
+          ],
+          "contenu_constate": "| `/studio/projets/:projectId/etudes/:studyId/variantes/:variantId` | Révision de travail de la variante, contexte actif et droits reçus de la façade autorisée. |",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Décrire/définir cette option ne nécessite ni fermetureG1 ni implantation ; ROUTE-09 arbitragefinal reste distinct non proposé Vérifié.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "ROUTE-05",
+      "mission": "M13",
+      "texte_source_exact": "Définir la route complète d’une révision dans la hiérarchie projet/étude/variante ; ne pas coder littéralement l’abréviation /studio/.../revisions/:revisionId.",
+      "verbe_source": "Définir",
+      "condition_cloture_documentaire": "Route révision complète sans abréviation littérale, consultation immuable et retour travail explicités.",
+      "analyse_individuelle_completude": "Contrat d’intégration décrit le chemin/comportement et ses préconditions de manière opérationnelle, sans présenter route comme implantée ni contrat final arbitré.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            19,
+            21
+          ],
+          "contenu_constate": "| `/studio/projets/:projectId/etudes/:studyId/variantes/:variantId/revisions/:revisionId` | Consultation d'une révision identifiée et immuable de cette variante. Éditer crée une intention explicite vers travail courant/nouvelle variante, jamais une mutation de cette révision. |\n\nTous les identifiants sont opaques, encodés comme segments ; type/longueur admis par contrat A2, jamais interprétés comme noms de fichiers. Résolution serveur vérifie existence **et** projectId↔studyId↔variantId↔revisionId et droits sur chaque ressource. Aucune redirection automatique vers le dernier projet en cas de lien interdit. Un contexte obsolète n'est pas remplacé silencieusement. Ordre de priorité : URL explicite autorisée, puis choix utilisateur ; dernier contexte personnel = suggestion seulement. Aucun paramètre URL ne transmet une permission.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Décrire/définir cette option ne nécessite ni fermetureG1 ni implantation ; ROUTE-09 arbitragefinal reste distinct non proposé Vérifié.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "ROUTE-06",
+      "mission": "M13",
+      "texte_source_exact": "Définir la représentation du domaine et de la planche actifs dans le contrat d’URL.",
+      "verbe_source": "Définir",
+      "condition_cloture_documentaire": "Domaine/planche représentés dans URL avec valeurs et erreurs/absence définies.",
+      "analyse_individuelle_completude": "Contrat d’intégration décrit le chemin/comportement et ses préconditions de manière opérationnelle, sans présenter route comme implantée ni contrat final arbitré.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            23,
+            25
+          ],
+          "contenu_constate": "Query proposée sur routes variantes/révisions : `domaine=dessin|bim|visualisation|documentation`. Dans `dessin` seulement, `planche=2d|3d`. Exemple complet : `/studio/projets/p1/etudes/s1/variantes/v1?domaine=dessin&planche=2d`. Exemple historique : `/studio/projets/p1/etudes/s1/variantes/v1/revisions/r8?domaine=bim`. Les IDs sont des exemples synthétiques.\n\nAbsence de domaine : écran d'accueil de variante, sans créer de planche. Absence de planche en dessin : choix explicite 2D/3D ; reprendre une préférence peut pré-sélectionner le choix sans créer de géométrie. Domaine inconnu/planche inconnue ou `planche` hors dessin : afficher un état URL non reconnue et lien vers contexte parent valide, aucune mutation ; pas de substitution métier silencieuse. Paramètres d'interface sans effet métier (panneau/caméra) restent hors de ce contrat initial. Ne pas coder de données privées dans URL ou analytics.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Décrire/définir cette option ne nécessite ni fermetureG1 ni implantation ; ROUTE-09 arbitragefinal reste distinct non proposé Vérifié.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "ROUTE-07",
+      "mission": "M13",
+      "texte_source_exact": "Définir le comportement à l’ouverture directe, à l’actualisation, au partage du lien et avec précédent/suivant.",
+      "verbe_source": "Définir",
+      "condition_cloture_documentaire": "Ouverture directe/refresh/partage/précédent-suivant/historique spécifiés sans perte contexte.",
+      "analyse_individuelle_completude": "Contrat d’intégration décrit le chemin/comportement et ses préconditions de manière opérationnelle, sans présenter route comme implantée ni contrat final arbitré.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            27,
+            27
+          ],
+          "contenu_constate": "Précédent/suivant et refresh conservent les segments et choix domaine/planche ; changement de domaine crée une entrée d'historique. Canonicalisation pure de paramètres d'affichage peut utiliser replace, sans perdre contexte ni modifier les modèles. Les liens historiques ne pointent jamais implicitement vers « latest ». Les chemins d'API ne sont pas déduits mécaniquement des routes web.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            104,
+            110
+          ],
+          "contenu_constate": "### Authentification et deep link : contrat précis supplémentaire\n\n- Entrée anonyme par URL complète : authentification sans précharger noms/vignettes/contenus sensibles. Garder un `returnTo` interne validé (même origine, chemin Studio autorisé, pas protocole/host arbitraire), puis revalider toute appartenance serveur. Une session acquise ne valide pas l’objet demandé.\n- Session expirée en édition : arrêter l’envoi de nouvelles mutations ; distinguer commande dont accusé serveur manque d’une commande refusée. Conserver la file locale autorisée et son propriétaire utilisateur/contexte ; ne pas l’envoyer sous un nouvel utilisateur après reconnexion.\n- Reconnexion même utilisateur : revalider droits/baseRevision et requestId avant reprise ; résultat accepté mais réponse perdue doit être dédupliqué côté serveur. Reconnexion autre utilisateur : isoler/verrouiller la file d’origine sans fuite ; proposer revenir au bon compte, pas réattribuer les objets.\n- Lien historique : ouverture en consultation même si le rôle peut éditer le courant. « Reprendre le travail courant » change explicitement l’URL et le contexte ; aucune modification rétroactive de la révision citée.\n- Retour navigateur pendant chargement/conflit : respecter garde de transition ; `AbortController` ou cancellation d’affichage seul ne prouve pas annulation de commande serveur. Une commande partie reste suivie dans son contexte initial.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Décrire/définir cette option ne nécessite ni fermetureG1 ni implantation ; ROUTE-09 arbitragefinal reste distinct non proposé Vérifié.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    },
+    {
+      "id": "ROUTE-08",
+      "mission": "M13",
+      "texte_source_exact": "Définir les refus d’accès et la vérification serveur de l’appartenance projet/étude/variante/révision.",
+      "verbe_source": "Définir",
+      "condition_cloture_documentaire": "Refus d’accès et vérification serveur appartenance hiérarchique définis.",
+      "analyse_individuelle_completude": "Contrat d’intégration décrit le chemin/comportement et ses préconditions de manière opérationnelle, sans présenter route comme implantée ni contrat final arbitré.",
+      "preuves_contenu": [
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            21,
+            21
+          ],
+          "contenu_constate": "Tous les identifiants sont opaques, encodés comme segments ; type/longueur admis par contrat A2, jamais interprétés comme noms de fichiers. Résolution serveur vérifie existence **et** projectId↔studyId↔variantId↔revisionId et droits sur chaque ressource. Aucune redirection automatique vers le dernier projet en cas de lien interdit. Un contexte obsolète n'est pas remplacé silencieusement. Ordre de priorité : URL explicite autorisée, puis choix utilisateur ; dernier contexte personnel = suggestion seulement. Aucun paramètre URL ne transmet une permission.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            55,
+            66
+          ],
+          "contenu_constate": "|---|---|---|\n| Auth en attente/expirée | Chargement de session puis connexion ; retour URL demandé après validation. | Afficher contenu sensible avant session ou envoyer les commandes en tant qu'anonyme. |\n| Aucun projet/étude/variante | Choisir/créer selon droits, liens parents. | Géométrie orpheline, création par simple ouverture. |\n| Chargement | role=status ; commandes dépendantes inactives, rail disponible. | Afficher le précédent projet comme projet courant confirmé. |\n| Refus/introuvable | Message neutre, retour autorisé. | Fuite de noms, vignettes, exports ou données mises en cache d'un contexte interdit. |\n| Lecture seule/lock | Badge et motif ; consultation/outils compatibles permis. | Mutations depuis bouton, raccourci, profil importé ou appel direct. |\n| Réseau/chunk/moteur en erreur | État localisé, réessai contrôlé, sortie et modèle canonique conservés. | Spinner permanent, succès fictif, mutation partielle. |\n| Offline préparé | Statut local et outils réellement présents ; droits à revalider. | Présenter catalogue disponible comme installé ou confirmer publication serveur. |\n| Preview/geste | Visuel transitoire identifié, Annuler/Terminer selon contrat. | Persister un geste en changeant d'espace sans décision. |\n| Local durable / pending / confirmé | Trois états explicites, conflits/refus séparés. | Bouton « Enregistré » confondant stockage local et confirmation centrale. |\n| Conflit/résultat périmé | Base/courant et résolution autorisée ; résultat périmé non engagé. | Last-write-wins ou application double après reconnexion. |\n| Approuvé/publié/historique | Versions exactes et rôles distincts. | Publier une nouvelle version sous approbation de l'ancienne. |",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        },
+        {
+          "fichier_local": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "ancres_lignes": [
+            104,
+            114
+          ],
+          "contenu_constate": "### Authentification et deep link : contrat précis supplémentaire\n\n- Entrée anonyme par URL complète : authentification sans précharger noms/vignettes/contenus sensibles. Garder un `returnTo` interne validé (même origine, chemin Studio autorisé, pas protocole/host arbitraire), puis revalider toute appartenance serveur. Une session acquise ne valide pas l’objet demandé.\n- Session expirée en édition : arrêter l’envoi de nouvelles mutations ; distinguer commande dont accusé serveur manque d’une commande refusée. Conserver la file locale autorisée et son propriétaire utilisateur/contexte ; ne pas l’envoyer sous un nouvel utilisateur après reconnexion.\n- Reconnexion même utilisateur : revalider droits/baseRevision et requestId avant reprise ; résultat accepté mais réponse perdue doit être dédupliqué côté serveur. Reconnexion autre utilisateur : isoler/verrouiller la file d’origine sans fuite ; proposer revenir au bon compte, pas réattribuer les objets.\n- Lien historique : ouverture en consultation même si le rôle peut éditer le courant. « Reprendre le travail courant » change explicitement l’URL et le contexte ; aucune modification rétroactive de la révision citée.\n- Retour navigateur pendant chargement/conflit : respecter garde de transition ; `AbortController` ou cancellation d’affichage seul ne prouve pas annulation de commande serveur. Une commande partie reste suivie dans son contexte initial.\n\n### Permissions et cumul explicite\n\nApprobation et publication ont deux capacités logiques indépendantes. Matrice de recette : lecteur aucune ; concepteur mutation autorisée seulement ; approbateur approuve l’ensemble identifié sans droit publier implicite ; publieur diffuse seulement sous approbation valide ; rôle cumulatif uniquement si configuration explicite des deux permissions et décision tracée. Administrateur technique sans délégation métier ne gagne aucun droit implicite. Révoquer une permission avant l’acte déclenche refus serveur même si le bouton était visible.",
+          "portee": "Lecture du contenu spécifié ; aucun constat d’exécution du comportement"
+        }
+      ],
+      "statut_actuel": "À définir",
+      "statut_propose": "Vérifié",
+      "acceptation_produit": false,
+      "test_metier_execute": false,
+      "case_source_modifiee": false,
+      "portee": "Tâche documentaire seulement, pas fonction/implémentation/gate/permission effective",
+      "dependance_gate": "Décrire/définir cette option ne nécessite ni fermetureG1 ni implantation ; ROUTE-09 arbitragefinal reste distinct non proposé Vérifié.",
+      "condition_prepublication": "A5 confirme cette qualification individuelle puis A0 verse les preuves au SHA documentaire exact et décide le delta de registre/P630 ; cette proposition ne modifie rien."
+    }
+  ],
+  "non_proposes": [
+    {
+      "id": "SRC-06",
+      "raison": "Verbe faire arbitrer toute contradiction ; classement préparé mais toutes DEC techniques et interfaces non closes. Pas clôture globale par D01."
+    },
+    {
+      "id": "CAD-04/CAD-05/CAD-07",
+      "raison": "Formulations confirmer/conserver/maintenir portent aussi garanties/conservation à contrôler ; pas assimilées ici à la seule spécification."
+    },
+    {
+      "id": "CAD-DEC-01",
+      "raison": "Ratification àG0 et critères de porte : aucune porte fermée dans proposition."
+    },
+    {
+      "id": "CAD-DEC-02/CAD-DEC-03",
+      "raison": "Rôles agents documentés ; affectations humaines/disponibilité/cumuls exacts pas inventés et pas déduits de table."
+    },
+    {
+      "id": "CAD-DEC-05/ROUTE-09",
+      "raison": "Arbitrages finaux routes/paquets/budgets/stockage non tous acquis ; D07 ne tranche pas chaque chemin physique ni les DEC techniques."
+    },
+    {
+      "id": "TR-EX/TR-INV/TR-IF/TR-AC",
+      "raison": "141fiches raffinées, revueextraction exacte, mais revuecontrats/oracles/conformité individuelle encore ouverte ; non incluses."
+    },
+    {
+      "id": "NAV/TEST/G0/G1/G2/G3/G4/lotscode",
+      "raison": "Aucune recette/porte/implémentation déduite de documentation spécifiée."
+    }
+  ],
+  "revues_G0": [
+    {
+      "agent": "A4",
+      "fichier": "/workspace/work/mission004/agents/A4/REVUE-G0-A1.json",
+      "portee": "Revueusage/nav/permissions, pas validationtoutes UX/ROUTE exécutées"
+    },
+    {
+      "agent": "A5",
+      "fichier": "/workspace/work/mission004/agents/A5/G0-REVUE-A5.json",
+      "portee": "Revuecadrage/oracles/sûreté, pas acceptationMVP ni gate"
+    },
+    {
+      "agent": "A2",
+      "portee": "Avis reçu sans réservetechnique cadrage, pièceécrite demandée ; pas décisionporte"
+    }
+  ],
+  "decision_application": "A0 après revueA5 individuelle et checkpointSHA ; pas application depuis fichier proposition"
+}

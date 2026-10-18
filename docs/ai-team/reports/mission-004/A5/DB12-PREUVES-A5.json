@@ -1,0 +1,93 @@
+{
+  "reviewer": "A5 réel",
+  "utc": "2026-10-18T12:03:34.836644+00:00",
+  "baseline_commit": "a4caaab0e6665480f09febe3914c960b424b6b47",
+  "branch": "fix/157-test-database-guard",
+  "state": "Working tree code noncommitté au moment des essais ; fichiershashés ci-dessous, pas attribuéàbaselinecommeimplémentée",
+  "results": [
+    {
+      "command": "vitest run --config vitest.guard.config.ts src/testing/test-target.review.test.ts",
+      "test_files": 1,
+      "tests_passed": 83,
+      "log": "adversarial-final.log",
+      "execution": "Purs, transports simulés, pgmocksentinel, vraiORMavecfaussetransport"
+    },
+    {
+      "command": "npm run test:db-guard",
+      "test_files": 3,
+      "tests_passed": 129,
+      "log": "db-guard-suite-final.log",
+      "start_utc": "2026-10-18T12:01:32Z"
+    },
+    {
+      "command": "npm run typecheck --workspace=@fadi/api",
+      "exit_code": 0,
+      "log": "typecheck-api-final.log"
+    }
+  ],
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "dca3828656e941b090ad8f971e857f499a3ef31397d307ee4350d0b6f45070da"
+    },
+    {
+      "path": "apps/api/package.json",
+      "sha256": "6e6dcae8fac90cdffe5fb14829a7687ea83dfaf8d6d4f7563772a29f36ba81a2"
+    },
+    {
+      "path": "apps/api/src/db/client.ts",
+      "sha256": "84bf4a610374edcc91fc4c835effc972eac22323464f8404cce371c0ab8e9608"
+    },
+    {
+      "path": "apps/api/src/testing/approved-test-authorities.ts",
+      "sha256": "8e277b41e222d4bd0fbaa8431a6b99923367dc44f946dfbd571a00822fe92cf9"
+    },
+    {
+      "path": "apps/api/src/testing/client-integration.test.ts",
+      "sha256": "ec952d98dca71dbd12ffc2bc802e938577d348737e6fdb71089be624033c1e2c"
+    },
+    {
+      "path": "apps/api/src/testing/guarded-test-pool.test.ts",
+      "sha256": "4161e4bef2eec2584fc276e76c574de574b00837d94a16ad0010d6d5df31fc55"
+    },
+    {
+      "path": "apps/api/src/testing/guarded-test-pool.ts",
+      "sha256": "d0ac9e095a83ff16cde7c3132fa900ca634c27d49309e97b518de305ab390f5b"
+    },
+    {
+      "path": "apps/api/src/testing/test-database.ts",
+      "sha256": "696e998d8985d64549bff184d30b8ef40c2f6dd6238d20d64c3af64ca3ebee36"
+    },
+    {
+      "path": "apps/api/src/testing/test-target.review.test.ts",
+      "sha256": "ece5c61626a665ea1fef0812b21a46e4b37d62a5ccc0f2ca2e3c9f47324b8c8c"
+    },
+    {
+      "path": "apps/api/src/testing/test-target.ts",
+      "sha256": "b8ca60d71e48e80f75c66f4d0bf22edeb60ebc5adf6a4a9e960b7af1ced309ec"
+    },
+    {
+      "path": "apps/api/vitest.config.ts",
+      "sha256": "12c0220c20a7dd57c4e516a6e758b4cb906d24a0d01d2668794b93aab2781726"
+    },
+    {
+      "path": "apps/api/vitest.guard.config.ts",
+      "sha256": "9dc56ffd7ebed043c0a3014bbd9c6f84c815e623b9b86c880df7382626d184fd"
+    },
+    {
+      "path": "apps/api/vitest.setup.ts",
+      "sha256": "d965f65c0362978ac2220e9dd2df6948516cb45f6c99c70c34d0c3758e7a32dc"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7aa1e779b88c510cc480b5885fb5f75d7fe1f61dd3c7301653b1fc83787f22b6"
+    }
+  ],
+  "prohibited_operations_performed": [],
+  "limits": [
+    "AucuneDBréelle ni migration/service/API/E2E ; mocksSQLneprouventpasisolationPostgres.",
+    "Autoritésruntime vides, aucuneconnexionréelleautorisée ;DB3reste requis.",
+    "N13/N14 externes horsDB1/2, testclienthérité ne prouvepas leurprotection.",
+    "Tout changementaprèsceshashes exige contrôlespertinents avantreview/commit."
+  ]
+}

@@ -1,0 +1,206 @@
+{
+  "head": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+  "method": "TypeScript AST relative literal imports, exports, dynamic imports; not TS module resolver",
+  "edges": [
+    {
+      "source": "accueil",
+      "target": "pilotage",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/accueil/DossierDashboard.tsx",
+      "line": 12,
+      "specifier": "../pilotage/RoadmapPreview"
+    },
+    {
+      "source": "accueil",
+      "target": "module-registry",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/accueil/SearchDialog.tsx",
+      "line": 5,
+      "specifier": "../module-registry"
+    },
+    {
+      "source": "accueil",
+      "target": "atelier",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/accueil/use-dossier-sync.ts",
+      "line": 8,
+      "specifier": "../atelier/bus/etat-projet"
+    },
+    {
+      "source": "atelier",
+      "target": "parcours",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/atelier/DesignReview.tsx",
+      "line": 17,
+      "specifier": "../parcours/MapTilerCard"
+    },
+    {
+      "source": "atelier",
+      "target": "parcours",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/atelier/DesignReview.tsx",
+      "line": 21,
+      "specifier": "../parcours/HarmoniePanel"
+    },
+    {
+      "source": "atelier",
+      "target": "programmation",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/atelier/DesignReview.tsx",
+      "line": 22,
+      "specifier": "../programmation/TextConflicts"
+    },
+    {
+      "source": "parcours",
+      "target": "atelier",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+      "line": 16,
+      "specifier": "../atelier/AtelierHarmonyPage"
+    },
+    {
+      "source": "parcours",
+      "target": "atelier",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+      "line": 17,
+      "specifier": "../atelier/DesignReview"
+    },
+    {
+      "source": "parcours",
+      "target": "collaboration",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+      "line": 19,
+      "specifier": "../collaboration/CollaborationModule"
+    },
+    {
+      "source": "parcours",
+      "target": "projets-sources",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+      "line": 20,
+      "specifier": "../projets-sources/ImportProjectButton"
+    },
+    {
+      "source": "parcours",
+      "target": "projets-sources",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+      "line": 21,
+      "specifier": "../projets-sources/ParcelleTool"
+    },
+    {
+      "source": "parcours",
+      "target": "projets-sources",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+      "line": 22,
+      "specifier": "../projets-sources/StepSources"
+    },
+    {
+      "source": "parcours",
+      "target": "programmation",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+      "line": 23,
+      "specifier": "../programmation/ProgrammeRepartition"
+    },
+    {
+      "source": "parcours",
+      "target": "programmation",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+      "line": 24,
+      "specifier": "../programmation/ProgrammeCase"
+    },
+    {
+      "source": "parcours",
+      "target": "programmation",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+      "line": 25,
+      "specifier": "../programmation/ProgrammeTransferFold"
+    },
+    {
+      "source": "parcours",
+      "target": "atelier",
+      "kind": "runtime-dynamic",
+      "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+      "line": 31,
+      "specifier": "../atelier/nouveau/AtelierNouveau"
+    },
+    {
+      "source": "pilotage",
+      "target": "accueil",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/pilotage/ProjectCockpitPage.tsx",
+      "line": 5,
+      "specifier": "../accueil/dossier-data"
+    },
+    {
+      "source": "pilotage",
+      "target": "accueil",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/pilotage/RoadmapPreview.tsx",
+      "line": 4,
+      "specifier": "../accueil/dossier-data"
+    },
+    {
+      "source": "pilotage",
+      "target": "accueil",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/pilotage/kpi-model.ts",
+      "line": 2,
+      "specifier": "../accueil/dossier-state"
+    },
+    {
+      "source": "pilotage",
+      "target": "accueil",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/pilotage/roadmap.ts",
+      "line": 2,
+      "specifier": "../accueil/dossier-state"
+    },
+    {
+      "source": "programmation",
+      "target": "bibliotheque",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/programmation/ProgrammeCase.tsx",
+      "line": 17,
+      "specifier": "../bibliotheque/BuildingLibraryPage"
+    },
+    {
+      "source": "programmation",
+      "target": "bibliotheque",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/programmation/ProgrammeCase.tsx",
+      "line": 18,
+      "specifier": "../bibliotheque/building-library.css"
+    },
+    {
+      "source": "programmation",
+      "target": "bibliotheque",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/programmation/ProgrammeLinks.tsx",
+      "line": 22,
+      "specifier": "../bibliotheque/building-library.css"
+    },
+    {
+      "source": "projets-sources",
+      "target": "parcours",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/projets-sources/ImportProjectButton.tsx",
+      "line": 12,
+      "specifier": "../parcours/HarmoniePanel"
+    },
+    {
+      "source": "projets-sources",
+      "target": "atelier",
+      "kind": "runtime",
+      "file": "apps/web/src/modules/projets-sources/ParcelleTool.tsx",
+      "line": 14,
+      "specifier": "../atelier/bus/atelier-client"
+    }
+  ]
+}

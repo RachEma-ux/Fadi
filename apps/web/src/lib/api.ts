@@ -1,3 +1,4 @@
+import type { StudioDocument, StudioEnvelope } from "@parcours/atelier-model";
 /**
  * Client HTTP minimal vers `apps/api`. Toujours `credentials: "include"`
  * (cookie de session httpOnly) ; jamais de jeton stocké en `localStorage`
@@ -716,7 +717,17 @@ export interface EnsemblesPersonnels {
   version: string | null;
 }
 
+export interface StudioContext {
+  study: { id: string; name: string; projectId: string };
+  variant: { id: string; name: string; studyId: string; headRevisionId: string };
+  revision: { id: string; parentRevisionId: string | null; document: StudioDocument };
+  canWrite: boolean;
+}
 export const api = {
+  studioStudies: (p: string) => request<{ studies: { id: string; name: string; initialVariantId: string }[] }>(`/projects/${encodeURIComponent(p)}/studio/studies`),
+  createStudioStudy: (p: string, name: string) => request<StudioContext>(`/projects/${encodeURIComponent(p)}/studio/studies`, { method: "POST", body: JSON.stringify({ name }) }),
+  studioContext: (p: string, s: string, v: string) => request<StudioContext>(`/projects/${encodeURIComponent(p)}/studio/studies/${encodeURIComponent(s)}/variants/${encodeURIComponent(v)}`),
+  studioCommands: (p: string, s: string, v: string, envelope: StudioEnvelope) => request<StudioContext & { replayed: boolean }>(`/projects/${encodeURIComponent(p)}/studio/studies/${encodeURIComponent(s)}/variants/${encodeURIComponent(v)}/commands`, { method: "POST", body: JSON.stringify(envelope) }),
   register: (email: string, password: string) =>
     request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
   login: (email: string, password: string) =>

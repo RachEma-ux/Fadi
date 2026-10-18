@@ -1,0 +1,575 @@
+{
+  "objet": "File finie A2 après complément COEX03, pas nouveauprogramme ni clôture203",
+  "provenance": [
+    {
+      "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+      "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A2/COEX03-COMPLEMENT-A2.json",
+      "sha256": "eac9b7efbf7623db99ea0fbaef0daa416c53a533581e20dc0c17f615711ddd8a"
+    }
+  ],
+  "ids203_exactement40": true,
+  "items203": [
+    {
+      "id": "REP-02",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "ATTENTE_INTEGRATION_A0",
+      "prochaine_operation": "Recevoir revueREP-A2/A5+deltaA5 et checkpointA0 ; aucun réaudit.",
+      "trigger": "A0 applique delta8REP et checkpoint, puis revalide état exact pour toute suite.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "REP-03",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "ATTENTE_INTEGRATION_A0",
+      "prochaine_operation": "Recevoir revueREP-A2/A5+deltaA5 et checkpointA0 ; aucun réaudit.",
+      "trigger": "A0 applique delta8REP et checkpoint, puis revalide état exact pour toute suite.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "REP-04",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "ATTENTE_INTEGRATION_A0",
+      "prochaine_operation": "Recevoir revueREP-A2/A5+deltaA5 et checkpointA0 ; aucun réaudit.",
+      "trigger": "A0 applique delta8REP et checkpoint, puis revalide état exact pour toute suite.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "REP-05",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "ATTENTE_INTEGRATION_A0",
+      "prochaine_operation": "Recevoir revueREP-A2/A5+deltaA5 et checkpointA0 ; aucun réaudit.",
+      "trigger": "A0 applique delta8REP et checkpoint, puis revalide état exact pour toute suite.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "REP-06",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "ATTENTE_INTEGRATION_A0",
+      "prochaine_operation": "Recevoir revueREP-A2/A5+deltaA5 et checkpointA0 ; aucun réaudit.",
+      "trigger": "A0 applique delta8REP et checkpoint, puis revalide état exact pour toute suite.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "REP-07",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "ATTENTE_INTEGRATION_A0",
+      "prochaine_operation": "Recevoir revueREP-A2/A5+deltaA5 et checkpointA0 ; aucun réaudit.",
+      "trigger": "A0 applique delta8REP et checkpoint, puis revalide état exact pour toute suite.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "REP-08",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "ATTENTE_INTEGRATION_A0",
+      "prochaine_operation": "Recevoir revueREP-A2/A5+deltaA5 et checkpointA0 ; aucun réaudit.",
+      "trigger": "A0 applique delta8REP et checkpoint, puis revalide état exact pour toute suite.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "REP-09",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "ATTENTE_INTEGRATION_A0",
+      "prochaine_operation": "Recevoir revueREP-A2/A5+deltaA5 et checkpointA0 ; aucun réaudit.",
+      "trigger": "A0 applique delta8REP et checkpoint, puis revalide état exact pour toute suite.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "ROUTE-09",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "TRIGGER_PRECIS",
+      "prochaine_operation": "Réunir NAV/M17/G1v2 dans la décision d’intégration existante proposée et soumettre les seules alternatives restantes.",
+      "trigger": "Contrat physique et accord final routes non actés ; D07 autonomie déjà retenu, ne pas le revoter.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "COEX-01",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Décliner les seuls composants candidats des onze fonctionsI/A.1 en fiches par fonction/interface publique, en réemployant les22groupesClaude ; ne pas refaire leur qualification ni choisir leur sort.",
+      "trigger": "La décision des22qualifications reste question6250995231 ; préparation par fonction possible.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "COEX-02",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "ATTENTE_REVUE_INTEGRATION",
+      "prochaine_operation": "Recevoir avisA5 et intégrer dossierClaude/revueA2 sans recette exécutée.",
+      "trigger": "AvisA5 et checkpointA0 ; pas acceptation normative.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "COEX-03",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "ATTENTE_REVUE_ET_DECISION",
+      "prochaine_operation": "A5 relit le complément11groupes et les3réserves ; A0joint aux arbitrages existants.",
+      "trigger": "RevueA5 puis réponse6250996328 ; aucune option présumée.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "COEX-04",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "TRIGGER_PRECIS",
+      "prochaine_operation": "Préparer options/critères et exemple documentaire sans choisir arbitrairement ni migrer.",
+      "trigger": "Choix de bascule par cohorte non pris ; aucune étude effectivement migrée.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "COEX-05",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "TRIGGER_PRECIS",
+      "prochaine_operation": "Recevoir décision sur portée de la règle de transfert dans questionexistante, puis annoter le dossier sans second arbitragede principe.",
+      "trigger": "Réponse6250998834 ; complément troisréserves déjà fourni, ne pas le refaire.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "COEX-06",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Rattacher aux troisconditionsR1/R2/R3 déjà proposées les artefacts attendus de récupération des nouvellesécritures et les droits/identités/documents à comparer via M27/LOT-R ; pas refaire la porte.",
+      "trigger": "Préparation de critères seulement ; aucune restaurationtestée ni retrait autorisé.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "G2-01",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Réemployer annexe G2 et graphe public ; compléter les POC ultérieurs par besoin de décision sans les exécuter.",
+      "trigger": "Lecture/préparation seulement, aucune nouvelle autorisationcode requise ; sources précises déjà jointes au contrat203.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "G2-02",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "TRIGGER_PRECIS",
+      "prochaine_operation": "Soumettre via A0 le dossier borné déjà préparé, sans réouvrir G0 ou DEC01/03 de cadrage.",
+      "trigger": "Aucun accord G2 déduit d’un plan ou d’une délégation générale.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "G2-03",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "TRIGGER_PRECIS",
+      "prochaine_operation": "Préparer champs de preuve ; ne lancer aucun POC ni moteur.",
+      "trigger": "Autorisation POC, préconditions G1 et confinement effectif non acquis ; corpusS1–S7 pertinents encore partiels.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "G2-04",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "TRIGGER_PRECIS",
+      "prochaine_operation": "Appliquer taxonomie déjà préparée aux nouvelles preuves exactes quand elles existent, sans réécrire une nouvelle méthode.",
+      "trigger": "Nouvelle preuve G2 autorisée ou nouveau rapportstatique nécessitant qualification ; aucun résultat exécuté disponible.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "G2-05",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Lier les risques DEC aux POC déjà proposés ; ne déclarer ni suffisance ni gate passé.",
+      "trigger": "Lecture/préparation seulement, aucune nouvelle autorisationcode requise ; sources précises déjà jointes au contrat203.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "G3-01",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Réemployer les18dossiersDEC et dix choix résiduels M05/M17 ; produire seulement le delta pour I/A.1.",
+      "trigger": "Lecture/préparation seulement, aucune nouvelle autorisationcode requise ; sources précises déjà jointes au contrat203.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "G3-02",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "TRIGGER_PRECIS",
+      "prochaine_operation": "Préparer tableau d’options depuis M17/G1v2/DEC18 ; attendre décisions avant de nommer une option retenue.",
+      "trigger": "Composants physiques, formats, stockage et compatibilité non choisis ; preuves G2 non disponibles.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "G3-03",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Réemployer LOT-I/X/A.1 et plan A0, demander estimation compétente une fois interfaces assez définies.",
+      "trigger": "Lecture/préparation seulement, aucune nouvelle autorisationcode requise ; sources précises déjà jointes au contrat203.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "G3-04",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "TRIGGER_PRECIS",
+      "prochaine_operation": "Préparer dossier d’acte ; attendre préconditions puis soumettre via A0, sans ouvrir de lot code.",
+      "trigger": "Décisions critiques/G2 applicables et autorisation de codeStudio non obtenues.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "A.1-04",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "TRIGGER_PRECIS",
+      "prochaine_operation": "Réutiliser M17/G1v2 et matricev2/v3 ; isoler choix résiduels plutôt que générer SQL ou nouveau schéma concurrent.",
+      "trigger": "DEC01/03 orientations logiques retenues, schémas physiques/format/IDs/versioning encore ouverts.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "A.1-05",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "TRIGGER_PRECIS",
+      "prochaine_operation": "Dresser inventaire et cas synthétiques documentaires à partir LOT-R/M27 ; aucun script de migration ou DB.",
+      "trigger": "Schéma cible non retenu ; stratégie de récupération des écritures post-bascule non approuvée.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "A.4-03",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Décliner AC001 et contrats M17/LOT-A.4-A.5 en scénarios documentaires, sans confondre dessin autonome et associé.",
+      "trigger": "Lecture/préparation seulement, aucune nouvelle autorisationcode requise ; sources précises déjà jointes au contrat203.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "A.4-04",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Lister cas déplacement, suppression hôte, fractionnement et références invalides ; rattacher à AC001 et preuve manquante.",
+      "trigger": "Lecture/préparation seulement, aucune nouvelle autorisationcode requise ; sources précises déjà jointes au contrat203.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "A.4-07",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Réutiliser EX020/023 et LOT-A.3/A.4 ; distinguer preuve moteurs actuels et future relation de suivi Studio.",
+      "trigger": "Lecture/préparation seulement, aucune nouvelle autorisationcode requise ; sources précises déjà jointes au contrat203.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "A.5-09",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Réemployer C-COMMAND/M23-M27/NAV et choix résiduels ; préparer cas négatifs sans réseau ni exécution.",
+      "trigger": "Lecture/préparation seulement, aucune nouvelle autorisationcode requise ; sources précises déjà jointes au contrat203.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "C.1-01",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Réemployer LOT-C et oraclesAC004/EX097/098 ; définir protocole avec A5, marquer seuils non décidés.",
+      "trigger": "Lecture/préparation seulement, aucune nouvelle autorisationcode requise ; sources précises déjà jointes au contrat203.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "C.1-07",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Documenter deux chemins et comparaison au même oracle LOT-C ; réserver seuil à baselineC.1-01.",
+      "trigger": "Lecture/préparation seulement, aucune nouvelle autorisationcode requise ; sources précises déjà jointes au contrat203.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "C.2-02",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Définir scénarios suppression/réordonnancement/rebatch/instance en s’appuyant LOT-C et M17 ; pas code renderer.",
+      "trigger": "Lecture/préparation seulement, aucune nouvelle autorisationcode requise ; sources précises déjà jointes au contrat203.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "C.2-03",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Aligner avec A4 les états sélection vide/indisponible et préparer oracles distincts de la seule présence d’un ID.",
+      "trigger": "Lecture/préparation seulement, aucune nouvelle autorisationcode requise ; sources précises déjà jointes au contrat203.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "C.2-05",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Décrire déclencheurs source inconnue/changement topologie/version et preuve comparative à partir LOT-C/M17.",
+      "trigger": "Lecture/préparation seulement, aucune nouvelle autorisationcode requise ; sources précises déjà jointes au contrat203.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "ADR-01",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Rassembler index G1/NAV et COEX dans candidat ADR, sans prétendre décision prise.",
+      "trigger": "Lecture/préparation seulement, aucune nouvelle autorisationcode requise ; sources précises déjà jointes au contrat203.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "ADR-02",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Réemployer CONTRAT-NAV-M004/NAV-M004 et M21 ; enregistrer seulement lacunes et options dans ADR.",
+      "trigger": "Lecture/préparation seulement, aucune nouvelle autorisationcode requise ; sources précises déjà jointes au contrat203.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "ADR-03",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "TRIGGER_PRECIS",
+      "prochaine_operation": "Transmettre via A0 dossier ADR/ROUTE-09 avec seules questions nouvelles ; ne simuler ni signature ni gate.",
+      "trigger": "Acte d’intégration final non disponible ; D07 de cadrage ne le remplace pas.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "ADR-04",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "ATTENTE_REVUE_INTEGRATION",
+      "prochaine_operation": "Recevoir avisA5 et intégrer dossierClaude/revueA2 sans recette exécutée.",
+      "trigger": "AvisA5 et checkpointA0 ; pas acceptation normative.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    },
+    {
+      "id": "ADR-05",
+      "owner": "A2",
+      "statut_registre_non_modifie": true,
+      "cloture_deduite": false,
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "prochaine_operation": "Soumettre matrice au cadrage pilote via A0/A1/A5 ; ne fabriquer ni probabilité chiffrée ni acceptation.",
+      "trigger": "Lecture/préparation seulement, aucune nouvelle autorisationcode requise ; sources précises déjà jointes au contrat203.",
+      "preuve_cadrage": {
+        "path": "/workspace/work/resume496/agents/A2/203-QUALIFICATION-A2.json",
+        "sha256": "4b42a244353a96870634ce6f9ed2600cf0f8580cc7466e85b5889908410c458e"
+      }
+    }
+  ],
+  "actions_transverses": [
+    {
+      "id": "M05-RESIDUEL",
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "operation": "Relier les dixchoix de compatibilité M05/M17 aux11groupesCOEX03 : lecteurs/writers, ancienformat, inconnus, snapshot/publication ; ne pas renommer constantev3 ni générer migration.",
+      "trigger_code": "Choixphysiques+preuveG2 applicable+autorisationlot, non acquises."
+    },
+    {
+      "id": "M07-RESIDUEL",
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "operation": "Spécifier règles candidates entre modulesweb : imports publics autorisés/type-only/runtime, limitesStudio↔internesAtelier/Parcours ; réutiliser carte25imports et PR152f277 sans dupliquer correctif résolveur.",
+      "trigger_code": "Décisioncontrat frontières et autorisationA3 séparée ; PR152 non réputée fusionnée."
+    },
+    {
+      "id": "M08-RESIDUEL",
+      "file": "READY_DOCUMENTATION_RESIDUELLE",
+      "operation": "Préparer clarification documentaire bornée des troisécarts DA03-13/D111, DA05-02/D060, DA04-07/Suivi/D125 et rôle abrégé/prospectifDA09-09 ; relier avisA5existants, sans refaire125 analyses ni modifierfiches/décisions.",
+      "trigger_modification": "A0 choisit périmètre documentaire exact après lecture sources/revues ; aucun correctifapp autorisé par cette file."
+    }
+  ],
+  "ordre_recommande": [
+    "RevueA5ducomplémentCOEX03 puis intégrationA0 des preuves disponibles sans attendre décision physique.",
+    "M07contrat frontièresweb et M05liaisons compatibilité peuvent être préparés indépendamment.",
+    "M08clarifications documentaires bornées, pas réaudit125.",
+    "Contrats association/replay/spatial/picking prêts documentairement, aucune mesure/implémentation à lancer."
+  ],
+  "comptes_files": {
+    "ATTENTE_INTEGRATION_A0": 8,
+    "TRIGGER_PRECIS": 11,
+    "READY_DOCUMENTATION_RESIDUELLE": 18,
+    "ATTENTE_REVUE_INTEGRATION": 2,
+    "ATTENTE_REVUE_ET_DECISION": 1
+  },
+  "limites": [
+    "203A2v1 gelée inchangée ; cette file ne remplace aucun statutcanonique.",
+    "READY signifie actiondocumentaire exacte prête, pas lotcode/G2/G3/DB/mesure autorisé.",
+    "Questions6250995231/6328/7313/8834 déjà ouvertes, aucun doublon émis.",
+    "A0 conserve les décisions déjà acquises et deuxAcceptéG0 ; aucun P630 recalculé ici."
+  ]
+}

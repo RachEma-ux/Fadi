@@ -1,0 +1,26 @@
+{
+  "checkpoint": "7b0cca44fa44449cae80785dea078a857be4180c",
+  "branch": "docs/156-m004-checkpoint-sans-db",
+  "source": "GitHub API relue après push par A0, pas inférence de git local",
+  "reference_distante_confirmee": true,
+  "pull_requests_associees": 0,
+  "workflow_runs_au_SHA": 0,
+  "conclusion_CI": "Non exécutée, pas verte",
+  "PR165": {
+    "state": "open",
+    "merged": false,
+    "head": "63e804be7b8e8935913514bd57937053c7402474"
+  },
+  "PR169": {
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head": "a15d65044ca4454bf3159f4155e51465b2a70a2c"
+  },
+  "main": {
+    "head": "a4caaab0e6665480f09febe3914c960b424b6b47",
+    "protected": false
+  },
+  "commentaire_progres": 6249920975,
+  "limite": "Instant de contrôle du premier checkpoint ; toute tête suivante nécessite son propre contrôle."
+}

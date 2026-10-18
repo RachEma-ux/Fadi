@@ -1,0 +1,214 @@
+{
+  "review": "A2-G1-DEC01-DEC03-COMPLEMENTS-V2",
+  "scope": "Revue architecturale documentaire bornée, aucune ratification physique ni G1",
+  "sources": [
+    {
+      "path": "A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+      "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813"
+    },
+    {
+      "path": "A1/G1-SCHEMAS-LOGIQUES-DOCUMENTAIRES-v2.json",
+      "sha256": "ca552c040a1da0064e63c2a2cf643619fbeee13c53ad9c98d65114376a4a7b0c"
+    },
+    {
+      "path": "A1/G1-EXEMPLES-DOCUMENTAIRES-2D-IDENTITES-v2.json",
+      "sha256": "3d29419c227258b60645893340eee9dfbd009c16ec0e0428eb54c6dae729ea11"
+    }
+  ],
+  "comparison_sources": [
+    {
+      "path": "A2/M05-M17-CONTRATS-DURABLES.md",
+      "sha256": "893d4917fe810867b589727e82d1789db56453f86c78fbfab56b294acedac84b"
+    },
+    {
+      "path": "A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+      "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917"
+    },
+    {
+      "path": "A1/studio-141-fiches-v2.json",
+      "sha256": "48c8aa1093bec1fda771961d4d0fb7827ba7e4775f72ed9afe6cf29feada2df3"
+    }
+  ],
+  "method": [
+    "Trois fichiers lus entièrement ; trois positifs et dix négatifs lus par parcours des objets et comparaison récursive exhaustive aux positifs, tous deltas examinés.",
+    "Empreintes illustratives de deux contenus courants et du contenu ancien conservé recalculées, contexte/révisions/filiation/identités contrôlés. Aucun validateur métier exécuté.",
+    "Décisions6250109830/6250110124/6250110501 rapprochées de l’export A0 ; orientations acquises et G0 cadrage reconnus, inconnues et restrictions conservées."
+  ],
+  "verdict": "COHERENCE_LOGIQUE_DOCUMENTAIRE_SANS_RESERVE_BLOQUANTE",
+  "blocking_findings": [],
+  "documentary_findings": [
+    {
+      "id": "A2-G1-VERSION-01",
+      "state": "CLARIFIE_V2",
+      "severity": "P3_documentaire",
+      "evidence": "Schéma logique rappelle documentVersion de pièce livrée, tandis que canonicalDocument2D et revision.canonicalSources portent documentVersion1/2.",
+      "request": "Distinguer explicitement version de contenu canonique et version de pièce publiée (exemple contentVersion), sans imposer stockage ou nouveau contrat physique.",
+      "effect": "Évite confusion des versions ; pas nouvelle décision à demander au propriétaire.",
+      "resolution": "contentVersion contenu canonique distinct de documentVersion pièce livrée IF009/M24. Aucun choix physique adopté."
+    }
+  ],
+  "checks": [
+    "Projet transverse, Étude et Variante à identités propres, parenté autorisée serveur, Révision immuable appartenant à une seule Variante.",
+    "Étude sans variante et sans géométrie permise ; document2D autonome sans modèle3D de substitution ; variante obligatoire avant géométrie éditée.",
+    "Trois autorités candidates et écrivain unique ; vues/projections reconstruisibles ; conversion/référence/copie/association explicites, pas double source canonique.",
+    "IF001 rattachement et identité serveur, IF004 base, IF006 enveloppe commune conservée ; pas nouveau format de transport ni route API.",
+    "Anciennes révisions/contenus conservés, provenance de fork/mapping ancienne variante-projet explicites ; aucune migration silencieuse.",
+    "Réouverture historique ne substitue pas latest ; publication selon IF009 et M24 sur ensemble exact, droits approve/publish distincts.",
+    "Pas choix UUID/SQL/moteur/stockage physique ou canonicalisation production adopté ; DEC01/03 physiques et DEC02/12/16/18 restent conditionnées."
+  ],
+  "example_reviews": [
+    {
+      "exampleId": "G1-DOC-POS-STUDY",
+      "verdict": "COHERENT_LOGIQUE_NON_EXECUTE",
+      "reason": "Étude sansvariante permise, géométrieabsente"
+    },
+    {
+      "exampleId": "G1-DOC-POS-2D",
+      "verdict": "COHERENT_LOGIQUE_NON_EXECUTE",
+      "reason": "Dessin2Dcanonique autonome, révisionimmuable, aucun3D requis"
+    },
+    {
+      "exampleId": "G1-DOC-POS-NEXT-REVISION",
+      "verdict": "COHERENT_LOGIQUE_NON_EXECUTE",
+      "reason": "Nouvelle révision et contenu2D, anciennesrévision/pièceconservées, identitésdocument/primitivesstables"
+    },
+    {
+      "exampleId": "G1-DOC-NEG-ORPHAN",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Géométrie sansvariante propriétaire",
+      "limits": "Liens hash cohérents en v2 ; refus logique attendu non exécuté, ordre réel des contrôles non décidé."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-PARENTS",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Étude d’un autreprojet",
+      "limits": "Liens hash cohérents en v2 ; refus logique attendu non exécuté, ordre réel des contrôles non décidé."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-IMMUTABLE",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Mutationd’une révisionhistorique au lieu nouvellecommande",
+      "limits": "Liens hash cohérents en v2 ; refus logique attendu non exécuté, ordre réel des contrôles non décidé."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-UNIT",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Coordonnées2D sansunité explicite",
+      "limits": "Liens hash cohérents en v2 ; refus logique attendu non exécuté, ordre réel des contrôles non décidé."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-ID-REUSE",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Deuxprimitives réutilisentmêmeID",
+      "limits": "Liens hash cohérents en v2 ; refus logique attendu non exécuté, ordre réel des contrôles non décidé."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-STALE-BASE",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Base commande incompatible têtecourante",
+      "limits": "Liens hash cohérents en v2 ; refus logique attendu non exécuté, ordre réel des contrôles non décidé."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-WRITER",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Writer modèle3D choisi pour document2D",
+      "limits": "Liens hash cohérents en v2 ; refus logique attendu non exécuté, ordre réel des contrôles non décidé."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-TARGET",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Cote référence primitive inconnue",
+      "limits": "Liens hash cohérents en v2 ; refus logique attendu non exécuté, ordre réel des contrôles non décidé."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-MIGRATION",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Ancienprojetfork présenté comme étude/variante sans mapping",
+      "limits": "Liens hash cohérents en v2 ; refus logique attendu non exécuté, ordre réel des contrôles non décidé."
+    },
+    {
+      "exampleId": "G1-DOC-NEG-LATEST",
+      "verdict": "REFUS_DOCUMENTAIRE_COHERENT_NON_EXECUTE",
+      "target_fault": "Réouverturehistorique substitue latest",
+      "limits": "Liens hash cohérents en v2 ; refus logique attendu non exécuté, ordre réel des contrôles non décidé."
+    }
+  ],
+  "limits": [
+    "Aucune application ou API exécutée, donnée enregistrée, permission effective ou récupération démontrée.",
+    "Cette revue ne ferme ni DEC01/03 physiques, G1, G2–G4 ni la conformité des141 exigences.",
+    "Fichiers M17/M24 historiques non réécrits par A2 ; A0 seul intègre les amendements retenus.",
+    "Une structure JSON lisible et ses hashes ne constituent ni format Studio livré ni validation d’une étude terminable."
+  ],
+  "previous_review_sha256": "f3744dd0b987018b5da6b205a11541a301fa2c792856b99d7f4689b45f0cbdc8",
+  "v2_delta_review": [
+    "Diff intégral des trois pièces v1/v2 lu ; uniquement clarification versions et hashes des fixtures, aucune orientation métier modifiée.",
+    "Deux contenus courants + dix négatifs + contenu historique conservé : 13 liens recalculés indépendamment, tous cohérents. Faute sémantique ciblée préservée dans chacun des dix négatifs ; aucune preuve de refus runtime."
+  ],
+  "documentary_hash_checks": [
+    {
+      "path": "/valid_examples/1",
+      "hash": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "matches": true
+    },
+    {
+      "path": "/valid_examples/2",
+      "hash": "429836df6e275f9aeef84b7c509fbe8f12c44fec63984faff74684439d448a4e",
+      "matches": true
+    },
+    {
+      "path": "/valid_examples/2/previousContentRetained",
+      "hash": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "matches": true
+    },
+    {
+      "path": "/invalid_examples/0/payload",
+      "hash": "4ce17952f76dd1ac294d216bbc63fcd24c9fe79955505f0181a6785ea9e58efd",
+      "matches": true
+    },
+    {
+      "path": "/invalid_examples/1/payload",
+      "hash": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "matches": true
+    },
+    {
+      "path": "/invalid_examples/2/payload",
+      "hash": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "matches": true
+    },
+    {
+      "path": "/invalid_examples/3/payload",
+      "hash": "59db3e459412742f2e36fc9a5716678ff944ae5ae23f7c32d867bda1a8249900",
+      "matches": true
+    },
+    {
+      "path": "/invalid_examples/4/payload",
+      "hash": "dc7a69d29d0b0215e9dbcc7425df85d4c14722de3277adfcc38404686572d90a",
+      "matches": true
+    },
+    {
+      "path": "/invalid_examples/5/payload",
+      "hash": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "matches": true
+    },
+    {
+      "path": "/invalid_examples/6/payload",
+      "hash": "9369ff69935caa810a192c0a1830d1e306eade60c556e2f7d9c815a7d8e4151c",
+      "matches": true
+    },
+    {
+      "path": "/invalid_examples/7/payload",
+      "hash": "ba9571746efa4d4a28cc269e91283d03350f9ce76cc7d3c5f4c895d6746ac7a8",
+      "matches": true
+    },
+    {
+      "path": "/invalid_examples/8/payload",
+      "hash": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "matches": true
+    },
+    {
+      "path": "/invalid_examples/9/payload",
+      "hash": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "matches": true
+    }
+  ]
+}

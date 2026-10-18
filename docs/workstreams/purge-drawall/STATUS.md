@@ -1,6 +1,14 @@
 # Purge DrawAll dans Fadi — Statut
 
-Mis à jour : 2026-10-17 (UTC).
+Mis à jour : 2026-10-18 (UTC).
+
+## Actualisation Mission 003 — 18 octobre 2026
+
+La PR #148 est fusionnée depuis le 17 octobre 2026 au commit `5cf61d1fed9ed523b331228af20bce93a4f2bf63` ; #147 reste ouverte. Les mentions de PR brouillon et fichiers externes présents dans les sections antérieures ci-dessous sont des observations historiques, pas l’état courant. Les quatre documents interproduits retirés ne sont pas restaurés.
+
+Le titre opérationnel Atelier est maintenant Fadi ; normes, fonctions industrielles, identifiants historiques et décisions restent conservés. Inventaire Mission 003 :1 283 fichiers scannés,488 touchés,1 887 lignes ; ce périmètre diffère du relevé historique 494/2 267. Le triage mécanique et la revue ciblée ne prouvent pas une purge sémantique exhaustive, notamment des 269 fiches et 176 fichiers de code. Le scanner nominal de 761 fichiers est vert, avec ses limites.
+
+Prochaine action autorisée M08 : qualifier les références opérationnelles restantes et leurs liens, conserver la justification par fichier ; aucune suppression/renommage applicatif ni migration d’identifiant sans lot autorisé. M00/M29 publient ces pièces dans #165. Les deux checkpoints STATUS/HANDOFF sont actualisés ensemble ; aucune clôture de #147 ni intervention DrawAll.
 
 ## État
 
@@ -46,3 +54,11 @@ Mis à jour : 2026-10-17 (UTC).
 
 - Inventaire exhaustif, choix de périmètre, suppression contrôlée et preuves de conformité.
 - Tests et critères métier des fonctions Fadi restantes vérifiés.
+
+## Complément Mission003 — seconde cohorte
+
+A2 a effectivement relu20 autres documents/méta et43 occurrences, sans reprendre les23 fichiers nominaux/90 occurrences. Total43 fichiers/133 occurrences ;445 autres fichiers (176 code,269 fiches historiques) non qualifiés sémantiquement. Dix-neuf documents à conserver comme contrats/traces historiques, une réserve OCCT couverte par M06. [Preuve de cohorte](../../ai-team/reports/mission-003/A2/isolation-extra-docs-review.json). Aucune conclusion d’isolation exhaustive ; prochaine action A2 :176 fichiers code en lecture seule.
+
+## Reprise de la cohorte initiale complète
+
+A2 a poursuivi les176 fichiers code (452 lignes),269 fiches (853 lignes) et449 lignes supplémentaires des documents nominaux. Union vérifiée A0 :1887/1887 paires fichier-ligne uniques, zéro manque/doublon ; [preuve](../../ai-team/reports/mission-003/validation-M08-A0.json). Les paragraphes précédents sont des étapes datées du tri. Aucune autonomie exhaustive ni conformité fonctionnelle déduite ;125 chemins absents dans69 fiches, un abrégé et DA-09-09 prospectif restent à qualifier/rapprocher. #147 reste ouverte, prochaine action A2 : mapping des références selon leur rôle sans réécriture historique.

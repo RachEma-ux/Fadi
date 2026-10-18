@@ -1,0 +1,29 @@
+{
+  "observed_on": "2026-10-18",
+  "sha": "dcf29af87e9a3673c062cc95d44cec32fa8e2902",
+  "run_id": 39117840425,
+  "jobs": [
+    {
+      "name": "image",
+      "id": 117647207944,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39117840425/job/117647207944"
+    },
+    {
+      "name": "e2e",
+      "id": 117647208102,
+      "status": "in_progress",
+      "conclusion": null,
+      "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39117840425/job/117647208102"
+    },
+    {
+      "name": "validate",
+      "id": 117647208119,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/RachEma-ux/Fadi/actions/runs/39117840425/job/117647208119"
+    }
+  ],
+  "limit": "Relevé des états de jobs ; aucun nombre de tests déduit et aucun état transféré au commit suivant."
+}

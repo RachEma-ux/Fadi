@@ -1,0 +1,1366 @@
+{
+  "report": "NEXT-READY-POST203-A4",
+  "date": "2026-10-18",
+  "scope": "Revue finie des24IDs affectés àA4 en qualification203 ; pas réauditNAV/G1, aucun nouveau choix normatif ni gate. Écriture des deux pièces scratch seulement.",
+  "sources": {
+    "main_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+    "main_register_snapshot": {
+      "path": "/workspace/work/resume496/incoming/snapshots/task-register-main817.json",
+      "sha256": "7c5da578b34f775329e40827d8b99b6b7796d2055f9a1151725140c0013e686b"
+    },
+    "docs2076_register_snapshot": {
+      "path": "/workspace/work/resume496/incoming/snapshots/task-register-docs2076.json",
+      "sha256": "01e6e4a794653d9bca770b9152d3c7cca9159e893b7e56b4d16551da0a1e578f"
+    },
+    "prior_qualification": {
+      "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+      "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f"
+    },
+    "nav_delta_reused": {
+      "path": "/workspace/work/resume496/agents/A4/NAV-DELTA-G1-v2.json",
+      "sha256": "ece28669451e2a220172a5562a37bba54de0ef544e95b507623c77dd0429ff2e"
+    },
+    "g1_review_reused": {
+      "path": "/workspace/work/resume496/agents/A4/G1-INDEX-REVUE-CIBLEE-A4.json",
+      "sha256": "b9a5421b6d12de8fcb936da089c2d753db187bd179b1710c7a32a72369b02255"
+    }
+  },
+  "verdict": "Aucun complément de spécification A4 indépendant nouveau identifié dans ces24IDs après réemploi des pièces NAV/G1/M21 et203. La préparation A4 actuellement réalisable est remise ; les tâches ne sont ni clôturées ni acceptées. Plusieurs suites documentaires restent immédiatement possibles chez A0 et ne sont pas bloquées par G1/G2.",
+  "new_delta_implemented": null,
+  "reason_no_duplicate_delta": "Chaque manque concret est soit déjà couvert par une pièce précise référencée ci-dessous, soit une décision/entrée réelle/mesure ou une intégration commune réservée àA0. Produire un autre contrat maintenant répéterait l’existant ou inventerait la donnée manquante.",
+  "matrix": [
+    {
+      "id": "I.4-03",
+      "mission": "M16",
+      "proprietaire_conserve": "A4",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-DELTA-UX-REGISTRY.json",
+        "sha256": "5c005dc5a289bbf4f3e438df4d8e98606acbaf7e36205be5b218a1c0ce66e7ad",
+        "json_pointer": "/url_state_contract",
+        "exact_value": {
+          "reuse": "NAV-DELTA-G1-v2 et NAV-004/005/006/007 existants ; aucune nouvelle numérotation",
+          "state_fields": [
+            "authenticatedActor",
+            "authorizedProjectId",
+            "authorizedStudyId",
+            "authorizedVariantId",
+            "requestedRevisionId",
+            "baseRevisionId",
+            "domaine",
+            "planche",
+            "writerAuthority",
+            "schemaVersion"
+          ],
+          "resolution": "Serveur vérifie parenté et droits ; URL autorisée prime la préférence personnelle. Aucun champ client n’accorde un droit.",
+          "transition_table": [
+            {
+              "event": "Historique/refresh",
+              "result": "Restituer les mêmes P/S/V/R/domaine/planche autorisés ; révision historique reste en consultation."
+            },
+            {
+              "event": "Domaine absent",
+              "result": "Accueil variante sans création de planche."
+            },
+            {
+              "event": "Dessin sans planche",
+              "result": "Choix explicite 2D/3D sans géométrie implicite."
+            },
+            {
+              "event": "Domaine/planche invalide ou planche hors dessin",
+              "result": "État URL non reconnue avec retour parent autorisé, aucune mutation."
+            },
+            {
+              "event": "Contexte change pendant envoi",
+              "result": "Garde NAV-007 ; intention/requestId et résultat gardent le contexte initial, aucun réadressage."
+            },
+            {
+              "event": "Réponse tardive P1 après affichageP2",
+              "result": "Ignorer pour affichageP2 sans perdre suivi d’une commande serveur éventuelle deP1."
+            },
+            {
+              "event": "FR/EN ou mobile plein écran",
+              "result": "Langue/disposition ne remplace pas identité ou propriétaire ; garde pending et focus accessibles."
+            }
+          ],
+          "physical_url_approval": "Chemins existants candidats, pas nouvelle validation du contrat physique."
+        }
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/0/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            294,
+            294
+          ],
+          "exact_excerpt": "- [ ] **I.4-03** — Conserver le domaine, la planche et le contexte actifs selon le contrat d’URL validé."
+        }
+      },
+      "decision_ou_mesure_manquante": "Arrêt du contrat URL physique et façade par A0/A2, avec la décision G1/G2 déjà en instruction.",
+      "prochain_trigger": "Après décision bornée : A4 met uniquement à jour les paramètres effectivement retenus et leurs oracles NAV existants ; aucun code implicite.",
+      "pourquoi_pas_nouveau_livrable_A4": "Choix de contrat ouvert, pas manque de texte à recopier.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": false,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "À définir",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "B.1-02",
+      "mission": "M21",
+      "proprietaire_conserve": "A4",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-DELTA-UX-REGISTRY.json",
+        "sha256": "5c005dc5a289bbf4f3e438df4d8e98606acbaf7e36205be5b218a1c0ce66e7ad",
+        "json_pointer": "/registry_record_contract",
+        "exact_value": {
+          "required_for_retained_capability": [
+            "toolId canonique stable",
+            "capabilityId stable",
+            "domaine/modes/planches admissibles",
+            "propriétaire de contrat et composant mainteneur",
+            "contractVersion et lien vers contrat",
+            "permissions effectives décidées serveur",
+            "result_category distincte du writerAuthority",
+            "alias de provenance et fenêtre de compatibilité",
+            "états indisponible/incompatible/refusé/échec nommés"
+          ],
+          "not_identifiers": [
+            "label FR/EN",
+            "raccourci",
+            "objectId métier",
+            "commandType seul"
+          ],
+          "retained_catalogue": null,
+          "canonical_owner_assignments": null,
+          "reason_open": "Les huit example.* ne constituent pas la liste retenue ni des toolId réservés ; composants et responsables réels doivent être confirmés avant de fixer le catalogue."
+        }
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/1/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            404,
+            404
+          ],
+          "exact_excerpt": "- [ ] **B.1-02** — Fixer toolId, propriétaire et contrat pour chaque capacité retenue."
+        }
+      },
+      "decision_ou_mesure_manquante": "Liste réelle des capacités retenues, mainteneur et propriétaire de contrat/version pour chacune.",
+      "prochain_trigger": "À réception du catalogue retenu : renseigner la table toolId/propriétaire/contrat, préserver les huit exemples comme exemples.",
+      "pourquoi_pas_nouveau_livrable_A4": "Réserver aujourd’hui des toolId ou nommer un mainteneur inventerait une décision.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": false,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "À définir",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "B.1-04",
+      "mission": "M21",
+      "proprietaire_conserve": "A4",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-DELTA-UX-REGISTRY.json",
+        "sha256": "5c005dc5a289bbf4f3e438df4d8e98606acbaf7e36205be5b218a1c0ce66e7ad",
+        "json_pointer": "/alias_policy_delta",
+        "exact_value": {
+          "source_examples": [
+            {
+              "catalogue": "atelier-palette",
+              "version": "historical-to-qualify",
+              "legacy_id": "echelle",
+              "discriminator": "DA-07-13",
+              "candidate_target": "example.studio.ladder"
+            },
+            {
+              "catalogue": "atelier-palette",
+              "version": "historical-to-qualify",
+              "legacy_id": "echelle",
+              "discriminator": "DA-02-05",
+              "candidate_target": "example.studio.scale2d"
+            }
+          ],
+          "lookup_key": [
+            "catalogue",
+            "version",
+            "legacy_id",
+            "discriminator"
+          ],
+          "unresolved_version": "historical-to-qualify reste inconnu, pas une version admise en production",
+          "resolution": [
+            "Aucune correspondance : indisponible, aucun renommage silencieux.",
+            "Une correspondance complète et contrat adopté : proposer cible avec provenance, sans exécuter une migration.",
+            "Plusieurs correspondances ou discriminateur absent : ambigu, choix nommé ; ne jamais prendre le premier résultat.",
+            "Alias pointant une cible absente ou chaîne cyclique : refus explicite et rapport, pas activation."
+          ],
+          "compatibility_to_decide": [
+            "stockages réels favoris/profils/historique concernés",
+            "versions source/cible réellement supportées",
+            "échéance éventuelle et conservation des anciens IDs",
+            "allocation et propriétaire de chaque ID retenu"
+          ],
+          "no_changes": "Aucune commande, favori, historique ou profil persisté renommé par cette pièce."
+        }
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/2/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            406,
+            406
+          ],
+          "exact_excerpt": "- [ ] **B.1-04** — Conserver les alias nécessaires à la migration des identifiants."
+        }
+      },
+      "decision_ou_mesure_manquante": "Inventaire versions/stockages/consommateurs historiques des identifiants et correspondances effectivement décidées.",
+      "prochain_trigger": "Après inventaire A2 et arbitrage : compléter les mappings discriminés et cas négatifs ; migration reste distincte.",
+      "pourquoi_pas_nouveau_livrable_A4": "Politique ambiguïté/collision/refus déjà fournie ; nouvel alias sans provenance serait spéculatif.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": false,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "À définir",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "B.2-08",
+      "mission": "M21",
+      "proprietaire_conserve": "A4",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-DELTA-UX-REGISTRY.json",
+        "sha256": "5c005dc5a289bbf4f3e438df4d8e98606acbaf7e36205be5b218a1c0ce66e7ad",
+        "json_pointer": "/team_profile_option",
+        "exact_value": {
+          "state": "Option non retenue tant que contrat absent",
+          "default_activation": false,
+          "membership_or_permission_grant": false,
+          "ordinary_personal_profile_unaffected": true,
+          "necessary_future_contract": [
+            "propriétaire et droit de publier le profil",
+            "version/compatibilité et précédence équipe/personnel",
+            "conflits/synchronisation et retrait",
+            "diff explicite avant adoption et retour profil précédent"
+          ],
+          "fallback": "Si aucun contrat équipe retenu : profil personnel et découverte restent utilisables ; aucun profil équipe fabriqué ni imposé.",
+          "adversarial_oracles": [
+            "Importer un profil équipe ne confère pas approve/publish ou écriture.",
+            "Désactiver l’option ne modifie aucune géométrie ni révision.",
+            "Conflit de préférences sans contrat : conserver l’existant, état explicite, aucun écrasement."
+          ]
+        }
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/3/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            421,
+            421
+          ],
+          "exact_excerpt": "- [ ] **B.2-08** — Conserver le profil d’équipe comme option tant que son contrat n’est pas retenu."
+        }
+      },
+      "decision_ou_mesure_manquante": "Éventuel contrat de profil équipe ; option explicitement non activée jusque-là.",
+      "prochain_trigger": "Si décision de retenir l’option : préciser propriétaire, précédence, conflits et retrait au delta limité ; sinon conserver l’état optionnel.",
+      "pourquoi_pas_nouveau_livrable_A4": "Aucun besoin d’activer ou d’inventer un profil équipe pour continuer les préparations personnelles.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": false,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "En cours",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "B.3-12",
+      "mission": "M21",
+      "proprietaire_conserve": "A4",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-B3-12-PROTOCOLE-MESURES.json",
+        "sha256": "d4d1f80623c4101277484f30620a2e5068e28b13d7cc50409cc62ef73e54327c",
+        "json_pointer": "/profile",
+        "exact_value": {
+          "required_tools": 20,
+          "selected_tools": null,
+          "selected_count": null,
+          "selection_owner": "A1/A4 avec revue A2/A5, pas une personne humaine inventée",
+          "manifest_version": null,
+          "manifest_sha256": null,
+          "selection_requirements": [
+            "20 toolId retenus distincts, contrats/modes/dépendances versionnés",
+            "scénario utilisateur et ordre découverte/activation explicites",
+            "ne pas multiplier les8exemples en20outils pour atteindre le compte"
+          ]
+        }
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/4/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            438,
+            438
+          ],
+          "exact_excerpt": "- [ ] **B.3-12** — Mesurer transferts et mémoire pour un profil de vingt outils à cache froid et chaud, sans gain arbitraire annoncé."
+        }
+      },
+      "decision_ou_mesure_manquante": "Vingt outils réellement retenus/versionnés, banc/appareil, répétitions, baseline/seuils et portée autorisée d’exécution.",
+      "prochain_trigger": "Après sélection et accord de mesure : compléter manifeste et protocole puis produire résultats bruts réels ; jamais avant.",
+      "pourquoi_pas_nouveau_livrable_A4": "Protocole froid/chaud, métriques, limites et gabarit existent ; fabriquer vingt outils ou résultats n’est pas une suite autorisée.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": false,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "À définir",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "PIL-05",
+      "mission": "M30",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/pilot_guard",
+        "exact_value": {
+          "id": "PIL-05",
+          "reuse": [
+            {
+              "path": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+              "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+              "blob_sha1": "d78f71f381ab4cd9758d61ff58a651ca8b980ae7",
+              "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+              "lines": [
+                38,
+                46
+              ],
+              "exact_excerpt": "**Objectif :** terminer une petite étude synthétique local/pavillon, depuis entrée autonome Studio jusqu'à réouverture et livrables identifiés. Aucun jeu client/production. L'étude porte trois variantes pédagogiques distinctes pour séparer dessin2D libre, géométrie3D libre et conception architecturale associée, avec provenances explicites ; une copie indépendante ne propage jamais vers sa source.\n\n**Contexte minimal :** un projet synthétique autorisé, étude cadrée avant géométrie possible, variantes propriétaires nommées, révisions identifiées et immuables comme références. Utiliser services Fadi comptes/projets/données/stockage/documents, sans seconde application/base métier/identité concurrente. Les variants actuels par projets bifurqués ne valent pas implémentation de cette hiérarchie : DEC03 doit préciser le modèle physique.\n\n**Minimum fonctionnel de la spécification pilote**, sans affirmer la disponibilité du code :\n\n- A : créer ligne/contour fermé indépendant, sélectionner/modifier/déplacer, gérer calques, coter et annoter ; sauvegarder/fermer/rouvrir, composer vue/feuille et publier. Précision/saisie numérique/annulation font partie du contrat, pas une démonstration de boutons.\n- B : créer une géométrie spatiale directement sans dessin préalable, sélectionner/éditer des faces et transformer le volume, grouper selon besoin ; naviguer, sauvegarder/rouvrir puis produire vue ou coupe dérivée.\n- C : mur/ouverture communs aux deux planches, hôtes/contraintes et métrés sourcés ; annuler/rétablir, copie indépendante, conflit deux sessions/rejeu, contrôle d'une exigence, observation/correction/recontrôle, approbation et publication du dossier exact."
+            },
+            {
+              "path": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+              "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+              "blob_sha1": "d78f71f381ab4cd9758d61ff58a651ca8b980ae7",
+              "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+              "lines": [
+                81,
+                89
+              ],
+              "exact_excerpt": "### Critères des trois parcours, pas démonstration partielle\n\n| Parcours | Acceptation fonctionnelle future | Preuve exigée |\n|---|---|---|\n| A2Dindépendante | Édition/calques/cotes/annotation/sauvegarde/fermeture/réouverture/feuille/publication sans modèle3D requis/créé implicitement | TEST001 complet + permissions018/035, source dessin/revisions, manifeste et empreintes ; capture de bouton insuffisante |\n| B3Ddirecte | Création spatiale/édition face/volume/transformation/sauvegarde/réouverture/vue ou coupe sans esquisse2D ni BIM implicite | TEST002 + sélections/topologie pertinentes, source modèle/vue, réouverture fidèle |\n| Cassociée | Même mur/hôte depuis2D/3D, volumes exacts du casRT, undo/redo/conflit/rejeu/copie, observation/correction/recontrôle/approbation/publication | TEST003–014,027,029–031,038,018/035 selon exigences ; révisions/sources exactes et refus négatifs |\n\nTransversaux éliminatoires : double autorité, corruption de référence, accès interprojets, doublon de commande, écrasement de conflit, résultat périmé engagé courant, publication sous approbation d'un autre contenu. Gain performance/CI verte ne compense jamais un de ces défauts. Même snapping/picking/cotes/volumes/export dans tolérances contractuelles avant/après optimisation ; aucune tolérance inventée pour passer."
+            }
+          ],
+          "complete_paths": [
+            {
+              "path": "A",
+              "chain": "Dessin2D indépendant → modifier/coter/annoter → sauver/fermer/rouvrir → feuille/publication sans3D",
+              "proof_missing": "recette terminable/permissions/manifeste, aucun runtime fourni"
+            },
+            {
+              "path": "B",
+              "chain": "Créer/modifier géométrie3D directe → sauver/rouvrir → vue/coupe sansesquisse2D",
+              "proof_missing": "recette/identités/topologie/réouverture, aucun runtime fourni"
+            },
+            {
+              "path": "C",
+              "chain": "Objetsassociés/hôtes/quantités → undo/conflit/rejeu → observation/correction/recontrôle → approbation/publication",
+              "proof_missing": "ensembleexact/droits distincts et preuves métier, aucun runtime fourni"
+            }
+          ],
+          "rule": "Mur/ouverture reste un cas synthétique géométrique ciblé ; il ne remplace ni A ni B ni une étude C terminable."
+        }
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/5/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            758,
+            758
+          ],
+          "exact_excerpt": "- [ ] **PIL-05** — Vérifier que le cas mur/ouverture n’est pas utilisé seul comme démonstration de l’utilité métier du pilote."
+        }
+      },
+      "decision_ou_mesure_manquante": "Revue A1/A5 du rattachement aux parcours A/B/C et futures preuves métier terminables.",
+      "prochain_trigger": "A0 peut maintenant intégrer la garde documentaire au suivi ; les recettes complètes attendent leur sous-lot autorisé.",
+      "pourquoi_pas_nouveau_livrable_A4": "A/B/C et limite mur/ouverture déjà explicités ; répéter le cadrage accepté serait un doublon.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": true,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "En cours",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "EST-01",
+      "mission": "M30",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/estimation_intake",
+        "exact_value": {
+          "ids": [
+            "EST-01",
+            "EST-02",
+            "EST-03",
+            "EST-04"
+          ],
+          "availability": {
+            "actual_people": null,
+            "committed_capacity_per_period": null,
+            "leave_or_constraints": null,
+            "source_and_confirmation_date": null
+          },
+          "workload": {
+            "project_count": null,
+            "complexity_distribution": null,
+            "formats_versions_volumes": null,
+            "migration_inventory": null,
+            "review_cadence": null
+          },
+          "per_sublot_template": {
+            "id": null,
+            "scope_hash": null,
+            "reuse_audit": null,
+            "gaps": null,
+            "contracts": null,
+            "tests": null,
+            "migration": null,
+            "reviews": null,
+            "risk_margin_basis": null,
+            "effort_range_and_unit": null,
+            "estimator_and_date": null,
+            "critical_dependencies": null,
+            "authorized_scope": null
+          },
+          "calendar_rule": "Ne pas convertir charge en délai sans disponibilité engagée et dépendances ; G3 décidera le calendrier applicable. Un temps libre ne lève pas un contrat/gate critique.",
+          "ready_method": "Collecter d’abord les données humaines et volumes ; préparer la structure ne requiert pas automatiquement DEC13. DEC13 borne les budgets appareil/mesures concernés, pas toute définition de planning.",
+          "values": "Inconnues maintenues, zéro chiffre de disponibilité/délai/gain inventé."
+        }
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/6/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            764,
+            764
+          ],
+          "exact_excerpt": "- [ ] **EST-01** — Recueillir la disponibilité de l’équipe, le volume des projets, la charge de migration et la cadence de recette."
+        }
+      },
+      "decision_ou_mesure_manquante": "Réponses de personnes réellement habilitées, capacité engagée, volumes et cadence de recette.",
+      "prochain_trigger": "A0 collecte les champs auprès des responsables ; A4 peut contrôler cohérence/unité/provenance à réception, sans inventer réponses.",
+      "pourquoi_pas_nouveau_livrable_A4": "L’instrument existe ; un formulaire rempli artificiellement ne serait pas une preuve de disponibilité.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": false,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "À faire",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "EST-02",
+      "mission": "M30",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/estimation_intake/per_sublot_template",
+        "exact_value": {
+          "id": null,
+          "scope_hash": null,
+          "reuse_audit": null,
+          "gaps": null,
+          "contracts": null,
+          "tests": null,
+          "migration": null,
+          "reviews": null,
+          "risk_margin_basis": null,
+          "effort_range_and_unit": null,
+          "estimator_and_date": null,
+          "critical_dependencies": null,
+          "authorized_scope": null
+        }
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/7/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            765,
+            765
+          ],
+          "exact_excerpt": "- [ ] **EST-02** — Chiffrer chaque sous-lot après audit : réutilisation, écarts, nouveaux contrats, tests, migration, revue et marge de risque."
+        }
+      },
+      "decision_ou_mesure_manquante": "Sous-lot stabilisé, audit du réemploi et écarts, estimation attribuée et données de tests/migration/revue/marge.",
+      "prochain_trigger": "A0 chiffre avec les responsables après données reçues ; A4 relie contrats et périmètre UX correspondant.",
+      "pourquoi_pas_nouveau_livrable_A4": "Aucune charge, fourchette ou marge mesurée disponible ; le gabarit est prêt.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": false,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "À faire",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "EST-03",
+      "mission": "M30",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/estimation_intake/calendar_rule",
+        "exact_value": "Ne pas convertir charge en délai sans disponibilité engagée et dépendances ; G3 décidera le calendrier applicable. Un temps libre ne lève pas un contrat/gate critique."
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/8/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            766,
+            766
+          ],
+          "exact_excerpt": "- [ ] **EST-03** — Distinguer charge de travail et délai calendaire lors de l’établissement du calendrier à G3."
+        }
+      },
+      "decision_ou_mesure_manquante": "Efforts et disponibilités engagées, dépendances critiques et décision calendrier G3 applicable.",
+      "prochain_trigger": "A0 prépare un calendrier seulement depuis ces entrées puis le soumet dans le périmètre autorisé.",
+      "pourquoi_pas_nouveau_livrable_A4": "Règle charge/délai rédigée ; aucune date déductible de l’activité des agents IA.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": false,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "À faire",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "EST-04",
+      "mission": "M30",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/estimation_intake/calendar_rule",
+        "exact_value": "Ne pas convertir charge en délai sans disponibilité engagée et dépendances ; G3 décidera le calendrier applicable. Un temps libre ne lève pas un contrat/gate critique."
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/9/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            767,
+            767
+          ],
+          "exact_excerpt": "- [ ] **EST-04** — Conserver une dépendance critique non résolue comme blocage, même si du temps est disponible."
+        }
+      },
+      "decision_ou_mesure_manquante": "Preuve ou décision effective de levée de chaque dépendance critique concernée.",
+      "prochain_trigger": "A0 conserve blocage local et déclenche uniquement le sous-lot dont la précondition est réellement satisfaite.",
+      "pourquoi_pas_nouveau_livrable_A4": "Règle fournie ; temps libre et présence d’un document ne lèvent pas le blocage.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": false,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "À faire",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "SUIVI-01",
+      "mission": "M29",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/canonical_paths",
+        "exact_value": {
+          "direction": "Studio/ documents directeurs et source normative originale",
+          "context": "docs/workstreams/studio/CONTEXT.md",
+          "tasks": "docs/workstreams/studio/TASKS.md",
+          "status": "docs/workstreams/studio/STATUS.md",
+          "handoff": "docs/workstreams/studio/HANDOFF.md",
+          "register": "docs/workstreams/studio/task-register.json",
+          "assignments": "docs/ai-team/missions.json",
+          "decisions": "journaux existants Atelier/Planche/ADR selon sujet ; aucune renumérotation",
+          "program": "https://github.com/RachEma-ux/Fadi/issues/156",
+          "questions": "https://github.com/RachEma-ux/Fadi/issues/166"
+        }
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/10/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            872,
+            872
+          ],
+          "exact_excerpt": "- [ ] **SUIVI-01** — Créer ou compléter le chantier studio selon le protocole de continuité existant, sans branche permanente par module."
+        }
+      },
+      "decision_ou_mesure_manquante": "Réservation des fichiers communs et intégration A0 sur branche documentaire courte.",
+      "prochain_trigger": "A0 réemploie le chantier existant ; A4 ne crée ni chantier ni branche permanente.",
+      "pourquoi_pas_nouveau_livrable_A4": "Suite documentaire prête chez A0, hors propriété d’écriture A4.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": true,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "En cours",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "SUIVI-02",
+      "mission": "M29",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/canonical_paths",
+        "exact_value": {
+          "direction": "Studio/ documents directeurs et source normative originale",
+          "context": "docs/workstreams/studio/CONTEXT.md",
+          "tasks": "docs/workstreams/studio/TASKS.md",
+          "status": "docs/workstreams/studio/STATUS.md",
+          "handoff": "docs/workstreams/studio/HANDOFF.md",
+          "register": "docs/workstreams/studio/task-register.json",
+          "assignments": "docs/ai-team/missions.json",
+          "decisions": "journaux existants Atelier/Planche/ADR selon sujet ; aucune renumérotation",
+          "program": "https://github.com/RachEma-ux/Fadi/issues/156",
+          "questions": "https://github.com/RachEma-ux/Fadi/issues/166"
+        }
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/11/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            873,
+            873
+          ],
+          "exact_excerpt": "- [ ] **SUIVI-02** — Maintenir dans Studio/ les documents directeurs et plans versionnés, sans créer une seconde autorité normative."
+        }
+      },
+      "decision_ou_mesure_manquante": "Revue A0 des références versions/blobs et de toute évolution des documents directeurs.",
+      "prochain_trigger": "A0 maintient Studio/ comme source et lie les rapports, sans promouvoir leurs résumés en nouvelle norme.",
+      "pourquoi_pas_nouveau_livrable_A4": "Politique de préséance déjà disponible ; aucun besoin d’une autre copie normative.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": true,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "En cours",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "SUIVI-03",
+      "mission": "M29",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/targeted_checkpoint_delta_for_A0",
+        "exact_value": {
+          "observed_base": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "git_merge": "Merge commit817bd36 (#165), parentsa4caaab/fa9f0db, observé en lecture locale de références fournies ; pas une fusion exécutée par A4.",
+          "stale_text": "STATUS/HANDOFF/TASKS de main817 décrivent encore165ouverte/maina4caaab/aucunefusion ; conserver comme fait historique et ajouter nouvelétat daté.",
+          "ci_for_817": "Non consultée ici ; ne pas transférer CIb102360 ou autres SHA.",
+          "next_authorized_action": "A0 réserve branche documentaire courte et cheminCI sûr, intègre revues parID, actualise STATUS/HANDOFF ensemble ; aucun code/service/DB/administration."
+        }
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/12/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            874,
+            874
+          ],
+          "exact_excerpt": "- [ ] **SUIVI-03** — Créer ou compléter docs/workstreams/studio/CONTEXT.md : but, sources, DEM-01, périmètre accepté, responsabilités et limites."
+        }
+      },
+      "decision_ou_mesure_manquante": "Lien DEM-01/périmètre accepté exact et responsabilités humaines réellement connues, si disponibles.",
+      "prochain_trigger": "A0 ajoute au CONTEXT les références G0/DEC déjà retenues ; inconnues humaines restent signalées.",
+      "pourquoi_pas_nouveau_livrable_A4": "Delta ciblé et chemins fournis ; seule intégration commune reste réservée à A0.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": true,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "En cours",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "SUIVI-04",
+      "mission": "M29",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/work_units_prepared",
+        "exact_value": [
+          {
+            "label": "Delta navigation I.4-03",
+            "issue_existing": 160,
+            "source_mission": "M16",
+            "requirements": "Conserver sourceI.4-03 et NAV004–008 existants",
+            "scope_in": "contratURL/contextes/transitions documentaire",
+            "scope_out": "routes/codeUI/POC",
+            "contracts": "M17 contexte, NAV, DEC07principes ; routes physiques candidates",
+            "positive_negative": "Voir NAV-DELTA-G1-v2 : URLs exactes, parenté étrangère, résultat tardif etpending",
+            "rollback": "Refuser une intégration documentaire incohérente ; conserver fichiers antérieurs et traces, aucune opération de données."
+          },
+          {
+            "label": "Delta Registry/profil et mesure20",
+            "issue_existing": 160,
+            "source_mission": "M21",
+            "requirements": "B.1-02/B.1-04/B.2-08/B.3-12 +EX026–044,IF005 existants",
+            "scope_in": "catalogue candidat lié, aliasambiguïté, optionprofiléquipe, protocolemesures",
+            "scope_out": "catalogue industriel ratifié, loader, migrationprofil, télémétrie oumesureréelle",
+            "contracts": "M21,M17 etDEC04/05/06/07/14/18 pertinents",
+            "positive_negative": "alias complet/ambigu/cibleabsente ; profil sansélévationdroits ; cache froid/chaud défini",
+            "rollback": "Aucune migration effectuée ; garderversionsexemplesetmapping, retourdocumentaire explicite."
+          },
+          {
+            "label": "Coordination et estimations",
+            "issue_existing": 156,
+            "source_mission": "M29/M30",
+            "requirements": "19IDsA0inchangés",
+            "scope_in": "instrumentscollecte,deltaCHECKPOINT etprochainesactions",
+            "scope_out": "vraiesdisponibilitésinventées,calendrierG3accepté,créationIssue/PR oufusion",
+            "contracts": "protocolecontinuité,registreunique,G0acceptédoc,G1ouvert",
+            "positive_negative": "sourcesetpreuvesliées ; ancienSHA/CIetstatutsnontransférés",
+            "rollback": "Conserverhistoriques,nepasécraser630IDs,nouveaucheckpoint réversible sousA0."
+          }
+        ]
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/13/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            875,
+            875
+          ],
+          "exact_excerpt": "- [ ] **SUIVI-04** — Créer ou compléter docs/workstreams/studio/TASKS.md : sous-lots, dépendances, Issues, PR, états et critères."
+        }
+      },
+      "decision_ou_mesure_manquante": "Actualisation A0 des sous-lots et de leurs Issues/PR/critères sur références actuelles.",
+      "prochain_trigger": "A0 rattache les trois unités préparées à TASKS et au registre unique sans modifier les propriétaires.",
+      "pourquoi_pas_nouveau_livrable_A4": "Fiches d’unité prêtes, création d’un second tableau canonique serait un doublon.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": true,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "En cours",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "SUIVI-05",
+      "mission": "M29",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/targeted_checkpoint_delta_for_A0",
+        "exact_value": {
+          "observed_base": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "git_merge": "Merge commit817bd36 (#165), parentsa4caaab/fa9f0db, observé en lecture locale de références fournies ; pas une fusion exécutée par A4.",
+          "stale_text": "STATUS/HANDOFF/TASKS de main817 décrivent encore165ouverte/maina4caaab/aucunefusion ; conserver comme fait historique et ajouter nouvelétat daté.",
+          "ci_for_817": "Non consultée ici ; ne pas transférer CIb102360 ou autres SHA.",
+          "next_authorized_action": "A0 réserve branche documentaire courte et cheminCI sûr, intègre revues parID, actualise STATUS/HANDOFF ensemble ; aucun code/service/DB/administration."
+        }
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/14/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            876,
+            876
+          ],
+          "exact_excerpt": "- [ ] **SUIVI-05** — Créer ou compléter docs/workstreams/studio/STATUS.md : faits datés, commit, vérifications, risques et blocages."
+        }
+      },
+      "decision_ou_mesure_manquante": "Constat CI propre aux SHA actuels et checkpoint daté par A0.",
+      "prochain_trigger": "A0 corrige l’état courant post-fusion817 en conservant les anciens checkpoints et leurs preuves datées.",
+      "pourquoi_pas_nouveau_livrable_A4": "Contradiction temporelle PR165 ouverte/fusionnée déjà identifiée ; aucune ancienne CI transférée.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": true,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "En cours",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "SUIVI-06",
+      "mission": "M29",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/targeted_checkpoint_delta_for_A0",
+        "exact_value": {
+          "observed_base": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "git_merge": "Merge commit817bd36 (#165), parentsa4caaab/fa9f0db, observé en lecture locale de références fournies ; pas une fusion exécutée par A4.",
+          "stale_text": "STATUS/HANDOFF/TASKS de main817 décrivent encore165ouverte/maina4caaab/aucunefusion ; conserver comme fait historique et ajouter nouvelétat daté.",
+          "ci_for_817": "Non consultée ici ; ne pas transférer CIb102360 ou autres SHA.",
+          "next_authorized_action": "A0 réserve branche documentaire courte et cheminCI sûr, intègre revues parID, actualise STATUS/HANDOFF ensemble ; aucun code/service/DB/administration."
+        }
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/15/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            877,
+            877
+          ],
+          "exact_excerpt": "- [ ] **SUIVI-06** — Créer ou compléter docs/workstreams/studio/HANDOFF.md : dernier état vérifié, décisions, prochaine action autorisée et reprise."
+        }
+      },
+      "decision_ou_mesure_manquante": "Prochaine action effectivement autorisée et publication STATUS/HANDOFF ensemble par A0.",
+      "prochain_trigger": "A0 écrit la reprise exacte post817 avec causes/blocages/prochaine READY.",
+      "pourquoi_pas_nouveau_livrable_A4": "Préparation complète pour remise ; A4 ne peut écrire les fichiers communs à sa place.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": true,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "En cours",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "SUIVI-07",
+      "mission": "M29",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/tracking_record_template",
+        "exact_value": {
+          "task_id": "IDsource inchangé",
+          "mission_and_original_owner": "missions.json/registre, pas A4 par défaut",
+          "normative_ids": "EX/INV/IF/AC exacts + pointeurs vers source",
+          "component_or_contract": "candidat distinct de composant livré",
+          "TEST_NAV": "IDs existants, aucun doublon pour chaque citation",
+          "evidence": "type,sha,artifact_hash,path,lines,env,observed,limits",
+          "decision_ADR": "journal existant, auteur/date/portée, pas avis converti en autorisation",
+          "next_action": "opération concrète autorisée ou blocage local"
+        }
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/16/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            878,
+            878
+          ],
+          "exact_excerpt": "- [ ] **SUIVI-07** — Maintenir le registre EX/INV/IF/AC ↔ composants ↔ TEST/NAV ↔ preuves ↔ DEC/ADR."
+        }
+      },
+      "decision_ou_mesure_manquante": "Liens de preuves/revues effectivement intégrés par A0 et sources normatives gardées par A1/A5.",
+      "prochain_trigger": "A0 rattache les remises aux IDs existants, composants/contrats, TEST/NAV et DEC/ADR.",
+      "pourquoi_pas_nouveau_livrable_A4": "NAV-DELTA et qualification24 déjà fournissent leurs liens ; nouveau registre interdit.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": true,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "En cours",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "SUIVI-08",
+      "mission": "M29",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/canonical_paths",
+        "exact_value": {
+          "direction": "Studio/ documents directeurs et source normative originale",
+          "context": "docs/workstreams/studio/CONTEXT.md",
+          "tasks": "docs/workstreams/studio/TASKS.md",
+          "status": "docs/workstreams/studio/STATUS.md",
+          "handoff": "docs/workstreams/studio/HANDOFF.md",
+          "register": "docs/workstreams/studio/task-register.json",
+          "assignments": "docs/ai-team/missions.json",
+          "decisions": "journaux existants Atelier/Planche/ADR selon sujet ; aucune renumérotation",
+          "program": "https://github.com/RachEma-ux/Fadi/issues/156",
+          "questions": "https://github.com/RachEma-ux/Fadi/issues/166"
+        }
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/17/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            879,
+            879
+          ],
+          "exact_excerpt": "- [ ] **SUIVI-08** — Adopter pour matrices et ADR les noms du protocole sans dupliquer les registres existants."
+        }
+      },
+      "decision_ou_mesure_manquante": "Choix du journal canonique par sujet avant éventuelle nouvelle ADR.",
+      "prochain_trigger": "A0 utilise les noms et journaux existants ; une nouvelle décision nécessitera une preuve réelle, pas un numéro fictif.",
+      "pourquoi_pas_nouveau_livrable_A4": "Règle de réemploi déjà précise ; aucune ADR substantielle nouvelle à inventer.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": true,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "En cours",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "SUIVI-09",
+      "mission": "M29",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/public_artifact_policy",
+        "exact_value": {
+          "manifest": "Référence stable + SHA256 + SHA source + rôle de la preuve + limites, éviter copie volumineuse dans STATUS",
+          "privacy": "Synthétique/public uniquement ; expurger secrets, géométrie privée client, URLs signées et données personnelles avant publication ; ne pas prétendre scansecret exécuté",
+          "validations": [
+            "Code",
+            "Review ChatGPT",
+            "Review Admin"
+          ],
+          "not_allowed": "Aucune coche auto ou preuve métier déduite de qualification203/P630/CI."
+        }
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/18/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            880,
+            880
+          ],
+          "exact_excerpt": "- [ ] **SUIVI-09** — Conserver les rapports lourds dans des artefacts identifiés et leurs références stables, empreintes et verdicts dans le suivi."
+        }
+      },
+      "decision_ou_mesure_manquante": "Intégration A0 du manifeste et lien stable vers artefacts retenus.",
+      "prochain_trigger": "A0 copie les remises stabilisées et leurs hashes à octets identiques, consigne verdict/limites dans suivi.",
+      "pourquoi_pas_nouveau_livrable_A4": "Sources et hashes déjà produits ; seule destination canonique et revue d’intégration restent.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": true,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "En cours",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "SUIVI-10",
+      "mission": "M29",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/public_artifact_policy",
+        "exact_value": {
+          "manifest": "Référence stable + SHA256 + SHA source + rôle de la preuve + limites, éviter copie volumineuse dans STATUS",
+          "privacy": "Synthétique/public uniquement ; expurger secrets, géométrie privée client, URLs signées et données personnelles avant publication ; ne pas prétendre scansecret exécuté",
+          "validations": [
+            "Code",
+            "Review ChatGPT",
+            "Review Admin"
+          ],
+          "not_allowed": "Aucune coche auto ou preuve métier déduite de qualification203/P630/CI."
+        }
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/19/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            881,
+            881
+          ],
+          "exact_excerpt": "- [ ] **SUIVI-10** — Protéger le suivi public contre secrets, géométries privées de clients et URL sensibles."
+        }
+      },
+      "decision_ou_mesure_manquante": "Revue de publicabilité finale des seuls fichiers destinés à être versés.",
+      "prochain_trigger": "A0/A5 excluent secrets, sources privées et URL sensibles avant publication ; A4 fournit des pièces synthétiques sans données client.",
+      "pourquoi_pas_nouveau_livrable_A4": "Politique et périmètre connus ; aucun scan global ou accès à des secrets nécessaire/autorisé.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": true,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "En cours",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "PR-01",
+      "mission": "M29",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/work_units_prepared",
+        "exact_value": [
+          {
+            "label": "Delta navigation I.4-03",
+            "issue_existing": 160,
+            "source_mission": "M16",
+            "requirements": "Conserver sourceI.4-03 et NAV004–008 existants",
+            "scope_in": "contratURL/contextes/transitions documentaire",
+            "scope_out": "routes/codeUI/POC",
+            "contracts": "M17 contexte, NAV, DEC07principes ; routes physiques candidates",
+            "positive_negative": "Voir NAV-DELTA-G1-v2 : URLs exactes, parenté étrangère, résultat tardif etpending",
+            "rollback": "Refuser une intégration documentaire incohérente ; conserver fichiers antérieurs et traces, aucune opération de données."
+          },
+          {
+            "label": "Delta Registry/profil et mesure20",
+            "issue_existing": 160,
+            "source_mission": "M21",
+            "requirements": "B.1-02/B.1-04/B.2-08/B.3-12 +EX026–044,IF005 existants",
+            "scope_in": "catalogue candidat lié, aliasambiguïté, optionprofiléquipe, protocolemesures",
+            "scope_out": "catalogue industriel ratifié, loader, migrationprofil, télémétrie oumesureréelle",
+            "contracts": "M21,M17 etDEC04/05/06/07/14/18 pertinents",
+            "positive_negative": "alias complet/ambigu/cibleabsente ; profil sansélévationdroits ; cache froid/chaud défini",
+            "rollback": "Aucune migration effectuée ; garderversionsexemplesetmapping, retourdocumentaire explicite."
+          },
+          {
+            "label": "Coordination et estimations",
+            "issue_existing": 156,
+            "source_mission": "M29/M30",
+            "requirements": "19IDsA0inchangés",
+            "scope_in": "instrumentscollecte,deltaCHECKPOINT etprochainesactions",
+            "scope_out": "vraiesdisponibilitésinventées,calendrierG3accepté,créationIssue/PR oufusion",
+            "contracts": "protocolecontinuité,registreunique,G0acceptédoc,G1ouvert",
+            "positive_negative": "sourcesetpreuvesliées ; ancienSHA/CIetstatutsnontransférés",
+            "rollback": "Conserverhistoriques,nepasécraser630IDs,nouveaucheckpoint réversible sousA0."
+          }
+        ]
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/20/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            889,
+            889
+          ],
+          "exact_excerpt": "- [ ] **PR-01** — Ouvrir ou relier une Issue par unité de travail autorisée."
+        }
+      },
+      "decision_ou_mesure_manquante": "État GitHub actuel des Issues160/156 et unité de travail réservée par A0.",
+      "prochain_trigger": "A0 relie les unités aux Issues existantes ; nouvelle Issue seulement si besoin constaté et autorisé.",
+      "pourquoi_pas_nouveau_livrable_A4": "Liens de missions réemployés ; A4 ne crée ni Issue ni PR dans ce mandat.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": true,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "En cours",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "PR-02",
+      "mission": "M29",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/work_units_prepared",
+        "exact_value": [
+          {
+            "label": "Delta navigation I.4-03",
+            "issue_existing": 160,
+            "source_mission": "M16",
+            "requirements": "Conserver sourceI.4-03 et NAV004–008 existants",
+            "scope_in": "contratURL/contextes/transitions documentaire",
+            "scope_out": "routes/codeUI/POC",
+            "contracts": "M17 contexte, NAV, DEC07principes ; routes physiques candidates",
+            "positive_negative": "Voir NAV-DELTA-G1-v2 : URLs exactes, parenté étrangère, résultat tardif etpending",
+            "rollback": "Refuser une intégration documentaire incohérente ; conserver fichiers antérieurs et traces, aucune opération de données."
+          },
+          {
+            "label": "Delta Registry/profil et mesure20",
+            "issue_existing": 160,
+            "source_mission": "M21",
+            "requirements": "B.1-02/B.1-04/B.2-08/B.3-12 +EX026–044,IF005 existants",
+            "scope_in": "catalogue candidat lié, aliasambiguïté, optionprofiléquipe, protocolemesures",
+            "scope_out": "catalogue industriel ratifié, loader, migrationprofil, télémétrie oumesureréelle",
+            "contracts": "M21,M17 etDEC04/05/06/07/14/18 pertinents",
+            "positive_negative": "alias complet/ambigu/cibleabsente ; profil sansélévationdroits ; cache froid/chaud défini",
+            "rollback": "Aucune migration effectuée ; garderversionsexemplesetmapping, retourdocumentaire explicite."
+          },
+          {
+            "label": "Coordination et estimations",
+            "issue_existing": 156,
+            "source_mission": "M29/M30",
+            "requirements": "19IDsA0inchangés",
+            "scope_in": "instrumentscollecte,deltaCHECKPOINT etprochainesactions",
+            "scope_out": "vraiesdisponibilitésinventées,calendrierG3accepté,créationIssue/PR oufusion",
+            "contracts": "protocolecontinuité,registreunique,G0acceptédoc,G1ouvert",
+            "positive_negative": "sourcesetpreuvesliées ; ancienSHA/CIetstatutsnontransférés",
+            "rollback": "Conserverhistoriques,nepasécraser630IDs,nouveaucheckpoint réversible sousA0."
+          }
+        ]
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/21/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            890,
+            890
+          ],
+          "exact_excerpt": "- [ ] **PR-02** — Décrire besoin, sources, identifiants d’exigences et périmètre inclus/exclu."
+        }
+      },
+      "decision_ou_mesure_manquante": "Périmètre et versions finales des pièces retenues dans l’unité par A0.",
+      "prochain_trigger": "A0 reprend besoin/sources/IDs/inclus/exclus des fiches ; A4 ne réécrit pas la même spécification.",
+      "pourquoi_pas_nouveau_livrable_A4": "Trois dossiers de préparation bornés déjà rédigés.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": true,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "En cours",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "PR-03",
+      "mission": "M29",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/work_units_prepared",
+        "exact_value": [
+          {
+            "label": "Delta navigation I.4-03",
+            "issue_existing": 160,
+            "source_mission": "M16",
+            "requirements": "Conserver sourceI.4-03 et NAV004–008 existants",
+            "scope_in": "contratURL/contextes/transitions documentaire",
+            "scope_out": "routes/codeUI/POC",
+            "contracts": "M17 contexte, NAV, DEC07principes ; routes physiques candidates",
+            "positive_negative": "Voir NAV-DELTA-G1-v2 : URLs exactes, parenté étrangère, résultat tardif etpending",
+            "rollback": "Refuser une intégration documentaire incohérente ; conserver fichiers antérieurs et traces, aucune opération de données."
+          },
+          {
+            "label": "Delta Registry/profil et mesure20",
+            "issue_existing": 160,
+            "source_mission": "M21",
+            "requirements": "B.1-02/B.1-04/B.2-08/B.3-12 +EX026–044,IF005 existants",
+            "scope_in": "catalogue candidat lié, aliasambiguïté, optionprofiléquipe, protocolemesures",
+            "scope_out": "catalogue industriel ratifié, loader, migrationprofil, télémétrie oumesureréelle",
+            "contracts": "M21,M17 etDEC04/05/06/07/14/18 pertinents",
+            "positive_negative": "alias complet/ambigu/cibleabsente ; profil sansélévationdroits ; cache froid/chaud défini",
+            "rollback": "Aucune migration effectuée ; garderversionsexemplesetmapping, retourdocumentaire explicite."
+          },
+          {
+            "label": "Coordination et estimations",
+            "issue_existing": 156,
+            "source_mission": "M29/M30",
+            "requirements": "19IDsA0inchangés",
+            "scope_in": "instrumentscollecte,deltaCHECKPOINT etprochainesactions",
+            "scope_out": "vraiesdisponibilitésinventées,calendrierG3accepté,créationIssue/PR oufusion",
+            "contracts": "protocolecontinuité,registreunique,G0acceptédoc,G1ouvert",
+            "positive_negative": "sourcesetpreuvesliées ; ancienSHA/CIetstatutsnontransférés",
+            "rollback": "Conserverhistoriques,nepasécraser630IDs,nouveaucheckpoint réversible sousA0."
+          }
+        ]
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/22/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            891,
+            891
+          ],
+          "exact_excerpt": "- [ ] **PR-03** — Identifier le composant, les contrats, décisions et migrations concernés."
+        }
+      },
+      "decision_ou_mesure_manquante": "Composant physique et toute migration future décidés dans leurs lots ; aucune adoption ici.",
+      "prochain_trigger": "A0 cite les contrats/DEC ouverts et ajoute seulement le composant réellement choisi.",
+      "pourquoi_pas_nouveau_livrable_A4": "Frontières et absence d’autorisation de migration déjà explicites.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": true,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "En cours",
+      "acheve_ou_accepte": false
+    },
+    {
+      "id": "PR-04",
+      "mission": "M29",
+      "proprietaire_conserve": "A0",
+      "preparation_deja_disponible": {
+        "path": "/workspace/work/resume496/agents/A4/203-COORDINATION-A0-PREPARATION.json",
+        "sha256": "e369ac1ade2ff196369a7f81f64d8dcac4776958f62e2b99942ee5863e85666e",
+        "json_pointer": "/work_units_prepared",
+        "exact_value": [
+          {
+            "label": "Delta navigation I.4-03",
+            "issue_existing": 160,
+            "source_mission": "M16",
+            "requirements": "Conserver sourceI.4-03 et NAV004–008 existants",
+            "scope_in": "contratURL/contextes/transitions documentaire",
+            "scope_out": "routes/codeUI/POC",
+            "contracts": "M17 contexte, NAV, DEC07principes ; routes physiques candidates",
+            "positive_negative": "Voir NAV-DELTA-G1-v2 : URLs exactes, parenté étrangère, résultat tardif etpending",
+            "rollback": "Refuser une intégration documentaire incohérente ; conserver fichiers antérieurs et traces, aucune opération de données."
+          },
+          {
+            "label": "Delta Registry/profil et mesure20",
+            "issue_existing": 160,
+            "source_mission": "M21",
+            "requirements": "B.1-02/B.1-04/B.2-08/B.3-12 +EX026–044,IF005 existants",
+            "scope_in": "catalogue candidat lié, aliasambiguïté, optionprofiléquipe, protocolemesures",
+            "scope_out": "catalogue industriel ratifié, loader, migrationprofil, télémétrie oumesureréelle",
+            "contracts": "M21,M17 etDEC04/05/06/07/14/18 pertinents",
+            "positive_negative": "alias complet/ambigu/cibleabsente ; profil sansélévationdroits ; cache froid/chaud défini",
+            "rollback": "Aucune migration effectuée ; garderversionsexemplesetmapping, retourdocumentaire explicite."
+          },
+          {
+            "label": "Coordination et estimations",
+            "issue_existing": 156,
+            "source_mission": "M29/M30",
+            "requirements": "19IDsA0inchangés",
+            "scope_in": "instrumentscollecte,deltaCHECKPOINT etprochainesactions",
+            "scope_out": "vraiesdisponibilitésinventées,calendrierG3accepté,créationIssue/PR oufusion",
+            "contracts": "protocolecontinuité,registreunique,G0acceptédoc,G1ouvert",
+            "positive_negative": "sourcesetpreuvesliées ; ancienSHA/CIetstatutsnontransférés",
+            "rollback": "Conserverhistoriques,nepasécraser630IDs,nouveaucheckpoint réversible sousA0."
+          }
+        ]
+      },
+      "qualification_source_exacte": {
+        "path": "/workspace/work/resume496/agents/A4/203-QUALIFICATION-A4.json",
+        "sha256": "111cdb60261e1a65aff07ca2ab695796b64429d9d9230ae6a01960b4dea7039f",
+        "json_pointer": "/items/23/source_checklist",
+        "exact_value": {
+          "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "blob_sha1": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+          "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+          "lines": [
+            892,
+            892
+          ],
+          "exact_excerpt": "- [ ] **PR-04** — Définir les scénarios positifs/négatifs, preuves attendues et conditions de retour arrière."
+        }
+      },
+      "decision_ou_mesure_manquante": "Portée exacte du futur test/retour arrière et autorisation correspondante si opération mutatrice.",
+      "prochain_trigger": "A0 réemploie oracles NAV, alias et protocole ; les preuves futures sont liées au SHA exact, sans exécution par cette revue.",
+      "pourquoi_pas_nouveau_livrable_A4": "Positifs/négatifs/preuves et retour documentaire déjà préparés ; rollback de données non autorisé.",
+      "ready_A4_independante_sans_nouvelle_entree": false,
+      "suite_documentaire_A0_possible_maintenant": true,
+      "statut_canonique_actuel": "À définir — snapshots fournis, inchangé",
+      "statut_propose_203_conserve": "En cours",
+      "acheve_ou_accepte": false
+    }
+  ],
+  "next_A0_actions_ready": [
+    "Revalider l’état GitHub/CI des SHA actuels puis réserver le checkpoint documentaire ; fusion817 constatée sans transférer d’ancienneCI.",
+    "Intégrer à octets identiques les remises revues et leurs manifestes, relier les IDs et propriétaires inchangés aux Issues160/156.",
+    "Actualiser STATUS et HANDOFF ensemble pour la reprise post817 ; garder les checkpoints historiques.",
+    "Réutiliser les questions G1/G2 déjà ouvertes et les données demandées, sans réinterroger les orientations déjà retenues.",
+    "Relire publicabilité et cohérence du delta630 avant publication documentaire sur cheminCI sûr ; aucun code/DB/service/administration déduit."
+  ],
+  "boundaries": [
+    "PR142 et ses fichiers de navigation restent réservés à leur propre lot : pas de correction/appUI ou conflit d’écriture créé ici.",
+    "G1/G2 ouverts ne constituent pas un blocage global des documentations ; seuls les actes réellement dépendants attendent.",
+    "PIL05 attend preuve métier A/B/C terminables, pas simple testmur/ouverture ; personnes et chiffrages restent inconnus.",
+    "REP02–09 relève deClaude ; aucun résultat de compatibilité inventé ou substitué.",
+    "Les trois validations Code/ReviewChatGPT/ReviewAdmin restent indépendantes ; aucune coche/registre/gate modifié."
+  ],
+  "execution": "Zéro codeFadi/UI/test/browser/API/DB/service exécuté ; seuls lectures locales et construction/vérification documentaire JSON.",
+  "exhaustion_limit": "Constat local à la partitionA4 et aux entrées disponibles ; ne signifie pas épuisement du programme#156 ni travail permanent en arrière-plan."
+}

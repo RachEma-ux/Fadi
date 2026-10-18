@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-18",
+  "verifications_executees": [
+    "Parsing XML DOCX officiel",
+    "Blob Git recalculé et identique au blob canonique",
+    "141 IDs uniques :104EX/15INV/11IF/11AC",
+    "141 textes exacts comparés à paragraphes XML source",
+    "IF006 compléments530/531 conservés sans les présenter API réelle",
+    "Champs cas positif/négatif/contrat/candidat/décision/prochaine action présents pour141"
+  ],
+  "counts": {
+    "EX": 104,
+    "IF": 11,
+    "INV": 15,
+    "AC": 11
+  },
+  "source_git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+  "tests_metier_executes": 0,
+  "M12_cloture": false,
+  "gates_acceptes": [],
+  "limites": [
+    "Contrôle structurel et exactitude extraction ; pas revue métier suffisante par présence des champs",
+    "Ancres XML w:p, pas pages Word ni numéros de lignes TXT",
+    "Scénarios concrets proposés pour revue et exécution ultérieure autorisée",
+    "Aucun taux de conformité produit déduit"
+  ]
+}
