@@ -1,0 +1,285 @@
+{
+  "source_commit": "b6794c64c7ff98fadf62868331f4297631201069",
+  "method": "git show/rev-parse locaux et analyse textuelle stdlib strictement bornée ; ni import ni exécution des scripts remis, runner/test/service/DB/réseau",
+  "source_workflows_sha256": {
+    "main817": "9542a7ca056edcb50f3ecb1892b47e242dc45aa9589c3d7463a4f93a31e9f7ec",
+    "PR169a15": "dca3828656e941b090ad8f971e857f499a3ef31397d307ee4350d0b6f45070da",
+    "PR1715e": "cb3cc0beba7eb213a961056c7c3d58c6b4f64f409f385814568fc5680ab75819"
+  },
+  "files_reviewed": [
+    "docs/ai-team/reports/claude-verif-169-171/README.md",
+    "docs/ai-team/reports/claude-verif-169-171/ci_merge.py",
+    "docs/ai-team/reports/claude-verif-169-171/ci_eval.py",
+    "docs/ai-team/reports/claude-verif-169-171/routage.txt",
+    "docs/ai-team/reports/claude-verif-169-171/ci-resolu-169.yml",
+    "docs/ai-team/reports/claude-verif-169-171/ci-resolu-171.yml",
+    "docs/ai-team/reports/claude-verif-169-171/ci-resolu-169-171.yml"
+  ],
+  "results": [
+    {
+      "file": "ci-resolu-169.yml",
+      "blob": "94c3bebf6cd39f349f7185e8043c27f621972215",
+      "sha256": "ecb2902742ea20d7187bf440cd94917039035019f861de23b4bf57edd3701590",
+      "pure_jobs_byte_identical_to_source": {
+        "mission-docs-pure": true,
+        "db-guard-pure": true
+      },
+      "DB_jobs_identical_except_comments_if": {
+        "validate": true,
+        "e2e": true,
+        "image": true
+      },
+      "header_before_jobs_identical": true,
+      "job_level_guards_before_services": true,
+      "matrix": {
+        "docs": [
+          "push",
+          "mission-docs-pure"
+        ],
+        "classif": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "db": [
+          "push",
+          "db-guard-pure"
+        ],
+        "other": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "fork_classif": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "other_base": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "pushmain": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "other_repository_db": [
+          "push",
+          "db-guard-pure"
+        ],
+        "missing_headrepo_db": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "missing_event": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ]
+      }
+    },
+    {
+      "file": "ci-resolu-171.yml",
+      "blob": "6ae27db91c2e01f57fccf6cf7fc6cedbfbf437fd",
+      "sha256": "beca2dea96a0cef5dd027b16fe6bbcf5099b3b73c196210ca2f02ca47ad618b9",
+      "pure_jobs_byte_identical_to_source": {
+        "mission-docs-pure": true,
+        "classification-pure": true
+      },
+      "DB_jobs_identical_except_comments_if": {
+        "validate": true,
+        "e2e": true,
+        "image": true
+      },
+      "header_before_jobs_identical": true,
+      "job_level_guards_before_services": true,
+      "matrix": {
+        "docs": [
+          "push",
+          "mission-docs-pure"
+        ],
+        "classif": [
+          "push",
+          "classification-pure"
+        ],
+        "db": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "other": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "fork_classif": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "other_base": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "pushmain": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "other_repository_db": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "missing_headrepo_db": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "missing_event": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ]
+      }
+    },
+    {
+      "file": "ci-resolu-169-171.yml",
+      "blob": "6d6b8805d188e5872051f0a74f92116447a0ebf1",
+      "sha256": "eccb5d87a6083b3ec1a261658d12e6bfbf2426e7db8d0cdbb70ea9703878e209",
+      "pure_jobs_byte_identical_to_source": {
+        "mission-docs-pure": true,
+        "db-guard-pure": true,
+        "classification-pure": true
+      },
+      "DB_jobs_identical_except_comments_if": {
+        "validate": true,
+        "e2e": true,
+        "image": true
+      },
+      "header_before_jobs_identical": true,
+      "job_level_guards_before_services": true,
+      "matrix": {
+        "docs": [
+          "push",
+          "mission-docs-pure"
+        ],
+        "classif": [
+          "push",
+          "classification-pure"
+        ],
+        "db": [
+          "push",
+          "db-guard-pure"
+        ],
+        "other": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "fork_classif": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "other_base": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "pushmain": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "other_repository_db": [
+          "push",
+          "db-guard-pure"
+        ],
+        "missing_headrepo_db": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ],
+        "missing_event": [
+          "push",
+          "validate",
+          "e2e",
+          "image"
+        ]
+      }
+    }
+  ],
+  "findings": [
+    {
+      "priority": "P1 conditionnel avant application stricte",
+      "subject": "Tuple repository absent pour DB169",
+      "fact": "db-guard-pure et sa disjonction validate/e2e/image ne vérifient pas github.repository ; contexte synthétique autre repo + headrepo Fadi active route pure169",
+      "recommendation": "Ajouter symétriquement github.repository exact à la condition pure169 et aux trois exclusions lors de la résolution autorisée ; refaire matrice négative. Ne pas qualifier absence simple homogénéité."
+    },
+    {
+      "priority": "P2",
+      "subject": "ci_eval.py non stdlib et eval",
+      "fact": "PyYAML importé, remplacement textuel puis eval avec builtins vide : pas interpréteur sûr général ni sémantique Actions complète ; apostrophes de valeurs modifiées",
+      "recommendation": "Ne pas exécuter sur entrée arbitraire ; utiliser grammaire stricte indépendante et valeurs fixes, vérifier champs absents/repo/forks de chaque route."
+    },
+    {
+      "priority": "P2",
+      "subject": "ci_merge.py assemblage textuel",
+      "fact": "main appelé sans garde __name__, déduplication sur condition seulement ; bloc pur supposé avant validate ; ne vérifie pas collisions job IDs ni différences des jobs de PR après validate",
+      "recommendation": "Réserver aux trois blobs immuables revus ; comparer sorties aux sources et vérifier unicité jobs/guards ; pas outil générique ni import."
+    }
+  ],
+  "side_effects_review": {
+    "ci_merge": "Lecture des chemins argv ; stdout seulement, aucune écriture fichier propre, subprocess/réseau absent. Redirection shell serait une écriture à borner. Import déclenche main.",
+    "ci_eval": "Lecture argv et stdout ; import tiers yaml ; eval dynamique, aucun appel réseau explicite mais pas garantie hors import. Ne pas lancer tel quel pour prétendre stdlib.",
+    "workflows": "Jobs purs conservés identiques : checkout/setup et npm ci téléchargent via réseau si CI exécutée ; --ignore-scripts ne signifie pas sans réseau. npm run typecheck/build exécutent scripts contrôlés dans les lots, pas une sandbox réseau. Aucun secret expression introduit ; mot de passe CI local déjà présent dans jobs DB inchangés. Jobs complets restent destructifs et éligibles hors exceptions, notamment push main.",
+    "checks_not_performed": "Aucune fusion/rebase, aucun contrôle nouveau des scripts npm transitifs, hooks ou CI réelle ; conflit unique annoncé Claude non reproduit par fusion ici."
+  },
+  "verdict": "Propositions compatibles structurellement pour les sept contextes annoncés ; application stricte exacte repo nécessite correction bornée de route169. Faisabilité contrôle pur stdlib confirmée par analyse indépendante, pas exécution des scripts Claude. A0 décide de toute intégration autorisée ; aucune fusion main autorisée.",
+  "restriction_patch_proposed_not_applied": [
+    {
+      "file": "ci-resolu-169.yml",
+      "occurrences": 4,
+      "proposed_only": true,
+      "patch": "--- a/ci-resolu-169.yml\n+++ b/ci-resolu-169.yml\n@@ -72,7 +72,7 @@\n \n   db-guard-pure:\n     name: DB1/2 — tests simulés sans base (DB3 non validée)\n-    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main' }}\n+    if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main' }}\n     runs-on: ubuntu-latest\n     timeout-minutes: 15\n     env:\n@@ -108,7 +108,7 @@\n \n   validate:\n     # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.\n-    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main')) }}\n+    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main')) }}\n     runs-on: ubuntu-latest\n     services:\n       postgres:\n@@ -161,7 +161,7 @@\n   # Les captures (docs/migration/captures/webapp/) sont publiées en artefact.\n   e2e:\n     # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.\n-    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main')) }}\n+    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main')) }}\n     runs-on: ubuntu-latest\n     timeout-minutes: 40\n     services:\n@@ -418,7 +418,7 @@\n \n   image:\n     # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.\n-    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main')) }}\n+    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main')) }}\n     runs-on: ubuntu-latest\n     timeout-minutes: 30\n     services:\n"
+    },
+    {
+      "file": "ci-resolu-169-171.yml",
+      "occurrences": 4,
+      "proposed_only": true,
+      "patch": "--- a/ci-resolu-169-171.yml\n+++ b/ci-resolu-169-171.yml\n@@ -72,7 +72,7 @@\n \n   db-guard-pure:\n     name: DB1/2 — tests simulés sans base (DB3 non validée)\n-    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main' }}\n+    if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main' }}\n     runs-on: ubuntu-latest\n     timeout-minutes: 15\n     env:\n@@ -145,7 +145,7 @@\n \n   validate:\n     # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.\n-    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}\n+    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}\n     runs-on: ubuntu-latest\n     services:\n       postgres:\n@@ -198,7 +198,7 @@\n   # Les captures (docs/migration/captures/webapp/) sont publiées en artefact.\n   e2e:\n     # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.\n-    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}\n+    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}\n     runs-on: ubuntu-latest\n     timeout-minutes: 40\n     services:\n@@ -455,7 +455,7 @@\n \n   image:\n     # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.\n-    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}\n+    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}\n     runs-on: ubuntu-latest\n     timeout-minutes: 30\n     services:\n"
+    }
+  ],
+  "additional_negative_oracles": [
+    {
+      "contexts": "Chaque route docs/169/171 avec repository absent ou différent, headrepo absent ou fork, base absent ou différent, event absent/push, head absent ou suffixe ajouté",
+      "expected_after_proposed_restriction": "Aucun job pur ; validate/e2e/image éligibles. Pas de fallback silencieux sur une route exacte avec diff documentaire invalide : job documentaire échoue et DB reste skipped.",
+      "proof_kind": "Déduction de la conjonction exacte à cinq prédicats, aucun code tiers exécuté"
+    }
+  ]
+}

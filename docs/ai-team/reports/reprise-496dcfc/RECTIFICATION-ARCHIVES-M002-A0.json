@@ -1,0 +1,13 @@
+{
+  "type": "Rectification explicite d'une synthèse A0, sans réécriture du checkpoint publié",
+  "checkpoint_concerne": "fa9f0db232f49007c5a8bebded4ffce530a5bf8f",
+  "erreur": "La mention de cinq originaux Mission002 inaccessibles déduite de14/19 était incorrecte.",
+  "source_canonique": "docs/ai-team/reports/mission-002-originals/manifest.json",
+  "rapport_de_recuperation": "docs/ai-team/reports/MISSION-003-RECUPERATION.md",
+  "fichiers_inventories": 19,
+  "archives_non_redondantes": 14,
+  "references_sans_duplication": ["A1-build.py", "DOSSIER-MISSION-002.md", "Fadi_Studio_Definition_Officielle_Reference_V2_1.txt", "Fadi_Studio_Referentiel_Technique_Detaille_V1_0.txt", "checklist.md"],
+  "fichiers_autonomes_historiques_non_retrouves": ["15 INV en extraction autonome", "11 IF en extraction autonome", "11 AC en extraction autonome", "18 fiches DEC en fichiers autonomes"],
+  "limite": "Les décisions/NAV/matrices intégrées aux rapports récupérés et les141 fiches normatives ultérieures gardent leurs provenances respectives. Absence d'un ancien fichier autonome ne signifie pas absence de son information ni perte de cinq rapports.",
+  "action": "Supprimer cette fausse cause des statuts et suites actifs ; conserver ce rectificatif et les snapshots Git historiques. Aucun fichier original inventé ou archivé une seconde fois."
+}

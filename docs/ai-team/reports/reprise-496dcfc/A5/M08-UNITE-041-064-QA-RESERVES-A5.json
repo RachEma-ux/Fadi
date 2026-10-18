@@ -1,0 +1,930 @@
+{
+  "review": "A5 qualité réserves 041-064",
+  "reference": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "semantic_owner": "A1",
+  "input": "/workspace/work/resume496/agents/A1/M08-UNITE-041-064-REVUE-A1.json",
+  "input_sha256": "40b12afe436431a7971bfa492a4188ac48ba4cf91be9ef8ef9d60a7c70d31805",
+  "A2_original_sha256": "45ee8808f103b7a062a30e5058d7becf1e0e41ebf8aaf4ca4e606b6ad7c59547",
+  "scope": "QA attribution/matrice complète/réserves ; A5 ne revendique pas relecture indépendante exhaustive des candidats de ces cohortes. Relecture ciblée des extraits delta seulement pour065/094.",
+  "rows": [
+    {
+      "entry_id": "M08-PATH-041",
+      "expected": "Rectangle décomposé quatre lignes",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-041",
+      "expected": "Extrémités quatre lignes jointives",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-041",
+      "expected": "Polyligne cinq sommets quatre lignes",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-041",
+      "expected": "Mur décomposition refusée",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-041",
+      "expected": "Cotation référencée à réparer aprèsdécomposition",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-041",
+      "expected": "Quatre propositions aprèsdécomposition",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-041",
+      "expected": "Inverse restaure objet etIDs",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-041",
+      "expected": "Même enveloppe mêmesIDs décomposition",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-043",
+      "expected": "Sommet polygone déplacé",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-043",
+      "expected": "Autres sommets inchangés",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-043",
+      "expected": "Insertion effectif correct",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-043",
+      "expected": "Insertion ordre correct",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-043",
+      "expected": "Suppression effectif etordre",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-043",
+      "expected": "Suppression sousminimum refusée",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-043",
+      "expected": "Polygone auto-sécant refusé",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-043",
+      "expected": "Coin rectangle redimensionné sans déformation",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-043",
+      "expected": "Mur extrémité déplacée parpoignée",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-043",
+      "expected": "Porte distance conservée parpoignée mur",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-043",
+      "expected": "Dalle insertion décale contour[i]",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-043",
+      "expected": "Cote àréparer aveccorrespondanceindices",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-043",
+      "expected": "Cercle rayon édité parpoignée",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-043",
+      "expected": "Inverse pointsDeControle bitàbit",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-047",
+      "expected": "Couverture des commandes déplacementDA02-01",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-047",
+      "expected": "Couverture rotationDA02-03",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-047",
+      "expected": "Couverture échelleDA02-05",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-047",
+      "expected": "Pas de réducteur propre au manipulateur",
+      "original_status": "nonconclu",
+      "active_status": "nonconclu",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-049",
+      "expected": "Prisme contour simple : maillage fermé",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-049",
+      "expected": "Prisme simple Euler V-E+F=2",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-049",
+      "expected": "n trous Euler2-2n",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-049",
+      "expected": "Volume maillage aire nette×hauteur toléranceDA01-01",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-049",
+      "expected": "Normales vers extérieur",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-049",
+      "expected": "Contour auto-sécant refusé",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-049",
+      "expected": "Même entrée : empreinteEntrees identique",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-049",
+      "expected": "Même entrée : mêmes sommets",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-049",
+      "expected": "Inverse extrusion restitue état",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-050",
+      "expected": "Prisme contour simple : maillage fermé",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-050",
+      "expected": "Prisme simple Euler V-E+F=2",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-050",
+      "expected": "n trous Euler2-2n",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-050",
+      "expected": "Volume maillage aire nette×hauteur toléranceDA01-01",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-050",
+      "expected": "Normales vers extérieur",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-050",
+      "expected": "Contour auto-sécant refusé",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-050",
+      "expected": "Même entrée : empreinteEntrees identique",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-050",
+      "expected": "Même entrée : mêmes sommets",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-050",
+      "expected": "Inverse extrusion restitue état",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-052",
+      "expected": "Mêmes paramètres/version deux exécutions : même empreinte",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-052",
+      "expected": "Mêmes paramètres/version même géométrie",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-052",
+      "expected": "Paramètre modifié nouvelleempreinte",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-052",
+      "expected": "Versionmoteur changée àrecalculer",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-052",
+      "expected": "Épaisseur mur modifiée : porte t conservé",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-052",
+      "expected": "Épaisseur modifiée emprise contrôlée",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-052",
+      "expected": "Cotation rattachée recalculée aprèsepaisseur",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-052",
+      "expected": "Champ dérivé refusé",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-052",
+      "expected": "Inverse modification paramétrique",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-054",
+      "expected": "Poignée mur →commande etvaleurscanoniques",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-054",
+      "expected": "Ouverture lelongmur →commande etvaleurs",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-054",
+      "expected": "Poignée largeurouverture →commandeetvaleurs",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-054",
+      "expected": "Dalle sommets →commandeetvaleurs",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-054",
+      "expected": "Poteau point/angle →commandeetvaleurs",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-054",
+      "expected": "Esquisse sommets →commandeetvaleurs",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-054",
+      "expected": "Solide contour →commandeetvaleurs",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-054",
+      "expected": "Solide faces haute/basse/latérales →paramètres",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-054",
+      "expected": "Geste ne modifie jamaismaillage dérivé",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-054",
+      "expected": "Geste annulé aucunecommande",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-054",
+      "expected": "Importé : modifierparamètres refusé",
+      "original_status": "present",
+      "active_status": "present",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-054",
+      "expected": "Importé : seuls transformer.* admis",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-054",
+      "expected": "Même réducteur navigateur/serveur mêmesrésultats",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-056",
+      "expected": "Trois solides extrudés puis groupés",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-056",
+      "expected": "Déplacement groupe troiscorps unlot",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-056",
+      "expected": "Volume ensemble sommevolumes",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-056",
+      "expected": "Chevauchement signalé",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-056",
+      "expected": "Suppressioncorps effetlisté",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-056",
+      "expected": "Inverse restitue groupe/corps",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-058",
+      "expected": "ImportP118 comptesparclasse égalrapport",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-058",
+      "expected": "Ouverturehorsemprise listée",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-058",
+      "expected": "Pièce désalignée listée",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-058",
+      "expected": "Relationsdérivées recalculées aprèsmur.modifier",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-058",
+      "expected": "Contrôles sans correction : étatidentique",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-058",
+      "expected": "Inverse restitue cohérence",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-060",
+      "expected": "Mur.modifierépaisseur : emprise recalculée",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-060",
+      "expected": "Alignementmodifié : axe inchangé",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-060",
+      "expected": "Ouvertures t inchangé aprèséditionconstruction",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-060",
+      "expected": "TypeId inconnu refusé",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-060",
+      "expected": "Valeurabsente nonévaluée ni0nivide",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-060",
+      "expected": "Exterieur nonrecalculé",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-060",
+      "expected": "Poteau statutConception conservételquel",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-060",
+      "expected": "Inverse éditionconstruction",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-062",
+      "expected": "Polygone4 extrudé hauteur exacte",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-062",
+      "expected": "DecalageBase exact",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-062",
+      "expected": "Volume =aire×hauteur",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-062",
+      "expected": "Rectangle avec trou volumeequalsaire nette×h",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-062",
+      "expected": "Directionbas baseabaissée",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-062",
+      "expected": "Directionbas hauteurpositive",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-062",
+      "expected": "Profilouvert refusé",
+      "original_status": "nonconclu",
+      "active_status": "nonconclu",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-062",
+      "expected": "Profilautosécant refusé",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-062",
+      "expected": "Hauteur0 refusée",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-062",
+      "expected": "Hauteur négative refusée",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-062",
+      "expected": "Unitéhauteur≠m refusée",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-062",
+      "expected": "Cercle refusé",
+      "original_status": "nonconclu",
+      "active_status": "nonconclu",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-062",
+      "expected": "Consommeresquisse suppriméedanslot",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-062",
+      "expected": "Inverse restitueinitial",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-064",
+      "expected": "Facehaute hauteurmodifiée",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-064",
+      "expected": "Facehaute basefixe",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-064",
+      "expected": "Facebasse sommetfixe",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-064",
+      "expected": "Facelatéralerectangle emprise modifiée",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-064",
+      "expected": "Sommetslatéraux intersections recalculées",
+      "original_status": "partiel",
+      "active_status": "partiel",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-064",
+      "expected": "Hauteur résultante0 refusée",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-064",
+      "expected": "Arêteannulée refusée",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-064",
+      "expected": "Auto-intersection refusée",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-064",
+      "expected": "Trousortant refusé",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-064",
+      "expected": "Contouropen facelatéralerefusée",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-064",
+      "expected": "Représentationimportée refusée",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    },
+    {
+      "entry_id": "M08-PATH-064",
+      "expected": "Inverse valeursbitàbit",
+      "original_status": "absent",
+      "active_status": "absent",
+      "semantic_owner": "A1",
+      "quality_note": "A5 vérifie attribution, granularité et réserves ; pas seconde lecture indépendante de tous candidats."
+    }
+  ],
+  "rows_checked": 112,
+  "active_counts": {
+    "absent": 75,
+    "partiel": 33,
+    "nonconclu": 3,
+    "present": 1
+  },
+  "delta": null,
+  "delta_exact_citations_checked": [],
+  "errors": [],
+  "reservations": [
+    "049/050 neuf attendus dupliqués :112lignes103attendus distincts,11fiches ; préserver deux anciens chemins.",
+    "Un refus modifiernom IFC ne prouve pas exhaustive restriction transformer.*.",
+    "Volume OCCT30 ne démontre fermeture/Euler/orientation natifs ; D177/182/183 ne dispensent pas ces oracles.",
+    "Cercle062 refus historique vs test positif : nonconclu, aucune supersession inventée."
+  ],
+  "verdict": "Recevable documentaire sous réserves explicites, aucune conformité globale",
+  "limits": [
+    "Présents=assertions statiques seulement ; partiels indirects ne valent couverture ciblée.",
+    "toThrow seul ne prouve atomicité ; inverse autre opération ne prouve tous inverses.",
+    "Contrôles citationsexhaustifs sources des auteurs attribués àA1, pas répétition complète A5.",
+    "Aucun test/application/API/DB/E2E/service, aucune case/gate/historique modifié."
+  ]
+}

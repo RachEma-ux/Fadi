@@ -11,6 +11,47 @@ concurrency:
 permissions:
   contents: read
 jobs:
+  studio-v1-validation:
+    name: Studio V1 — API, navigateur et réouverture sur PostGIS neuf
+    if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'feat/156-studio-v1' && (github.base_ref == 'main' || github.base_ref == 'fix/157-test-database-guard') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    env:
+      MIGRATE_ON_START: "0"
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Refuser les endpoints de validation étrangers sans connexion
+        run: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/validation -p 'test_studio_profile_guard.py' -v
+      - run: npm run typecheck
+      - name: Régression des paquets purs et du web sans setup DB historique
+        run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
+      - run: npm run test:db-guard
+      - run: npm run build
+      - name: Installer le Chromium attendu par Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Profil neuf, recette réelle et redémarrage borné
+        run: python3 scripts/validation/studio-v1-functional.py
+      - name: Publier seulement les preuves expurgées
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-v1-validation-${{ github.event.pull_request.head.sha }}
+          path: |
+            work/studio-v1-proof/report-*.json
+            work/studio-v1-proof/studio-*.png
+            work/studio-v1-proof/existing-atelier-seam.png
+          if-no-files-found: error
+
   mission-docs-pure:
     name: Mission 004 — documentation sans base (intégration non exécutée)
     if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main' }}
@@ -70,11 +111,11 @@ jobs:
           Les autres branches et push sur main conservent les jobs applicatifs ; cette exception est bornée à la préparation documentaire.
           SUMMARY
 
-  classification-pure:
-    name: Classification — modèle pur sans base (intégration non exécutée)
-    if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main' }}
+  db-guard-pure:
+    name: DB1/2 — tests simulés sans base (DB3 non validée)
+    if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     env:
       DATABASE_URL: ""
       TEST_DATABASE_URL: ""
@@ -87,29 +128,28 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Installer sans script de cycle de vie
+      - name: Installer sans aucun script de cycle de vie
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Vérifier les types sans exécuter le serveur
         run: npm run typecheck
-      - name: Suite complète pure du modèle Atelier
-        run: npm run test --workspace=@parcours/atelier-model
-      - name: Construire sans lancer API ni appliquer de schéma
+      - name: Garde DB — uniquement tests et connexions simulés
+        run: npm run test:db-guard
+      - name: Construire sans lancer l'application ni appliquer de schéma
         run: npm run build
-      - name: Expliciter la couverture et les limites du lot pur
+      - name: Rendre explicite le périmètre non exécuté
         if: always()
         run: |
           cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
-          ## A3-CLASSIF-1 — code pur, aucune base réelle
-          Types, suite complète du modèle Atelier et build seulement ; aucun serveur API ou PostgreSQL démarré.
-          Les jobs validate/e2e/image sont intentionnellement non exécutés sur cette branche exacte ; skipped ne signifie pas réussite d'intégration.
-          Aucune migration, recette API/E2E mutatrice ou validation d'une base réelle n'est effectuée.
-          Ce succès éventuel ne prouve ni correction des données historiques, ni recette métier complète, ni autorisation de fusion/déploiement.
-          Les échecs du job restent des échecs ; aucune assertion n'est ignorée pour obtenir un résultat vert.
+          ## A3-DB-1/2 : vérifications sans base réelle
+          Ce job ne démarre aucun service PostgreSQL/API, n'applique aucun schéma et n'exécute aucun test API/E2E mutateur.
+          Les jobs `validate`, `e2e` et `image` sont intentionnellement non exécutés sur cette seule PR de garde DB.
+          Leur statut skipped ne prouve aucune réussite d'intégration. DB-3, la recette fonctionnelle et la fusion restent non autorisées.
+          Les éventuels échecs des étapes de ce job restent des échecs ; ce résumé n'en modifie pas le verdict.
           SUMMARY
 
   validate:
     # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.
-    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}
+    if: ${{ (!((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main'))) && !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'feat/156-studio-v1' && (github.base_ref == 'main' || github.base_ref == 'fix/157-test-database-guard')) }}
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -162,7 +202,7 @@ jobs:
   # Les captures (docs/migration/captures/webapp/) sont publiées en artefact.
   e2e:
     # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.
-    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}
+    if: ${{ (!((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main'))) && !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'feat/156-studio-v1' && (github.base_ref == 'main' || github.base_ref == 'fix/157-test-database-guard')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     services:
@@ -419,7 +459,7 @@ jobs:
 
   image:
     # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.
-    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main')) }}
+    if: ${{ (!((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main'))) && !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'feat/156-studio-v1' && (github.base_ref == 'main' || github.base_ref == 'fix/157-test-database-guard')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:

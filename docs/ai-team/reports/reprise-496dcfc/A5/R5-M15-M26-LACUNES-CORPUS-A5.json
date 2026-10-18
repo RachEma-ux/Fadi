@@ -1,0 +1,2357 @@
+{
+  "ready": "R5 M15/M26 manifeste lacunes réelles, premier I/A.1",
+  "inputs": [
+    {
+      "path": "/workspace/work/mission004/agents/A5/CORPUS-LIMITES-P630.md",
+      "sha256": "9667051c2b6d0d6d215d299de3185ba8214881e219accf81ecd33d1f6b450da5"
+    },
+    {
+      "path": "/workspace/work/mission004/agents/A5/fixtures-manifest.json",
+      "sha256": "04fa52e93a3ab6b2eeee2d34b0e22fa6527deaa90ea16a42d2f0c659caea0ca6"
+    },
+    {
+      "path": "/workspace/work/mission004/agents/A5/studio-38-oracles-M004.csv",
+      "sha256": "65f599e6645d6a927cc6f114a2d61ce371e814b4e097091120faba49aca89fe4"
+    }
+  ],
+  "existing_test_count": 38,
+  "test_ids": [
+    "TEST-001",
+    "TEST-002",
+    "TEST-003",
+    "TEST-004",
+    "TEST-005",
+    "TEST-006",
+    "TEST-007",
+    "TEST-008",
+    "TEST-009",
+    "TEST-010",
+    "TEST-011",
+    "TEST-012",
+    "TEST-013",
+    "TEST-014",
+    "TEST-015",
+    "TEST-016",
+    "TEST-017",
+    "TEST-018",
+    "TEST-019",
+    "TEST-020",
+    "TEST-021",
+    "TEST-022",
+    "TEST-023",
+    "TEST-024",
+    "TEST-025",
+    "TEST-026",
+    "TEST-027",
+    "TEST-028",
+    "TEST-029",
+    "TEST-030",
+    "TEST-031",
+    "TEST-032",
+    "TEST-033",
+    "TEST-034",
+    "TEST-035",
+    "TEST-036",
+    "TEST-037",
+    "TEST-038"
+  ],
+  "corpora": [
+    {
+      "corpus": "S1",
+      "path": "/workspace/work/mission004/agents/A5/fixtures/S1.json",
+      "sha256": "7aaf1edcd2aa175e4e77f624c87a563f0d67a4048e31d190e4fb0f50b9e0238c",
+      "original_manifest_hash_matches": true,
+      "actual_documentary_fixture": {
+        "schema": "fixture-documentaire-proposee/1",
+        "provenance": "Création synthétique Mission004 sous délégation D01/D07 ; aucun client/production",
+        "rights": "Contenu original préparé pour Fadi ; aucune ressource externe",
+        "purpose": "Spécification de données, pas format import/API implémenté",
+        "frame": "local",
+        "coordinate_unit": "mm",
+        "execution": "Non exécuté dans Studio",
+        "approval": "Préparation autorisée, gate/réalisation Studio non acceptées",
+        "decisions": [
+          "Q-M003-D01",
+          "Q-M003-D02",
+          "Q-M003-D07"
+        ],
+        "performance_budgets": "À fixer DEC13, aucune capacité/latence garantie",
+        "corpus_id": "S1",
+        "label": "Détail2D indépendant",
+        "context": {
+          "projectId": "syn-pavillon",
+          "studyId": "syn-study-01",
+          "variantId": "syn-variant-A",
+          "revisionId": "syn-revision-01"
+        },
+        "requires_model_3d": false,
+        "entities": [
+          {
+            "id": "line-a",
+            "type": "line",
+            "a": [
+              0,
+              0
+            ],
+            "b": [
+              6000,
+              0
+            ]
+          },
+          {
+            "id": "line-b",
+            "type": "line",
+            "a": [
+              6000,
+              0
+            ],
+            "b": [
+              6000,
+              4000
+            ]
+          },
+          {
+            "id": "circle-a",
+            "type": "circle",
+            "center": [
+              3000,
+              2000
+            ],
+            "radius": 500
+          },
+          {
+            "id": "dim-a",
+            "type": "dimension",
+            "refs": [
+              "line-a"
+            ],
+            "expected_mm": 6000
+          },
+          {
+            "id": "label-a",
+            "type": "text",
+            "position": [
+              0,
+              500
+            ],
+            "text": "Détail synthétique / Synthetic detail"
+          }
+        ],
+        "oracles": {
+          "line_a_length_mm": 6000,
+          "line_b_length_mm": 4000,
+          "circle_radius_mm": 500,
+          "projected_area_rectangle_mm2": 24000000
+        },
+        "negative_variants": [
+          "Supprimer line-a et conserver dim-a : référence à résoudre, jamais cote valide inventée",
+          "Unité absente : refus/invalidation déclarée",
+          "Sauvegarde refusée : pas état enregistré/publication implicitement autorisée"
+        ]
+      },
+      "gap": "Hachures/blocs/contraintes/courbes, sérialisation contrat et attentes complètes.",
+      "test_ids": [
+        "TEST-001",
+        "TEST-004",
+        "TEST-005",
+        "TEST-006",
+        "TEST-007",
+        "TEST-016",
+        "TEST-017",
+        "TEST-019",
+        "TEST-022",
+        "TEST-025"
+      ],
+      "owner": "A5 avec A1 exigences et A2 contrat",
+      "state": "En cours, fixture documentaire partielle non exécutée",
+      "next_trigger": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget."
+    },
+    {
+      "corpus": "S2",
+      "path": "/workspace/work/mission004/agents/A5/fixtures/S2.json",
+      "sha256": "13e6f20368111ca3da701e1dc9dab5e5e099cd1deefe7306b853abf4d53b5e88",
+      "original_manifest_hash_matches": true,
+      "actual_documentary_fixture": {
+        "schema": "fixture-documentaire-proposee/1",
+        "provenance": "Création synthétique Mission004 sous délégation D01/D07 ; aucun client/production",
+        "rights": "Contenu original préparé pour Fadi ; aucune ressource externe",
+        "purpose": "Spécification de données, pas format import/API implémenté",
+        "frame": "local",
+        "coordinate_unit": "mm",
+        "execution": "Non exécuté dans Studio",
+        "approval": "Préparation autorisée, gate/réalisation Studio non acceptées",
+        "decisions": [
+          "Q-M003-D01",
+          "Q-M003-D02",
+          "Q-M003-D07"
+        ],
+        "performance_budgets": "À fixer DEC13, aucune capacité/latence garantie",
+        "corpus_id": "S2",
+        "label": "Mur associé et ouverture — oracle normatif TEST009/010",
+        "context": {
+          "projectId": "syn-pavillon",
+          "studyId": "syn-study-01",
+          "variantId": "syn-variant-A",
+          "revisionId": "syn-revision-01"
+        },
+        "source": "STUDIO-PLAN-001 TEST009/010 ; REF02 §19.2",
+        "wall": {
+          "id": "wall-a",
+          "length": 6000,
+          "height": 3000,
+          "thickness": 200
+        },
+        "opening": {
+          "id": "opening-a",
+          "hostId": "wall-a",
+          "width": 1000,
+          "height": 2100
+        },
+        "update": {
+          "openingWidth": 1200,
+          "revision": "syn-revision-02"
+        },
+        "oracles": {
+          "gross_mm3": 3600000000,
+          "deducted_before_mm3": 420000000,
+          "net_before_mm3": 3180000000,
+          "deducted_after_mm3": 504000000,
+          "net_after_mm3": 3096000000,
+          "net_before_m3": "3.180",
+          "net_after_m3": "3.096",
+          "historic_revision_unchanged": true,
+          "same_wall_id_in_2d_3d": true
+        },
+        "negative_variants": [
+          "Porte hors hôte : refus atomique ou résolution explicite",
+          "Modifier programme automatiquement depuis surface dessinée : interdit",
+          "Résultat calcul ancien : non engagé"
+        ]
+      },
+      "gap": "Plan de niveau pilote, croisements/références/hôtes et refus dans format exploitable.",
+      "test_ids": [
+        "TEST-003",
+        "TEST-008",
+        "TEST-009",
+        "TEST-010",
+        "TEST-011",
+        "TEST-012",
+        "TEST-022",
+        "TEST-024",
+        "TEST-025",
+        "TEST-026",
+        "TEST-027",
+        "TEST-028"
+      ],
+      "owner": "A5 avec A1 exigences et A2 contrat",
+      "state": "En cours, fixture documentaire partielle non exécutée",
+      "next_trigger": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget."
+    },
+    {
+      "corpus": "S3",
+      "path": "/workspace/work/mission004/agents/A5/fixtures/S3.json",
+      "sha256": "719c89a3df0bdefe6ead943af1c6f642b80e66b7ffd9dd1eb2eb087f8565cf12",
+      "original_manifest_hash_matches": true,
+      "actual_documentary_fixture": {
+        "schema": "fixture-documentaire-proposee/1",
+        "provenance": "Création synthétique Mission004 sous délégation D01/D07 ; aucun client/production",
+        "rights": "Contenu original préparé pour Fadi ; aucune ressource externe",
+        "purpose": "Spécification de données, pas format import/API implémenté",
+        "frame": "local",
+        "coordinate_unit": "mm",
+        "execution": "Non exécuté dans Studio",
+        "approval": "Préparation autorisée, gate/réalisation Studio non acceptées",
+        "decisions": [
+          "Q-M003-D01",
+          "Q-M003-D02",
+          "Q-M003-D07"
+        ],
+        "performance_budgets": "À fixer DEC13, aucune capacité/latence garantie",
+        "corpus_id": "S3",
+        "label": "Densité2D candidate, pas engagement capacité",
+        "context": {
+          "projectId": "syn-pavillon",
+          "studyId": "syn-study-01",
+          "variantId": "syn-variant-A",
+          "revisionId": "syn-revision-01"
+        },
+        "segments": [
+          {
+            "id": "seg-000",
+            "a": [
+              0,
+              0
+            ],
+            "b": [
+              0,
+              1000
+            ]
+          },
+          {
+            "id": "seg-001",
+            "a": [
+              100,
+              0
+            ],
+            "b": [
+              100,
+              1000
+            ]
+          },
+          {
+            "id": "seg-002",
+            "a": [
+              200,
+              0
+            ],
+            "b": [
+              200,
+              1000
+            ]
+          },
+          {
+            "id": "seg-003",
+            "a": [
+              300,
+              0
+            ],
+            "b": [
+              300,
+              1000
+            ]
+          },
+          {
+            "id": "seg-004",
+            "a": [
+              400,
+              0
+            ],
+            "b": [
+              400,
+              1000
+            ]
+          },
+          {
+            "id": "seg-005",
+            "a": [
+              500,
+              0
+            ],
+            "b": [
+              500,
+              1000
+            ]
+          },
+          {
+            "id": "seg-006",
+            "a": [
+              600,
+              0
+            ],
+            "b": [
+              600,
+              1000
+            ]
+          },
+          {
+            "id": "seg-007",
+            "a": [
+              700,
+              0
+            ],
+            "b": [
+              700,
+              1000
+            ]
+          },
+          {
+            "id": "seg-008",
+            "a": [
+              800,
+              0
+            ],
+            "b": [
+              800,
+              1000
+            ]
+          },
+          {
+            "id": "seg-009",
+            "a": [
+              900,
+              0
+            ],
+            "b": [
+              900,
+              1000
+            ]
+          },
+          {
+            "id": "seg-010",
+            "a": [
+              1000,
+              0
+            ],
+            "b": [
+              1000,
+              1000
+            ]
+          },
+          {
+            "id": "seg-011",
+            "a": [
+              1100,
+              0
+            ],
+            "b": [
+              1100,
+              1000
+            ]
+          },
+          {
+            "id": "seg-012",
+            "a": [
+              1200,
+              0
+            ],
+            "b": [
+              1200,
+              1000
+            ]
+          },
+          {
+            "id": "seg-013",
+            "a": [
+              1300,
+              0
+            ],
+            "b": [
+              1300,
+              1000
+            ]
+          },
+          {
+            "id": "seg-014",
+            "a": [
+              1400,
+              0
+            ],
+            "b": [
+              1400,
+              1000
+            ]
+          },
+          {
+            "id": "seg-015",
+            "a": [
+              1500,
+              0
+            ],
+            "b": [
+              1500,
+              1000
+            ]
+          },
+          {
+            "id": "seg-016",
+            "a": [
+              1600,
+              0
+            ],
+            "b": [
+              1600,
+              1000
+            ]
+          },
+          {
+            "id": "seg-017",
+            "a": [
+              1700,
+              0
+            ],
+            "b": [
+              1700,
+              1000
+            ]
+          },
+          {
+            "id": "seg-018",
+            "a": [
+              1800,
+              0
+            ],
+            "b": [
+              1800,
+              1000
+            ]
+          },
+          {
+            "id": "seg-019",
+            "a": [
+              1900,
+              0
+            ],
+            "b": [
+              1900,
+              1000
+            ]
+          },
+          {
+            "id": "seg-020",
+            "a": [
+              2000,
+              0
+            ],
+            "b": [
+              2000,
+              1000
+            ]
+          },
+          {
+            "id": "seg-021",
+            "a": [
+              2100,
+              0
+            ],
+            "b": [
+              2100,
+              1000
+            ]
+          },
+          {
+            "id": "seg-022",
+            "a": [
+              2200,
+              0
+            ],
+            "b": [
+              2200,
+              1000
+            ]
+          },
+          {
+            "id": "seg-023",
+            "a": [
+              2300,
+              0
+            ],
+            "b": [
+              2300,
+              1000
+            ]
+          },
+          {
+            "id": "seg-024",
+            "a": [
+              2400,
+              0
+            ],
+            "b": [
+              2400,
+              1000
+            ]
+          },
+          {
+            "id": "seg-025",
+            "a": [
+              2500,
+              0
+            ],
+            "b": [
+              2500,
+              1000
+            ]
+          },
+          {
+            "id": "seg-026",
+            "a": [
+              2600,
+              0
+            ],
+            "b": [
+              2600,
+              1000
+            ]
+          },
+          {
+            "id": "seg-027",
+            "a": [
+              2700,
+              0
+            ],
+            "b": [
+              2700,
+              1000
+            ]
+          },
+          {
+            "id": "seg-028",
+            "a": [
+              2800,
+              0
+            ],
+            "b": [
+              2800,
+              1000
+            ]
+          },
+          {
+            "id": "seg-029",
+            "a": [
+              2900,
+              0
+            ],
+            "b": [
+              2900,
+              1000
+            ]
+          },
+          {
+            "id": "seg-030",
+            "a": [
+              3000,
+              0
+            ],
+            "b": [
+              3000,
+              1000
+            ]
+          },
+          {
+            "id": "seg-031",
+            "a": [
+              3100,
+              0
+            ],
+            "b": [
+              3100,
+              1000
+            ]
+          },
+          {
+            "id": "seg-032",
+            "a": [
+              3200,
+              0
+            ],
+            "b": [
+              3200,
+              1000
+            ]
+          },
+          {
+            "id": "seg-033",
+            "a": [
+              3300,
+              0
+            ],
+            "b": [
+              3300,
+              1000
+            ]
+          },
+          {
+            "id": "seg-034",
+            "a": [
+              3400,
+              0
+            ],
+            "b": [
+              3400,
+              1000
+            ]
+          },
+          {
+            "id": "seg-035",
+            "a": [
+              3500,
+              0
+            ],
+            "b": [
+              3500,
+              1000
+            ]
+          },
+          {
+            "id": "seg-036",
+            "a": [
+              3600,
+              0
+            ],
+            "b": [
+              3600,
+              1000
+            ]
+          },
+          {
+            "id": "seg-037",
+            "a": [
+              3700,
+              0
+            ],
+            "b": [
+              3700,
+              1000
+            ]
+          },
+          {
+            "id": "seg-038",
+            "a": [
+              3800,
+              0
+            ],
+            "b": [
+              3800,
+              1000
+            ]
+          },
+          {
+            "id": "seg-039",
+            "a": [
+              3900,
+              0
+            ],
+            "b": [
+              3900,
+              1000
+            ]
+          },
+          {
+            "id": "seg-040",
+            "a": [
+              4000,
+              0
+            ],
+            "b": [
+              4000,
+              1000
+            ]
+          },
+          {
+            "id": "seg-041",
+            "a": [
+              4100,
+              0
+            ],
+            "b": [
+              4100,
+              1000
+            ]
+          },
+          {
+            "id": "seg-042",
+            "a": [
+              4200,
+              0
+            ],
+            "b": [
+              4200,
+              1000
+            ]
+          },
+          {
+            "id": "seg-043",
+            "a": [
+              4300,
+              0
+            ],
+            "b": [
+              4300,
+              1000
+            ]
+          },
+          {
+            "id": "seg-044",
+            "a": [
+              4400,
+              0
+            ],
+            "b": [
+              4400,
+              1000
+            ]
+          },
+          {
+            "id": "seg-045",
+            "a": [
+              4500,
+              0
+            ],
+            "b": [
+              4500,
+              1000
+            ]
+          },
+          {
+            "id": "seg-046",
+            "a": [
+              4600,
+              0
+            ],
+            "b": [
+              4600,
+              1000
+            ]
+          },
+          {
+            "id": "seg-047",
+            "a": [
+              4700,
+              0
+            ],
+            "b": [
+              4700,
+              1000
+            ]
+          },
+          {
+            "id": "seg-048",
+            "a": [
+              4800,
+              0
+            ],
+            "b": [
+              4800,
+              1000
+            ]
+          },
+          {
+            "id": "seg-049",
+            "a": [
+              4900,
+              0
+            ],
+            "b": [
+              4900,
+              1000
+            ]
+          },
+          {
+            "id": "seg-050",
+            "a": [
+              5000,
+              0
+            ],
+            "b": [
+              5000,
+              1000
+            ]
+          },
+          {
+            "id": "seg-051",
+            "a": [
+              5100,
+              0
+            ],
+            "b": [
+              5100,
+              1000
+            ]
+          },
+          {
+            "id": "seg-052",
+            "a": [
+              5200,
+              0
+            ],
+            "b": [
+              5200,
+              1000
+            ]
+          },
+          {
+            "id": "seg-053",
+            "a": [
+              5300,
+              0
+            ],
+            "b": [
+              5300,
+              1000
+            ]
+          },
+          {
+            "id": "seg-054",
+            "a": [
+              5400,
+              0
+            ],
+            "b": [
+              5400,
+              1000
+            ]
+          },
+          {
+            "id": "seg-055",
+            "a": [
+              5500,
+              0
+            ],
+            "b": [
+              5500,
+              1000
+            ]
+          },
+          {
+            "id": "seg-056",
+            "a": [
+              5600,
+              0
+            ],
+            "b": [
+              5600,
+              1000
+            ]
+          },
+          {
+            "id": "seg-057",
+            "a": [
+              5700,
+              0
+            ],
+            "b": [
+              5700,
+              1000
+            ]
+          },
+          {
+            "id": "seg-058",
+            "a": [
+              5800,
+              0
+            ],
+            "b": [
+              5800,
+              1000
+            ]
+          },
+          {
+            "id": "seg-059",
+            "a": [
+              5900,
+              0
+            ],
+            "b": [
+              5900,
+              1000
+            ]
+          },
+          {
+            "id": "seg-060",
+            "a": [
+              6000,
+              0
+            ],
+            "b": [
+              6000,
+              1000
+            ]
+          },
+          {
+            "id": "seg-061",
+            "a": [
+              6100,
+              0
+            ],
+            "b": [
+              6100,
+              1000
+            ]
+          },
+          {
+            "id": "seg-062",
+            "a": [
+              6200,
+              0
+            ],
+            "b": [
+              6200,
+              1000
+            ]
+          },
+          {
+            "id": "seg-063",
+            "a": [
+              6300,
+              0
+            ],
+            "b": [
+              6300,
+              1000
+            ]
+          },
+          {
+            "id": "seg-064",
+            "a": [
+              6400,
+              0
+            ],
+            "b": [
+              6400,
+              1000
+            ]
+          },
+          {
+            "id": "seg-065",
+            "a": [
+              6500,
+              0
+            ],
+            "b": [
+              6500,
+              1000
+            ]
+          },
+          {
+            "id": "seg-066",
+            "a": [
+              6600,
+              0
+            ],
+            "b": [
+              6600,
+              1000
+            ]
+          },
+          {
+            "id": "seg-067",
+            "a": [
+              6700,
+              0
+            ],
+            "b": [
+              6700,
+              1000
+            ]
+          },
+          {
+            "id": "seg-068",
+            "a": [
+              6800,
+              0
+            ],
+            "b": [
+              6800,
+              1000
+            ]
+          },
+          {
+            "id": "seg-069",
+            "a": [
+              6900,
+              0
+            ],
+            "b": [
+              6900,
+              1000
+            ]
+          },
+          {
+            "id": "seg-070",
+            "a": [
+              7000,
+              0
+            ],
+            "b": [
+              7000,
+              1000
+            ]
+          },
+          {
+            "id": "seg-071",
+            "a": [
+              7100,
+              0
+            ],
+            "b": [
+              7100,
+              1000
+            ]
+          },
+          {
+            "id": "seg-072",
+            "a": [
+              7200,
+              0
+            ],
+            "b": [
+              7200,
+              1000
+            ]
+          },
+          {
+            "id": "seg-073",
+            "a": [
+              7300,
+              0
+            ],
+            "b": [
+              7300,
+              1000
+            ]
+          },
+          {
+            "id": "seg-074",
+            "a": [
+              7400,
+              0
+            ],
+            "b": [
+              7400,
+              1000
+            ]
+          },
+          {
+            "id": "seg-075",
+            "a": [
+              7500,
+              0
+            ],
+            "b": [
+              7500,
+              1000
+            ]
+          },
+          {
+            "id": "seg-076",
+            "a": [
+              7600,
+              0
+            ],
+            "b": [
+              7600,
+              1000
+            ]
+          },
+          {
+            "id": "seg-077",
+            "a": [
+              7700,
+              0
+            ],
+            "b": [
+              7700,
+              1000
+            ]
+          },
+          {
+            "id": "seg-078",
+            "a": [
+              7800,
+              0
+            ],
+            "b": [
+              7800,
+              1000
+            ]
+          },
+          {
+            "id": "seg-079",
+            "a": [
+              7900,
+              0
+            ],
+            "b": [
+              7900,
+              1000
+            ]
+          },
+          {
+            "id": "seg-080",
+            "a": [
+              8000,
+              0
+            ],
+            "b": [
+              8000,
+              1000
+            ]
+          },
+          {
+            "id": "seg-081",
+            "a": [
+              8100,
+              0
+            ],
+            "b": [
+              8100,
+              1000
+            ]
+          },
+          {
+            "id": "seg-082",
+            "a": [
+              8200,
+              0
+            ],
+            "b": [
+              8200,
+              1000
+            ]
+          },
+          {
+            "id": "seg-083",
+            "a": [
+              8300,
+              0
+            ],
+            "b": [
+              8300,
+              1000
+            ]
+          },
+          {
+            "id": "seg-084",
+            "a": [
+              8400,
+              0
+            ],
+            "b": [
+              8400,
+              1000
+            ]
+          },
+          {
+            "id": "seg-085",
+            "a": [
+              8500,
+              0
+            ],
+            "b": [
+              8500,
+              1000
+            ]
+          },
+          {
+            "id": "seg-086",
+            "a": [
+              8600,
+              0
+            ],
+            "b": [
+              8600,
+              1000
+            ]
+          },
+          {
+            "id": "seg-087",
+            "a": [
+              8700,
+              0
+            ],
+            "b": [
+              8700,
+              1000
+            ]
+          },
+          {
+            "id": "seg-088",
+            "a": [
+              8800,
+              0
+            ],
+            "b": [
+              8800,
+              1000
+            ]
+          },
+          {
+            "id": "seg-089",
+            "a": [
+              8900,
+              0
+            ],
+            "b": [
+              8900,
+              1000
+            ]
+          },
+          {
+            "id": "seg-090",
+            "a": [
+              9000,
+              0
+            ],
+            "b": [
+              9000,
+              1000
+            ]
+          },
+          {
+            "id": "seg-091",
+            "a": [
+              9100,
+              0
+            ],
+            "b": [
+              9100,
+              1000
+            ]
+          },
+          {
+            "id": "seg-092",
+            "a": [
+              9200,
+              0
+            ],
+            "b": [
+              9200,
+              1000
+            ]
+          },
+          {
+            "id": "seg-093",
+            "a": [
+              9300,
+              0
+            ],
+            "b": [
+              9300,
+              1000
+            ]
+          },
+          {
+            "id": "seg-094",
+            "a": [
+              9400,
+              0
+            ],
+            "b": [
+              9400,
+              1000
+            ]
+          },
+          {
+            "id": "seg-095",
+            "a": [
+              9500,
+              0
+            ],
+            "b": [
+              9500,
+              1000
+            ]
+          },
+          {
+            "id": "seg-096",
+            "a": [
+              9600,
+              0
+            ],
+            "b": [
+              9600,
+              1000
+            ]
+          },
+          {
+            "id": "seg-097",
+            "a": [
+              9700,
+              0
+            ],
+            "b": [
+              9700,
+              1000
+            ]
+          },
+          {
+            "id": "seg-098",
+            "a": [
+              9800,
+              0
+            ],
+            "b": [
+              9800,
+              1000
+            ]
+          },
+          {
+            "id": "seg-099",
+            "a": [
+              9900,
+              0
+            ],
+            "b": [
+              9900,
+              1000
+            ]
+          }
+        ],
+        "snapping_query": {
+          "point": [
+            450,
+            500
+          ],
+          "tie_candidates": [
+            "seg-004",
+            "seg-005"
+          ],
+          "distance_exact_mm": 50
+        },
+        "oracles": {
+          "segment_count": 100,
+          "reference_algorithm": "Balayage exhaustif sans index, distance géométrique calculée sur primitives ; règle priorité/égalité à figer par contrat",
+          "accelerated_same_target_point_priority": true
+        },
+        "negative_variants": [
+          "Index périmé après suppressionseg004",
+          "Zoom/unité modifiés : ne pas changer arbitrairement priorité",
+          "Égalité non spécifiée : Bloqué contrat, pas sélection imaginée"
+        ]
+      },
+      "gap": "Densité/superpositions/intersections, priorités égalité adoptées et traces algorithme.",
+      "test_ids": [
+        "TEST-022",
+        "TEST-025"
+      ],
+      "owner": "A5 avec A1 exigences et A2 contrat",
+      "state": "En cours, fixture documentaire partielle non exécutée",
+      "next_trigger": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget."
+    },
+    {
+      "corpus": "S4",
+      "path": "/workspace/work/mission004/agents/A5/fixtures/S4.json",
+      "sha256": "7885150682612d0e3034087b4f9087d437e6aa1ef411d6e4679352492268541d",
+      "original_manifest_hash_matches": true,
+      "actual_documentary_fixture": {
+        "schema": "fixture-documentaire-proposee/1",
+        "provenance": "Création synthétique Mission004 sous délégation D01/D07 ; aucun client/production",
+        "rights": "Contenu original préparé pour Fadi ; aucune ressource externe",
+        "purpose": "Spécification de données, pas format import/API implémenté",
+        "frame": "local",
+        "coordinate_unit": "mm",
+        "execution": "Non exécuté dans Studio",
+        "approval": "Préparation autorisée, gate/réalisation Studio non acceptées",
+        "decisions": [
+          "Q-M003-D01",
+          "Q-M003-D02",
+          "Q-M003-D07"
+        ],
+        "performance_budgets": "À fixer DEC13, aucune capacité/latence garantie",
+        "corpus_id": "S4",
+        "label": "Deux niveaux et instances, jeu de coordination réduit",
+        "context": {
+          "projectId": "syn-pavillon",
+          "studyId": "syn-study-01",
+          "variantId": "syn-variant-A",
+          "revisionId": "syn-revision-01"
+        },
+        "levels": [
+          {
+            "id": "level-0",
+            "elevation": 0
+          },
+          {
+            "id": "level-1",
+            "elevation": 3000
+          }
+        ],
+        "instances": [
+          {
+            "id": "column-0",
+            "levelId": "level-0",
+            "familyId": "column-syn",
+            "origin": [
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "id": "column-1",
+            "levelId": "level-1",
+            "familyId": "column-syn",
+            "origin": [
+              0,
+              0,
+              3000
+            ]
+          }
+        ],
+        "other_project": {
+          "projectId": "syn-forbidden",
+          "objectId": "foreign-column"
+        },
+        "oracles": {
+          "level_count": 2,
+          "instance_count": 2,
+          "instance_ids_distinct": true,
+          "picking_preserves_source_identity": true,
+          "cross_project_server_access_refused": true
+        },
+        "negative_variants": [
+          "Instance supprimée mais index conservé : jamais sélectionner autre instance",
+          "Identifiant foreign-column dans URL/job/export : refus sans fuite"
+        ],
+        "limit": "Deux niveaux synthétiques ne démontrent pas capacité immeuble dense ni conception structurelle réglementaire"
+      },
+      "gap": "Structure/réseaux/composants adaptés immeuble ; pas validation réglementaire inventée.",
+      "test_ids": [
+        "TEST-003",
+        "TEST-023",
+        "TEST-024",
+        "TEST-028",
+        "TEST-035",
+        "TEST-038"
+      ],
+      "owner": "A5 avec A1 exigences et A2 contrat",
+      "state": "En cours, fixture documentaire partielle non exécutée",
+      "next_trigger": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget."
+    },
+    {
+      "corpus": "S5",
+      "path": "/workspace/work/mission004/agents/A5/fixtures/S5.json",
+      "sha256": "53659cd76c46f44d6e5acd39e8de2c3a3b3495b52d622a1650a06f1bb8b3243c",
+      "original_manifest_hash_matches": true,
+      "actual_documentary_fixture": {
+        "schema": "fixture-documentaire-proposee/1",
+        "provenance": "Création synthétique Mission004 sous délégation D01/D07 ; aucun client/production",
+        "rights": "Contenu original préparé pour Fadi ; aucune ressource externe",
+        "purpose": "Spécification de données, pas format import/API implémenté",
+        "frame": "local",
+        "coordinate_unit": "mm",
+        "execution": "Non exécuté dans Studio",
+        "approval": "Préparation autorisée, gate/réalisation Studio non acceptées",
+        "decisions": [
+          "Q-M003-D01",
+          "Q-M003-D02",
+          "Q-M003-D07"
+        ],
+        "performance_budgets": "À fixer DEC13, aucune capacité/latence garantie",
+        "corpus_id": "S5",
+        "label": "Création3D directe indépendante — solide mathématique",
+        "context": {
+          "projectId": "syn-pavillon",
+          "studyId": "syn-study-01",
+          "variantId": "syn-variant-A",
+          "revisionId": "syn-revision-01"
+        },
+        "requires_2d_sketch": false,
+        "solid": {
+          "id": "solid-a",
+          "type": "cuboid",
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "size": [
+            2000,
+            3000,
+            4000
+          ]
+        },
+        "section": {
+          "plane": "z=2000mm",
+          "expected_rectangle_size": [
+            2000,
+            3000
+          ]
+        },
+        "oracles": {
+          "volume_mm3": 24000000000,
+          "volume_m3": "24",
+          "section_area_mm2": 6000000,
+          "section_area_m2": "6",
+          "source_id_restored_after_save_reopen": "solid-a"
+        },
+        "negative_variants": [
+          "Dimension négative : refus atomique",
+          "Worker résultat révisionprécédente : non engagé",
+          "Crash/annulation : modèlecommitted et références intacts"
+        ],
+        "limit": "Valeurs synthétiques choisies pour oracle mathématique, pas exigence dimensionnelle réglementaire"
+      },
+      "gap": "Booléens/courbes/surfaces complexes représentatives, oracles topologiques et format stable.",
+      "test_ids": [
+        "TEST-002",
+        "TEST-004",
+        "TEST-005",
+        "TEST-006",
+        "TEST-007",
+        "TEST-014",
+        "TEST-015",
+        "TEST-016",
+        "TEST-023",
+        "TEST-026",
+        "TEST-028",
+        "TEST-032",
+        "TEST-037"
+      ],
+      "owner": "A5 avec A1 exigences et A2 contrat",
+      "state": "En cours, fixture documentaire partielle non exécutée",
+      "next_trigger": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget."
+    },
+    {
+      "corpus": "S6",
+      "path": "/workspace/work/mission004/agents/A5/fixtures/S6.json",
+      "sha256": "fd8845ba3d359e40cfc1d9e64d0dff8257610f3f110cff8ad5355696df47ec9c",
+      "original_manifest_hash_matches": true,
+      "actual_documentary_fixture": {
+        "schema": "fixture-documentaire-proposee/1",
+        "provenance": "Création synthétique Mission004 sous délégation D01/D07 ; aucun client/production",
+        "rights": "Contenu original préparé pour Fadi ; aucune ressource externe",
+        "purpose": "Spécification de données, pas format import/API implémenté",
+        "frame": "local",
+        "coordinate_unit": "mm",
+        "execution": "Non exécuté dans Studio",
+        "approval": "Préparation autorisée, gate/réalisation Studio non acceptées",
+        "decisions": [
+          "Q-M003-D01",
+          "Q-M003-D02",
+          "Q-M003-D07"
+        ],
+        "performance_budgets": "À fixer DEC13, aucune capacité/latence garantie",
+        "corpus_id": "S6",
+        "label": "Études, variantes, révisions, permissions et manifeste",
+        "context": {
+          "projectId": "syn-pavillon",
+          "studyId": "syn-study-01",
+          "variantId": "syn-variant-A",
+          "revisionId": "syn-revision-01"
+        },
+        "roles": {
+          "designer": [
+            "edit"
+          ],
+          "approver": [
+            "approve"
+          ],
+          "publisher": [
+            "publish"
+          ],
+          "explicit_combined_role": [
+            "approve",
+            "publish"
+          ]
+        },
+        "revisions": [
+          {
+            "id": "syn-revision-01",
+            "wallNetM3": "3.180",
+            "immutable_after_approval": true
+          },
+          {
+            "id": "syn-revision-02",
+            "wallNetM3": "3.096",
+            "approved": false
+          }
+        ],
+        "publication_candidate": {
+          "source_revisions": [
+            "syn-revision-01"
+          ],
+          "requires_approved_exact_manifest": true,
+          "hash_values": "À calculer sur sérialisation contractuelle versionnée ; ne pas inventer hash de modèle non implémenté"
+        },
+        "oracles": {
+          "approve_is_not_publish": true,
+          "change_after_approval_requires_new_decision": true,
+          "old_revision_value_unchanged": "3.180",
+          "no_silent_privilege_grant": true
+        },
+        "negative_variants": [
+          "approver tente publier sanspublish : refus serveur",
+          "publisher tente approuver sansapprove : refus serveur",
+          "Source remplacée après approbation : publication ancienmanifeste refusée/nouvelleapprobation",
+          "PartageURL mélange study/variant autreprojet : refus"
+        ]
+      },
+      "gap": "Dossiers/modèles/contrôles effectifs du contrat, sérialisation/manifeste hash et snapshots restaurables.",
+      "test_ids": [
+        "TEST-001",
+        "TEST-002",
+        "TEST-010",
+        "TEST-011",
+        "TEST-012",
+        "TEST-014",
+        "TEST-018",
+        "TEST-019",
+        "TEST-027",
+        "TEST-029",
+        "TEST-030",
+        "TEST-031",
+        "TEST-032",
+        "TEST-033",
+        "TEST-034",
+        "TEST-035",
+        "TEST-038"
+      ],
+      "owner": "A5 avec A1 exigences et A2 contrat",
+      "state": "En cours, fixture documentaire partielle non exécutée",
+      "next_trigger": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget."
+    },
+    {
+      "corpus": "S7",
+      "path": "/workspace/work/mission004/agents/A5/fixtures/S7.json",
+      "sha256": "997ebca9d3a76ef07f20419a41bbf6e39ef184b164ec19af1aecf44699fc6008",
+      "original_manifest_hash_matches": true,
+      "actual_documentary_fixture": {
+        "schema": "fixture-documentaire-proposee/1",
+        "provenance": "Création synthétique Mission004 sous délégation D01/D07 ; aucun client/production",
+        "rights": "Contenu original préparé pour Fadi ; aucune ressource externe",
+        "purpose": "Spécification de données, pas format import/API implémenté",
+        "frame": "local",
+        "coordinate_unit": "mm",
+        "execution": "Non exécuté dans Studio",
+        "approval": "Préparation autorisée, gate/réalisation Studio non acceptées",
+        "decisions": [
+          "Q-M003-D01",
+          "Q-M003-D02",
+          "Q-M003-D07"
+        ],
+        "performance_budgets": "À fixer DEC13, aucune capacité/latence garantie",
+        "corpus_id": "S7",
+        "label": "Fileoffline puis revalidation",
+        "context": {
+          "projectId": "syn-pavillon",
+          "studyId": "syn-study-01",
+          "variantId": "syn-variant-A",
+          "revisionId": "syn-revision-01"
+        },
+        "profile": {
+          "id": "profile-local",
+          "cachedTools": [
+            "line"
+          ],
+          "notCachedTools": [
+            "rare-exact-tool"
+          ]
+        },
+        "queued_command": {
+          "requestId": "syn-request-01",
+          "baseRevision": "syn-revision-01",
+          "operation": "synthetic-design-command",
+          "author": "designer"
+        },
+        "transport_scenarios": [
+          "offline",
+          "response-lost-after-server-commit",
+          "reconnect",
+          "repeat-same-request",
+          "permission-revoked-before-reconnect"
+        ],
+        "oracles": {
+          "same_request_applied_at_most_once": true,
+          "mutation_count_after_successful_retry": 1,
+          "unknown_cached_tool_not_available": true,
+          "server_permission_revalidated": true,
+          "no_publication_before_reconnect_validation": true,
+          "incompatible_sw_preserves_pending_queue": true
+        },
+        "negative_variants": [
+          "Même requestId payloadmodifié : refus contrat",
+          "Droit révoqué : commande non committée et étatlocal récupérable",
+          "MiseàjourSW incompatible : pas effacementfile"
+        ],
+        "limit": "Aucun stockageIndexedDB ni réseau exécuté ; séquence prescrite seulement"
+      },
+      "gap": "États locaux versionnés, snapshots, protocole SW/quota/reconnexion exécutable après contrat.",
+      "test_ids": [
+        "TEST-013",
+        "TEST-020",
+        "TEST-021",
+        "TEST-034",
+        "TEST-036"
+      ],
+      "owner": "A5 avec A1 exigences et A2 contrat",
+      "state": "En cours, fixture documentaire partielle non exécutée",
+      "next_trigger": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget."
+    }
+  ],
+  "oracle_links": [
+    {
+      "id": "TEST-001",
+      "corpus": "S1;S6",
+      "lots": "A;E",
+      "NAV": "NAV-002;NAV-003;NAV-004;NAV-007",
+      "positive": "Même dessin/identités/unités, cotes et manifeste après réouverture ; aucun modèle3D nécessaire.",
+      "negative": "Refus explicite sans faux succès/published ; dessin récupérable et pas de modèle3D créé.",
+      "eliminatory": "Modèle3D imposé, perte du dessin, publication sans droit ou manifeste.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "366",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-002",
+      "corpus": "S5;S6",
+      "lots": "A",
+      "NAV": "NAV-002;NAV-004;NAV-007",
+      "positive": "Géométrie3D et identités restaurées ; vue dérivée conforme, pas esquisse2D imposée.",
+      "negative": "Refus atomique de géométrie invalide ; accès3D indépendant maintenu.",
+      "eliminatory": "Perte/corruption3D, obligation esquisse2D ou vue fausse.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "367",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-003",
+      "corpus": "S2;S4",
+      "lots": "A",
+      "NAV": "NAV-005;NAV-006",
+      "positive": "Même objectId/paramètres/hôtes ; projections cohérentes après chaque commande.",
+      "negative": "Rejet/conflit explicite ; aucune seconde source concurrente.",
+      "eliminatory": "Deux objets maîtres divergents ou écrasement silencieux.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "368",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-004",
+      "corpus": "S1;S5",
+      "lots": "A",
+      "NAV": "NAV-007",
+      "positive": "Nouveaux IDs ; modifier copie ne change jamais source.",
+      "negative": "Aucune mutation source, absence de référence active cachée.",
+      "eliminatory": "Identités réutilisées ou propagation vers source.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "369",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-005",
+      "corpus": "S1;S5",
+      "lots": "A",
+      "NAV": "NAV-005",
+      "positive": "Volume attendu/orientation/suivi stockés ; profil reste identifiable.",
+      "negative": "Commande refusée sans solide partiel ni hauteur inventée.",
+      "eliminatory": "Valeur implicite non déclarée, transaction partielle.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "370",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-006",
+      "corpus": "S1;S5",
+      "lots": "A",
+      "NAV": "NAV-007",
+      "positive": "Recalcul correct ou invalidation explicite du volume dépendant.",
+      "negative": "Réponse périmée ignorée ; travail actuel non remplacé.",
+      "eliminatory": "Ancien volume marqué courant ou géométrie divergente silencieuse.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "371",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-007",
+      "corpus": "S1;S5",
+      "lots": "A",
+      "NAV": "NAV-007",
+      "positive": "Cote rattachée avec preuve stable ou état à résoudre clairement identifié.",
+      "negative": "Pas de rattachement approximatif silencieux ; publication bloquée ou réserve explicite selon contrat approuvé.",
+      "eliminatory": "Cote apparemment valide sur mauvaise face.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "372",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-008",
+      "corpus": "S2",
+      "lots": "A",
+      "NAV": "NAV-007",
+      "positive": "Hôte/position/quantités cohérents, transaction entière.",
+      "negative": "Refus atomique ou résolution explicite décidée ; aucune géométrie partielle.",
+      "eliminatory": "Porte sans hôte rendue valide ou demi-transaction.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "373",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-009",
+      "corpus": "S2",
+      "lots": "A;E",
+      "NAV": "NAV-006",
+      "positive": "Brut3,600m³ ; déduit0,420m³ ; net3,180m³ ; mêmes valeurs documentées.",
+      "negative": "Refus/invalidation explicite sans volume net trompeur.",
+      "eliminatory": "Quantité incorrecte ou source/unité perdue.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "374",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-010",
+      "corpus": "S2;S6",
+      "lots": "A;E",
+      "NAV": "NAV-006",
+      "positive": "Net3,096m³ actuel ; révision historique garde3,180m³.",
+      "negative": "Ancien manifeste/révision inchangés et clairement identifiés.",
+      "eliminatory": "Historique réécrit ou ancien dossier remplacé silencieusement.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "375",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-011",
+      "corpus": "S2;S6",
+      "lots": "A",
+      "NAV": "NAV-007",
+      "positive": "Références, métrés et affichage reviennent exactement aux états attendus.",
+      "negative": "Conflit/règle explicite ; aucune perte du travail autrui ni publication.",
+      "eliminatory": "Undo écrase autrui ou supprime historique publié.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "376",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-012",
+      "corpus": "S2;S6",
+      "lots": "A;X",
+      "NAV": "NAV-007",
+      "positive": "Une validation, seconde revalidation/conflit affiché ; données serveur autoritaires.",
+      "negative": "Refus serveur sans last-write-wins ni écrasement.",
+      "eliminatory": "Deux validations divergentes sur même base sans résolution.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "377",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-013",
+      "corpus": "S7",
+      "lots": "A;R",
+      "NAV": "NAV-007",
+      "positive": "Une seule application et même résultat serveur.",
+      "negative": "Refus de divergence ou contrat idempotence explicite ; jamais deuxième mutation.",
+      "eliminatory": "Double application ou confusion identité/contenu.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "378",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-014",
+      "corpus": "S5;S6",
+      "lots": "A;D",
+      "NAV": "NAV-008",
+      "positive": "Résultat validé et engagé atomiquement pour révision correspondante.",
+      "negative": "Marqué périmé, non engagé ; attente terminée proprement.",
+      "eliminatory": "Résultat périmé remplace modèle courant.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "379",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-015",
+      "corpus": "S5",
+      "lots": "D",
+      "NAV": "NAV-008",
+      "positive": "Succès complet ou erreur récupérable ; modèle canonical intact.",
+      "negative": "Pas de corruption/engagement partiel ; annulation/relance sans doublon.",
+      "eliminatory": "Blocage définitif, modèle partiel ou ressource non libérée.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "380",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-016",
+      "corpus": "S1;S5",
+      "lots": "B",
+      "NAV": "NAV-001;NAV-005",
+      "positive": "Ressources mesurées ; moteurs rares non initialisés sans besoin justifié.",
+      "negative": "Écart mesuré signalé, preuve invalide ; pas succès fondé sur barre réduite.",
+      "eliminatory": "Tous moteurs initialisés malgré profil sans justification approuvée.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "381",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-017",
+      "corpus": "S1",
+      "lots": "B",
+      "NAV": "NAV-001;NAV-005",
+      "positive": "Catalogue le retrouve ; état permission/contexte exact.",
+      "negative": "État indisponible/motif correct, aucune action autorisée par recherche seule.",
+      "eliminatory": "Masquage introuvable ou catalogue contourne droits.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "382",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-018",
+      "corpus": "S6",
+      "lots": "B;E;X",
+      "NAV": "NAV-004;NAV-006",
+      "positive": "Publication soumise contrôles serveur et manifeste approuvé.",
+      "negative": "Refus serveur, aucune publication ni fuite.",
+      "eliminatory": "Publication par simple présence bouton/profil.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "383",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-019",
+      "corpus": "S1;S6",
+      "lots": "B",
+      "NAV": "NAV-005;NAV-006",
+      "positive": "Même géométrie/révision/droits ; seule présentation change.",
+      "negative": "Champs interdits refusés/ignorés selon contrat sans mutation métier.",
+      "eliminatory": "Changement profil modifie géométrie ou droits.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "384",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-020",
+      "corpus": "S7",
+      "lots": "B",
+      "NAV": "NAV-008",
+      "positive": "Outils en cache utilisables ; absence cache affichée indisponible.",
+      "negative": "Pas faux disponible ni chargement bloquant ; navigation restante fonctionne.",
+      "eliminatory": "Fausse disponibilité ou perte travail local.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "385",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-021",
+      "corpus": "S7",
+      "lots": "A;B",
+      "NAV": "NAV-007",
+      "positive": "Revalidation serveur et conflits gérés ; synchronisation unique.",
+      "negative": "Refus ou conflit explicite ; aucune publication anticipée.",
+      "eliminatory": "Application sans droits actuels ou perte silencieuse file.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "386",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-022",
+      "corpus": "S1;S2;S3",
+      "lots": "C",
+      "NAV": "NAV-005",
+      "positive": "Mêmes cible/point/priorité dans tolérances approuvées.",
+      "negative": "Résultat oracle conservé ou optimisation rejetée ; aucun écart masqué.",
+      "eliminatory": "Cible/priorité différente hors tolérance.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "387",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-023",
+      "corpus": "S4;S5",
+      "lots": "C",
+      "NAV": "NAV-005",
+      "positive": "Identifiant source correct pour chaque triangle/instance.",
+      "negative": "Aucune sélection du mauvais objet ; invalidation contrôlée.",
+      "eliminatory": "Mauvaise identité sélectionnée ou donnée autre projet exposée.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "388",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-024",
+      "corpus": "S2;S4",
+      "lots": "C",
+      "NAV": "NAV-005",
+      "positive": "Seuls dérivés dépendants recalculés ; résultat identique au calcul complet.",
+      "negative": "Écart détecté par oracle ; résultat non conforme non engagé.",
+      "eliminatory": "Optimisation altère géométrie/quantités ; gain non mesuré revendiqué.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "389",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-025",
+      "corpus": "S1;S2;S3",
+      "lots": "C;F",
+      "NAV": "NAV-001;NAV-005",
+      "positive": "Rapport fidélité/accessibilité/latence mesuré ; décision moteur sur preuve.",
+      "negative": "Limite explicite ; aucune victoire globale sans test.",
+      "eliminatory": "Renderer retenu altère résultat ou détruit interaction/accessibilité.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "390",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-026",
+      "corpus": "S2;S5",
+      "lots": "E;F",
+      "NAV": "NAV-006",
+      "positive": "Composition technique et volume net inchangés.",
+      "negative": "Refus/séparation explicite, pas mutation technique implicite.",
+      "eliminatory": "Apparence modifie quantités ou propriétés techniques.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "391",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-027",
+      "corpus": "S2;S6",
+      "lots": "A;E",
+      "NAV": "NAV-006",
+      "positive": "Exigence approuvée inchangée ; écart calculé/visible.",
+      "negative": "Refus de propagation implicite, exigence sourcée conservée.",
+      "eliminatory": "Exigence ajustée automatiquement pour masquer écart.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "392",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-028",
+      "corpus": "S2;S4;S5",
+      "lots": "E",
+      "NAV": "NAV-008",
+      "positive": "Entités supportées correctes ; état natif/représentation explicite.",
+      "negative": "Rapport de pertes exhaustif et refus/invalidation selon contrat ; aucun silence.",
+      "eliminatory": "Proxy présenté paramétrique/BIM certifié ou entité perdue silencieusement.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "393",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-029",
+      "corpus": "S6",
+      "lots": "E",
+      "NAV": "NAV-006",
+      "positive": "Même identité suivi/responsable/contexte/décision clôture.",
+      "negative": "Observation résolue explicitement/reliée, jamais clôturée automatiquement sans preuve.",
+      "eliminatory": "Perte suivi ou clôture injustifiée.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "394",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-030",
+      "corpus": "S6",
+      "lots": "E",
+      "NAV": "NAV-006;NAV-007",
+      "positive": "Manifest/hash correspond exactement à contenu approuvé.",
+      "negative": "Refus ou nouvelle procédure de contrôle/approbation.",
+      "eliminatory": "Dossier diffusé diffère de celui approuvé.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "395",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-031",
+      "corpus": "S6",
+      "lots": "E",
+      "NAV": "NAV-006",
+      "positive": "Retrait journalisé ; contenu historique récupérable selon politique approuvée.",
+      "negative": "Refus et historique inchangé ; pas suppression cachée.",
+      "eliminatory": "Perte historique ou retrait anonyme.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "396",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-032",
+      "corpus": "S5;S6",
+      "lots": "E;F",
+      "NAV": "NAV-006",
+      "positive": "Image séparée, provenance/droits conservés ; modèle identique.",
+      "negative": "Refus ; aucune modification canonical ou publication implicite.",
+      "eliminatory": "Image présentée vérité BIM ou mutation automatique.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "397",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-033",
+      "corpus": "S6",
+      "lots": "F",
+      "NAV": "NAV-004",
+      "positive": "Schéma/droits/confirmation/idempotence identiques action humaine.",
+      "negative": "Refus sans effet ; aucune voie privilégiée agent.",
+      "eliminatory": "MCP contourne contrôle serveur ou double mutation.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "398",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-034",
+      "corpus": "S6;S7",
+      "lots": "R",
+      "NAV": "NAV-004;NAV-007",
+      "positive": "Révisions/identités/associations/publications/manifestes retrouvés identiques.",
+      "negative": "Refus avant mutation cible inconnue ; restauration échouée ne détruit original.",
+      "eliminatory": "Restauration non prouvée, perte IDs ou cible sensible touchée.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "399",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-035",
+      "corpus": "S4;S6",
+      "lots": "A;E;X",
+      "NAV": "NAV-004",
+      "positive": "Données exactes limitées droits du projet.",
+      "negative": "Refus serveur sans fuite payload/headers/cache/job status ; pas mutation.",
+      "eliminatory": "Une fuite interprojet même partielle.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "400",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-036",
+      "corpus": "S7",
+      "lots": "B;R",
+      "NAV": "NAV-004;NAV-007",
+      "positive": "Contrats compatibles ou migration contrôlée ; file/identités intactes.",
+      "negative": "Blocage récupérable et conservation file ; pas purge silencieuse.",
+      "eliminatory": "Perte commande locale ou rejeu sous mauvais contrat.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "401",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-037",
+      "corpus": "S5",
+      "lots": "D",
+      "NAV": "NAV-008",
+      "positive": "Courbe mémoire pic/résiduel analysée selon seuil DEC13 approuvé.",
+      "negative": "Ressources libérées selon contrat, aucun job périmé engagé.",
+      "eliminatory": "Fuite au-delà seuil ou mesure absente présentée preuve.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "402",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    },
+    {
+      "id": "TEST-038",
+      "corpus": "S4;S6",
+      "lots": "E",
+      "NAV": "NAV-006",
+      "positive": "Manifeste coordonné immuable, hash de chaque source et approbation exacte ensemble.",
+      "negative": "Refus/nouvelle approbation ; aucun assemblage mixte non revu.",
+      "eliminatory": "Hash/versions incohérents ou publication non autorisée.",
+      "source": {
+        "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+        "line": "403",
+        "revision": "STUDIO-PLAN-001 blob db5588eca8980efcd7276c1cc2182b9070c6eb38"
+      },
+      "state": "Non exécuté"
+    }
+  ],
+  "I_A1_first_slice": "Contexte projet/étude/variante/révision, dessin2D autonome et modèle3D autonome préparés via S1/S5/S6 ; association et droits via S2/S6, reprise/pending via S7. Liste de faisabilité, pas sélection gate acceptée ni capacité réalisée.",
+  "local_dependencies": [
+    {
+      "owner": "A2/A0",
+      "trigger": "Avant fixture sérialisée exécutable",
+      "condition": "Contrats versionnés dessin2D/model3D/association/commandes/manifestes adoptés ; exemples M17/M24 restent candidats tant que validation requise non acquise."
+    },
+    {
+      "owner": "A0/DEC13 puis A5",
+      "trigger": "Seulement avant oracle performance/charge dépendant seuil",
+      "condition": "Budget adopté avec unité/matériel/protocole ; pas blocage des oracles identité/atomicité indépendants ni seuil numérique inventé."
+    },
+    {
+      "owner": "A5/A4",
+      "trigger": "Avant essai pilote autorisé",
+      "condition": "Manifestes/hash/SHA/build/runId/env/avant-après/oracle négatif et statut individuel ; NAV UX-S0 contexte distinct des scènes S1–S7."
+    }
+  ],
+  "limits": [
+    "Aucun TEST039, corpus complet fictif ou tâche630cochée.",
+    "Sept fixtures ne ferment pas X.1-01..07 ; aucune preuve produit actuelle déduite de validation mathématique documentaire.",
+    "Aucun import moteur/application/test/DB/réseau effectué."
+  ]
+}
