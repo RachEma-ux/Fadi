@@ -118,8 +118,13 @@ def main():
 
     try:
         api = start_api()
+        # The built application (`npm run build`) is served by `vite preview`, not the dev server: on a cold
+        # runner, dev-time dependency discovery reloads the page mid-recipe and mixes module instances
+        # (React Router "useLocation() outside <Router>"). Same /auth, /projects… relay to the API.
+        if not (ROOT / 'apps/web/dist/index.html').is_file():
+            raise RuntimeError('Built web application missing; run npm run build first')
         web = launch([
-            'npm', 'run', 'dev', '--workspace=@fadi/web', '--',
+            'npm', 'run', 'preview', '--workspace=@fadi/web', '--',
             '--host', '127.0.0.1', '--port', '5173', '--strictPort',
         ], 'vite.log')
         ready('http://127.0.0.1:3001/health', 'API')

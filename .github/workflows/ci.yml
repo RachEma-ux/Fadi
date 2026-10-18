@@ -93,6 +93,8 @@ jobs:
             [ -f "$f" ] || continue
             python3 -c "import json,sys; r=json.load(open(sys.argv[1])); print(sys.argv[1], r.get('result'), r.get('failure'), r.get('failedResponses'), r.get('browserErrors') or r.get('pageErrors'))" "$f"
           done
+          # Journal du serveur web seulement (aucune chaîne de connexion) ; api.log reste protégé.
+          for f in ../studio-v1-private/*/vite.log; do [ -f "$f" ] && tail -n 30 "$f"; done || true
       - name: Publier seulement les preuves expurgées
         if: ${{ always() && steps.perimetre.outputs.studio == 'true' }}
         uses: actions/upload-artifact@v4
