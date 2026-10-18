@@ -34,3 +34,7 @@
 - Aucun lien d'exécution ou référentiel actif de Fadi vers le produit DrawAll ; tous les fichiers suspects justifiés, supprimés ou explicitement maintenus comme éléments Fadi.
 - Traçabilité des suppressions ; absence d'action sur le dépôt DrawAll.
 - PR et CI vertes, acceptation de l'éventuelle suppression fonctionnelle, production inchangée jusqu'au déploiement autorisé.
+
+## Actualisation M06/M08 — Mission 003
+
+La fusion du premier lot #148 est vérifiée, mais PURGE-02/03 et la qualification complète restent ouvertes dans #147. Le titre Atelier opérationnel et les checkpoints sont réconciliés ; aucun code DA, norme ou fonction industrielle supprimé. Lire le dernier STATUS/HANDOFF avant les observations historiques.

@@ -1,0 +1,9 @@
+{
+  "reference": "a4caaab0e6665480f09febe3914c960b424b6b47",
+  "entries": 125,
+  "candidate_files_verified_sha256": 17,
+  "content_evidence_checked": 305,
+  "whitespace_restored": 282,
+  "method": "git show immutable source_commit:path; SHA256 verified; exact_line replaced with splitlines()[line-1] without strip(); prior text equals raw text after strip; no line number, meaning, candidate relationship or oracle verdict changed",
+  "limits": "125 candidates mappings do not establish 125 equivalent test oracles; no execution; historical missing literals remain anomalies"
+}

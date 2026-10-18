@@ -1,0 +1,15 @@
+{
+  "kind": "Validation documentaire/maths exactes desfixtures, aucunoutilStudio exécuté",
+  "checks": {
+    "S2_gross_mm3": true,
+    "S2_net_before_exact": true,
+    "S2_net_after_exact": true,
+    "S5_volume_exact": true,
+    "S5_section_exact": true,
+    "S3_count": true,
+    "38_unique_ids": true,
+    "all_studio_not_executed": true
+  },
+  "verdict": "PASS",
+  "limits": "Ne valide pas sérialisation métier, imports, géométrieapplicative, permissions ou performancesStudio"
+}

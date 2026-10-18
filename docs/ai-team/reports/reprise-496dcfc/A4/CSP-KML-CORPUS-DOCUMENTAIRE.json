@@ -1,0 +1,161 @@
+{
+  "schema": "DOCUMENTARY-CORPUS-NONEXECUTABLE/1",
+  "decision_comment": 6250111226,
+  "reference": "496dcfc7bf80868ef21216d667187087db32a738",
+  "executable": false,
+  "runtime_tests_executed": false,
+  "approved_real_kml_origins": [],
+  "identified_not_approved_origins": [
+    {
+      "origin": "https://api.maptiler.com",
+      "evidence": [
+        "apps/web/public/parcelle/index.html:1083",
+        "apps/web/src/lib/maptiler.ts:20"
+      ],
+      "role": "servicecartographique identifiéstatiquement, pas fournisseurKMLapprouvé"
+    }
+  ],
+  "synthetic_only_origin": "https://icons-fixture.invalid",
+  "synthetic_approval_note": "Touteapprobationci-dessous est unétat de fixture ; le domaine.invalid n’est ni fournisseur réel ni entrée de policy proposée. Aucun chargement réseau autorisé.",
+  "cases": [
+    {
+      "id": "KML-A01",
+      "given": "image locale/data acceptée fixture",
+      "existing_oracles": [
+        "CSP05",
+        "CSP07"
+      ],
+      "expected_future_oracle": "présentation complète, aucun accès réseau, géométrie inchangée",
+      "execution": "Non exécuté"
+    },
+    {
+      "id": "KML-A02",
+      "given": "originehttps fixture explicitement approuvée par jeu synthétique",
+      "existing_oracles": [
+        "CSP05",
+        "CSP07"
+      ],
+      "expected_future_oracle": "interceptionlocale imageautorisée ; ancrage/rotation/couleur/échelle conservés",
+      "execution": "Non exécuté"
+    },
+    {
+      "id": "KML-A03",
+      "given": "origineHTTPSfixture sans approbation",
+      "existing_oracles": [
+        "CSP05",
+        "CSP07",
+        "CSP09"
+      ],
+      "expected_future_oracle": "zérochargementautorisé, étatrefus etfallbackneutre accessibles ; référenceconservée",
+      "execution": "Non exécuté"
+    },
+    {
+      "id": "KML-A04",
+      "given": "origineapprouvéefixture image404/timeout/decodefailure",
+      "existing_oracles": [
+        "CSP05",
+        "CSP07",
+        "CSP09"
+      ],
+      "expected_future_oracle": "étatindisponible distinctrefus, retryborné, fallbackneutre etgéométrie inchangée",
+      "execution": "Non exécuté"
+    },
+    {
+      "id": "KML-A05",
+      "given": "redirectfixtureversoriginenonautorisée ou credentials/mixedcontent",
+      "existing_oracles": [
+        "CSP02",
+        "CSP05",
+        "CSP07"
+      ],
+      "expected_future_oracle": "aucuncontournementallowlist/credential ; rapportexpurgé, pas scripts/importexécutés",
+      "execution": "Non exécuté"
+    },
+    {
+      "id": "KML-A06",
+      "given": "droitéditionrévoqué pendantassetpending",
+      "existing_oracles": [
+        "CSP09",
+        "CSP10"
+      ],
+      "expected_future_oracle": "UIlectureseule et refusserveur seloncontrat, aucunefuite/élévationdroit parCSP",
+      "execution": "Non exécuté"
+    },
+    {
+      "id": "KML-A07",
+      "given": "stylesdynamiques rotation/ancrage/opacity/progression",
+      "existing_oracles": [
+        "CSP05",
+        "CSP09"
+      ],
+      "expected_future_oracle": "CSScalculé/ciblestactiles/focusconformes malgréassetrefusé ; pasperteédition",
+      "execution": "Non exécuté"
+    },
+    {
+      "id": "KML-A08",
+      "given": "reloadlangue/offline/SW aveccommande locale etassetmanquant",
+      "existing_oracles": [
+        "CSP08",
+        "CSP09"
+      ],
+      "expected_future_oracle": "filelocalepréservée, messagesappropriés, paspublicationconfirmée horsserveur",
+      "execution": "Non exécuté"
+    },
+    {
+      "id": "KML-A09",
+      "given": "workerWASMoverrideD177 etfallbackgénérationdocument",
+      "existing_oracles": [
+        "CSP01",
+        "CSP03",
+        "CSP04"
+      ],
+      "expected_future_oracle": "policyworker etfetchcompilationprouvés futurs ; fallbackthread n’estpas workerOK",
+      "execution": "Non exécuté"
+    }
+  ],
+  "existing_14_oracles": [
+    "CSP01",
+    "CSP02",
+    "CSP03",
+    "CSP04",
+    "CSP05",
+    "CSP06",
+    "CSP07",
+    "CSP08",
+    "CSP09",
+    "CSP10",
+    "SCAN01",
+    "SCAN02",
+    "SCAN03",
+    "SCAN04"
+  ],
+  "preserve_invariants": [
+    "geometry",
+    "objectId",
+    "units",
+    "coordinate_frame",
+    "quantities",
+    "relationships",
+    "sourceRevision",
+    "local_command_queue"
+  ],
+  "source_hashes": [
+    {
+      "path": "apps/web/public/parcelle/index.html",
+      "sha256": "4f6e445eba8cbce2002fd79b96948f1f7b9afa0e88da448a86ab0b7cc8e4982f"
+    },
+    {
+      "path": "apps/web/src/lib/maptiler.ts",
+      "sha256": "65d6162e9be5e9375e1bb170e042ca95f9dd530ba6207407f4450d5fbcf45f85"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts",
+      "sha256": "d3947984643b9d6a8881c52a5b940f2dc60c9aa1f068fcb08f8c4dcba440c8bf"
+    },
+    {
+      "path": "apps/web/src/lib/i18n/index.ts",
+      "sha256": "0fee144c8f3137c338791c347c6af721b282d95b736cd8a37ad7d2c02bd7b168"
+    }
+  ],
+  "scope": "Casdocumentairesuniquement ; pas image/script exécutable,header,app,scan ou réseau. Aucun inventairefournisseur exhaustif annoncé."
+}

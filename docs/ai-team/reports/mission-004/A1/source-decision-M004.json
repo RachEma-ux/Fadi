@@ -1,0 +1,28 @@
+{
+  "reference_instructions_A0": "301a4fa…",
+  "sources_lues": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "9eb61f15835871a08c56647bf576fc5ead705e00dc688a7e83cc9091bd61ed26"
+    },
+    {
+      "path": "docs/ai-team/CODEX-MISSION-004-PROMPT.md",
+      "sha256": "342ca494e47ad46e98ddc1f465f103ac1a1ad53085310036bb44bd80e1da358c"
+    },
+    {
+      "path": "docs/ai-team/CODEX-DELEGATED-DECISIONS.md",
+      "sha256": "e387c7e7a3ce4d7e7adc81c1dfd635625e0b750721e8386af1e48a082b2eb5dd"
+    }
+  ],
+  "export_A0": {
+    "path": "/workspace/work/mission004/github-166-decisions.json",
+    "sha256": "c11894771579dcc1326c86d54f844ab0eea2cd8da9fe4c2468d459c77777575b",
+    "observed_on": "2026-10-18"
+  },
+  "decision_officielle": {
+    "id": 6249520098,
+    "url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249520098",
+    "body": "[CHATGPT-DECISION][DELEGATED-WORKFLOW][2026-10-18]\n\n**Décisions mandatées par l'utilisateur, transmises à A0/Codex.** L'utilisateur a explicitement autorisé **A3-DB-1/2** et délégué à ChatGPT les décisions que Codex lui soumet. Le texte normatif, le périmètre et les exclusions sont dans [CODEX-DELEGATED-DECISIONS.md](https://github.com/RachEma-ux/Fadi/blob/docs/156-codex-missions-completes/docs/ai-team/CODEX-DELEGATED-DECISIONS.md) sur la branche de [PR #165](https://github.com/RachEma-ux/Fadi/pull/165). Ne pas attendre la fusion pour **lire** le document. Pour l'exécution et les checkpoints, relire aussi `AGENTS.md`, `CODEX-START-HERE.md`, `CODEX-NONBLOCKING-EXECUTION.md` et HANDOFF.\n\n### Décisions Q-M003-D01 à D07\n- [CHATGPT-DECISION][Q-M003-D01] STUDIO-RT-001 V1.0 référence technique **de travail** ; pilote synthétique local/pavillon avec A 2D seule publiée, B 3D directe vue/coupe, C objets associés jusqu'à revue/publication. Préparer/valider le dossier complet G0, pas de gate implicite.\n- [CHATGPT-DECISION][Q-M003-D02] Pour le **MVP**, reporter IA externe/MCP/tiers/immersion et rendu avancés. Conserver Visualisation et capacités natives, options F dans le backlog. D-179 DWG/DGN maintenue.\n- [CHATGPT-DECISION][Q-M003-D03] **AUTORISÉ : lot A3-DB-1/2 uniquement.** Code garde `TEST_DATABASE_URL` obligatoire, aucun fallback `DATABASE_URL`, identité endpoint/base/rôle et marqueur jetable attestés, refus fail-closed avant toute mutation, vérification sur reconnexion et tests **purement simulés** (cas négatifs/positifs du dossier). Brancher les lanceurs concernés ; réaliser sur **branche courte et PR code séparées**, avec revue A5/A6 et preuves. **INTERDIT :** connexion à DB réelle, tests destructifs/E2E mutateurs, migration, initialisation, redémarrage de base, production, fusion. DB-3 reste distinct.\n- [CHATGPT-DECISION][Q-M003-D04] D04a retenue **strictement localement** si environnement isolé et DB jetable déjà provisionnée **et attestée**, `MIGRATE_ON_START=0`, aucune migration ni opération mutatrice/suppression. Démarrage local API/DB/web et sondes de lecture possibles uniquement après vérification des préconditions ; sinon lecture des scripts/diagnostic uniquement et dossier D04b non exécuté.\n- [CHATGPT-DECISION][Q-M003-D05] Pour la **préparation** du ruleset, retenir le profil solo sans approbation GitHub impossible tant qu'aucun réviseur indépendant confirmé ; PR, checks effectifs, discussions résolues, acceptation humaine traçable, pas de force-push/suppression. **Pas d'activation administrative** sans revue de configuration finale.\n- [CHATGPT-DECISION][Q-M003-D06] Séquence de **revue** #154 → #152 → #142 après résolution de son problème CI sous accord applicable ; travaux indépendants en parallèle. Aucune fusion conférée par ce choix.\n- [CHATGPT-DECISION][Q-M003-D07] Contrat de préparation Studio : entrée après Projets ; URLs complètes, contexte autorisé serveur, quatre domaines, planches 2D/3D dans Dessin/modélisation, plein écran explicite et transitions sûres ; permissions distinctes approbation/publication, cumul seulement configuré explicitement avec journal. Préparer G1 et NAV, ne pas coder le lot Studio sans sa porte/autorisation.\n\nD08 documentaire déjà couvert par #156. Ces **choix débloquent les spécifications et la programmation A3-DB-1/2**, pas une autorisation globale pour tous les autres lots.\n\n### Ordre d'action immédiat\n1. Accuser lecture dans #166 : `[CODEX-ACK][DELEGATED-WORKFLOW]` avec HEAD/branche, questions absorbées, mission et premier sous-lot.\n2. A0 affecte **A3** au seul sous-lot A3-DB-1/2 sur branche de code distincte et PR sans fusion ; A5/A6 définissent/relisent tests purs et absence d'accès réel aux DB. Ne jamais désactiver les garde-fous pour forcer le vert.\n3. En parallèle A1/A2/A4/A5/A6 poursuivent M00/M29, M08 125 chemins, 141 fiches, 18 DEC, NAV, 38 oracles/7 corpus et travaux READY ; une question ne bloque que la sous-tâche dépendante.\n4. Consigner `[CODEX-PROGRESS]` avec SHA exact, tests, fichiers changés, blocages, prochaine action ; STATUS/HANDOFF mis à jour ensemble.\n\n**Limites non déléguées par ce document :** suppression de données, tests sur une base réelle sans accord séparé, fusion, push main, activation administrative GitHub, migration/production, sauvegardes/rétention et dépenses/permissions externes. Une demande de ces opérations doit être présentée explicitement avant action. Un commentaire ne démarre pas une session Codex ; l'ACK confirmera sa lecture réelle."
+  },
+  "limite": "Lecture de l’export réel fourni A0, sans appel GitHub autonome ; les recommandations antérieures demeurent historiques et sont remplacées dans la portée de cette décision"
+}

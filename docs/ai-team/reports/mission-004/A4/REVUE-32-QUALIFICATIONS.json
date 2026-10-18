@@ -1,0 +1,382 @@
+{
+  "review": "A4-32-QUALIFICATIONS-M004",
+  "date": "2026-10-18",
+  "scope": "Revue indépendante documentaire des32lignes CAD/ARC/ARC-DATA/G0/G1 ; aucun test produit ni modification delta/registre",
+  "input_path": "/workspace/work/mission004/agents/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+  "input_sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+  "reference_documents": "7b0cca44fa44449cae80785dea078a857be4180c",
+  "verdict": "Aucune erreur bloquante identifiée ; delta recevable comme qualification préparatoire, sans Vérifié/Accepté ni porte passée",
+  "blocking_findings": [],
+  "checks": {
+    "ids": 32,
+    "unique_ids": 32,
+    "labels_exact_match": true,
+    "status_counts": {
+      "En cours": 29,
+      "Bloqué": 2,
+      "À définir": 1
+    },
+    "all_verified_closure_checkbox_flags_false": true,
+    "proof_hashes_match_checkout": true,
+    "all_line_excerpts_exact": true,
+    "non_line_anchor": "G1-02 emploie JSONpointer studio-141-fiches-v2.json plutôt que lignes ; hash correspondant vérifié, sémantique exhaustive/XML laissés A0",
+    "product_tests_executed": false
+  },
+  "by_content": [
+    {
+      "topic": "CAD invariants",
+      "verdict": "CAD04/05/07 séparent décisions déjàretenues et preuve future21étapes/services/fonctionsindustrielles ; inventaire125chemins ne clôt pas capacités."
+    },
+    {
+      "topic": "Architecture/NAV",
+      "verdict": "ARC01..10 restent En cours pour chaîne/façades/publicinterfaces/modulesdocumentaires ; absenceProjectShell/iframe, sources/variantes et planchechoisie explicitement cohérentsNAV. Aucun nouveau cheminapp déclaré livré."
+    },
+    {
+      "topic": "Autorités/commandes",
+      "verdict": "ARC-DATA01..08 restent préparation :2D/3Dindépendantes,objetassociéunique,projections nonautorité ; baseRevision/requestId/droits/versions/invalidation et ancienrésultat nécessitent contrat/preuve future."
+    },
+    {
+      "topic": "Gates",
+      "verdict": "CAD-DEC01/G0-03 Bloqué pour acte explicite de passage non démontré ; D01/D02/D07 ne sont pas remis indûment en attente. G0-01/02 et G1-01..04 En cours pour dossier/revue/liaisons restantes, aucune recette implémentée déduite."
+    }
+  ],
+  "human_responsibility_question": {
+    "id": "CAD-DEC-03",
+    "proposed_state": "À définir maintenu",
+    "missing": "Personnes effectivement désignées, disponibilité/cadence et règles de cumul ; agentsA0–A6 ne constituent pas preuve de disponibilité humaine ni habilitation métier.",
+    "next_action": "A0 recueille l’identification et la disponibilité des responsables humains/approbateur/publieur pour réalisation ; conserve inconnues et aucun calendrier imposé. Le principe permissionsdistinctes/cumulexplicite D07 est acquis et ne doit pas être redemandé."
+  },
+  "non_blocking_note": {
+    "id": "CAD-DEC-02",
+    "observation": "Le libellé source distingue8responsabilités, dont qualité/sécurité et exploitation ; conserver ces deux responsabilités séparément dans mapping final, même si une personne autorisée cumule. Formulation abrégée «qualité-exploitation» de condition ne doit pas masquer exploitation. Le manque reste déjà déclaré, donc pas blocage de ce delta En cours."
+  },
+  "per_id": [
+    {
+      "id": "CAD-04",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "CAD-05",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "CAD-07",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "CAD-DEC-01",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "Bloqué",
+      "state_verdict": "Blocage limité à acte de porte non démontré",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "CAD-DEC-02",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "CAD-DEC-03",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "À définir",
+      "state_verdict": "Informations humaines réellement manquantes, pas de disponibilité inventée",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "CAD-DEC-05",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-01",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-02",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-03",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-04",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-05",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-06",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-07",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-08",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-09",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-10",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-DATA-01",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-DATA-02",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-DATA-03",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-DATA-04",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-DATA-05",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-DATA-06",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-DATA-07",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "ARC-DATA-08",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "G0-01",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "G0-02",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "G0-03",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "Bloqué",
+      "state_verdict": "Blocage limité à acte de porte non démontré",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "G1-01",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "G1-02",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "G1-03",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    },
+    {
+      "id": "G1-04",
+      "source_label": "Libellé exact identique checklist locale verrouillée",
+      "nature_verdict": "Cohérente avec obligation documentaire/garantie/décision décrite ; condition de clôture explicite",
+      "proposed_state": "En cours",
+      "state_verdict": "Compatible avec préparation commencée sans clôture",
+      "verified": false,
+      "gate_passed": false,
+      "runtime_evidence": false
+    }
+  ],
+  "limits": [
+    "Revue sourceMD/hash/extraits locaux ; ne vérifie pas autorisations humaines externes ni XMLnormatif exhaustif, A0 en garde le contrôle.",
+    "Aucun fichier delta/registre/sourceNAV/G0 modifié.",
+    "29En cours ne signifie pas29réalisations ou29conditions satisfaites ; il s’agit de la qualification commencée et de manques explicites.",
+    "Une réception de ce delta ne passe ni G0/G1/G3, ne coche pas source et ne valide aucune capacitéStudio."
+  ],
+  "next_action": "A0 peut rapprocher et intégrer les32qualifications après son contrôlefinal des sources/hash/XML ; conserverCADDEC03etlesdeuxactesporte nonrésolus, poursuivrecontrats indépendants."
+}

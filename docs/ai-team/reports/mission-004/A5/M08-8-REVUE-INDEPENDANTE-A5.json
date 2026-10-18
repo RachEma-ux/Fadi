@@ -1,0 +1,183 @@
+{
+  "reviewer": "A5 indépendant A2",
+  "utc": "2026-10-18T12:34:22.355660+00:00",
+  "comparison_sha256": "15f05e6719f99cf36a79375c43e818e266a52c8bca9ae6d10a77ca1bcc410c65",
+  "original125_sha256_after_review": "d8879b4ce71b82ea38352a61d7d2ae025350d8e65ef1b345241f85aa5e159348",
+  "original125_modified_by_A5": false,
+  "source_references": {
+    "baseline": "a4caaab0e6665480f09febe3914c960b424b6b47",
+    "current": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+    "current_scope": "PR169code, pas nouvelleexécution/niMaincourantcertifié"
+  },
+  "method": [
+    "Lire huitfiches entières dont acceptations/limites/suivi, puis sous-attendus ligneValidationE2E sansréécrirehistoire.",
+    "Contrôler chaque source et citation aux deuxSHAs ; lire prédicats/préparations/helpers liés plutôtquetitres.",
+    "Comparer geste/type/cible/nombre/corpus/unité/undo/reload/concurrence ; absent uniquement danscandidatsbornés, pas repositoryentier.",
+    "Préconditionstatiqueprésente ne prouve ni assertionmétier ni exécution ; aucunpourcentagedeconformité depuis comptageligne."
+  ],
+  "source_files_verified": 15,
+  "evidence_occurrences_all_sections": 183,
+  "unique_current_source_lines": 131,
+  "line_role_heuristic_nonsemantic": {
+    "setup_helper_control_or_other_context": 68,
+    "test_title_not_predicate": 2,
+    "assertion_predicate_line": 61
+  },
+  "historical_subexpectations_total": 52,
+  "classification_counts": {
+    "partielle": 27,
+    "absente": 18,
+    "presente": 7
+  },
+  "present_count_nature": "Les7présents sont7occurrences de préparation/copiedeP118 ; pas7comportements métier validés.",
+  "supplement_nonapplicable": 3,
+  "equivalent_complete_E2E_demonstrated": 0,
+  "errors": [],
+  "entry_reviews": [
+    {
+      "entry_id": "M08-PATH-008",
+      "source_fiche": "docs/atelier/fiches/DA-01-08.md",
+      "historical_subexpectations": 5,
+      "classification_counts": {
+        "partielle": 4,
+        "absente": 1
+      },
+      "A5_disagreement": null,
+      "A5_verdict": "CLASSIFICATION_BORNEE_CORROBOREE_STATIQUEMENT",
+      "not_equivalent_reason": "PréparationP118 éventuelle ne vérifie pas geste/cible/quantités/undo/reload/concurrence de la lignehistorique complète ; autre niveau ne remplace pas E2E.",
+      "full_fiche_context_read": true,
+      "historical_acceptance_preserved": true,
+      "behavior_executed": false
+    },
+    {
+      "entry_id": "M08-PATH-053",
+      "source_fiche": "docs/atelier/fiches/DA-03-09.md",
+      "historical_subexpectations": 5,
+      "classification_counts": {
+        "presente": 1,
+        "absente": 1,
+        "partielle": 3
+      },
+      "A5_disagreement": null,
+      "A5_verdict": "CLASSIFICATION_BORNEE_CORROBOREE_STATIQUEMENT",
+      "not_equivalent_reason": "PréparationP118 éventuelle ne vérifie pas geste/cible/quantités/undo/reload/concurrence de la lignehistorique complète ; autre niveau ne remplace pas E2E.",
+      "full_fiche_context_read": true,
+      "historical_acceptance_preserved": true,
+      "behavior_executed": false
+    },
+    {
+      "entry_id": "M08-PATH-079",
+      "source_fiche": "docs/atelier/fiches/DA-05-07.md",
+      "historical_subexpectations": 7,
+      "classification_counts": {
+        "presente": 1,
+        "absente": 4,
+        "partielle": 2
+      },
+      "A5_disagreement": null,
+      "A5_verdict": "CLASSIFICATION_BORNEE_CORROBOREE_STATIQUEMENT",
+      "not_equivalent_reason": "PréparationP118 éventuelle ne vérifie pas geste/cible/quantités/undo/reload/concurrence de la lignehistorique complète ; autre niveau ne remplace pas E2E.",
+      "full_fiche_context_read": true,
+      "historical_acceptance_preserved": true,
+      "behavior_executed": false
+    },
+    {
+      "entry_id": "M08-PATH-080",
+      "source_fiche": "docs/atelier/fiches/DA-05-09.md",
+      "historical_subexpectations": 7,
+      "classification_counts": {
+        "presente": 1,
+        "partielle": 5,
+        "absente": 1
+      },
+      "A5_disagreement": null,
+      "A5_verdict": "CLASSIFICATION_BORNEE_CORROBOREE_STATIQUEMENT",
+      "not_equivalent_reason": "PréparationP118 éventuelle ne vérifie pas geste/cible/quantités/undo/reload/concurrence de la lignehistorique complète ; autre niveau ne remplace pas E2E.",
+      "full_fiche_context_read": true,
+      "historical_acceptance_preserved": true,
+      "behavior_executed": false
+    },
+    {
+      "entry_id": "M08-PATH-089",
+      "source_fiche": "docs/atelier/fiches/DA-06-07.md",
+      "historical_subexpectations": 8,
+      "classification_counts": {
+        "presente": 1,
+        "partielle": 4,
+        "absente": 3
+      },
+      "A5_disagreement": null,
+      "A5_verdict": "CLASSIFICATION_BORNEE_CORROBOREE_STATIQUEMENT",
+      "not_equivalent_reason": "PréparationP118 éventuelle ne vérifie pas geste/cible/quantités/undo/reload/concurrence de la lignehistorique complète ; autre niveau ne remplace pas E2E.",
+      "full_fiche_context_read": true,
+      "historical_acceptance_preserved": true,
+      "behavior_executed": false
+    },
+    {
+      "entry_id": "M08-PATH-091",
+      "source_fiche": "docs/atelier/fiches/DA-06-08.md",
+      "historical_subexpectations": 7,
+      "classification_counts": {
+        "presente": 1,
+        "absente": 5,
+        "partielle": 1
+      },
+      "A5_disagreement": null,
+      "A5_verdict": "CLASSIFICATION_BORNEE_CORROBOREE_STATIQUEMENT",
+      "not_equivalent_reason": "PréparationP118 éventuelle ne vérifie pas geste/cible/quantités/undo/reload/concurrence de la lignehistorique complète ; autre niveau ne remplace pas E2E.",
+      "full_fiche_context_read": true,
+      "historical_acceptance_preserved": true,
+      "behavior_executed": false
+    },
+    {
+      "entry_id": "M08-PATH-122",
+      "source_fiche": "docs/atelier/fiches/DA-21-06.md",
+      "historical_subexpectations": 6,
+      "classification_counts": {
+        "presente": 1,
+        "partielle": 4,
+        "absente": 1
+      },
+      "A5_disagreement": null,
+      "A5_verdict": "CLASSIFICATION_BORNEE_CORROBOREE_STATIQUEMENT",
+      "not_equivalent_reason": "PréparationP118 éventuelle ne vérifie pas geste/cible/quantités/undo/reload/concurrence de la lignehistorique complète ; autre niveau ne remplace pas E2E.",
+      "full_fiche_context_read": true,
+      "historical_acceptance_preserved": true,
+      "behavior_executed": false
+    },
+    {
+      "entry_id": "M08-PATH-123",
+      "source_fiche": "docs/atelier/fiches/DA-21-07.md",
+      "historical_subexpectations": 7,
+      "classification_counts": {
+        "presente": 1,
+        "partielle": 4,
+        "absente": 2
+      },
+      "A5_disagreement": null,
+      "A5_verdict": "CLASSIFICATION_BORNEE_CORROBOREE_STATIQUEMENT",
+      "not_equivalent_reason": "PréparationP118 éventuelle ne vérifie pas geste/cible/quantités/undo/reload/concurrence de la lignehistorique complète ; autre niveau ne remplace pas E2E.",
+      "full_fiche_context_read": true,
+      "historical_acceptance_preserved": true,
+      "behavior_executed": false
+    }
+  ],
+  "content_findings": [
+    {
+      "id": "M08-CLASSIFICATION-SOURCE-A-ARBITRER",
+      "severity": "P2 apparentàqualifier",
+      "source": "DA06-08 règleR3 sansdéduction/écritureautomatiqueclasseIfc vscommandes.test.ts279/281 résultatclassIfcRegleVérifiée",
+      "A5_confirmation": "Texteetassertionvérifiés ; contradictionapparente d’oracle, pasdéfautruntime démontré. Rapprocher D111/ontologies/décisionsapplicables avant adaptationcompatible ; conserverD174historique.",
+      "action_owner": "A0/A1/A2",
+      "automatic_fix_authorized": false
+    }
+  ],
+  "coverage_limits": [
+    "52attendus décomposés ne sont pas toutes lesobligations deshuitfiches ni des125entrées.",
+    "3suppléments nonapplicables n’effacent pas obligationshistoriques ; ils restentfonctionnalitésnativesutiles.",
+    "Absencebornée n’établit ni fonctionnalitéabsente ni absence de test dansautrechemin ; candidatesadditionnels peuvent être proposés dansun nouveaurapport sansmuter mappingoriginal.",
+    "Lescitationsrépétées/setup ne sont pas autant d’assertions/testspassés.",
+    "Aucun testAPI/E2E/DB/navigateur/application exécuté ; aucunregistrecochegate modifié."
+  ],
+  "verdict": "RECEPTION_DOCUMENTAIRE_BORNEE_SANS_EQUIVALENCE"
+}

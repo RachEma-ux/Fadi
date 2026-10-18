@@ -1,0 +1,150 @@
+{
+  "version": "0.2",
+  "mission": "M004/A4",
+  "reference_sha": "301a4fa8f2594fa1c8f0317c18085b5ae22ac7a3",
+  "count": 9,
+  "UX-S0": "Fixture de contexte documentaire distincte des scènes géométriques S1–S7 ; à matérialiser et autoriser, pas supposée exécutable",
+  "proof_policy": "SHA/build/corpus hash/env/locale/rôle/attendus-observés/journaux expurgés ; aucun test API/E2E exécuté ici",
+  "nav": [
+    {
+      "id": "NAV-001",
+      "title": "entrée Studio et accès",
+      "source_id_preserved": true,
+      "status": "Prescrit, non exécuté",
+      "conformity": "Non évaluée Studio",
+      "acceptance": "Absente",
+      "decision_status": "D07 retenu pour spécifications ; G1/G3 non passés",
+      "fixtures_candidates": [
+        "UX-S0"
+      ],
+      "test_specification": "**Source inchangée :** Studio présent dans le rail, nom accessible, clavier et actif corrects. **Dépendances :** I.1/I.5, placement D07 acté pour spécifications, icône et base commune à finaliser. **Liens :** UX-01..04 ; EX-001/032..037.\n\n**Positif :** depuis Accueil, Tab jusqu'à Studio, activer Entrée ; vérifier URL Studio, label visible déplié et nom accessible/infobulle replié ; répéter tactile mobile et toutes les routes Studio. **Négatif :** route Accueil/Projets/Collaboration ne présente pas Studio comme actif ; rail déplié/replié ne crée pas de doubles liens focusables ni ne perd son nom ; focus ne reste pas dans un panneau fermé.\n\n**Oracle :** un seul contrôle de navigation Studio, un seul actif global (`aria-current=page` ou sémantique validée), destination autonome ; nom Studio dans l'arbre accessible ; focus visible/atteignable ; dimensions proposées >=44px pour cible mobile. **Env :** E-UX sans corpus géométrique. **Preuve :** P-UX + ordre Tab et arbre accessible avant/après rail.",
+      "m004_addendum": "Choix D07 actés pour spécifications ; aucune preuve métier déduite."
+    },
+    {
+      "id": "NAV-002",
+      "title": "autonomie et Parcours intact",
+      "source_id_preserved": true,
+      "status": "Prescrit, non exécuté",
+      "conformity": "Non évaluée Studio",
+      "acceptance": "Absente",
+      "decision_status": "D07 retenu pour spécifications ; G1/G3 non passés",
+      "fixtures_candidates": [
+        "UX-S0",
+        "S1",
+        "S5"
+      ],
+      "test_specification": "**Source :** ouverture sans Parcours/Atelier, aucune étape créée/validée implicitement. **Dépendances :** I.2, A.1 contexte, EX-001. **Liens :** TEST-001/002 pour autonomies finales, pas équivalence avec MVP.\n\n**Positif :** lien direct `/studio` puis projet synthétique sans étapes accomplies, étude/variante, choix 2D puis autre étude 3D ; StudioShell s'affiche sans ouverture Atelier. **Négatif :** supprimer les caches UI Parcours/Atelier et faire échouer leurs endpoints non requis : Studio doit encore proposer le contexte autorisé ; aucun prérequis « terminer étape10 » ; ouverture seule ne crée géométrie ou progression.\n\n**Oracle :** même inventaire 21 étapes, numéros/phases/libellés/cartes/stats avant/après navigation ; pas d'appel obligatoire à données Parcours pour ouvrir Studio ; pas de redirection `?module=atelier`, iframe ou initialisation Atelier complet ; géométrie sans 3D/2D fictive selon choix. Vérifier réseau et données, pas seule absence de texte. **Env :** E-UX + UX-S0, données read fixtures pour premier test, vrai backend jetable pour preuve de non-mutation. **Preuve :** P-UX + diff d'état et graphe routes/requêtes.",
+      "m004_addendum": "Choix D07 actés pour spécifications ; aucune preuve métier déduite."
+    },
+    {
+      "id": "NAV-003",
+      "title": "contexte absent sans objets orphelins",
+      "source_id_preserved": true,
+      "status": "Prescrit, non exécuté",
+      "conformity": "Non évaluée Studio",
+      "acceptance": "Absente",
+      "decision_status": "D07 retenu pour spécifications ; G1/G3 non passés",
+      "fixtures_candidates": [
+        "UX-S0"
+      ],
+      "test_specification": "**Source :** absence projet/étude conduit à choix explicite. **Dépendances :** I.2, A.1, permissions. **Liens :** EX-003 et IF-001.\n\n**Positif :** trois comptes/états : aucun projet ; projet sans étude ; étude sans variante. Présenter choix/creation seulement autorisée, puis contexte complet avant édition. **Négatif :** deep-link incomplet, double clic Créer et essai géométrie avant variante ; lecteur sans droit création ne peut créer via raccourci/profil/API ; absence d'étude ne déclenche pas insertion cachée.\n\n**Oracle :** aucune géométrie sans variantId propriétaire ; ouvrir une page est non mutateur ; nombre de créations correspond exactement aux intentions confirmées/idempotentes ; choix accessible et retour Fadi possible. **Env :** E-UX + UX-S0, base jetable obligatoire pour création. **Preuve :** P-UX + commandes/requestId et comptages anonymisés par propriétaire.",
+      "m004_addendum": "Choix D07 actés pour spécifications ; aucune preuve métier déduite."
+    },
+    {
+      "id": "NAV-004",
+      "title": "URL, historique et refus sans fuite",
+      "source_id_preserved": true,
+      "status": "Prescrit, non exécuté",
+      "conformity": "Non évaluée Studio",
+      "acceptance": "Absente",
+      "decision_status": "D07 retenu pour spécifications ; G1/G3 non passés",
+      "fixtures_candidates": [
+        "UX-S0",
+        "S6"
+      ],
+      "test_specification": "**Source :** URL/réouverture/précédent-suivant restituent contexte autorisé, lien interdit ne divulgue rien. **Dépendances :** routes et façade A2/M17, garde isolation serveur. **Liens :** TEST-035, EX-088.\n\n**Positif :** URL complète V1 dessin2D, naviguer V2 visualisation puis R1 BIM ; refresh/précédent/suivant rétablissent exactement P/S/V/R/domaine/planche. Dernier projet personnel différent ne remplace pas l'URL. **Négatif :** permuter project/study/variant/revision entre propriétaires, ID absent/malformé, révoquer permission après cache chargé, rejouer URL/export/job interdits ; aucun nom, image, metadata ou anciennes données sensibles ne doit fuir.\n\n**Oracle :** chaîne d'appartenance et droits contrôlée serveur à chaque ressource ; refus neutre/autorisé selon politique arrêtée ; absence de corps sensible et scène/caches précédent contexte non affichés ; URL historique ne passe pas à latest. Paramètre domaine/planche invalide produit état non reconnu sans mutation. **Env :** E-UX + UX-S0, vraies sessions/API de test pour preuve sécurité, mocks seulement complément. **Preuve :** P-UX + matrice réponses expurgées et assertions absence de fuite.",
+      "m004_addendum": "Tester deep-link anonyme puis login même utilisateur/autre utilisateur ; returnTo externe interdit ; hiérarchie serveur revalidée après auth."
+    },
+    {
+      "id": "NAV-005",
+      "title": "quatre domaines et deux planches véritables",
+      "source_id_preserved": true,
+      "status": "Prescrit, non exécuté",
+      "conformity": "Non évaluée Studio",
+      "acceptance": "Absente",
+      "decision_status": "D07 retenu pour spécifications ; G1/G3 non passés",
+      "fixtures_candidates": [
+        "S1",
+        "S5",
+        "S6"
+      ],
+      "test_specification": "**Source :** quatre domaines accessibles, deux planches dans Dessin et modélisation seulement. **Dépendances :** I.4 puis A.2/A.3/E pour capacités métier. **Liens :** EX-004..007, TEST-001/002/003.\n\n**Positif :** parcourir quatre domaines, ouvrir 2D seule et 3D seule ; vérifier que leurs contrôles d'édition existent et que données indépendantes restent persistantes dans leurs propriétaires. **Négatif :** `planche=3d&domaine=bim`/planche inconnue refusée ou état explicite ; ne pas présenter coupe/feuille/visionneuse comme planche autonome ; ni volume fictif créé en A ni esquisse requise en B.\n\n**Oracle :** noms/responsabilités des quatre domaines identiques au contrat ; planches éditables uniquement D1 ; absence d'effet métier parasite. Test enveloppe I ne ferme que présence/navigation ; autonomie persistante et publication attendent les TEST aval. **Env :** E-UX + corpus de parcours A/B/C fourni A5. **Preuve :** P-UX + identités/modèles avant/après et sous-critères d'édition explicitement exécutés ou non.",
+      "m004_addendum": "Choix D07 actés pour spécifications ; aucune preuve métier déduite."
+    },
+    {
+      "id": "NAV-006",
+      "title": "bandeau exact et courses de navigation",
+      "source_id_preserved": true,
+      "status": "Prescrit, non exécuté",
+      "conformity": "Non évaluée Studio",
+      "acceptance": "Absente",
+      "decision_status": "D07 retenu pour spécifications ; G1/G3 non passés",
+      "fixtures_candidates": [
+        "UX-S0",
+        "S6"
+      ],
+      "test_specification": "**Source :** bon Projet/Étude/Variante/Révision ; Projets non faussement actif. **Dépendances :** I.3/M17, HomeTopbar/façade. **Liens :** EX-003/012/016/087/088/092, IF-001, NAV-004.\n\n**Positif :** ouvrir W3 puis R1, vérifier labels/IDs/readonly et source de chaque vue ; navigation rapide entre deux projets avec requêtes retardées. **Négatif :** réponse P1 tardive après ouverture P2 ; refus accès/absence révision ; ne pas mélanger nom P1 avec actions P2, ni montrer dernière révision sous URL historique, ni nom de projet interdit.\n\n**Oracle :** contexte de toutes les commandes égal au contexte autorisé de l'écran ; identités du bandeau et URL alignées ; historique clairement identifié ; Projets inactif, Studio seul actif. **Env :** E-UX + UX-S0 avec latences déterministes et retour de requête inversé. **Preuve :** P-UX + chronologie IDs/navigation/réponses expurgée et capture finale.",
+      "m004_addendum": "Choix D07 actés pour spécifications ; aucune preuve métier déduite."
+    },
+    {
+      "id": "NAV-007",
+      "title": "aucun abandon silencieux",
+      "source_id_preserved": true,
+      "status": "Prescrit, non exécuté",
+      "conformity": "Non évaluée Studio",
+      "acceptance": "Absente",
+      "decision_status": "D07 retenu pour spécifications ; G1/G3 non passés",
+      "fixtures_candidates": [
+        "S6",
+        "S7"
+      ],
+      "test_specification": "**Source :** transition protège geste, commande locale et sauvegarde pending. **Dépendances :** I.5, A.5/DEC-12, B/DEC-14, R/SW. **Liens :** TEST-011/012/013/019/021/036.\n\n**Positif :** pour preview, commande durable locale, envoi pending et conflit, choisir Rester puis sortie autorisée ; rouvrir même contexte et confirmer uniquement ce qui a été engagé ; tester route/domaine/planche/projet, historique, changement FR/EN (reload actuel), fermeture et SW. Plein écran seul conserve le geste/queue selon contrat.\n\n**Négatif :** réseau coupé entre envoi/réponse, réponse doublée, quota local épuisé, permission retirée pendant envoi, ancienne commande après changement de variante, SW incompatible, crash mobile sans beforeunload. Interdire fausse confirmation serveur, perte de file et application dans le nouveau contexte.\n\n**Oracle :** modèle/queue/journal source de vérité préservés ou annulation explicitement choisie ; exactement un effet par requestId ; contextes P/S/V/baseRevision inchangés par réadressage ; historique/publication anciens intacts ; récupération vérifiable après reopen. Définir précisément « local durable » dans M17, pas inférer depuis toast. **Env :** E-UX + corpus S7/A5, sessions concurrentes et stockage fault-injection sur cible jetable. **Preuve :** P-UX + queue avant/après, journal commandes/résolution et métriques de pertes/doublons=0.",
+      "m004_addendum": "Étendre coupure auth : queue utilisateurA ne part jamais sous B ; commande envoyée/réponse perdue dédupliquée ; navigation ne vaut pas annulation serveur."
+    },
+    {
+      "id": "NAV-008",
+      "title": "erreurs récupérables, plein écran explicite",
+      "source_id_preserved": true,
+      "status": "Prescrit, non exécuté",
+      "conformity": "Non évaluée Studio",
+      "acceptance": "Absente",
+      "decision_status": "D07 retenu pour spécifications ; G1/G3 non passés",
+      "fixtures_candidates": [
+        "S5",
+        "S7"
+      ],
+      "test_specification": "**Source :** erreur moteur/chargement récupérable ; rail non masqué par ancien mode Atelier. **Dépendances :** I.2/I.5, D protections minimales ; plein écran D07 retenu pour spécifications. **Liens :** TEST-014/015/037.\n\n**Positif :** provoquer échec de chunk/moteur/requête, utiliser Réessayer puis sortir vers Accueil/Projets ; demander plein écran puis le quitter avec bouton et événement système, focus/restauration contexte exacts. **Négatif :** Fullscreen API refuse ; worker crash avec pending ; résultat ancien après retry ; rotation/clavier virtuel rend habituellement bouton hors écran ; vérifier navigation toujours accessible hors mode explicite, sortie jamais dépendante d'un geste caché.\n\n**Oracle :** aucune activation automatique `atelier-immersive` par Studio ; erreur bornée avec action/aria-alert, navigation Fadi utilisable ; modèle canonique non partiel ; pending résolus explicitement, résultat périmé exclu, retry idempotent ; bouton de sortie visible/actionnable et état cohérent après sortie système. **Env :** E-UX + contrôles fault-injection, matériel physique pour comportements fullscreen/clavier mobile. **Preuve :** P-UX + DOM/classes/cibles tactiles, erreurs et transitions job ; aucun seuil mémoire inventé.",
+      "m004_addendum": "Plein écran accepté comme principe D07 ; tests refus API/sortie système restent prescrits."
+    },
+    {
+      "id": "NAV-009",
+      "title": "coexistence et non-régression Fadi",
+      "source_id_preserved": true,
+      "status": "Prescrit, non exécuté",
+      "conformity": "Non évaluée Studio",
+      "acceptance": "Absente",
+      "decision_status": "D07 retenu pour spécifications ; G1/G3 non passés",
+      "fixtures_candidates": [
+        "S1",
+        "S2",
+        "S4",
+        "S6",
+        "S7"
+      ],
+      "test_specification": "**Source :** Accueil/Projets/Parcours/Atelier/Collaboration conservent leurs parcours pendant coexistence. **Dépendances :** base PR142 décidée/revalidée, A5 matrice M04/M26 ; capacités Fadi inchangées. **Liens :** recettes existantes et TEST de persistance/permissions, sans dupliquer leurs résultats.\n\n**Positif :** rejouer sur build candidat les parcours Fadi applicables, étapes10/11 et Atelier direct, carte mobile21 étapes, Collaboration, menus/outils/clavier et FR/EN ; revenir Studio puis Fadi. Mesurer navigation et absence débordement global ; vérifier cibles réelles des gestes sous barres flottantes.\n\n**Négatif :** méta CSS Studio sur ancien écran, route active erronée, raccourci Studio déclenché dans un champ Fadi, manque traduction, panneau superposé intercepte clic géométrique, retour vers un projet non autorisé. Ne pas corriger l'oracle pour masquer un défaut ; ne pas neutraliser assertions métier ou droits.\n\n**Oracle :** résultats métier avant/après conformes au corpus validé ; 21 étapes/ordre/phases/libellés et Harmonie conservés ; capacités industrielles et règle outils conservées ; assertions identités/quantités/undo/documents/permissions toujours présentes. Les traces PR142 anciennes a383fa… ne valident pas le candidat. Sur tête PR142 0d960605… la CI38766145763 échoue à planche-boutons ; layout vert seul insuffisant. **Env :** E-UX et cibles jetables A5/A6, nouveaux tests sécurité selon droits. **Preuve :** P-UX + matrice script→assertions→SHA→verdict ; skipped/non exécuté affichés, preuve issue PR142 séparée.",
+      "m004_addendum": "Séparer trois validations Code/Review ChatGPT/Review Admin ; aucun signal snapshot ne coche NAV."
+    }
+  ],
+  "test_environment": "E-UX proposé : Chromium Playwright verrouillé et navigateur système identifiés séparément ; 1920/1440/1024/768/390 px portrait+paysage ; FR/EN, clavier/tactile, zoom200%, reduced-motion ; appareils réels et budgets DEC13 distincts de headless. Toute recette mutatrice exige autorisation+cible jetable sûre ; aucune exécutée ici.",
+  "three_validations": "Code, Review ChatGPT et Review Admin indépendants ; aucun signal ou décision ne coche automatiquement ces trois étapes."
+}

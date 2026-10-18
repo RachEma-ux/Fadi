@@ -1,0 +1,51 @@
+{
+  "reviewer": "A5",
+  "A2_review_sha256": "fac54baa0b0268dc998fe4ebcf62c9a47335096591da8ee278b1b6afb52f7d39",
+  "expected_A2_sha256": "fac54baa0b0268dc998fe4ebcf62c9a47335096591da8ee278b1b6afb52f7d39",
+  "code_reference": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "sources_verified": 42,
+  "citation_occurrences_verified": 216,
+  "unique_citations": 202,
+  "errors": [],
+  "verdict": "Précondition documentaire conjointe satisfaite dans périmètre statique déclaré ; accord A5 pour A0 poursuivre lot A3-CLASSIF-1 déjà autorisé6250110849, branche/PR dédiée sans fusion. Aucun accord DB/API/E2E/production ajouté.",
+  "effects_review": [
+    {
+      "id": "CLASSIF-I01",
+      "verdict": "Cohérent et couvert par contrat autorisé, aucun besoin de changement consommateur identifié",
+      "reason": "Aucune déclaration absente créée ; déclaration saisie/importée/ancienne regle-verifiee conservée entière."
+    },
+    {
+      "id": "CLASSIF-I02",
+      "verdict": "Cohérent et couvert par contrat autorisé, aucun besoin de changement consommateur identifié",
+      "reason": "Liste, colonne et compteur génériques peuvent ne plus montrer une propriété auparavant fabriquée. Aucun changement UI nécessaire démontré."
+    },
+    {
+      "id": "CLASSIF-I03",
+      "verdict": "Cohérent et couvert par contrat autorisé, aucun besoin de changement consommateur identifié",
+      "reason": "Diagnostic AnnexeC et remarque export peuvent rester visibles après code externe au lieu d’être effacés par écrasement. Mapping produit IFC et associations restent dérivés/inchangés."
+    },
+    {
+      "id": "CLASSIF-I04",
+      "verdict": "Cohérent et couvert par contrat autorisé, aucun besoin de changement consommateur identifié",
+      "reason": "Diff/inverse/archives/copies conservent propriétés entières ; anciennes valeurs non réécrites."
+    },
+    {
+      "id": "CLASSIF-I05",
+      "verdict": "Cohérent et couvert par contrat autorisé, aucun besoin de changement consommateur identifié",
+      "reason": "Une classeIFC déclarée sur une définition peut apparaître par projection générique de composant ; aucune fonctionnalité nouvelle de classification type/héritage livrée."
+    }
+  ],
+  "scope_differences": "A2 motifs directs élargis81lignes/19fichiers et génériques114lignes/31fichiers vs A5 cinq motifs63occurrences et14points contextualisés ; compteurs non additionnables. Inventaires complémentaires, pas audit exhaustif des données/consommateurs externes.",
+  "A5_clarification": "Helper Inspecteur2030 concerne groupe/calque, pas occurrenceCLASSIF1. A5 inventaire local corrigé pour lever ambiguïté de portée ; aucun élargissement de code. Le hash A5 antérieur dans cross_review_A5 reste snapshot de la remise lue par A2.",
+  "required_acceptance": [
+    "AbsenceclasseIfc préservée ; saisie/import et ancienregle-verifiee préservés intégralement, métadonnées inconnues comprises.",
+    "Codes/libellés/statuts référentiel conservés, autres systèmes et objets exclus inchangés.",
+    "id/ids, cible invalide ou verrouillée après valide : entrée profonde inchangée et aucun effet partiel ; inverse exact via appliquerLot et répétabilité.",
+    "Diagnostic et export purs avant/après : pas mutation, annexeC/associations et traitement importés inchangés.",
+    "Ne pas affaiblir assertion numérique+1, référentiels ou contrôles dérivés ; API/E2E lus seulement.",
+    "Aucune migration ou réparation historique par hypothèse ; aucun changementUI/IFCengine/schema/contratids sous ce lot."
+  ],
+  "stop_condition": "Si A3/A5 découvre effet nécessitant autre code ou réparation de données, suspendre uniquement écriture nouvelle concernée et demander extension explicite ; ne pas changer des assertions pour cacher une défaillance.",
+  "runtime": "Aucune nouvelle exécution : ni test produit/pur, ni application/service/réseau/DB ; extraction documentaire Python/Git seulement.",
+  "hash_matches": true
+}

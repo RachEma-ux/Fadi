@@ -1,0 +1,93 @@
+{
+  "mode": "Revues documentaires M08 distinctes + seul fichier testsCLASSIF1 autorisé6250110849",
+  "reference_inventory": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "code_checkout_baseline": "a4caaab0e6665480f09febe3914c960b424b6b47",
+  "files": [
+    {
+      "path": "CLASSIF1-INVENTAIRE-INDEPENDANT-A5.json",
+      "sha256": "a047a5925eba616fba9f923654edc76f492adc1869f11d5642644e81896db974",
+      "bytes": 86741
+    },
+    {
+      "path": "CLASSIF1-INVENTAIRE-INDEPENDANT-A5.md",
+      "sha256": "79b576a0ee48bae11b3836ab48275a11af90893dc11220c529d54b117ab9e508",
+      "bytes": 6162
+    },
+    {
+      "path": "CLASSIF1-REVUE-CONJOINTE-A5.json",
+      "sha256": "ef65fe28720344ed351b0a7bffa6d00903842cc6344b3a56855c0215ba43bf97",
+      "bytes": 4024
+    },
+    {
+      "path": "CLASSIF1-REVUE-CONJOINTE-A5.md",
+      "sha256": "9dcbb0b059eb577784ea36db5b8bc59133fb79c11c42e4e13656113c7caf2bb0",
+      "bytes": 2757
+    },
+    {
+      "path": "CLASSIF1-TESTS-ET-REVUE-A5.json",
+      "sha256": "6a44cc3b2c4f647ffbd1cb59db0b8167860c6ed44a616ad3299ba0ccba836e55",
+      "bytes": 3576
+    },
+    {
+      "path": "CLASSIF1-TESTS-ET-REVUE-A5.md",
+      "sha256": "a481d2288ab11a924757b5cf374c3e8eec09b8942fc85657768a0834b93867e0",
+      "bytes": 2933
+    },
+    {
+      "path": "M08-001-007-CONFRONTATION-A2-A5.json",
+      "sha256": "1942e09f76e023e0898522142c48286dc10acf02d58c1e690f988d587440d5d7",
+      "bytes": 100601
+    },
+    {
+      "path": "M08-001-007-REVUE-INDEPENDANTE.json",
+      "sha256": "d05aa59783c39b73f221c09957b5ce430c565ee9f25d59eaa4070b298b1ca4bc",
+      "bytes": 146081
+    },
+    {
+      "path": "M08-001-007-REVUE-INDEPENDANTE.md",
+      "sha256": "030402a5ad633075adc4c3e37193d5236ff399a5dc1b0aaed55ed9630f61c3cf",
+      "bytes": 11468
+    },
+    {
+      "path": "M08-009-015-CONFRONTATION-A5.json",
+      "sha256": "da7bf0fc95c2e32c04d54db8b9d126398c1358f83ca185302135d50d708960aa",
+      "bytes": 77226
+    },
+    {
+      "path": "M08-009-015-CONFRONTATION-A5.md",
+      "sha256": "8275b60014840376549353fc58f307eed00596e4191760f07258a126994a41e8",
+      "bytes": 15036
+    },
+    {
+      "path": "M08-009-015-LECTURE-INDEPENDANTE-A5.json",
+      "sha256": "657aec58d97fe550d094da46a2ca8b24ea10b5a255b9430cfcc302a2a31e332b",
+      "bytes": 155655
+    },
+    {
+      "path": "M08-016-018-020-022-CONFRONTATION-A5.json",
+      "sha256": "c5365fbecd8b1df405c945e85c2f137db0e5d59e9a22922bfb2f21702721b05b",
+      "bytes": 64912
+    },
+    {
+      "path": "M08-016-018-020-022-CONFRONTATION-A5.md",
+      "sha256": "be67e8afc70445df47491fa44dc18c950ff66fa9c203c901b96fd54439e41159",
+      "bytes": 10516
+    },
+    {
+      "path": "M08-016-018-020-022-LECTURE-INDEPENDANTE-A5.json",
+      "sha256": "cd1f1fa36677be75d2098b91e584909807e71ccebd37337264a1a4ca3e86c24a",
+      "bytes": 87099
+    },
+    {
+      "path": "classification-conservation-final.log",
+      "sha256": "78757c001570390222a8f59e42217ca90881d45c3fcda6473627c7de52b22cbe",
+      "bytes": 219
+    },
+    {
+      "path": "classification-conservation-first.log",
+      "sha256": "431dc15ed43a5e2eb9a16fc31d5b627481bddd18005d25cb2ab8392fcf725e24",
+      "bytes": 475
+    }
+  ],
+  "status": "M08cohortes001–007,009–015,016/018/020/022 et préconditionCLASSIF1 revus ;24testsCLASSIF1purs déjàpassés nonrelancés ; A0 seul intègre"
+}

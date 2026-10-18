@@ -1,0 +1,576 @@
+{
+  "mission": "004",
+  "instruction_sha": "63e804be7b8e8935913514bd57937053c7402474",
+  "publication": "Le SHA porteur se lit dans git log ; aucun SHA de contenu autoréférentiel inventé.",
+  "path_resolution": "Les chemins locaux des pièces agents sont des provenances de session. Leur copie publiable et son empreinte sont résolues par fichiers[].origine_session/fichier ; les références de code citent leurs SHA propres.",
+  "fichiers": [
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+      "origine_session": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+      "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+      "octets": 14941,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json",
+      "origine_session": "/workspace/work/mission004/agents/A1/studio-141-fiches-v2.json",
+      "sha256": "48c8aa1093bec1fda771961d4d0fb7827ba7e4775f72ed9afe6cf29feada2df3",
+      "octets": 977583,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A1/matrice-141-exigences-composants-tests-preuves.csv",
+      "origine_session": "/workspace/work/mission004/agents/A1/matrice-141-exigences-composants-tests-preuves.csv",
+      "sha256": "f118cdecfae37c45cbec6c10d50d69872d6a61f7b34ba2df0944aeba9fd95804",
+      "octets": 116900,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A1/studio-18-decisions-v2.json",
+      "origine_session": "/workspace/work/mission004/agents/A1/studio-18-decisions-v2.json",
+      "sha256": "f36eed4b8c246387e5fd853eadd1a773bdeeb7e94d32f44f44352ba3b1cbc49e",
+      "octets": 45735,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A1/source-decision-M004.json",
+      "origine_session": "/workspace/work/mission004/agents/A1/source-decision-M004.json",
+      "sha256": "d6d0be1d29e92912522e088f1db96345c71b845fcaaa0ca078b1809a14c53aca",
+      "octets": 5678,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A1/validation-141-v2.json",
+      "origine_session": "/workspace/work/mission004/agents/A1/validation-141-v2.json",
+      "sha256": "c32483ae9cc17829e5dff398e574ecfc39128eeb2e9f0f0956be57bd3fb21bd4",
+      "octets": 442,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A1/proposition-24-IDs-documentaires-verifies.json",
+      "origine_session": "/workspace/work/mission004/agents/A1/proposition-24-IDs-documentaires-verifies.json",
+      "sha256": "340d32b254f7860443f24714098d9e03fa612d03c68e18768e50dd35b09d0ceb",
+      "octets": 90978,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A2/DB12-CONTRACT-REVIEW.md",
+      "origine_session": "/workspace/work/mission004/agents/A2/DB12-CONTRACT-REVIEW.md",
+      "sha256": "b1d36b42fcdc5366f20f76ea1ae5de011d07938b73ff336dc9ca360b68ec3de0",
+      "octets": 8720,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A2/DB12-FINAL-STATIC-REVIEW.md",
+      "origine_session": "/workspace/work/mission004/agents/A2/DB12-FINAL-STATIC-REVIEW.md",
+      "sha256": "5ed10fc9fe9aef238c578fefdd2813bd974b41fde3a9f65e740e3a9da726afac",
+      "octets": 5140,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A2/G0-REVUE-A2.json",
+      "origine_session": "/workspace/work/mission004/agents/A2/G0-REVUE-A2.json",
+      "sha256": "f2fcf0f7324671b0c127e5592d1feba68ca79f87c313df4ab2a7186c0ad33b7a",
+      "octets": 1005,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A2/M08-125-PATH-MAPPING.json",
+      "origine_session": "/workspace/work/mission004/agents/A2/M08-125-PATH-MAPPING.json",
+      "sha256": "d8879b4ce71b82ea38352a61d7d2ae025350d8e65ef1b345241f85aa5e159348",
+      "octets": 625881,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A2/M08-MAPPING-PROVENANCE-CHECK.json",
+      "origine_session": "/workspace/work/mission004/agents/A2/M08-MAPPING-PROVENANCE-CHECK.json",
+      "sha256": "1b4e9d37d3f061c1021dc1998883bd0681a5dbf4b854861cc5ca2bc759eaa118",
+      "octets": 577,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A2/M08-MAPPING-RECEPTION.md",
+      "origine_session": "/workspace/work/mission004/agents/A2/M08-MAPPING-RECEPTION.md",
+      "sha256": "08fc7aef5bdd662e65720466bb0ebb5c5ba466050dabc93d70df7f98a2eca05c",
+      "octets": 1805,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A3/RAPPORT-A3-DB-1-2.md",
+      "origine_session": "/workspace/work/mission004/agents/A3/RAPPORT-A3-DB-1-2.md",
+      "sha256": "6b1179a0b6903651a49b3db8df6d6401cf83df55f6deabc6fb213cf4083c22e7",
+      "octets": 6584,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A3/validation.json",
+      "origine_session": "/workspace/work/mission004/agents/A3/validation.json",
+      "sha256": "cc89f89e3018365e0f8cd9849216586c2aeb98f9ac798f3307f47cf82eada06d",
+      "octets": 6515,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+      "origine_session": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+      "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+      "octets": 20849,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A4/NAV-M004.json",
+      "origine_session": "/workspace/work/mission004/agents/A4/NAV-M004.json",
+      "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2",
+      "octets": 16498,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A4/MAQUETTES-DOCUMENTAIRES.md",
+      "origine_session": "/workspace/work/mission004/agents/A4/MAQUETTES-DOCUMENTAIRES.md",
+      "sha256": "911a0721ed0a72ecf48478c63b635efd5dbe9c112d1de08e18fdd8c56f06baab",
+      "octets": 9552,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A4/CHECKPOINT-A4.md",
+      "origine_session": "/workspace/work/mission004/agents/A4/CHECKPOINT-A4.md",
+      "sha256": "fc6870e2937d33851aa12c7a47655df6d2da5ddf76dc5e14ed5cee0714e0cb76",
+      "octets": 1034,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A4/PREUVES-LECTURE.json",
+      "origine_session": "/workspace/work/mission004/agents/A4/PREUVES-LECTURE.json",
+      "sha256": "0edb6717f98d48c14ffa735e02b41becb097773c1e11d5454ca2454ee3732401",
+      "octets": 4198,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A4/PR142-PR168-REVUE.md",
+      "origine_session": "/workspace/work/mission004/agents/A4/PR142-PR168-REVUE.md",
+      "sha256": "cc1a06768e86756d46ef34654eac0dc935960dad049225bbf85983d316df8ae4",
+      "octets": 6811,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A4/REVUE-G0-A1.json",
+      "origine_session": "/workspace/work/mission004/agents/A4/REVUE-G0-A1.json",
+      "sha256": "e590e12a3f84251d64d08593454198de7bff62484e556228bc4f05d29a3a1508",
+      "octets": 1356,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A4/ROUTE03-COMPLEMENT.json",
+      "origine_session": "/workspace/work/mission004/agents/A4/ROUTE03-COMPLEMENT.json",
+      "sha256": "d4521b47aa305e658a7c72cf216d2ce1eefdb4e599359d22bed4981da799e706",
+      "octets": 1256,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/A5-M004-REVUE-ET-REMISE.md",
+      "origine_session": "/workspace/work/mission004/agents/A5/A5-M004-REVUE-ET-REMISE.md",
+      "sha256": "97d276d75ee90701e87da6433b974fe4dfd8f7605047b61e3aa4cbe040c931f4",
+      "octets": 9288,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/DB12-PREUVES-A5.json",
+      "origine_session": "/workspace/work/mission004/agents/A5/DB12-PREUVES-A5.json",
+      "sha256": "03277c448dc1ed7891853a4c36a3009ff9f82becfafaaed6083bb59a47584a4c",
+      "octets": 3435,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/DB3-CONDITIONS-DE-RECEPTION.md",
+      "origine_session": "/workspace/work/mission004/agents/A5/DB3-CONDITIONS-DE-RECEPTION.md",
+      "sha256": "fa74b659a0ffbb832094439c3a16465ca51f82294e3289f25acff5506f6a493c",
+      "octets": 7304,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/G0-REVUE-A5.json",
+      "origine_session": "/workspace/work/mission004/agents/A5/G0-REVUE-A5.json",
+      "sha256": "566e38b1ff8f6580d714102bd8b8ff2095c6e8d0ee59ae6a3d1a025d6281381a",
+      "octets": 969,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/M08-REVUE-ORACLES-A5.json",
+      "origine_session": "/workspace/work/mission004/agents/A5/M08-REVUE-ORACLES-A5.json",
+      "sha256": "f040a703e8dede461638bd9470d54bca4d9f60ca3f98b8a8f08db3e65e0ae6c4",
+      "octets": 1299,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
+      "origine_session": "/workspace/work/mission004/agents/A5/studio-38-oracles-M004.csv",
+      "sha256": "65f599e6645d6a927cc6f114a2d61ce371e814b4e097091120faba49aca89fe4",
+      "octets": 47753,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/fixtures-manifest.json",
+      "origine_session": "/workspace/work/mission004/agents/A5/fixtures-manifest.json",
+      "sha256": "04fa52e93a3ab6b2eeee2d34b0e22fa6527deaa90ea16a42d2f0c659caea0ca6",
+      "octets": 2380,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/fixtures-consistency.json",
+      "origine_session": "/workspace/work/mission004/agents/A5/fixtures-consistency.json",
+      "sha256": "033d53c0390d26a8c0ce766bfbf89331d3e9d43354d85d4c77008e43a2a80260",
+      "octets": 489,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/NAV-FIXTURES-M004.md",
+      "origine_session": "/workspace/work/mission004/agents/A5/NAV-FIXTURES-M004.md",
+      "sha256": "6209ac11ee6c16584f0fb315e86373efd73215bd247ab66a41ca5912c394d896",
+      "octets": 2817,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/CORPUS-LIMITES-P630.md",
+      "origine_session": "/workspace/work/mission004/agents/A5/CORPUS-LIMITES-P630.md",
+      "sha256": "9667051c2b6d0d6d215d299de3185ba8214881e219accf81ecd33d1f6b450da5",
+      "octets": 2106,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+      "origine_session": "/workspace/work/mission004/agents/A5/REVUE-24-IDS-DOCUMENTAIRES-A5.json",
+      "sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+      "octets": 34722,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-P630-DOCUMENTAIRE.md",
+      "origine_session": "/workspace/work/mission004/agents/A5/REVUE-P630-DOCUMENTAIRE.md",
+      "sha256": "15010c6e13aa6714c76134682103b41d531fb7e5e31cb6605a5ba94811d2b411",
+      "octets": 5024,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/fixtures/S1.json",
+      "origine_session": "/workspace/work/mission004/agents/A5/fixtures/S1.json",
+      "sha256": "7aaf1edcd2aa175e4e77f624c87a563f0d67a4048e31d190e4fb0f50b9e0238c",
+      "octets": 2052,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/fixtures/S2.json",
+      "origine_session": "/workspace/work/mission004/agents/A5/fixtures/S2.json",
+      "sha256": "13e6f20368111ca3da701e1dc9dab5e5e099cd1deefe7306b853abf4d53b5e88",
+      "octets": 1769,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/fixtures/S3.json",
+      "origine_session": "/workspace/work/mission004/agents/A5/fixtures/S3.json",
+      "sha256": "719c89a3df0bdefe6ead943af1c6f642b80e66b7ffd9dd1eb2eb087f8565cf12",
+      "octets": 14513,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/fixtures/S4.json",
+      "origine_session": "/workspace/work/mission004/agents/A5/fixtures/S4.json",
+      "sha256": "7885150682612d0e3034087b4f9087d437e6aa1ef411d6e4679352492268541d",
+      "octets": 1957,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/fixtures/S5.json",
+      "origine_session": "/workspace/work/mission004/agents/A5/fixtures/S5.json",
+      "sha256": "53659cd76c46f44d6e5acd39e8de2c3a3b3495b52d622a1650a06f1bb8b3243c",
+      "octets": 1694,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/fixtures/S6.json",
+      "origine_session": "/workspace/work/mission004/agents/A5/fixtures/S6.json",
+      "sha256": "fd8845ba3d359e40cfc1d9e64d0dff8257610f3f110cff8ad5355696df47ec9c",
+      "octets": 2097,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/fixtures/S7.json",
+      "origine_session": "/workspace/work/mission004/agents/A5/fixtures/S7.json",
+      "sha256": "997ebca9d3a76ef07f20419a41bbf6e39ef184b164ec19af1aecf44699fc6008",
+      "octets": 1964,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A6/CI-SURE-DB12.md",
+      "origine_session": "/workspace/work/mission004/agents/A6/CI-SURE-DB12.md",
+      "sha256": "744b75527914fa48c882b585614c47ad5ff8de906adcd4326fef9ad5b91ee033",
+      "octets": 6279,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A6/CI-169-observation.json",
+      "origine_session": "/workspace/work/mission004/agents/A6/CI-169-observation.json",
+      "sha256": "268fa7267ce10f51c3685f15d05637a644bc56781405fa098f95af7399bcf15e",
+      "octets": 2554,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A6/CI-DOC-PURE-PROPOSITION.md",
+      "origine_session": "/workspace/work/mission004/agents/A6/CI-DOC-PURE-PROPOSITION.md",
+      "sha256": "1f15c694de1ab5e1701a50b8b95ebaada59e73a17637105622b500eb7dcc1f05",
+      "octets": 4852,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A6/M03-M04-PROFIL-SOLO-VERSIONS.md",
+      "origine_session": "/workspace/work/mission004/agents/A6/M03-M04-PROFIL-SOLO-VERSIONS.md",
+      "sha256": "4b7cc06bcb226f16040ef7e5713c6d21939514fe36d210f61b4d53a5d2b6bef9",
+      "octets": 6709,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A6/M03-M04-preuves.json",
+      "origine_session": "/workspace/work/mission004/agents/A6/M03-M04-preuves.json",
+      "sha256": "dcecacf94e7ed419c3b77483c46b99699316830001791cc8fbe72f6d4d9c6f72",
+      "octets": 8279,
+      "provenance": "Nouvelle production Mission004 ; pas original Mission002"
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A2/M05-M17-CONTRATS-DURABLES.md",
+      "origine_session": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+      "sha256": "893d4917fe810867b589727e82d1789db56453f86c78fbfab56b294acedac84b",
+      "octets": 17763,
+      "provenance": "Nouvelle préparation Mission004 ; exemple documentaire non exécutable."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A2/M05-M17-EXEMPLES-DOCUMENTAIRES.json",
+      "origine_session": "/workspace/work/mission004/agents/A2/M05-M17-EXEMPLES-DOCUMENTAIRES.json",
+      "sha256": "6a6ffdb05613f0d992681d29f1e5b3c6b937c2356c6034cdd33aa28596ee1868",
+      "octets": 43793,
+      "provenance": "Nouvelle préparation Mission004 ; exemple documentaire non exécutable."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A2/M05-M17-SOURCES.json",
+      "origine_session": "/workspace/work/mission004/agents/A2/M05-M17-SOURCES.json",
+      "sha256": "274b591a29080b0ea13d1d9778361d3519e6632a642434b4d548671f45daa493",
+      "octets": 163257,
+      "provenance": "Nouvelle préparation Mission004 ; exemple documentaire non exécutable."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A2/M05-M17-RECEPTION.json",
+      "origine_session": "/workspace/work/mission004/agents/A2/M05-M17-RECEPTION.json",
+      "sha256": "4ccd7438e724f54f40541717bac750616079f6266d0904c9c5d14a9147161067",
+      "octets": 939,
+      "provenance": "Nouvelle préparation Mission004 ; exemple documentaire non exécutable."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A6/AVIS-CHECKPOINT-BRANCHE-SANS-PR.md",
+      "origine_session": "/workspace/work/mission004/agents/A6/AVIS-CHECKPOINT-BRANCHE-SANS-PR.md",
+      "sha256": "2b211ee9fb34bdea1fa708496f8200f5b304a59457321886eb262190df86e362",
+      "octets": 5040,
+      "provenance": "Nouvelle préparation Mission004 ; pas exécution du produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+      "origine_session": "/workspace/work/mission004/agents/A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+      "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917",
+      "octets": 20490,
+      "provenance": "Mission004, version finale après revue croisée si applicable ; aucune exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A1/M24-EXEMPLES-MANIFESTES.json",
+      "origine_session": "/workspace/work/mission004/agents/A1/M24-EXEMPLES-MANIFESTES.json",
+      "sha256": "bdecc5b2387a619ae3e0a09e78df44ea1dd3188fb1451be96980d32018551bf0",
+      "octets": 167495,
+      "provenance": "Mission004, version finale après revue croisée si applicable ; aucune exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A1/M24-VALIDATION-DOCUMENTAIRE.json",
+      "origine_session": "/workspace/work/mission004/agents/A1/M24-VALIDATION-DOCUMENTAIRE.json",
+      "sha256": "ef1dd6c58722a3c25ec14afebd2e6ddf574bd468dd0f668deea5cc4d02e27798",
+      "octets": 1289,
+      "provenance": "Mission004, version finale après revue croisée si applicable ; aucune exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A1/M24-REMISE.json",
+      "origine_session": "/workspace/work/mission004/agents/A1/M24-REMISE.json",
+      "sha256": "ae7b9e0c0711b6a5187d8d6c79a96cbe30a64b0355859a6c2284f209e2857f5b",
+      "octets": 1871,
+      "provenance": "Mission004, version finale après revue croisée si applicable ; aucune exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A4/M21-CONTRAT-MINIMAL.md",
+      "origine_session": "/workspace/work/mission004/agents/A4/M21-CONTRAT-MINIMAL.md",
+      "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625",
+      "octets": 12389,
+      "provenance": "Mission004, version finale après revue croisée si applicable ; aucune exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A4/M21-CATALOGUE-EXEMPLES.json",
+      "origine_session": "/workspace/work/mission004/agents/A4/M21-CATALOGUE-EXEMPLES.json",
+      "sha256": "579b15c4bd3079ce8376881fbce62eae432a8a90a290eccbdcfe4b0bea79e13d",
+      "octets": 10372,
+      "provenance": "Mission004, version finale après revue croisée si applicable ; aucune exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A4/M21-VERIFICATION-JSON.json",
+      "origine_session": "/workspace/work/mission004/agents/A4/M21-VERIFICATION-JSON.json",
+      "sha256": "cacb51b13601b35cbd55de72f6da8ad096a2fbfddbb50714597843e1dcf4727e",
+      "octets": 496,
+      "provenance": "Mission004, version finale après revue croisée si applicable ; aucune exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/M09-WORKFLOW-PUR-PROPOSE.md",
+      "origine_session": "/workspace/work/mission004/agents/A5/M09-WORKFLOW-PUR-PROPOSE.md",
+      "sha256": "97d3d667921b035eee226b2d585d243e54b27c2843ee7955d31c8515b8d27eff",
+      "octets": 5374,
+      "provenance": "Mission004, version finale après revue croisée si applicable ; aucune exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A2/REVUE-M21-M24.json",
+      "origine_session": "/workspace/work/mission004/agents/A2/REVUE-M21-M24.json",
+      "sha256": "31d768fa619f9b5f85be4d500db605fd4c9fd042e465a893495aa390eacf1878",
+      "octets": 7309,
+      "provenance": "Revue croisée indépendante après corrections documentaires, pas gate ni test produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A4/REVUE-M17-M24.json",
+      "origine_session": "/workspace/work/mission004/agents/A4/REVUE-M17-M24.json",
+      "sha256": "ff0b894af1fc0592029061ba700ad6065e39f8788b01b9cb81fc2039fc11aa4f",
+      "octets": 9336,
+      "provenance": "Revue croisée finale indépendante des contrats et exemples ; pas gate ni test produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-M17-M21-M24.json",
+      "origine_session": "/workspace/work/mission004/agents/A5/REVUE-M17-M21-M24.json",
+      "sha256": "56565e77aac291e8d3557f31bd0263a1b630ef9611be23ba69923d5ba128006c",
+      "octets": 14342,
+      "provenance": "Revue croisée finale indépendante des contrats et exemples ; pas gate ni test produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/REVUE-M17-M21-M24.md",
+      "origine_session": "/workspace/work/mission004/agents/A5/REVUE-M17-M21-M24.md",
+      "sha256": "e9394b0cc0eb5bdc230105fa0313452c42041b2b086b65f98d976955fc04cb22",
+      "octets": 3145,
+      "provenance": "Revue croisée finale indépendante des contrats et exemples ; pas gate ni test produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+      "origine_session": "/workspace/work/mission004/agents/A1/delta-32-CAD-ARC-G0-G1-qualification.json",
+      "sha256": "ac9940d7492d43fa05144d3eb3b590c292fcb89c0c4031a311ac153d45ee557c",
+      "octets": 294423,
+      "provenance": "Suite réelle après premier checkpoint Mission004 ; préparation/revue documentaire, pas exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A2/M08-8-ORACLES-COMPARAISON.json",
+      "origine_session": "/workspace/work/mission004/agents/A2/M08-8-ORACLES-COMPARAISON.json",
+      "sha256": "15f05e6719f99cf36a79375c43e818e266a52c8bca9ae6d10a77ca1bcc410c65",
+      "octets": 157770,
+      "provenance": "Suite réelle après premier checkpoint Mission004 ; préparation/revue documentaire, pas exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A2/M08-8-ORACLES-COMPARAISON.md",
+      "origine_session": "/workspace/work/mission004/agents/A2/M08-8-ORACLES-COMPARAISON.md",
+      "sha256": "d667a600b0df12a442c6916465162fc0b823984502212a26134fd8983893394a",
+      "octets": 4625,
+      "provenance": "Suite réelle après premier checkpoint Mission004 ; préparation/revue documentaire, pas exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A2/REVUE-M23-M27.json",
+      "origine_session": "/workspace/work/mission004/agents/A2/REVUE-M23-M27.json",
+      "sha256": "4d5ed249beaab082e1696fca9f6f96744bcb22d54917fcbb6abe9c129d4c6c25",
+      "octets": 12196,
+      "provenance": "Suite réelle après premier checkpoint Mission004 ; préparation/revue documentaire, pas exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/M08-8-REVUE-INDEPENDANTE-A5.json",
+      "origine_session": "/workspace/work/mission004/agents/A5/M08-8-REVUE-INDEPENDANTE-A5.json",
+      "sha256": "add81a162b100d92d87d70b1a6068decd9ce650b062aab6a3885432d1a0235cd",
+      "octets": 8313,
+      "provenance": "Suite réelle après premier checkpoint Mission004 ; préparation/revue documentaire, pas exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/M08-8-REVUE-INDEPENDANTE-A5.md",
+      "origine_session": "/workspace/work/mission004/agents/A5/M08-8-REVUE-INDEPENDANTE-A5.md",
+      "sha256": "b14673e695ef1e0b8bea4e56a6f65846f8dc845656751e6ffc0dc14719224e7f",
+      "octets": 2672,
+      "provenance": "Suite réelle après premier checkpoint Mission004 ; préparation/revue documentaire, pas exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+      "origine_session": "/workspace/work/mission004/agents/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+      "sha256": "45b5b77923079d12f9dc98a1050a32ed177f74de0243075b2efb041a1585eb3e",
+      "octets": 13984,
+      "provenance": "Suite réelle après premier checkpoint Mission004 ; préparation/revue documentaire, pas exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A6/M23-M27/EXEMPLES-JOBS-REPRISE-RESTAURATION.json",
+      "origine_session": "/workspace/work/mission004/agents/A6/M23-M27/EXEMPLES-JOBS-REPRISE-RESTAURATION.json",
+      "sha256": "71c1cfeafd36f1741f55395ccb4d524a9abee439f9e078a385d7802a1eb54632",
+      "octets": 11876,
+      "provenance": "Suite réelle après premier checkpoint Mission004 ; préparation/revue documentaire, pas exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A6/M23-M27/SOURCES.json",
+      "origine_session": "/workspace/work/mission004/agents/A6/M23-M27/SOURCES.json",
+      "sha256": "ba6f442df835dc3d3a36e01a1b9d4bfbf8788ec825157948fa01e8d8fc0c3b8f",
+      "octets": 887,
+      "provenance": "Suite réelle après premier checkpoint Mission004 ; préparation/revue documentaire, pas exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A6/M23-M27/VALIDATION-COHERENCE-JSON.json",
+      "origine_session": "/workspace/work/mission004/agents/A6/M23-M27/VALIDATION-COHERENCE-JSON.json",
+      "sha256": "9b0bd10c3bbac6fbcc8dcb676db970db6ec44769c10f916c8b3b0cf1ac6c1ff1",
+      "octets": 901,
+      "provenance": "Suite réelle après premier checkpoint Mission004 ; préparation/revue documentaire, pas exécution produit."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
+      "origine_session": "/workspace/work/mission004/agents/A4/REVUE-32-QUALIFICATIONS.json",
+      "sha256": "c3ca130287d2411948a4992fa02fcb2be9eca57a656838d424b1d8f457377b5f",
+      "octets": 18289,
+      "provenance": "Revue indépendante de32qualifications ; aucune clôture proposée."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A4/REVUE-M09-CSP-USAGES.json",
+      "origine_session": "/workspace/work/mission004/agents/A4/REVUE-M09-CSP-USAGES.json",
+      "sha256": "447b197484ede5cb0c99f66c6d1a5707e7a0279b0f631c0aae4c2e39629418c1",
+      "octets": 15520,
+      "provenance": "Complément documentaire après revue des usages natifs ; pas enforcement/CSP appliqué."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A4/REVUE-M09-CSP-USAGES.md",
+      "origine_session": "/workspace/work/mission004/agents/A4/REVUE-M09-CSP-USAGES.md",
+      "sha256": "8ae35e34df63ccf56016526793083585aa1361aef7234432677a331995ae9e74",
+      "octets": 3955,
+      "provenance": "Complément documentaire après revue des usages natifs ; pas enforcement/CSP appliqué."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/M09-INVENTAIRE-POINTS.json",
+      "origine_session": "/workspace/work/mission004/agents/A5/M09-INVENTAIRE-POINTS.json",
+      "sha256": "8b3bb9f5fa492fb010a90b70117b05a95787b554a775c137b7c5c6f7ab2d441e",
+      "octets": 13081,
+      "provenance": "Complément documentaire après revue des usages natifs ; pas enforcement/CSP appliqué."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A5/M09-LOT-A3-CSP-SCAN-PRET-A-AUTORISER.md",
+      "origine_session": "/workspace/work/mission004/agents/A5/M09-LOT-A3-CSP-SCAN-PRET-A-AUTORISER.md",
+      "sha256": "ef5c0cb3cc46e92617152db305083ab821435ec2561d593f0e10aa29f84f2c76",
+      "octets": 26458,
+      "provenance": "Complément documentaire après revue des usages natifs ; pas enforcement/CSP appliqué."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A2/M08-CLASSIFICATION-CONFLIT-STATIQUE.md",
+      "origine_session": "/workspace/work/mission004/agents/A2/M08-CLASSIFICATION-CONFLIT-STATIQUE.md",
+      "sha256": "bda95812b87a7bad15df79063770dfb0509eebc14f70ba4f2ed57715ce663100",
+      "octets": 7130,
+      "provenance": "ConstatP2A0 confirmé indépendamment A2 en lecture statique ; pas code ou test."
+    },
+    {
+      "fichier": "docs/ai-team/reports/mission-004/A2/M08-CLASSIFICATION-CONFLIT-STATIQUE.json",
+      "origine_session": "/workspace/work/mission004/agents/A2/M08-CLASSIFICATION-CONFLIT-STATIQUE.json",
+      "sha256": "9d2e1669ce89544806a13f6cff7b0b7772b8228a066755466857bc9402b90fc3",
+      "octets": 28106,
+      "provenance": "ConstatP2A0 confirmé indépendamment A2 en lecture statique ; pas code ou test."
+    }
+  ],
+  "non_publies": "Helpers, dépendances, builds, journaux bruts, doublons delta141, patch workflow non arbitré, et données confidentielles exclus."
+}

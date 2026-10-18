@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "programme": 156,
+  "canal": 166,
+  "type": "Acte de passage G0 de cadrage documentaire",
+  "statut": "Accepté",
+  "provenance_decision": {
+    "comment_id": 6250109830,
+    "url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250109830",
+    "auteur_GitHub_reel": "RachEma-ux",
+    "marqueur_du_corps": "[CHATGPT-DECISION][Q-M004-G0-REVIEW][2026-10-18]",
+    "autorite": "Décision ChatGPT déléguée portée par le compte GitHub RachEma-ux ; ne pas confondre auteur réel API et marqueur de rôle",
+    "date_expresse_du_corps": "2026-10-18",
+    "retrieved_at_export_A0": "2026-10-18 12:53:15 UTC",
+    "export_source_sha256": "f49c1efb921a921b4825d92e4f44f76d1921d10c2e9a3aad0268400442060615",
+    "body_exact": "[CHATGPT-DECISION][Q-M004-G0-REVIEW][2026-10-18]\n\n**Décision déléguée : passage G0 de cadrage documentaire ACCEPTÉ dans le périmètre exact du dossier du SHA `7b0cca44fa44449cae80785dea078a857be4180c`, sous réserve de conserver les inconnues listées.** Référence STUDIO-RT-001 V1.0 de travail, étude synthétique local/pavillon A/B/C, quatre domaines, deux planches autonomes, sources/contradictions classées et reports convenus. Les revues indépendantes A2/A4/A5 ne signalent aucun blocage de cadrage. A0 peut consigner l'acte G0 **avec SHA, auteur décision déléguée, réserves et pièces de revue** ; mettre à jour uniquement les IDs documentaires dont le critère exact est réellement satisfait et prouvé, sans cocher automatiquement toute la checklist. **Restent ouverts explicitement :** noms/disponibilité des personnes habilitées (CAD-DEC-03), contrats et autorités physiques, règles de droits finales, corpus intégral, seuils et budgets, POC, migrations et rollback. Ces inconnues sont des entrées G1/G2/G3 ; G0 n'affirme ni faisabilité ni implémentation. **Aucune acceptation G1/G2/G3/G4, code Studio, DB-3, test mutateur, fusion ou production n'est accordée.** Dossier : [G0 SHA](https://github.com/RachEma-ux/Fadi/blob/7b0cca44fa44449cae80785dea078a857be4180c/docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md) ; [question](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249930964).\n\n**Continuité :** A0 doit citer ce lien dans les registres et reprendre la prochaine tâche `READY` parmi M00–M30 ; si une permission manque, ne bloquer que la sous-tâche concernée. La décision ne déclenche pas une session Codex. Aucun contrôle CI antérieur n'est transféré aux nouveaux SHA.",
+    "limite_date": "Date de décision issue du corps ; timestamp GitHub created_at non fourni dans cet export, non inventé"
+  },
+  "dossier": {
+    "sha": "7b0cca44fa44449cae80785dea078a857be4180c",
+    "path": "docs/ai-team/reports/mission-004/A1/G0-DOSSIER-FINALISE-M004.md",
+    "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa"
+  },
+  "scope_accepte": [
+    "Référence technique de travail STUDIO-RT-001V1.0",
+    "Étude synthétique local/pavillon A2Dautonomepubliable/B3Ddirectevuecoupe/Cassociérevuetpublication",
+    "Quatre domaines, deux planches autonomes",
+    "Sources et contradictions classées, reports convenus",
+    "Cadrage documentaire avec inconnues explicitement conservées"
+  ],
+  "pieces_revues": [
+    {
+      "agent": "A2",
+      "path": "docs/ai-team/reports/mission-004/A2/G0-REVUE-A2.json",
+      "sha256": "f2fcf0f7324671b0c127e5592d1feba68ca79f87c313df4ab2a7186c0ad33b7a",
+      "contenu_revue": {
+        "review": "A2-G0-M004",
+        "source": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+        "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+        "scope": "Revue documentaire de cadrage et cohérence architecture uniquement, avis précédemment transmis ; aucune nouvelle analyse ni exécution",
+        "blocking_findings": [],
+        "verdict": "Aucune réserve technique bloquante pour la préparation G0 dans ce périmètre",
+        "checks": [
+          "Projet/Étude/Variante/Révision explicite ; trois autorités et écrivain unique requis pour la suite",
+          "D01/D02/D07 retenus sans réouverture des mêmes questions ; autonomie Studio et deux planches préservées",
+          "DEC01/03/18 puis02/12 restent à arbitrer au niveau approprié avant G1/G3 et lots concernés"
+        ],
+        "limits": [
+          "G0 non déclaré passé ; aucune gate prononcée",
+          "Aucune implémentation ou POC Studio autorisé",
+          "Aucune équivalence ou preuve métier tirée des seules fiches"
+        ]
+      },
+      "limite": "Revue de cadrage uniquement, aucune recette ou acceptationG1–G4"
+    },
+    {
+      "agent": "A4",
+      "path": "docs/ai-team/reports/mission-004/A4/REVUE-G0-A1.json",
+      "sha256": "e590e12a3f84251d64d08593454198de7bff62484e556228bc4f05d29a3a1508",
+      "contenu_revue": {
+        "review": "A4-G0-M004",
+        "date": "2026-10-18",
+        "source": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+        "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+        "scope": "usage/navigation/permissions uniquement, revue documentaire sans UI",
+        "blocking_findings": [],
+        "verdict": "Aucune réserve bloquante dans le périmètre A4 relu",
+        "checks": [
+          "D07 après Projets et principes retenus pour spécifications ; pas de remise en attente des mêmes choix.",
+          "Pilote A2D/B3D/C associé explicite, sauvegarde/réouverture/fin utile ; quatre domaines conservés et deux planches D1.",
+          "Contexte Projet/Étude/Variante/Révision et serveur requis ; création étude sans géométrie et variante propriétaire avant édition.",
+          "Approbation/publication droits distincts ; cumul explicite tracé, aucun privilège admin technique implicite.",
+          "G0 En cours non passé ; pas de code/POC Studio autorisé par délégationDB ; cas positifs/négatifs/preuves futurs non présentés exécutés.",
+          "D02 report options conserve Visualisation, capacités natives et backlog ; pas coches implicites."
+        ],
+        "limits": [
+          "Revue doc seule ; aucune navigation réelle, permission serveur ou durabilité exécutée.",
+          "G1/G2/G3 et passage G0 ne sont pas prononcés par ce rapport."
+        ]
+      },
+      "limite": "Revue de cadrage uniquement, aucune recette ou acceptationG1–G4"
+    },
+    {
+      "agent": "A5",
+      "path": "docs/ai-team/reports/mission-004/A5/G0-REVUE-A5.json",
+      "sha256": "566e38b1ff8f6580d714102bd8b8ff2095c6e8d0ee59ae6a3d1a025d6281381a",
+      "contenu_revue": {
+        "reviewer": "A5",
+        "scope": "Revue ciblée corpus/oracles/sûreté dossierG0 et fidélité141textes",
+        "g0_sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+        "141_count": 141,
+        "141_text_changes": [],
+        "blocking_framing_findings": [],
+        "finding": "Aucune réserve bloquante de cadrage dans périmètre inspecté ; ne vaut pas gateG0 passée ni recette exécutée.",
+        "checks": [
+          "D01/D02/D07 retenus dans limites ;codeStudio nonautorisé",
+          "MurTEST009/010 3.180/3.096 cohérent et autresdéductions exclues",
+          "Approver/publisher distincts et cumulexplicitementconfiguré",
+          "Données synthétiques sansprod;manifestesA5constitués",
+          "Critèresdoc/capacitéVérifié etAccepté distincts",
+          "DEC13 budgets/tolérances noninventés"
+        ],
+        "limits": [
+          "Pas revue métier exhaustive des141contrats",
+          "AucunTEST/NAVStudio exécuté",
+          "PassageG0 àconsigner parautoritédéléguée selonpreuves"
+        ]
+      },
+      "limite": "Revue de cadrage uniquement, aucune recette ou acceptationG1–G4"
+    }
+  ],
+  "inconnues_conservees": [
+    "Noms/disponibilité des personnes habilitées CAD-DEC-03",
+    "Contrats et autorités physiques",
+    "Règles de droits finales",
+    "Corpus intégral",
+    "Seuils et budgets",
+    "POC",
+    "Migrations et rollback"
+  ],
+  "non_autorise": [
+    "AcceptationG1/G2/G3/G4",
+    "CodeStudio",
+    "DB3",
+    "Tests mutateurs",
+    "Fusion",
+    "Production"
+  ],
+  "portee_acceptation": "G0 cadrage documentaire seulement, ni faisabilité, ni logiciel, ni validation métier des fonctions",
+  "etat_DEC01": "Orientation2Dcanoniqueautonome retenue pourG1 par6250110124 ; DEC01physique/coûts/preuves/migrationrollback resteouverte",
+  "etat_DEC03": "OrientationProjetÉtudeVarianteRévision retenue pourG1 par6250110501 ; DEC03stockage/IDsphysiques/isolation/historiquerestaurationmigrationrollback resteouverte",
+  "regles_checklist": "Aucune coche630 niHTML modifiée par A1 ; seuls IDs dont critère exact prouvé sont proposés à A0 pour checkpoint",
+  "action_suivante": "A0 intègre acte et preuves dans suivi canonique, STATUS/HANDOFFensemble, puis poursuitG1documentaire sans nouveaugate implicite."
+}

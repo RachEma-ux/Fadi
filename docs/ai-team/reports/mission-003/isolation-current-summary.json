@@ -1,0 +1,44 @@
+{
+  "observed_on": "2026-10-18",
+  "reference_HEAD": "dcf29af87e9a3673c062cc95d44cec32fa8e2902",
+  "working_tree": "Plus rapports de cohortes code176/fiches269 et checkpoint documentaire non encore commis ; pas snapshot prétendu du HEAD pur",
+  "command": "node scripts/audit-drawall-in-fadi.mjs <rapport hors dépôt>",
+  "summary": {
+    "scanned_files": 1351,
+    "affected_files": 505,
+    "total_matching_lines": 4996,
+    "by_category": {
+      "E-REPOSITORY-METADATA": {
+        "files": 4,
+        "lines": 18
+      },
+      "D-ACTIVE-FADI-CODE-REVIEW": {
+        "files": 176,
+        "lines": 452
+      },
+      "B-FADI-DOCUMENTATION": {
+        "files": 56,
+        "lines": 3673
+      },
+      "C-FADI-CAPABILITY-SHEET": {
+        "files": 269,
+        "lines": 853
+      }
+    },
+    "skipped_files": [
+      {
+        "path": "docs/ai-team/reports/mission-003/A2/isolation-fiches-review.json",
+        "reason": "large text file"
+      },
+      {
+        "path": "docs/workstreams/studio/task-register.json",
+        "reason": "large text file"
+      }
+    ]
+  },
+  "limits": [
+    "Scan lexical seulement, code inchangé ; occurrences nouvelles dans archives/rapports ne constituent pas des dépendances opérationnelles.",
+    "Les grandes sorties JSON signalées sont exclues par le scanner1500000octets ; leurs manifestes/contrôles dédiés restent disponibles.",
+    "Le périmètre sémantique des cohortes A2 reste488 fichiers/1887 lignes de la référence a09, distinct du scan de cet arbre plus récent."
+  ]
+}

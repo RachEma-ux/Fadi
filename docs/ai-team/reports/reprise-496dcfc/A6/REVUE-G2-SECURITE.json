@@ -1,0 +1,67 @@
+{
+  "review": "A6 static security review only",
+  "source": "/workspace/work/resume496/agents/A1/G2-DOSSIER-POC-PUR-2D-IDENTITES-PROPOSE.md",
+  "source_sha256": "0f0d531a65fb9138bef39f644aabb0095428bfe44027561d0b72b4899fb98e81",
+  "checks": [
+    {
+      "control": "No authorization claimed",
+      "present": true,
+      "assessment": "préparation seulement ; pas de lancement G2"
+    },
+    {
+      "control": "Local filesystem allowlist",
+      "present": true,
+      "assessment": "création exclusive et chemins bornés prescrits ; racine physique définitive à ratifier avant code"
+    },
+    {
+      "control": "Network/DB/API excluded",
+      "present": true,
+      "assessment": "aucun accès/installation/service proposé"
+    },
+    {
+      "control": "Imports inventoried before execution",
+      "present": true,
+      "assessment": "exports publics purs candidats ; pas de preuve absence effets transitifs sans inventaire"
+    },
+    {
+      "control": "Rollback only experimental files",
+      "present": true,
+      "assessment": "cesser usage et conserver origine ; nettoyage non implicite"
+    },
+    {
+      "control": "No fabricated performance values",
+      "present": true,
+      "assessment": "limites durée/taille/profondeur et arrêt futur restent à décider avant exécution, pas valeur arbitraire"
+    },
+    {
+      "control": "No false durability proof",
+      "present": true,
+      "assessment": "garanties fichier distinctes DB/coupure matérielle"
+    }
+  ],
+  "documentary_conclusion": "recevable comme proposition bornée, sans autorisation ni preuve exécution G2",
+  "execution_prerequisites": [
+    "accord explicite du lot code/POC, racine et fichiers exacts",
+    "inventaire A2 des imports publics transitifs sans network/DB/UI/init lourde",
+    "création exclusive sans suivi symlink/traversal, chemins réels bornés, pas overwrite",
+    "limites taille/profondeur/fichiers, durée/annulation et arrêt sûr décidés sur protocole, aucune valeur inventée ici",
+    "processus distinct éventuel lancé via argument vector borné, sans shell, environnement minimal sans secrets/credentials hérités",
+    "traces expurgées sans contenu clients et fixture uniquement synthétique",
+    "aucun fetch URL ni chargement JSON distant, driverDB/service ou scripts lifecycle",
+    "erreur/timeout ne promeut pas fichier invalide ; rollback consiste à abandonner artifacts propres sans effacer source"
+  ],
+  "blocking_for_execution_not_for_document_preparation": [
+    "G2 non autorisé",
+    "limites de ressources/timeout et racine physique non fixées",
+    "import public transitive effects non encore attestés"
+  ],
+  "runtime_execution": false,
+  "network_database_worker_or_service": false,
+  "modified_application_or_A1_source": false,
+  "review_does_not_accept_gate": [
+    "G1",
+    "G2",
+    "G3",
+    "G4"
+  ]
+}

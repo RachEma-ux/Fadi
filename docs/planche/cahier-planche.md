@@ -63,6 +63,8 @@ navigation (D-157). La Planche est **additive** : aucune fonction existante n'es
 
 ## 2. Compatibilité avec les règles de Fadi
 
+**Actualisation du 18 octobre 2026 (Mission003).** La ligne C1 ci-dessous conserve le traitement historique de D-156. Pour l’interface actuelle, **D-163 et AGENTS.md prévalent : français/anglais**, français source et traductions anglaises, avec contrôle `interface-anglais.mjs`. La mention historique « pas de sélecteur de langue actif » ne constitue plus une exigence applicable. Les noms de référence des outils restent des synonymes ; les données et documents produits gardent leur propre langue. D-156 n’est pas réécrite par cette note et aucune recette bilingue nouvelle n’est annoncée ici.
+
 | # | Exigence « comme SketchUp » | Règle Fadi | Verdict | Traitement retenu |
 | --- | --- | --- | --- | --- |
 | C1 | Interface, consignes, libellés et alertes en anglais ; 12 langues (Settings > Language) [MCP §7.1]. | **R1** (application en français), `AGENTS.md`. | Conflit | Tout texte affiché est en français (traduction fidèle, §1). Le nom anglais de chaque outil est gardé dans le catalogue (`nomReference`) comme **synonyme de recherche** (la palette accepte déjà des synonymes, DA-02-15), jamais comme libellé. Pas de sélecteur de langue actif ; le globe de la barre du bas affiche « Français » (comme D-156). |

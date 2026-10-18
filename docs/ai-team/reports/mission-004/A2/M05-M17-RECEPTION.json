@@ -1,0 +1,27 @@
+{
+  "status": "RECEPTION_DOCUMENTAIRE_SEULE",
+  "command_examples": 16,
+  "snapshot_publication_examples": 5,
+  "distinct_ids": 21,
+  "source_files": 10,
+  "normative_references": 23,
+  "checks": "JSON lisible ; IDs distincts ; fixtures refus contexte et ID distinguent entrée client/serveur ; sources égales Git. Aucun validateur métier/code ni test exécuté.",
+  "files": [
+    {
+      "path": "M05-M17-CONTRATS-DURABLES.md",
+      "sha256": "893d4917fe810867b589727e82d1789db56453f86c78fbfab56b294acedac84b"
+    },
+    {
+      "path": "M05-M17-EXEMPLES-DOCUMENTAIRES.json",
+      "sha256": "6a6ffdb05613f0d992681d29f1e5b3c6b937c2356c6034cdd33aa28596ee1868"
+    },
+    {
+      "path": "M05-M17-SOURCES.json",
+      "sha256": "274b591a29080b0ea13d1d9778361d3519e6632a642434b4d548671f45daa493"
+    },
+    {
+      "path": "G0-REVUE-A2.json",
+      "sha256": "f2fcf0f7324671b0c127e5592d1feba68ca79f87c313df4ab2a7186c0ad33b7a"
+    }
+  ]
+}

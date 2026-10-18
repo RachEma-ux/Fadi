@@ -1,0 +1,6290 @@
+{
+  "scope": "triage mécanique des 488 fichiers, aucune qualification sémantique exhaustive ni suppression",
+  "rows": [
+    {
+      "path": ".github/workflows/audit-drawall.yml",
+      "category": "E-REPOSITORY-METADATA",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        1,
+        6,
+        7,
+        8,
+        24,
+        26,
+        30,
+        31
+      ],
+      "da_lines": []
+    },
+    {
+      "path": "AGENTS.md",
+      "category": "E-REPOSITORY-METADATA",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        41
+      ],
+      "da_lines": []
+    },
+    {
+      "path": "apps/api/src/app.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2056
+      ]
+    },
+    {
+      "path": "apps/api/src/lib/atelier-documents.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        101
+      ]
+    },
+    {
+      "path": "apps/api/src/lib/atelier-refexterne.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "apps/api/src/lib/atelier-validation.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        58
+      ]
+    },
+    {
+      "path": "apps/api/src/routes/atelier-automatisation.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        246
+      ]
+    },
+    {
+      "path": "apps/api/src/routes/atelier-commands.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        301
+      ]
+    },
+    {
+      "path": "apps/api/src/routes/atelier-mecanique.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        111
+      ]
+    },
+    {
+      "path": "apps/api/src/routes/atelier-versions.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        19,
+        20,
+        315,
+        613,
+        639,
+        713
+      ]
+    },
+    {
+      "path": "apps/api/src/routes/preferences.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "apps/web/e2e/atelier-complements.mjs",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2,
+        3,
+        5
+      ]
+    },
+    {
+      "path": "apps/web/e2e/atelier-nouveau.mjs",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        288
+      ]
+    },
+    {
+      "path": "apps/web/src/lib/api.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        1147
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/bus/atelier-client.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        416
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/AtelierNouveau.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        93
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/actions.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        84,
+        117
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/atelier-nouveau.css",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        1850
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/etat-ui.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        67,
+        71,
+        74
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/nouveau.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        367
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/outils.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        91,
+        92,
+        93,
+        94,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/BatimentP2.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Bois.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        63,
+        99,
+        157,
+        197
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Complements.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        59,
+        130,
+        400
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Documentation.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        114,
+        137
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Graphes.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Inspecteur.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        31,
+        295,
+        892,
+        1374,
+        1484,
+        1540,
+        1632,
+        1663
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Mecanique.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        20,
+        56,
+        91,
+        253
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Modifications.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        219,
+        265
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Navigateur.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        180,
+        290,
+        395
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Palette.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/ProfilVertical.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/ReferencesExternes.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Regles.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Reprise.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Reseaux.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        87,
+        147,
+        184,
+        225,
+        273,
+        309,
+        336
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Structure.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        94,
+        136,
+        214,
+        242,
+        292,
+        319,
+        354
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/plan2d/Plan2D.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        24,
+        45,
+        125,
+        138,
+        323,
+        832,
+        851,
+        916
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2,
+        26,
+        211
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/plan2d/outils-2d.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        697
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/sync-ensembles.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/vue3d/Vue3D.tsx",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        5,
+        19,
+        64,
+        701
+      ]
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        19,
+        42,
+        46,
+        152,
+        584,
+        882
+      ]
+    },
+    {
+      "path": "docs/ai-team/CODEX-START-HERE.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        17,
+        62
+      ],
+      "da_lines": []
+    },
+    {
+      "path": "docs/ai-team/MISSIONS.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        79
+      ],
+      "da_lines": []
+    },
+    {
+      "path": "docs/atelier/README.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        1,
+        3
+      ],
+      "da_lines": []
+    },
+    {
+      "path": "docs/atelier/decisions.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        204
+      ],
+      "da_lines": [
+        16,
+        22,
+        26,
+        28,
+        30,
+        34,
+        40,
+        41,
+        43,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        197
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        12,
+        13
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        12,
+        13,
+        14,
+        16,
+        17,
+        27
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        11,
+        12,
+        14,
+        17,
+        27
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        12,
+        13,
+        16,
+        28
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        11,
+        12,
+        13,
+        26,
+        28
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        12,
+        13,
+        14,
+        18,
+        24
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-07.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        11
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-08.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        11,
+        13,
+        16,
+        17,
+        23,
+        27
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-09.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        10,
+        13,
+        15,
+        18,
+        27
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-10.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        11,
+        12,
+        15,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-11.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        11,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-01-12.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        29
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        14,
+        15,
+        16,
+        29
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        11,
+        16,
+        28
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        11,
+        16,
+        28
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        11,
+        12,
+        15,
+        16,
+        22
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        11,
+        15,
+        27
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        11,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-07.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        16,
+        27
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-08.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        12,
+        16,
+        27
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-09.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        11,
+        12,
+        14
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-10.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        14,
+        15,
+        27
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-11.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        14,
+        15,
+        27
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-12.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        11,
+        13
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-13.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-14.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        11,
+        13,
+        15
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-15.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        16,
+        28
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-16.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        15,
+        27
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-02-17.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        10,
+        12,
+        17,
+        22,
+        23,
+        27
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        12,
+        13,
+        14,
+        19,
+        23
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-07.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-08.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-09.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        14,
+        19,
+        24
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-10.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        11,
+        19,
+        23
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-11.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-12.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        10,
+        12,
+        13,
+        14,
+        23
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-13.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        12,
+        13,
+        14,
+        18,
+        23
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-14.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-15.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        12,
+        16,
+        18,
+        23
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-03-16.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-04-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        12,
+        14,
+        15,
+        16,
+        21,
+        23
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-04-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-04-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-04-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-04-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-04-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        10,
+        13
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-04-07.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        10,
+        12,
+        24
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-04-08.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-04-09.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-04-10.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-04-11.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        13
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        12,
+        18
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        11,
+        12,
+        17,
+        21
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        12,
+        23
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        14,
+        24
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        24
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-07.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        11,
+        17,
+        22
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-08.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-09.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        10,
+        13,
+        14,
+        18,
+        23
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-10.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-11.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        13
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-12.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        12
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-13.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-14.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        23
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-15.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        11,
+        22
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-16.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-17.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-05-18.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-06-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-06-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        11,
+        14,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-06-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-06-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-06-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-06-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-06-07.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        15
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-06-08.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        15,
+        20
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-06-09.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-06-10.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        12,
+        13,
+        17,
+        28
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        12
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        12,
+        25
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        13,
+        14,
+        25
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        10,
+        11,
+        16,
+        19
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        12,
+        15,
+        19
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-07.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-08.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-09.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-10.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        13,
+        16,
+        27
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-11.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-12.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-13.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-14.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-15.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        14,
+        16,
+        20
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-16.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        14
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-17.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-18.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-19.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-20.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-21.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-22.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-07-23.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-07.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-08.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        3,
+        7,
+        9,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-09.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-10.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-11.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        12
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-12.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-13.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        13,
+        14,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-14.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-15.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-16.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-17.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-18.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-08-19.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-09-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-09-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-09-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-09-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-09-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        13
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-09-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-09-07.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-09-08.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-10-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-10-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-10-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        14
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-10-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-10-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-10-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        12
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-10-07.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-10-08.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-10-09.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-10-10.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-10-13.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-10-14.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        12
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-10-15.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-10-16.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-11-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-11-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        13
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-11-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        14,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-11-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-11-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        14
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-07.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-08.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-09.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-10.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-11.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-12.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-13.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-14.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-16.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-17.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-18.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-19.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-20.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-12-21.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-07.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-08.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-09.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-10.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-11.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-12.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-13.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-14.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-15.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        10
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-16.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-17.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-18.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-19.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-20.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-21.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-14-22.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-07.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-08.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-09.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-10.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-11.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-12.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9,
+        10,
+        11,
+        15
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-13.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-14.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-15.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-16.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-17.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-18.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-15-19.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-16-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-16-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-16-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-16-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-16-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-16-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-16-07.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-16-08.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-16-09.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-16-10.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-16-11.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-16-12.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-16-13.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-16-14.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-16-15.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-16-16.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-16-17.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-17-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-17-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        9
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-17-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-17-10.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-17-11.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-17-13.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-17-14.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-17-15.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-17-16.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        24
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-18-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-18-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-18-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        11,
+        24
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-18-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        25
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-19-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-19-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-19-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-19-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        12
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-19-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-19-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-21-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        12
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-21-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        16,
+        17
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-21-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-21-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        14,
+        23
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-21-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        24
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-21-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        11,
+        12,
+        23
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-21-07.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        16,
+        23
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-21-08.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-21-09.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        14
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-22-01.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-22-02.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-22-03.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-22-04.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-22-05.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7,
+        11
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-22-06.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-22-07.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-22-08.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-22-09.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-22-10.md",
+      "category": "C-FADI-CAPABILITY-SHEET",
+      "proposed_disposition": "CONSERVER_TRACE_FADI_A_REVOIR",
+      "reason": "Fiche DA historique ; préfixe seul insuffisant, liens et acceptations à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        1,
+        7
+      ]
+    },
+    {
+      "path": "docs/atelier/lots/complements.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        12,
+        14,
+        15
+      ]
+    },
+    {
+      "path": "docs/atelier/lots/lot-0.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        11,
+        12,
+        37
+      ]
+    },
+    {
+      "path": "docs/atelier/lots/lot-3b.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        12
+      ]
+    },
+    {
+      "path": "docs/atelier/lots/lot-5.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        29
+      ]
+    },
+    {
+      "path": "docs/atelier/lots/lot-7.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        48
+      ]
+    },
+    {
+      "path": "docs/atelier/lots/lot-9.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        14
+      ]
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-0.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        11,
+        12
+      ]
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-1.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        6
+      ]
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-2.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        5,
+        6,
+        15,
+        43,
+        44,
+        46,
+        48
+      ]
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-3.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        5,
+        19,
+        53
+      ]
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-4.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        5
+      ]
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-5.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        5
+      ]
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-6.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        5,
+        6
+      ]
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-7.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        5,
+        6,
+        18,
+        20,
+        21
+      ]
+    },
+    {
+      "path": "docs/atelier/lots/p2-lot-8.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        5,
+        6,
+        19,
+        20
+      ]
+    },
+    {
+      "path": "docs/atelier/matrice-echanges.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        57
+      ]
+    },
+    {
+      "path": "docs/atelier/recette-p2.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        23
+      ]
+    },
+    {
+      "path": "docs/atelier/recette.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        25,
+        108
+      ]
+    },
+    {
+      "path": "docs/atelier-cahier-des-charges.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        21
+      ],
+      "da_lines": [
+        364,
+        414,
+        441,
+        486,
+        487,
+        498,
+        499,
+        525,
+        526,
+        562,
+        686,
+        697
+      ]
+    },
+    {
+      "path": "docs/atelier-cahier-p2.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        11
+      ],
+      "da_lines": [
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        94,
+        95,
+        96,
+        101,
+        102,
+        103,
+        122,
+        126,
+        147,
+        198,
+        199,
+        200,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207,
+        208,
+        209,
+        210,
+        211,
+        212,
+        213,
+        214,
+        215,
+        216,
+        217,
+        218,
+        219,
+        220,
+        221,
+        222,
+        223,
+        224,
+        225,
+        226,
+        227,
+        228,
+        229,
+        230,
+        231,
+        232,
+        233,
+        234,
+        235,
+        236,
+        237,
+        238,
+        239,
+        240,
+        241,
+        242,
+        243,
+        244,
+        245,
+        246,
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        253,
+        254,
+        255,
+        256,
+        257,
+        258,
+        259,
+        260,
+        261,
+        262,
+        263,
+        264,
+        265,
+        266,
+        267,
+        268,
+        269,
+        270,
+        271,
+        272,
+        273,
+        274,
+        275,
+        276,
+        277,
+        278,
+        279,
+        280,
+        281,
+        282,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
+        289,
+        290,
+        291,
+        292,
+        293,
+        294,
+        295,
+        296,
+        297,
+        298,
+        299,
+        300,
+        301,
+        302,
+        303,
+        304,
+        305,
+        306,
+        307,
+        308,
+        309,
+        310,
+        311,
+        312,
+        313,
+        314,
+        315,
+        316,
+        317,
+        318,
+        319,
+        320,
+        321,
+        322,
+        323,
+        324,
+        325,
+        326,
+        327,
+        328,
+        329,
+        330,
+        331,
+        332,
+        333,
+        334,
+        335,
+        336,
+        337,
+        338,
+        339,
+        340,
+        341,
+        342,
+        343,
+        344,
+        345,
+        346,
+        347,
+        348,
+        349,
+        350,
+        351,
+        352,
+        353,
+        354,
+        355,
+        356,
+        357,
+        358,
+        359,
+        360,
+        361,
+        362,
+        363,
+        364,
+        365,
+        366,
+        367,
+        368,
+        369,
+        370,
+        371,
+        372,
+        373,
+        374,
+        375,
+        376,
+        377,
+        378,
+        379,
+        380,
+        381,
+        382,
+        383,
+        384,
+        385,
+        386,
+        387,
+        388,
+        389,
+        390,
+        391,
+        392,
+        393,
+        394,
+        395,
+        396,
+        397,
+        398,
+        399,
+        400,
+        401,
+        402,
+        403,
+        404,
+        405,
+        406,
+        407,
+        408,
+        409,
+        410,
+        411,
+        412,
+        413,
+        414,
+        415,
+        416,
+        417,
+        418,
+        419,
+        420,
+        421,
+        422,
+        423,
+        424,
+        425,
+        426,
+        427,
+        428,
+        429,
+        430,
+        431,
+        432,
+        433,
+        434,
+        435,
+        436,
+        437,
+        438,
+        439,
+        440,
+        441,
+        442,
+        443,
+        444,
+        445,
+        446,
+        447,
+        448,
+        449,
+        450,
+        451,
+        452,
+        453,
+        454,
+        455,
+        456,
+        457,
+        458,
+        459,
+        460,
+        461,
+        462,
+        463,
+        464,
+        465,
+        466,
+        467
+      ]
+    },
+    {
+      "path": "docs/audits/2026-10-18-a0-codex-cloud.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        15,
+        21,
+        94,
+        136,
+        153,
+        168
+      ],
+      "da_lines": []
+    },
+    {
+      "path": "docs/migration/etapes/10.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        77
+      ],
+      "da_lines": []
+    },
+    {
+      "path": "docs/migration/etapes/11.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        72
+      ],
+      "da_lines": []
+    },
+    {
+      "path": "docs/migration/matrix.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        71,
+        73,
+        74,
+        75,
+        76
+      ],
+      "da_lines": [
+        101
+      ]
+    },
+    {
+      "path": "docs/planche/analyses/programme-lots.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        7
+      ],
+      "da_lines": []
+    },
+    {
+      "path": "docs/planche/cahier-planche.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        3
+      ],
+      "da_lines": [
+        68,
+        932
+      ]
+    },
+    {
+      "path": "docs/planche/fiches/PL-01-02.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        21
+      ]
+    },
+    {
+      "path": "docs/planche/fiches/PL-01-03.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "CONSERVER_TRACE_A_REVOIR",
+      "reason": "Marqueurs DA ; provenance/consommateurs/licence restent à rapprocher.",
+      "nominal_lines": [],
+      "da_lines": [
+        7,
+        23
+      ]
+    },
+    {
+      "path": "docs/workstreams/README.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        9
+      ],
+      "da_lines": []
+    },
+    {
+      "path": "docs/workstreams/ai-team/CONTEXT.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        17
+      ],
+      "da_lines": []
+    },
+    {
+      "path": "docs/workstreams/purge-drawall/CONTEXT.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        1,
+        5,
+        9,
+        10,
+        16,
+        23,
+        33,
+        35,
+        36
+      ],
+      "da_lines": []
+    },
+    {
+      "path": "docs/workstreams/purge-drawall/HANDOFF.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        1,
+        8,
+        10,
+        15,
+        17,
+        18,
+        23,
+        24,
+        30,
+        46
+      ],
+      "da_lines": []
+    },
+    {
+      "path": "docs/workstreams/purge-drawall/INVENTORY.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        1,
+        5,
+        11,
+        12,
+        22,
+        23,
+        24,
+        26,
+        30,
+        31,
+        49,
+        51
+      ],
+      "da_lines": []
+    },
+    {
+      "path": "docs/workstreams/purge-drawall/STATUS.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        1,
+        7,
+        11,
+        12,
+        15,
+        18,
+        22,
+        33,
+        42
+      ],
+      "da_lines": [
+        23
+      ]
+    },
+    {
+      "path": "docs/workstreams/purge-drawall/TASKS.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        1,
+        6,
+        19,
+        21,
+        30,
+        34,
+        35
+      ],
+      "da_lines": []
+    },
+    {
+      "path": "packages/atelier-model/src/annexe-c.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/annotations-fabrication.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/automatisation/graphes.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/automatisation/longueur-saisie.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        4
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/automatisation/longueur-saisie.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/automatisation/regles-classes.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/baies-cintrees.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        30
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/batiment-p2.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        116,
+        169,
+        233
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/batiment-p2.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2,
+        205
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/blocs-murs.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        30
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/cintres.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/classification-regle.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/coins-jointifs.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/ajuster-forme.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        19
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/ajuster-forme.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/altimetrie.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/axes-associes.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        15
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/batiment-p2.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        3,
+        18
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        23,
+        187,
+        231
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/bloc.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/calques-imbriques.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        57
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/chanfrein-arc.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        10,
+        43,
+        73
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/changer-classe.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        259
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/contrainte-murs.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        17
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        34,
+        79
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/documents.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        137
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/ensembles.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/escalier-balance.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        12
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/escalier-balance.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/escaliers.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2,
+        90
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/etats-calques.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        14
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/etats-calques.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/etirer-fenetre.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        20
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/etirer-fenetre.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/fenetres.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/hachures-associees.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/index.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        326,
+        328
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/poses.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/referentiels.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/refexterne.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        16,
+        76,
+        88
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/refexterne.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2,
+        115
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/reseau-3d.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        18
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/reseau-associatif.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        15
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/reseau-associatif.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/transformer.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        291,
+        1353,
+        1415,
+        1589,
+        1659,
+        1678
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/tremie.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/validation.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        451,
+        1219
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/verrous.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/vues3d.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/zones.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/contraintes.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/coordination.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2,
+        80
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/cotes-externes.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        17
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/dalles-inclinees.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        16
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/dalles-retombees.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        31
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/dalles.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/degrade.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        15
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/documents/documents.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        40
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/documents/refexterne-rendu.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/documents/tableaux.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2,
+        142,
+        158,
+        185,
+        198,
+        230,
+        263,
+        288,
+        298,
+        319,
+        338
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/documents/visibilite.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/documents/vues.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2,
+        86,
+        412,
+        439,
+        447,
+        591,
+        699,
+        802,
+        831
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/bcf.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        45
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/bcf.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/ifc.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        576,
+        828,
+        1057
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/nuage.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2,
+        96
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/echelle-non-uniforme.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        20
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/espaces-volume.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        23
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/espaces-volume.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/esquisse/arrondir.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/esquisse/chaines.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        10
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/esquisse/chaines.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/esquisse/conversion.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/esquisse/effacer.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        5
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/esquisse/effacer.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/esquisse/lissage.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        5
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/geometrie-3d.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        203
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/geometrie.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        367,
+        893,
+        1011,
+        1082,
+        1102
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/hachures.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        10
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/hachures.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/interferences.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        11
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/interferences.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/menuiserie.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        19,
+        62
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/menuiserie.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/modele.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        270,
+        292,
+        299,
+        308,
+        386,
+        394,
+        400,
+        418,
+        422,
+        435,
+        455,
+        482,
+        497,
+        508,
+        519,
+        531,
+        546,
+        560,
+        574,
+        583,
+        597,
+        613,
+        628,
+        648,
+        662,
+        676,
+        696,
+        725,
+        742,
+        760,
+        778,
+        795,
+        806,
+        809,
+        818,
+        827,
+        839,
+        852,
+        868,
+        890,
+        901,
+        916,
+        919
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/motifs-importes.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        22
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologie.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        136,
+        143,
+        152
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/mechanical/cinematique.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/mechanical/familles.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2,
+        13
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/mechanical/index.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2,
+        205,
+        234,
+        250,
+        308,
+        334
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/mechanical/inerties.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/mechanical/liaisons.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/mep/index.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2,
+        23,
+        90,
+        169,
+        205
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/mep/pid.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/mep/sections.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/sheetmetal/index.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2,
+        21
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/sheetmetal/pliage.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/structure/index.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2,
+        100
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/structure/sections.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/structure/soudures.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/structure/trame.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/timber/index.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2,
+        90
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/timber/ossature.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/timber/sections.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/p2-7-documentation.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        25,
+        95,
+        169
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/p2-8-automatisation.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        32,
+        174
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/plancher.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        23
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/plancher.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/portes-pliantes-pivotantes.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        16
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/poses.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        21
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/pousser-face.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        6
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/pousser-face.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/presse-papiers.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        23
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/presse-papiers.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/profils-verticaux.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        28
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/profils-verticaux.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/quantites.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/reconnaissance.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/reprise.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        19
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/reprise.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/reservations.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        9
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/reservations.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/sections-poteaux.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        14
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/selection-semblables.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        10
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/selection-semblables.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/solides-associes.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        16
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/solides-forme.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        27
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/solides-forme.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        2
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/symetrie-textes-poteaux.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        17
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/sync-champs.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        9
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/sync.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        102
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/versions.test.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        30
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/versions.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        316
+      ]
+    },
+    {
+      "path": "packages/geometry-exact/src/index.ts",
+      "category": "D-ACTIVE-FADI-CODE-REVIEW",
+      "proposed_disposition": "CONSERVER_CODE_FADI_A_REVOIR",
+      "reason": "Marqueurs DA uniquement dans source active ; pas une dépendance produit démontrée.",
+      "nominal_lines": [],
+      "da_lines": [
+        169,
+        177,
+        183
+      ]
+    },
+    {
+      "path": "scripts/audit-drawall-in-fadi.mjs",
+      "category": "E-REPOSITORY-METADATA",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        3,
+        4,
+        13,
+        31,
+        32,
+        49,
+        53,
+        63
+      ],
+      "da_lines": []
+    },
+    {
+      "path": "scripts/check-fadi-isolation.mjs",
+      "category": "E-REPOSITORY-METADATA",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        11
+      ],
+      "da_lines": []
+    }
+  ]
+}

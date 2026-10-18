@@ -1,0 +1,15 @@
+{
+  "date_utc": "2026-10-18",
+  "branche": "docs/156-codex-missions-completes",
+  "parent_documentaire": "b1023605b965b27ff56fabf179756592673c98d4",
+  "reference_code_M08": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "correctif_CLASSIF1": "5e0285d37f23c7c539502664036f0a2ff0986409",
+  "tests_documentaires": {"nombre": 14, "resultat": "réussi"},
+  "couverture_affectations": {"missions": 31, "ids": 630, "resultat": "réussi", "realisation_metier_deduite": false},
+  "continuite": "réussie",
+  "diff_whitespace": "réussi",
+  "manifest_et_liens": "empreintes, JSON et liens relatifs contrôlés, aucun écart relevé",
+  "recherche_secrets": "aucun motif de clé privée ou jeton GitHub/AWS identifié dans les nouvelles pièces intégralement parcourues ; pas une certification de sécurité",
+  "SHA_porteur": "Commit qui contient ce fichier ; preuve de présence distante et CI relevées dans #166 après push, jamais anticipées ici",
+  "limites": "Contrôles documentaires uniquement. Aucun test API/E2E, DB réelle, service, migration ou POC Studio exécuté. Les tests purs CLASSIF1 ont leur SHA distinct et leur preuve propre."
+}

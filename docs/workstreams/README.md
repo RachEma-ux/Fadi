@@ -11,6 +11,8 @@ Chaque **chantier** dispose d'un dossier de contexte et d'un point de reprise ; 
 | Exploitation / sauvegarde Fadi-Serv | Travaux d'exploitation déjà suivis ailleurs, sans duplication | [Déploiement](../deploiement.md) | [PR #143](https://github.com/RachEma-ux/Fadi/pull/143) (état à revérifier) |
 | Interface gabarits pleine largeur | PR existante indépendante | Aucune nouvelle fiche avant décision | [PR #142](https://github.com/RachEma-ux/Fadi/pull/142) (état à revérifier) |
 | Atelier et Planche | Cahiers, lots et décisions préexistants ; ne pas recréer leur suivi | [Atelier](../atelier/README.md) · [Planche](../planche/README.md) | Les nouveaux chantiers ne sont ouverts qu'en cas de changement cadré |
+| Équipe Codex Fadi | Programme documentaire M00–M30 ; aucune correction réalisée par sa création | [ai-team/](ai-team/CONTEXT.md) | [Issue #156](https://github.com/RachEma-ux/Fadi/issues/156) |
+| Studio | Cadrage et missions définis ; cases et conformité à qualifier | [studio/](studio/CONTEXT.md) | [Programme #156](https://github.com/RachEma-ux/Fadi/issues/156), Issues #159–#164 |
 
 ## Ouvrir un chantier
 

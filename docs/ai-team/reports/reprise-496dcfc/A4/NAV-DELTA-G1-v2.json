@@ -1,0 +1,1736 @@
+{
+  "document": "A4 NAV-DELTA-G1-v2",
+  "date": "2026-10-18",
+  "reference_documentaire_git_sha": "b1023605b965b27ff56fabf179756592673c98d4",
+  "scope": "Delta de spécifications uniquement. Aucun nouveau numéro NAV, aucun doublon de registre ; NAV001–009 cités avec leur texte exact source. Aucun code/UI/test/browser/API/DB/service exécuté.",
+  "status": "Préparé pour revue A0/A1/A2/A5 ; G1 et choix physiques non clos.",
+  "source_files": [
+    {
+      "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/NAV-M004.json",
+      "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2"
+    },
+    {
+      "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+      "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+      "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-SCHEMAS-LOGIQUES-DOCUMENTAIRES-v2.json",
+      "sha256": "ca552c040a1da0064e63c2a2cf643619fbeee13c53ad9c98d65114376a4a7b0c"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-EXEMPLES-DOCUMENTAIRES-2D-IDENTITES-v2.json",
+      "sha256": "3d29419c227258b60645893340eee9dfbd009c16ec0e0428eb54c6dae729ea11"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+      "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/G2-DOSSIER-POC-PUR-2D-IDENTITES-PROPOSE.md",
+      "sha256": "0f0d531a65fb9138bef39f644aabb0095428bfe44027561d0b72b4899fb98e81"
+    }
+  ],
+  "entries": [
+    {
+      "id": "NAV-001",
+      "existing_title": "entrée Studio et accès",
+      "criterion_source": {
+        "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/NAV-M004.json",
+        "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2",
+        "json_pointer": "/nav/0/test_specification",
+        "exact_value": "**Source inchangée :** Studio présent dans le rail, nom accessible, clavier et actif corrects. **Dépendances :** I.1/I.5, placement D07 acté pour spécifications, icône et base commune à finaliser. **Liens :** UX-01..04 ; EX-001/032..037.\n\n**Positif :** depuis Accueil, Tab jusqu'à Studio, activer Entrée ; vérifier URL Studio, label visible déplié et nom accessible/infobulle replié ; répéter tactile mobile et toutes les routes Studio. **Négatif :** route Accueil/Projets/Collaboration ne présente pas Studio comme actif ; rail déplié/replié ne crée pas de doubles liens focusables ni ne perd son nom ; focus ne reste pas dans un panneau fermé.\n\n**Oracle :** un seul contrôle de navigation Studio, un seul actif global (`aria-current=page` ou sémantique validée), destination autonome ; nom Studio dans l'arbre accessible ; focus visible/atteignable ; dimensions proposées >=44px pour cible mobile. **Env :** E-UX sans corpus géométrique. **Preuve :** P-UX + ordre Tab et arbre accessible avant/après rail.",
+        "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+      },
+      "delta_documentaire": "Pas de nouveau placement, contrôle ou libellé introduit par G1 v2. Le rail Studio après Projets et son nom accessible restent le contrat D07. Les identités propres ne créent pas une seconde entrée par étude ou variante.",
+      "sources_exactes": [
+        {
+          "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "provenance": {
+            "kind": "Git documentaire",
+            "sha": "b1023605b965b27ff56fabf179756592673c98d4"
+          },
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            7,
+            9
+          ],
+          "exact_excerpt": "**Imposé par le mandat et les références :** entrée exactement Studio dans le rail vertical principal ; module natif autonome sans passage Parcours ni simple raccourci/iframe Atelier ; services Fadi communs ; quatre domaines et deux planches 2D/3D indépendantes dans Dessin et modélisation ; Projet→Étude→Variante→Révision ; pas de seconde autorité métier ; droits serveur, traçabilité, sauvegarde et publication ; Atelier et 21 étapes préservés ; interface FR/EN et règle Planche icône/barre/raccourci.\n\n**D07 RETENU pour spécifications :** Studio après Projets, URLs complètes et contexte hiérarchique vérifié serveur, plein écran explicite réversible, protection des gestes/sauvegardes, UX clavier/mobile/FR–EN, approbation/publication séparées avec cumul explicite traçable. Les chemins physiques et query ci-dessous sont le contrat opérationnel proposé dans ce cadre ; DEC-13 appareils/budgets et mapping des rôles restent à documenter. D01 retient le référentiel et pilote synthétique pour cadrage, D02 les reports du pilote ; ni G0 ni G1 n’est passé par ce seul arbitrage. D06 retient ordre de revue #154→#152→#142, sans autoriser fusion. Les noms d'actions `study.read`, etc. dans cette contribution sont des droits logiques à mapper aux rôles Fadi, pas des permissions déjà implantées."
+        },
+        {
+          "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "provenance": {
+            "kind": "Git documentaire",
+            "sha": "b1023605b965b27ff56fabf179756592673c98d4"
+          },
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            35,
+            37
+          ],
+          "exact_excerpt": "## Surface et navigation\n\nRail Fadi persistant hors plein écran explicite ; Studio actif sur toutes ses routes, pas Projets/Collaboration. Placement après Projets retenu pour spécifications par D07 ; ne pas le reposer comme question ouverte. Rail replié : icône dédiée avec accessible name/title Studio ; déplié : texte visible identique. Menu mobile donne la même entrée, pas un raccourci vers Atelier. Navigation commune reste utilisable en loading/erreur."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "lines": [
+            29,
+            30
+          ],
+          "exact_excerpt": "| Entrer par Studio, routes complètes et contexte partiel | AppShell/auth existants, façade contexte ; A4/A2 | NAV sections Routes/Surface/Façade, IF001 ; NAV001–006/008/009 | URL autorisée donne bon contexte ; absence projet/étude/variante mène choix, aucun GET créateur ni étapeParcours validée | Interface physique façade et mapping ressource/erreur/focus, dépendances #142 requalifiées |\n| Résoudre parenté et autorisations | Service projets/identité Fadi, décision serveur ; A2 | C-STUDY/NAV/IF001/004, EX087/088/092 ; TEST035 | Tous IDs existants mais parents différents → refus sans fuite ni mutation ; URL/profil ne crée aucun droit | Politique tenant/ressource/masquage refus et droits finaux non ratifiés |"
+        }
+      ],
+      "acquis_de_specification": "D07 acquis pour spécifications ; détails de façade, focus et mapping des ressources restent proposés.",
+      "preuves_runtime_manquantes": "NAV prescrit, non exécuté. Ni interface Studio, ni contrôle serveur, ni persistance/reprise, ni droit effectif validé ici. Syntaxe et empreintes JSON cohérentes ne prouvent aucun de ces comportements.",
+      "prochains_cas_mesurables_sous_meme_id": [
+        {
+          "scenario_label": "Entrée unique sous plusieurs identités",
+          "action_future": "Ouvrir deux variantes autorisées, revenir Accueil puis activer Studio au clavier et au toucher.",
+          "measurable_oracle": "Un seul contrôle Studio ; zéro lien supplémentaire portant une identité métier ; Studio seul actif sur ses routes et focus visible.",
+          "negative_future": "Changement de studyId/variantId ne produit ni double lien focusable ni actif Projets erroné.",
+          "environment_required": "Future recette E-UX sur build/SHA identifié ; cible synthétique jetable autorisée si création/mutation, jamais production",
+          "execution": "Non exécuté ; proposition sous le même ID NAV"
+        }
+      ],
+      "statut_nav_inchange": {
+        "status": "Prescrit, non exécuté",
+        "conformity": "Non évaluée Studio",
+        "acceptance": "Absente"
+      }
+    },
+    {
+      "id": "NAV-002",
+      "existing_title": "autonomie et Parcours intact",
+      "criterion_source": {
+        "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/NAV-M004.json",
+        "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2",
+        "json_pointer": "/nav/1/test_specification",
+        "exact_value": "**Source :** ouverture sans Parcours/Atelier, aucune étape créée/validée implicitement. **Dépendances :** I.2, A.1 contexte, EX-001. **Liens :** TEST-001/002 pour autonomies finales, pas équivalence avec MVP.\n\n**Positif :** lien direct `/studio` puis projet synthétique sans étapes accomplies, étude/variante, choix 2D puis autre étude 3D ; StudioShell s'affiche sans ouverture Atelier. **Négatif :** supprimer les caches UI Parcours/Atelier et faire échouer leurs endpoints non requis : Studio doit encore proposer le contexte autorisé ; aucun prérequis « terminer étape10 » ; ouverture seule ne crée géométrie ou progression.\n\n**Oracle :** même inventaire 21 étapes, numéros/phases/libellés/cartes/stats avant/après navigation ; pas d'appel obligatoire à données Parcours pour ouvrir Studio ; pas de redirection `?module=atelier`, iframe ou initialisation Atelier complet ; géométrie sans 3D/2D fictive selon choix. Vérifier réseau et données, pas seule absence de texte. **Env :** E-UX + UX-S0, données read fixtures pour premier test, vrai backend jetable pour preuve de non-mutation. **Preuve :** P-UX + diff d'état et graphe routes/requêtes.",
+        "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+      },
+      "delta_documentaire": "DEC-01 retient le principe du contenu 2D canonique indépendant ; DEC-03 retient des identités Étude/Variante propres. L’ouverture Studio et l’étude vide ne doivent charger ni créer un modèle 3D de substitution, ni exiger l’Atelier ou une étape Parcours.",
+      "sources_exactes": [
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            10,
+            13
+          ],
+          "exact_excerpt": "- [6250110124 — DEC-01](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250110124) : **optionA document2D canonique autonome retenue pour préparer G1**, réemploi des noyaux Fadi purs par interfaces publiques ; DEC-01 reste ouverte pour modèlephysique/coûts/preuves/persistance/migration/rollback.\n- [6250110501 — DEC-03](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250110501) : **identités métier propres Étude/Variante et Révision immuable dans Projet transverse retenues pour préparer G1** ; stockage/IDsphysiques/contraintes/isolation/restauration/migration/rollback restent ouverts.\n\nLe compte GitHub auteur réel est RachEma-ux ; les corps portent CHATGPT-DECISION dans la délégation documentée. Le choix de principe n'est plus candidat ; sa traduction physique et sa preuve restent à instruire. Aucune acceptationG1–G4 ni codeStudio n'en découle. Les autres décisions de cet export (CIpure bornée, classificationpure sousinventaire, CSP/KMLpréparation) ne sont pas des autorisations d'implémenter ces contrats Studio."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            19,
+            22
+          ],
+          "exact_excerpt": "| Identité document2D | `documentId` stable distinct de l'identité de la feuille publiée, de sa version de pièce et de son rendu. Le document appartient à une variante autorisée d'une étude/projet. | Créer/éditer/sauver/fermer/rouvrir avec mêmes identités ; allocation/forme physique IDs reste DEC01/03 |\n| Source de vérité | Primitives, calques, cotes, annotations et contraintes du document font autorité, pas SVG/Canvas/maillage ou copie d'un modèle3D. | Comparer canonique avant/après reconstruction des caches ; aucun modèle3D synthétique substitut |\n| Autonomie forte | Ni création ni édition ni version ni persistance ni publication d'un dessinA ne requiert un document/modèle3D. Une source3D peut être référencée explicitement mais n'est pas une dépendance obligatoire du dessin libre. | TEST001 complet, moteur3D absent/nonchargé lorsque non requis ; mesurer sans inventer budget |\n| Référence vs copie vs associé | Une conversion/extrusion produit objet3D ou association explicite selon contrat. Une coupe3D dérivée n'est pas déclarée dessin2D indépendant sans opération d'extraction explicite ; copie autonome n'entretient pas de propagation. | TEST004–007, provenance/IDs et rapport des liens ; DEC02 topologie/associations reste ouverte |"
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            27,
+            30
+          ],
+          "exact_excerpt": "| Réemploi | Noyaux géométriques purs Fadi existants réutilisés par API/adaptateur public après qualification ; aucun nouvel outil n'importe UIAtelier comme autorité. | Comparaison fidélité/limites/licences/coûts ; DEC18 parcomposant, pas réécriture automatique |\n| Compatibilité | Lecture/import/export distingués par format/version/entité/sens. Conservation desID et propriétés reconnues ; inconnues préservées ou rapport de pertes explicite, jamais disparition silencieuse. | Corpus ancien/nouveau avant/après ; pas roundtrip paramétrique supposé ni migration implicite |\n\nCes précisions définissent les responsabilités, pas une nouvelle structure de document sérialisée. Les exemples M17/M24 restent illustratifs ; leur `schemaVersion=illustrative-1` n'est pas un formatStudio accepté par le code."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "lines": [
+            21,
+            23
+          ],
+          "exact_excerpt": "Premier sous-ensemble : intégration autonome Studio I (rail/routes/contexte/états/refus/transitions) et fondations A.1 (identités Étude/Variante/Révision, propriétaire canonique et sauvegarde/réouverture versionnée). Il doit pouvoir cadrer une étude et créer une variante sans géométrie fictive, puis enregistrer/lire une référence de contenu canonique avec isolation et historique.\n\nExclus de sa réalisation initiale proposée : éditeurs/outils complets A.2/A.3, association topologique A.4, tous moteurs industriels réintégrés dans un nouveau catalogue, Registry/Manager completB, optimisationC/ordonnanceurD, revue/publication métier complèteE, migration de données existantesR et optionsF reportées. Leurs **interfaces** utiles restent prises en compte pour ne pas créer un contrat incompatible. Une intégration I/A.1 livrée ne serait pas le MVP A/B/C terminable ; TEST001 complet attend E. Aucun de ces lots n'est ouvert par cet index."
+        }
+      ],
+      "acquis_de_specification": "Orientations logiques retenues pour préparer G1 ; réemploi par interface publique et autonomie persistante restent à prouver.",
+      "preuves_runtime_manquantes": "NAV prescrit, non exécuté. Ni interface Studio, ni contrôle serveur, ni persistance/reprise, ni droit effectif validé ici. Syntaxe et empreintes JSON cohérentes ne prouvent aucun de ces comportements.",
+      "prochains_cas_mesurables_sous_meme_id": [
+        {
+          "scenario_label": "Autonomie 2D sous identité propre",
+          "action_future": "Depuis /studio ouvrir une étude sans étapes terminées, choisir une variante puis la planche 2D indépendante.",
+          "measurable_oracle": "Zéro modèle 3D créé ; inventaire des 21 étapes, phases et états identique avant/après ; documentId stable au réouvrir.",
+          "negative_future": "Indisponibilité des données Parcours/Atelier non requises ne crée pas de prérequis caché ni de faux volume.",
+          "environment_required": "Future recette E-UX sur build/SHA identifié ; cible synthétique jetable autorisée si création/mutation, jamais production",
+          "execution": "Non exécuté ; proposition sous le même ID NAV"
+        }
+      ],
+      "statut_nav_inchange": {
+        "status": "Prescrit, non exécuté",
+        "conformity": "Non évaluée Studio",
+        "acceptance": "Absente"
+      }
+    },
+    {
+      "id": "NAV-003",
+      "existing_title": "contexte absent sans objets orphelins",
+      "criterion_source": {
+        "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/NAV-M004.json",
+        "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2",
+        "json_pointer": "/nav/2/test_specification",
+        "exact_value": "**Source :** absence projet/étude conduit à choix explicite. **Dépendances :** I.2, A.1, permissions. **Liens :** EX-003 et IF-001.\n\n**Positif :** trois comptes/états : aucun projet ; projet sans étude ; étude sans variante. Présenter choix/creation seulement autorisée, puis contexte complet avant édition. **Négatif :** deep-link incomplet, double clic Créer et essai géométrie avant variante ; lecteur sans droit création ne peut créer via raccourci/profil/API ; absence d'étude ne déclenche pas insertion cachée.\n\n**Oracle :** aucune géométrie sans variantId propriétaire ; ouvrir une page est non mutateur ; nombre de créations correspond exactement aux intentions confirmées/idempotentes ; choix accessible et retour Fadi possible. **Env :** E-UX + UX-S0, base jetable obligatoire pour création. **Preuve :** P-UX + commandes/requestId et comptages anonymisés par propriétaire.",
+        "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+      },
+      "delta_documentaire": "L’étude possède une identité propre et peut contenir cadrage/sources sans variante. Toute géométrie persistée reste rattachée à une variante autorisée ; aucune attribution au dernier projet ou création implicite n’est permise. Le cas positif documentaire Étude vide précise le contexte admissible, pas un écran livré.",
+      "sources_exactes": [
+        {
+          "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "provenance": {
+            "kind": "Git documentaire",
+            "sha": "b1023605b965b27ff56fabf179756592673c98d4"
+          },
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            15,
+            21
+          ],
+          "exact_excerpt": "| `/studio` | Accueil global, liste des projets/études autorisés, sélection explicite. Aucun projet fictif, aucune création au GET. |\n| `/studio/projets/:projectId` | Études du projet autorisé, création avec droit explicite ; pas de requête Parcours obligatoire. |\n| `/studio/projets/:projectId/etudes/:studyId` | Cadrage, sources et variantes de l'étude appartenant au projet. Étude sans variante permise, géométrie interdite sans variante. |\n| `/studio/projets/:projectId/etudes/:studyId/variantes/:variantId` | Révision de travail de la variante, contexte actif et droits reçus de la façade autorisée. |\n| `/studio/projets/:projectId/etudes/:studyId/variantes/:variantId/revisions/:revisionId` | Consultation d'une révision identifiée et immuable de cette variante. Éditer crée une intention explicite vers travail courant/nouvelle variante, jamais une mutation de cette révision. |\n\nTous les identifiants sont opaques, encodés comme segments ; type/longueur admis par contrat A2, jamais interprétés comme noms de fichiers. Résolution serveur vérifie existence **et** projectId↔studyId↔variantId↔revisionId et droits sur chaque ressource. Aucune redirection automatique vers le dernier projet en cas de lien interdit. Un contexte obsolète n'est pas remplacé silencieusement. Ordre de priorité : URL explicite autorisée, puis choix utilisateur ; dernier contexte personnel = suggestion seulement. Aucun paramètre URL ne transmet une permission."
+        },
+        {
+          "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "provenance": {
+            "kind": "Git documentaire",
+            "sha": "b1023605b965b27ff56fabf179756592673c98d4"
+          },
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            125,
+            132
+          ],
+          "exact_excerpt": "À l’URL d’étude, afficher trois zones nommées **Cadrage**, **Sources de l’étude**, **Variantes**. Les sources sont des références au catalogue/stockage Fadi commun, jamais une seconde base documentaire. L’étude peut déjà référencer des sources avant sa première variante ; ouvrir la page ou une source ne crée aucune géométrie.\n\n- **Lecture :** lister uniquement les références autorisées de cette étude, avec titre, type/format, auteur/fournisseur si connu, date, version et état de disponibilité ; afficher provenance, unités/repère/transformation et restrictions lorsqu’applicables (EX-014/IF-001). Une information absente reste non renseignée ; pas d’auteur ou de validation inventés. Consultation/téléchargement de chaque pièce revérifie les droits de sa ressource ; un titre ou aperçu interdit ne fuit pas depuis une ancienne étude en cache.\n- **Rattachement/import :** actions explicites distinctes « Lier une source existante » et « Importer une source », offertes seulement selon autorisation. L’import n’est pas une conversion native/BIM automatique : choix de fichier, métadonnées/provenance et restrictions, contrôles de type/taille/sanitation, rapport d’incompatibilités/pertes puis confirmation de rattachement au contexte exact selon contrat A2/API. Aucun téléversement réel ni import n’est effectué par cette spécification. Les données inconnues ne sont pas silencieusement ignorées.\n- **État :** aucune source → message et action autorisée ; lecture seule → liste/consultation autorisées, mutation refusée avec motif ; chargement/erreur → état récupérable ; source retirée/indisponible → référence explicitement indisponible, sans substitution ni effacement des versions historiques. Changement d’étude pendant import/pending suit la garde NAV-007 ; aucune pièce n’est réadressée à la nouvelle étude.\n- **Variantes :** la zone reste accessible même vide, avec « Aucune variante » et « Créer une variante » selon droit. La liste permet ouvrir une variante existante ; la création intentionnelle fournit son propriétaire studyId/projectId vérifié serveur. Sans droit, lecture selon autorisation et motif du refus. Une source liée à l’étude n’est pas copiée/convertie implicitement lors de la création ; les références/versionnements et la politique d’évolution sont explicités par M17. Aucun modèle 2D/3D n’est créé par simple navigation.\n\nOracles documentaires proposés : URL étude vide expose les trois zones sans variante fictive ; source autorisée consultable avec provenance ; pièce d’autre étude/projet refusée sans fuite ; import non autorisé/refusé n’engendre ni référence partielle ni objet ; variante créée seulement par intention autorisée, source immuable conservée. Exécution future : NAV-003/004/006/007, TEST-028/035 selon capacités ; la description seule ne les déclare pas réussis et ne passe pas G1."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            42,
+            47
+          ],
+          "exact_excerpt": "| ProjetFadi | Autorité transverse existante : comptes, accès, sources et catalogue partagés. | Aucun projetparallèle créé pour rendre Studio autonome |\n| Étude | Identité métier propre, appartient à un projet ; cadrage/sources avant géométrie et avant variante permis. | Étude d'un autre projet dans URL/commande/source rejetée sans fuite |\n| Variante | Identité métier propre, appartient à une étude ; toute géométrie persistée a une variante propriétaire. | Interdire géométrieorpheline et attribution implicite à «dernierprojet» |\n| Révision | Identité immuable, appartient à exactement une variante, parents/transaction/sources identifiés. | Aucune mutation rétroactive ; nouvelle commande sur tête autorisée ou fork explicite |\n| Fork | Nouvelles identités propriétaires et provenance verssource selon contrat ; paspropagation implicite d'une copie. | Mapping explicite des anciennes variantes-projets ; pas renommer/copier/migrer silencieusement les données existantes |\n| Session/droits | Identité tenant/projet/étude/variante vérifiée serveur avec permissions surressource/action ; `actorId` client ne fait pas autorité. | Une combinaison d'IDs tous existants mais appartenant à des parents différents est refusée |"
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-EXEMPLES-DOCUMENTAIRES-2D-IDENTITES-v2.json",
+          "sha256": "3d29419c227258b60645893340eee9dfbd009c16ec0e0428eb54c6dae729ea11",
+          "json_pointer": "/valid_examples/0",
+          "exact_value": {
+            "exampleId": "G1-DOC-POS-STUDY",
+            "expected": "Étude sansvariante permise, géométrieabsente",
+            "project": {
+              "projectId": "example-project-G1",
+              "authority": "Fadi-project-service-fixture-only"
+            },
+            "study": {
+              "studyId": "example-study-G1",
+              "projectId": "example-project-G1",
+              "sources": [],
+              "brief": "Étude synthétique documentaire, pasprojetcréé"
+            },
+            "variants": [],
+            "canonicalDocuments": [],
+            "execution": "Non exécuté ; cohérence documentaire seulement"
+          },
+          "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-SCHEMAS-LOGIQUES-DOCUMENTAIRES-v2.json",
+          "sha256": "ca552c040a1da0064e63c2a2cf643619fbeee13c53ad9c98d65114376a4a7b0c",
+          "json_pointer": "/modeles/Étude",
+          "exact_value": {
+            "identite": "studyId propre stable, pas alias implicite de projectId",
+            "appartenance": "exactement un projectId",
+            "contenu": "cadrage/sources/hypothèses, variantes possibles mais non obligatoires àcréation",
+            "interdit": "géométriepersistée sansvariante, mutation de programme approuvé par dessin"
+          },
+          "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-SCHEMAS-LOGIQUES-DOCUMENTAIRES-v2.json",
+          "sha256": "ca552c040a1da0064e63c2a2cf643619fbeee13c53ad9c98d65114376a4a7b0c",
+          "json_pointer": "/modeles/Variante",
+          "exact_value": {
+            "identite": "variantId propre stable",
+            "appartenance": "exactement un studyId/projectId autorisés",
+            "filiation": "fork explicite avec provenance et nouvellesidentités seloncontrat, paspropagationimplicite",
+            "tete": "révisioncourante référencée, pas réécriturehistorique"
+          },
+          "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+        }
+      ],
+      "acquis_de_specification": "Principe d’identité DEC-03 retenu ; transports, cycle de création et allocation physique non ratifiés.",
+      "preuves_runtime_manquantes": "NAV prescrit, non exécuté. Ni interface Studio, ni contrôle serveur, ni persistance/reprise, ni droit effectif validé ici. Syntaxe et empreintes JSON cohérentes ne prouvent aucun de ces comportements.",
+      "prochains_cas_mesurables_sous_meme_id": [
+        {
+          "scenario_label": "Étude avec sources, sans variante",
+          "action_future": "Ouvrir la route étude existante avec sources autorisées et liste de variantes vide.",
+          "measurable_oracle": "Trois zones Cadrage/Sources/Variantes accessibles ; zéro variante, document, géométrie ou révision créée par GET/navigation.",
+          "negative_future": "Commande géométrique avant variantId propriétaire refusée sans effet ; lecteur ne crée pas via raccourci ou double clic.",
+          "environment_required": "Future recette E-UX sur build/SHA identifié ; cible synthétique jetable autorisée si création/mutation, jamais production",
+          "execution": "Non exécuté ; proposition sous le même ID NAV"
+        },
+        {
+          "scenario_label": "Création intentionnelle de variante",
+          "action_future": "Choisir Créer selon permission, confirmer une seule intention.",
+          "measurable_oracle": "Une seule nouvelle identité sous le studyId/projectId autorisés et provenance explicite ; aucun modèle fictif produit.",
+          "negative_future": "Requête répétée ne double pas la création selon le futur contrat idempotent ; parenté étrangère refusée.",
+          "environment_required": "Future recette E-UX sur build/SHA identifié ; cible synthétique jetable autorisée si création/mutation, jamais production",
+          "execution": "Non exécuté ; proposition sous le même ID NAV"
+        }
+      ],
+      "statut_nav_inchange": {
+        "status": "Prescrit, non exécuté",
+        "conformity": "Non évaluée Studio",
+        "acceptance": "Absente"
+      }
+    },
+    {
+      "id": "NAV-004",
+      "existing_title": "URL, historique et refus sans fuite",
+      "criterion_source": {
+        "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/NAV-M004.json",
+        "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2",
+        "json_pointer": "/nav/3/test_specification",
+        "exact_value": "**Source :** URL/réouverture/précédent-suivant restituent contexte autorisé, lien interdit ne divulgue rien. **Dépendances :** routes et façade A2/M17, garde isolation serveur. **Liens :** TEST-035, EX-088.\n\n**Positif :** URL complète V1 dessin2D, naviguer V2 visualisation puis R1 BIM ; refresh/précédent/suivant rétablissent exactement P/S/V/R/domaine/planche. Dernier projet personnel différent ne remplace pas l'URL. **Négatif :** permuter project/study/variant/revision entre propriétaires, ID absent/malformé, révoquer permission après cache chargé, rejouer URL/export/job interdits ; aucun nom, image, metadata ou anciennes données sensibles ne doit fuir.\n\n**Oracle :** chaîne d'appartenance et droits contrôlée serveur à chaque ressource ; refus neutre/autorisé selon politique arrêtée ; absence de corps sensible et scène/caches précédent contexte non affichés ; URL historique ne passe pas à latest. Paramètre domaine/planche invalide produit état non reconnu sans mutation. **Env :** E-UX + UX-S0, vraies sessions/API de test pour preuve sécurité, mocks seulement complément. **Preuve :** P-UX + matrice réponses expurgées et assertions absence de fuite.",
+        "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+      },
+      "delta_documentaire": "Les segments P/S/V/R correspondent à des identités métier propres, non à des aliases de projets copiés. Parenté, droits de chaque ressource et révision immuable sont vérifiés serveur, y compris après login, cache, retour navigateur et réouverture historique. Les anciennes variantes-projets exigent un mapping explicite ; aucune migration ou route API n’est décidée.",
+      "sources_exactes": [
+        {
+          "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "provenance": {
+            "kind": "Git documentaire",
+            "sha": "b1023605b965b27ff56fabf179756592673c98d4"
+          },
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            18,
+            27
+          ],
+          "exact_excerpt": "| `/studio/projets/:projectId/etudes/:studyId/variantes/:variantId` | Révision de travail de la variante, contexte actif et droits reçus de la façade autorisée. |\n| `/studio/projets/:projectId/etudes/:studyId/variantes/:variantId/revisions/:revisionId` | Consultation d'une révision identifiée et immuable de cette variante. Éditer crée une intention explicite vers travail courant/nouvelle variante, jamais une mutation de cette révision. |\n\nTous les identifiants sont opaques, encodés comme segments ; type/longueur admis par contrat A2, jamais interprétés comme noms de fichiers. Résolution serveur vérifie existence **et** projectId↔studyId↔variantId↔revisionId et droits sur chaque ressource. Aucune redirection automatique vers le dernier projet en cas de lien interdit. Un contexte obsolète n'est pas remplacé silencieusement. Ordre de priorité : URL explicite autorisée, puis choix utilisateur ; dernier contexte personnel = suggestion seulement. Aucun paramètre URL ne transmet une permission.\n\nQuery proposée sur routes variantes/révisions : `domaine=dessin|bim|visualisation|documentation`. Dans `dessin` seulement, `planche=2d|3d`. Exemple complet : `/studio/projets/p1/etudes/s1/variantes/v1?domaine=dessin&planche=2d`. Exemple historique : `/studio/projets/p1/etudes/s1/variantes/v1/revisions/r8?domaine=bim`. Les IDs sont des exemples synthétiques.\n\nAbsence de domaine : écran d'accueil de variante, sans créer de planche. Absence de planche en dessin : choix explicite 2D/3D ; reprendre une préférence peut pré-sélectionner le choix sans créer de géométrie. Domaine inconnu/planche inconnue ou `planche` hors dessin : afficher un état URL non reconnue et lien vers contexte parent valide, aucune mutation ; pas de substitution métier silencieuse. Paramètres d'interface sans effet métier (panneau/caméra) restent hors de ce contrat initial. Ne pas coder de données privées dans URL ou analytics.\n\nPrécédent/suivant et refresh conservent les segments et choix domaine/planche ; changement de domaine crée une entrée d'historique. Canonicalisation pure de paramètres d'affichage peut utiliser replace, sans perdre contexte ni modifier les modèles. Les liens historiques ne pointent jamais implicitement vers « latest ». Les chemins d'API ne sont pas déduits mécaniquement des routes web."
+        },
+        {
+          "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "provenance": {
+            "kind": "Git documentaire",
+            "sha": "b1023605b965b27ff56fabf179756592673c98d4"
+          },
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            104,
+            110
+          ],
+          "exact_excerpt": "### Authentification et deep link : contrat précis supplémentaire\n\n- Entrée anonyme par URL complète : authentification sans précharger noms/vignettes/contenus sensibles. Garder un `returnTo` interne validé (même origine, chemin Studio autorisé, pas protocole/host arbitraire), puis revalider toute appartenance serveur. Une session acquise ne valide pas l’objet demandé.\n- Session expirée en édition : arrêter l’envoi de nouvelles mutations ; distinguer commande dont accusé serveur manque d’une commande refusée. Conserver la file locale autorisée et son propriétaire utilisateur/contexte ; ne pas l’envoyer sous un nouvel utilisateur après reconnexion.\n- Reconnexion même utilisateur : revalider droits/baseRevision et requestId avant reprise ; résultat accepté mais réponse perdue doit être dédupliqué côté serveur. Reconnexion autre utilisateur : isoler/verrouiller la file d’origine sans fuite ; proposer revenir au bon compte, pas réattribuer les objets.\n- Lien historique : ouverture en consultation même si le rôle peut éditer le courant. « Reprendre le travail courant » change explicitement l’URL et le contexte ; aucune modification rétroactive de la révision citée.\n- Retour navigateur pendant chargement/conflit : respecter garde de transition ; `AbortController` ou cancellation d’affichage seul ne prouve pas annulation de commande serveur. Une commande partie reste suivie dans son contexte initial."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            43,
+            51
+          ],
+          "exact_excerpt": "| Étude | Identité métier propre, appartient à un projet ; cadrage/sources avant géométrie et avant variante permis. | Étude d'un autre projet dans URL/commande/source rejetée sans fuite |\n| Variante | Identité métier propre, appartient à une étude ; toute géométrie persistée a une variante propriétaire. | Interdire géométrieorpheline et attribution implicite à «dernierprojet» |\n| Révision | Identité immuable, appartient à exactement une variante, parents/transaction/sources identifiés. | Aucune mutation rétroactive ; nouvelle commande sur tête autorisée ou fork explicite |\n| Fork | Nouvelles identités propriétaires et provenance verssource selon contrat ; paspropagation implicite d'une copie. | Mapping explicite des anciennes variantes-projets ; pas renommer/copier/migrer silencieusement les données existantes |\n| Session/droits | Identité tenant/projet/étude/variante vérifiée serveur avec permissions surressource/action ; `actorId` client ne fait pas autorité. | Une combinaison d'IDs tous existants mais appartenant à des parents différents est refusée |\n| WriterAuthority | Un écrivain unique pour chaque donnée canonique2D/3Dlibre/associée ; vues/scènes ne sont pas écrivains. | Deux planches ne fabriquent pas deux copiesautoritaires du même mur ; migration d'autorité distincte et non autorisée ici |\n| Diffusion | Publication et approbation visent leurs ensembles exacts ; travail courant peut évoluer sans effacer référence historique. | `revisionId` n'est ni statutdediffusion ni publicationId ; ne jamais substituer latest enréouverture |\n\nLes choix d'index/stockage/IDs physiques/contraintes/lectures transactionnelles seront comparés par A2, sans créer de tables ou imposer UUID. La portée serveur de déduplication et la durée de rétention sont des choix à ratifier ; aucune rétention/sauvegarde n'est modifiée."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            55,
+            60
+          ],
+          "exact_excerpt": "1. Une révisionA peut ne contenir que l'autoritédocument2D ; une révisionB seulement modèle3Dlibre ; C porte l'objetarchitectural et ses relations/projections. La lecture ne complète pas artificiellement les autoritésabsentes.\n2. Le dossier candidat est une **coupe logique cohérente** des références versionnées/empreintées. Pièces, règles, contrôles, observations et sources citées doivent correspondre à l'ensemble effectivement examiné ; une série de GET ne prouve pas cette cohérence.\n3. L'approbation est une décision sur cet ensembleexact et la publication un acte distinct avec droitpublish. Rôleconcepteur/admintechnique ne donne pas approve/publish ; cumul seulement explicite et journalisé conformément D07.\n4. Réouverturehistorique : résoudre publication/révision exactes, revalider droits et parenté, vérifier pièces/empreintes/lecteurs compatibles, puis reconstruire les projections. Source manquante/inconnue/divergente → état explicite/récupération, jamais substitutionlatest.\n5. Modifier après réouverture est une intention distincte vers têteautorisée/nouvellevariante, avec préconditionIF004. L'ancien manifeste et ses pièces restent identifiables. Un statut local pending ne devient pas publication centrale.\n6. La méthode de hash des exemplesJSON M24 ne décide pas la canonicalisation de production ; DEC16 reste ouverte. IFC en proxies/représentations ne prouve pas sourcecanonique paramétrique ni certification ; matrice par sens/version/entité et pertes reste requise."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "lines": [
+            30,
+            37
+          ],
+          "exact_excerpt": "| Résoudre parenté et autorisations | Service projets/identité Fadi, décision serveur ; A2 | C-STUDY/NAV/IF001/004, EX087/088/092 ; TEST035 | Tous IDs existants mais parents différents → refus sans fuite ni mutation ; URL/profil ne crée aucun droit | Politique tenant/ressource/masquage refus et droits finaux non ratifiés |\n| Cadrer/lire/créer une étude, sources autorisées | Étude identité propre dans Projet transverse, références catalogueFadi ; A2/A1 | M17§1 et NAVSources étude ; IF001 | Étude sans variante autorisée ; géométrie persistée orpheline interdite ; source d'autrui non divulguée | Transport/validation des champs/stockage/transaction, choix physiquesDEC03 |\n| Créer/lire une variante, provenance d'un fork | Variante identité propre, uniqueÉtude/Projet ; A2 | C-STUDY, M17§1/2, EX013 | Nouvelle identité et filiation ; aucune propagation vers origine ; références/propriétaires cohérents | Allocation IDs/cycle de vie, mapping anciens projets-forks ; migration non réalisée |\n| Créer/citer un contenu2D autonome, vide ou défini selon contrat | Document canonique drawing2d, writer unique serveur ; A2 | C-DRAWING2D/M17§2, G1-DELTA-v2 ; EX004/020/023 | Aucune création de modèle3D de substitution ; unités/repère/version/IDs explicites ; calque/cote vers cible valide | Types physiques, contraintes/schema/compatibilité et coûtDEC01 ; absence3D/persistance encore à prouverG2 |\n| Engager une modification et produire révision | C-COMMAND, propriétaire de donnée et transaction autoritaire ; A2 | M17§3, IF004/006/011, EX017/018/045–049 | Précondition version/droits/writer avant effet ; refus atomique ; même requestId/contenu retourne premier résultat, pas doublon ; changement de contenu sous mêmeID refusé | Atomicité/déduplication/limites/quotas/reprise et historique physique, DEC12/03 |\n| Lire une révision historique exacte | Révision immuable d'une uniquevariante et sourcescitées ; A2 | M17§4, M24§6, IF004/009/011 | Identités et empreintes cohérentes ; aucune substitutionlatest ; éditionhistorique exige nouvelle intention | Snapshot en coupe logique, lecteurcompatible et contrôle droits parsource ; preuvelecturecohérente à établir |\n| Sauvegarder/fermer/rouvrir | Contenus canoniques confirmés, pas scènes/caches ; A2/A6 | C-STUDY/C-DRAWING2D, M24§3/6, EX089/090 | Accusé suit engagementdurable, après coupure distinguer confirmé/pending/conflit ; retrouver contenu exact sous bon compte | Choix persistance/incident/reconnexion et garanties de reprise, mesures non inventées |\n| Gérer versions et compatibilité | Contrats/formats/snapshots versionnés, chaque service propriétaire ; A2 | M17§1/5, M24§7/8, EX019/030/044/091 | schemaVersion/contractVersion/revisionId/baseRevisionId/contentVersion illustratif/documentVersion pièce non confondus ; inconnues refusées ou conservées avec rapport | Matrice lecteurs/imports/exports anciensformats réels, décision transformation/rollback ; aucun autobump |"
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-EXEMPLES-DOCUMENTAIRES-2D-IDENTITES-v2.json",
+          "sha256": "3d29419c227258b60645893340eee9dfbd009c16ec0e0428eb54c6dae729ea11",
+          "json_pointer": "/invalid_examples/1",
+          "exact_value": {
+            "exampleId": "G1-DOC-NEG-PARENTS",
+            "cause_cible": "Étude d’un autreprojet",
+            "payload": {
+              "exampleId": "G1-DOC-POS-2D",
+              "expected": "Dessin2Dcanonique autonome, révisionimmuable, aucun3D requis",
+              "project": {
+                "projectId": "example-project-G1",
+                "authority": "Fadi-project-service-fixture-only"
+              },
+              "study": {
+                "studyId": "example-study-G1",
+                "projectId": "example-foreign-project",
+                "sources": [],
+                "brief": "Étude synthétique documentaire, pasprojetcréé"
+              },
+              "variant": {
+                "variantId": "example-variant-A",
+                "studyId": "example-study-G1",
+                "projectId": "example-project-G1",
+                "headRevisionId": "example-revision-A1"
+              },
+              "revision": {
+                "revisionId": "example-revision-A1",
+                "scope": {
+                  "projectId": "example-project-G1",
+                  "studyId": "example-study-G1",
+                  "variantId": "example-variant-A"
+                },
+                "parentRevisionIds": [],
+                "transactionId": "example-transaction-A1",
+                "immutable": true,
+                "canonicalSources": [
+                  {
+                    "authority": "drawing2d",
+                    "documentId": "example-drawing-A",
+                    "contentVersion": "1",
+                    "contentHash": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7"
+                  }
+                ]
+              },
+              "canonicalDocument2D": {
+                "schemaVersion": "documentary-not-runtime-1",
+                "documentId": "example-drawing-A",
+                "contentVersion": "1",
+                "scope": {
+                  "projectId": "example-project-G1",
+                  "studyId": "example-study-G1",
+                  "variantId": "example-variant-A"
+                },
+                "revisionId": "example-revision-A1",
+                "authority": "drawing2d",
+                "writerAuthority": "drawing2d",
+                "coordinateFrame": {
+                  "frameId": "example-plane-A",
+                  "kind": "document2d",
+                  "lengthUnit": "m"
+                },
+                "layers": [
+                  {
+                    "layerId": "example-layer-1",
+                    "name": "Calque synthétique"
+                  }
+                ],
+                "primitives": [
+                  {
+                    "primitiveId": "example-line-1",
+                    "kind": "line",
+                    "points": [
+                      [
+                        0,
+                        0
+                      ],
+                      [
+                        6,
+                        0
+                      ]
+                    ],
+                    "layerId": "example-layer-1"
+                  }
+                ],
+                "annotations": [
+                  {
+                    "annotationId": "example-text-1",
+                    "kind": "text",
+                    "value": "Exemple documentaire G1"
+                  }
+                ],
+                "dimensions": [
+                  {
+                    "dimensionId": "example-dimension-1",
+                    "targetPrimitiveIds": [
+                      "example-line-1"
+                    ],
+                    "value": 6,
+                    "unit": "m"
+                  }
+                ],
+                "constraints": [],
+                "relations3D": [],
+                "provenance": {
+                  "origin": "Synthetic documentary example A1",
+                  "version": "1",
+                  "real_project_data": false
+                }
+              },
+              "runtime_schema_supported": false,
+              "execution": "Non exécuté ; schéma documentaire pasformat acceptéparFadi"
+            },
+            "expected": "Refus/erreur explicite sansmutationcanonique ; jamaispreuveexécutée",
+            "validation_order": "Cas proposés pour refus ciblé, ordre des contrôles réels à décider ; données illustrative-schema non format accepté par Fadi.",
+            "execution": "Non exécuté",
+            "anomalies_intentionnelles": [
+              "Étude d’un autreprojet"
+            ],
+            "empreintes": "Liens de contenu recalculés après mutation documentaire pour isoler la faute sémantique ciblée ; aucun validateur runtime exécuté"
+          },
+          "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-EXEMPLES-DOCUMENTAIRES-2D-IDENTITES-v2.json",
+          "sha256": "3d29419c227258b60645893340eee9dfbd009c16ec0e0428eb54c6dae729ea11",
+          "json_pointer": "/invalid_examples/9",
+          "exact_value": {
+            "exampleId": "G1-DOC-NEG-LATEST",
+            "cause_cible": "Réouverturehistorique substitue latest",
+            "payload": {
+              "exampleId": "G1-DOC-POS-2D",
+              "expected": "Dessin2Dcanonique autonome, révisionimmuable, aucun3D requis",
+              "project": {
+                "projectId": "example-project-G1",
+                "authority": "Fadi-project-service-fixture-only"
+              },
+              "study": {
+                "studyId": "example-study-G1",
+                "projectId": "example-project-G1",
+                "sources": [],
+                "brief": "Étude synthétique documentaire, pasprojetcréé"
+              },
+              "variant": {
+                "variantId": "example-variant-A",
+                "studyId": "example-study-G1",
+                "projectId": "example-project-G1",
+                "headRevisionId": "example-revision-A1"
+              },
+              "revision": {
+                "revisionId": "example-revision-A1",
+                "scope": {
+                  "projectId": "example-project-G1",
+                  "studyId": "example-study-G1",
+                  "variantId": "example-variant-A"
+                },
+                "parentRevisionIds": [],
+                "transactionId": "example-transaction-A1",
+                "immutable": true,
+                "canonicalSources": [
+                  {
+                    "authority": "drawing2d",
+                    "documentId": "example-drawing-A",
+                    "contentVersion": "1",
+                    "contentHash": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7"
+                  }
+                ]
+              },
+              "canonicalDocument2D": {
+                "schemaVersion": "documentary-not-runtime-1",
+                "documentId": "example-drawing-A",
+                "contentVersion": "1",
+                "scope": {
+                  "projectId": "example-project-G1",
+                  "studyId": "example-study-G1",
+                  "variantId": "example-variant-A"
+                },
+                "revisionId": "example-revision-A1",
+                "authority": "drawing2d",
+                "writerAuthority": "drawing2d",
+                "coordinateFrame": {
+                  "frameId": "example-plane-A",
+                  "kind": "document2d",
+                  "lengthUnit": "m"
+                },
+                "layers": [
+                  {
+                    "layerId": "example-layer-1",
+                    "name": "Calque synthétique"
+                  }
+                ],
+                "primitives": [
+                  {
+                    "primitiveId": "example-line-1",
+                    "kind": "line",
+                    "points": [
+                      [
+                        0,
+                        0
+                      ],
+                      [
+                        6,
+                        0
+                      ]
+                    ],
+                    "layerId": "example-layer-1"
+                  }
+                ],
+                "annotations": [
+                  {
+                    "annotationId": "example-text-1",
+                    "kind": "text",
+                    "value": "Exemple documentaire G1"
+                  }
+                ],
+                "dimensions": [
+                  {
+                    "dimensionId": "example-dimension-1",
+                    "targetPrimitiveIds": [
+                      "example-line-1"
+                    ],
+                    "value": 6,
+                    "unit": "m"
+                  }
+                ],
+                "constraints": [],
+                "relations3D": [],
+                "provenance": {
+                  "origin": "Synthetic documentary example A1",
+                  "version": "1",
+                  "real_project_data": false
+                }
+              },
+              "runtime_schema_supported": false,
+              "execution": "Non exécuté ; schéma documentaire pasformat acceptéparFadi",
+              "reopenIntentFixture": {
+                "revisionId": "example-revision-A1",
+                "fallbackToLatest": true
+              }
+            },
+            "expected": "Refus/erreur explicite sansmutationcanonique ; jamaispreuveexécutée",
+            "validation_order": "Cas proposés pour refus ciblé, ordre des contrôles réels à décider ; données illustrative-schema non format accepté par Fadi.",
+            "execution": "Non exécuté",
+            "anomalies_intentionnelles": [
+              "Réouverturehistorique substitue latest"
+            ],
+            "empreintes": "Liens de contenu recalculés après mutation documentaire pour isoler la faute sémantique ciblée ; aucun validateur runtime exécuté"
+          },
+          "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+        }
+      ],
+      "acquis_de_specification": "Identités/logique historique retenues en orientation ; chemins web et politique de refus restent candidats, formats/stockage non choisis.",
+      "preuves_runtime_manquantes": "NAV prescrit, non exécuté. Ni interface Studio, ni contrôle serveur, ni persistance/reprise, ni droit effectif validé ici. Syntaxe et empreintes JSON cohérentes ne prouvent aucun de ces comportements.",
+      "prochains_cas_mesurables_sous_meme_id": [
+        {
+          "scenario_label": "Lien historique exact après authentification",
+          "action_future": "Ouvrir anonymement une URL complète P/S/V/R puis se connecter ; rafraîchir et utiliser précédent/suivant.",
+          "measurable_oracle": "Même P/S/V/R/domaine/planche ; consultation historique explicite ; zéro substitution latest et aucun contenu privé avant autorisation.",
+          "negative_future": "ID valides mais parents différents, autre utilisateur ou returnTo externe : refus neutre sans nom/vignette/contenu sensible.",
+          "environment_required": "Future recette E-UX sur build/SHA identifié ; cible synthétique jetable autorisée si création/mutation, jamais production",
+          "execution": "Non exécuté ; proposition sous le même ID NAV"
+        },
+        {
+          "scenario_label": "Réouverture avec pièce incompatible",
+          "action_future": "Réouvrir une révision exacte dont une source est absente, divergente ou illisible.",
+          "measurable_oracle": "État explicite avec récupération ; version/source manquante identifiée seulement selon droits ; zéro création de remplacement.",
+          "negative_future": "Cache d’une ancienne étude ne fuit pas ; aucun fallback sur une pièce courante portant le même nom.",
+          "environment_required": "Future recette E-UX sur build/SHA identifié ; cible synthétique jetable autorisée si création/mutation, jamais production",
+          "execution": "Non exécuté ; proposition sous le même ID NAV"
+        }
+      ],
+      "statut_nav_inchange": {
+        "status": "Prescrit, non exécuté",
+        "conformity": "Non évaluée Studio",
+        "acceptance": "Absente"
+      }
+    },
+    {
+      "id": "NAV-005",
+      "existing_title": "quatre domaines et deux planches véritables",
+      "criterion_source": {
+        "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/NAV-M004.json",
+        "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2",
+        "json_pointer": "/nav/4/test_specification",
+        "exact_value": "**Source :** quatre domaines accessibles, deux planches dans Dessin et modélisation seulement. **Dépendances :** I.4 puis A.2/A.3/E pour capacités métier. **Liens :** EX-004..007, TEST-001/002/003.\n\n**Positif :** parcourir quatre domaines, ouvrir 2D seule et 3D seule ; vérifier que leurs contrôles d'édition existent et que données indépendantes restent persistantes dans leurs propriétaires. **Négatif :** `planche=3d&domaine=bim`/planche inconnue refusée ou état explicite ; ne pas présenter coupe/feuille/visionneuse comme planche autonome ; ni volume fictif créé en A ni esquisse requise en B.\n\n**Oracle :** noms/responsabilités des quatre domaines identiques au contrat ; planches éditables uniquement D1 ; absence d'effet métier parasite. Test enveloppe I ne ferme que présence/navigation ; autonomie persistante et publication attendent les TEST aval. **Env :** E-UX + corpus de parcours A/B/C fourni A5. **Preuve :** P-UX + identités/modèles avant/après et sous-critères d'édition explicitement exécutés ou non.",
+        "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+      },
+      "delta_documentaire": "Les quatre domaines et deux planches demeurent inchangés. G1 précise que la révision A peut citer seulement drawing2d, B seulement model3d et C associated avec relations/projections. Une planche, une scène ou une coupe dérivée ne devient pas une seconde autorité géométrique ; conversion, référence, copie et association restent des intentions distinctes.",
+      "sources_exactes": [
+        {
+          "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "provenance": {
+            "kind": "Git documentaire",
+            "sha": "b1023605b965b27ff56fabf179756592673c98d4"
+          },
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            23,
+            25
+          ],
+          "exact_excerpt": "Query proposée sur routes variantes/révisions : `domaine=dessin|bim|visualisation|documentation`. Dans `dessin` seulement, `planche=2d|3d`. Exemple complet : `/studio/projets/p1/etudes/s1/variantes/v1?domaine=dessin&planche=2d`. Exemple historique : `/studio/projets/p1/etudes/s1/variantes/v1/revisions/r8?domaine=bim`. Les IDs sont des exemples synthétiques.\n\nAbsence de domaine : écran d'accueil de variante, sans créer de planche. Absence de planche en dessin : choix explicite 2D/3D ; reprendre une préférence peut pré-sélectionner le choix sans créer de géométrie. Domaine inconnu/planche inconnue ou `planche` hors dessin : afficher un état URL non reconnue et lien vers contexte parent valide, aucune mutation ; pas de substitution métier silencieuse. Paramètres d'interface sans effet métier (panneau/caméra) restent hors de ce contrat initial. Ne pas coder de données privées dans URL ou analytics."
+        },
+        {
+          "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "provenance": {
+            "kind": "Git documentaire",
+            "sha": "b1023605b965b27ff56fabf179756592673c98d4"
+          },
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            41,
+            46
+          ],
+          "exact_excerpt": "| Domaine | Entrée/limite |\n|---|---|\n| Dessin et modélisation | Deux planches éditables autonomes ; relation associé/référence liée/copie indépendante visible. Une coupe dérivée ne devient pas document 2D indépendant implicitement. |\n| BIM et coordination | Propriétés, exigences/mesures distinctes, contrôles et observations ; aucune autorité géométrique concurrente. |\n| Visualisation, rendu et immersion | Vue/caméra/apparence et provenance ; couleur apparente ne modifie pas composition ni volumes. IA/immersion avancées conditionnelles ne suppriment pas ce domaine. |\n| Documentation, métrés et collaboration | Vues→feuilles→dossier, observations/revue, approbation et publication séparées ; manifeste des versions effectivement approuvées. |"
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            19,
+            24
+          ],
+          "exact_excerpt": "| Identité document2D | `documentId` stable distinct de l'identité de la feuille publiée, de sa version de pièce et de son rendu. Le document appartient à une variante autorisée d'une étude/projet. | Créer/éditer/sauver/fermer/rouvrir avec mêmes identités ; allocation/forme physique IDs reste DEC01/03 |\n| Source de vérité | Primitives, calques, cotes, annotations et contraintes du document font autorité, pas SVG/Canvas/maillage ou copie d'un modèle3D. | Comparer canonique avant/après reconstruction des caches ; aucun modèle3D synthétique substitut |\n| Autonomie forte | Ni création ni édition ni version ni persistance ni publication d'un dessinA ne requiert un document/modèle3D. Une source3D peut être référencée explicitement mais n'est pas une dépendance obligatoire du dessin libre. | TEST001 complet, moteur3D absent/nonchargé lorsque non requis ; mesurer sans inventer budget |\n| Référence vs copie vs associé | Une conversion/extrusion produit objet3D ou association explicite selon contrat. Une coupe3D dérivée n'est pas déclarée dessin2D indépendant sans opération d'extraction explicite ; copie autonome n'entretient pas de propagation. | TEST004–007, provenance/IDs et rapport des liens ; DEC02 topologie/associations reste ouverte |\n| Primitives/relations | Identités de primitives/calques/cotes stables dans leur contexte ; références contrôlées. Suppression/division ambiguë d'une cible conserve la cote avec statut àrésoudre ou correspondance démontrée, pas rapprochement arbitraire. | Caspositif/casnégatif exacts et réouverture, passimpleproximité ; choix types/solveur physiques non décidés |\n| Unités/repères | Unité et repère du document explicites ; transformations vers projet/local/géographique versionnées lorsque utilisées. Pixels ne deviennent jamais unité canonique. Information inconnue déclarée, pas défautinventé. | Imports àunités/repères inconnus refusés ou mis en résolution ; conversions comparées aux oracles |"
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            48,
+            49
+          ],
+          "exact_excerpt": "| WriterAuthority | Un écrivain unique pour chaque donnée canonique2D/3Dlibre/associée ; vues/scènes ne sont pas écrivains. | Deux planches ne fabriquent pas deux copiesautoritaires du même mur ; migration d'autorité distincte et non autorisée ici |\n| Diffusion | Publication et approbation visent leurs ensembles exacts ; travail courant peut évoluer sans effacer référence historique. | `revisionId` n'est ni statutdediffusion ni publicationId ; ne jamais substituer latest enréouverture |"
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            55,
+            60
+          ],
+          "exact_excerpt": "1. Une révisionA peut ne contenir que l'autoritédocument2D ; une révisionB seulement modèle3Dlibre ; C porte l'objetarchitectural et ses relations/projections. La lecture ne complète pas artificiellement les autoritésabsentes.\n2. Le dossier candidat est une **coupe logique cohérente** des références versionnées/empreintées. Pièces, règles, contrôles, observations et sources citées doivent correspondre à l'ensemble effectivement examiné ; une série de GET ne prouve pas cette cohérence.\n3. L'approbation est une décision sur cet ensembleexact et la publication un acte distinct avec droitpublish. Rôleconcepteur/admintechnique ne donne pas approve/publish ; cumul seulement explicite et journalisé conformément D07.\n4. Réouverturehistorique : résoudre publication/révision exactes, revalider droits et parenté, vérifier pièces/empreintes/lecteurs compatibles, puis reconstruire les projections. Source manquante/inconnue/divergente → état explicite/récupération, jamais substitutionlatest.\n5. Modifier après réouverture est une intention distincte vers têteautorisée/nouvellevariante, avec préconditionIF004. L'ancien manifeste et ses pièces restent identifiables. Un statut local pending ne devient pas publication centrale.\n6. La méthode de hash des exemplesJSON M24 ne décide pas la canonicalisation de production ; DEC16 reste ouverte. IFC en proxies/représentations ne prouve pas sourcecanonique paramétrique ni certification ; matrice par sens/version/entité et pertes reste requise."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-SCHEMAS-LOGIQUES-DOCUMENTAIRES-v2.json",
+          "sha256": "ca552c040a1da0064e63c2a2cf643619fbeee13c53ad9c98d65114376a4a7b0c",
+          "json_pointer": "/modeles/Document2DCanonique",
+          "exact_value": {
+            "identite": "documentId stable distinct de la pièce publiée",
+            "appartenance": "variantepropriétaire et révisioncitant ce contenu",
+            "autorite": "drawing2d, writer unique serveur",
+            "requis_logiques": [
+              "versiondeschéma explicite",
+              "repère2D etunités explicites",
+              "primitivesidentifiées",
+              "calquesidentifiés",
+              "cotes/annotations/contraintes si présentes référencent cibles valides ou ambiguïtés explicites",
+              "provenance/version ducontenu",
+              "sauvegarde/réouverture indépendant de3D"
+            ],
+            "facultatif": "relations3D explicites ; absence modèle3D normale, pasfausse3Ddesubstitution",
+            "derives": "SVG/Canvas/index/scènes/projections reconstruisibles, jamais sourcecanonique"
+          },
+          "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+        }
+      ],
+      "acquis_de_specification": "Autonomie 2D retenue en principe ; association topologique DEC-02 et choix physiques restent ouverts. I/A.1 n’est pas le MVP A/B/C.",
+      "preuves_runtime_manquantes": "NAV prescrit, non exécuté. Ni interface Studio, ni contrôle serveur, ni persistance/reprise, ni droit effectif validé ici. Syntaxe et empreintes JSON cohérentes ne prouvent aucun de ces comportements.",
+      "prochains_cas_mesurables_sous_meme_id": [
+        {
+          "scenario_label": "Choix de planche indépendant",
+          "action_future": "Depuis une variante sans planche sélectionnée, choisir 2D puis une autre variante 3D indépendante ; traverser les quatre domaines.",
+          "measurable_oracle": "Deux planches seulement dans Dessin et modélisation ; aucun contenu de l’autorité absente créé à la lecture ; propriétaires et contexte conservés.",
+          "negative_future": "planche=3d hors domaine dessin ou planche inconnue : état URL non reconnue, zéro mutation.",
+          "environment_required": "Future recette E-UX sur build/SHA identifié ; cible synthétique jetable autorisée si création/mutation, jamais production",
+          "execution": "Non exécuté ; proposition sous le même ID NAV"
+        },
+        {
+          "scenario_label": "Projection et extraction explicites",
+          "action_future": "Consulter une coupe associée puis demander, si autorisé et contrat ratifié, une copie 2D indépendante.",
+          "measurable_oracle": "Avant extraction la coupe est marquée dérivée ; une copie confirmée a documentId/provenance propres et aucune propagation implicite.",
+          "negative_future": "Changer de planche ou ouvrir la coupe seule ne convertit pas silencieusement la projection en document canonique.",
+          "environment_required": "Future recette E-UX sur build/SHA identifié ; cible synthétique jetable autorisée si création/mutation, jamais production",
+          "execution": "Non exécuté ; proposition sous le même ID NAV"
+        }
+      ],
+      "statut_nav_inchange": {
+        "status": "Prescrit, non exécuté",
+        "conformity": "Non évaluée Studio",
+        "acceptance": "Absente"
+      }
+    },
+    {
+      "id": "NAV-006",
+      "existing_title": "bandeau exact et courses de navigation",
+      "criterion_source": {
+        "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/NAV-M004.json",
+        "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2",
+        "json_pointer": "/nav/5/test_specification",
+        "exact_value": "**Source :** bon Projet/Étude/Variante/Révision ; Projets non faussement actif. **Dépendances :** I.3/M17, HomeTopbar/façade. **Liens :** EX-003/012/016/087/088/092, IF-001, NAV-004.\n\n**Positif :** ouvrir W3 puis R1, vérifier labels/IDs/readonly et source de chaque vue ; navigation rapide entre deux projets avec requêtes retardées. **Négatif :** réponse P1 tardive après ouverture P2 ; refus accès/absence révision ; ne pas mélanger nom P1 avec actions P2, ni montrer dernière révision sous URL historique, ni nom de projet interdit.\n\n**Oracle :** contexte de toutes les commandes égal au contexte autorisé de l'écran ; identités du bandeau et URL alignées ; historique clairement identifié ; Projets inactif, Studio seul actif. **Env :** E-UX + UX-S0 avec latences déterministes et retour de requête inversé. **Preuve :** P-UX + chronologie IDs/navigation/réponses expurgée et capture finale.",
+        "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+      },
+      "delta_documentaire": "Le bandeau doit nommer la révision historique et la variante propriétaire, en distinguant revisionId, contentVersion illustratif du contenu, documentVersion de pièce, schemaVersion et contractVersion. Un résultat tardif conserve son contexte initial ; ancien contenu ou publication ne peut être présenté sous la tête courante.",
+      "sources_exactes": [
+        {
+          "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "provenance": {
+            "kind": "Git documentaire",
+            "sha": "b1023605b965b27ff56fabf179756592673c98d4"
+          },
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            29,
+            39
+          ],
+          "exact_excerpt": "## Façade de contexte proposée pour A2/M17\n\nStudioShell autonome sous AppShell/RequireAuth ; aucune dépendance à ProjectShell, aucune iframe. Une façade partagée fournit contexte demandé/validé, droits effectifs, révision de base/courante, métadonnées de bandeau et état de synchronisation. Schéma logique candidat : `{ projectId, studyId?, variantId?, requestedRevisionId?, baseRevisionId?, effectivePermissions, accessState, freshness, writerAuthority, schemaVersion }`. Le champ writerAuthority désigne le propriétaire d’écriture unique décidé pour le jeu de données pendant coexistence ; schemaVersion borne compatibilité/reprise (à définir avec M17/M27). Aucun outil n'est actif avant résolution du propriétaire de sa donnée ; géométrie 2D, géométrie 3D libre et objet associé gardent leurs autorités distinctes.\n\nAppShell doit reconnaître `/studio/...` pour le bandeau, mais n'active pas Projets. HomeTopbar actuel appelle étapes/programme quand projectId existe : adaptation par façade ou contrat de bandeau borné, sans faire de Parcours une dépendance de Studio. Les données d'étapes restent consultables par lien explicite lorsque nécessaire. Switching projet détruit ou isole la scène/caches de l'ancien contexte ; un retour de requête tardive ne remplace pas le nouveau contexte. Droit révoqué invalide les vues sensibles selon politique cache arrêtée par A2/A5, y compris offline.\n\n## Surface et navigation\n\nRail Fadi persistant hors plein écran explicite ; Studio actif sur toutes ses routes, pas Projets/Collaboration. Placement après Projets retenu pour spécifications par D07 ; ne pas le reposer comme question ouverte. Rail replié : icône dédiée avec accessible name/title Studio ; déplié : texte visible identique. Menu mobile donne la même entrée, pas un raccourci vers Atelier. Navigation commune reste utilisable en loading/erreur.\n\nBandeau : Projet / Étude / Variante / Révision, raccourcis parents autorisés, statut de travail et synchronisation distincts. Si contexte partiel, indiquer « Choisir une étude/variante » plutôt qu'inventer une valeur. Si accès refusé, aucun nom du projet interdit. Historique : badge consultation et révision source ; les documents dérivés indiquent leur actualité."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            25,
+            26
+          ],
+          "exact_excerpt": "| Commandes | C-COMMAND/IF006 reste l'interface logique commune. L'identité authentifiée, droits, parenté, baseRevision et writerAuthority sont vérifiés avant effet ; pas écriture directe du moteur dans stockage. | Mauvaise révision/contexte/droit → refus atomique, même requestId → pas doubleeffet ; DEC12/historique à stabiliser |\n| Version/persistance | `schemaVersion`, `contractVersion`, `revisionId`, `baseRevisionId`, `documentVersion` conservent les sens distincts de M17 ; aucun numéro n'est substitué à un autre. Une confirmation centrale suit engagement durable, pas image obtenue. | Sauvegarde/réouverture après incident sur corpus sûr autorisé ; erreurdurabilité ne devient pas succès |"
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            32,
+            36
+          ],
+          "exact_excerpt": "### Clarification de vocabulaire — revue A2 P3\n\nDans les exemples v2 uniquement, `contentVersion` désigne la version illustrative du **contenu canonique** cité par une révision ; `documentVersion` reste la version de **pièce livrée** dans le manifeste M24/IF-009. `revisionId` est l'état historique immuable de la variante, `schemaVersion` le format du contenu et `contractVersion` le contrat de commande. Ces notions ne sont pas interchangeables. Le champ illustratif `contentVersion` ne décide ni nouveau format applicatif, ni stockage, ni allocation d'ID. Il évite seulement l'ambiguïté du premier exemple. Les fichiers initiaux restent historiques ; le v2 est actif pour cette clarification.\n\nLes dix refus v2 conservent leur faute sémantique ciblée avec liens d'empreinte recalculés : le hash périmé n'ajoute plus une deuxième faute artificielle aux cas documentaires. Cela ne prouve pas qu'un validateur Fadi les refuse ; aucun runtime n'est exécuté."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            43,
+            49
+          ],
+          "exact_excerpt": "| Étude | Identité métier propre, appartient à un projet ; cadrage/sources avant géométrie et avant variante permis. | Étude d'un autre projet dans URL/commande/source rejetée sans fuite |\n| Variante | Identité métier propre, appartient à une étude ; toute géométrie persistée a une variante propriétaire. | Interdire géométrieorpheline et attribution implicite à «dernierprojet» |\n| Révision | Identité immuable, appartient à exactement une variante, parents/transaction/sources identifiés. | Aucune mutation rétroactive ; nouvelle commande sur tête autorisée ou fork explicite |\n| Fork | Nouvelles identités propriétaires et provenance verssource selon contrat ; paspropagation implicite d'une copie. | Mapping explicite des anciennes variantes-projets ; pas renommer/copier/migrer silencieusement les données existantes |\n| Session/droits | Identité tenant/projet/étude/variante vérifiée serveur avec permissions surressource/action ; `actorId` client ne fait pas autorité. | Une combinaison d'IDs tous existants mais appartenant à des parents différents est refusée |\n| WriterAuthority | Un écrivain unique pour chaque donnée canonique2D/3Dlibre/associée ; vues/scènes ne sont pas écrivains. | Deux planches ne fabriquent pas deux copiesautoritaires du même mur ; migration d'autorité distincte et non autorisée ici |\n| Diffusion | Publication et approbation visent leurs ensembles exacts ; travail courant peut évoluer sans effacer référence historique. | `revisionId` n'est ni statutdediffusion ni publicationId ; ne jamais substituer latest enréouverture |"
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-SCHEMAS-LOGIQUES-DOCUMENTAIRES-v2.json",
+          "sha256": "ca552c040a1da0064e63c2a2cf643619fbeee13c53ad9c98d65114376a4a7b0c",
+          "json_pointer": "/clarification_versions",
+          "exact_value": {
+            "contentVersion": "Étiquette illustrative de la version du contenu canonique, distincte de la pièce diffusée ; allocation/format physique à décider",
+            "documentVersion": "Version d’une pièce livrée référencée dans manifeste IF009/M24 ; pas version du document canonique de travail",
+            "revisionId": "État historique immuable de la variante, qui référence les contenus exacts",
+            "schemaVersion": "Version de leur représentation, non interchangeable avec révision/version de pièce",
+            "contractVersion": "Version du contrat de commande, non interchangeable avec format de contenu"
+          },
+          "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-EXEMPLES-DOCUMENTAIRES-2D-IDENTITES-v2.json",
+          "sha256": "3d29419c227258b60645893340eee9dfbd009c16ec0e0428eb54c6dae729ea11",
+          "json_pointer": "/valid_examples/2",
+          "exact_value": {
+            "exampleId": "G1-DOC-POS-NEXT-REVISION",
+            "expected": "Nouvelle révision et contenu2D, anciennesrévision/pièceconservées, identitésdocument/primitivesstables",
+            "project": {
+              "projectId": "example-project-G1",
+              "authority": "Fadi-project-service-fixture-only"
+            },
+            "study": {
+              "studyId": "example-study-G1",
+              "projectId": "example-project-G1",
+              "sources": [],
+              "brief": "Étude synthétique documentaire, pasprojetcréé"
+            },
+            "variant": {
+              "variantId": "example-variant-A",
+              "studyId": "example-study-G1",
+              "projectId": "example-project-G1",
+              "headRevisionId": "example-revision-A2"
+            },
+            "revision": {
+              "revisionId": "example-revision-A2",
+              "scope": {
+                "projectId": "example-project-G1",
+                "studyId": "example-study-G1",
+                "variantId": "example-variant-A"
+              },
+              "parentRevisionIds": [
+                "example-revision-A1"
+              ],
+              "transactionId": "example-transaction-A2",
+              "immutable": true,
+              "canonicalSources": [
+                {
+                  "authority": "drawing2d",
+                  "documentId": "example-drawing-A",
+                  "contentVersion": "2",
+                  "contentHash": "429836df6e275f9aeef84b7c509fbe8f12c44fec63984faff74684439d448a4e"
+                }
+              ]
+            },
+            "canonicalDocument2D": {
+              "schemaVersion": "documentary-not-runtime-1",
+              "documentId": "example-drawing-A",
+              "contentVersion": "2",
+              "scope": {
+                "projectId": "example-project-G1",
+                "studyId": "example-study-G1",
+                "variantId": "example-variant-A"
+              },
+              "revisionId": "example-revision-A2",
+              "authority": "drawing2d",
+              "writerAuthority": "drawing2d",
+              "coordinateFrame": {
+                "frameId": "example-plane-A",
+                "kind": "document2d",
+                "lengthUnit": "m"
+              },
+              "layers": [
+                {
+                  "layerId": "example-layer-1",
+                  "name": "Calque synthétique"
+                }
+              ],
+              "primitives": [
+                {
+                  "primitiveId": "example-line-1",
+                  "kind": "line",
+                  "points": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      7,
+                      0
+                    ]
+                  ],
+                  "layerId": "example-layer-1"
+                }
+              ],
+              "annotations": [
+                {
+                  "annotationId": "example-text-1",
+                  "kind": "text",
+                  "value": "Exemple documentaire G1"
+                }
+              ],
+              "dimensions": [
+                {
+                  "dimensionId": "example-dimension-1",
+                  "targetPrimitiveIds": [
+                    "example-line-1"
+                  ],
+                  "value": 7,
+                  "unit": "m"
+                }
+              ],
+              "constraints": [],
+              "relations3D": [],
+              "provenance": {
+                "origin": "Synthetic documentary example A1",
+                "version": "1",
+                "real_project_data": false
+              }
+            },
+            "runtime_schema_supported": false,
+            "execution": "Non exécuté ; schéma documentaire pasformat acceptéparFadi",
+            "previousRevisionRetained": {
+              "revisionId": "example-revision-A1",
+              "scope": {
+                "projectId": "example-project-G1",
+                "studyId": "example-study-G1",
+                "variantId": "example-variant-A"
+              },
+              "parentRevisionIds": [],
+              "transactionId": "example-transaction-A1",
+              "immutable": true,
+              "canonicalSources": [
+                {
+                  "authority": "drawing2d",
+                  "documentId": "example-drawing-A",
+                  "contentVersion": "1",
+                  "contentHash": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7"
+                }
+              ]
+            },
+            "previousContentRetained": {
+              "schemaVersion": "documentary-not-runtime-1",
+              "documentId": "example-drawing-A",
+              "contentVersion": "1",
+              "scope": {
+                "projectId": "example-project-G1",
+                "studyId": "example-study-G1",
+                "variantId": "example-variant-A"
+              },
+              "revisionId": "example-revision-A1",
+              "authority": "drawing2d",
+              "writerAuthority": "drawing2d",
+              "coordinateFrame": {
+                "frameId": "example-plane-A",
+                "kind": "document2d",
+                "lengthUnit": "m"
+              },
+              "layers": [
+                {
+                  "layerId": "example-layer-1",
+                  "name": "Calque synthétique"
+                }
+              ],
+              "primitives": [
+                {
+                  "primitiveId": "example-line-1",
+                  "kind": "line",
+                  "points": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      6,
+                      0
+                    ]
+                  ],
+                  "layerId": "example-layer-1"
+                }
+              ],
+              "annotations": [
+                {
+                  "annotationId": "example-text-1",
+                  "kind": "text",
+                  "value": "Exemple documentaire G1"
+                }
+              ],
+              "dimensions": [
+                {
+                  "dimensionId": "example-dimension-1",
+                  "targetPrimitiveIds": [
+                    "example-line-1"
+                  ],
+                  "value": 6,
+                  "unit": "m"
+                }
+              ],
+              "constraints": [],
+              "relations3D": [],
+              "provenance": {
+                "origin": "Synthetic documentary example A1",
+                "version": "1",
+                "real_project_data": false
+              }
+            }
+          },
+          "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+        }
+      ],
+      "acquis_de_specification": "Distinction de vocabulaire documentaire clarifiée ; contentVersion n’est pas un nouveau champ applicatif adopté.",
+      "preuves_runtime_manquantes": "NAV prescrit, non exécuté. Ni interface Studio, ni contrôle serveur, ni persistance/reprise, ni droit effectif validé ici. Syntaxe et empreintes JSON cohérentes ne prouvent aucun de ces comportements.",
+      "prochains_cas_mesurables_sous_meme_id": [
+        {
+          "scenario_label": "Course entre variantes et versions",
+          "action_future": "Retarder la réponse V1/R1 puis ouvrir V2/R2 et livrer la réponse V1 ; afficher ensuite une pièce publiée distincte.",
+          "measurable_oracle": "URL et bandeau P/S/V/R alignés à V2/R2 ; aucune action ou scène V1 active ; version de pièce jamais utilisée comme révision de variante.",
+          "negative_future": "Réponse de contexte interdit ou hash divergent : aucune confirmation ni remplacement latest.",
+          "environment_required": "Future recette E-UX sur build/SHA identifié ; cible synthétique jetable autorisée si création/mutation, jamais production",
+          "execution": "Non exécuté ; proposition sous le même ID NAV"
+        },
+        {
+          "scenario_label": "Passage historique vers édition",
+          "action_future": "Sur R1 historique, choisir explicitement Reprendre le travail courant ou nouvelle variante selon droit.",
+          "measurable_oracle": "R1 immuable ; URL et nouvelle base changées par intention autorisée ; aucune commande pending de R1 réadressée.",
+          "negative_future": "Bouton/shortcut d’édition directe sur historique refuse sans mutation rétroactive.",
+          "environment_required": "Future recette E-UX sur build/SHA identifié ; cible synthétique jetable autorisée si création/mutation, jamais production",
+          "execution": "Non exécuté ; proposition sous le même ID NAV"
+        }
+      ],
+      "statut_nav_inchange": {
+        "status": "Prescrit, non exécuté",
+        "conformity": "Non évaluée Studio",
+        "acceptance": "Absente"
+      }
+    },
+    {
+      "id": "NAV-007",
+      "existing_title": "aucun abandon silencieux",
+      "criterion_source": {
+        "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/NAV-M004.json",
+        "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2",
+        "json_pointer": "/nav/6/test_specification",
+        "exact_value": "**Source :** transition protège geste, commande locale et sauvegarde pending. **Dépendances :** I.5, A.5/DEC-12, B/DEC-14, R/SW. **Liens :** TEST-011/012/013/019/021/036.\n\n**Positif :** pour preview, commande durable locale, envoi pending et conflit, choisir Rester puis sortie autorisée ; rouvrir même contexte et confirmer uniquement ce qui a été engagé ; tester route/domaine/planche/projet, historique, changement FR/EN (reload actuel), fermeture et SW. Plein écran seul conserve le geste/queue selon contrat.\n\n**Négatif :** réseau coupé entre envoi/réponse, réponse doublée, quota local épuisé, permission retirée pendant envoi, ancienne commande après changement de variante, SW incompatible, crash mobile sans beforeunload. Interdire fausse confirmation serveur, perte de file et application dans le nouveau contexte.\n\n**Oracle :** modèle/queue/journal source de vérité préservés ou annulation explicitement choisie ; exactement un effet par requestId ; contextes P/S/V/baseRevision inchangés par réadressage ; historique/publication anciens intacts ; récupération vérifiable après reopen. Définir précisément « local durable » dans M17, pas inférer depuis toast. **Env :** E-UX + corpus S7/A5, sessions concurrentes et stockage fault-injection sur cible jetable. **Preuve :** P-UX + queue avant/après, journal commandes/résolution et métriques de pertes/doublons=0.",
+        "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+      },
+      "delta_documentaire": "G1 renforce la distinction entre contenu canonique engagé durablement et rendu/cache. Un statut local pending ne vaut ni confirmation centrale ni publication. Parenté, permission, writerAuthority et baseRevision sont recontrôlés avant effet ; contenu et anciennes révisions sont conservés sous leurs identités. Le v2 ne fournit pas la mécanique physique de queue, durabilité ou déduplication.",
+      "sources_exactes": [
+        {
+          "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "provenance": {
+            "kind": "Git documentaire",
+            "sha": "b1023605b965b27ff56fabf179756592673c98d4"
+          },
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            64,
+            83
+          ],
+          "exact_excerpt": "| Local durable / pending / confirmé | Trois états explicites, conflits/refus séparés. | Bouton « Enregistré » confondant stockage local et confirmation centrale. |\n| Conflit/résultat périmé | Base/courant et résolution autorisée ; résultat périmé non engagé. | Last-write-wins ou application double après reconnexion. |\n| Approuvé/publié/historique | Versions exactes et rôles distincts. | Publier une nouvelle version sous approbation de l'ancienne. |\n\nDroits logiques candidats : lire étude, créer étude, modifier variante, exécuter contrôle, commenter, soumettre, approuver, publier. Mapper aux permissions Fadi et au verrou d'édition sans inventer une élévation d'administrateur. Profil personnel ne modifie aucun droit ; découverte≠exécution. Permission perdue pendant attente : refus serveur, conserver un brouillon local autorisé selon politique, pas de confirmation réussie.\n\nFR source dans composants + en.json et messages.ts pour l'ergonomie Atelier réutilisée. Nom Studio identique FR/EN ; libellés des domaines traduits sans traduire données, noms de projet, exemples ou livrables. Locale nombres/dates suit dispositif existant. Changer de langue recharge actuellement la page (`lib/i18n/index.ts`) : soumettre au même garde de transition que fermeture/refresh, sans se reposer seulement sur beforeunload.\n\n## Contrat de transition pending proposé\n\nPortée : route globale, changement de projet/étude/variante/révision/domaine/planche, historique navigateur, langue, sortie fenêtre et mise à jour SW. Séparer changement de disposition (plein écran/panneau) qui ne devrait pas abandonner le geste, et changement de propriétaire de données qui exige une frontière.\n\n1. Aucun geste/commande pending : naviguer et restaurer focus.\n2. Geste non engagé : Rester / Annuler le geste puis quitter ; « Terminer puis quitter » uniquement si contrat d'outil le permet et commande confirmée ou localement durable selon choix utilisateur.\n3. Commandes localement durables en attente : Rester / Attendre confirmation / Quitter en conservant le travail local si preuve de reprise du contexte. Montrer explicitement non confirmé serveur ; ne jamais vider la queue.\n4. Erreur de stockage local : empêcher une promesse de reprise, proposer Rester/récupération explicite ; téléchargement n'est pas réputé sûr ou complet sans contrat.\n5. Conflit/refus : garder traces et accéder à résolution ; quitter n'équivaut ni à résoudre ni à publier.\n6. Fermeture forcée mobile : la durabilité est assurée avant l'événement par le modèle/queue, pas par une boîte native incertaine. SW incompatible n'écrase pas contrat/queue.\n\nChaque intention garde contexte complet et requestId ; aucune commande ancienne n'est réadressée à la variante visible après navigation. D07 acte la protection et les permissions pour spécifications ; les mécanismes exacts dépendent des contrats DEC-12/14/M17. Leur rédaction ne lève ni G1, ni G3, ni l’autorisation de code Studio."
+        },
+        {
+          "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "provenance": {
+            "kind": "Git documentaire",
+            "sha": "b1023605b965b27ff56fabf179756592673c98d4"
+          },
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            106,
+            110
+          ],
+          "exact_excerpt": "- Entrée anonyme par URL complète : authentification sans précharger noms/vignettes/contenus sensibles. Garder un `returnTo` interne validé (même origine, chemin Studio autorisé, pas protocole/host arbitraire), puis revalider toute appartenance serveur. Une session acquise ne valide pas l’objet demandé.\n- Session expirée en édition : arrêter l’envoi de nouvelles mutations ; distinguer commande dont accusé serveur manque d’une commande refusée. Conserver la file locale autorisée et son propriétaire utilisateur/contexte ; ne pas l’envoyer sous un nouvel utilisateur après reconnexion.\n- Reconnexion même utilisateur : revalider droits/baseRevision et requestId avant reprise ; résultat accepté mais réponse perdue doit être dédupliqué côté serveur. Reconnexion autre utilisateur : isoler/verrouiller la file d’origine sans fuite ; proposer revenir au bon compte, pas réattribuer les objets.\n- Lien historique : ouverture en consultation même si le rôle peut éditer le courant. « Reprendre le travail courant » change explicitement l’URL et le contexte ; aucune modification rétroactive de la révision citée.\n- Retour navigateur pendant chargement/conflit : respecter garde de transition ; `AbortController` ou cancellation d’affichage seul ne prouve pas annulation de commande serveur. Une commande partie reste suivie dans son contexte initial."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            23,
+            28
+          ],
+          "exact_excerpt": "| Primitives/relations | Identités de primitives/calques/cotes stables dans leur contexte ; références contrôlées. Suppression/division ambiguë d'une cible conserve la cote avec statut àrésoudre ou correspondance démontrée, pas rapprochement arbitraire. | Caspositif/casnégatif exacts et réouverture, passimpleproximité ; choix types/solveur physiques non décidés |\n| Unités/repères | Unité et repère du document explicites ; transformations vers projet/local/géographique versionnées lorsque utilisées. Pixels ne deviennent jamais unité canonique. Information inconnue déclarée, pas défautinventé. | Imports àunités/repères inconnus refusés ou mis en résolution ; conversions comparées aux oracles |\n| Commandes | C-COMMAND/IF006 reste l'interface logique commune. L'identité authentifiée, droits, parenté, baseRevision et writerAuthority sont vérifiés avant effet ; pas écriture directe du moteur dans stockage. | Mauvaise révision/contexte/droit → refus atomique, même requestId → pas doubleeffet ; DEC12/historique à stabiliser |\n| Version/persistance | `schemaVersion`, `contractVersion`, `revisionId`, `baseRevisionId`, `documentVersion` conservent les sens distincts de M17 ; aucun numéro n'est substitué à un autre. Une confirmation centrale suit engagement durable, pas image obtenue. | Sauvegarde/réouverture après incident sur corpus sûr autorisé ; erreurdurabilité ne devient pas succès |\n| Réemploi | Noyaux géométriques purs Fadi existants réutilisés par API/adaptateur public après qualification ; aucun nouvel outil n'importe UIAtelier comme autorité. | Comparaison fidélité/limites/licences/coûts ; DEC18 parcomposant, pas réécriture automatique |\n| Compatibilité | Lecture/import/export distingués par format/version/entité/sens. Conservation desID et propriétés reconnues ; inconnues préservées ou rapport de pertes explicite, jamais disparition silencieuse. | Corpus ancien/nouveau avant/après ; pas roundtrip paramétrique supposé ni migration implicite |"
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            34,
+            36
+          ],
+          "exact_excerpt": "Dans les exemples v2 uniquement, `contentVersion` désigne la version illustrative du **contenu canonique** cité par une révision ; `documentVersion` reste la version de **pièce livrée** dans le manifeste M24/IF-009. `revisionId` est l'état historique immuable de la variante, `schemaVersion` le format du contenu et `contractVersion` le contrat de commande. Ces notions ne sont pas interchangeables. Le champ illustratif `contentVersion` ne décide ni nouveau format applicatif, ni stockage, ni allocation d'ID. Il évite seulement l'ambiguïté du premier exemple. Les fichiers initiaux restent historiques ; le v2 est actif pour cette clarification.\n\nLes dix refus v2 conservent leur faute sémantique ciblée avec liens d'empreinte recalculés : le hash périmé n'ajoute plus une deuxième faute artificielle aux cas documentaires. Cela ne prouve pas qu'un validateur Fadi les refuse ; aucun runtime n'est exécuté."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            55,
+            59
+          ],
+          "exact_excerpt": "1. Une révisionA peut ne contenir que l'autoritédocument2D ; une révisionB seulement modèle3Dlibre ; C porte l'objetarchitectural et ses relations/projections. La lecture ne complète pas artificiellement les autoritésabsentes.\n2. Le dossier candidat est une **coupe logique cohérente** des références versionnées/empreintées. Pièces, règles, contrôles, observations et sources citées doivent correspondre à l'ensemble effectivement examiné ; une série de GET ne prouve pas cette cohérence.\n3. L'approbation est une décision sur cet ensembleexact et la publication un acte distinct avec droitpublish. Rôleconcepteur/admintechnique ne donne pas approve/publish ; cumul seulement explicite et journalisé conformément D07.\n4. Réouverturehistorique : résoudre publication/révision exactes, revalider droits et parenté, vérifier pièces/empreintes/lecteurs compatibles, puis reconstruire les projections. Source manquante/inconnue/divergente → état explicite/récupération, jamais substitutionlatest.\n5. Modifier après réouverture est une intention distincte vers têteautorisée/nouvellevariante, avec préconditionIF004. L'ancien manifeste et ses pièces restent identifiables. Un statut local pending ne devient pas publication centrale."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "lines": [
+            34,
+            38
+          ],
+          "exact_excerpt": "| Engager une modification et produire révision | C-COMMAND, propriétaire de donnée et transaction autoritaire ; A2 | M17§3, IF004/006/011, EX017/018/045–049 | Précondition version/droits/writer avant effet ; refus atomique ; même requestId/contenu retourne premier résultat, pas doublon ; changement de contenu sous mêmeID refusé | Atomicité/déduplication/limites/quotas/reprise et historique physique, DEC12/03 |\n| Lire une révision historique exacte | Révision immuable d'une uniquevariante et sourcescitées ; A2 | M17§4, M24§6, IF004/009/011 | Identités et empreintes cohérentes ; aucune substitutionlatest ; éditionhistorique exige nouvelle intention | Snapshot en coupe logique, lecteurcompatible et contrôle droits parsource ; preuvelecturecohérente à établir |\n| Sauvegarder/fermer/rouvrir | Contenus canoniques confirmés, pas scènes/caches ; A2/A6 | C-STUDY/C-DRAWING2D, M24§3/6, EX089/090 | Accusé suit engagementdurable, après coupure distinguer confirmé/pending/conflit ; retrouver contenu exact sous bon compte | Choix persistance/incident/reconnexion et garanties de reprise, mesures non inventées |\n| Gérer versions et compatibilité | Contrats/formats/snapshots versionnés, chaque service propriétaire ; A2 | M17§1/5, M24§7/8, EX019/030/044/091 | schemaVersion/contractVersion/revisionId/baseRevisionId/contentVersion illustratif/documentVersion pièce non confondus ; inconnues refusées ou conservées avec rapport | Matrice lecteurs/imports/exports anciensformats réels, décision transformation/rollback ; aucun autobump |\n| Protéger navigation, actions/pending et changement compte | UI guide ; commande/queue propriétaire fait autorité ; A4/A2/A5 | NAVTransition/auth, M21cycle, M17C-COMMAND ; NAV007/008 | Quitter ≠ sauver, fermerUI ≠ annuler serveur ; queueA jamais envoyée sousB ; contexte ancien non réadressé | Protocole durable de queue/annulation et compatibilitéSW ; pas garanti par seul dialogue |"
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-EXEMPLES-DOCUMENTAIRES-2D-IDENTITES-v2.json",
+          "sha256": "3d29419c227258b60645893340eee9dfbd009c16ec0e0428eb54c6dae729ea11",
+          "json_pointer": "/invalid_examples/5",
+          "exact_value": {
+            "exampleId": "G1-DOC-NEG-STALE-BASE",
+            "cause_cible": "Base commande incompatible têtecourante",
+            "payload": {
+              "exampleId": "G1-DOC-POS-2D",
+              "expected": "Dessin2Dcanonique autonome, révisionimmuable, aucun3D requis",
+              "project": {
+                "projectId": "example-project-G1",
+                "authority": "Fadi-project-service-fixture-only"
+              },
+              "study": {
+                "studyId": "example-study-G1",
+                "projectId": "example-project-G1",
+                "sources": [],
+                "brief": "Étude synthétique documentaire, pasprojetcréé"
+              },
+              "variant": {
+                "variantId": "example-variant-A",
+                "studyId": "example-study-G1",
+                "projectId": "example-project-G1",
+                "headRevisionId": "example-revision-A1"
+              },
+              "revision": {
+                "revisionId": "example-revision-A1",
+                "scope": {
+                  "projectId": "example-project-G1",
+                  "studyId": "example-study-G1",
+                  "variantId": "example-variant-A"
+                },
+                "parentRevisionIds": [],
+                "transactionId": "example-transaction-A1",
+                "immutable": true,
+                "canonicalSources": [
+                  {
+                    "authority": "drawing2d",
+                    "documentId": "example-drawing-A",
+                    "contentVersion": "1",
+                    "contentHash": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7"
+                  }
+                ]
+              },
+              "canonicalDocument2D": {
+                "schemaVersion": "documentary-not-runtime-1",
+                "documentId": "example-drawing-A",
+                "contentVersion": "1",
+                "scope": {
+                  "projectId": "example-project-G1",
+                  "studyId": "example-study-G1",
+                  "variantId": "example-variant-A"
+                },
+                "revisionId": "example-revision-A1",
+                "authority": "drawing2d",
+                "writerAuthority": "drawing2d",
+                "coordinateFrame": {
+                  "frameId": "example-plane-A",
+                  "kind": "document2d",
+                  "lengthUnit": "m"
+                },
+                "layers": [
+                  {
+                    "layerId": "example-layer-1",
+                    "name": "Calque synthétique"
+                  }
+                ],
+                "primitives": [
+                  {
+                    "primitiveId": "example-line-1",
+                    "kind": "line",
+                    "points": [
+                      [
+                        0,
+                        0
+                      ],
+                      [
+                        6,
+                        0
+                      ]
+                    ],
+                    "layerId": "example-layer-1"
+                  }
+                ],
+                "annotations": [
+                  {
+                    "annotationId": "example-text-1",
+                    "kind": "text",
+                    "value": "Exemple documentaire G1"
+                  }
+                ],
+                "dimensions": [
+                  {
+                    "dimensionId": "example-dimension-1",
+                    "targetPrimitiveIds": [
+                      "example-line-1"
+                    ],
+                    "value": 6,
+                    "unit": "m"
+                  }
+                ],
+                "constraints": [],
+                "relations3D": [],
+                "provenance": {
+                  "origin": "Synthetic documentary example A1",
+                  "version": "1",
+                  "real_project_data": false
+                }
+              },
+              "runtime_schema_supported": false,
+              "execution": "Non exécuté ; schéma documentaire pasformat acceptéparFadi",
+              "commandPreconditionFixture": {
+                "baseRevisionId": "example-old-revision",
+                "currentRevisionId": "example-revision-A1",
+                "requestId": "example-request-1"
+              }
+            },
+            "expected": "Refus/erreur explicite sansmutationcanonique ; jamaispreuveexécutée",
+            "validation_order": "Cas proposés pour refus ciblé, ordre des contrôles réels à décider ; données illustrative-schema non format accepté par Fadi.",
+            "execution": "Non exécuté",
+            "anomalies_intentionnelles": [
+              "Base commande incompatible têtecourante"
+            ],
+            "empreintes": "Liens de contenu recalculés après mutation documentaire pour isoler la faute sémantique ciblée ; aucun validateur runtime exécuté"
+          },
+          "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-EXEMPLES-DOCUMENTAIRES-2D-IDENTITES-v2.json",
+          "sha256": "3d29419c227258b60645893340eee9dfbd009c16ec0e0428eb54c6dae729ea11",
+          "json_pointer": "/invalid_examples/6",
+          "exact_value": {
+            "exampleId": "G1-DOC-NEG-WRITER",
+            "cause_cible": "Writer modèle3D choisi pour document2D",
+            "payload": {
+              "exampleId": "G1-DOC-POS-2D",
+              "expected": "Dessin2Dcanonique autonome, révisionimmuable, aucun3D requis",
+              "project": {
+                "projectId": "example-project-G1",
+                "authority": "Fadi-project-service-fixture-only"
+              },
+              "study": {
+                "studyId": "example-study-G1",
+                "projectId": "example-project-G1",
+                "sources": [],
+                "brief": "Étude synthétique documentaire, pasprojetcréé"
+              },
+              "variant": {
+                "variantId": "example-variant-A",
+                "studyId": "example-study-G1",
+                "projectId": "example-project-G1",
+                "headRevisionId": "example-revision-A1"
+              },
+              "revision": {
+                "revisionId": "example-revision-A1",
+                "scope": {
+                  "projectId": "example-project-G1",
+                  "studyId": "example-study-G1",
+                  "variantId": "example-variant-A"
+                },
+                "parentRevisionIds": [],
+                "transactionId": "example-transaction-A1",
+                "immutable": true,
+                "canonicalSources": [
+                  {
+                    "authority": "drawing2d",
+                    "documentId": "example-drawing-A",
+                    "contentVersion": "1",
+                    "contentHash": "9369ff69935caa810a192c0a1830d1e306eade60c556e2f7d9c815a7d8e4151c"
+                  }
+                ]
+              },
+              "canonicalDocument2D": {
+                "schemaVersion": "documentary-not-runtime-1",
+                "documentId": "example-drawing-A",
+                "contentVersion": "1",
+                "scope": {
+                  "projectId": "example-project-G1",
+                  "studyId": "example-study-G1",
+                  "variantId": "example-variant-A"
+                },
+                "revisionId": "example-revision-A1",
+                "authority": "drawing2d",
+                "writerAuthority": "model3d",
+                "coordinateFrame": {
+                  "frameId": "example-plane-A",
+                  "kind": "document2d",
+                  "lengthUnit": "m"
+                },
+                "layers": [
+                  {
+                    "layerId": "example-layer-1",
+                    "name": "Calque synthétique"
+                  }
+                ],
+                "primitives": [
+                  {
+                    "primitiveId": "example-line-1",
+                    "kind": "line",
+                    "points": [
+                      [
+                        0,
+                        0
+                      ],
+                      [
+                        6,
+                        0
+                      ]
+                    ],
+                    "layerId": "example-layer-1"
+                  }
+                ],
+                "annotations": [
+                  {
+                    "annotationId": "example-text-1",
+                    "kind": "text",
+                    "value": "Exemple documentaire G1"
+                  }
+                ],
+                "dimensions": [
+                  {
+                    "dimensionId": "example-dimension-1",
+                    "targetPrimitiveIds": [
+                      "example-line-1"
+                    ],
+                    "value": 6,
+                    "unit": "m"
+                  }
+                ],
+                "constraints": [],
+                "relations3D": [],
+                "provenance": {
+                  "origin": "Synthetic documentary example A1",
+                  "version": "1",
+                  "real_project_data": false
+                }
+              },
+              "runtime_schema_supported": false,
+              "execution": "Non exécuté ; schéma documentaire pasformat acceptéparFadi"
+            },
+            "expected": "Refus/erreur explicite sansmutationcanonique ; jamaispreuveexécutée",
+            "validation_order": "Cas proposés pour refus ciblé, ordre des contrôles réels à décider ; données illustrative-schema non format accepté par Fadi.",
+            "execution": "Non exécuté",
+            "anomalies_intentionnelles": [
+              "Writer modèle3D choisi pour document2D"
+            ],
+            "empreintes": "Liens de contenu recalculés après mutation documentaire pour isoler la faute sémantique ciblée ; aucun validateur runtime exécuté"
+          },
+          "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+        }
+      ],
+      "acquis_de_specification": "Obligations de sauvegarde et non-réadressage acquises de spécification ; garanties réelles de transaction/queue/incidents restent ouvertes.",
+      "preuves_runtime_manquantes": "NAV prescrit, non exécuté. Ni interface Studio, ni contrôle serveur, ni persistance/reprise, ni droit effectif validé ici. Syntaxe et empreintes JSON cohérentes ne prouvent aucun de ces comportements.",
+      "prochains_cas_mesurables_sous_meme_id": [
+        {
+          "scenario_label": "Réponse perdue et changement de variante",
+          "action_future": "Envoyer sous V1/baseR1, perdre la réponse, demander V2 puis changer FR/EN ; choisir Rester ou quitter en conservant selon contrat.",
+          "measurable_oracle": "Contexte et requestId V1 conservés ; zéro effet dans V2 ; au plus un effet central ; état indéterminé/pending jamais Enregistré confirmé.",
+          "negative_future": "Second utilisateur connecté : queue du premier non envoyée, aucun contenu divulgué ni réattribué.",
+          "environment_required": "Future recette E-UX sur build/SHA identifié ; cible synthétique jetable autorisée si création/mutation, jamais production",
+          "execution": "Non exécuté ; proposition sous le même ID NAV"
+        },
+        {
+          "scenario_label": "Sauvegarde puis réouverture fidèle",
+          "action_future": "Modifier le contenu 2D et obtenir un engagement durable selon le futur protocole, fermer puis rouvrir les révisions ancienne et nouvelle.",
+          "measurable_oracle": "Mêmes documentId/primitiveId/calques/cotes/annotations et unités attendus ; ancienne révision inchangée ; nouvelle contentVersion illustrative non confondue avec pièce publiée.",
+          "negative_future": "Quota local, base périmée, droits révoqués ou writer incohérent : refus explicite sans effet partiel, traces et récupération autorisée préservées.",
+          "environment_required": "Future recette E-UX sur build/SHA identifié ; cible synthétique jetable autorisée si création/mutation, jamais production",
+          "execution": "Non exécuté ; proposition sous le même ID NAV"
+        }
+      ],
+      "statut_nav_inchange": {
+        "status": "Prescrit, non exécuté",
+        "conformity": "Non évaluée Studio",
+        "acceptance": "Absente"
+      }
+    },
+    {
+      "id": "NAV-008",
+      "existing_title": "erreurs récupérables, plein écran explicite",
+      "criterion_source": {
+        "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/NAV-M004.json",
+        "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2",
+        "json_pointer": "/nav/7/test_specification",
+        "exact_value": "**Source :** erreur moteur/chargement récupérable ; rail non masqué par ancien mode Atelier. **Dépendances :** I.2/I.5, D protections minimales ; plein écran D07 retenu pour spécifications. **Liens :** TEST-014/015/037.\n\n**Positif :** provoquer échec de chunk/moteur/requête, utiliser Réessayer puis sortir vers Accueil/Projets ; demander plein écran puis le quitter avec bouton et événement système, focus/restauration contexte exacts. **Négatif :** Fullscreen API refuse ; worker crash avec pending ; résultat ancien après retry ; rotation/clavier virtuel rend habituellement bouton hors écran ; vérifier navigation toujours accessible hors mode explicite, sortie jamais dépendante d'un geste caché.\n\n**Oracle :** aucune activation automatique `atelier-immersive` par Studio ; erreur bornée avec action/aria-alert, navigation Fadi utilisable ; modèle canonique non partiel ; pending résolus explicitement, résultat périmé exclu, retry idempotent ; bouton de sortie visible/actionnable et état cohérent après sortie système. **Env :** E-UX + contrôles fault-injection, matériel physique pour comportements fullscreen/clavier mobile. **Preuve :** P-UX + DOM/classes/cibles tactiles, erreurs et transitions job ; aucun seuil mémoire inventé.",
+        "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+      },
+      "delta_documentaire": "La réouverture exige un lecteur compatible, les empreintes exactes et une récupération explicite si une source diverge. Le plein écran explicite, le rail réaccessible, le clavier et le mobile restent inchangés par les modèles G1 ; sortie ou échec moteur ne doit pas faire croire à une sauvegarde ni effacer le contexte canonique.",
+      "sources_exactes": [
+        {
+          "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "provenance": {
+            "kind": "Git documentaire",
+            "sha": "b1023605b965b27ff56fabf179756592673c98d4"
+          },
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            48,
+            66
+          ],
+          "exact_excerpt": "Desktop : focus visible, pas de débordement global ; panneaux/outils peuvent défiler localement. Mobile : cibles proposées >=44×44 px, défilement local domaines/outils, panneaux refermables, actions importantes nommées et atteignables sans geste secret. Rotation/clavier virtuel : sortie/validation toujours atteignables. Ces seuils UX candidats ne remplacent pas DEC-13 ni un audit WCAG.\n\nPlein écran : bouton explicite « Plein écran » / « Full screen » et sortie « Quitter le plein écran » / « Exit full screen ». Ne pas appliquer automatiquement `atelier-immersive`. Fullscreen API est facultative : échec/refus laisse le mode normal utilisable. Bouton de sortie visible et clavier utilisable ; Échap ferme d'abord menu/geste selon contrat de l'outil et ne constitue pas l'unique sortie. Événement fullscreenchange synchronise le bouton ; sortie système conserve contexte, file et focus. Navigation Fadi demeure réaccessible via sortie, sans masquer une erreur de sauvegarde.\n\n## États et droits candidats\n\n| État | Présentation et action autorisée | Interdit |\n|---|---|---|\n| Auth en attente/expirée | Chargement de session puis connexion ; retour URL demandé après validation. | Afficher contenu sensible avant session ou envoyer les commandes en tant qu'anonyme. |\n| Aucun projet/étude/variante | Choisir/créer selon droits, liens parents. | Géométrie orpheline, création par simple ouverture. |\n| Chargement | role=status ; commandes dépendantes inactives, rail disponible. | Afficher le précédent projet comme projet courant confirmé. |\n| Refus/introuvable | Message neutre, retour autorisé. | Fuite de noms, vignettes, exports ou données mises en cache d'un contexte interdit. |\n| Lecture seule/lock | Badge et motif ; consultation/outils compatibles permis. | Mutations depuis bouton, raccourci, profil importé ou appel direct. |\n| Réseau/chunk/moteur en erreur | État localisé, réessai contrôlé, sortie et modèle canonique conservés. | Spinner permanent, succès fictif, mutation partielle. |\n| Offline préparé | Statut local et outils réellement présents ; droits à revalider. | Présenter catalogue disponible comme installé ou confirmer publication serveur. |\n| Preview/geste | Visuel transitoire identifié, Annuler/Terminer selon contrat. | Persister un geste en changeant d'espace sans décision. |\n| Local durable / pending / confirmé | Trois états explicites, conflits/refus séparés. | Bouton « Enregistré » confondant stockage local et confirmation centrale. |\n| Conflit/résultat périmé | Base/courant et résolution autorisée ; résultat périmé non engagé. | Last-write-wins ou application double après reconnexion. |\n| Approuvé/publié/historique | Versions exactes et rôles distincts. | Publier une nouvelle version sous approbation de l'ancienne. |"
+        },
+        {
+          "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "provenance": {
+            "kind": "Git documentaire",
+            "sha": "b1023605b965b27ff56fabf179756592673c98d4"
+          },
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            74,
+            83
+          ],
+          "exact_excerpt": "Portée : route globale, changement de projet/étude/variante/révision/domaine/planche, historique navigateur, langue, sortie fenêtre et mise à jour SW. Séparer changement de disposition (plein écran/panneau) qui ne devrait pas abandonner le geste, et changement de propriétaire de données qui exige une frontière.\n\n1. Aucun geste/commande pending : naviguer et restaurer focus.\n2. Geste non engagé : Rester / Annuler le geste puis quitter ; « Terminer puis quitter » uniquement si contrat d'outil le permet et commande confirmée ou localement durable selon choix utilisateur.\n3. Commandes localement durables en attente : Rester / Attendre confirmation / Quitter en conservant le travail local si preuve de reprise du contexte. Montrer explicitement non confirmé serveur ; ne jamais vider la queue.\n4. Erreur de stockage local : empêcher une promesse de reprise, proposer Rester/récupération explicite ; téléchargement n'est pas réputé sûr ou complet sans contrat.\n5. Conflit/refus : garder traces et accéder à résolution ; quitter n'équivaut ni à résoudre ni à publier.\n6. Fermeture forcée mobile : la durabilité est assurée avant l'événement par le modèle/queue, pas par une boîte native incertaine. SW incompatible n'écrase pas contrat/queue.\n\nChaque intention garde contexte complet et requestId ; aucune commande ancienne n'est réadressée à la variante visible après navigation. D07 acte la protection et les permissions pour spécifications ; les mécanismes exacts dépendent des contrats DEC-12/14/M17. Leur rédaction ne lève ni G1, ni G3, ni l’autorisation de code Studio."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            26,
+            28
+          ],
+          "exact_excerpt": "| Version/persistance | `schemaVersion`, `contractVersion`, `revisionId`, `baseRevisionId`, `documentVersion` conservent les sens distincts de M17 ; aucun numéro n'est substitué à un autre. Une confirmation centrale suit engagement durable, pas image obtenue. | Sauvegarde/réouverture après incident sur corpus sûr autorisé ; erreurdurabilité ne devient pas succès |\n| Réemploi | Noyaux géométriques purs Fadi existants réutilisés par API/adaptateur public après qualification ; aucun nouvel outil n'importe UIAtelier comme autorité. | Comparaison fidélité/limites/licences/coûts ; DEC18 parcomposant, pas réécriture automatique |\n| Compatibilité | Lecture/import/export distingués par format/version/entité/sens. Conservation desID et propriétés reconnues ; inconnues préservées ou rapport de pertes explicite, jamais disparition silencieuse. | Corpus ancien/nouveau avant/après ; pas roundtrip paramétrique supposé ni migration implicite |"
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            58,
+            60
+          ],
+          "exact_excerpt": "4. Réouverturehistorique : résoudre publication/révision exactes, revalider droits et parenté, vérifier pièces/empreintes/lecteurs compatibles, puis reconstruire les projections. Source manquante/inconnue/divergente → état explicite/récupération, jamais substitutionlatest.\n5. Modifier après réouverture est une intention distincte vers têteautorisée/nouvellevariante, avec préconditionIF004. L'ancien manifeste et ses pièces restent identifiables. Un statut local pending ne devient pas publication centrale.\n6. La méthode de hash des exemplesJSON M24 ne décide pas la canonicalisation de production ; DEC16 reste ouverte. IFC en proxies/représentations ne prouve pas sourcecanonique paramétrique ni certification ; matrice par sens/version/entité et pertes reste requise."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "lines": [
+            36,
+            38
+          ],
+          "exact_excerpt": "| Sauvegarder/fermer/rouvrir | Contenus canoniques confirmés, pas scènes/caches ; A2/A6 | C-STUDY/C-DRAWING2D, M24§3/6, EX089/090 | Accusé suit engagementdurable, après coupure distinguer confirmé/pending/conflit ; retrouver contenu exact sous bon compte | Choix persistance/incident/reconnexion et garanties de reprise, mesures non inventées |\n| Gérer versions et compatibilité | Contrats/formats/snapshots versionnés, chaque service propriétaire ; A2 | M17§1/5, M24§7/8, EX019/030/044/091 | schemaVersion/contractVersion/revisionId/baseRevisionId/contentVersion illustratif/documentVersion pièce non confondus ; inconnues refusées ou conservées avec rapport | Matrice lecteurs/imports/exports anciensformats réels, décision transformation/rollback ; aucun autobump |\n| Protéger navigation, actions/pending et changement compte | UI guide ; commande/queue propriétaire fait autorité ; A4/A2/A5 | NAVTransition/auth, M21cycle, M17C-COMMAND ; NAV007/008 | Quitter ≠ sauver, fermerUI ≠ annuler serveur ; queueA jamais envoyée sousB ; contexte ancien non réadressé | Protocole durable de queue/annulation et compatibilitéSW ; pas garanti par seul dialogue |"
+        }
+      ],
+      "acquis_de_specification": "Principe D07 retenu ; erreurs/compatibilité/reprise prescrites, matériel mobile/fullscreen et budgets DEC-13 non validés.",
+      "preuves_runtime_manquantes": "NAV prescrit, non exécuté. Ni interface Studio, ni contrôle serveur, ni persistance/reprise, ni droit effectif validé ici. Syntaxe et empreintes JSON cohérentes ne prouvent aucun de ces comportements.",
+      "prochains_cas_mesurables_sous_meme_id": [
+        {
+          "scenario_label": "Erreur de lecteur pendant pending et plein écran",
+          "action_future": "Avec une commande pending, provoquer un lecteur incompatible ou un résultat divergent, demander puis quitter le plein écran.",
+          "measurable_oracle": "Erreur accessible avec action, sortie visible au clavier et au toucher ; P/S/V/R et queue conservés ; zéro publication/confirmation fictive.",
+          "negative_future": "Fullscreen API refusée, clavier virtuel et rotation : navigation et récupération restent atteignables sans geste caché.",
+          "environment_required": "Future recette E-UX sur build/SHA identifié ; cible synthétique jetable autorisée si création/mutation, jamais production",
+          "execution": "Non exécuté ; proposition sous le même ID NAV"
+        },
+        {
+          "scenario_label": "Récupération sans latest",
+          "action_future": "Réessayer une révision historique après erreur de source.",
+          "measurable_oracle": "Même révision et source/version demandées ; résultat ancien de retry exclu ; aucune substitution par contenu courant.",
+          "negative_future": "Erreur permanente ne produit ni spinner sans issue ni document partiel déclaré complet.",
+          "environment_required": "Future recette E-UX sur build/SHA identifié ; cible synthétique jetable autorisée si création/mutation, jamais production",
+          "execution": "Non exécuté ; proposition sous le même ID NAV"
+        }
+      ],
+      "statut_nav_inchange": {
+        "status": "Prescrit, non exécuté",
+        "conformity": "Non évaluée Studio",
+        "acceptance": "Absente"
+      }
+    },
+    {
+      "id": "NAV-009",
+      "existing_title": "coexistence et non-régression Fadi",
+      "criterion_source": {
+        "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/NAV-M004.json",
+        "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2",
+        "json_pointer": "/nav/8/test_specification",
+        "exact_value": "**Source :** Accueil/Projets/Parcours/Atelier/Collaboration conservent leurs parcours pendant coexistence. **Dépendances :** base PR142 décidée/revalidée, A5 matrice M04/M26 ; capacités Fadi inchangées. **Liens :** recettes existantes et TEST de persistance/permissions, sans dupliquer leurs résultats.\n\n**Positif :** rejouer sur build candidat les parcours Fadi applicables, étapes10/11 et Atelier direct, carte mobile21 étapes, Collaboration, menus/outils/clavier et FR/EN ; revenir Studio puis Fadi. Mesurer navigation et absence débordement global ; vérifier cibles réelles des gestes sous barres flottantes.\n\n**Négatif :** méta CSS Studio sur ancien écran, route active erronée, raccourci Studio déclenché dans un champ Fadi, manque traduction, panneau superposé intercepte clic géométrique, retour vers un projet non autorisé. Ne pas corriger l'oracle pour masquer un défaut ; ne pas neutraliser assertions métier ou droits.\n\n**Oracle :** résultats métier avant/après conformes au corpus validé ; 21 étapes/ordre/phases/libellés et Harmonie conservés ; capacités industrielles et règle outils conservées ; assertions identités/quantités/undo/documents/permissions toujours présentes. Les traces PR142 anciennes a383fa… ne valident pas le candidat. Sur tête PR142 0d960605… la CI38766145763 échoue à planche-boutons ; layout vert seul insuffisant. **Env :** E-UX et cibles jetables A5/A6, nouveaux tests sécurité selon droits. **Preuve :** P-UX + matrice script→assertions→SHA→verdict ; skipped/non exécuté affichés, preuve issue PR142 séparée.",
+        "status": "Exemple ou description logique documentaire ; pas contrat runtime adopté"
+      },
+      "delta_documentaire": "L’index I/A.1 référence les contrats existants et exclut éditeurs complets, Registry complet et publication métier complète. Les schémas logiques ne modifient ni les 21 étapes ni Atelier/Planche natifs et n’autorisent aucune migration des anciens forks. FR/EN, clavier, tactile et coexistence restent les mêmes obligations, sans nouvelle norme d’interface.",
+      "sources_exactes": [
+        {
+          "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "provenance": {
+            "kind": "Git documentaire",
+            "sha": "b1023605b965b27ff56fabf179756592673c98d4"
+          },
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            7,
+            9
+          ],
+          "exact_excerpt": "**Imposé par le mandat et les références :** entrée exactement Studio dans le rail vertical principal ; module natif autonome sans passage Parcours ni simple raccourci/iframe Atelier ; services Fadi communs ; quatre domaines et deux planches 2D/3D indépendantes dans Dessin et modélisation ; Projet→Étude→Variante→Révision ; pas de seconde autorité métier ; droits serveur, traçabilité, sauvegarde et publication ; Atelier et 21 étapes préservés ; interface FR/EN et règle Planche icône/barre/raccourci.\n\n**D07 RETENU pour spécifications :** Studio après Projets, URLs complètes et contexte hiérarchique vérifié serveur, plein écran explicite réversible, protection des gestes/sauvegardes, UX clavier/mobile/FR–EN, approbation/publication séparées avec cumul explicite traçable. Les chemins physiques et query ci-dessous sont le contrat opérationnel proposé dans ce cadre ; DEC-13 appareils/budgets et mapping des rôles restent à documenter. D01 retient le référentiel et pilote synthétique pour cadrage, D02 les reports du pilote ; ni G0 ni G1 n’est passé par ce seul arbitrage. D06 retient ordre de revue #154→#152→#142, sans autoriser fusion. Les noms d'actions `study.read`, etc. dans cette contribution sont des droits logiques à mapper aux rôles Fadi, pas des permissions déjà implantées."
+        },
+        {
+          "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "provenance": {
+            "kind": "Git documentaire",
+            "sha": "b1023605b965b27ff56fabf179756592673c98d4"
+          },
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            48,
+            50
+          ],
+          "exact_excerpt": "Desktop : focus visible, pas de débordement global ; panneaux/outils peuvent défiler localement. Mobile : cibles proposées >=44×44 px, défilement local domaines/outils, panneaux refermables, actions importantes nommées et atteignables sans geste secret. Rotation/clavier virtuel : sortie/validation toujours atteignables. Ces seuils UX candidats ne remplacent pas DEC-13 ni un audit WCAG.\n\nPlein écran : bouton explicite « Plein écran » / « Full screen » et sortie « Quitter le plein écran » / « Exit full screen ». Ne pas appliquer automatiquement `atelier-immersive`. Fullscreen API est facultative : échec/refus laisse le mode normal utilisable. Bouton de sortie visible et clavier utilisable ; Échap ferme d'abord menu/geste selon contrat de l'outil et ne constitue pas l'unique sortie. Événement fullscreenchange synchronise le bouton ; sortie système conserve contexte, file et focus. Navigation Fadi demeure réaccessible via sortie, sans masquer une erreur de sauvegarde."
+        },
+        {
+          "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+          "provenance": {
+            "kind": "Git documentaire",
+            "sha": "b1023605b965b27ff56fabf179756592673c98d4"
+          },
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            68,
+            70
+          ],
+          "exact_excerpt": "Droits logiques candidats : lire étude, créer étude, modifier variante, exécuter contrôle, commenter, soumettre, approuver, publier. Mapper aux permissions Fadi et au verrou d'édition sans inventer une élévation d'administrateur. Profil personnel ne modifie aucun droit ; découverte≠exécution. Permission perdue pendant attente : refus serveur, conserver un brouillon local autorisé selon politique, pas de confirmation réussie.\n\nFR source dans composants + en.json et messages.ts pour l'ergonomie Atelier réutilisée. Nom Studio identique FR/EN ; libellés des domaines traduits sans traduire données, noms de projet, exemples ou livrables. Locale nombres/dates suit dispositif existant. Changer de langue recharge actuellement la page (`lib/i18n/index.ts`) : soumettre au même garde de transition que fermeture/refresh, sans se reposer seulement sur beforeunload."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "lines": [
+            17,
+            23
+          ],
+          "exact_excerpt": "Les anciens exemplesG1v1 restent historiques. Les modèles M17 et les exemplesM24 ne sont pas remplacés par un autre sérialiseur : les exemplesv2 sont des illustrations de contraintes qui complètent ces dossiers. Les références de code sont des candidats, pas des capacités testées.\n\n## Périmètre de contrat proposé, distinct d'une autorisation de réalisation\n\nPremier sous-ensemble : intégration autonome Studio I (rail/routes/contexte/états/refus/transitions) et fondations A.1 (identités Étude/Variante/Révision, propriétaire canonique et sauvegarde/réouverture versionnée). Il doit pouvoir cadrer une étude et créer une variante sans géométrie fictive, puis enregistrer/lire une référence de contenu canonique avec isolation et historique.\n\nExclus de sa réalisation initiale proposée : éditeurs/outils complets A.2/A.3, association topologique A.4, tous moteurs industriels réintégrés dans un nouveau catalogue, Registry/Manager completB, optimisationC/ordonnanceurD, revue/publication métier complèteE, migration de données existantesR et optionsF reportées. Leurs **interfaces** utiles restent prises en compte pour ne pas créer un contrat incompatible. Une intégration I/A.1 livrée ne serait pas le MVP A/B/C terminable ; TEST001 complet attend E. Aucun de ces lots n'est ouvert par cet index."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-INDEX-PREMIER-SOUS-ENSEMBLE-I-A1.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "8a3bb41d4c49074890d7648a33f2520140509e3a69ec4a83ece26f56c6db9073",
+          "lines": [
+            38,
+            41
+          ],
+          "exact_excerpt": "| Protéger navigation, actions/pending et changement compte | UI guide ; commande/queue propriétaire fait autorité ; A4/A2/A5 | NAVTransition/auth, M21cycle, M17C-COMMAND ; NAV007/008 | Quitter ≠ sauver, fermerUI ≠ annuler serveur ; queueA jamais envoyée sousB ; contexte ancien non réadressé | Protocole durable de queue/annulation et compatibilitéSW ; pas garanti par seul dialogue |\n| Préparer contrats aval sans réaliser E/B | Catalogue léger et C-PUBLICATION/IF009, pas nouveau modèle canonique ; A4/A1/A2 | M21, M24§2–8 | Registry métadonnées seul ; approbation/publication distinctes ; contenuexact référencé, pas hashclient faisant preuve | DEC04–07/14/16 pour lots concernés ; absence de ces fonctions dans I/A.1 ne vaut pas livraison du MVP |\n\nCes conditions sont des **oracles à réaliser ultérieurement dans le périmètre autorisé**, pas des tests Studio exécutés. Les validationsJSON/hash documentaires v2 n'ont ni chargé les moteurs ni connecté une base. Reprises A0/A2/A4/A5 ne doivent pas les convertir en certification de contrat runtime."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            27,
+            28
+          ],
+          "exact_excerpt": "| Réemploi | Noyaux géométriques purs Fadi existants réutilisés par API/adaptateur public après qualification ; aucun nouvel outil n'importe UIAtelier comme autorité. | Comparaison fidélité/limites/licences/coûts ; DEC18 parcomposant, pas réécriture automatique |\n| Compatibilité | Lecture/import/export distingués par format/version/entité/sens. Conservation desID et propriétés reconnues ; inconnues préservées ou rapport de pertes explicite, jamais disparition silencieuse. | Corpus ancien/nouveau avant/après ; pas roundtrip paramétrique supposé ni migration implicite |"
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+          "lines": [
+            46,
+            51
+          ],
+          "exact_excerpt": "| Fork | Nouvelles identités propriétaires et provenance verssource selon contrat ; paspropagation implicite d'une copie. | Mapping explicite des anciennes variantes-projets ; pas renommer/copier/migrer silencieusement les données existantes |\n| Session/droits | Identité tenant/projet/étude/variante vérifiée serveur avec permissions surressource/action ; `actorId` client ne fait pas autorité. | Une combinaison d'IDs tous existants mais appartenant à des parents différents est refusée |\n| WriterAuthority | Un écrivain unique pour chaque donnée canonique2D/3Dlibre/associée ; vues/scènes ne sont pas écrivains. | Deux planches ne fabriquent pas deux copiesautoritaires du même mur ; migration d'autorité distincte et non autorisée ici |\n| Diffusion | Publication et approbation visent leurs ensembles exacts ; travail courant peut évoluer sans effacer référence historique. | `revisionId` n'est ni statutdediffusion ni publicationId ; ne jamais substituer latest enréouverture |\n\nLes choix d'index/stockage/IDs physiques/contraintes/lectures transactionnelles seront comparés par A2, sans créer de tables ou imposer UUID. La portée serveur de déduplication et la durée de rétention sont des choix à ratifier ; aucune rétention/sauvegarde n'est modifiée."
+        },
+        {
+          "path": "/workspace/work/resume496/agents/A1/G2-DOSSIER-POC-PUR-2D-IDENTITES-PROPOSE.md",
+          "provenance": {
+            "kind": "Proposition documentaire A1 locale non committée",
+            "sha": null
+          },
+          "sha256": "0f0d531a65fb9138bef39f644aabb0095428bfe44027561d0b72b4899fb98e81",
+          "lines": [
+            3,
+            20
+          ],
+          "exact_excerpt": "Programme#156, A1 préparation. **POC non autorisé et non exécuté par ce dossier.** A0 peut soumettre cette portée à l'autorité déléguée dans#166 ; une décision doit citer les opérations permises, fichiers, critères et exclusions. G0 accepté et orientations DEC01/03 ne suffisent pas à lancer ce code. Aucun fichier d'implémentation, paquet, SQL, DB, API ou UI n'est créé ici.\n\n## Question de faisabilité et limite de preuve\n\nPeut-on représenter un document2D canonique autonome avec identitésProjet/Étude/Variante/Révision, réutiliser une primitive géométrique pure Fadi par interface publique et démontrer sauvegarde/réouverture **dans un fichierJSON local synthétique**, sans modèle3D de substitution et sans réécrire une révision historique ?\n\nCe POC peut renseigner une partie de DEC01/03/G2 : contraintes du modèlelogique, fidélité de sérialisation, identité et refus purs. Il **ne prouvera pas** choixphysique PostgreSQL, transactionserveur, isolationmulti-utilisateur réelle, sécuritéAPI, UI/mobile, éditioncomplèteA/B/C, publicationmétier, cacheSW/offlineproduction, restaurationdesauvegarde ou résistance matérielle àcoupure. Il ne ferme ni DEC01/03 physiques ni G1/G2/G3 automatiquement.\n\n## Portée future proposée\n\n| Inclus, seulement après accord | Exclus |\n|---|---|\n| Schémaillustratif de travail dans harnessjetable, Projet→Étude→Variante→Révision, document2D/IDs/calques/cote/annotation et contenuversionné | Nouveau formatnatifStudio ratifié, tables/migrations/paquets/dependances ou modifications application |\n| Segment et contour2D synthétiques à coordonnées explicites, lecture/écriture de copies dans répertoire inédit dédié | Modèle3D fictif, moteurs3D/WASM/Workers/UI, navigateurs, serveurs/API |\n| Calcul d'aire par exportpublic pur Fadi identifié et vérifié parA2 avant import | Réimplémenter un moteur ou importer moduleUIAtelier/DrawAll |\n| Préconditions de révision et parenté en mémoire, refus sans effet dans harness | Authentification/droits réels, preuve d'isolationserveur ou base réelle |\n| PersistanceJSONlocale exclusivement sur fichiers nouveaux, relecture et comparaison sans écraser origine | Réseau, DBdriver, PostgreSQL, API/E2E, init/restart, secrets, donnéesclients, production, restauration/rétention/migration |\n| Mesures réelles éventuelles du harness et rapport explicite de ses limites | Seuils de perf/coût arbitraires, déduction capacitéproduit depuis un petitfixture |"
+        }
+      ],
+      "acquis_de_specification": "G0 documentaire accepté sur dossier borné ; mentions antérieures G0 non passé restent historiques. G1–G4, contrats physiques et POC proposé non clos/non autorisés par ces pièces.",
+      "preuves_runtime_manquantes": "NAV prescrit, non exécuté. Ni interface Studio, ni contrôle serveur, ni persistance/reprise, ni droit effectif validé ici. Syntaxe et empreintes JSON cohérentes ne prouvent aucun de ces comportements.",
+      "prochains_cas_mesurables_sous_meme_id": [
+        {
+          "scenario_label": "Retour Fadi après nouveau contexte Studio",
+          "action_future": "Naviguer Studio sous nouveaux P/S/V/R puis revenir Atelier direct, Parcours21étapes, Collaboration et Planche ; répéter FR/EN, mobile et clavier.",
+          "measurable_oracle": "Ordre/phases/libellés/stats des21étapes identiques ; mêmes propriétaires et données Fadi ; aucune CSS/commande/raccourci Studio parasite.",
+          "negative_future": "Champ de saisie Fadi ne déclenche pas raccourci Studio ; changement de langue avec pending respecte NAV-007.",
+          "environment_required": "Future recette E-UX sur build/SHA identifié ; cible synthétique jetable autorisée si création/mutation, jamais production",
+          "execution": "Non exécuté ; proposition sous le même ID NAV"
+        },
+        {
+          "scenario_label": "Permissions d’approbation et publication au retour de revue",
+          "action_future": "Sur un ensemble exact identifié, exercer séparément lecteurs, concepteurs, approbateurs, publieurs et cumul explicitement configuré.",
+          "measurable_oracle": "Approve et publish restent capacités distinctes ; révision/contenus approuvés exactement ceux publiés ; administrateur technique sans délégation n’obtient aucun droit.",
+          "negative_future": "Révoquer publish entre affichage et acte, ou modifier le contenu après approbation : refus serveur sans publication, ancienne référence immuable intacte.",
+          "environment_required": "Future recette E-UX sur build/SHA identifié ; cible synthétique jetable autorisée si création/mutation, jamais production",
+          "execution": "Non exécuté ; proposition sous le même ID NAV"
+        }
+      ],
+      "statut_nav_inchange": {
+        "status": "Prescrit, non exécuté",
+        "conformity": "Non évaluée Studio",
+        "acceptance": "Absente"
+      }
+    }
+  ],
+  "permissions_cross_links": {
+    "NAV-004": "Accès serveur ressource/action, deep link et refus sans fuite.",
+    "NAV-005": "Domaines/planche ne confèrent pas droit approve/publish.",
+    "NAV-006": "Ensemble/révision affichés exacts avant tout acte.",
+    "NAV-007": "Permission retirée pendant pending, interdiction de publication depuis simple état local.",
+    "NAV-009": "Régression des droits indépendants et cumul explicite sur ensemble exact."
+  },
+  "unchanged_constraints": [
+    "Studio après Projets ; quatre domaines ; deux planches autonomes dans Dessin et modélisation seulement.",
+    "Chemins web candidats conservés ; aucune route API déduite, aucun nouvel identifiant physique imposé.",
+    "Interface FR/EN, accessible au clavier/mobile ; langue n’altère pas les données et transition recharge suit NAV-007.",
+    "Atelier/Planche natifs et21étapes préservés ; aucun changement DrawAll ni nouvelle dépendance.",
+    "Code, Review ChatGPT et Review Admin restent trois validations distinctes ; aucune coche ni gate déclenchée."
+  ],
+  "remaining_decisions": [
+    "DEC01/03 physiques : allocation/stockage/contraintes/isolation/restauration/rollback et coûts.",
+    "DEC02 associations/topologie ; DEC12/14 queue/commande/historique/chargement ; DEC16 canonicalisation/empreinte de production.",
+    "Mapping final des droits/tenant/ressource/masquage/cache après révocation et contrat physique de façade.",
+    "G1 par sous-ensemble et autorisations G2/G3/réalisation distinctes.",
+    "Personnes/disponibilités CAD-DEC-03 demeurent inconnues."
+  ],
+  "proof_protocol_future": "Pour chaque cas sous NAV existant : SHA/build, corpus et hash, environnement/navigateur matériel, locale, rôle/permissions effectives, contexte P/S/V/R, attendu/observé, journaux expurgés, comptages mutations/fuites/pertes/doublons. Sans exécution autorisée : non exécuté. Un POC fichier local ne prouve ni sécurité serveur ni UX."
+}

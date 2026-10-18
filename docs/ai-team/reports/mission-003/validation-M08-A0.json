@@ -1,0 +1,11 @@
+{
+  "source_reference": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+  "unit": "Paire fichier+ligne du scan lexical initial ; pas nombre de marqueurs",
+  "source_files": 488,
+  "expected_pairs": 1887,
+  "reviewed_pairs": 1887,
+  "unique_pairs": 1887,
+  "missing_pairs": 0,
+  "duplicate_pairs": 0,
+  "limit": "Couverture contextualisée assistée du scan uniquement ; aucune preuve exhaustive hors scanner, de licence ou de conformité fonctionnelle. M08 reste En cours."
+}

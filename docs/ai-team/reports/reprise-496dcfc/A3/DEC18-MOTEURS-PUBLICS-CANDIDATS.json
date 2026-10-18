@@ -1,0 +1,1858 @@
+{
+  "mission": "DEC18/M17 — inventaire de réemploi par interfaces publiques",
+  "agent": "A3",
+  "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+  "baseline_main": "a4caaab0e6665480f09febe3914c960b424b6b47",
+  "reference_pr": 171,
+  "timestamp_utc": "2026-10-18 13:18:43 UTC",
+  "mode": "Lecture seule des sources/lock/docs ; aucun import produit, exécution moteur, test, POC, DB, service ou modification source. Seuls livrables A3 écrits.",
+  "status": "En cours — candidats proposés pour revue, DEC18 ouverte/G1 non accepté",
+  "engines_count": 12,
+  "inputs_reused": [
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+      "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+      "nature": "document préparatoire réutilisé, pas API ni acceptation"
+    },
+    {
+      "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-003/A2/LOT-A.1.md",
+      "sha256": "7b1e77bda632aa63d34596c5c9c98372adf8708065722497d32726f7ad60d30a",
+      "nature": "document préparatoire réutilisé, pas API ni acceptation"
+    },
+    {
+      "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-003/A2/LOT-A.2.md",
+      "sha256": "f07be9bd6b449b0bed65bc81942055b2212a1ef326f5ae6dacc0a544e35ea4b0",
+      "nature": "document préparatoire réutilisé, pas API ni acceptation"
+    },
+    {
+      "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-003/A2/LOT-A.3.md",
+      "sha256": "44a46d3a0b15d752b22ef5ef4d7fca5c737e1262ef58cbabf3717176d6db921b",
+      "nature": "document préparatoire réutilisé, pas API ni acceptation"
+    },
+    {
+      "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-003/A2/LOT-B.md",
+      "sha256": "d7a8d5aa56581d6f7386048a6146f2807edbac24b4013c5e8a42721376c6f188",
+      "nature": "document préparatoire réutilisé, pas API ni acceptation"
+    },
+    {
+      "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-003/A2/LOT-C.md",
+      "sha256": "415c97de50efc82801d397532dc98b405bf9a11424db7fafb401b2f04d5619d7",
+      "nature": "document préparatoire réutilisé, pas API ni acceptation"
+    }
+  ],
+  "engines": [
+    {
+      "id": "MTR-01",
+      "name": "Géométrie de parcelle et extraction du prototype Fadi",
+      "state": "En cours — candidat de réemploi documenté, intégration Studio non implémentée/non acceptée",
+      "package": {
+        "name": "@parcours/core-geometry",
+        "version": "0.1.0",
+        "entry": "./src/index.ts",
+        "private": true,
+        "react_declared_dependency": false,
+        "license_declared": null,
+        "runtime_dependencies": {},
+        "evidence": {
+          "path": "packages/core-geometry/package.json",
+          "line": 6,
+          "excerpt": "  \"exports\": {"
+        }
+      },
+      "public_entry_chain": [
+        "@parcours/core-geometry",
+        "src/index.ts export * geometry/parcel-geometry/site-zoning"
+      ],
+      "api_and_types": [
+        "Point2=readonly[number,number]",
+        "BuildingModel",
+        "ModelGeometryResult",
+        "ColumnShapeResolver",
+        "buildModelGeometry",
+        "inwardOffset",
+        "buildingFootprint"
+      ],
+      "evidence": [
+        {
+          "path": "packages/core-geometry/src/index.ts",
+          "line": 1,
+          "excerpt": "export * from \"./geometry.js\";"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.ts",
+          "line": 123,
+          "excerpt": "export interface ModelGeometryResult {"
+        },
+        {
+          "path": "packages/core-geometry/README.md",
+          "line": 7,
+          "excerpt": "Toutes les fonctions ci-dessous sont un portage fidèle — pas une réécriture — du code trouvé dans `EMB.designer` (module `designer` / Atelier) de `Parcours_V8_19_Escalier_B_Mezzanine.html`, assignées "
+        },
+        {
+          "path": "packages/core-geometry/src/parcel-geometry.ts",
+          "line": 67,
+          "excerpt": "export function inwardOffset(poly: readonly Point2[], distance: number): Point2[] | null {"
+        }
+      ],
+      "studio_paths": [
+        "A",
+        "B",
+        "C"
+      ],
+      "public_surface_verdict": "Exports publics existants, à qualifier par primitive ; ne pas rétablir le magasin ou moteur monolithique historique.",
+      "react": "Aucun import React dans le noyau ciblé, vérification statique ; les modules UI cités comme manques ne sont pas une API publique Studio.",
+      "writer_ownership": "Fonctions pures : retour de données, aucune persistance. A2 fixe le contrat adaptateur, A3 implémente seulement après autorisation ; autorité serveur Studio et writer unique restent à décider physiquement en M17/DEC03/DEC12.",
+      "license_provenance": "README trace EMB.designer/Parcours_V8_19_Escalier_B_Mezzanine.html. Aucun champ license dans package ; droits propres à confirmer, autonomie opérationnelle distincte de propriété intellectuelle.",
+      "limits": [
+        "README documente une extraction tracée du prototype Parcours, pas preuve de correction ni de droits externes.",
+        "ColumnShapeResolver est un contrat explicite ; warnings de formes non prises en charge à conserver.",
+        "Recul/offset et tolérances historiques ne deviennent pas normes Studio par supposition."
+      ],
+      "missing_adapters": [
+        "Conversion explicite tuples/local/cadastral/unités vers document2D et contexte Projet ; aucune unité déduite de pixels.",
+        "Choisir entre primitive réutilisable et contrat historique BuildingModel, sans créer un modèle3D obligatoire pour A."
+      ],
+      "costs_to_measure": [
+        "Nombre de sommets, contours concaves/trous, précision/écart et coût des conversions",
+        "Chargement/tree-shaking de l’entrée publique et coût mémoire par primitive"
+      ],
+      "tests": {
+        "present_sources": [
+          {
+            "path": "packages/core-geometry/src/geometry.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          },
+          {
+            "path": "packages/core-geometry/src/parcel-geometry.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          },
+          {
+            "path": "packages/core-geometry/src/site-zoning.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          }
+        ],
+        "newly_executed": [],
+        "result": "Présence/statique seulement dans ce lot DEC18, aucun import ni test exécuté. Le passage pur CLASSIF1 antérieur reste sa preuve datée distincte."
+      },
+      "next_action": "Revue A2 des contrats puis A6 licences/provenance et coûts ; préparer la fiche DEC18 sans la clore. Aucun code/POC/nouveau paquet autorisé par cet inventaire."
+    },
+    {
+      "id": "MTR-02",
+      "name": "Primitives 2D et maillages 3D paramétriques Atelier",
+      "state": "En cours — candidat de réemploi documenté, intégration Studio non implémentée/non acceptée",
+      "package": {
+        "name": "@parcours/atelier-model",
+        "version": "0.1.0",
+        "entry": "./src/index.ts",
+        "private": true,
+        "react_declared_dependency": false,
+        "license_declared": null,
+        "runtime_dependencies": {
+          "@parcours/core-geometry": "0.1.0",
+          "@parcours/domain-model": "0.1.0",
+          "@parcours/planche-model": "0.1.0"
+        },
+        "evidence": {
+          "path": "packages/atelier-model/package.json",
+          "line": 6,
+          "excerpt": "  \"exports\": {"
+        }
+      },
+      "public_entry_chain": [
+        "@parcours/atelier-model",
+        "index export * geometrie.js et exports nommés geometrie-3d.js"
+      ],
+      "api_and_types": [
+        "Vec",
+        "aireNette",
+        "intersectionSegments",
+        "projectionSurSegment",
+        "balayerSection",
+        "cylindre",
+        "fusionnerMaillages",
+        "MaillageBrut"
+      ],
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 4,
+          "excerpt": "export * from \"./geometrie.js\";"
+        },
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 95,
+          "excerpt": "export { balayer as balayerSection, cylindre, fusionner as fusionnerMaillages, type MaillageBrut } from \"./geometrie-3d.js\";"
+        },
+        {
+          "path": "packages/atelier-model/src/geometrie.ts",
+          "line": 86,
+          "excerpt": "export function intersectionSegments(a: Vec, b: Vec, c: Vec, d: Vec, tol = TOLERANCE_REDUCTEUR): { point: Vec; t: number; u: number } | null {"
+        },
+        {
+          "path": "packages/atelier-model/src/unites.ts",
+          "line": 44,
+          "excerpt": "export const TOLERANCE_REDUCTEUR = 0.001; // m — coïncidence, longueur nulle (D-012)"
+        }
+      ],
+      "studio_paths": [
+        "A",
+        "B",
+        "C"
+      ],
+      "public_surface_verdict": "Surface publique pour algorithmes, pas document2D canonique autonome déjà livré.",
+      "react": "Aucun import React dans le noyau ciblé, vérification statique ; les modules UI cités comme manques ne sont pas une API publique Studio.",
+      "writer_ownership": "Fonctions pures : retour de données, aucune persistance. A2 fixe le contrat adaptateur, A3 implémente seulement après autorisation ; autorité serveur Studio et writer unique restent à décider physiquement en M17/DEC03/DEC12.",
+      "license_provenance": "Code suivi natif Fadi, paquets workspace liés par lock ; licence propre non déclarée dans package.",
+      "limits": [
+        "Vec objet différent du tuple core et du Vec3 Planche ; conversions typées explicites.",
+        "TOLERANCE_REDUCTEUR=0.001m n’est pas le budget de fidélité Studio ; tolérances doivent être nommées par usage.",
+        "Projection/tessellation est dérivée ; ne pas remplacer paramètres et relations canoniques."
+      ],
+      "missing_adapters": [
+        "Document2D indépendant et interfaces primitives/IDs/repères à compléter selon G1 v2.",
+        "Contrat d’extraction coupe/copie/association pour B/C ; aucun import profond de l’UI."
+      ],
+      "costs_to_measure": [
+        "Erreurs numériques avant/après conversion et comportements dégénérés",
+        "Temps/allocations pour tailles des corpus, coût d’import de l’entrée Atelier complète"
+      ],
+      "tests": {
+        "present_sources": [
+          {
+            "path": "packages/atelier-model/src/geometrie-outils.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          },
+          {
+            "path": "packages/atelier-model/src/projection/maillage.test.ts",
+            "line": 1,
+            "excerpt": "import { readFileSync } from \"node:fs\";"
+          }
+        ],
+        "newly_executed": [],
+        "result": "Présence/statique seulement dans ce lot DEC18, aucun import ni test exécuté. Le passage pur CLASSIF1 antérieur reste sa preuve datée distincte."
+      },
+      "next_action": "Revue A2 des contrats puis A6 licences/provenance et coûts ; préparer la fiche DEC18 sans la clore. Aucun code/POC/nouveau paquet autorisé par cet inventaire."
+    },
+    {
+      "id": "MTR-03",
+      "name": "Topologie libre 3D Planche et représentation dérivée",
+      "state": "En cours — candidat de réemploi documenté, intégration Studio non implémentée/non acceptée",
+      "package": {
+        "name": "@parcours/planche-model",
+        "version": "0.1.0",
+        "entry": "./src/index.ts",
+        "private": true,
+        "react_declared_dependency": false,
+        "license_declared": null,
+        "runtime_dependencies": {},
+        "evidence": {
+          "path": "packages/planche-model/package.json",
+          "line": 6,
+          "excerpt": "  \"exports\": {"
+        }
+      },
+      "public_entry_chain": [
+        "@parcours/planche-model",
+        "index export * geometrie-libre.js et representation.js"
+      ],
+      "api_and_types": [
+        "Modele",
+        "Vec3",
+        "Resultat",
+        "modeleVide",
+        "ajouterSegment",
+        "ajouterRectangle",
+        "maillagesPlanche",
+        "MaillagePlanche"
+      ],
+      "evidence": [
+        {
+          "path": "packages/planche-model/src/index.ts",
+          "line": 3,
+          "excerpt": "export * from \"./geometrie-libre.js\";"
+        },
+        {
+          "path": "packages/planche-model/src/geometrie-libre.ts",
+          "line": 186,
+          "excerpt": "export interface Modele {"
+        },
+        {
+          "path": "packages/planche-model/src/representation.ts",
+          "line": 49,
+          "excerpt": "export function maillagesPlanche(m: Modele): MaillagePlanche[] {"
+        },
+        {
+          "path": "packages/planche-model/src/vecteur.ts",
+          "line": 10,
+          "excerpt": "export const TOL = 1e-6;"
+        }
+      ],
+      "studio_paths": [
+        "B",
+        "C"
+      ],
+      "public_surface_verdict": "Noyau public sans React/three/DOM ; ne pas l’assimiler aux deux documents Studio ni à un renderer public.",
+      "react": "Aucun import React dans le noyau ciblé, vérification statique ; les modules UI cités comme manques ne sont pas une API publique Studio.",
+      "writer_ownership": "Fonctions pures : retour de données, aucune persistance. A2 fixe le contrat adaptateur, A3 implémente seulement après autorisation ; autorité serveur Studio et writer unique restent à décider physiquement en M17/DEC03/DEC12.",
+      "license_provenance": "Implémentation Fadi suivie ; README revendique aucune dépendance runtime et package le confirme. Licence propre non déclarée.",
+      "limits": [
+        "Topologie 3D et représentation de maillage, pas B-Rep exact.",
+        "Une Planche aplatie z=0 ne satisfait pas à elle seule l’autonomie du documentA.",
+        "Renderer/caméra/selection UI app/web ne sont pas publiés comme paquet partagé ; aucune extraction implicite."
+      ],
+      "missing_adapters": [
+        "Identité document3D, versions, commandes/validation/durabilité et rendu via contrat public.",
+        "Association 2D↔3D versionnée DEC02, IDs topologiques et remontée des ambiguïtés à concevoir."
+      ],
+      "costs_to_measure": [
+        "Fidélité topologique/IDs faces après éditions",
+        "Tessellation, mémoire et latence rendu séparées CPU/GPU/appareil réel"
+      ],
+      "tests": {
+        "present_sources": [
+          {
+            "path": "packages/planche-model/src/geometrie-libre.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          },
+          {
+            "path": "packages/planche-model/src/echanges.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          }
+        ],
+        "newly_executed": [],
+        "result": "Présence/statique seulement dans ce lot DEC18, aucun import ni test exécuté. Le passage pur CLASSIF1 antérieur reste sa preuve datée distincte."
+      },
+      "next_action": "Revue A2 des contrats puis A6 licences/provenance et coûts ; préparer la fiche DEC18 sans la clore. Aucun code/POC/nouveau paquet autorisé par cet inventaire."
+    },
+    {
+      "id": "MTR-04",
+      "name": "Inférences/snapping Planche et couture 2D non publique",
+      "state": "En cours — candidat de réemploi documenté, intégration Studio non implémentée/non acceptée",
+      "package": {
+        "name": "@parcours/planche-model",
+        "version": "0.1.0",
+        "entry": "./src/index.ts",
+        "private": true,
+        "react_declared_dependency": false,
+        "license_declared": null,
+        "runtime_dependencies": {},
+        "evidence": {
+          "path": "packages/planche-model/package.json",
+          "line": 6,
+          "excerpt": "  \"exports\": {"
+        }
+      },
+      "public_entry_chain": [
+        "@parcours/planche-model",
+        "index export * inference.js"
+      ],
+      "api_and_types": [
+        "EntreeInference",
+        "Inference",
+        "GeometrieVisible",
+        "Verrou",
+        "ModeAlt",
+        "inferer",
+        "geometrieVisible"
+      ],
+      "evidence": [
+        {
+          "path": "packages/planche-model/src/index.ts",
+          "line": 10,
+          "excerpt": "export * from \"./inference.js\";"
+        },
+        {
+          "path": "packages/planche-model/src/inference.ts",
+          "line": 436,
+          "excerpt": "export function inferer(e: EntreeInference): Inference {"
+        },
+        {
+          "path": "packages/planche-model/src/inference.ts",
+          "line": 576,
+          "excerpt": "export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): GeometrieVisible {"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts",
+          "line": 255,
+          "excerpt": "export function accrocher(p: Point2, cache: ReturnType<typeof segmentsDuNiveau>, options: Accrochages, rayon: number, depuis: Point2 | null, exclure: readonly string[] = []): Accroche {"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts",
+          "line": 8,
+          "excerpt": "import type { Accrochages } from \"../etat-ui\";"
+        }
+      ],
+      "studio_paths": [
+        "A",
+        "B",
+        "C"
+      ],
+      "public_surface_verdict": "Inférence Planche publique ; snapping plan2D seulement export de fichier interne, pas API de package.",
+      "react": "Aucun import React dans le noyau ciblé, vérification statique ; les modules UI cités comme manques ne sont pas une API publique Studio.",
+      "writer_ownership": "Fonctions pures : retour de données, aucune persistance. A2 fixe le contrat adaptateur, A3 implémente seulement après autorisation ; autorité serveur Studio et writer unique restent à décider physiquement en M17/DEC03/DEC12.",
+      "license_provenance": "Code natif Fadi, aucun tiers déclaré pour ce noyau. Licence propre à confirmer.",
+      "limits": [
+        "accrochage.ts est pur mais dépend du type etat-ui et de segmentsDuNiveau/ModeleAtelier. Pur ne signifie pas public.",
+        "Aucun accélérateur spatial Studio prouvé par cette lecture ; sémantique de priorité/ambiguïté à conserver."
+      ],
+      "missing_adapters": [
+        "Adaptateur document2D→géométrie visible sans niveau/modèle3D imposé.",
+        "Référence de snapping et futur index C doivent produire mêmes cibles/ambiguïtés dans tolérance déclarée ; ne pas importer UI en profondeur."
+      ],
+      "costs_to_measure": [
+        "Algorithme référence vs index : cibles équivalentes, cas superposés/trous/tangences",
+        "Temps par requête et reconstruction du cache, tolérance écran→mètres explicitée"
+      ],
+      "tests": {
+        "present_sources": [
+          {
+            "path": "packages/planche-model/src/inference.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          }
+        ],
+        "newly_executed": [],
+        "result": "Présence/statique seulement dans ce lot DEC18, aucun import ni test exécuté. Le passage pur CLASSIF1 antérieur reste sa preuve datée distincte."
+      },
+      "next_action": "Revue A2 des contrats puis A6 licences/provenance et coûts ; préparer la fiche DEC18 sans la clore. Aucun code/POC/nouveau paquet autorisé par cet inventaire."
+    },
+    {
+      "id": "MTR-05",
+      "name": "Contraintes 2D Atelier et solveur mécanique3D",
+      "state": "En cours — candidat de réemploi documenté, intégration Studio non implémentée/non acceptée",
+      "package": {
+        "name": "@parcours/atelier-model",
+        "version": "0.1.0",
+        "entry": "./src/index.ts",
+        "private": true,
+        "react_declared_dependency": false,
+        "license_declared": null,
+        "runtime_dependencies": {
+          "@parcours/core-geometry": "0.1.0",
+          "@parcours/domain-model": "0.1.0",
+          "@parcours/planche-model": "0.1.0"
+        },
+        "evidence": {
+          "path": "packages/atelier-model/package.json",
+          "line": 6,
+          "excerpt": "  \"exports\": {"
+        }
+      },
+      "public_entry_chain": [
+        "@parcours/atelier-model",
+        "index export * contraintes.js ; export nomme resoudreContraintes depuis solveur mécanique"
+      ],
+      "api_and_types": [
+        "ParamsContrainte",
+        "Systeme",
+        "ResultatResolution",
+        "systeme",
+        "resoudreSysteme",
+        "appliquerSolution",
+        "diagnosticContraintes",
+        "resoudreContraintes",
+        "ContrainteSolveur",
+        "ResultatSolveur"
+      ],
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 38,
+          "excerpt": "export * from \"./contraintes.js\";"
+        },
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 82,
+          "excerpt": "export { resoudre as resoudreContraintes, type ContrainteSolveur, type Diagnostic, type PoseRigide, type ResultatSolveur } from \"./ontologies/mechanical/solveur.js\";"
+        },
+        {
+          "path": "packages/atelier-model/src/contraintes.ts",
+          "line": 88,
+          "excerpt": "export const MAX_VARIABLES = 200;"
+        },
+        {
+          "path": "packages/atelier-model/src/contraintes.ts",
+          "line": 156,
+          "excerpt": "export function systeme(etat: ModeleAtelier, contraintes: (Relation & { params: ParamsContrainte })[], fixes: { id: string; i: number }[] = []): Systeme {"
+        },
+        {
+          "path": "packages/atelier-model/src/ontologies/mechanical/solveur.ts",
+          "line": 42,
+          "excerpt": "export const ITERATIONS_MAX = 100;"
+        }
+      ],
+      "studio_paths": [
+        "A",
+        "B",
+        "C"
+      ],
+      "public_surface_verdict": "Exports publics existants, deux domaines de résolution distincts ; pas solveur universel Studio validé.",
+      "react": "Aucun import React dans le noyau ciblé, vérification statique ; les modules UI cités comme manques ne sont pas une API publique Studio.",
+      "writer_ownership": "Fonctions pures : retour de données, aucune persistance. A2 fixe le contrat adaptateur, A3 implémente seulement après autorisation ; autorité serveur Studio et writer unique restent à décider physiquement en M17/DEC03/DEC12.",
+      "license_provenance": "Solveurs locaux Fadi, package sans tierce dépendance spécifique de solveur ; licence propre non déclarée.",
+      "limits": [
+        "Solveur2D lié à ModeleAtelier/relations/esquisses ; MAX_VARIABLES200 et TOLERANCE_CONTRAINTE5e-6 sont des bornes sources, pas capacité garantie.",
+        "Solveur mécanique poses rigides/liaisons ≠ contraintes topologiques d’un document2D ou conservation d’identité après B-Rep.",
+        "Sur-contrainte, non convergence et références supprimées doivent rester des refus/diagnostics explicites."
+      ],
+      "missing_adapters": [
+        "Projection contrôlée du document2D autonome vers le système de contraintes et restitution par commande de son écrivain.",
+        "Contrat d’associations C, refus atomique et diagnostic stable selon DEC02/DEC06/DEC18."
+      ],
+      "costs_to_measure": [
+        "Convergence/rang/résidu, singularités/redondances, limite nombre variables et temps",
+        "Effet des tolérances physiques/unités et latence de résolution incrémentale"
+      ],
+      "tests": {
+        "present_sources": [
+          {
+            "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          },
+          {
+            "path": "packages/atelier-model/src/contraintes-cercles.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          },
+          {
+            "path": "packages/atelier-model/src/ontologies/mechanical/mechanical.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          }
+        ],
+        "newly_executed": [],
+        "result": "Présence/statique seulement dans ce lot DEC18, aucun import ni test exécuté. Le passage pur CLASSIF1 antérieur reste sa preuve datée distincte."
+      },
+      "next_action": "Revue A2 des contrats puis A6 licences/provenance et coûts ; préparer la fiche DEC18 sans la clore. Aucun code/POC/nouveau paquet autorisé par cet inventaire."
+    },
+    {
+      "id": "MTR-06",
+      "name": "Noyau B-Rep exact OCCT via façade Fadi",
+      "state": "En cours — candidat de réemploi documenté, intégration Studio non implémentée/non acceptée",
+      "package": {
+        "name": "@parcours/geometry-exact",
+        "version": "0.1.0",
+        "entry": "./src/index.ts",
+        "private": true,
+        "react_declared_dependency": false,
+        "license_declared": null,
+        "runtime_dependencies": {
+          "occt-wasm": "5.6.1"
+        },
+        "evidence": {
+          "path": "packages/geometry-exact/package.json",
+          "line": 6,
+          "excerpt": "  \"exports\": {"
+        }
+      },
+      "public_entry_chain": [
+        "@parcours/geometry-exact",
+        "exports ./src/index.ts ; classe MoteurExact publique"
+      ],
+      "api_and_types": [
+        "OperationExacte",
+        "OptionsMoteur",
+        "SolideExact",
+        "CONTRAT_SOLIDE_EXACT=solide-exact/1",
+        "MoteurExact.charger",
+        "executer",
+        "exporterStep",
+        "mailler",
+        "validerOperation",
+        "memeResultat"
+      ],
+      "evidence": [
+        {
+          "path": "packages/geometry-exact/src/index.ts",
+          "line": 20,
+          "excerpt": "export const CONTRAT_SOLIDE_EXACT = \"solide-exact/1\" as const;"
+        },
+        {
+          "path": "packages/geometry-exact/src/index.ts",
+          "line": 248,
+          "excerpt": "export class MoteurExact {"
+        },
+        {
+          "path": "packages/geometry-exact/src/index.ts",
+          "line": 252,
+          "excerpt": "  static async charger(options: OptionsMoteur = {}, partager = true): Promise<MoteurExact> {"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts",
+          "line": 75,
+          "excerpt": "export const apercuExact = (op: unknown): Promise<SolideExact> => demander<SolideExact>({ nature: \"operation\", op });"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts",
+          "line": 9,
+          "excerpt": "import wasmUrl from \"occt-wasm/dist/occt-wasm.wasm?url\";"
+        }
+      ],
+      "studio_paths": [
+        "B",
+        "C"
+      ],
+      "public_surface_verdict": "Façade Fadi publique, noyau5.6.1 verrouillé ; client Worker actuel interne, non réutilisable comme API UI profonde.",
+      "react": "Aucun import React dans le noyau ciblé, vérification statique ; les modules UI cités comme manques ne sont pas une API publique Studio.",
+      "writer_ownership": "Fonctions pures : retour de données, aucune persistance. A2 fixe le contrat adaptateur, A3 implémente seulement après autorisation ; autorité serveur Studio et writer unique restent à décider physiquement en M17/DEC03/DEC12.",
+      "license_provenance": "occt-wasm5.6.1 : lock MIT OR Apache-2.0 pour wrapper/outillage ; README installé491–495 précise WASM LGPL-2.1-only. Règles D177/182/183 de binaire séparé remplaçable conservées ; conformité distribution à revoir A6, aucune nouvelle ratification des décisions déjà actées.",
+      "limits": [
+        "Brep canonique/maillage dérivé distincts ; Planche demeure maillage selon D177/182/183, aucune conversion paramétrique silencieuse.",
+        "Remplacement binaireWASM existant doit conserver licence/versions/empreinte ; reproductibilité et coût non remesurés ici.",
+        "Client Worker interne état global/localStorage et messages ; pas isolation contextuelle Studio, annulation/timeout/worker pool prouvés."
+      ],
+      "missing_adapters": [
+        "Contrat public d’exécution Worker/serveur, résultats liés document/revision/opération et refus résultat périmé.",
+        "Publication du client derrière adaptateur indépendant UI/stockage, source confiance/version/URLWASM validée ; aucun code à ce stade."
+      ],
+      "costs_to_measure": [
+        "Chargement froid/chaud, bytesWASM/mémoire, handles/libération et annulation",
+        "Déflexion/volume/aire/faces avant-après et comparaison empreinte par version serveur/client"
+      ],
+      "tests": {
+        "present_sources": [
+          {
+            "path": "packages/geometry-exact/src/index.test.ts",
+            "line": 1,
+            "excerpt": "import { beforeAll, describe, expect, it } from \"vitest\";"
+          },
+          {
+            "path": "apps/web/src/modules/atelier/nouveau/exact/operations.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          }
+        ],
+        "newly_executed": [],
+        "result": "Présence/statique seulement dans ce lot DEC18, aucun import ni test exécuté. Le passage pur CLASSIF1 antérieur reste sa preuve datée distincte."
+      },
+      "next_action": "Revue A2 des contrats puis A6 licences/provenance et coûts ; préparer la fiche DEC18 sans la clore. Aucun code/POC/nouveau paquet autorisé par cet inventaire."
+    },
+    {
+      "id": "MTR-07",
+      "name": "Booléens de maillage Manifold et interface injectée",
+      "state": "En cours — candidat de réemploi documenté, intégration Studio non implémentée/non acceptée",
+      "package": {
+        "name": "@parcours/planche-model",
+        "version": "0.1.0",
+        "entry": "./src/index.ts",
+        "private": true,
+        "react_declared_dependency": false,
+        "license_declared": null,
+        "runtime_dependencies": {},
+        "evidence": {
+          "path": "packages/planche-model/package.json",
+          "line": 6,
+          "excerpt": "  \"exports\": {"
+        }
+      },
+      "public_entry_chain": [
+        "@parcours/planche-model",
+        "index→outils/index export * machine.js et export nommé opererSolides"
+      ],
+      "api_and_types": [
+        "AdaptateurBooleens.union/difference/intersection",
+        "Maillage",
+        "ContexteOutil",
+        "opererSolides"
+      ],
+      "evidence": [
+        {
+          "path": "packages/planche-model/src/index.ts",
+          "line": 13,
+          "excerpt": "export * from \"./outils/index.js\";"
+        },
+        {
+          "path": "packages/planche-model/src/outils/machine.ts",
+          "line": 153,
+          "excerpt": "export interface AdaptateurBooleens {"
+        },
+        {
+          "path": "packages/planche-model/src/outils/index.ts",
+          "line": 19,
+          "excerpt": "export { opererSolides, type OperationSolide, type EtatSolide } from \"./solides.js\";"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/planche/booleens-manifold.ts",
+          "line": 38,
+          "excerpt": "export function chargerBooleens(): Promise<AdaptateurBooleens> {"
+        }
+      ],
+      "studio_paths": [
+        "B",
+        "C"
+      ],
+      "public_surface_verdict": "Interface Fadi publique et injection prévues ; implémentation chargerBooleens demeure interne apps/web.",
+      "react": "Aucun import React dans le noyau ciblé, vérification statique ; les modules UI cités comme manques ne sont pas une API publique Studio.",
+      "writer_ownership": "Fonctions pures : retour de données, aucune persistance. A2 fixe le contrat adaptateur, A3 implémente seulement après autorisation ; autorité serveur Studio et writer unique restent à décider physiquement en M17/DEC03/DEC12.",
+      "license_provenance": "manifold-3d3.5.4 épinglé apps/web et lock intégrité, licence Apache-2.0 déclarée ; adapter Fadi suivi, dépendances transitives listées lock mais aucun audit complet SBOM effectué.",
+      "limits": [
+        "Apache-2.0 manifold3.5.4 n’est pas DrawAll ; booléen de maillage jamais présenté comme B-Rep exact.",
+        "Conversion Float32 et faceID conditionnel : fidélité/topologie et identités à qualifier, pas association stable supposée.",
+        "Initialisation WASM et cancellation/timeouts/mémoire pas validés Studio."
+      ],
+      "missing_adapters": [
+        "Adaptateur public au contrat existant sans import profond apps/web, cycle de vie et journal des pertes topologiques.",
+        "Validation résultat et remontée erreur par commande native, pas écriture directe du modèle."
+      ],
+      "costs_to_measure": [
+        "Coût conversion Float32 et pertes précision/faceID",
+        "Temps booléen et fuite mémoire selon nombre faces ; chargement paresseux réel"
+      ],
+      "tests": {
+        "present_sources": [
+          {
+            "path": "apps/web/src/modules/atelier/nouveau/planche/booleens-manifold.test.ts",
+            "line": 1,
+            "excerpt": "/** Lot 6 — CA-COQ-1, CA-BOO-1 à -5 avec le vrai moteur manifold-3d (Node, WASM), boîtes alignées sur les axes. */"
+          }
+        ],
+        "newly_executed": [],
+        "result": "Présence/statique seulement dans ce lot DEC18, aucun import ni test exécuté. Le passage pur CLASSIF1 antérieur reste sa preuve datée distincte."
+      },
+      "next_action": "Revue A2 des contrats puis A6 licences/provenance et coûts ; préparer la fiche DEC18 sans la clore. Aucun code/POC/nouveau paquet autorisé par cet inventaire."
+    },
+    {
+      "id": "MTR-08",
+      "name": "Commandes réversibles et modèle Atelier natif",
+      "state": "En cours — candidat de réemploi documenté, intégration Studio non implémentée/non acceptée",
+      "package": {
+        "name": "@parcours/atelier-model",
+        "version": "0.1.0",
+        "entry": "./src/index.ts",
+        "private": true,
+        "react_declared_dependency": false,
+        "license_declared": null,
+        "runtime_dependencies": {
+          "@parcours/core-geometry": "0.1.0",
+          "@parcours/domain-model": "0.1.0",
+          "@parcours/planche-model": "0.1.0"
+        },
+        "evidence": {
+          "path": "packages/atelier-model/package.json",
+          "line": 6,
+          "excerpt": "  \"exports\": {"
+        }
+      },
+      "public_entry_chain": [
+        "@parcours/atelier-model",
+        "index export * commandes/index.js ; types réexportés depuis base.js"
+      ],
+      "api_and_types": [
+        "Commande",
+        "Enveloppe",
+        "Effets",
+        "ResultatLot",
+        "appliquerCommande",
+        "appliquerLot",
+        "differentiel",
+        "appliquerDifferentiel",
+        "commandeInverse",
+        "CONTRAT_COMMANDES=atelier-commands/3",
+        "CONTRATS_ACCEPTES=1/2/3"
+      ],
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 21,
+          "excerpt": "export * from \"./commandes/index.js\";"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/index.ts",
+          "line": 410,
+          "excerpt": "export function appliquerLot(etat: ModeleAtelier, enveloppe: Enveloppe): ResultatLot {"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/index.ts",
+          "line": 452,
+          "excerpt": "export type { Commande, Enveloppe, Effets, ContexteCommande, InstantaneDiff, Reducteur };"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/base.ts",
+          "line": 9,
+          "excerpt": "export const CONTRAT_COMMANDES = \"atelier-commands/3\" as const;"
+        }
+      ],
+      "studio_paths": [
+        "A",
+        "B",
+        "C"
+      ],
+      "public_surface_verdict": "Contrat public pur de commandes Atelier, pas contrat physique C-COMMAND Studio déjà implémenté.",
+      "react": "Aucun import React dans le noyau ciblé, vérification statique ; les modules UI cités comme manques ne sont pas une API publique Studio.",
+      "writer_ownership": "Réducteurs purs ne persistent rien. Écriture Atelier actuelle via API de commandes transactionnelle ; écrivains Studio uniques par autorité à établir M17/DEC03/DEC12. A3 ne crée aucun handler Studio sous cette analyse.",
+      "license_provenance": "Modèle et réducteurs Fadi suivis ; package version0.1.0 distinct des contrats1/2/3 ; licence propre non déclarée.",
+      "limits": [
+        "Ne pas renuméroter/downgrader les contrats pour aligner ancien README/manifest.",
+        "L’enveloppe ne garantit pas seule tenant/projet/étude/variante/doc/revision/permissions, requestId et durabilité serveur Studio.",
+        "Commandes et ontologies industrielles natives conservées ; aucun outil supprimé pour simplifier Studio."
+      ],
+      "missing_adapters": [
+        "Relier C-COMMAND logique G1 à autorités séparées2D/3D/associé, baseRevision et versions de contrat distinctes.",
+        "Adaptateur/handlers versionnés, atomicité complète et inverse exact, refus de résultat sans auteur autorisé."
+      ],
+      "costs_to_measure": [
+        "Coût clone/diff/contrôles postcommande, taille du journal et rejouabilité",
+        "Cas négatifs contexte/version/droit/second objet invalide sans effet partiel"
+      ],
+      "tests": {
+        "present_sources": [
+          {
+            "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          },
+          {
+            "path": "packages/atelier-model/src/commandes/classification-conservation.test.ts",
+            "line": 1,
+            "excerpt": "/** Oracles indépendants A5 — D-065/D-111/D-112, acceptation historique D-174 conservée."
+          },
+          {
+            "path": "packages/atelier-model/src/commandes/verrous.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          }
+        ],
+        "newly_executed": [],
+        "result": "Présence/statique seulement dans ce lot DEC18, aucun import ni test exécuté. Le passage pur CLASSIF1 antérieur reste sa preuve datée distincte."
+      },
+      "next_action": "Revue A2 des contrats puis A6 licences/provenance et coûts ; préparer la fiche DEC18 sans la clore. Aucun code/POC/nouveau paquet autorisé par cet inventaire."
+    },
+    {
+      "id": "MTR-09",
+      "name": "Historique, versions, archives et synchronisation",
+      "state": "En cours — candidat de réemploi documenté, intégration Studio non implémentée/non acceptée",
+      "package": {
+        "name": "@parcours/atelier-model",
+        "version": "0.1.0",
+        "entry": "./src/index.ts",
+        "private": true,
+        "react_declared_dependency": false,
+        "license_declared": null,
+        "runtime_dependencies": {
+          "@parcours/core-geometry": "0.1.0",
+          "@parcours/domain-model": "0.1.0",
+          "@parcours/planche-model": "0.1.0"
+        },
+        "evidence": {
+          "path": "packages/atelier-model/package.json",
+          "line": 6,
+          "excerpt": "  \"exports\": {"
+        }
+      },
+      "public_entry_chain": [
+        "@parcours/atelier-model",
+        "index export * versions.js/sync.js/reprise.js/archive.js ; Planche delta.js public séparé"
+      ],
+      "api_and_types": [
+        "Dessin",
+        "etatARevision",
+        "comparerModeles",
+        "comparerDessins",
+        "analyserFusion",
+        "cibleAnnulation",
+        "cibleRetablissement",
+        "rejouerLots",
+        "verifierModele",
+        "differencePlanche",
+        "appliquerDeltaPlanche",
+        "empreintePlanche"
+      ],
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 44,
+          "excerpt": "export * from \"./versions.js\";"
+        },
+        {
+          "path": "packages/atelier-model/src/versions.ts",
+          "line": 53,
+          "excerpt": "export function etatARevision(etat: ModeleAtelier, revisionCourante: number, entrees: readonly EntreeJournalLue[], revisionCible: number): ModeleAtelier {"
+        },
+        {
+          "path": "packages/atelier-model/src/sync.ts",
+          "line": 61,
+          "excerpt": "export function rejouerLots(etatServeur: ModeleAtelier, revisionServeur: number, lots: readonly LotEnAttente[]): ResultatRejeu {"
+        },
+        {
+          "path": "packages/planche-model/src/index.ts",
+          "line": 14,
+          "excerpt": "export * from \"./delta.js\";"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/planche/historique.ts",
+          "line": 23,
+          "excerpt": "export function historiqueInitial(modele: Modele): Historique {"
+        }
+      ],
+      "studio_paths": [
+        "A",
+        "B",
+        "C"
+      ],
+      "public_surface_verdict": "Algorithmes publics utiles ; historique local Planche interne et service journal API non API de paquet partagée.",
+      "react": "Aucun import React dans le noyau ciblé, vérification statique ; les modules UI cités comme manques ne sont pas une API publique Studio.",
+      "writer_ownership": "Fonctions pures : retour de données, aucune persistance. A2 fixe le contrat adaptateur, A3 implémente seulement après autorisation ; autorité serveur Studio et writer unique restent à décider physiquement en M17/DEC03/DEC12.",
+      "license_provenance": "Code Fadi suivi, aucun moteur distant déclaré ; licence propre à confirmer. Le service API et le stockage réel ne sont pas éprouvés par cet inventaire.",
+      "limits": [
+        "Versions Atelier courantes et archives ≠ identité logique Projet→Étude→Variante→Révision.",
+        "Historique local Planche pur limité200pas n’est ni journal serveur ni preuve de sauvegarde durable.",
+        "Empreinte n’est ni autorisation, signature de publication ni preuve de restauration."
+      ],
+      "missing_adapters": [
+        "Révisions immuables/contexte/auteur/parentage et writerAuthority M17G1v2, stockage/IDs physiques DEC03 ouverts.",
+        "Frontière journal durable/rejeu local/publication ; formats anciens préservés sans migration supposée."
+      ],
+      "costs_to_measure": [
+        "Taille/temps snapshot/diff/rejeu, reconstruction N révisions et conflits",
+        "Durabilité/reprise après coupure et limites de rétention à spécifier sans toucher sauvegardes"
+      ],
+      "tests": {
+        "present_sources": [
+          {
+            "path": "packages/atelier-model/src/versions.test.ts",
+            "line": 1,
+            "excerpt": "import { readFileSync } from \"node:fs\";"
+          },
+          {
+            "path": "packages/atelier-model/src/sync.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          },
+          {
+            "path": "packages/atelier-model/src/reprise.test.ts",
+            "line": 1,
+            "excerpt": "import { readFileSync } from \"node:fs\";"
+          },
+          {
+            "path": "packages/atelier-model/src/archive.test.ts",
+            "line": 1,
+            "excerpt": "import { readFileSync } from \"node:fs\";"
+          },
+          {
+            "path": "packages/planche-model/src/delta.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          }
+        ],
+        "newly_executed": [],
+        "result": "Présence/statique seulement dans ce lot DEC18, aucun import ni test exécuté. Le passage pur CLASSIF1 antérieur reste sa preuve datée distincte."
+      },
+      "next_action": "Revue A2 des contrats puis A6 licences/provenance et coûts ; préparer la fiche DEC18 sans la clore. Aucun code/POC/nouveau paquet autorisé par cet inventaire."
+    },
+    {
+      "id": "MTR-10",
+      "name": "Documents, vues, feuilles et rendus SVG/PDF/DXF",
+      "state": "En cours — candidat de réemploi documenté, intégration Studio non implémentée/non acceptée",
+      "package": {
+        "name": "@parcours/atelier-model",
+        "version": "0.1.0",
+        "entry": "./src/index.ts",
+        "private": true,
+        "react_declared_dependency": false,
+        "license_declared": null,
+        "runtime_dependencies": {
+          "@parcours/core-geometry": "0.1.0",
+          "@parcours/domain-model": "0.1.0",
+          "@parcours/planche-model": "0.1.0"
+        },
+        "evidence": {
+          "path": "packages/atelier-model/package.json",
+          "line": 6,
+          "excerpt": "  \"exports\": {"
+        }
+      },
+      "public_entry_chain": [
+        "@parcours/atelier-model",
+        "index→documents/dessin,vues,feuilles,rendu-svg,rendu-pdf ; dxfVue/dxfFeuille nommés"
+      ],
+      "api_and_types": [
+        "Primitive",
+        "Bornes",
+        "VueGeneree",
+        "FeuilleComposee",
+        "genererVue",
+        "composerFeuille",
+        "elementsSvg",
+        "pdfPage",
+        "svgVue",
+        "pdfFeuille",
+        "dxfVue",
+        "dxfFeuille"
+      ],
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 29,
+          "excerpt": "export * from \"./documents/dessin.js\";"
+        },
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 36,
+          "excerpt": "export { dxfVue, dxfFeuille } from \"./documents/rendu-dxf.js\";"
+        },
+        {
+          "path": "packages/atelier-model/src/documents/rendu-svg.ts",
+          "line": 32,
+          "excerpt": "export function elementsSvg(primitives: readonly Primitive[], vers: VersFeuille): string {"
+        },
+        {
+          "path": "packages/atelier-model/src/documents/rendu-pdf.ts",
+          "line": 116,
+          "excerpt": "export function pdfPage(largeurMm: number, hauteurMm: number, primitives: readonly Primitive[], titre: string): Uint8Array {"
+        },
+        {
+          "path": "packages/atelier-model/src/documents/vues.ts",
+          "line": 861,
+          "excerpt": "export function genererVue(etat: ModeleAtelier, params: ParamsVue, definitionId: string | null = null, options: OptionsGeneration = {}): VueGeneree {"
+        }
+      ],
+      "studio_paths": [
+        "A",
+        "B",
+        "C"
+      ],
+      "public_surface_verdict": "Primitives/rendus publics réutilisables ; vues/feuilles actuellement alimentées par ModeleAtelier.",
+      "react": "Aucun import React dans le noyau ciblé, vérification statique ; les modules UI cités comme manques ne sont pas une API publique Studio.",
+      "writer_ownership": "Fonctions pures : retour de données, aucune persistance. A2 fixe le contrat adaptateur, A3 implémente seulement après autorisation ; autorité serveur Studio et writer unique restent à décider physiquement en M17/DEC03/DEC12.",
+      "license_provenance": "Générateurs locaux Fadi sans bibliothèque PDF déclarée par ce paquet. Licence propre et provenance des fontes/ressources finales restent à vérifier A6.",
+      "limits": [
+        "Primitive de rendu/document ≠ contenu canonique2D ni documentId/version de pièce/revisionId.",
+        "PDF utilise WinAnsi : police/Unicode/FR-EN et normes dessin à qualifier par corpus, pas conformité présumée.",
+        "Moteur ne fournit pas seul contrôle/approbation/publication exacte de l’ensemble M24."
+      ],
+      "missing_adapters": [
+        "Projection du canoniqueA autonome vers primitives sans modèle3D fictif.",
+        "Manifestes C-PUBLICATION versions/empreintes/droits et restitution des ressources/styles/annotations, refus état périmé."
+      ],
+      "costs_to_measure": [
+        "Fidélité cotations/styles/polices/échelle/repères sur différentsformats",
+        "Temps génération/bytes et mémoire, génération Worker/annulation/rendu navigateur distincts"
+      ],
+      "tests": {
+        "present_sources": [
+          {
+            "path": "packages/atelier-model/src/documents/documents.test.ts",
+            "line": 1,
+            "excerpt": "import { readFileSync } from \"node:fs\";"
+          },
+          {
+            "path": "packages/atelier-model/src/documents/historique-feuille.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          },
+          {
+            "path": "packages/atelier-model/src/documents/axonometrie.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          }
+        ],
+        "newly_executed": [],
+        "result": "Présence/statique seulement dans ce lot DEC18, aucun import ni test exécuté. Le passage pur CLASSIF1 antérieur reste sa preuve datée distincte."
+      },
+      "next_action": "Revue A2 des contrats puis A6 licences/provenance et coûts ; préparer la fiche DEC18 sans la clore. Aucun code/POC/nouveau paquet autorisé par cet inventaire."
+    },
+    {
+      "id": "MTR-11",
+      "name": "Échanges IFC : export pur et adaptateur de lecture",
+      "state": "En cours — candidat de réemploi documenté, intégration Studio non implémentée/non acceptée",
+      "package": {
+        "name": "@parcours/atelier-model",
+        "version": "0.1.0",
+        "entry": "./src/index.ts",
+        "private": true,
+        "react_declared_dependency": false,
+        "license_declared": null,
+        "runtime_dependencies": {
+          "@parcours/core-geometry": "0.1.0",
+          "@parcours/domain-model": "0.1.0",
+          "@parcours/planche-model": "0.1.0"
+        },
+        "evidence": {
+          "path": "packages/atelier-model/package.json",
+          "line": 6,
+          "excerpt": "  \"exports\": {"
+        }
+      },
+      "public_entry_chain": [
+        "@parcours/atelier-model",
+        "index export * echanges/ifc.js/import-ifc.js"
+      ],
+      "api_and_types": [
+        "exporterIfc",
+        "OptionsExportIfc",
+        "RapportEchange",
+        "LectureIfc",
+        "ProduitIfcLu",
+        "OptionsImportIfc",
+        "commandesImportIfc",
+        "ResultatImportIfc"
+      ],
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 40,
+          "excerpt": "export * from \"./echanges/ifc.js\";"
+        },
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 41,
+          "excerpt": "export * from \"./echanges/import-ifc.js\";"
+        },
+        {
+          "path": "packages/atelier-model/src/echanges/ifc.ts",
+          "line": 150,
+          "excerpt": "export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { contenu: string; rapport: RapportEchange } {"
+        },
+        {
+          "path": "packages/atelier-model/src/echanges/import-ifc.ts",
+          "line": 133,
+          "excerpt": "export function commandesImportIfc(etat: ModeleAtelier, lecture: LectureIfc, options: OptionsImportIfc): ResultatImportIfc {"
+        },
+        {
+          "path": "apps/api/src/lib/atelier-ifc.ts",
+          "line": 12,
+          "excerpt": "import * as WebIFC from \"web-ifc\";"
+        }
+      ],
+      "studio_paths": [
+        "B",
+        "C"
+      ],
+      "public_surface_verdict": "Écriture texte et traduction lecture→commandes publiques/pures ; parseur binaire web-ifc actuellement dans API interne.",
+      "react": "Aucun import React dans le noyau ciblé, vérification statique ; les modules UI cités comme manques ne sont pas une API publique Studio.",
+      "writer_ownership": "Fonctions pures : retour de données, aucune persistance. A2 fixe le contrat adaptateur, A3 implémente seulement après autorisation ; autorité serveur Studio et writer unique restent à décider physiquement en M17/DEC03/DEC12.",
+      "license_provenance": "web-ifc0.0.78 MPL-2.0 dans apps/api/lock ; export Fadi local distinct du parseurtiers. Licences distribution/provenance et contenus importés àqualifier, sanstest externe ici.",
+      "limits": [
+        "Import crée objet-importe/représentations/proxys ; pas conservation paramétrique intégrale ni certification BIM.",
+        "Conversion Y/Z du lecteur et MapConversion explicites ; rotation/échelle/CRS non supportés rapportés, jamais devinés.",
+        "Trois validations IFC historiques n’acceptent pas Studio et ne valent pas test nouveau."
+      ],
+      "missing_adapters": [
+        "Contrat lecteur isolé/contextuel/limitesfichiers et ressourcesWASM ; traductions d’unités/repères/import partiel avec rapport.",
+        "Publication M24 exactensemble et droits serveur ; pas exposition du parser interne par importprofond."
+      ],
+      "costs_to_measure": [
+        "Types/entités/champs conservés vs pertes explicites, fidélité géométrique et quantités",
+        "Taille mémoire parseur/fichier, temps import/export, isolation et interruption sûre"
+      ],
+      "tests": {
+        "present_sources": [
+          {
+            "path": "packages/atelier-model/src/echanges/echanges.test.ts",
+            "line": 1,
+            "excerpt": "import { readFileSync } from \"node:fs\";"
+          },
+          {
+            "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          },
+          {
+            "path": "packages/atelier-model/src/annexe-c.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          }
+        ],
+        "newly_executed": [],
+        "result": "Présence/statique seulement dans ce lot DEC18, aucun import ni test exécuté. Le passage pur CLASSIF1 antérieur reste sa preuve datée distincte."
+      },
+      "next_action": "Revue A2 des contrats puis A6 licences/provenance et coûts ; préparer la fiche DEC18 sans la clore. Aucun code/POC/nouveau paquet autorisé par cet inventaire."
+    },
+    {
+      "id": "MTR-12",
+      "name": "Catalogue, machines outils et contrat Registry/Manager",
+      "state": "En cours — candidat de réemploi documenté, intégration Studio non implémentée/non acceptée",
+      "package": {
+        "name": "@parcours/planche-model",
+        "version": "0.1.0",
+        "entry": "./src/index.ts",
+        "private": true,
+        "react_declared_dependency": false,
+        "license_declared": null,
+        "runtime_dependencies": {},
+        "evidence": {
+          "path": "packages/planche-model/package.json",
+          "line": 6,
+          "excerpt": "  \"exports\": {"
+        }
+      },
+      "public_entry_chain": [
+        "@parcours/planche-model",
+        "index export * catalogue-outils.js et outils/index.js→machine.js"
+      ],
+      "api_and_types": [
+        "Outil",
+        "OUTILS",
+        "outilParId",
+        "outilParRaccourci",
+        "rechercherOutil",
+        "MACHINES",
+        "machineParId",
+        "MachineOutil",
+        "ContexteOutil",
+        "EvenementOutil",
+        "Transition"
+      ],
+      "evidence": [
+        {
+          "path": "packages/planche-model/src/index.ts",
+          "line": 12,
+          "excerpt": "export * from \"./catalogue-outils.js\";"
+        },
+        {
+          "path": "packages/planche-model/src/outils/index.ts",
+          "line": 24,
+          "excerpt": "export const MACHINES: ReadonlyMap<string, MachineOutil<any>> = new Map("
+        },
+        {
+          "path": "packages/planche-model/src/outils/index.ts",
+          "line": 28,
+          "excerpt": "export function machineParId(id: string): MachineOutil<any> | undefined {"
+        },
+        {
+          "path": "packages/planche-model/src/outils/machine.ts",
+          "line": 188,
+          "excerpt": "export interface MachineOutil<E> {"
+        },
+        {
+          "path": "packages/planche-model/src/catalogue-outils.ts",
+          "line": 9,
+          "excerpt": " * - `statutReleve` : `observe` (vu en direct), `instructor` (texte du panneau Instructor, non éprouvé),"
+        }
+      ],
+      "studio_paths": [
+        "A",
+        "B",
+        "C"
+      ],
+      "public_surface_verdict": "Machines et catalogue publics ; ni ToolRegistry Studio versionné ni Manager de chargement complet constatés.",
+      "react": "Aucun import React dans le noyau ciblé, vérification statique ; les modules UI cités comme manques ne sont pas une API publique Studio.",
+      "writer_ownership": "Fonctions pures : retour de données, aucune persistance. A2 fixe le contrat adaptateur, A3 implémente seulement après autorisation ; autorité serveur Studio et writer unique restent à décider physiquement en M17/DEC03/DEC12.",
+      "license_provenance": "Implémentation Fadi ; catalogue cite observation/documentation SketchUp comme référence d’ergonomie, pas dépendance opérationnelle ni preuve de droit à copier des ressources. Licence propre et ressources icônes àqualifier.",
+      "limits": [
+        "statutReleve observe/instructor/non-verifie/fadi est provenance de relevé UX, pas statut implémenté/vérifié/disponible.",
+        "Map MACHINES ReadonlyMap côté type n’est pas preuve de scellement runtime ni de permissions.",
+        "Icône/barre/raccourci et tactile de la règleD202 restent obligatoires ; ne pas transformer métadonnées en capacité active."
+      ],
+      "missing_adapters": [
+        "Contrat Registry B : identity/version/domains/document/capabilities/deps/permissions, chargement et indisponibilité explicites.",
+        "Manager lifecycle mount/unmount/cancel/error/worker, FR-EN/clavier/accessibilité, mêmescommandes sanswriterconcurrent."
+      ],
+      "costs_to_measure": [
+        "Charge initiale/àla demande, mémoire/tempsactivation et récupération erreur",
+        "Résolution identifiants/collisions raccourcis, couverture états/outils et intégrité des dépendances"
+      ],
+      "tests": {
+        "present_sources": [
+          {
+            "path": "packages/planche-model/src/catalogue-outils.test.ts",
+            "line": 1,
+            "excerpt": "import { existsSync } from \"node:fs\";"
+          },
+          {
+            "path": "packages/planche-model/src/outils/registre-formes.test.ts",
+            "line": 1,
+            "excerpt": "import { describe, expect, it } from \"vitest\";"
+          }
+        ],
+        "newly_executed": [],
+        "result": "Présence/statique seulement dans ce lot DEC18, aucun import ni test exécuté. Le passage pur CLASSIF1 antérieur reste sa preuve datée distincte."
+      },
+      "next_action": "Revue A2 des contrats puis A6 licences/provenance et coûts ; préparer la fiche DEC18 sans la clore. Aucun code/POC/nouveau paquet autorisé par cet inventaire."
+    }
+  ],
+  "locked_third_party": {
+    "occt-wasm": {
+      "version": "5.6.1",
+      "resolved": "https://registry.npmjs.org/occt-wasm/-/occt-wasm-5.6.1.tgz",
+      "integrity": "sha512-Oizs4+eEBq6EI92rC7RRbMw9oWbYkaaugn7ljnNnFpX5nhoDoastBSLYH0wnF3tq1yicEvk6Rzy9hhoWp9E7WQ==",
+      "license": "MIT OR Apache-2.0",
+      "dependencies": {
+        "comlink": "^4.4.2"
+      }
+    },
+    "manifold-3d": {
+      "version": "3.5.4",
+      "resolved": "https://registry.npmjs.org/manifold-3d/-/manifold-3d-3.5.4.tgz",
+      "integrity": "sha512-WWsme5HabwLHVcWPHT9m+s7mdmDVSEvCny+uXH1E7jEc8FbFUgM75C3Dh6NVw57Eeh3Ow7+xHCuXfxDMOemi9A==",
+      "license": "Apache-2.0",
+      "dependencies": {
+        "@gltf-transform/core": "^4.2.0",
+        "@gltf-transform/extensions": "^4.2.0",
+        "@gltf-transform/functions": "^4.2.0",
+        "@jridgewell/resolve-uri": "^3.1.2",
+        "@jridgewell/trace-mapping": "^0.3.31",
+        "@jscadui/3mf-export": "^0.5.0",
+        "commander": "^13.1.0",
+        "convert-source-map": "^2.0.0",
+        "fast-xml-parser": "^5.4.2",
+        "fflate": "^0.8.0",
+        "magic-string": "^0.30.21"
+      }
+    },
+    "web-ifc": {
+      "version": "0.0.78",
+      "resolved": "https://registry.npmjs.org/web-ifc/-/web-ifc-0.0.78.tgz",
+      "integrity": "sha512-LGKMNYFVNyz9vVERN0iz+zvPQJqT7MEGBxslzcuuhwDDOA116LmJLKkg8sZ5SEvQJSc5NRVMWgpRNkDmuoQoJg==",
+      "license": "MPL-2.0"
+    }
+  },
+  "lock_reference": {
+    "path": "package-lock.json",
+    "line": 3629,
+    "excerpt": "    \"node_modules/occt-wasm\": {"
+  },
+  "license_evidence": [
+    {
+      "path": "node_modules/occt-wasm/README.md",
+      "line": 491,
+      "excerpt": "**Build tooling** (xtask, scripts, TypeScript wrapper): MIT OR Apache-2.0"
+    },
+    {
+      "path": "node_modules/occt-wasm/README.md",
+      "line": 493,
+      "excerpt": "**Compiled WASM output**: LGPL-2.1-only (inherits from [OCCT](https://dev.opencascade.org/resources/download))"
+    }
+  ],
+  "historical_decisions_preserved": [
+    {
+      "path": "docs/atelier/decisions.md",
+      "line": 181,
+      "excerpt": "| D-177 | 2026-10-08 | **Licence OCCT arbitrée** : OCCT entre comme **composant LGPL chargé séparément** — fichier `.wasm` servi depuis une URL propre, téléchargé à la demande dans un Web Worker après"
+    },
+    {
+      "path": "docs/atelier/decisions.md",
+      "line": 186,
+      "excerpt": "| D-182 | 2026-10-08 | **Lot P2-0 accepté sur dossier, lot P2-1 (noyau exact) engagé et livré.** Acceptation de P2-0 sur le compte rendu `lots/p2-lot-0.md`, les mesures `p2-mesures.md` et la relecture"
+    },
+    {
+      "path": "docs/atelier/decisions.md",
+      "line": 187,
+      "excerpt": "| D-183 | 2026-10-08 | **Lot P2-1 accepté sur dossier ; lot P2-2 (mécanique et assemblages) engagé ; décisions 10.1 déléguées au chef de projet pour la suite de P2.** Le maître d'ouvrage a délégué par"
+    }
+  ],
+  "source_inventory": [
+    {
+      "path": "packages/core-geometry/package.json",
+      "sha256": "229bc46d4ea297389e0e8f39288f1a2e3a38c98f021269a2f49811aeccc82636",
+      "git_blob": "9be6f4bf2f711bdda59cd70434d98717f93bca37",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/package.json",
+      "sha256": "f953685848e93d33a7709aa61001dc7444a588038912b6a324ce5365847b59f5",
+      "git_blob": "bc67bf33589dbcffd8c91711488f756096de2808",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/package.json",
+      "sha256": "2f12672cad6c1362cec2c94a919192b360f0520b18371b68a696ded0c1b2f846",
+      "git_blob": "1ff2b1331d991cb6302557c14fe67a94c72b51f2",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/geometry-exact/package.json",
+      "sha256": "544697f26c4513fda9527546ea4df7bf10b646546827701a5b56be6110178e75",
+      "git_blob": "a7b875463110a1ac276d968b9f49be0ed661fab0",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/core-geometry/src/index.ts",
+      "sha256": "7e02df528d83c7c6fcc8ad3a038901915b9826438153505778036e4156090e67",
+      "git_blob": "50694182121b7005044d67204bd157966e5ed45e",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/core-geometry/src/geometry.ts",
+      "sha256": "7bf209c60bed52f18c56112df45f738b30c9966fa2ab929495ef5605b357f280",
+      "git_blob": "babfeaa7683a891244c7aad4e15d21ebac2a3984",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/core-geometry/README.md",
+      "sha256": "13ff111540dbb6cccc6872b37482b7abfee00f3edc50daf7d75c9ee2c6b16dc4",
+      "git_blob": "40e3ed5699e74aee939fff67bf66ffa5e73aad54",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/core-geometry/src/parcel-geometry.ts",
+      "sha256": "63fd3e8efd912acec5e8a0c74fc6768e05b769e1a5ef28fe5e5a9b5a80a2643a",
+      "git_blob": "662007e0423a1207edf053b4ea7d3d8fde07954f",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/core-geometry/src/geometry.test.ts",
+      "sha256": "ab2612a89e298e954f080587ed426dd5f47eaeda1454e9ea465e8da8eda9a4b1",
+      "git_blob": "70e9b41e98b33c589bc31620cec7c2275c916add",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/core-geometry/src/parcel-geometry.test.ts",
+      "sha256": "cc739407f49cca614a770e9271ae234e9d823275f3b398065b064227d71f91f6",
+      "git_blob": "a946b02d7f539916b7fc72883cd979bf28be646a",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/core-geometry/src/site-zoning.test.ts",
+      "sha256": "72e2c856fac77d80cdf496a30248ed1a91e6c5592ffdfd01dc33d025a08d9ed3",
+      "git_blob": "cdf53a6246f0b6b6790f0d70a0b96e3dda6a30e5",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/index.ts",
+      "sha256": "285d0018b95a727e522f575a8e34c399b91e549a335dacc01ea549c28e4102f4",
+      "git_blob": "8de844c237534e110a0d8c07b7b8430aa7c1c9b0",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/geometrie.ts",
+      "sha256": "9e3b757529118909ef32881b08e3366b376f3aee100e83e2a29e5f6ade16910c",
+      "git_blob": "30812cb784ced7963b3061db7dd3eb619f796b60",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/unites.ts",
+      "sha256": "3517580471c608f482d7fb5ae9cd9a0045632079898ff5dbac23a1fdb917c2e4",
+      "git_blob": "47223ac307bcb61da70e0cba7b14460cbbc5b792",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/geometrie-outils.test.ts",
+      "sha256": "475c27d991a2c400378d07611ea63e17df9eacdcfd48e4935f32f5edcaf012fe",
+      "git_blob": "4c95334225a1fbfe51f72a484f08433e1398c6d3",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/projection/maillage.test.ts",
+      "sha256": "6e7dd4f59a6691c499ad8191df498490b3163110146581756bb7ce5eb5825dd2",
+      "git_blob": "4bffbe7b626c1ad2661e5cb2b88379b387515d58",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/index.ts",
+      "sha256": "54fdd6707c1b12e618eed6ddb53cba7dd92fc066baa1a4fad1805e576e925f2d",
+      "git_blob": "b4115f50e38e492acfed0ff7a405a99404c931ae",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/geometrie-libre.ts",
+      "sha256": "9e3c838d985a7b3a792d4ce8e5a77e32726fd691a230702ed0f34083c1e6a0b4",
+      "git_blob": "8e966ce41ce3a06c3e16e8c6020d3c85916dda7c",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/representation.ts",
+      "sha256": "4e704ff0c568884ffbb2b432b7a927f257e2aefbcb48acfa3c2c2a0b4a2892bb",
+      "git_blob": "b50a5a37904f5a145dbb42c6c8f0a20febac57a2",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/vecteur.ts",
+      "sha256": "054316e926bd9e102dc1bb829678e712ec52eedc7efb3e50bea1d06f771c0d44",
+      "git_blob": "e3d9440557a4e623570a91152c5d820810359e9e",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/geometrie-libre.test.ts",
+      "sha256": "5f01741258b13811b0b76310504c62216498f28530b3d8c6ea96902a56d0a328",
+      "git_blob": "d4f7407143b7d3b15d391fd5c2ba689d819f4188",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/echanges.test.ts",
+      "sha256": "30a9c585a53f7f9d14b2b0b9035f48577412924231ba933976152abe056a705e",
+      "git_blob": "dd6af94a6dc37731f559227ef5c190d59a208fb6",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/inference.ts",
+      "sha256": "9ccec48c6e9ba326747ab6570830b9d865178681f63bbf075e9dd4afa1bd8f43",
+      "git_blob": "7562c2e15f223fa4b99edfb0cac723299510ae7b",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts",
+      "sha256": "9fa43b9b203a4c577f1cbafee4971b69fdf1775f6c1917d198aa577fa8d8b6fe",
+      "git_blob": "2a93faaaf9cddb0325bcf7986450e4a400738e41",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/inference.test.ts",
+      "sha256": "2a83b1061758f621c642807437b8cc9d40841864f5878158d7f5d915f2787934",
+      "git_blob": "c843bf1b46edd6d805ef7c58cbc6e33c992c5371",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/contraintes.ts",
+      "sha256": "05e46871b30a3b2366e73c90dbd6f10869c87a9127b22be6b8466728fee35729",
+      "git_blob": "9f11a0ef8c93bc51d87a4480bfd23cee61b98754",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/mechanical/solveur.ts",
+      "sha256": "742620d0381260471c1755486ec9d77bba8dfc2fb8a94e965034d23b30019f91",
+      "git_blob": "8d742d395c5252cd233f6b64df20edb18e032b3d",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+      "sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+      "git_blob": "5fcc75babb77747b5a284f2d6fc8bcb24cf12874",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/contraintes-cercles.test.ts",
+      "sha256": "0cdfb119b621a83ac690ebb8827abf9f1c9d039e5d998a9bb4867a6cfdc71083",
+      "git_blob": "726883b5e115fa01998f4f58c901c912414b892f",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/mechanical/mechanical.test.ts",
+      "sha256": "a3124f2a74b65879df435278ffed1c0423d6ad1cbffd46db6b01abde99054bcc",
+      "git_blob": "1d7196c8def570c4168cac0c13666e70d0c31d1a",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/geometry-exact/src/index.ts",
+      "sha256": "069b5e477417396eea81ac2546375343916d32ee2b4dcebd95a9c674d1dba034",
+      "git_blob": "cc2771d2d99466de67f1c12504e717a6aa339afb",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts",
+      "sha256": "ff535450de7f84ad37bbaab160affe2e67711b161afcf24a038ce20e67402958",
+      "git_blob": "5d6e8f9ae27e8070f567da3b07dc86f83c9d6e60",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts",
+      "sha256": "d3947984643b9d6a8881c52a5b940f2dc60c9aa1f068fcb08f8c4dcba440c8bf",
+      "git_blob": "8c1a16e6f47734f208aa006cd3476f6866a4ca07",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/geometry-exact/src/index.test.ts",
+      "sha256": "a0c4412a1649d4523f5e9786bcb6430e12acdac3c696fd2978338459144dc6ee",
+      "git_blob": "16a0ee6e02ca2e68797d3061704ce93bc33fbbe1",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/exact/operations.test.ts",
+      "sha256": "4a717c02732fbcdce69d09d553c14fb72e0b518f3fdfe5c72a1895d8881951f2",
+      "git_blob": "1cac7d8ac8bcb3df91b665be9d4acb90357005bc",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/outils/machine.ts",
+      "sha256": "52874b2fd6d8041e920eb3703543868f7209bd2895a1d7e301792deb808f015a",
+      "git_blob": "7ffe6e894625251123d0fb10e653a46810cef5ba",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/outils/index.ts",
+      "sha256": "f195a6ed7e65ac5da73ac065044cb3dce40ccc43d3b94210a225a91c434f26fc",
+      "git_blob": "2de4b5f31a06f67864c49b93c9da975d9ed251e0",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/planche/booleens-manifold.ts",
+      "sha256": "0938db5fd4570b0fca73601cea094ee5b5447d6b213db3f0555893ae5840a8d1",
+      "git_blob": "4704501a158f9451335bbf375e8525146c91d6a8",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/planche/booleens-manifold.test.ts",
+      "sha256": "bd2344ae3fd10fefd20e2a3087d9449c70656a2f23126428236077d126ae8d9f",
+      "git_blob": "f132ee6fbf1afb79f5e7bb64d665b5adca41e146",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/index.ts",
+      "sha256": "ee0dd04b4976c17d5f77a261730d239c8d125a2442ca8013c464d59dc8ce09b3",
+      "git_blob": "6df8663bc325337bd4cd2aa5c7dab0b2ece3619e",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/base.ts",
+      "sha256": "c3b7e504f32e2a22ed3415d8cf61ee60d77bf7417b1f3ccf3417e75f2d3f4deb",
+      "git_blob": "fee67dcb89d226620e3d8b556dbc4440fc411b4c",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "sha256": "6f1fd64ec0ff7244e13706cba3deb5d2ce55a8a7ac7ffd42bb11aea7b3bb7057",
+      "git_blob": "fc966986a29cf165a1fcf37405c694591a02a552",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/classification-conservation.test.ts",
+      "sha256": "a0e30f9ca0480538dcdb6959cb318ecc365726c0139025678ebed658e3f4db15",
+      "git_blob": "637a9a15b671ebb33d443225d360206a8bb742a6",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/verrous.test.ts",
+      "sha256": "3926e9d5898ec482f8ce034710c6f6b2ce642b63a3e82ec1f66cd9999515baae",
+      "git_blob": "678542d5a88950bdb4a1ce9961ad26c678d34f16",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/versions.ts",
+      "sha256": "24d9119d6c592760cfe321feeeebcfe53bd0b01a354f5e0367bb8cdd1a08425d",
+      "git_blob": "5f60bbc23f69815302a83e53b043acb8cc7cb4dd",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/sync.ts",
+      "sha256": "9d131871ae178996c075ddcd7fc63a399cfa35c117cb506694221fee9810dd56",
+      "git_blob": "4becb4d80c30096f1c15a15b976a1e179752dcb3",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/planche/historique.ts",
+      "sha256": "961b66961160e0a47dc296b7b62162f3dc393a3ba387231575e70c3901da4a28",
+      "git_blob": "b1e0ad3503650816eddb75104498296304c71844",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/versions.test.ts",
+      "sha256": "65d352cbe2f2b0265c5ed026c9c7dc0f05624059e7078e581eb1c248b7ed748f",
+      "git_blob": "f6af686629b38ec50ae4cce65a8f7affa0e2160c",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/sync.test.ts",
+      "sha256": "71eccfae4a4dbb6a6d3c83d2e3db9d0e6e967d959bb2032247592a404c26aad9",
+      "git_blob": "023ce7ce3e66214479bcd3f8a5b3fcb8feb10727",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/reprise.test.ts",
+      "sha256": "07ad4cef2d368abf0706b47b38ef7071ecb463c10ff7423875027bc2de00e5d4",
+      "git_blob": "7449908dfb8d4f7ae95bc493b5df3a80b3602ce3",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/archive.test.ts",
+      "sha256": "d76df356d8817d5ffafab9bf93472f90ebd7ca7b1c8fdd6591763baaae25aaff",
+      "git_blob": "e55318e5da0546ff3589f43a8e6549736dcd63bf",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/delta.test.ts",
+      "sha256": "3126201555e8767284cd5483eff31cce7c46c0a509d6dbaadc82d8a09cb2d4be",
+      "git_blob": "47fec31eeba3a6a913bf128140f0567a647c6320",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/documents/rendu-svg.ts",
+      "sha256": "cb75e11df0cbaca1e6bc11b78b11018ea1b9e4be4a179a278818a10f540d0baa",
+      "git_blob": "535d87d04d7b971edae997d100e27e7c08878e39",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/documents/rendu-pdf.ts",
+      "sha256": "e66869b74648f9f40aad934175bb3450bd9ce253b801229a9bd9a8635b2ff05c",
+      "git_blob": "71f9d58fc4184d79473802cbd0b99ee274a8b21e",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/documents/vues.ts",
+      "sha256": "be6eadbc15435951f59662519b7f8c667449af19d6eefc862a02ffec87534625",
+      "git_blob": "a76c91b00044de1939ba11e847dc2a3af473fb3f",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/documents/documents.test.ts",
+      "sha256": "694b3e54d755dd74e4ae1c14d38c3ba05afbbf2c1b674c77054abe41321c3be2",
+      "git_blob": "9cd33950e7348a008e53f8dde2a6a58619cfd36d",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/documents/historique-feuille.test.ts",
+      "sha256": "0fc8a0d0e30ae035509ea4efd65d0d3e06f53fdd73d1b0b6abab32c6a11ee5c2",
+      "git_blob": "89acdcb9f5a03b8e7290e5b5907e4510406ee189",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/documents/axonometrie.test.ts",
+      "sha256": "3e1e7ba026d8fe61cf7b6575bae3c76b2300a3f5e2784028207bc23fd18f1893",
+      "git_blob": "0a47f1eb1606d86de3447e3e9b761c5d1ca2ca1c",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/ifc.ts",
+      "sha256": "4e3de1b2be7a5b7974744e45ee536b26e1daca05bc877d6e07c9a397bc5ea520",
+      "git_blob": "3b31a7df41007a681d9bbb8c656e475e4d123465",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/import-ifc.ts",
+      "sha256": "bc1ffa41c0146ae6eccab9df141c7f001c4c584d34b82c93cecd71e60cfe093d",
+      "git_blob": "9ffdbe751a394f6af832cb0862732f8bb3084387",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "apps/api/src/lib/atelier-ifc.ts",
+      "sha256": "e35e5bbd6836775ad8fbc0c8cc96e49cc109245909e7a7bd222f133aaac90151",
+      "git_blob": "6328a45b8b9d46b2d1d87b1b5bbe21011fb70dbf",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/echanges.test.ts",
+      "sha256": "082ff7430b4df8a2bf94cac2e7d2daef8aba6bcadaa34c6a95d1e3ea636f5310",
+      "git_blob": "1a384109cb8098cbac51e65c811f74ea950077c9",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+      "sha256": "a3a870f1f187e3475d0a5d7f298f961e4665ff712bdab918dc15f1bd6b3f2c7a",
+      "git_blob": "6a2dbb2e60eb300e988cec2996fff80264fce0c4",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/annexe-c.test.ts",
+      "sha256": "19840668ea9f1b829611a0edf6203f30f3148a702e5e5b89510b20ee2f149d72",
+      "git_blob": "f02e7add67412d09797be94a628813fa0c320aac",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/catalogue-outils.ts",
+      "sha256": "4ffe968d873b4d19b304e9dcc20198ab8334714533866153226ee43ed1a77b8b",
+      "git_blob": "30a5dfde237f42e3fbe699837256cbf7db364e53",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/catalogue-outils.test.ts",
+      "sha256": "290984fad5e1db0a87ed4dcc4bc62dd2674e99ce2290fc13f964139720fa1052",
+      "git_blob": "96844bdbd5b0c89a01ddbec4b98e35c7ba7e87c6",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/outils/registre-formes.test.ts",
+      "sha256": "8be1c426738eb9570a0ad9a6dd4dfb23e9444bd27e1604889336b67eacc4910c",
+      "git_blob": "37dbd52a50bf73d1d321c9effd6475ac4704b8f2",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "7506e0ae6075d622a1d8ee6835bc2411316c8915f279c4aea06c12b1144df6f3",
+      "git_blob": "3801bea00d04cd4aa816356d950e461304dfa3e3",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    },
+    {
+      "path": "node_modules/occt-wasm/README.md",
+      "sha256": "bba3d542763184c3d58dd62060b9ac107d5d2df96c60ea5962cb99093eb822cc",
+      "git_blob": null,
+      "reference_commit": null,
+      "artifact_provenance": "installed npm artifact, see locked package integrity"
+    },
+    {
+      "path": "docs/atelier/decisions.md",
+      "sha256": "91bd4cd64d0a67d1fdb3e6acd6582703e88024fabd5b3b1f333f79a8094cad26",
+      "git_blob": "46d9f06852af152522bf1431dda245f811e1b153",
+      "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "artifact_provenance": "tracked source"
+    }
+  ],
+  "static_checks": {
+    "package_scopes": [
+      "core-geometry",
+      "atelier-model",
+      "planche-model",
+      "geometry-exact"
+    ],
+    "react_runtime_import_matches": [],
+    "drawall_operational_import_matches": [],
+    "limits": "Motifs directs des sources quatre noyaux, pas analyse exhaustive graphe transitif/dynamique, pas audit complet droits/SBOM ni preuve runtime ; aucun dépôt DrawAll consulté ou modifié."
+  },
+  "transverse_limits": [
+    "Entrée package publique par exports ne signifie pas API Studio stable ou coût de chargement garanti. Une fonction exportée d’un fichier interne apps/web n’est pas une entrée publique partagée.",
+    "Document2D A autonome : ne pas sérialiser une feuille/unSVG ou un modèle3D aplati à sa place. Réemplois algorithmiques ≠ nouveau canonique accepté.",
+    "Écrivains uniques et contrôles serveur restent contrats physiques ouverts ; aucun moteur ne persiste directement dans une seconde base métier.",
+    "Toutes les mesures de coût/performances/durabilité restent à faire sous autorisations G2/lot appropriées ; aucun chiffre de capacité inventé.",
+    "D177/182/183 acceptées restent la référence : ne pas rouvrir le choix OCCT ou ajouter OCCT à Planche par simple réemploi.",
+    "Aucune fermeture DEC18 ou lot, création de paquet, extraction d’UI, remplacement moteur ou codeStudio autorisée."
+  ],
+  "next_ready": [
+    "A2 relit les chaînes exports/APIs/types, limites et priorités des adaptateurs.",
+    "A6 confirme licences propres/tiers/artefactsWASM et contraintes distribution/isolation.",
+    "A1 rapproche les douze candidats des exigences et exemples G1v2 ; coût/tolérances/seuils restent DEC13 et dossierG2.",
+    "A0 intègre au suivi canonique après revue, puis prépare seulement les demandes bornées requises pour futur code/POC."
+  ]
+}

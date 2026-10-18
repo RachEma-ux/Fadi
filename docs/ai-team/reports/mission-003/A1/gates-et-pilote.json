@@ -1,0 +1,76 @@
+{
+  "mission": "003",
+  "gates": [
+    {
+      "id": "G0",
+      "etat": "En cours",
+      "cause": "Dossier sources/pilote préparé ; référence/pilote/exclusions non ratifiés",
+      "responsable": "A1/A0/utilisateur",
+      "essais_effectues": "Lecture/extraction/qualification documentaire seulement ; aucun POC ni test métier A1",
+      "decision_humaine_canonique": "M002-D01,M002-D02",
+      "prochaine_action": "Ratifier dossier produit sans rouvrir invariants imposés",
+      "accepte": false
+    },
+    {
+      "id": "G1",
+      "etat": "En cours",
+      "cause": "141 fiches proposées ; contrats/navigation/oracles sous revue, pas de contrat accepté par présence",
+      "responsable": "A2/A4/A5/A1",
+      "essais_effectues": "Lecture/extraction/qualification documentaire seulement ; aucun POC ni test métier A1",
+      "decision_humaine_canonique": "M002-D07",
+      "prochaine_action": "Rapprocher contrats candidats, oracles et preuves manquantes par sous-ensemble",
+      "accepte": false
+    },
+    {
+      "id": "G2",
+      "etat": "Bloqué",
+      "cause": "AUTORISATION_REQUISE : aucun POC code/écriture autorisé par cette préparation ; corpus/contrat sûrs requis",
+      "responsable": "A2/A0/utilisateur",
+      "essais_effectues": "Lecture/extraction/qualification documentaire seulement ; aucun POC ni test métier A1",
+      "decision_humaine_canonique": "M002-D01,M002-D07 ; autorisation spécifique POC distincte",
+      "prochaine_action": "Soumettre POC minimal borné et données sûres ; ne pas exécuter",
+      "accepte": false
+    },
+    {
+      "id": "G3",
+      "etat": "Bloqué",
+      "cause": "DEC applicables non ratifiées et preuves G2 manquantes ; aucune autorisation code sous-lot",
+      "responsable": "A2/A0/utilisateur",
+      "essais_effectues": "Lecture/extraction/qualification documentaire seulement ; aucun POC ni test métier A1",
+      "decision_humaine_canonique": "M002-D01,M002-D07 ; accord sous-lot distinct",
+      "prochaine_action": "Comparer options/preuves/impacts/rollback/chiffrage et obtenir décision explicite",
+      "accepte": false
+    },
+    {
+      "id": "G4",
+      "etat": "À faire",
+      "cause": "Livraison future ; aucun build Studio livré/recetté/restauré accepté",
+      "responsable": "A0/A1/A5/A6/utilisateur",
+      "essais_effectues": "Lecture/extraction/qualification documentaire seulement ; aucun POC ni test métier A1",
+      "decision_humaine_canonique": "Accord livraison/déploiement distinct ; pas M002-D08",
+      "prochaine_action": "Préparer recette finale après réalisation autorisée, puis décision de livraison et déploiement séparée",
+      "accepte": false
+    }
+  ],
+  "pilote_statut": "Proposé, non ratifié",
+  "pilote": "Petite étude synthétique local/pavillon : A2Dindépendant publiable, B3Ddirect sauvegardé avec vue/coupe, Cassocié contrôlé/observé/approuvé/publié",
+  "parcours": [
+    "A indépendant2D sans modèle3D",
+    "B indépendant3D sans esquisse2D préalable",
+    "C même objet2D/3D, contraintes/quantités/conflit/historique/observation/publication"
+  ],
+  "donnees": "Synthétiques/autorisées/traçables ; aucune production ; oracle RT001 mur distinct d’une utilité métier complète",
+  "exclusions_proposees": [
+    "DWG selon D179 sans réouverture tacite",
+    "IA externe",
+    "MCP",
+    "extensions tierces",
+    "immersion/rendu avancés",
+    "renderer alternatif non prouvé"
+  ],
+  "decisions_canoniques": [
+    "M002-D01",
+    "M002-D02",
+    "M002-D07"
+  ]
+}

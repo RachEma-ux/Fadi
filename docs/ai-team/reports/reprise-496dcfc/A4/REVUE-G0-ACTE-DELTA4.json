@@ -1,0 +1,72 @@
+{
+  "review": "A4-G0-ACTE-DELTA4-RESUME496",
+  "date": "2026-10-18",
+  "reference": "496dcfc7bf80868ef21216d667187087db32a738",
+  "verdict": "Aucune erreur bloquante ; propositions recevables pour intégration canonique A0 dans la seule portée documentaire G0",
+  "blocking_findings": [],
+  "inputs": [
+    {
+      "path": "/workspace/work/resume496/agents/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+      "sha256": "a5dec6aa0afbbe56f7f5bdebb9a3397b70a991bae352d4c93d6ef45d9719adba"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/G0-DELTA-4-IDS-PROPOSE.json",
+      "sha256": "890e2fc442d694a8b89f5856846e1e3c44727fa42748aef920530412cf67b0ff"
+    },
+    {
+      "path": "/workspace/work/resume496/decisions-166.json",
+      "sha256": "f49c1efb921a921b4825d92e4f44f76d1921d10c2e9a3aad0268400442060615"
+    }
+  ],
+  "decision_checks": {
+    "comment": 6250109830,
+    "body_matches_export_exactly": true,
+    "github_author_matches": "RachEma-ux",
+    "delegated_role_not_api_author": "MarqueurCHATGPT-DECISIONdéléguée distinct compteAPI, correctement décrit",
+    "scope_exact_dossier_sha": "7b0cca44fa44449cae80785dea078a857be4180c",
+    "date": "Datecorps2026-10-18 etdateexport distinctes ; created_atAPI nonfourni noninventé",
+    "source_hash_and_line_excerpts": "Toushashes etextraits desquatreIDscorrespondent checkout local ; troisrevuesA2/A4/A5hashes concordants",
+    "ui_checks_executed": false
+  },
+  "per_id": [
+    {
+      "id": "G0-01",
+      "proposed": "Vérifié documentaire",
+      "condition_review": "DEM01/sources/piloteA/B/C/critères/rôles de préparation décrits dans dossier revu ; CADDEC03 personnes/opérationnel resteinconnu selon réserveacceptée. Aucune faisabilité déduite.",
+      "verdict": "Recevable souscondition versementpreuve/checkpointA0"
+    },
+    {
+      "id": "G0-02",
+      "proposed": "Vérifié documentaire",
+      "condition_review": "Critères mesurables des3parcours etoptionsreportées nommés ; revuesindépendantes etacteprécis permettent vérificationducadrage, pasexécutiondesparcours.",
+      "verdict": "Recevable souscondition versementpreuve/checkpointA0"
+    },
+    {
+      "id": "G0-03",
+      "proposed": "Accepté cadrage documentaire",
+      "condition_review": "Nouvel acteexplicite6250109830 couvreexactdossier/critèresà7b0cca4 sousréserves ; dépasseancienneorientationD01 sans étendreG1–4.",
+      "verdict": "Recevable après enregistrementcanoniqueacteparA0 ; aucunecochenativeautomatique"
+    },
+    {
+      "id": "CAD-DEC-01",
+      "proposed": "Accepté cadrage documentaire",
+      "condition_review": "Premierusagemétier/critèresàG0 expressémentacceptés parlemêmeacte ; pas acceptationlogiciel ni nouvelleautorisationcode.",
+      "verdict": "Recevable après enregistrementcanoniqueacteparA0"
+    }
+  ],
+  "preserved_open": [
+    "CAD-DEC-03 personnes/disponibilités et habilitations réelles",
+    "CAD-DEC-02 affectationsopérationnelles àqualifier",
+    "DEC-01/DEC-03 physiques/preuves/migrationrollback ouvertes malgréorientationslogiques retenues",
+    "G1/G2/G3/G4 nonacceptés",
+    "Autres626IDs sans clôtureautomatique",
+    "Corpusintégral/budgets/règlesdedroits/POC restentouverts"
+  ],
+  "required_publication_condition": "A0 seul verseacte+preuves/revuedansregistrecanonique etSTATUS/HANDOFFensemble auSHAcheckpoint ; A1/A4 nemodifientregistres, sourcecasesouHTML. Propositionlocale≠versementdéjàréalisé.",
+  "limits": [
+    "Revue portée/document/sourcesexactes locales, pas validation métierexécutée ni nouvelle lecture réseau ducommentaire.",
+    "La revueA4historique G0nonpassé resteobservationantérieure ; nouvelacte la supersède pourG0documentaire uniquement, sansla réécrire.",
+    "AucunecocheCode/ReviewChatGPT/ReviewAdmin, aucunheader/workflow/code ougatesG1–4 modifiés."
+  ],
+  "next_action": "A0 peut intégrer uniquement lesquatreIDs avecpreuves/portée ; conserverinconnues etcontinuerpréparationsG1indépendantes sansnouvellequestionG0identique."
+}

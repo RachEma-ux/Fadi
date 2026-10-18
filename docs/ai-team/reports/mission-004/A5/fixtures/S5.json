@@ -1,0 +1,59 @@
+{
+  "schema": "fixture-documentaire-proposee/1",
+  "provenance": "Création synthétique Mission004 sous délégation D01/D07 ; aucun client/production",
+  "rights": "Contenu original préparé pour Fadi ; aucune ressource externe",
+  "purpose": "Spécification de données, pas format import/API implémenté",
+  "frame": "local",
+  "coordinate_unit": "mm",
+  "execution": "Non exécuté dans Studio",
+  "approval": "Préparation autorisée, gate/réalisation Studio non acceptées",
+  "decisions": [
+    "Q-M003-D01",
+    "Q-M003-D02",
+    "Q-M003-D07"
+  ],
+  "performance_budgets": "À fixer DEC13, aucune capacité/latence garantie",
+  "corpus_id": "S5",
+  "label": "Création3D directe indépendante — solide mathématique",
+  "context": {
+    "projectId": "syn-pavillon",
+    "studyId": "syn-study-01",
+    "variantId": "syn-variant-A",
+    "revisionId": "syn-revision-01"
+  },
+  "requires_2d_sketch": false,
+  "solid": {
+    "id": "solid-a",
+    "type": "cuboid",
+    "origin": [
+      0,
+      0,
+      0
+    ],
+    "size": [
+      2000,
+      3000,
+      4000
+    ]
+  },
+  "section": {
+    "plane": "z=2000mm",
+    "expected_rectangle_size": [
+      2000,
+      3000
+    ]
+  },
+  "oracles": {
+    "volume_mm3": 24000000000,
+    "volume_m3": "24",
+    "section_area_mm2": 6000000,
+    "section_area_m2": "6",
+    "source_id_restored_after_save_reopen": "solid-a"
+  },
+  "negative_variants": [
+    "Dimension négative : refus atomique",
+    "Worker résultat révisionprécédente : non engagé",
+    "Crash/annulation : modèlecommitted et références intacts"
+  ],
+  "limit": "Valeurs synthétiques choisies pour oracle mathématique, pas exigence dimensionnelle réglementaire"
+}

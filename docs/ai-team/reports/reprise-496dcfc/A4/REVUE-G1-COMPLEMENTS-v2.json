@@ -1,0 +1,149 @@
+{
+  "review": "A4-G1-COMPLEMENTS-v2-delta",
+  "scope": "Revue documentaire UX/logique des trois sources v2 ; parsing et recalcul purs JSON, aucun code Fadi/lecteurStudio/runtime/UI/DB/API exécuté. V1 et revue initiale conservés.",
+  "sources": [
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+      "sha256": "cc21a73f2052ad30b0fa13815fcc230b0c2cba46a5de3c4edeb5cf4945c9c813",
+      "lines": 71
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-SCHEMAS-LOGIQUES-DOCUMENTAIRES-v2.json",
+      "sha256": "ca552c040a1da0064e63c2a2cf643619fbeee13c53ad9c98d65114376a4a7b0c",
+      "lines": 84
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-EXEMPLES-DOCUMENTAIRES-2D-IDENTITES-v2.json",
+      "sha256": "3d29419c227258b60645893340eee9dfbd009c16ec0e0428eb54c6dae729ea11",
+      "lines": 1536
+    }
+  ],
+  "verdict": "Aucun blocage documentaire UX nouveau identifié sur le delta v2 ; aucune acceptation G1/G2 ou capacité produit.",
+  "findings": [
+    {
+      "topic": "Versions",
+      "verdict": "cohérent documentaire",
+      "reason": "contentVersion canonique distingue maintenant documentVersion pièce livrée, revisionId historique, schemaVersion représentation et contractVersion commande. Aucun choix physique adopté."
+    },
+    {
+      "topic": "Autonomie et parenté",
+      "verdict": "cohérent documentaire",
+      "reason": "Étude sans variante et sans géométrie permise ; document2D appartient à variante et révision, reste autonome sans3D. Aucun projet/variante synthétique créé par navigation. Trois autorités drawing2d/model3d/associated demeurent distinctes ; dérivé/projection ne devient pas écrivain."
+    },
+    {
+      "topic": "Édition et sauvegarde",
+      "verdict": "cohérent documentaire, preuve future",
+      "reason": "Nouvelle révision conserve ancienne révision/contenu et identités document/primitive ; refus stale-base, mutationhistorique, writer contradictoire et substitutionlatest explicites. Durabilité non déduite d’un rendu ; autorisation/action explicites requises."
+    },
+    {
+      "topic": "Droits et publication",
+      "verdict": "cohérent documentaire, contrat NAV hérité",
+      "reason": "Vérification serveur parenté/droits ; approve/publish distincts, cumul explicite ; réouverture revalide accès/empreintes, n’édite pas l’historique. Les exemples ne simulent pas permissions serveur effectives."
+    },
+    {
+      "topic": "FR/EN, clavier, mobile et états",
+      "verdict": "non requalifiés par les JSON",
+      "reason": "Ces deltas ne remplacent ni NAV001–009 ni maquettes/M21. Ils ne contiennent pas oracles d’interface complets FR/EN/pending/conflit/focus/sauvegarde indéterminée ; ces exigences restent liées aux contrats NAV et à prouver ultérieurement, aucun succès UX déduit."
+    },
+    {
+      "topic": "Préservation Fadi",
+      "verdict": "aucune modification observée dans ces pièces",
+      "reason": "Aucun changement des21étapes, suppression Atelier/Planche native ou dépendance DrawAll proposé par le delta ; pas preuve de non-régression exécutée."
+    },
+    {
+      "topic": "Dix refus ciblés",
+      "verdict": "liens auxiliaires réparés",
+      "reason": "Diffs JSON statiques : orphan,parenté,mutationhistorique,unitéabsente,IDdoublé,baseancienne,writer3D,coteinconnue,migrationimplicite,latest. Les recalculs de liens n’introduisent plus de fautehash supplémentaire. Ne prouve pas que Fadi refuse ces entrées."
+    }
+  ],
+  "pure_json_link_checks": [
+    {
+      "reference": "example-revision-A1",
+      "computed": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "declared": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "matches": true
+    },
+    {
+      "reference": "example-revision-A2",
+      "computed": "429836df6e275f9aeef84b7c509fbe8f12c44fec63984faff74684439d448a4e",
+      "declared": "429836df6e275f9aeef84b7c509fbe8f12c44fec63984faff74684439d448a4e",
+      "matches": true
+    },
+    {
+      "reference": "example-revision-A1",
+      "computed": "4ce17952f76dd1ac294d216bbc63fcd24c9fe79955505f0181a6785ea9e58efd",
+      "declared": "4ce17952f76dd1ac294d216bbc63fcd24c9fe79955505f0181a6785ea9e58efd",
+      "matches": true
+    },
+    {
+      "reference": "example-revision-A1",
+      "computed": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "declared": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "matches": true
+    },
+    {
+      "reference": "example-revision-A1",
+      "computed": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "declared": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "matches": true
+    },
+    {
+      "reference": "example-revision-A1",
+      "computed": "59db3e459412742f2e36fc9a5716678ff944ae5ae23f7c32d867bda1a8249900",
+      "declared": "59db3e459412742f2e36fc9a5716678ff944ae5ae23f7c32d867bda1a8249900",
+      "matches": true
+    },
+    {
+      "reference": "example-revision-A1",
+      "computed": "dc7a69d29d0b0215e9dbcc7425df85d4c14722de3277adfcc38404686572d90a",
+      "declared": "dc7a69d29d0b0215e9dbcc7425df85d4c14722de3277adfcc38404686572d90a",
+      "matches": true
+    },
+    {
+      "reference": "example-revision-A1",
+      "computed": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "declared": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "matches": true
+    },
+    {
+      "reference": "example-revision-A1",
+      "computed": "9369ff69935caa810a192c0a1830d1e306eade60c556e2f7d9c815a7d8e4151c",
+      "declared": "9369ff69935caa810a192c0a1830d1e306eade60c556e2f7d9c815a7d8e4151c",
+      "matches": true
+    },
+    {
+      "reference": "example-revision-A1",
+      "computed": "ba9571746efa4d4a28cc269e91283d03350f9ce76cc7d3c5f4c895d6746ac7a8",
+      "declared": "ba9571746efa4d4a28cc269e91283d03350f9ce76cc7d3c5f4c895d6746ac7a8",
+      "matches": true
+    },
+    {
+      "reference": "example-revision-A1",
+      "computed": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "declared": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "matches": true
+    },
+    {
+      "reference": "example-revision-A1",
+      "computed": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "declared": "a9b2574e694b8cfe3096f2f3bce023c178e8285a3a684cd1fbf76565a570acc7",
+      "matches": true
+    }
+  ],
+  "count": {
+    "logical_positive_examples": 3,
+    "proposed_negative_examples": 10,
+    "content_hash_links_checked": 12,
+    "matching": 12
+  },
+  "remaining": [
+    "DEC01/03 physiques, DEC02 et autres contrats non ratifiés restent ouverts.",
+    "G1/G2/G3/G4 restent non acceptés ; G0 documentaire ne les autorise pas.",
+    "Personnes/disponibilités CAD-DEC-03 inconnues.",
+    "Index I/A.1 et proposition G2 signalés par A1 mais ne sont pas inclus dans le verdict détaillé présent ; aucune approbation de POC."
+  ],
+  "historical_review": {
+    "path": "/workspace/work/resume496/agents/A4/REVUE-G1-COMPLEMENTS.json",
+    "sha256": "755a6abc1fbfa3f9f9cd58358969fc95347a043ba2822ee7797073cc1a53568e"
+  }
+}

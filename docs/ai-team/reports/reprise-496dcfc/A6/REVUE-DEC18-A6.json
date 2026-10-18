@@ -1,0 +1,1097 @@
+{
+  "review": "A6 independent static license/provenance/public boundary",
+  "reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+  "reviewed_A3_json_sha256": "24de7c5169d0d1bb5d3f1be2119c5186065ae9f2c5fc45277c6a5318b7164c8b",
+  "groups": [
+    {
+      "id": "MTR-01",
+      "package": "@parcours/core-geometry",
+      "public_entry": [
+        "@parcours/core-geometry",
+        "src/index.ts export * geometry/parcel-geometry/site-zoning"
+      ],
+      "static_verdict": "coherent with public export evidence and stated limitations; not Studio API certification",
+      "caution": "Exports publics existants, à qualifier par primitive ; ne pas rétablir le magasin ou moteur monolithique historique.",
+      "license_provenance_statement_reviewed": "README trace EMB.designer/Parcours_V8_19_Escalier_B_Mezzanine.html. Aucun champ license dans package ; droits propres à confirmer, autonomie opérationnelle distincte de propriété intellectuelle.",
+      "source_refs": [
+        {
+          "path": "packages/core-geometry/src/index.ts",
+          "line": 1,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/geometry.ts",
+          "line": 123,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/README.md",
+          "line": 7,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/core-geometry/src/parcel-geometry.ts",
+          "line": 67,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ]
+    },
+    {
+      "id": "MTR-02",
+      "package": "@parcours/atelier-model",
+      "public_entry": [
+        "@parcours/atelier-model",
+        "index export * geometrie.js et exports nommés geometrie-3d.js"
+      ],
+      "static_verdict": "coherent with public export evidence and stated limitations; not Studio API certification",
+      "caution": "Surface publique pour algorithmes, pas document2D canonique autonome déjà livré.",
+      "license_provenance_statement_reviewed": "Code suivi natif Fadi, paquets workspace liés par lock ; licence propre non déclarée dans package.",
+      "source_refs": [
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 4,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 95,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/geometrie.ts",
+          "line": 86,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/unites.ts",
+          "line": 44,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ]
+    },
+    {
+      "id": "MTR-03",
+      "package": "@parcours/planche-model",
+      "public_entry": [
+        "@parcours/planche-model",
+        "index export * geometrie-libre.js et representation.js"
+      ],
+      "static_verdict": "coherent with public export evidence and stated limitations; not Studio API certification",
+      "caution": "Noyau public sans React/three/DOM ; ne pas l’assimiler aux deux documents Studio ni à un renderer public.",
+      "license_provenance_statement_reviewed": "Implémentation Fadi suivie ; README revendique aucune dépendance runtime et package le confirme. Licence propre non déclarée.",
+      "source_refs": [
+        {
+          "path": "packages/planche-model/src/index.ts",
+          "line": 3,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/planche-model/src/geometrie-libre.ts",
+          "line": 186,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/planche-model/src/representation.ts",
+          "line": 49,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/planche-model/src/vecteur.ts",
+          "line": 10,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ]
+    },
+    {
+      "id": "MTR-04",
+      "package": "@parcours/planche-model",
+      "public_entry": [
+        "@parcours/planche-model",
+        "index export * inference.js"
+      ],
+      "static_verdict": "coherent with public export evidence and stated limitations; not Studio API certification",
+      "caution": "Inférence Planche publique ; snapping plan2D seulement export de fichier interne, pas API de package.",
+      "license_provenance_statement_reviewed": "Code natif Fadi, aucun tiers déclaré pour ce noyau. Licence propre à confirmer.",
+      "source_refs": [
+        {
+          "path": "packages/planche-model/src/index.ts",
+          "line": 10,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/planche-model/src/inference.ts",
+          "line": 436,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/planche-model/src/inference.ts",
+          "line": 576,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts",
+          "line": 255,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts",
+          "line": 8,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ]
+    },
+    {
+      "id": "MTR-05",
+      "package": "@parcours/atelier-model",
+      "public_entry": [
+        "@parcours/atelier-model",
+        "index export * contraintes.js ; export nomme resoudreContraintes depuis solveur mécanique"
+      ],
+      "static_verdict": "coherent with public export evidence and stated limitations; not Studio API certification",
+      "caution": "Exports publics existants, deux domaines de résolution distincts ; pas solveur universel Studio validé.",
+      "license_provenance_statement_reviewed": "Solveurs locaux Fadi, package sans tierce dépendance spécifique de solveur ; licence propre non déclarée.",
+      "source_refs": [
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 38,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 82,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/contraintes.ts",
+          "line": 88,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/contraintes.ts",
+          "line": 156,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/ontologies/mechanical/solveur.ts",
+          "line": 42,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ]
+    },
+    {
+      "id": "MTR-06",
+      "package": "@parcours/geometry-exact",
+      "public_entry": [
+        "@parcours/geometry-exact",
+        "exports ./src/index.ts ; classe MoteurExact publique"
+      ],
+      "static_verdict": "coherent with public export evidence and stated limitations; not Studio API certification",
+      "caution": "Façade Fadi publique, noyau5.6.1 verrouillé ; client Worker actuel interne, non réutilisable comme API UI profonde.",
+      "license_provenance_statement_reviewed": "occt-wasm5.6.1 : lock MIT OR Apache-2.0 pour wrapper/outillage ; README installé491–495 précise WASM LGPL-2.1-only. Règles D177/182/183 de binaire séparé remplaçable conservées ; conformité distribution à revoir A6, aucune nouvelle ratification des décisions déjà actées.",
+      "source_refs": [
+        {
+          "path": "packages/geometry-exact/src/index.ts",
+          "line": 20,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/geometry-exact/src/index.ts",
+          "line": 248,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/geometry-exact/src/index.ts",
+          "line": 252,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts",
+          "line": 75,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts",
+          "line": 9,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ]
+    },
+    {
+      "id": "MTR-07",
+      "package": "@parcours/planche-model",
+      "public_entry": [
+        "@parcours/planche-model",
+        "index→outils/index export * machine.js et export nommé opererSolides"
+      ],
+      "static_verdict": "coherent with public export evidence and stated limitations; not Studio API certification",
+      "caution": "Interface Fadi publique et injection prévues ; implémentation chargerBooleens demeure interne apps/web.",
+      "license_provenance_statement_reviewed": "manifold-3d3.5.4 épinglé apps/web et lock intégrité, licence Apache-2.0 déclarée ; adapter Fadi suivi, dépendances transitives listées lock mais aucun audit complet SBOM effectué.",
+      "source_refs": [
+        {
+          "path": "packages/planche-model/src/index.ts",
+          "line": 13,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/planche-model/src/outils/machine.ts",
+          "line": 153,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/planche-model/src/outils/index.ts",
+          "line": 19,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/planche/booleens-manifold.ts",
+          "line": 38,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ]
+    },
+    {
+      "id": "MTR-08",
+      "package": "@parcours/atelier-model",
+      "public_entry": [
+        "@parcours/atelier-model",
+        "index export * commandes/index.js ; types réexportés depuis base.js"
+      ],
+      "static_verdict": "coherent with public export evidence and stated limitations; not Studio API certification",
+      "caution": "Contrat public pur de commandes Atelier, pas contrat physique C-COMMAND Studio déjà implémenté.",
+      "license_provenance_statement_reviewed": "Modèle et réducteurs Fadi suivis ; package version0.1.0 distinct des contrats1/2/3 ; licence propre non déclarée.",
+      "source_refs": [
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 21,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/index.ts",
+          "line": 410,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/index.ts",
+          "line": 452,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/base.ts",
+          "line": 9,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ]
+    },
+    {
+      "id": "MTR-09",
+      "package": "@parcours/atelier-model",
+      "public_entry": [
+        "@parcours/atelier-model",
+        "index export * versions.js/sync.js/reprise.js/archive.js ; Planche delta.js public séparé"
+      ],
+      "static_verdict": "coherent with public export evidence and stated limitations; not Studio API certification",
+      "caution": "Algorithmes publics utiles ; historique local Planche interne et service journal API non API de paquet partagée.",
+      "license_provenance_statement_reviewed": "Code Fadi suivi, aucun moteur distant déclaré ; licence propre à confirmer. Le service API et le stockage réel ne sont pas éprouvés par cet inventaire.",
+      "source_refs": [
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 44,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/versions.ts",
+          "line": 53,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/sync.ts",
+          "line": 61,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/planche-model/src/index.ts",
+          "line": 14,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/planche/historique.ts",
+          "line": 23,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ]
+    },
+    {
+      "id": "MTR-10",
+      "package": "@parcours/atelier-model",
+      "public_entry": [
+        "@parcours/atelier-model",
+        "index→documents/dessin,vues,feuilles,rendu-svg,rendu-pdf ; dxfVue/dxfFeuille nommés"
+      ],
+      "static_verdict": "coherent with public export evidence and stated limitations; not Studio API certification",
+      "caution": "Primitives/rendus publics réutilisables ; vues/feuilles actuellement alimentées par ModeleAtelier.",
+      "license_provenance_statement_reviewed": "Générateurs locaux Fadi sans bibliothèque PDF déclarée par ce paquet. Licence propre et provenance des fontes/ressources finales restent à vérifier A6.",
+      "source_refs": [
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 29,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 36,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/documents/rendu-svg.ts",
+          "line": 32,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/documents/rendu-pdf.ts",
+          "line": 116,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/documents/vues.ts",
+          "line": 861,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ]
+    },
+    {
+      "id": "MTR-11",
+      "package": "@parcours/atelier-model",
+      "public_entry": [
+        "@parcours/atelier-model",
+        "index export * echanges/ifc.js/import-ifc.js"
+      ],
+      "static_verdict": "coherent with public export evidence and stated limitations; not Studio API certification",
+      "caution": "Écriture texte et traduction lecture→commandes publiques/pures ; parseur binaire web-ifc actuellement dans API interne.",
+      "license_provenance_statement_reviewed": "web-ifc0.0.78 MPL-2.0 dans apps/api/lock ; export Fadi local distinct du parseurtiers. Licences distribution/provenance et contenus importés àqualifier, sanstest externe ici.",
+      "source_refs": [
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 40,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/index.ts",
+          "line": 41,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/echanges/ifc.ts",
+          "line": 150,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/atelier-model/src/echanges/import-ifc.ts",
+          "line": 133,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "apps/api/src/lib/atelier-ifc.ts",
+          "line": 12,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ]
+    },
+    {
+      "id": "MTR-12",
+      "package": "@parcours/planche-model",
+      "public_entry": [
+        "@parcours/planche-model",
+        "index export * catalogue-outils.js et outils/index.js→machine.js"
+      ],
+      "static_verdict": "coherent with public export evidence and stated limitations; not Studio API certification",
+      "caution": "Machines et catalogue publics ; ni ToolRegistry Studio versionné ni Manager de chargement complet constatés.",
+      "license_provenance_statement_reviewed": "Implémentation Fadi ; catalogue cite observation/documentation SketchUp comme référence d’ergonomie, pas dépendance opérationnelle ni preuve de droit à copier des ressources. Licence propre et ressources icônes àqualifier.",
+      "source_refs": [
+        {
+          "path": "packages/planche-model/src/index.ts",
+          "line": 12,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/planche-model/src/outils/index.ts",
+          "line": 24,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/planche-model/src/outils/index.ts",
+          "line": 28,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/planche-model/src/outils/machine.ts",
+          "line": 188,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        },
+        {
+          "path": "packages/planche-model/src/catalogue-outils.ts",
+          "line": 9,
+          "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409"
+        }
+      ]
+    }
+  ],
+  "local_packages": [
+    {
+      "path": "packages/core-geometry/package.json",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "version": "0.1.0",
+      "exports": {
+        ".": "./src/index.ts"
+      },
+      "private": true,
+      "license_field": null,
+      "ownership_or_distribution_rights_proven": false
+    },
+    {
+      "path": "packages/atelier-model/package.json",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "version": "0.1.0",
+      "exports": {
+        ".": "./src/index.ts"
+      },
+      "private": true,
+      "license_field": null,
+      "ownership_or_distribution_rights_proven": false
+    },
+    {
+      "path": "packages/planche-model/package.json",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "version": "0.1.0",
+      "exports": {
+        ".": "./src/index.ts"
+      },
+      "private": true,
+      "license_field": null,
+      "ownership_or_distribution_rights_proven": false
+    },
+    {
+      "path": "packages/geometry-exact/package.json",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "version": "0.1.0",
+      "exports": {
+        ".": "./src/index.ts"
+      },
+      "private": true,
+      "license_field": null,
+      "ownership_or_distribution_rights_proven": false
+    }
+  ],
+  "all_source_proofs": [
+    {
+      "path": "packages/core-geometry/package.json",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "9be6f4bf2f711bdda59cd70434d98717f93bca37",
+      "sha256": "229bc46d4ea297389e0e8f39288f1a2e3a38c98f021269a2f49811aeccc82636",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/package.json",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "bc67bf33589dbcffd8c91711488f756096de2808",
+      "sha256": "f953685848e93d33a7709aa61001dc7444a588038912b6a324ce5365847b59f5",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/package.json",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "1ff2b1331d991cb6302557c14fe67a94c72b51f2",
+      "sha256": "2f12672cad6c1362cec2c94a919192b360f0520b18371b68a696ded0c1b2f846",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/geometry-exact/package.json",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "a7b875463110a1ac276d968b9f49be0ed661fab0",
+      "sha256": "544697f26c4513fda9527546ea4df7bf10b646546827701a5b56be6110178e75",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/core-geometry/src/index.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "50694182121b7005044d67204bd157966e5ed45e",
+      "sha256": "7e02df528d83c7c6fcc8ad3a038901915b9826438153505778036e4156090e67",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/core-geometry/src/geometry.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "babfeaa7683a891244c7aad4e15d21ebac2a3984",
+      "sha256": "7bf209c60bed52f18c56112df45f738b30c9966fa2ab929495ef5605b357f280",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/core-geometry/README.md",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "40e3ed5699e74aee939fff67bf66ffa5e73aad54",
+      "sha256": "13ff111540dbb6cccc6872b37482b7abfee00f3edc50daf7d75c9ee2c6b16dc4",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/core-geometry/src/parcel-geometry.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "662007e0423a1207edf053b4ea7d3d8fde07954f",
+      "sha256": "63fd3e8efd912acec5e8a0c74fc6768e05b769e1a5ef28fe5e5a9b5a80a2643a",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/core-geometry/src/geometry.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "70e9b41e98b33c589bc31620cec7c2275c916add",
+      "sha256": "ab2612a89e298e954f080587ed426dd5f47eaeda1454e9ea465e8da8eda9a4b1",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/core-geometry/src/parcel-geometry.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "a946b02d7f539916b7fc72883cd979bf28be646a",
+      "sha256": "cc739407f49cca614a770e9271ae234e9d823275f3b398065b064227d71f91f6",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/core-geometry/src/site-zoning.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "cdf53a6246f0b6b6790f0d70a0b96e3dda6a30e5",
+      "sha256": "72e2c856fac77d80cdf496a30248ed1a91e6c5592ffdfd01dc33d025a08d9ed3",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/index.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "8de844c237534e110a0d8c07b7b8430aa7c1c9b0",
+      "sha256": "285d0018b95a727e522f575a8e34c399b91e549a335dacc01ea549c28e4102f4",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/geometrie.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "30812cb784ced7963b3061db7dd3eb619f796b60",
+      "sha256": "9e3b757529118909ef32881b08e3366b376f3aee100e83e2a29e5f6ade16910c",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/unites.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "47223ac307bcb61da70e0cba7b14460cbbc5b792",
+      "sha256": "3517580471c608f482d7fb5ae9cd9a0045632079898ff5dbac23a1fdb917c2e4",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/geometrie-outils.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "4c95334225a1fbfe51f72a484f08433e1398c6d3",
+      "sha256": "475c27d991a2c400378d07611ea63e17df9eacdcfd48e4935f32f5edcaf012fe",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/projection/maillage.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "4bffbe7b626c1ad2661e5cb2b88379b387515d58",
+      "sha256": "6e7dd4f59a6691c499ad8191df498490b3163110146581756bb7ce5eb5825dd2",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/index.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "b4115f50e38e492acfed0ff7a405a99404c931ae",
+      "sha256": "54fdd6707c1b12e618eed6ddb53cba7dd92fc066baa1a4fad1805e576e925f2d",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/geometrie-libre.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "8e966ce41ce3a06c3e16e8c6020d3c85916dda7c",
+      "sha256": "9e3c838d985a7b3a792d4ce8e5a77e32726fd691a230702ed0f34083c1e6a0b4",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/representation.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "b50a5a37904f5a145dbb42c6c8f0a20febac57a2",
+      "sha256": "4e704ff0c568884ffbb2b432b7a927f257e2aefbcb48acfa3c2c2a0b4a2892bb",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/vecteur.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "e3d9440557a4e623570a91152c5d820810359e9e",
+      "sha256": "054316e926bd9e102dc1bb829678e712ec52eedc7efb3e50bea1d06f771c0d44",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/geometrie-libre.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "d4f7407143b7d3b15d391fd5c2ba689d819f4188",
+      "sha256": "5f01741258b13811b0b76310504c62216498f28530b3d8c6ea96902a56d0a328",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/echanges.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "dd6af94a6dc37731f559227ef5c190d59a208fb6",
+      "sha256": "30a9c585a53f7f9d14b2b0b9035f48577412924231ba933976152abe056a705e",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/inference.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "7562c2e15f223fa4b99edfb0cac723299510ae7b",
+      "sha256": "9ccec48c6e9ba326747ab6570830b9d865178681f63bbf075e9dd4afa1bd8f43",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "2a93faaaf9cddb0325bcf7986450e4a400738e41",
+      "sha256": "9fa43b9b203a4c577f1cbafee4971b69fdf1775f6c1917d198aa577fa8d8b6fe",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/inference.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "c843bf1b46edd6d805ef7c58cbc6e33c992c5371",
+      "sha256": "2a83b1061758f621c642807437b8cc9d40841864f5878158d7f5d915f2787934",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/contraintes.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "9f11a0ef8c93bc51d87a4480bfd23cee61b98754",
+      "sha256": "05e46871b30a3b2366e73c90dbd6f10869c87a9127b22be6b8466728fee35729",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/mechanical/solveur.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "8d742d395c5252cd233f6b64df20edb18e032b3d",
+      "sha256": "742620d0381260471c1755486ec9d77bba8dfc2fb8a94e965034d23b30019f91",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/contrainte.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "5fcc75babb77747b5a284f2d6fc8bcb24cf12874",
+      "sha256": "e667e103e017fe1cb61a0fe157a43b47a47c22795e6e0608df07c33960478ab8",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/contraintes-cercles.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "726883b5e115fa01998f4f58c901c912414b892f",
+      "sha256": "0cdfb119b621a83ac690ebb8827abf9f1c9d039e5d998a9bb4867a6cfdc71083",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/ontologies/mechanical/mechanical.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "1d7196c8def570c4168cac0c13666e70d0c31d1a",
+      "sha256": "a3124f2a74b65879df435278ffed1c0423d6ad1cbffd46db6b01abde99054bcc",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/geometry-exact/src/index.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "cc2771d2d99466de67f1c12504e717a6aa339afb",
+      "sha256": "069b5e477417396eea81ac2546375343916d32ee2b4dcebd95a9c674d1dba034",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "5d6e8f9ae27e8070f567da3b07dc86f83c9d6e60",
+      "sha256": "ff535450de7f84ad37bbaab160affe2e67711b161afcf24a038ce20e67402958",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "8c1a16e6f47734f208aa006cd3476f6866a4ca07",
+      "sha256": "d3947984643b9d6a8881c52a5b940f2dc60c9aa1f068fcb08f8c4dcba440c8bf",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/geometry-exact/src/index.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "16a0ee6e02ca2e68797d3061704ce93bc33fbbe1",
+      "sha256": "a0c4412a1649d4523f5e9786bcb6430e12acdac3c696fd2978338459144dc6ee",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/exact/operations.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "1cac7d8ac8bcb3df91b665be9d4acb90357005bc",
+      "sha256": "4a717c02732fbcdce69d09d553c14fb72e0b518f3fdfe5c72a1895d8881951f2",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/outils/machine.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "7ffe6e894625251123d0fb10e653a46810cef5ba",
+      "sha256": "52874b2fd6d8041e920eb3703543868f7209bd2895a1d7e301792deb808f015a",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/outils/index.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "2de4b5f31a06f67864c49b93c9da975d9ed251e0",
+      "sha256": "f195a6ed7e65ac5da73ac065044cb3dce40ccc43d3b94210a225a91c434f26fc",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/planche/booleens-manifold.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "4704501a158f9451335bbf375e8525146c91d6a8",
+      "sha256": "0938db5fd4570b0fca73601cea094ee5b5447d6b213db3f0555893ae5840a8d1",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/planche/booleens-manifold.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "f132ee6fbf1afb79f5e7bb64d665b5adca41e146",
+      "sha256": "bd2344ae3fd10fefd20e2a3087d9449c70656a2f23126428236077d126ae8d9f",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/index.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "6df8663bc325337bd4cd2aa5c7dab0b2ece3619e",
+      "sha256": "ee0dd04b4976c17d5f77a261730d239c8d125a2442ca8013c464d59dc8ce09b3",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/base.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "fee67dcb89d226620e3d8b556dbc4440fc411b4c",
+      "sha256": "c3b7e504f32e2a22ed3415d8cf61ee60d77bf7417b1f3ccf3417e75f2d3f4deb",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "fc966986a29cf165a1fcf37405c694591a02a552",
+      "sha256": "6f1fd64ec0ff7244e13706cba3deb5d2ce55a8a7ac7ffd42bb11aea7b3bb7057",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/classification-conservation.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "637a9a15b671ebb33d443225d360206a8bb742a6",
+      "sha256": "a0e30f9ca0480538dcdb6959cb318ecc365726c0139025678ebed658e3f4db15",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/verrous.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "678542d5a88950bdb4a1ce9961ad26c678d34f16",
+      "sha256": "3926e9d5898ec482f8ce034710c6f6b2ce642b63a3e82ec1f66cd9999515baae",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/versions.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "5f60bbc23f69815302a83e53b043acb8cc7cb4dd",
+      "sha256": "24d9119d6c592760cfe321feeeebcfe53bd0b01a354f5e0367bb8cdd1a08425d",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/sync.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "4becb4d80c30096f1c15a15b976a1e179752dcb3",
+      "sha256": "9d131871ae178996c075ddcd7fc63a399cfa35c117cb506694221fee9810dd56",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/planche/historique.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "b1e0ad3503650816eddb75104498296304c71844",
+      "sha256": "961b66961160e0a47dc296b7b62162f3dc393a3ba387231575e70c3901da4a28",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/versions.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "f6af686629b38ec50ae4cce65a8f7affa0e2160c",
+      "sha256": "65d352cbe2f2b0265c5ed026c9c7dc0f05624059e7078e581eb1c248b7ed748f",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/sync.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "023ce7ce3e66214479bcd3f8a5b3fcb8feb10727",
+      "sha256": "71eccfae4a4dbb6a6d3c83d2e3db9d0e6e967d959bb2032247592a404c26aad9",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/reprise.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "7449908dfb8d4f7ae95bc493b5df3a80b3602ce3",
+      "sha256": "07ad4cef2d368abf0706b47b38ef7071ecb463c10ff7423875027bc2de00e5d4",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/archive.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "e55318e5da0546ff3589f43a8e6549736dcd63bf",
+      "sha256": "d76df356d8817d5ffafab9bf93472f90ebd7ca7b1c8fdd6591763baaae25aaff",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/delta.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "47fec31eeba3a6a913bf128140f0567a647c6320",
+      "sha256": "3126201555e8767284cd5483eff31cce7c46c0a509d6dbaadc82d8a09cb2d4be",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/documents/rendu-svg.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "535d87d04d7b971edae997d100e27e7c08878e39",
+      "sha256": "cb75e11df0cbaca1e6bc11b78b11018ea1b9e4be4a179a278818a10f540d0baa",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/documents/rendu-pdf.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "71f9d58fc4184d79473802cbd0b99ee274a8b21e",
+      "sha256": "e66869b74648f9f40aad934175bb3450bd9ce253b801229a9bd9a8635b2ff05c",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/documents/vues.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "a76c91b00044de1939ba11e847dc2a3af473fb3f",
+      "sha256": "be6eadbc15435951f59662519b7f8c667449af19d6eefc862a02ffec87534625",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/documents/documents.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "9cd33950e7348a008e53f8dde2a6a58619cfd36d",
+      "sha256": "694b3e54d755dd74e4ae1c14d38c3ba05afbbf2c1b674c77054abe41321c3be2",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/documents/historique-feuille.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "89acdcb9f5a03b8e7290e5b5907e4510406ee189",
+      "sha256": "0fc8a0d0e30ae035509ea4efd65d0d3e06f53fdd73d1b0b6abab32c6a11ee5c2",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/documents/axonometrie.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "0a47f1eb1606d86de3447e3e9b761c5d1ca2ca1c",
+      "sha256": "3e1e7ba026d8fe61cf7b6575bae3c76b2300a3f5e2784028207bc23fd18f1893",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/ifc.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "3b31a7df41007a681d9bbb8c656e475e4d123465",
+      "sha256": "4e3de1b2be7a5b7974744e45ee536b26e1daca05bc877d6e07c9a397bc5ea520",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/import-ifc.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "9ffdbe751a394f6af832cb0862732f8bb3084387",
+      "sha256": "bc1ffa41c0146ae6eccab9df141c7f001c4c584d34b82c93cecd71e60cfe093d",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "apps/api/src/lib/atelier-ifc.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "6328a45b8b9d46b2d1d87b1b5bbe21011fb70dbf",
+      "sha256": "e35e5bbd6836775ad8fbc0c8cc96e49cc109245909e7a7bd222f133aaac90151",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/echanges.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "1a384109cb8098cbac51e65c811f74ea950077c9",
+      "sha256": "082ff7430b4df8a2bf94cac2e7d2daef8aba6bcadaa34c6a95d1e3ea636f5310",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "6a2dbb2e60eb300e988cec2996fff80264fce0c4",
+      "sha256": "a3a870f1f187e3475d0a5d7f298f961e4665ff712bdab918dc15f1bd6b3f2c7a",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/atelier-model/src/annexe-c.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "f02e7add67412d09797be94a628813fa0c320aac",
+      "sha256": "19840668ea9f1b829611a0edf6203f30f3148a702e5e5b89510b20ee2f149d72",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/catalogue-outils.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "30a5dfde237f42e3fbe699837256cbf7db364e53",
+      "sha256": "4ffe968d873b4d19b304e9dcc20198ab8334714533866153226ee43ed1a77b8b",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/catalogue-outils.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "96844bdbd5b0c89a01ddbec4b98e35c7ba7e87c6",
+      "sha256": "290984fad5e1db0a87ed4dcc4bc62dd2674e99ce2290fc13f964139720fa1052",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "packages/planche-model/src/outils/registre-formes.test.ts",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "37dbd52a50bf73d1d321c9effd6475ac4704b8f2",
+      "sha256": "8be1c426738eb9570a0ad9a6dd4dfb23e9444bd27e1604889336b67eacc4910c",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "package-lock.json",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "3801bea00d04cd4aa816356d950e461304dfa3e3",
+      "sha256": "7506e0ae6075d622a1d8ee6835bc2411316c8915f279c4aea06c12b1144df6f3",
+      "verified": true,
+      "provenance": "tracked source"
+    },
+    {
+      "path": "node_modules/occt-wasm/README.md",
+      "commit_sha": null,
+      "git_blob": null,
+      "sha256": "bba3d542763184c3d58dd62060b9ac107d5d2df96c60ea5962cb99093eb822cc",
+      "verified": true,
+      "provenance": "installed npm artifact, see locked package integrity"
+    },
+    {
+      "path": "docs/atelier/decisions.md",
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "git_blob": "46d9f06852af152522bf1431dda245f811e1b153",
+      "sha256": "91bd4cd64d0a67d1fdb3e6acd6582703e88024fabd5b3b1f333f79a8094cad26",
+      "verified": true,
+      "provenance": "tracked source"
+    }
+  ],
+  "additional_license_artifacts": [
+    {
+      "path": "node_modules/manifold-3d/LICENSE",
+      "commit_sha": null,
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "first_line": "                                 Apache License",
+      "package_version": "3.5.4",
+      "lock_reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "lock_integrity": "sha512-WWsme5HabwLHVcWPHT9m+s7mdmDVSEvCny+uXH1E7jEc8FbFUgM75C3Dh6NVw57Eeh3Ow7+xHCuXfxDMOemi9A==",
+      "provenance": "installed artifact, not a tracked Git source"
+    },
+    {
+      "path": "node_modules/web-ifc/LICENSE.md",
+      "commit_sha": null,
+      "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5",
+      "first_line": "Mozilla Public License Version 2.0",
+      "package_version": "0.0.78",
+      "lock_reference_commit": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "lock_integrity": "sha512-LGKMNYFVNyz9vVERN0iz+zvPQJqT7MEGBxslzcuuhwDDOA116LmJLKkg8sZ5SEvQJSc5NRVMWgpRNkDmuoQoJg==",
+      "provenance": "installed artifact, not a tracked Git source"
+    }
+  ],
+  "source_count": 70,
+  "quote_counts": {
+    "exact": 98,
+    "partial_verbatim": 1
+  },
+  "partial_quote_details": [
+    {
+      "path": "packages/core-geometry/README.md",
+      "line": 7,
+      "commit_sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "nature": "verbatim substring, not full line"
+    }
+  ],
+  "errors": [],
+  "traceability_passed": true,
+  "locked_third_party_version_license_integrity_matched": true,
+  "runtime_module_imported": false,
+  "network_or_db_or_scan": false,
+  "DEC18_closed": false,
+  "G1_or_G2_accepted": false,
+  "remaining_reservations": [
+    "Local package private/exports/version does not establish ownership or distribution license",
+    "OCCT README hash is artifact provenance, not Git commit; no independent tarball-to-installed-tree or binary correspondence verification",
+    "OCCT tooling MIT OR Apache2 distinct from README compiled WASM LGPL2.1-only; actual distribution replacement/notices/relevant sources obligations not validated here",
+    "Installed Manifold Apache2 and web-ifc MPL2 LICENSE files read, transitive deps and notices not exhaustively audited",
+    "Static exports do not prove no transitive side effects, loading costs, semantics or Studio compatibility",
+    "Internal worker/Manifold/web-ifc adapters remain private to apps, not public API by file export",
+    "Prototype extraction/font/icon/imported-content rights remain unestablished; no native function deletion justified"
+  ]
+}

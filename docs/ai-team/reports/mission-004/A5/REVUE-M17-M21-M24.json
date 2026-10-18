@@ -1,0 +1,392 @@
+{
+  "reviewer": "A5 indépendant A1/A2/A4",
+  "utc": "2026-10-18T12:26:33.679895+00:00",
+  "scope": "Lecture complète documents et inspection intégrale JSON, recalcul hashes/ancrages et refus ciblés ; pas validateur métier/applicatif",
+  "files_reviewed": [
+    {
+      "path": "A2/M05-M17-CONTRATS-DURABLES.md",
+      "sha256": "893d4917fe810867b589727e82d1789db56453f86c78fbfab56b294acedac84b",
+      "bytes": 17763
+    },
+    {
+      "path": "A2/M05-M17-EXEMPLES-DOCUMENTAIRES.json",
+      "sha256": "6a6ffdb05613f0d992681d29f1e5b3c6b937c2356c6034cdd33aa28596ee1868",
+      "bytes": 43793
+    },
+    {
+      "path": "A2/M05-M17-SOURCES.json",
+      "sha256": "274b591a29080b0ea13d1d9778361d3519e6632a642434b4d548671f45daa493",
+      "bytes": 163257
+    },
+    {
+      "path": "A2/M05-M17-RECEPTION.json",
+      "sha256": "4ccd7438e724f54f40541717bac750616079f6266d0904c9c5d14a9147161067",
+      "bytes": 939
+    },
+    {
+      "path": "A4/M21-CONTRAT-MINIMAL.md",
+      "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625",
+      "bytes": 12389
+    },
+    {
+      "path": "A4/M21-CATALOGUE-EXEMPLES.json",
+      "sha256": "579b15c4bd3079ce8376881fbce62eae432a8a90a290eccbdcfe4b0bea79e13d",
+      "bytes": 10372
+    },
+    {
+      "path": "A4/M21-VERIFICATION-JSON.json",
+      "sha256": "cacb51b13601b35cbd55de72f6da8ad096a2fbfddbb50714597843e1dcf4727e",
+      "bytes": 496
+    },
+    {
+      "path": "A1/M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+      "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917",
+      "bytes": 20490
+    },
+    {
+      "path": "A1/M24-EXEMPLES-MANIFESTES.json",
+      "sha256": "bdecc5b2387a619ae3e0a09e78df44ea1dd3188fb1451be96980d32018551bf0",
+      "bytes": 167495
+    },
+    {
+      "path": "A1/M24-VALIDATION-DOCUMENTAIRE.json",
+      "sha256": "ef1dd6c58722a3c25ec14afebd2e6ddf574bd468dd0f668deea5cc4d02e27798",
+      "bytes": 1289
+    },
+    {
+      "path": "A1/M24-REMISE.json",
+      "sha256": "ae7b9e0c0711b6a5187d8d6c79a96cbe30a64b0355859a6c2284f209e2857f5b",
+      "bytes": 1871
+    }
+  ],
+  "M17": {
+    "command_examples": 16,
+    "snapshot_publication_examples": 5,
+    "source_code_blobs_verified": 10,
+    "normative_anchors_verified": 23,
+    "IF006": "Enveloppe illustrative maintenue ; préconditions ajoutées non-wire et contratsphysiques candidats, pas secondeAPI",
+    "three_authorities": "drawing2d/model3d/associated cohérents ; vues/caches nonautoritaires",
+    "placeholder_hashes": "M17publications hasheszéro sontexplicitementrejetésruntime ; pashashesvalidesprouvés"
+  },
+  "M21": {
+    "tools": 8,
+    "result_to_writer_map": {
+      "drawing2d": "drawing2d",
+      "free3d": "model3d",
+      "architectural-object": "associated",
+      "derived-check-result": null,
+      "review-decision": null,
+      "immutable-publication": null
+    },
+    "checks": "8IDs/icônes distincts, permissionsapproval/publication distinctes, nontypegéométriquewriternull, loadersnull etaliasesambiguïtéconservée",
+    "runtime_tests": 0
+  },
+  "M24": {
+    "positive_documentary_examples": [
+      {
+        "id": "M24-POS-A",
+        "checks": {
+          "canonical_hash": true,
+          "manifest_hash": true,
+          "approval_exact": true,
+          "publication_exact": true,
+          "reopen_exact": true,
+          "context_match": true,
+          "schema_match": true,
+          "authority_match": true,
+          "separate_approval_publication_records": true,
+          "document_hash_fixture-document-A": true
+        },
+        "verdict": "COHERENCE_DOCUMENTAIRE_SEULE"
+      },
+      {
+        "id": "M24-POS-B",
+        "checks": {
+          "canonical_hash": true,
+          "manifest_hash": true,
+          "approval_exact": true,
+          "publication_exact": true,
+          "reopen_exact": true,
+          "context_match": true,
+          "schema_match": true,
+          "authority_match": true,
+          "separate_approval_publication_records": true,
+          "document_hash_fixture-document-B": true
+        },
+        "verdict": "COHERENCE_DOCUMENTAIRE_SEULE"
+      },
+      {
+        "id": "M24-POS-C",
+        "checks": {
+          "canonical_hash": true,
+          "manifest_hash": true,
+          "approval_exact": true,
+          "publication_exact": true,
+          "reopen_exact": true,
+          "context_match": true,
+          "schema_match": true,
+          "authority_match": true,
+          "separate_approval_publication_records": true,
+          "document_hash_fixture-document-C": true
+        },
+        "verdict": "COHERENCE_DOCUMENTAIRE_SEULE"
+      }
+    ],
+    "negative_documentary_examples": [
+      {
+        "id": "M24-NEG-PARENT",
+        "expected_refusal_candidate": "CONTEXT_PARENT_MISMATCH",
+        "hash_links": {
+          "body": true,
+          "manifest": true,
+          "approval": true,
+          "publication": true,
+          "reopen": true
+        },
+        "piece_hashes_coherent": true,
+        "intentional_stale_hash_case": false,
+        "semantic_fault_checked_in_content": true,
+        "execution": "AUCUN_TEST_PRODUIT",
+        "candidate_control_order": "À définir, pas affirmation du premier code retourné"
+      },
+      {
+        "id": "M24-NEG-CHANGED-DOCUMENT",
+        "expected_refusal_candidate": "APPROVAL_MISMATCH",
+        "hash_links": {
+          "body": true,
+          "manifest": true,
+          "approval": true,
+          "publication": true,
+          "reopen": true
+        },
+        "piece_hashes_coherent": false,
+        "intentional_stale_hash_case": true,
+        "semantic_fault_checked_in_content": true,
+        "execution": "AUCUN_TEST_PRODUIT",
+        "candidate_control_order": "À définir, pas affirmation du premier code retourné"
+      },
+      {
+        "id": "M24-NEG-MISSING-PIECE",
+        "expected_refusal_candidate": "PUBLICATION_INCOMPLETE",
+        "hash_links": {
+          "body": true,
+          "manifest": true,
+          "approval": true,
+          "publication": true,
+          "reopen": true
+        },
+        "piece_hashes_coherent": true,
+        "intentional_stale_hash_case": false,
+        "semantic_fault_checked_in_content": true,
+        "execution": "AUCUN_TEST_PRODUIT",
+        "candidate_control_order": "À définir, pas affirmation du premier code retourné"
+      },
+      {
+        "id": "M24-NEG-OLD-RESULT",
+        "expected_refusal_candidate": "SOURCE_REVISION_MISMATCH",
+        "hash_links": {
+          "body": true,
+          "manifest": true,
+          "approval": true,
+          "publication": true,
+          "reopen": true
+        },
+        "piece_hashes_coherent": true,
+        "intentional_stale_hash_case": false,
+        "semantic_fault_checked_in_content": true,
+        "execution": "AUCUN_TEST_PRODUIT",
+        "candidate_control_order": "À définir, pas affirmation du premier code retourné"
+      },
+      {
+        "id": "M24-NEG-UNIT",
+        "expected_refusal_candidate": "UNIT_MISMATCH",
+        "hash_links": {
+          "body": true,
+          "manifest": true,
+          "approval": true,
+          "publication": true,
+          "reopen": true
+        },
+        "piece_hashes_coherent": true,
+        "intentional_stale_hash_case": false,
+        "semantic_fault_checked_in_content": true,
+        "execution": "AUCUN_TEST_PRODUIT",
+        "candidate_control_order": "À définir, pas affirmation du premier code retourné"
+      },
+      {
+        "id": "M24-NEG-UNKNOWN-SCHEMA",
+        "expected_refusal_candidate": "SCHEMA_UNSUPPORTED",
+        "hash_links": {
+          "body": true,
+          "manifest": true,
+          "approval": true,
+          "publication": true,
+          "reopen": true
+        },
+        "piece_hashes_coherent": true,
+        "intentional_stale_hash_case": false,
+        "semantic_fault_checked_in_content": true,
+        "execution": "AUCUN_TEST_PRODUIT",
+        "candidate_control_order": "À définir, pas affirmation du premier code retourné"
+      },
+      {
+        "id": "M24-NEG-FALSE-CONTROL",
+        "expected_refusal_candidate": "CHECK_NOT_CONFORMANT",
+        "hash_links": {
+          "body": true,
+          "manifest": true,
+          "approval": true,
+          "publication": true,
+          "reopen": true
+        },
+        "piece_hashes_coherent": true,
+        "intentional_stale_hash_case": false,
+        "semantic_fault_checked_in_content": true,
+        "execution": "AUCUN_TEST_PRODUIT",
+        "candidate_control_order": "À définir, pas affirmation du premier code retourné"
+      },
+      {
+        "id": "M24-NEG-OPEN-OBSERVATION",
+        "expected_refusal_candidate": "UNRESOLVED_OBSERVATION",
+        "hash_links": {
+          "body": true,
+          "manifest": true,
+          "approval": true,
+          "publication": true,
+          "reopen": true
+        },
+        "piece_hashes_coherent": true,
+        "intentional_stale_hash_case": false,
+        "semantic_fault_checked_in_content": true,
+        "execution": "AUCUN_TEST_PRODUIT",
+        "candidate_control_order": "À définir, pas affirmation du premier code retourné"
+      },
+      {
+        "id": "M24-NEG-APPROVE-WITHOUT-RIGHT",
+        "expected_refusal_candidate": "FORBIDDEN_SCOPE",
+        "hash_links": {
+          "body": true,
+          "manifest": true,
+          "approval": true,
+          "publication": true,
+          "reopen": true
+        },
+        "piece_hashes_coherent": true,
+        "intentional_stale_hash_case": false,
+        "semantic_fault_checked_in_content": true,
+        "execution": "AUCUN_TEST_PRODUIT",
+        "candidate_control_order": "À définir, pas affirmation du premier code retourné"
+      },
+      {
+        "id": "M24-NEG-PUBLISH-WITHOUT-RIGHT",
+        "expected_refusal_candidate": "FORBIDDEN_SCOPE",
+        "hash_links": {
+          "body": true,
+          "manifest": true,
+          "approval": true,
+          "publication": true,
+          "reopen": true
+        },
+        "piece_hashes_coherent": true,
+        "intentional_stale_hash_case": false,
+        "semantic_fault_checked_in_content": true,
+        "execution": "AUCUN_TEST_PRODUIT",
+        "candidate_control_order": "À définir, pas affirmation du premier code retourné"
+      },
+      {
+        "id": "M24-NEG-OFFLINE",
+        "expected_refusal_candidate": "CENTRAL_COMMIT_REQUIRED",
+        "hash_links": {
+          "body": true,
+          "manifest": true,
+          "approval": true,
+          "publication": true,
+          "reopen": true
+        },
+        "piece_hashes_coherent": true,
+        "intentional_stale_hash_case": false,
+        "semantic_fault_checked_in_content": true,
+        "execution": "AUCUN_TEST_PRODUIT",
+        "candidate_control_order": "À définir, pas affirmation du premier code retourné"
+      },
+      {
+        "id": "M24-NEG-WRITER",
+        "expected_refusal_candidate": "WRITER_MISMATCH",
+        "hash_links": {
+          "body": true,
+          "manifest": true,
+          "approval": true,
+          "publication": true,
+          "reopen": true
+        },
+        "piece_hashes_coherent": true,
+        "intentional_stale_hash_case": false,
+        "semantic_fault_checked_in_content": true,
+        "execution": "AUCUN_TEST_PRODUIT",
+        "candidate_control_order": "À définir, pas affirmation du premier code retourné"
+      },
+      {
+        "id": "M24-NEG-FALLBACK-LATEST",
+        "expected_refusal_candidate": "IMMUTABLE_REVISION",
+        "hash_links": {
+          "body": true,
+          "manifest": true,
+          "approval": true,
+          "publication": true,
+          "reopen": true
+        },
+        "piece_hashes_coherent": true,
+        "intentional_stale_hash_case": false,
+        "semantic_fault_checked_in_content": true,
+        "execution": "AUCUN_TEST_PRODUIT",
+        "candidate_control_order": "À définir, pas affirmation du premier code retourné"
+      },
+      {
+        "id": "M24-NEG-ORDER",
+        "expected_refusal_candidate": "APPROVAL_MISMATCH",
+        "hash_links": {
+          "body": true,
+          "manifest": false,
+          "approval": true,
+          "publication": true,
+          "reopen": true
+        },
+        "piece_hashes_coherent": true,
+        "intentional_stale_hash_case": true,
+        "semantic_fault_checked_in_content": true,
+        "execution": "AUCUN_TEST_PRODUIT",
+        "candidate_control_order": "À définir, pas affirmation du premier code retourné"
+      },
+      {
+        "id": "M24-NEG-IFC-CLAIM",
+        "expected_refusal_candidate": "UNSUPPORTED_CAPABILITY_CLAIM",
+        "hash_links": {
+          "body": true,
+          "manifest": true,
+          "approval": true,
+          "publication": true,
+          "reopen": true
+        },
+        "piece_hashes_coherent": true,
+        "intentional_stale_hash_case": false,
+        "semantic_fault_checked_in_content": true,
+        "execution": "AUCUN_TEST_PRODUIT",
+        "candidate_control_order": "À définir, pas affirmation du premier code retourné"
+      }
+    ],
+    "IF009": "Champs listés présents ou référencesillustrativesexplicites :identifiant/usage/date/auteur/étatapprobation/docsordonnés/modèlesrègles/contrôles/observations/décisionexacte",
+    "canonicalisation": "MéthodeJSONsortedcompact de démonstration uniquement, DEC16 toujoursouverte",
+    "product_tests": 0
+  },
+  "errors": [],
+  "blocking_content_findings": [],
+  "residual_limits": [
+    "Modèles/URLs/permissions/outils/JSON ne sont pas des formats/API implémentés ni signatures réelles.",
+    "Une preuve métier future doit appliquer contrôle complet entenantcontexte/droits/étatversionné serveur ; les suppositionspositives ne la remplacentpas.",
+    "M24NEGORDER modifie la liste de pièces ; une permutationpure de plusieurs pièces, sans ajout/perte, reste àconstituer avant recettecomplèteordre/TEST038.",
+    "CaspositifsIF009 à piècesJSONsynthétiques ne prouvent pas exportPDF/IFC, publicationmétier, identitépersistée ni roundtrip.",
+    "Les seuils, stockages, canonicalisation, règlesréouverture/migrations et décisions techniques restentouverts."
+  ],
+  "verdict": "PAS_DE_LACUNE_BLOQUANTE_DOCUMENTAIRE_IDENTIFIEE",
+  "acceptance": "Présentationàrevue documentaire seulement ; aucunregistre/coches/gate modifié, aucuntestproduitnouveau, aucunP630déduit"
+}

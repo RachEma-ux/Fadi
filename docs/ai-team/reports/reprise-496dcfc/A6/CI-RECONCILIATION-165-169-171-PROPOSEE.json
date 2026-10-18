@@ -1,0 +1,219 @@
+{
+  "mode": "immutable read-only workflow comparison, no merge/rebase/run",
+  "references": [
+    {
+      "pr": 165,
+      "sha": "b1023605b965b27ff56fabf179756592673c98d4",
+      "workflow_blob": "2c0c2c9198f3ebc70f6bb006f3fa1f59ce2b4c7c",
+      "workflow_sha256": "9542a7ca056edcb50f3ecb1892b47e242dc45aa9589c3d7463a4f93a31e9f7ec",
+      "trigger": {
+        "push": {
+          "branches": [
+            "main"
+          ]
+        },
+        "pull_request": ""
+      },
+      "pure_job_id": "mission-docs-pure",
+      "pure_job_name": "Mission 004 — documentation sans base (intégration non exécutée)",
+      "condition": "${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main' }}",
+      "pure_steps": [
+        {
+          "name": "actions/checkout@v4",
+          "run": null,
+          "uses": "actions/checkout@v4"
+        },
+        {
+          "name": "Refuser un diff hors du périmètre documentaire avant les contrôles",
+          "run": "python3 - <<'PY_SCOPE'\nimport os, re, subprocess\nbase = os.environ.get(\"BASE_SHA\", \"\")\nif not re.fullmatch(r\"[0-9a-f]{40}\", base):\n    raise SystemExit(\"Refus : SHA de base PR invalide ou absent.\")\nresult = subprocess.run(\n    [\"git\", \"diff\", \"--name-only\", \"--no-renames\", \"-z\", f\"{base}...HEAD\"],\n    check=True, capture_output=True,\n)\npaths = [p.decode(\"utf-8\") for p in result.stdout.split(b\"\\0\") if p]\nexact = {\"AGENTS.md\", \"CLAUDE.md\", \"apps/web/src/modules/README.md\",\n         \".github/workflows/ci.yml\", \".github/workflows/codex-missions.yml\"}\nunexpected = [p for p in paths if not (p.startswith((\"docs/\", \"Studio/\")) or p in exact)]\nif unexpected:\n    print(\"Refus : le diff contient des fichiers hors du périmètre documentaire :\")\n    for path in unexpected:\n        print(ascii(path))\n    raise SystemExit(1)\nprint(f\"Périmètre documentaire vérifié : {len(paths)} chemins ; aucune source applicative hors allowlist.\")\nPY_SCOPE\n",
+          "uses": null
+        },
+        {
+          "name": "actions/setup-node@v4",
+          "run": null,
+          "uses": "actions/setup-node@v4"
+        },
+        {
+          "name": "Tests unitaires du validateur documentaire sans base ni réseau",
+          "run": "python3 -m unittest discover -s docs/ai-team -p 'test_check_missions.py' -v",
+          "uses": null
+        },
+        {
+          "name": "Couverture des 31 missions et 630 affectations",
+          "run": "python3 docs/ai-team/check_missions.py --check",
+          "uses": null
+        },
+        {
+          "name": "Continuité — tests et structure",
+          "run": "node --test scripts/check-continuity.test.mjs\nnode scripts/check-continuity.mjs\n",
+          "uses": null
+        },
+        {
+          "name": "Isolation nominale Fadi",
+          "run": "node scripts/check-fadi-isolation.mjs",
+          "uses": null
+        },
+        {
+          "name": "Déclarer les vérifications d'intégration non effectuées",
+          "run": "cat >> \"$GITHUB_STEP_SUMMARY\" <<'SUMMARY'\n## Mission 004 — branche documentaire, aucune base réelle\nTests documentaires, couverture des affectations, continuité et isolation nominale seulement.\nAucun service PostgreSQL/API, installation npm, migration, test API/E2E ou image applicative exécuté dans ce job.\nLes jobs validate/e2e/image sont intentionnellement skipped sur cette branche exacte ; ils ne sont pas réussis.\nCe résultat ne valide ni les 630 fonctionnalités, ni l'intégration applicative, ni DB-3, ni une fusion.\nLes autres branches et push sur main conservent les jobs applicatifs ; cette exception est bornée à la préparation documentaire.\nSUMMARY\n",
+          "uses": null
+        }
+      ],
+      "pure_has_services": false,
+      "normal_conditions": {
+        "validate": "${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') }}",
+        "e2e": "${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') }}",
+        "image": "${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') }}"
+      },
+      "has_early_diff_guard": true
+    },
+    {
+      "pr": 169,
+      "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "workflow_blob": "a1021924a6caae14ef52163f9a1e3b5d54ab530d",
+      "workflow_sha256": "dca3828656e941b090ad8f971e857f499a3ef31397d307ee4350d0b6f45070da",
+      "trigger": {
+        "push": {
+          "branches": [
+            "main"
+          ]
+        },
+        "pull_request": ""
+      },
+      "pure_job_id": "db-guard-pure",
+      "pure_job_name": "DB1/2 — tests simulés sans base (DB3 non validée)",
+      "condition": "${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main' }}",
+      "pure_steps": [
+        {
+          "name": "actions/checkout@v4",
+          "run": null,
+          "uses": "actions/checkout@v4"
+        },
+        {
+          "name": "actions/setup-node@v4",
+          "run": null,
+          "uses": "actions/setup-node@v4"
+        },
+        {
+          "name": "Installer sans aucun script de cycle de vie",
+          "run": "npm ci --ignore-scripts --no-audit --no-fund",
+          "uses": null
+        },
+        {
+          "name": "Vérifier les types sans exécuter le serveur",
+          "run": "npm run typecheck",
+          "uses": null
+        },
+        {
+          "name": "Garde DB — uniquement tests et connexions simulés",
+          "run": "npm run test:db-guard",
+          "uses": null
+        },
+        {
+          "name": "Construire sans lancer l'application ni appliquer de schéma",
+          "run": "npm run build",
+          "uses": null
+        },
+        {
+          "name": "Rendre explicite le périmètre non exécuté",
+          "run": "cat >> \"$GITHUB_STEP_SUMMARY\" <<'SUMMARY'\n## A3-DB-1/2 : vérifications sans base réelle\nCe job ne démarre aucun service PostgreSQL/API, n'applique aucun schéma et n'exécute aucun test API/E2E mutateur.\nLes jobs `validate`, `e2e` et `image` sont intentionnellement non exécutés sur cette seule PR de garde DB.\nLeur statut skipped ne prouve aucune réussite d'intégration. DB-3, la recette fonctionnelle et la fusion restent non autorisées.\nLes éventuels échecs des étapes de ce job restent des échecs ; ce résumé n'en modifie pas le verdict.\nSUMMARY\n",
+          "uses": null
+        }
+      ],
+      "pure_has_services": false,
+      "normal_conditions": {
+        "validate": "${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') }}",
+        "e2e": "${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') }}",
+        "image": "${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main') }}"
+      },
+      "has_early_diff_guard": false
+    },
+    {
+      "pr": 171,
+      "sha": "5e0285d37f23c7c539502664036f0a2ff0986409",
+      "workflow_blob": "655d7b76a83f541062dbcfacd5c4b97edc1c4542",
+      "workflow_sha256": "cb3cc0beba7eb213a961056c7c3d58c6b4f64f409f385814568fc5680ab75819",
+      "trigger": {
+        "push": {
+          "branches": [
+            "main"
+          ]
+        },
+        "pull_request": ""
+      },
+      "pure_job_id": "classification-pure",
+      "pure_job_name": "Classification — modèle pur sans base (intégration non exécutée)",
+      "condition": "${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main' }}",
+      "pure_steps": [
+        {
+          "name": "actions/checkout@v4",
+          "run": null,
+          "uses": "actions/checkout@v4"
+        },
+        {
+          "name": "actions/setup-node@v4",
+          "run": null,
+          "uses": "actions/setup-node@v4"
+        },
+        {
+          "name": "Installer sans script de cycle de vie",
+          "run": "npm ci --ignore-scripts --no-audit --no-fund",
+          "uses": null
+        },
+        {
+          "name": "Vérifier les types sans exécuter le serveur",
+          "run": "npm run typecheck",
+          "uses": null
+        },
+        {
+          "name": "Suite complète pure du modèle Atelier",
+          "run": "npm run test --workspace=@parcours/atelier-model",
+          "uses": null
+        },
+        {
+          "name": "Construire sans lancer API ni appliquer de schéma",
+          "run": "npm run build",
+          "uses": null
+        },
+        {
+          "name": "Expliciter la couverture et les limites du lot pur",
+          "run": "cat >> \"$GITHUB_STEP_SUMMARY\" <<'SUMMARY'\n## A3-CLASSIF-1 — code pur, aucune base réelle\nTypes, suite complète du modèle Atelier et build seulement ; aucun serveur API ou PostgreSQL démarré.\nLes jobs validate/e2e/image sont intentionnellement non exécutés sur cette branche exacte ; skipped ne signifie pas réussite d'intégration.\nAucune migration, recette API/E2E mutatrice ou validation d'une base réelle n'est effectuée.\nCe succès éventuel ne prouve ni correction des données historiques, ni recette métier complète, ni autorisation de fusion/déploiement.\nLes échecs du job restent des échecs ; aucune assertion n'est ignorée pour obtenir un résultat vert.\nSUMMARY\n",
+          "uses": null
+        }
+      ],
+      "pure_has_services": false,
+      "normal_conditions": {
+        "validate": "${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main') }}",
+        "e2e": "${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main') }}",
+        "image": "${{ !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/156-classification-no-ifc-inference' && github.base_ref == 'main') }}"
+      },
+      "has_early_diff_guard": false
+    }
+  ],
+  "old_jobs_equal_main_except_if": {
+    "validate": {
+      "165": true,
+      "169": true,
+      "171": true
+    },
+    "e2e": {
+      "165": true,
+      "169": true,
+      "171": true
+    },
+    "image": {
+      "165": true,
+      "169": true,
+      "171": true
+    }
+  },
+  "main_sha": "a4caaab0e6665480f09febe3914c960b424b6b47",
+  "key_findings": [
+    "165 and171 explicitly test github.repository,169 tests head.repo.full_name but lacks github.repository condition",
+    "all three overwrite same job-level if; picking any one loses the other branch routes",
+    "pure jobs distinct and commands differ; docs guard has scope allowlist, code jobs not scoped by file diff",
+    "main push never matches PR tuples: complete workflows would run after merge, forbidden until separately authorized/validated"
+  ],
+  "runtime_execution": false,
+  "new_workflow_created_or_modified": false
+}

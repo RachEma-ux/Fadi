@@ -1,0 +1,774 @@
+{
+  "reviewer": "A5 indépendant de l’auteurA1/A4",
+  "utc": "2026-10-18T12:14:38.613105+00:00",
+  "source_proposal_sha256": "340d32b254f7860443f24714098d9e03fa612d03c68e18768e50dd35b09d0ceb",
+  "source_checklist_blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+  "review_kind": "Revue verbesconditions+contenu parID, pas simple existence/champs",
+  "proposed_count": 24,
+  "accepted_documentary_ids": [
+    "SRC-04",
+    "SRC-05",
+    "CAD-01",
+    "CAD-02",
+    "CAD-03",
+    "CAD-06",
+    "CAD-DEC-04",
+    "UX-01",
+    "UX-02",
+    "UX-03",
+    "UX-04",
+    "UX-05",
+    "UX-06",
+    "UX-07",
+    "UX-08",
+    "UX-09",
+    "ROUTE-01",
+    "ROUTE-02",
+    "ROUTE-03",
+    "ROUTE-04",
+    "ROUTE-05",
+    "ROUTE-06",
+    "ROUTE-07",
+    "ROUTE-08"
+  ],
+  "rejected_partial_ids": [],
+  "evidence_errors": [],
+  "application_condition": "A0 doit publier les pièces auSHAexact et lierpreuves/clôture/naturedoc avantéventuellemiseàjour ; aucunregistre/cochen’aétémodifié parA5.",
+  "not_accepted": [
+    "G0–G4",
+    "REC/NAV/TESTexécutions",
+    "X1corpuscomplets",
+    "141TRparsimpleextraction",
+    "630capacités",
+    "permissionsimplementées",
+    "fusiondéploiement"
+  ],
+  "rows": [
+    {
+      "id": "SRC-04",
+      "texte_source_exact": "Consigner DEM-01 : un module autonome intitulé exactement « Studio », accessible dans la barre latérale verticale de Fadi.",
+      "condition_documentaire_revue": "DEM-01 formulé explicitement : titre Studio, autonomie et entrée verticale principale.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "DEM01 consigné avec nom exactStudio, autonomie sansParcours/iframe et railvertical ; contenu déclaratif complet, pas entrée implémentée.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            7,
+            7
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "SRC-05",
+      "texte_source_exact": "Distinguer dans le dossier les principes de la charte, les contrats du référentiel, les propositions du plan et les observations historiques du dépôt.",
+      "condition_documentaire_revue": "Séparation explicite des principes charte, contrats RT, propositions plan et observations historiques.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Le dossier classe explicitement principesCharte/contratsRT/propositionsPlan et observationshistoriques ; les1757/47/3 etIFC restent distincts des preuvesStudio.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lines": [
+            19,
+            26
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lines": [
+            30,
+            34
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission003/repo/docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
+          "sha256": "6b781c5e2b8e41a874fce28e98b11033cddd7b4e53a3324b479616dede54fba5",
+          "lines": [
+            31,
+            31
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "CAD-01",
+      "texte_source_exact": "Décrire le premier usage métier : petite étude réellement terminable, de l’entrée dans Studio à la publication.",
+      "condition_documentaire_revue": "Premier usage décrit depuis entrée Studio jusqu’à publication, trois résultats utiles réouvrables.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Usage local/pavillon A/B/C décrit de sélection/édition à réouverture et publicationA/C, B jusqu’à vue/coupe ; critères métier terminables et interdiction démo superficielle.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lines": [
+            38,
+            46
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lines": [
+            83,
+            89
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "CAD-02",
+      "texte_source_exact": "Délimiter le périmètre pilote, ses utilisateurs, ses données et les capacités incluses ou exclues.",
+      "condition_documentaire_revue": "Pilote, utilisateurs, données, capacités incluses et reportées explicités.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Périmètre synthétique, minimumopérations, rôles/logiquepermissions et reportsD02 définis ; aucune donnéeproduction ou attributioncompte réel.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lines": [
+            38,
+            57
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lines": [
+            61,
+            63
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lines": [
+            79,
+            79
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lines": [
+            93,
+            93
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "CAD-03",
+      "texte_source_exact": "Inscrire les quatre domaines, les deux planches autonomes et le parcours associé dans les critères du pilote.",
+      "condition_documentaire_revue": "Quatre domaines, deux planches autonomes et conception associée inscrits dans les critères pilote.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Quatre domainesD1–D4 nommés avec responsabilités/sorties ; deux planches autonomes et même objet associé inclus aux critèresA/B/C.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lines": [
+            54,
+            57
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lines": [
+            85,
+            89
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "CAD-06",
+      "texte_source_exact": "Inscrire explicitement l’absence d’autorisation de suppression de l’Atelier, de modification des 21 étapes et de remplacement systématique des moteurs.",
+      "condition_documentaire_revue": "Absence d’autorisation de suppression Atelier, modification21étapes, remplacement systématique moteurs inscrite.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Interdits explicites maintenus : pas suppressionAtelier, modification21étapes ni remplacement systématiquemoteurs ; docsource incorporée et dossier portent les trois bornes.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lines": [
+            26,
+            26
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lines": [
+            31,
+            31
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lines": [
+            48,
+            48
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission003/repo/Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+          "sha256": "4976191179bafa59cbc3a24fef9c28c9f50dcc7fa9a0bd8573dc075586659ce3",
+          "lines": [
+            34,
+            34
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "CAD-DEC-04",
+      "texte_source_exact": "Soumettre le placement du bouton « Studio » à décision ; conserver « après Projets » comme proposition, non comme choix déjà adopté.",
+      "condition_documentaire_revue": "Placement après Projets soumis avec distinction proposition/décision.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Soumissionplacement suivie deD07 retenu pour spécifications, avec historiqueM003proposé et limitescode/gates ; obligation de soumission satisfaite sans réécrirel’histoire. Pas décisionarchitecturaleglobale.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A1/G0-DOSSIER-FINALISE-M004.md",
+          "sha256": "085c7ef843db6497bb953ab268a2e4030ae7a42ffb01c1caa6f3c9b55e9c95fa",
+          "lines": [
+            9,
+            13
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            9,
+            9
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            37,
+            37
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "UX-01",
+      "texte_source_exact": "Spécifier l’entrée « Studio » au même niveau de navigation qu’Accueil et Projets.",
+      "condition_documentaire_revue": "Entrée Studio au même niveau navigation Accueil/Projets.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Railprincipal autonome aprèsProjets, même niveauAccueil/Projets visible aux maquettes ; pas raccourciAtelier.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            7,
+            9
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            35,
+            37
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "UX-02",
+      "texte_source_exact": "Spécifier le texte « Studio » dans la barre dépliée et son maintien dans l’état actif du module.",
+      "condition_documentaire_revue": "Texte Studio en rail déplié et état actif maintenu sur routes Studio.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "LibelléStudiovisible raildéplié et étatStudioactif sur ses routes spécifiés ; aucunProjetsfaussementactif.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            37,
+            37
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "UX-03",
+      "texte_source_exact": "Spécifier le nom accessible et l’infobulle « Studio » pour l’icône en barre repliée.",
+      "condition_documentaire_revue": "Nom accessible et infobulle Studio en rail replié.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Nomaccessible/titleStudio et icône propre railreplié explicitement prescrits ; conformitéaccessibilité nonprétendue.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            37,
+            37
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "UX-04",
+      "texte_source_exact": "Spécifier l’accès à la même entrée depuis le menu vertical adaptatif sur mobile.",
+      "condition_documentaire_revue": "Même entrée depuis menu vertical adaptatif mobile.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "MêmeentréeStudio menuverticalmobile ; panneau/rotation et ciblesproposées documentés, pas implémentationmobile passée.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            37,
+            37
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            48,
+            48
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "UX-05",
+      "texte_source_exact": "Spécifier le plein écran comme action explicite, avec sortie visible, sans masquage automatique de la navigation.",
+      "condition_documentaire_revue": "Plein écran explicite, sortie visible, sans masquage automatique.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Entrée/sortiepleinécran nommées, pas atelierimmersive automatique, sortievisible/reversible, refusAPInonbloquant et événementsretour conservés.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            50,
+            50
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "UX-06",
+      "texte_source_exact": "Spécifier l’accueil : projets et études accessibles, sélection et création d’une étude.",
+      "condition_documentaire_revue": "Accueil avec projets/études autorisés, sélection et création étude.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Accueilautorisé/sélection/créationétudesousdroit, absencecontexte et interdictioncréationGET/géométrieorpheline explicités.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            15,
+            18
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            55,
+            57
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "UX-07",
+      "texte_source_exact": "Spécifier la reprise d’un contexte projet transmis uniquement lorsqu’il est valide et autorisé.",
+      "condition_documentaire_revue": "Reprise du contexte transmis seulement valide et autorisé.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "URLexpliciteprioritaire, droits et appartenance hiérarchique relus serveur, contexteobsolète refusé sans substitutiondernierprojet.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            21,
+            21
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            31,
+            33
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "UX-08",
+      "texte_source_exact": "Spécifier le choix explicite du projet en l’absence de contexte, sans projet fictif ni géométrie orpheline.",
+      "condition_documentaire_revue": "Choix explicite projet en absence contexte, aucun projet fictif/objet orphelin.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Choixprojetexplicite, contextepartiel nommé, étudevariante absentes traitées ; aucunevaleurfictive/géométrieorpheline.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            15,
+            18
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            25,
+            25
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            39,
+            39
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "UX-09",
+      "texte_source_exact": "Limiter le dernier contexte personnel à une suggestion : il ne remplace ni une permission ni le contexte demandé dans l’URL.",
+      "condition_documentaire_revue": "Dernier contexte personnel = suggestion, jamais permission/substitution URL.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Derniercontextepersonnel suggestionuniquement, jamaispreuvepermission ou substitutionURL ; règledepriorité explicite.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            21,
+            21
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "ROUTE-01",
+      "texte_source_exact": "Décrire dans la décision d’intégration l’option /studio pour l’accueil Studio.",
+      "condition_documentaire_revue": "Option /studio et préconditions accueil décrites.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Option /studio avec listeautorisée et choixexplicite décrite, aucunecréationGET ; verbeDécrireoption satisfait dans contratcandidat.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            15,
+            15
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "ROUTE-02",
+      "texte_source_exact": "Décrire l’option /studio/projets/:projectId pour les études du projet autorisé.",
+      "condition_documentaire_revue": "Option /studio/projets/:projectId et droits étude décrits.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Optionprojet avecétudesautorisées etcréationcontrôlée décrite ; pasdépendanceParcours.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            16,
+            16
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "ROUTE-03",
+      "texte_source_exact": "Décrire l’option /studio/projets/:projectId/etudes/:studyId pour le cadrage, les sources et les variantes.",
+      "condition_documentaire_revue": "Option /studio/projets/:projectId/etudes/:studyId et contexte cadrage définis.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Optionétude doit documenter cadrage, sources et variantes : revue explicite des trois termes, pas raccourci cadrage/variantes. Les sourcesd’étude sont maintenantexplicitementtraitées dansligneoption.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            17,
+            17
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            121,
+            132
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A4/MAQUETTES-DOCUMENTAIRES.md",
+          "sha256": "911a0721ed0a72ecf48478c63b635efd5dbe9c112d1de08e18fdd8c56f06baab",
+          "lines": [
+            108,
+            121
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "ROUTE-04",
+      "texte_source_exact": "Décrire l’option /studio/projets/:projectId/etudes/:studyId/variantes/:variantId pour l’espace de conception.",
+      "condition_documentaire_revue": "Option espace /studio/projets/:projectId/etudes/:studyId/variantes/:variantId définie.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Optionvariante décrit espacedetravail et contexte/révision/droits ; sourceuniquefuturetoujourscontratcandidat.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            18,
+            18
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "ROUTE-05",
+      "texte_source_exact": "Définir la route complète d’une révision dans la hiérarchie projet/étude/variante ; ne pas coder littéralement l’abréviation /studio/.../revisions/:revisionId.",
+      "condition_documentaire_revue": "Route révision complète sans abréviation littérale, consultation immuable et retour travail explicités.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "URLrévisioncomplète sansabréviation, référenceimmuable et intentionexplicitepouréditer ; critèresdoc satisfaits sansroutecodée.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            19,
+            21
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "ROUTE-06",
+      "texte_source_exact": "Définir la représentation du domaine et de la planche actifs dans le contrat d’URL.",
+      "condition_documentaire_revue": "Domaine/planche représentés dans URL avec valeurs et erreurs/absence définies.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Querydomaine/quatrevaleurs etplanche2D/3Dseulementdessin, absence/inconnu/horsdomaine et nonmutation explicités.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            23,
+            25
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "ROUTE-07",
+      "texte_source_exact": "Définir le comportement à l’ouverture directe, à l’actualisation, au partage du lien et avec précédent/suivant.",
+      "condition_documentaire_revue": "Ouverture directe/refresh/partage/précédent-suivant/historique spécifiés sans perte contexte.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "URLcomplète/refresh/historique/directlinkauth etpartagepermissionbornée définis ; contextepréservé, historiquejamaislatest.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            27,
+            27
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            104,
+            110
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    },
+    {
+      "id": "ROUTE-08",
+      "texte_source_exact": "Définir les refus d’accès et la vérification serveur de l’appartenance projet/étude/variante/révision.",
+      "condition_documentaire_revue": "Refus d’accès et vérification serveur appartenance hiérarchique définis.",
+      "verdict_revue": "COMPLET_DOCUMENTAIRE",
+      "justification_independante": "Appartenance dechaqueID et droitsserver, refusneutre/sansfuite, cache etretourauth contrôlés dans lesspécifications.",
+      "evidence": [
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            21,
+            21
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            55,
+            66
+          ],
+          "exact_proposed_evidence": true
+        },
+        {
+          "path": "/workspace/work/mission004/agents/A4/CONTRAT-NAV-M004.md",
+          "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+          "lines": [
+            104,
+            114
+          ],
+          "exact_proposed_evidence": true
+        }
+      ],
+      "limites": "Complétude du travail documentaire seulement ; contrat/routes candidats, aucunecapacitéStudio/gate/permission/acceptationmétier validée.",
+      "registre_modifie": false,
+      "source_checkbox_changed": false
+    }
+  ],
+  "initial_rejection_then_resolved": {
+    "id": "ROUTE-03",
+    "initial_missing": "Sources de l’étude non décrites dans la première optionRoute03",
+    "resolution": "A4 contratsectionSources121–fin+maquette8 lus, actualisation29hashesA1revérifiée, zéroerreurfinale",
+    "outcome": "Complétude documentaire vérifiée, aucune recette/route/G1 acceptée"
+  },
+  "conditional_P630_after_A0_only": {
+    "previous_verified_ids": 6,
+    "new_documentary_ids": 24,
+    "would_total": 30,
+    "denominator": 630,
+    "rounded_percent": 4.8,
+    "applied_by_A5": false,
+    "PDEV": null
+  }
+}

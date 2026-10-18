@@ -1,0 +1,84 @@
+{
+  "type": "Schémas logiques documentaires non exécutables ; pas JSON Schema, SQL, API ni format natifStudio",
+  "version_document": "G1-A1-complement-2",
+  "autorite": {
+    "DEC01": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250110124",
+    "DEC03": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250110501",
+    "portee": "Orientations logiques retenues pour préparerG1, ni choix physique ratifié ni code/POCautorisé"
+  },
+  "contrats_repris": [
+    "C-STUDY",
+    "C-DRAWING2D",
+    "C-COMMAND",
+    "C-PUBLICATION"
+  ],
+  "modeles": {
+    "Projet": {
+      "identite": "projectId opaque stable",
+      "autorite": "Service projetFadi existant",
+      "relations": "tenant/projet/droits/sources transverses autorisés, aucun projetconcurrent"
+    },
+    "Étude": {
+      "identite": "studyId propre stable, pas alias implicite de projectId",
+      "appartenance": "exactement un projectId",
+      "contenu": "cadrage/sources/hypothèses, variantes possibles mais non obligatoires àcréation",
+      "interdit": "géométriepersistée sansvariante, mutation de programme approuvé par dessin"
+    },
+    "Variante": {
+      "identite": "variantId propre stable",
+      "appartenance": "exactement un studyId/projectId autorisés",
+      "filiation": "fork explicite avec provenance et nouvellesidentités seloncontrat, paspropagationimplicite",
+      "tete": "révisioncourante référencée, pas réécriturehistorique"
+    },
+    "Révision": {
+      "identite": "revisionId stable, immuable",
+      "appartenance": "exactement un variantId/studyId/projectId",
+      "versions_distinctes": [
+        "schemaVersion du document",
+        "contractVersion de commande",
+        "revisionId historique",
+        "baseRevisionId précondition",
+        "documentVersion de pièce livrée"
+      ],
+      "contenu": "parents/transaction/références de contenusimmuables avecversion/empreinte, événements et autorités correspondantes",
+      "interdit": "modifierancienneRévision, remplacer.latest souslienhistorique"
+    },
+    "Document2DCanonique": {
+      "identite": "documentId stable distinct de la pièce publiée",
+      "appartenance": "variantepropriétaire et révisioncitant ce contenu",
+      "autorite": "drawing2d, writer unique serveur",
+      "requis_logiques": [
+        "versiondeschéma explicite",
+        "repère2D etunités explicites",
+        "primitivesidentifiées",
+        "calquesidentifiés",
+        "cotes/annotations/contraintes si présentes référencent cibles valides ou ambiguïtés explicites",
+        "provenance/version ducontenu",
+        "sauvegarde/réouverture indépendant de3D"
+      ],
+      "facultatif": "relations3D explicites ; absence modèle3D normale, pasfausse3Ddesubstitution",
+      "derives": "SVG/Canvas/index/scènes/projections reconstruisibles, jamais sourcecanonique"
+    },
+    "PublicationReference": {
+      "source": "C-PUBLICATION/IF009 et M24 existants, passecondmanifeste",
+      "contenu": "sources/dessins/pièces/contrôles/observations/règles exacts coordonnés ; approbation etdiffusiondistinctes",
+      "interdit": "substituerdocumentcourant àpiècehistorique ou supprimerpublication aprèsévolution"
+    }
+  },
+  "choix_physiques_non_ratifies": [
+    "formephysique/stockage/index/contraintes de schéma",
+    "allocation/encodageIDs",
+    "typesdeprimitives/solveurphysiques",
+    "canonicalisation/empreinteproduction",
+    "migrationanciensforks/rollback et coûts",
+    "lecteursversionnés/permissionsdéfinitives/preuvesisolation/restauration"
+  ],
+  "limite": "Descriptions de contrats, aucune implémentation/validationproduit ; DEC01/03 restentouvertes.",
+  "clarification_versions": {
+    "contentVersion": "Étiquette illustrative de la version du contenu canonique, distincte de la pièce diffusée ; allocation/format physique à décider",
+    "documentVersion": "Version d’une pièce livrée référencée dans manifeste IF009/M24 ; pas version du document canonique de travail",
+    "revisionId": "État historique immuable de la variante, qui référence les contenus exacts",
+    "schemaVersion": "Version de leur représentation, non interchangeable avec révision/version de pièce",
+    "contractVersion": "Version du contrat de commande, non interchangeable avec format de contenu"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "mission": "004/M24",
+  "auteur": "A1",
+  "date": "2026-10-18",
+  "nature": "Préparation documentaire candidate ; pas API/format natif implémenté",
+  "contrats_A2_repris": [
+    "C-STUDY",
+    "C-COMMAND",
+    "C-DRAWING2D",
+    "C-MODEL3D",
+    "C-ASSOCIATION",
+    "C-PUBLICATION"
+  ],
+  "textes_IF_normatifs": "Fiches141exactes source RT001 ; IF001/004/006/009/011 référencés sans remplacement",
+  "positive_examples": 3,
+  "negative_examples": 15,
+  "verifications_executees": [
+    "Parsing JSON",
+    "Recalcul empreintes internes des exemples positifs et liens manifeste/approbation/publication",
+    "Cohérence arithmétique oracle RT001 documentée, aucun moteur Fadi exécuté"
+  ],
+  "tests_produit_executes": 0,
+  "code_Studio": false,
+  "gate_acceptee": false,
+  "comptes_permissions_reelles": false,
+  "donnees_production": false,
+  "fichiers": [
+    {
+      "file": "M24-CONTRAT-PUBLICATION-REOUVERTURE.md",
+      "bytes": 20490,
+      "sha256": "8e2d348db23b39aa58d2e1d5ac9f5bbdee45f6cdf60015a3031dab71cd9d9917"
+    },
+    {
+      "file": "M24-EXEMPLES-MANIFESTES.json",
+      "bytes": 167495,
+      "sha256": "bdecc5b2387a619ae3e0a09e78df44ea1dd3188fb1451be96980d32018551bf0"
+    },
+    {
+      "file": "M24-VALIDATION-DOCUMENTAIRE.json",
+      "bytes": 1289,
+      "sha256": "ef1dd6c58722a3c25ec14afebd2e6ddf574bd468dd0f668deea5cc4d02e27798"
+    },
+    {
+      "file": "M24-publication-exemples.py",
+      "bytes": 13032,
+      "sha256": "a59bd23e1ab4323d2171f44f389caaf32cec2581903cc3f545b8babc1fe1521d"
+    }
+  ],
+  "prochaine_action": "A2 vérifie compatibilité contratdurable, A5 lie oracles/refus ; A0 intègre après revue documentaire. Aucune ouverture codeStudio depuis autorisationDB1/2.",
+  "correction_revue_A2": "Réserve empreinte réouverture des sept négatifs sémantiques corrigée et revérifiée par contrôle distinct"
+}

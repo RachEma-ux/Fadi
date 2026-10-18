@@ -1,0 +1,44 @@
+{
+  "reviewer": "A2",
+  "scope": "M06 diff documentaire vs HEAD3f0dc63 de la copie, huit fichiers ciblés ; aucune modification repo par A2",
+  "reviewed_diff_sha256": "9b8ee764d29c6cda7249e586a406a480f395e3f04d124cf090da492ffc432bb3",
+  "verdict": "Aucune erreur bloquante relevée dans le périmètre relu",
+  "findings": [],
+  "verified": [
+    {
+      "claim": "D174 acceptation Atelier0–9 et Planche1–7 avec limites, pas recette Studio",
+      "proof": "docs/atelier/decisions.md:178 ; ajout docs/planche/README fidèle"
+    },
+    {
+      "claim": "D177 arbitrage licenceOCCT8oct2026 LGPL séparé/remplaçable ; D182 noyau livré ; D183 P2-1 accepté",
+      "proof": "docs/atelier/decisions.md:181,186,187 ; architecture/recette actualisées sans prétendre Planche exacte"
+    },
+    {
+      "claim": "Noms/versions application inchangés",
+      "proof": "diff ciblé uniquementREADME/docs ; aucun diff manifest.json/module-registry.ts dans relevé"
+    },
+    {
+      "claim": "Inventaire1283/488/1887 et scanner761 cités sans exhaustivité ;269fiches176codes nonclos",
+      "proof": "Comparé artefacts A2isolation-inventory.json et ajout STATUS/HANDOFF ; mot notamment autorise20autrestraces nonrésolues"
+    },
+    {
+      "claim": "Fusion#148 et#147ouverte distinguées des relevés historiques",
+      "proof": "SnapshotsA0github-pr-148.json et A2issue-147.json, aucune clôture implicite"
+    },
+    {
+      "claim": "STATUS etHANDOFF actualisés ensemble",
+      "proof": "Huit chemins du diff ciblé"
+    }
+  ],
+  "non_blocking_notes": [
+    {
+      "topic": "Date en tête checkpoints",
+      "note": "Ancien «Misàjour17oct» reste avant actualisation explicitement datée18oct ; pas erreur de fond, lisibilité améliorable."
+    },
+    {
+      "topic": "Périmètre de preuve",
+      "note": "Revue statique uniquement ; pas validation licences distribuées, couverture fonctionnelle ni recette. Inventaire original nonexhaustif et source de code baseline nonretestée."
+    }
+  ],
+  "next_action": "A0 intègre seulement diff documentaire autorisé avec contrôles continuité ; pas correctionmanifest/version ni sourceTS depuis cette revue."
+}

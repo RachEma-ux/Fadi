@@ -1,0 +1,26 @@
+{
+  "documentaryOnly": true,
+  "result": "passed",
+  "checks": [
+    "JSON syntax",
+    "6 unique illustrative scenario IDs",
+    "all requirement IDs found in A1 source fiches",
+    "explicit canonicalEffects empty for refusal cases",
+    "scope consistency",
+    "lost ACK no duplicate event",
+    "approval fingerprint equals publication manifest fixture",
+    "duplicate outbox delivery no new business event",
+    "new writes and pending queue preserved",
+    "6 illustrative fingerprints recomputed",
+    "5 source file SHA256 recomputed"
+  ],
+  "runtimeTestsExecuted": false,
+  "workerOrDatabaseOrRestoreExecuted": false,
+  "limitations": [
+    "not a production schema validator",
+    "no Studio feature acceptance",
+    "no durability/performance proof",
+    "no budget or retention value decided"
+  ],
+  "example_sha256": "71c1cfeafd36f1741f55395ccb4d524a9abee439f9e078a385d7802a1eb54632"
+}

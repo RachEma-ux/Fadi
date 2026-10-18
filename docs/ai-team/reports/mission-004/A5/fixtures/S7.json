@@ -1,0 +1,60 @@
+{
+  "schema": "fixture-documentaire-proposee/1",
+  "provenance": "Création synthétique Mission004 sous délégation D01/D07 ; aucun client/production",
+  "rights": "Contenu original préparé pour Fadi ; aucune ressource externe",
+  "purpose": "Spécification de données, pas format import/API implémenté",
+  "frame": "local",
+  "coordinate_unit": "mm",
+  "execution": "Non exécuté dans Studio",
+  "approval": "Préparation autorisée, gate/réalisation Studio non acceptées",
+  "decisions": [
+    "Q-M003-D01",
+    "Q-M003-D02",
+    "Q-M003-D07"
+  ],
+  "performance_budgets": "À fixer DEC13, aucune capacité/latence garantie",
+  "corpus_id": "S7",
+  "label": "Fileoffline puis revalidation",
+  "context": {
+    "projectId": "syn-pavillon",
+    "studyId": "syn-study-01",
+    "variantId": "syn-variant-A",
+    "revisionId": "syn-revision-01"
+  },
+  "profile": {
+    "id": "profile-local",
+    "cachedTools": [
+      "line"
+    ],
+    "notCachedTools": [
+      "rare-exact-tool"
+    ]
+  },
+  "queued_command": {
+    "requestId": "syn-request-01",
+    "baseRevision": "syn-revision-01",
+    "operation": "synthetic-design-command",
+    "author": "designer"
+  },
+  "transport_scenarios": [
+    "offline",
+    "response-lost-after-server-commit",
+    "reconnect",
+    "repeat-same-request",
+    "permission-revoked-before-reconnect"
+  ],
+  "oracles": {
+    "same_request_applied_at_most_once": true,
+    "mutation_count_after_successful_retry": 1,
+    "unknown_cached_tool_not_available": true,
+    "server_permission_revalidated": true,
+    "no_publication_before_reconnect_validation": true,
+    "incompatible_sw_preserves_pending_queue": true
+  },
+  "negative_variants": [
+    "Même requestId payloadmodifié : refus contrat",
+    "Droit révoqué : commande non committée et étatlocal récupérable",
+    "MiseàjourSW incompatible : pas effacementfile"
+  ],
+  "limit": "Aucun stockageIndexedDB ni réseau exécuté ; séquence prescrite seulement"
+}

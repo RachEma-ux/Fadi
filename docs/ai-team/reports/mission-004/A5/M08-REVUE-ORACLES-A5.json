@@ -1,0 +1,22 @@
+{
+  "reviewer": "A5",
+  "scope": "Contrôle statique indépendant des125entrées/relationscandidates A2 auSHAimmuable ; aucune recette exécutée",
+  "sha": "a4caaab0e6665480f09febe3914c960b424b6b47",
+  "entries": 125,
+  "candidate_relations": 185,
+  "relationship_counts": {
+    "CANDIDAT_PARTIEL_CONTENU_ET_SOURCE": 79,
+    "CANDIDAT_DECLARE_SOURCE_A_RAPPROCHER": 90,
+    "CANDIDAT_AUTRE_NIVEAU_NON_EQUIVALENT": 8,
+    "CANDIDAT_E2E_PARTIEL_REPERE_PAR_ASSERTION": 8
+  },
+  "evidence_errors": [],
+  "oracle_equivalence": "Non démontrée ; 0/125 équivalences acceptées par ce contrôle",
+  "required_next_review": "Par ancienne ligneValidation, séparer chaque assertion/refus/idempotence/undo/précision ; lier à assertion réelle et casfixtureactuel. Présencecommande/entête≠oracle couvert. Préserver lienhistorique et expliciter écarts, pas remplacerautomatiquement parpremierfichiercandidat.",
+  "limits": [
+    "CANDIDAT_PARTIEL_CONTENU_ET_SOURCE fournit lien direct decontenu, pas toutes assertions deValidation.",
+    "CANDIDAT_SOURCE_ENTETE seulement est àqualifier individuellement, pas preuve detest.",
+    "AUTRE_NIVEAU nonéquivalent ne remplace pas unitaire par E2E.",
+    "Cheminabrégé etDA0909 prospectif restent anomalies distinctes, aucune suppressioncapacité."
+  ]
+}
