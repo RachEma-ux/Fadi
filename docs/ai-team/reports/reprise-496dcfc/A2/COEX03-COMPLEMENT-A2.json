@@ -1,0 +1,330 @@
+{
+  "objet": "Complément COEX03 à matriceClaude existante ; proposition documentaire non exécutable",
+  "source_remise": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+  "reference_code_Claude": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "provenance_sources": [
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "blob": "1745c055866378b35cf6a2f831e17e726572258a",
+      "sha256": "1f2a520254eca039a43dfa6cc892c1efcd42b7fec4d01ae820332d22bc0a72a1",
+      "lines": [
+        {
+          "line": 61,
+          "exact_line": "| Jeu de données | Tables | Écrivain(s) au `817bd36` |"
+        },
+        {
+          "line": 63,
+          "exact_line": "| Modèle typé de l'Atelier | `atelier_niveaux`, `_objets`, `_relations`, `_definitions`, `_calques`, `_groupes`, `_references`, `_problemes`, `atelier_site` | `lib/atelier-modele.ts` seul, appelé par le service de commandes et par les imports contrôlés (archive, exemples, bascule). Règle R9 ([cahier #L118](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/docs/atelier-cahier-des-charges.md#L118)). |"
+        },
+        {
+          "line": 64,
+          "exact_line": "| Journal et boîte de sortie | `atelier_commands`, `atelier_outbox` | Validation des commandes (`lib/atelier-validation.ts`), archive, exemples, bascule ; `lib/atelier-events.ts` |"
+        },
+        {
+          "line": 65,
+          "exact_line": "| Versions, volumes, variantes, publications, verrous | `atelier_versions`, `volumes`, `atelier_variants`, `atelier_publications`, `atelier_locks`, `atelier_lock_events` | `lib/atelier-versions.ts` et `routes/atelier-versions.ts` |"
+        },
+        {
+          "line": 66,
+          "exact_line": "| Automatisation | `atelier_scripts`, `atelier_propositions` | `routes/atelier-automatisation.ts` |"
+        },
+        {
+          "line": 67,
+          "exact_line": "| Documents | `produced_documents`, `drawing_exports` | `lib/documents.ts`, `routes/documents.ts` |"
+        },
+        {
+          "line": 68,
+          "exact_line": "| Projet (dont `model_revision`) | `projects` | 12 fichiers. `model_revision + 1` n'est écrit que dans la transaction de commande ([atelier-commands.ts#L8](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/routes/atelier-commands.ts#L8)). |"
+        },
+        {
+          "line": 69,
+          "exact_line": "| Côté navigateur | Dexie `fadi-local` : `lots`, `modelCache`, `keyValue` | Le bus client de l'Atelier ([local-store.ts#L58-L64](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/web/src/lib/local-store.ts#L58-L64)) |"
+        },
+        {
+          "line": 75,
+          "exact_line": "**A — recommandée.**"
+        },
+        {
+          "line": 82,
+          "exact_line": "**B.** Les deux clients peuvent écrire sur le même jeu, départagés par le verrou d'édition existant (`atelier_locks`) et par la révision de base (409). C'est techniquement possible, mais contraire au Plan §8.2 (« deux chaînes d'écriture incompatibles sur la même étude ») et aux risques RISK-01 et RISK-03. **Non recommandé.**"
+        },
+        {
+          "line": 98,
+          "exact_line": "**A — recommandée.**"
+        },
+        {
+          "line": 125,
+          "exact_line": "> Entre l'Atelier et Studio, aucune donnée métier n'est recopiée dans les deux sens. Le transfert se fait uniquement de deux façons : (1) le rejeu de commandes typées validées par le service de commandes (R9) ; (2) un import à sens unique, avec rapport de correspondance et de pertes (Plan §8.1). Il n'y a ni seconde base métier pour Studio, ni tâche périodique qui recopie des tables, ni écriture directe d'un client dans les tables de l'autre autorité."
+        }
+      ]
+    },
+    {
+      "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob": "db5588eca8980efcd7276c1cc2182b9070c6eb38",
+      "sha256": "4976191179bafa59cbc3a24fef9c28c9f50dcc7fa9a0bd8573dc075586659ce3",
+      "lines": [
+        {
+          "line": 121,
+          "exact_line": "La bascule des données définit un seul propriétaire d’écriture par jeu de données. Pour une étude migrée, l’ancien accès peut devenir une redirection contrôlée ou une consultation en lecture seule ; le choix est à valider. Aucune synchronisation bidirectionnelle artisanale entre deux bases concurrentes n’est introduite. Aucun retrait définitif n’intervient avant comparaison avant/après, restauration testée et acceptation."
+        },
+        {
+          "line": 227,
+          "exact_line": "La séquence avant/après déploiement est une proposition opérationnelle de ce plan : sauvegarde restaurable avant toute migration, vérification utilisateur après mise en production, puis sauvegarde de l’état accepté. Le retour arrière doit traiter les écritures effectuées après la bascule ; remettre seulement l’ancien bundle n’est pas une récupération des données."
+        },
+        {
+          "line": 297,
+          "exact_line": "Le transfert d’autorité d’écriture d’Atelier vers Studio est une décision par périmètre. Ne pas autoriser deux chaînes d’écriture incompatibles sur la même étude. Conserver l’accès de consultation historique nécessaire. La suppression d’anciens écrans, routes ou stockages est un lot ultérieur explicitement autorisé, pas un effet secondaire du lot I."
+        },
+        {
+          "line": 301,
+          "exact_line": "Conserver le build, les migrations, les versions de schéma et la sauvegarde de référence. Définir les déclencheurs de retour arrière, le responsable et le traitement des nouvelles écritures. Prévoir le refus des anciennes versions clientes incompatibles et la protection des files locales lors du changement de service worker."
+        }
+      ]
+    },
+    {
+      "path": "docs/atelier-cahier-des-charges.md",
+      "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob": "7ed0f9ad9409c0e9088f5a1c7504ceaa236a494b",
+      "sha256": "65c36a53a35fc732a8ef2d7f29316689ad1539bb562ddc7b381b7043d97c7584",
+      "lines": [
+        {
+          "line": 118,
+          "exact_line": "| R9 | Toute modification du modèle passe par une commande typée, idempotente (`requestId`), validée par le serveur, journalisée, inversible. Pas d'écriture directe en base depuis une route hors du service de commandes. Les scripts et l'assistant utilisent les mêmes commandes. | §6 Architecture V4, T06, T19 |"
+        }
+      ]
+    }
+  ],
+  "source_contrat_durable": {
+    "path": "/workspace/work/mission004/agents/A2/M05-M17-CONTRATS-DURABLES.md",
+    "sha256": "893d4917fe810867b589727e82d1789db56453f86c78fbfab56b294acedac84b",
+    "lines": [
+      {
+        "line": 11,
+        "exact_line": "`schemaVersion` qualifie chaque document persistant ; `contractVersion` l'opération, `revisionId` un état immuable, `baseRevisionId` la précondition d'écriture, `documentVersion` une version de pièce. Ces cinq notions ne sont pas interchangeables. Une révision inclut contexte, parent(s), transaction et références de contenus versionnés avec empreintes. Un fork produit nouveaux IDs propriétaires et provenance vers la source ; aucune propagation implicite. Un historique consulté est immuable ; modifier signifie nouvelle commande sur tête autorisée ou fork explicite, jamais mutation d'une révision existante."
+      },
+      {
+        "line": 23,
+        "exact_line": "Un objet/révision a un seul couple propriétaire logique + writerAuthority autorisé, établi serveur. Deux surfaces peuvent afficher le même objet, elles n'obtiennent pas deux droits d'écriture directs. Une copie indépendante reçoit nouvel ID et provenance ; une référence liée reste distincte d'une copie. L'autorité associée ne duplique pas les quantités transverses autoritaires ni le programme approuvé. Une vue graphique n'est jamais une autorité métier."
+      },
+      {
+        "line": 25,
+        "exact_line": "Atelier et Studio peuvent partager un moteur via adaptateur public, mais une même donnée partagée garde un écrivain unique. Tout mode de coexistence « Studio écrit l'ancien Atelier et sa nouvelle copie » est refusé. La forme physique de l'adaptateur et le choix de réutiliser un document existant demeurent DEC-18/01 ; le champ candidat writerAuthority n'est pas une colonne existante. Une transition d'autorité serait une opération explicite, atomique, auditée, avec refus si commandes hors ligne en attente et restauration prouvée ; aucune migration proposée ici n'est autorisée."
+      },
+      {
+        "line": 31,
+        "exact_line": "L'enveloppe illustrative IF-006 est réutilisée telle quelle : requestId/toolId/contractVersion/actorId/scope(projectId,studyId,variantId,baseRevisionId)/targetIds/operation/parameters/mode. Les variantes de représentation physique restent à ratifier ; aucune route nouvelle annoncée. Les métadonnées writerAuthority, expectedObjectVersions et relationVersions des exemples se trouvent dans une section documentaire `preconditions`, pas ajoutées en prétendant modifier IF-006. Leur emplacement physique est ouvert."
+      },
+      {
+        "line": 33,
+        "exact_line": "Avant effet : authentification serveur et concordance actorId, autorisation tenant/projet/étude/variante/objet et action ; versions de contrat/document supportées ; parenté complète ; base courante et versions d'objets/relations si nécessaire ; writer unique ; unités/repère/tolérances valides, références non ambiguës, limites de taille et coût. Role est une capacité serveur d'édition, de revue, d'approbation ou de publication, jamais un champ client créant un droit. Délégation/cumul explicites et journalisés selon politique approuvée ; administrateur technique n'est pas approbateur métier implicite."
+      },
+      {
+        "line": 53,
+        "exact_line": "| routes/atelier-commands.ts | enveloppe requestId, baseRevision numérique >=0, contract enum accepté, label, commands ; 1 MiB, max500 commandes, cibles max5000 | Ne pas envoyer scope/baseRevisionId Studio à cette route comme si compatible ; adaptateur explicite requis |"
+      }
+    ]
+  },
+  "matrice": [
+    {
+      "id_local_documentaire_noncanonique": "J01",
+      "jeu": "Modèle Atelier typé / atelier_niveaux,objets,relations,definitions,calques,groupes,references,problemes,site",
+      "ancre_matrice_Claude": "COEX-03 tableau écrivains actuels",
+      "autorite_serveur_fait_ou_prescription": "Fait statique Claude : persistance lib/atelier-modele.ts ; service commandes et imports contrôlés existants.",
+      "clients_faits_ou_choix_ouverts": "Atelier actuel émet commandes ; imports archive/exemples/bascule sont autres chemins serveur contrôlés. ClientsStudio autorisés non décidés.",
+      "version_et_epoque": "API historique baseRevision numérique/model_revision ; pas revisionIdStudio équivalent implicite.",
+      "transfert": "Adapter ou transférer par périmètre seulement après décision ; source reste autoritaire jusque-là.",
+      "refus_ou_invariant_candidat": "Refus serveur hors périmètre/droit/base périmée ; aucune copie métier réécrite par deux autorités.",
+      "choix_retenu": null,
+      "epoque_physique_adoptee": false
+    },
+    {
+      "id_local_documentaire_noncanonique": "J02",
+      "jeu": "Journal / boîte sortie : atelier_commands,atelier_outbox",
+      "ancre_matrice_Claude": "COEX-03 tableau écrivains actuels",
+      "autorite_serveur_fait_ou_prescription": "Fait statique Claude : atelier-validation/archive/exemples/bascule/atelier-events participent selon opération.",
+      "clients_faits_ou_choix_ouverts": "Clients ne modifient pas journal directement ; droitsStudio et chemin exact ouverts.",
+      "version_et_epoque": "requestId scoped et révision de commande actuels ; contratVersion et rétention dedupStudio ouverts.",
+      "transfert": "Historique append-only logique proposé ; conserver identités et source, pas nettoyage rétroactif.",
+      "refus_ou_invariant_candidat": "Payload différent sous même identité ou scope incompatible refusé ; publication événement ancien pas nouveaucommit.",
+      "choix_retenu": null,
+      "epoque_physique_adoptee": false
+    },
+    {
+      "id_local_documentaire_noncanonique": "J03",
+      "jeu": "Versions / volumes / variantes / publications / verrous",
+      "ancre_matrice_Claude": "COEX-03 tableau écrivains actuels",
+      "autorite_serveur_fait_ou_prescription": "Fait statique Claude : lib et routes atelier-versions ; groupe composite, pas un seul propriétaire physique démontré pour tous usages.",
+      "clients_faits_ou_choix_ouverts": "Atelier et services serveur actuels ; Studio lecture/édition par donnée à décider.",
+      "version_et_epoque": "Ancienne variante=projet forké ; distinction Étude/Variante/RévisionStudio ; publications immuables proposées séparément.",
+      "transfert": "Mapping source→cible et droits/refus anciennesversions requis ; aucune assimilation IDs.",
+      "refus_ou_invariant_candidat": "Objet historique/révision/pub non réécrit ; serveur refuse client périmé malgré readOnlyUI.",
+      "choix_retenu": null,
+      "epoque_physique_adoptee": false
+    },
+    {
+      "id_local_documentaire_noncanonique": "J04",
+      "jeu": "Automatisation : scripts/propositions/graphes",
+      "ancre_matrice_Claude": "COEX-03 tableau écrivains actuels",
+      "autorite_serveur_fait_ou_prescription": "Fait statique Claude : routes atelier-automatisation, opérations via boucle contrôlée.",
+      "clients_faits_ou_choix_ouverts": "Atelier/scripts actuels ; extensions ou Studio ne reçoivent pas permission implicite.",
+      "version_et_epoque": "Versions commandes et cible courante à valider serveur ; schéma futur ouvert.",
+      "transfert": "Pas seconde boucle canonique ; interface publique compatible à instruire DEC18.",
+      "refus_ou_invariant_candidat": "Acteur/proposition hors droit/contexte refusé avant effet ; plugin/IA ne contourne pas validation.",
+      "choix_retenu": null,
+      "epoque_physique_adoptee": false
+    },
+    {
+      "id_local_documentaire_noncanonique": "J05",
+      "jeu": "Documents : produced_documents,drawing_exports",
+      "ancre_matrice_Claude": "COEX-03 tableau écrivains actuels",
+      "autorite_serveur_fait_ou_prescription": "Fait statique Claude : lib/documents et routes/documents.",
+      "clients_faits_ou_choix_ouverts": "Clients consultent/demandent selon droits actuels ; rattachementStudy/Variant et approbationStudio ouverts.",
+      "version_et_epoque": "documentVersion livré distinct contentVersion/schemaVersion ; manifeste IF009 coordonné proposé.",
+      "transfert": "Référencer catalogue commun ; pas annuaire concurrent ; publications historiques conservées.",
+      "refus_ou_invariant_candidat": "Refus source retirée/interdite/hash incohérent ; approuver≠publier ; ne jamais remplacer contenu identifié par latest.",
+      "choix_retenu": null,
+      "epoque_physique_adoptee": false
+    },
+    {
+      "id_local_documentaire_noncanonique": "J06",
+      "jeu": "Projet transverse / projects dont model_revision",
+      "ancre_matrice_Claude": "COEX-03 tableau écrivains actuels",
+      "autorite_serveur_fait_ou_prescription": "Fait statique Claude : plusieurs écrivains de champsprojet ; ne pas étendre R9 à toute tableprojects.",
+      "clients_faits_ou_choix_ouverts": "Services transverses restent propriétaires ; Studio reçoit contexte validé, pas autorité projetglobale.",
+      "version_et_epoque": "model_revision historique ≠ revisionIdStudio ; forme physique non décidée.",
+      "transfert": "Réutiliser identité/projet autorisé IF001 ; transfert contenu ne transfère pas tous droits projet.",
+      "refus_ou_invariant_candidat": "Serveur valide tenant/projet/parenté acteur ; URL ou profil ne crée aucun droit.",
+      "choix_retenu": null,
+      "epoque_physique_adoptee": false
+    },
+    {
+      "id_local_documentaire_noncanonique": "J07",
+      "jeu": "Cache/file locale Dexie lots,modelCache,keyValue",
+      "ancre_matrice_Claude": "COEX-03 tableau écrivains actuels",
+      "autorite_serveur_fait_ou_prescription": "Fait statique Claude : busAtelier/local-store ; cache et intentions, jamais autorité canonique serveur.",
+      "clients_faits_ou_choix_ouverts": "Client actuelAtelier ; partage ou partitionStudio et compatibilitéSW à décider, pas réemploi aveugle.",
+      "version_et_epoque": "buildId/toolContractVersion/schemaVersion/context/base/requestId ; durée rétention/format inconnus.",
+      "transfert": "Transfert suspend si filepending non traitée ; nouvellesécritures et changementcompte pris en compte.",
+      "refus_ou_invariant_candidat": "QueueA jamais envoyée sousB ; commande incompatible/quota/coupure reste état explicite, pas confirmation fictive.",
+      "choix_retenu": null,
+      "epoque_physique_adoptee": false
+    },
+    {
+      "id_local_documentaire_noncanonique": "J08",
+      "jeu": "Futur document2D autonome drawing2d",
+      "ancre_matrice_Claude": "Complément logique candidat M17, pas fait du codeClaude",
+      "autorite_serveur_fait_ou_prescription": "Prescription M17/G1v2 seulement : propriétaire logique2D unique ; aucune table/route/driverStudio implémenté déduit.",
+      "clients_faits_ou_choix_ouverts": "Planches/outils peuvent émettre intentions compatibles ; nombre clients ne fixe pas nombre autorités.",
+      "version_et_epoque": "IDspropres/context et versions distinctes ; époque de transfert concept documentaire, pas champ adopté.",
+      "transfert": "Allocation writer physique COEX03/DEC01 ouverte ; sauvegarde indépendante sans modèle3Dde substitution.",
+      "refus_ou_invariant_candidat": "Unité/repère/parenté/base/writer/refscote invalides refusés atomiquement ; deux autorités pour même contenu interdites.",
+      "choix_retenu": null,
+      "epoque_physique_adoptee": false
+    },
+    {
+      "id_local_documentaire_noncanonique": "J09",
+      "jeu": "Futur modèle3D indépendant model3d",
+      "ancre_matrice_Claude": "Complément logique candidat M17, pas fait du codeClaude",
+      "autorite_serveur_fait_ou_prescription": "Prescription M17 : propriétaire logique3D unique ; moteur/adaptateur public et persistance restent DEC18/02 ouverts.",
+      "clients_faits_ou_choix_ouverts": "Plusieurs surfaces possibles selon politique ; toute mutation passe autorité validée.",
+      "version_et_epoque": "Révision et géométrie versionnées ; topologie/objet et format physique non adoptés.",
+      "transfert": "Aucune obligation esquisse2D ; import copie/association explicités, pas doublecopie autoritaire.",
+      "refus_ou_invariant_candidat": "Refuser cible incompatible/version périmée et mutationpartielle ; résultat dérivé ancien ne remplace pas courant.",
+      "choix_retenu": null,
+      "epoque_physique_adoptee": false
+    },
+    {
+      "id_local_documentaire_noncanonique": "J10",
+      "jeu": "Futurs objets architecturaux associés",
+      "ancre_matrice_Claude": "Complément logique candidat M17, pas fait du codeClaude",
+      "autorite_serveur_fait_ou_prescription": "Prescription C-ASSOCIATION : même définition et objectId, writer logiqueunique associé ; projections2D/3D non autorités parallèles.",
+      "clients_faits_ou_choix_ouverts": "Deuxplanches autorisées peuvent demander même objet via mêmes préconditions ; choixclientsCOEX03 non arrêté.",
+      "version_et_epoque": "Versionsobjet/relation/hôte et base ; protocole topologieDEC02 ouvert.",
+      "transfert": "Transfert explicite conserve identité ou mapping documenté ; référence liée/copienouvelle distinguées.",
+      "refus_ou_invariant_candidat": "Doubleécrivain, hôte invalide, conflit ou résultatpérimé refusés/identifiés ; pas fusion silencieuse dernierécrivain.",
+      "choix_retenu": null,
+      "epoque_physique_adoptee": false
+    },
+    {
+      "id_local_documentaire_noncanonique": "J11",
+      "jeu": "Futures identités Étude / Variante / Révision",
+      "ancre_matrice_Claude": "Complément logique candidat M17, pas fait du codeClaude",
+      "autorite_serveur_fait_ou_prescription": "Prescription DEC03orientation/G1v2 : identités propres dans Projet ; aucune structureSQL adoptée.",
+      "clients_faits_ou_choix_ouverts": "Services transverses projet restent propriétaires ; façadeStudio à contractualiser sans ProjectShell préalable.",
+      "version_et_epoque": "Immutabilitérévision ; parenté project-study-variant ; contentVersion/documentVersion distincts.",
+      "transfert": "Mapping ancienprojetfork→Étude/Variante à décider ; récupération nouvellesécritures requise.",
+      "refus_ou_invariant_candidat": "Orphelin, mauvaisparent, réutilisationID, mutationhistorique ou réouverture latest interdit selon contrat logique proposé.",
+      "choix_retenu": null,
+      "epoque_physique_adoptee": false
+    }
+  ],
+  "granularite": "Septgroupes de données du tableauClaude conservés par renvoi et enrichis de contrats/risques ; quatre futurs groupes logiques distincts, aucune nouvelle table/route/typecode inventée. Pas seconde matrice de qualification22composants.",
+  "trois_reserves": [
+    {
+      "id": "R-AUTORITE",
+      "source_indices": [
+        0,
+        1,
+        2
+      ],
+      "constat": "LePlan interdit chaînes incompatibles et exige propriétaireunique par jeu ; il n’impose pas exactement un clientUI. R9 impose commandes validées, pas import privé du busclientAtelier.",
+      "critere": "Chaque ligne distingue autorité canonique, adaptateurservice et clients autorisés ; optionB pluriclient ne peut être rejetée comme doubleautorité sans analyser compatibilité.",
+      "question_existante": 6250996328
+    },
+    {
+      "id": "R-REFUS-SERVEUR",
+      "source_indices": [
+        0,
+        1
+      ],
+      "constat": "readOnly/protectedReference sont capacitésUI observées, insuffisantes comme preuve refusserveur après transfert.",
+      "critere": "Décisionde transfert couvre accès ancien API, permissions, époque/révision, queuepending, requêtes périmées et nouvellesécritures ; aucun test exécuté ici.",
+      "question_existante": 6250997313
+    },
+    {
+      "id": "R-TRANSFERT",
+      "source_indices": [
+        0,
+        1
+      ],
+      "constat": "La proposition interdit toute donnée copiée dans deuxsens et limite transfert à deuxmécanismes ; source interdit synchronisation artisanale entre deuxbasesconcurrentes.",
+      "critere": "Distinguer copie indépendante, référence, projection/cache et doubleautorité ; restriction supplémentaire reste candidate à arbitrer ; invariant pasdebaseconcurrente déjà conservé.",
+      "question_existante": 6250998834
+    }
+  ],
+  "questions_existantes": [
+    {
+      "commentaire": 6250995231,
+      "url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250995231",
+      "scope": "COEX01 qualification22groupes",
+      "etat": "Déjà publiée selon instructionA0 ; aucune réponse inventée ni nouvelle question."
+    },
+    {
+      "commentaire": 6250996328,
+      "url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250996328",
+      "scope": "COEX03 propriétaire/clients",
+      "etat": "Déjà publiée selon instructionA0 ; aucune réponse inventée ni nouvelle question."
+    },
+    {
+      "commentaire": 6250997313,
+      "url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250997313",
+      "scope": "COEX04 lectureseule/redirection",
+      "etat": "Déjà publiée selon instructionA0 ; aucune réponse inventée ni nouvelle question."
+    },
+    {
+      "commentaire": 6250998834,
+      "url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250998834",
+      "scope": "COEX05/06 transfert/retrait",
+      "etat": "Déjà publiée selon instructionA0 ; aucune réponse inventée ni nouvelle question."
+    }
+  ],
+  "etat": "En cours documentaire proposé, décisionCOEX03 physique toujours ouverte ; aucun Vérifié/Accepté ni gate",
+  "limites": [
+    "Aucun effet runtime ni exhaustivité des écrivains de chaquechamp revendiqués ; faits actuels attribués à lectureClaude817.",
+    "Époque est dimension de contrat à instruire, pas colonne, lock ni mécanisme adopté.",
+    "Aucune optionA/B adoptée ; aucune question nouvelle ; A5 doit relire avant intégrationA0.",
+    "Aucun helper/registre/app/DB/service/test/import exécuté ou modifié."
+  ]
+}

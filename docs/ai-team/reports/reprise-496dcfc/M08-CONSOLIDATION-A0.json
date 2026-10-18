@@ -1,0 +1,46 @@
+{
+  "reference": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "mapping_sha256": "d8879b4ce71b82ea38352a61d7d2ae025350d8e65ef1b345241f85aa5e159348",
+  "compteurs": {
+    "total": 125,
+    "analyses_avec_historiques": 125,
+    "revues_avec_historiques": 125,
+    "reste_a_analyser": 0,
+    "nouvelles_analyses": 117,
+    "nouvelles_revues": 117
+  },
+  "tous_ids_uniques": true,
+  "chaque_id_a_analyse_et_revue_ou_preuve_historique": true,
+  "absences_litterales": {
+    "code_sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+    "paths_uniques": 33,
+    "occurrences": 125,
+    "fiches": 69,
+    "controle": "git cat-file -e en lecture seule, tous les chemins littéraux demeurent absents à ce SHA ; candidats examinés séparément, aucune équivalence imposée",
+    "paths_redevenus_presents": []
+  },
+  "deltas_revus": [
+    {
+      "ids": "065..092",
+      "actifs": {
+        "present": 17,
+        "partiel": 22,
+        "absent": 93
+      },
+      "portee": "132 sous-attendus, dont plusieurs supports indirects non couverts"
+    },
+    {
+      "ids": "094..124",
+      "actifs": {
+        "present": 13,
+        "partiel": 28,
+        "absent": 94
+      },
+      "portee": "135 sous-attendus ; annexe_resolution active de A1v2, champ controle.comptes_recalcules reste snapshot initial14/26/95"
+    }
+  ],
+  "aucun_total_agrege_de_couverture": "Grains et répétitions normatives différents, contextes génériques non équivalents aux oracles ciblés. Aucun cumul présenté comme taux de couverture.",
+  "aucun_test_execute_pour_M08": true,
+  "mission_M08_close": false,
+  "cases_source_HTML_modifiees": false
+}

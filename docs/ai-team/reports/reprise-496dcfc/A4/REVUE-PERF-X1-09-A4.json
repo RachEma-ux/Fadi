@@ -1,0 +1,270 @@
+{
+  "review": "A4 — PERF/X.1-09, revue indépendante statique",
+  "date": "2026-10-18",
+  "scope": "Dix définitions PERF de REF02§18 et leur protocole candidat dans NEXT-READY A5 ; pas revue des45IDs complets, aucune mesure, instrumentation, application, test produit, browser, API, DB ou service.",
+  "candidate_sources": [
+    {
+      "path": "/workspace/work/resume496/agents/A5/NEXT-READY-POST203-A5.json",
+      "sha256": "8823d852b14ef6b04dd2896419cdebf305757b1913a9adf3017b5d240c3228e6"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A5/NEXT-READY-POST203-A5.md",
+      "sha256": "a1506c1bf5ced2834a6a93f0f1c7ac1d45e53841c7cff92b7df10a9e26338c4e"
+    }
+  ],
+  "normative_source": {
+    "path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+    "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+    "blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+    "sha256": "98479152a8fd31b5871bc8bb3fe72aeeb5beb5929190b04a0e9ff167dbf91b5d",
+    "matches_declared_A5": true
+  },
+  "verdict": "Les10sources/40cellules sont reproduites exactement, sans perte ni renumérotation. Exigences et propositions sont séparées ; aucun budget numérique adopté ou résultat runtime fabriqué. Protocole utile pour préparation, réserves de bornes ci-dessous à conserver avant instrumentation/mesure.",
+  "blocking_source_errors": [],
+  "gate_accepted": false,
+  "task_verified_or_accepted": false,
+  "findings": [
+    {
+      "id": "PERF-01",
+      "source_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "source_xml": "word/document.xml",
+      "source_xml_row_1based": 222,
+      "source_exact_cells": [
+        "PERF-01",
+        "Ouverture de Studio jusqu’à la première action utile.",
+        "Cache froid/chaud, réseau, CPU, appareil.",
+        "p50/p95 avec limite décidée."
+      ],
+      "candidate_pointer": "/concrete_missing_ready_executed/definitions_and_protocols/0",
+      "four_cells_verbatim": true,
+      "source_loss_detected": false,
+      "requirements_vs_proposal": "Les quatre cellules sont normatives ; instrumentation_candidate_not_implemented décrit des propositions distinctes, non adoptées et non exécutées.",
+      "ux_start_end_assessment": "Pertinent : fin sur une action métier disponible, pas sur le shell peint.",
+      "bounded_protocol_reservation": "À renseigner par scénario : action utile précise et intention accessible (clavier/tactile) ; fin identique froid/chaud. Un refus explicite est une issue distincte, pas un échantillon de succès.",
+      "numeric_budget": null,
+      "execution_state": "Non exécuté",
+      "verdict": "Source exacte ; protocole documentaire pertinent, précisions futures conservées."
+    },
+    {
+      "id": "PERF-02",
+      "source_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "source_xml": "word/document.xml",
+      "source_xml_row_1based": 223,
+      "source_exact_cells": [
+        "PERF-02",
+        "Activation d’outil simple et spécialisé.",
+        "Bundle, dépendances, worker, première réponse.",
+        "Temps d’activation + bytes + mémoire."
+      ],
+      "candidate_pointer": "/concrete_missing_ready_executed/definitions_and_protocols/1",
+      "four_cells_verbatim": true,
+      "source_loss_detected": false,
+      "requirements_vs_proposal": "Les quatre cellules sont normatives ; instrumentation_candidate_not_implemented décrit des propositions distinctes, non adoptées et non exécutées.",
+      "ux_start_end_assessment": "Pertinent : demande explicite, préparation des ressources et réponse valide.",
+      "bounded_protocol_reservation": "Consigner séparément outil prêt et première réponse : fusionner ces deux instants masquerait le temps d’activation. Chargement, worker, transferts et mémoire gardent leurs unités/limites.",
+      "numeric_budget": null,
+      "execution_state": "Non exécuté",
+      "verdict": "Source exacte ; protocole documentaire pertinent, précisions futures conservées."
+    },
+    {
+      "id": "PERF-03",
+      "source_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "source_xml": "word/document.xml",
+      "source_xml_row_1based": 224,
+      "source_exact_cells": [
+        "PERF-03",
+        "Pointeur → preview visible.",
+        "Périphérique, FPS, densité de scène.",
+        "Latence de bout en bout."
+      ],
+      "candidate_pointer": "/concrete_missing_ready_executed/definitions_and_protocols/2",
+      "four_cells_verbatim": true,
+      "source_loss_detected": false,
+      "requirements_vs_proposal": "Les quatre cellules sont normatives ; instrumentation_candidate_not_implemented décrit des propositions distinctes, non adoptées et non exécutées.",
+      "ux_start_end_assessment": "Pertinent : lien causal entre événement pointeur et aperçu correspondant, sans attribuer un ancien résultat.",
+      "bounded_protocol_reservation": "La future méthode doit distinguer soumission de frame et aperçu réellement observable ; un timestamp renderer/rAF ne prouve pas à lui seul une latence physique de bout en bout.",
+      "numeric_budget": null,
+      "execution_state": "Non exécuté",
+      "verdict": "Source exacte ; protocole documentaire pertinent, précisions futures conservées."
+    },
+    {
+      "id": "PERF-04",
+      "source_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "source_xml": "word/document.xml",
+      "source_xml_row_1based": 225,
+      "source_exact_cells": [
+        "PERF-04",
+        "Snapping/ciblage correct.",
+        "100 / 10 000 / 100 000 primitives illustratives, densité variable.",
+        "p50/p95/p99 ET conformité géométrique."
+      ],
+      "candidate_pointer": "/concrete_missing_ready_executed/definitions_and_protocols/3",
+      "four_cells_verbatim": true,
+      "source_loss_detected": false,
+      "requirements_vs_proposal": "Les quatre cellules sont normatives ; instrumentation_candidate_not_implemented décrit des propositions distinctes, non adoptées et non exécutées.",
+      "ux_start_end_assessment": "Pertinent : scène versionnée, cible/identité/coordonnées comparées et résultat faux non accepté.",
+      "bounded_protocol_reservation": "Séparer t_resultat du contrôle d’oracle ; le temps de comparaison n’entre pas implicitement dans la latence snapping. La vérification géométrique reste obligatoire avant d’accepter les statistiques.",
+      "numeric_budget": null,
+      "execution_state": "Non exécuté",
+      "verdict": "Source exacte ; protocole documentaire pertinent, précisions futures conservées."
+    },
+    {
+      "id": "PERF-05",
+      "source_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "source_xml": "word/document.xml",
+      "source_xml_row_1based": 226,
+      "source_exact_cells": [
+        "PERF-05",
+        "Navigation 2D/3D.",
+        "Plans annotés, modèles BIM mixtes, GPU réel.",
+        "CPU/GPU séparés, trames manquées."
+      ],
+      "candidate_pointer": "/concrete_missing_ready_executed/definitions_and_protocols/4",
+      "four_cells_verbatim": true,
+      "source_loss_detected": false,
+      "requirements_vs_proposal": "Les quatre cellules sont normatives ; instrumentation_candidate_not_implemented décrit des propositions distinctes, non adoptées et non exécutées.",
+      "ux_start_end_assessment": "Pertinent : navigation prescrite, état caméra et CPU/GPU séparés.",
+      "bounded_protocol_reservation": "Définir la trace et fenêtre début/fin avant mesure, compter trames manquées ; SwiftShader et GPU réel distincts. Indisponibilité ou échec reste visible et ne disparaît pas des résultats.",
+      "numeric_budget": null,
+      "execution_state": "Non exécuté",
+      "verdict": "Source exacte ; protocole documentaire pertinent, précisions futures conservées."
+    },
+    {
+      "id": "PERF-06",
+      "source_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "source_xml": "word/document.xml",
+      "source_xml_row_1based": 227,
+      "source_exact_cells": [
+        "PERF-06",
+        "Modif. objet architectural.",
+        "Mur hôte, ouvertures, dépendances, index.",
+        "Coût d’invalidation vs reconstruction totale."
+      ],
+      "candidate_pointer": "/concrete_missing_ready_executed/definitions_and_protocols/5",
+      "four_cells_verbatim": true,
+      "source_loss_detected": false,
+      "requirements_vs_proposal": "Les quatre cellules sont normatives ; instrumentation_candidate_not_implemented décrit des propositions distinctes, non adoptées et non exécutées.",
+      "ux_start_end_assessment": "Pertinent : propagation de commande aux dépendances et cohérence de même révision.",
+      "bounded_protocol_reservation": "Le protocole candidat doit préciser les deux bras invalidation et reconstruction totale à entrées/versions/scène égales, avec même état final. La source exige une comparaison de coûts, pas seulement une fin de mise à jour.",
+      "numeric_budget": null,
+      "execution_state": "Non exécuté",
+      "verdict": "Source exacte ; protocole documentaire pertinent, précisions futures conservées."
+    },
+    {
+      "id": "PERF-07",
+      "source_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "source_xml": "word/document.xml",
+      "source_xml_row_1based": 228,
+      "source_exact_cells": [
+        "PERF-07",
+        "Booléen exact.",
+        "Formes simples, cas dégénérés, BRep fournisseurs.",
+        "Chargement, calcul, mémoire, erreurs, précision."
+      ],
+      "candidate_pointer": "/concrete_missing_ready_executed/definitions_and_protocols/6",
+      "four_cells_verbatim": true,
+      "source_loss_detected": false,
+      "requirements_vs_proposal": "Les quatre cellules sont normatives ; instrumentation_candidate_not_implemented décrit des propositions distinctes, non adoptées et non exécutées.",
+      "ux_start_end_assessment": "Pertinent : demande identifiée, réponse géométrique validée, erreurs dégénérées et refus sans mutation.",
+      "bounded_protocol_reservation": "Garder chargement et calcul séparés, mémoire/erreurs/précision explicites ; tolérances viennent du contrat/corpus, pas de seuil ajouté par la revue.",
+      "numeric_budget": null,
+      "execution_state": "Non exécuté",
+      "verdict": "Source exacte ; protocole documentaire pertinent, précisions futures conservées."
+    },
+    {
+      "id": "PERF-08",
+      "source_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "source_xml": "word/document.xml",
+      "source_xml_row_1based": 229,
+      "source_exact_cells": [
+        "PERF-08",
+        "Génération documentaire.",
+        "Détails, vues, feuilles multi-sources, PDF/DXF.",
+        "Temps, annulation, export fidèle."
+      ],
+      "candidate_pointer": "/concrete_missing_ready_executed/definitions_and_protocols/7",
+      "four_cells_verbatim": true,
+      "source_loss_detected": false,
+      "requirements_vs_proposal": "Les quatre cellules sont normatives ; instrumentation_candidate_not_implemented décrit des propositions distinctes, non adoptées et non exécutées.",
+      "ux_start_end_assessment": "Pertinent : sources immuables et document contrôlé par rapport à leur version, annulation explicite.",
+      "bounded_protocol_reservation": "Séparer disponibilité des octets/livrable et contrôle de fidélité ; un export historique épinglé encore exact n’est pas automatiquement invalide si la tête courante évolue. Interdire sa présentation comme nouveau courant ou publication sous approbation différente.",
+      "numeric_budget": null,
+      "execution_state": "Non exécuté",
+      "verdict": "Source exacte ; protocole documentaire pertinent, précisions futures conservées."
+    },
+    {
+      "id": "PERF-09",
+      "source_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "source_xml": "word/document.xml",
+      "source_xml_row_1based": 230,
+      "source_exact_cells": [
+        "PERF-09",
+        "Mémoire longue session.",
+        "Changement d’outils, fermer/réouvrir.",
+        "Pic, résiduelle, absence de fuite."
+      ],
+      "candidate_pointer": "/concrete_missing_ready_executed/definitions_and_protocols/8",
+      "four_cells_verbatim": true,
+      "source_loss_detected": false,
+      "requirements_vs_proposal": "Les quatre cellules sont normatives ; instrumentation_candidate_not_implemented décrit des propositions distinctes, non adoptées et non exécutées.",
+      "ux_start_end_assessment": "Pertinent : séquence versionnée et mesures de pic/résiduelle par phase.",
+      "bounded_protocol_reservation": "Préciser durées/cycles et ressources attendues vivantes ou libérées ; cache ou worker partagé encore utilisé ne constitue pas à lui seul une fuite. Absence de fuite exige un protocole, pas une moyenne favorable.",
+      "numeric_budget": null,
+      "execution_state": "Non exécuté",
+      "verdict": "Source exacte ; protocole documentaire pertinent, précisions futures conservées."
+    },
+    {
+      "id": "PERF-10",
+      "source_sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "source_xml": "word/document.xml",
+      "source_xml_row_1based": 231,
+      "source_exact_cells": [
+        "PERF-10",
+        "Travail hors ligne.",
+        "Profils en cache, interruption/sync.",
+        "Disponibilité réelle et données récupérables."
+      ],
+      "candidate_pointer": "/concrete_missing_ready_executed/definitions_and_protocols/9",
+      "four_cells_verbatim": true,
+      "source_loss_detected": false,
+      "requirements_vs_proposal": "Les quatre cellules sont normatives ; instrumentation_candidate_not_implemented décrit des propositions distinctes, non adoptées et non exécutées.",
+      "ux_start_end_assessment": "Pertinent : cache attesté, interruption prescrite et données récupérables après reprise.",
+      "bounded_protocol_reservation": "Séparer disponibilité pendant coupure, durabilité locale et confirmation centrale après reconnexion ; conflit/brouillon reste explicite. Catalogue en cache seul ne vaut pas outil réellement disponible.",
+      "numeric_budget": null,
+      "execution_state": "Non exécuté",
+      "verdict": "Source exacte ; protocole documentaire pertinent, précisions futures conservées."
+    }
+  ],
+  "section18_context_exact": [
+    {
+      "xml_paragraph_1based": 915,
+      "exact_text": "Les budgets de performance relèvent du niveau 3 : chaque seuil associe un appareil, une scène, une opération, un environnement, une méthode, une distribution et un critère d’acceptation. Un écran à 60 Hz dispose théoriquement de 16,7 ms pour l’ensemble de la trame, mais cette valeur n’est pas une promesse de délai pour chaque outil."
+    },
+    {
+      "xml_paragraph_1based": 963,
+      "exact_text": "Scène S1 : détail 2D isolé avec cotes, textes, hachures, blocs, entités courbes et contraintes. S2 : plan de niveau avec murs, portes, fenêtres, croisements et références liées. S3 : plan 2D très dense, entités superposées et intersections nombreuses. S4 : immeuble multi-niveaux, structure, réseaux et composants répétitifs. S5 : géométrie 3D libre avec booléens, courbes exactes et surfaces complexes. S6 : étude avec plusieurs variantes, révisions, dossiers et contrôles. S7 : session hors réseau puis reconnectée. Chaque scène a une licence d’utilisation autorisée et une empreinte de corpus conservée."
+    },
+    {
+      "xml_paragraph_1based": 965,
+      "exact_text": "EX-097 — Mesure reproductible. Fixer matériel, navigateur/version, mémoire, GPU/driver, taille d’écran, statut des caches, réseau, build, commit, répétitions, opérations, outliers et méthode statistique ; conserver traces et scripts. Les mesures JavaScript renderer.render() ne sont pas assimilées automatiquement au coût GPU, et SwiftShader ne remplace pas un GPU physique."
+    },
+    {
+      "xml_paragraph_1based": 966,
+      "exact_text": "EX-098 — Double vérification. Tout gain de performance est accompagné d’une comparaison géométrique et fonctionnelle : mêmes cibles de snapping, même sélection, mêmes dimensions/quantités, mêmes objets exportés dans les tolérances, même comportement d’annulation et de conflits."
+    },
+    {
+      "xml_paragraph_1based": 967,
+      "exact_text": "EX-099 — Adaptativité conditionnée. La dégradation graphique répond aux mesures et aux préférences ; aucune réduction d’effet ne peut affecter les invariants de conception. Le résultat demeure publiable sur données de référence, indépendamment de la qualité instantanée de la prévisualisation."
+    }
+  ],
+  "cross_cutting_limits": [
+    "Les100/10000/100000primitives sont les tailles illustratives de PERF04 source, pas une capacité promise.",
+    "La mention théorique60Hz/16,7ms de§18.1 n’est pas un budget outil ; les numeric_budget restentnull.",
+    "EX097 impose matériel/navigateur/GPUdriver/tailleécran/caches/réseau/build/commit/répétitions/outliers/statistiques ; data_fields génériques ne suffisent pas encore à matérialiser un banc reproductible.",
+    "renderer.render() ne mesure pas automatiquement GPU ; SwiftShader ne remplace pas GPUphysique. Les futurs résultats doivent expliciter le support des métriques et l’observation des frames.",
+    "EX098 : mêmes cibles/sélection/dimensions/quantités/objets exportés/undo/conflits dans tolérances ; gain temporel ne compense pas défaut.",
+    "EX099 : adaptativité graphique ne change pas invariants de conception ni possibilité de publication sur données de référence.",
+    "Les réserves concernent le protocole candidat futur, pas l’exactitude de l’extraction normative ni un défaut mesuré de Fadi."
+  ],
+  "next_action": "A5 conserve les textes source ; clarifie les horodatages et comparateurs avant un lot d’instrumentation explicitement autorisé. A0 intègre avec avis et limites, sans Vérifié/Accepté/coche ni clôture G1–G4."
+}

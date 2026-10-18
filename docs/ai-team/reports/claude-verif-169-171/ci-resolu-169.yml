@@ -1,0 +1,459 @@
+name: CI
+# Un seul run par commit : les branches de PR passent par `pull_request`, `push` ne couvre que `main`.
+# Un nouveau push sur la même branche annule le run dépassé (jamais sur `main`).
+on:
+  push:
+    branches: [main]
+  pull_request:
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+permissions:
+  contents: read
+jobs:
+  mission-docs-pure:
+    name: Mission 004 — documentation sans base (intégration non exécutée)
+    if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Refuser un diff hors du périmètre documentaire avant les contrôles
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          python3 - <<'PY_SCOPE'
+          import os, re, subprocess
+          base = os.environ.get("BASE_SHA", "")
+          if not re.fullmatch(r"[0-9a-f]{40}", base):
+              raise SystemExit("Refus : SHA de base PR invalide ou absent.")
+          result = subprocess.run(
+              ["git", "diff", "--name-only", "--no-renames", "-z", f"{base}...HEAD"],
+              check=True, capture_output=True,
+          )
+          paths = [p.decode("utf-8") for p in result.stdout.split(b"\0") if p]
+          exact = {"AGENTS.md", "CLAUDE.md", "apps/web/src/modules/README.md",
+                   ".github/workflows/ci.yml", ".github/workflows/codex-missions.yml"}
+          unexpected = [p for p in paths if not (p.startswith(("docs/", "Studio/")) or p in exact)]
+          if unexpected:
+              print("Refus : le diff contient des fichiers hors du périmètre documentaire :")
+              for path in unexpected:
+                  print(ascii(path))
+              raise SystemExit(1)
+          print(f"Périmètre documentaire vérifié : {len(paths)} chemins ; aucune source applicative hors allowlist.")
+          PY_SCOPE
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests unitaires du validateur documentaire sans base ni réseau
+        run: python3 -m unittest discover -s docs/ai-team -p 'test_check_missions.py' -v
+      - name: Couverture des 31 missions et 630 affectations
+        run: python3 docs/ai-team/check_missions.py --check
+      - name: Continuité — tests et structure
+        run: |
+          node --test scripts/check-continuity.test.mjs
+          node scripts/check-continuity.mjs
+      - name: Isolation nominale Fadi
+        run: node scripts/check-fadi-isolation.mjs
+      - name: Déclarer les vérifications d'intégration non effectuées
+        if: always()
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
+          ## Mission 004 — branche documentaire, aucune base réelle
+          Tests documentaires, couverture des affectations, continuité et isolation nominale seulement.
+          Aucun service PostgreSQL/API, installation npm, migration, test API/E2E ou image applicative exécuté dans ce job.
+          Les jobs validate/e2e/image sont intentionnellement skipped sur cette branche exacte ; ils ne sont pas réussis.
+          Ce résultat ne valide ni les 630 fonctionnalités, ni l'intégration applicative, ni DB-3, ni une fusion.
+          Les autres branches et push sur main conservent les jobs applicatifs ; cette exception est bornée à la préparation documentaire.
+          SUMMARY
+
+  db-guard-pure:
+    name: DB1/2 — tests simulés sans base (DB3 non validée)
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: ""
+      TEST_DATABASE_URL: ""
+      MIGRATE_ON_START: "0"
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Installer sans aucun script de cycle de vie
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Vérifier les types sans exécuter le serveur
+        run: npm run typecheck
+      - name: Garde DB — uniquement tests et connexions simulés
+        run: npm run test:db-guard
+      - name: Construire sans lancer l'application ni appliquer de schéma
+        run: npm run build
+      - name: Rendre explicite le périmètre non exécuté
+        if: always()
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
+          ## A3-DB-1/2 : vérifications sans base réelle
+          Ce job ne démarre aucun service PostgreSQL/API, n'applique aucun schéma et n'exécute aucun test API/E2E mutateur.
+          Les jobs `validate`, `e2e` et `image` sont intentionnellement non exécutés sur cette seule PR de garde DB.
+          Leur statut skipped ne prouve aucune réussite d'intégration. DB-3, la recette fonctionnelle et la fusion restent non autorisées.
+          Les éventuels échecs des étapes de ce job restent des échecs ; ce résumé n'en modifie pas le verdict.
+          SUMMARY
+
+  validate:
+    # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.
+    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main')) }}
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: fadi
+          POSTGRES_PASSWORD: fadi_ci_password
+          POSTGRES_DB: fadi_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://fadi:fadi_ci_password@localhost:5432/fadi_test
+      WEB_ORIGIN: http://localhost:5173
+      # app.test.ts registers one user per authorization scenario against a
+      # single shared Express app (one in-memory rate limiter for the whole
+      # file) — see apps/api/.env.test.example for the full explanation.
+      AUTH_RATE_LIMIT: "500"
+      API_RATE_LIMIT: "5000"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run db:migrate
+      - run: npm test
+      - run: npm run build
+      # Corpus IFC (lot 6, D-006 : conformité testée, jamais « certifiée ») : petit modèle comparé à sa référence,
+      # P.118 exporté, puis relu par web-ifc, importé en représentations et réexporté ; chaque fichier validé par
+      # IfcOpenShell (schéma IFC4X3_ADD2, règles EXPRESS, effectifs, géométrie d'un échantillon).
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ifcopenshell==0.9.0 pytest
+      - name: Corpus IFC validé par IfcOpenShell (apps/api/test-corpus/ifc/)
+        run: |
+          npx --workspace=@fadi/api tsx test-corpus/ifc/generer.ts ../../ifc-sortie
+          for f in petit p118 p118-reimporte; do python3 apps/api/test-corpus/ifc/valider.py ifc-sortie/$f.ifc ifc-sortie/$f.attendus.json; done
+
+  # Scénario Playwright de bout en bout (apps/web/e2e/parcours-scenario.mjs) :
+  # le parcours complet sur P.118 — import, 21 étapes, Atelier, parcelle,
+  # Harmonie, bibliothèque, liaisons, documents, collaboration, hors-ligne,
+  # partage — contre l'API construite, qui sert elle-même le build de l'application (mode de production).
+  # Les captures (docs/migration/captures/webapp/) sont publiées en artefact.
+  e2e:
+    # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.
+    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: fadi
+          POSTGRES_PASSWORD: fadi_ci_password
+          POSTGRES_DB: fadi_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://fadi:fadi_ci_password@localhost:5432/fadi_e2e
+      # Mode de production : l'API sert le build de l'application (WEB_DIST) — un seul port, même origine, pas de vite preview.
+      WEB_ORIGIN: http://localhost:3001
+      WEB_DIST: apps/web/dist
+      PORT: "3001"
+      AUTH_RATE_LIMIT: "500"
+      API_RATE_LIMIT: "5000"
+      BASE_URL: http://localhost:3001
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm run db:migrate
+      - run: npm run build
+      - name: Démarrer l'API qui sert aussi l'application (WEB_DIST)
+        run: |
+          nohup node apps/api/dist/server.js > api.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3001/health > /dev/null && curl -sf -H "Accept: text/html" http://localhost:3001/accueil | grep -q "<div id=\"root\""; then echo "prêts"; break; fi
+            sleep 1
+          done
+          curl -sf http://localhost:3001/health && curl -sf -o /dev/null -H "Accept: text/html" http://localhost:3001/accueil
+          : > web.log
+      - name: Recette des accueils Fadi — dossier explicite, états fiables, action avant l’aperçu
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/accueils-design node apps/web/e2e/accueils-design.mjs 2>&1 | tee e2e.log
+      - name: Scénario Playwright
+        run: |
+          set -o pipefail
+          node apps/web/e2e/parcours-scenario.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du nouvel Atelier (apps/web/e2e/atelier-nouveau.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/atelier-nouveau.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des documents dérivés et objets du lot 5 (apps/web/e2e/atelier-documents.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/atelier-documents.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des échanges du lot 6 (apps/web/e2e/atelier-echanges.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/atelier-echanges.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des versions, variantes et publications du lot 7 (apps/web/e2e/atelier-versions.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/atelier-versions.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de l'automatisation et de l'assistant du lot 8 (apps/web/e2e/atelier-automatisation.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/atelier-automatisation.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des compléments — historique, consultation, reprise, références externes (apps/web/e2e/atelier-complements.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/atelier-complements.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la disposition Canevas — ergonomie SketchUp Web (apps/web/e2e/atelier-canevas.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/atelier-canevas.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du mode Planche, lot Planche 2 — dessin, champ Mesures, toucher (apps/web/e2e/planche.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/planche.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des outils de modification de la Planche, lot Planche 3 (apps/web/e2e/planche-modification.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/planche-modification.mjs 2>&1 | tee -a e2e.log
+      - name: Recette outil par outil de la Planche — 22 machines, caméra, grille sans outil grisé, brouillon (apps/web/e2e/planche-outils.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/planche-outils.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Pousser/Tirer d'arêtes de la Planche — surfaces, couronne, allongement, lien, téléphone (apps/web/e2e/planche-pousser-aretes.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-pousser-aretes node apps/web/e2e/planche-pousser-aretes.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des modes de Pousser/Tirer — barre d'options, vrai Étirement, téléphone (apps/web/e2e/planche-pousser-modes.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-pousser-modes node apps/web/e2e/planche-pousser-modes.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des objets O-1 — Grouper, Créer un composant, Éclater dans la barre d'actions, raccourcis, liens rompus (apps/web/e2e/planche-objets.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-objets node apps/web/e2e/planche-objets.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du clavier de la Planche (lot 9) — frappes seules des modificateurs, barres au clavier (apps/web/e2e/planche-clavier.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-clavier node apps/web/e2e/planche-clavier.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Pousser/Tirer complet (lot 10a) — valeur refusée, aperçu périmé, Inverser le sens (apps/web/e2e/planche-pousser-l10a.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-pousser-l10a node apps/web/e2e/planche-pousser-l10a.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des liens d'extrusion (lot 10b) — lié par défaut, Indépendante, racine seulement, recalcul (apps/web/e2e/planche-liens.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-liens node apps/web/e2e/planche-liens.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Suivez-moi complet (lot 10c) — profil percé, aperçu au survol, Capuchons, Maj+F (apps/web/e2e/planche-suivez-moi.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-suivez-moi node apps/web/e2e/planche-suivez-moi.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Révolution (lot 10d) — méthode de Suivez-moi, axe présélectionné, aperçu, corrections 90 et 96s (apps/web/e2e/planche-revolution.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-revolution node apps/web/e2e/planche-revolution.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des outils Profilé (lot L12) — catalogue d'essai, Maj+Q, Info entité, Profilés depuis arêtes, téléphone (apps/web/e2e/planche-profiles.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-profiles node apps/web/e2e/planche-profiles.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des assemblages de pièces (lot L13) — cadre en onglet, coupe d'un poteau par une poutre, Ctrl + Z, allonger (apps/web/e2e/planche-assemblages.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-assemblages node apps/web/e2e/planche-assemblages.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la liste de débit (lot L14) — lignes, masse sourcée seulement, tri, sélection exacte, repères, étiquettes, CSV (apps/web/e2e/planche-debit.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-debit node apps/web/e2e/planche-debit.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du Texte 3D (lot L16) — aperçu en volume, alignement, pose sur une face verticale (apps/web/e2e/planche-texte-3d.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-texte-3d node apps/web/e2e/planche-texte-3d.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de l'édition des pièces (lot L17) — section régénérée, rotation axiale, Aligner une face (apps/web/e2e/planche-pieces-edition.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-pieces-edition node apps/web/e2e/planche-pieces-edition.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des compléments de modification (lot L18) — Décalage à trous et chevauchement, statuts de l'Instructeur, poignées de rotation, axes de l'objet (apps/web/e2e/planche-modification-l18.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-modification-l18 node apps/web/e2e/planche-modification-l18.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des diagnostics de l'extrusion (lot L19) — code stable et recours dans la barre d'état (apps/web/e2e/planche-diagnostics-l19.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-diagnostics-l19 node apps/web/e2e/planche-diagnostics-l19.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de l'Étirement à plis (lot L20) — voisine percée pliée en facettes planes, trou gardé (apps/web/e2e/planche-etirement-plis.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-etirement-plis node apps/web/e2e/planche-etirement-plis.mjs 2>&1 | tee -a e2e.log
+      - name: Recette d'Épaissir et de l'extrusion multi-faces (lot L21) (apps/web/e2e/planche-epaissir.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-epaissir node apps/web/e2e/planche-epaissir.mjs 2>&1 | tee -a e2e.log
+      - name: Recette d'Effilement et de Loft (lot L22) (apps/web/e2e/planche-effilement-loft.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-effilement-loft node apps/web/e2e/planche-effilement-loft.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/planche-lots-4-6.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du lot 5 de la Planche — composants, presse-papiers, menu contextuel, panneaux (apps/web/e2e/planche-lot-5.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/planche-lot-5.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du lot 7 de la Planche — persistance par commandes, Planches nommées, IFC, PNG, téléphone, axe-core (apps/web/e2e/planche-lot-7.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/planche-lot-7.mjs 2>&1 | tee -a e2e.log
+      - name: Porte P1 réduite (P2-0) — un projet, un écran, bâtiment + esquisse + Planche + feuille + version (apps/web/e2e/porte-p1-reduite.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/porte-p1-reduite.mjs 2>&1 | tee -a e2e.log
+      - name: Noyau exact (P2-1, D-177) — Worker OCCT à la demande, révolution, booléen, STEP export / import, IFC (apps/web/e2e/p2-noyau-exact.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/p2-noyau-exact.mjs 2>&1 | tee -a e2e.log
+      - name: "Porte P1 → P2 (P2-2) — P.118-M : ontologie mécanique, CTA à 4 pièces et 2 liaisons pilotées, version, feuille éclatée, IFC, collision (apps/web/e2e/porte-p1-p2.mjs)"
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/porte-p1-p2.mjs 2>&1 | tee -a e2e.log
+      - name: "Lot P2-3 structure — trame générée après aperçu, catalogue sourcé, assemblages, armatures, coulage, nomenclatures, IFC réimporté (apps/web/e2e/p2-structure.mjs)"
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/p2-structure.mjs 2>&1 | tee -a e2e.log
+      - name: "Lot P2-4 bois et tôlerie — ossature générée sur un mur de P.118 après aperçu, CLT, assemblage, tôle pliée et développé, table de pliage, nomenclatures, IFC (apps/web/e2e/p2-bois-tolerie.mjs)"
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/p2-bois-tolerie.mjs 2>&1 | tee -a e2e.log
+      - name: "Lot P2-5 réseaux — ontologie activée, catalogue de tubes sourcé et spécification, réseau routé depuis l'inspecteur (deux tronçons + coude connectés), pompe, connectivité vérifiée (refus, rupture signalée, réparation), nomenclature, P&ID, IFC MEP réimporté (apps/web/e2e/p2-reseaux.mjs)"
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/p2-reseaux.mjs 2>&1 | tee -a e2e.log
+      - name: "Lot P2-6 coordination — bâtiment P2 (plafond, rampe, mur-rideau, terrain depuis l'inspecteur), gaine × mur signalée puis exemptée par une réservation accordée, mécanisme animé (trajectoire, obstacle), surface libre subdivisée, tableaux rénovation / chantier, IFC natif (apps/web/e2e/p2-coordination.mjs)"
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/p2-coordination.mjs 2>&1 | tee -a e2e.log
+      - name: "Lot P2-7 documentation — annotation de fabrication et cote tolérancée depuis l'inspecteur, étiquette intelligente, feuille gabarit production béton, isométrique de tuyauterie, nuage de points LAS lu et posé derrière le plan (apps/web/e2e/p2-documentation.mjs)"
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/p2-documentation.mjs 2>&1 | tee -a e2e.log
+      - name: "Lot P2-8 automatisation — graphe de génération dessiné, règle du graphe non tenue (échec nommé), proposition par la même boucle puis accord (4 poteaux), graphe composé dans l'éditeur visuel et déposé dans le projet, règle par ontologie sur les murs (problèmes rattachés, rejugés) (apps/web/e2e/p2-automatisation.mjs)"
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/p2-automatisation.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de l'interface anglaise — relevé des textes restés en français (apps/web/e2e/interface-anglais.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/interface-anglais.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des boutons de la Planche, ordinateur et téléphone (apps/web/e2e/planche-boutons.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/planche-boutons.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la Planche détachée et de la barre du mode Documents (apps/web/e2e/planche-detachee-documents.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/planche-detachee-documents.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la barre de l'Atelier — Plan à deux fonctions, Fichier, ⚙, barre d'actions flottante (apps/web/e2e/atelier-barre.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/atelier-barre.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des barres d'outils de la Planche — bouton « Outils », barres d'opérations flottantes (apps/web/e2e/planche-barre-outils.mjs)
+        run: |
+          set -o pipefail
+          node apps/web/e2e/planche-barre-outils.mjs 2>&1 | tee -a e2e.log
+      - name: Sauvegarde puis restauration vérifiées (scripts/verify-restore.sh) sur la base du scénario
+        env:
+          PGPASSWORD: fadi_ci_password
+        run: sh scripts/verify-restore.sh localhost fadi fadi_e2e fadi_restore_check
+      - name: Résumé de l'échec (annotations lisibles depuis l'API)
+        if: failure()
+        run: |
+          grep -n "^✗" e2e.log | head -n 8 | while IFS= read -r l; do echo "::error title=e2e::${l:0:900}"; done
+          echo "::error title=e2e-fin::$(tail -n 12 e2e.log | tr '\n' '|' | cut -c1-900)"
+          grep -n -E "Error|Timeout|exceeded" e2e.log | tail -n 4 | while IFS= read -r l; do echo "::error title=e2e-erreur::${l:0:900}"; done
+          echo "::error title=api-log::$(tail -n 15 api.log | tr '\n' '|' | cut -c1-900)"
+      - name: Journaux des serveurs
+        if: failure()
+        run: tail -n 100 api.log web.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: captures-webapp
+          path: |
+            docs/migration/captures/webapp/
+            atelier-captures/
+          retention-days: 14
+
+  image:
+    # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.
+    if: ${{ !((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: fadi
+          POSTGRES_PASSWORD: fadi_ci_password
+          POSTGRES_DB: fadi_image
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construire l'image de production (Dockerfile)
+        run: docker build -t fadi:ci .
+      - name: Démarrer le conteneur (schéma appliqué au démarrage) et sonder /health, /accueil, /projects
+        run: |
+          docker run -d --name fadi --network host \
+            -e DATABASE_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_image \
+            -e WEB_ORIGIN=http://localhost:3001 -e TRUST_PROXY=0 fadi:ci
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3001/health | grep -q '"db":"ok"'; then echo "conteneur prêt"; break; fi
+            sleep 1
+          done
+          curl -sf http://localhost:3001/health | grep -q '"db":"ok"'
+          curl -sf -H "Accept: text/html" http://localhost:3001/accueil | grep -q '<div id="root"'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/projects)" = "401"
+          curl -sf -o /dev/null -X POST -H "Content-Type: application/json" -d '{"email":"image@example.com","password":"correct-horse-battery"}' http://localhost:3001/auth/register
+      - name: Journal du conteneur
+        if: always()
+        run: |
+          docker logs fadi 2>&1 | tail -n 50
+          if [ "${{ job.status }}" != "success" ]; then echo "::error title=image-log::$(docker logs fadi 2>&1 | tail -n 20 | tr '\n' '|' | cut -c1-900)"; fi

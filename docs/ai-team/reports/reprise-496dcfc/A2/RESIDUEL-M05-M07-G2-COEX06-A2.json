@@ -1,0 +1,984 @@
+{
+  "objet": "Cinqdeltas documentaires nonredondants A2 après203/COEX03",
+  "sources": [
+    {
+      "key": "choices",
+      "path": "/workspace/work/resume496/agents/A2/M05-M17-CHOIX-RESIDUELS-A2.json",
+      "sha256": "917ac7aa79493d4c8f2302d7b1ec881d3126b865e7b959a36cb9a659b94bc1c6",
+      "citations": []
+    },
+    {
+      "key": "coex",
+      "path": "/workspace/work/resume496/agents/A2/COEX03-COMPLEMENT-A2.json",
+      "sha256": "eac9b7efbf7623db99ea0fbaef0daa416c53a533581e20dc0c17f615711ddd8a",
+      "citations": []
+    },
+    {
+      "key": "frontieres",
+      "path": "/workspace/work/mission003/agents/A2/M05-M07-M08-CONTRATS.md",
+      "sha256": "925af4ac2c735fc3eaecb639e61e0bf18d2c451f86c848cdc0f439845cf7e35e",
+      "citations": [
+        {
+          "line": 21,
+          "exact_line": "Snapshots A0 relus : #152 ouverte brouillon head `f2777230e3e9c3bd6a2a5f61e2147acd1fba4b38`, mergeable true ; diff 13 fichiers, scripts/workflow/docs. #151 ouverte vérifiée par API (snapshot issue-151.json). Le patch introduit AST/résolution alias, imports type/require/dynamiques, refus cibles calculées, séparation apps/packages/ontologies et cycles **paquets/apps** ; 52 tests déclarés/rapportés dans PR. Pas de nouveau moteur à recréer. Les résultats CI cités dans son corps sont historiques, pas réexécutés par A2."
+        },
+        {
+          "line": 25,
+          "exact_line": "`module-edges.json` contient 25 arêtes locales intermodules issues d'AST TypeScript (dont 1 dynamic import, 2 CSS). 0 import explicitement type-only détecté sur ces arêtes ; 24 imports/exports à syntaxe valeur, 1 dynamique. Cette classification distingue syntaxe type/value, pas une preuve de code effectivement exécuté : compiler, tree-shaking, CSS et dépendances transitives non simulés. Le script local couvre relatifs littéraux, pas alias ni require ; #152 couvre d'autres angles. Cycles agrégés de responsabilités : atelier↔parcours, parcours↔projets-sources, accueil↔pilotage. Cela ne prouve pas un SCC de fichiers ni une erreur au chargement."
+        },
+        {
+          "line": 29,
+          "exact_line": "| Source | Cible permise | Règle / exception |"
+        },
+        {
+          "line": 32,
+          "exact_line": "| Module métier | lib/services communs, composants UI neutres, packages purs publics | Une interface publique versionnée ; tests et direction unique. |"
+        },
+        {
+          "line": 39,
+          "exact_line": "Extractions candidates à décider : HarmonieToast/CenterElevationButton/TextConflicts dans façades adaptées, données dossier partagées accueil/pilotage hors cycle, service transmission parcelle hors bus UI profond. Ne pas déplacer automatiquement ces composants : inventaire consommateurs, séparation métier/UI, test contrats et non-régression d'abord. Baseline d'exceptions nommée, justifiée, datée et propriétaire ; interdire toute nouvelle arête non prévue sans ADR, pas ignorer le graphe existant. Tests futurs : type-only, runtime, alias, CSS/dynamic, interface permise, import profond refusé, exception exacte et cycle nouveau ; conserver #152 plutôt que fork."
+        },
+        {
+          "line": 43,
+          "exact_line": "#147 ouverte revalidée API ; #148 fusionnée revalidée snapshot A0, ne pas garder « PR brouillon non fusionnée » comme fait actuel. Aucun accès à DrawAll. Scanner local relancé en lecture seule : **1 283 fichiers texte scannés, 488 touchés, 1 887 lignes**, 0 fichier sauté par taille dans son périmètre. 269 fiches, 176 fichiers code, 39 documents, 4 métadonnées ; ancien chiffre 494/2267 n'est pas le résultat actuel. `check-fadi-isolation` : **761 fichiers**, aucune référence nominale interdite ; limite de périmètre connue."
+        }
+      ]
+    },
+    {
+      "key": "edges25",
+      "path": "/workspace/work/mission003/agents/A2/module-edges.json",
+      "sha256": "1ee9db84751c568cdb7c6484c6ce5ce6b8dea8398f96f38afacad378392645a7",
+      "citations": []
+    },
+    {
+      "key": "poc",
+      "path": "/workspace/work/mission003/repo/docs/ai-team/reports/reprise-496dcfc/G2-PERIMETRE-A0-PROPOSE.md",
+      "sha256": "ac32020d48acef36a470a49b970e81e51eccc8433847737202490cdd4428eed8",
+      "citations": [
+        {
+          "line": 9,
+          "exact_line": "Le schéma serait expérimental, distinct d'un format Studio ratifié. Deux chemins : document 2D sans modèle 3D et identités Projet → Étude → Variante → Révision, avec ancien contenu conservé et nouvelle révision. Les dix refus documentaires G1 v2 seraient transformés en cas purs, sans les présenter aujourd'hui comme tests réussis. Rectangle synthétique 6×2 puis 7×2 : oracle analytique 12 puis 14 m², sans portée normative générale."
+        },
+        {
+          "line": 13,
+          "exact_line": "Seul candidat produit : export public `polygonArea` de `@parcours/core-geometry`. Aucun import profond depuis `apps/web`, moteur 3D, WASM, worker, client DB ou module UI. Le [dossier DEC18](A3/DEC18-MOTEURS-PUBLICS-CANDIDATS.json) constate des exports et leurs limites, sans prouver encore l'absence d'effets de toutes les réexportations transitives du point d'entrée public. A2 doit attester ce graphe précis au SHA retenu avant tout import exécuté. À défaut, ce sous-point reste bloqué : pas de copie silencieuse du moteur ni de contournement par import interne."
+        },
+        {
+          "line": 21,
+          "exact_line": "Environnement enfant minimal explicite : exécutable et arguments fixes sans shell, aucun héritage de secrets, credential, `DATABASE_URL` ou `TEST_DATABASE_URL`. L'absence de variable ne prouve pas une interdiction réseau : le futur environnement doit effectivement refuser le réseau pendant les essais, et A6 doit le constater avant exécution. Aucun serveur, URL distante, installation, script lifecycle, navigateur, DB, API, migration ou reprise de service. Fixtures exclusivement synthétiques. Aucune écriture dans le dépôt hors des six sources proposées ; rapports documentaires relus séparément par A0."
+        },
+        {
+          "line": 33,
+          "exact_line": "Les primitives Linux/Python, droits exclusifs de racine, absence d'autres writers, confinement réseau et terminaison de tout l'arbre doivent être attestés par A6 au contexte final. Le code du binaire natif n'a pas été audité et aucune trace exhaustive de ses lectures n'est promise. Si ces conditions ne sont pas démontrables, **l'exécution reste bloquée même après un éventuel accord de développement du harness**. Pas d'installation, conteneur/service ou élargissement de permissions implicite pour contourner ce blocage."
+        },
+        {
+          "line": 37,
+          "exact_line": "Comparer avant/après chaque refus ; isoler la faute ciblée, vérifier identité, parenté, version, non-finitude, référence manquante, writer contradictoire et empreinte de l'ancienne révision. Parsing et sérialisation ne prouvent ni droits serveur, ni transaction DB, ni concurrence réelle, ni résistance matérielle à une coupure. L'absence de 3D doit être explicite dans le cas autonome."
+        }
+      ]
+    },
+    {
+      "key": "m27",
+      "path": "/workspace/work/mission004/agents/A6/M23-M27/CONTRAT-JOBS-REPRISE-RESTAURATION.md",
+      "sha256": "45b5b77923079d12f9dc98a1050a32ed177f74de0243075b2efb041a1585eb3e",
+      "citations": [
+        {
+          "line": 49,
+          "exact_line": "3. Charger une **coupe logique cohérente** des documents canoniques, révisions, journal/request-results et outbox. Le mécanisme transaction/isolement/version-set est à ratifier/éprouver ; une série de GET indépendants ne prouve pas cette coupe."
+        },
+        {
+          "line": 61,
+          "exact_line": "- frontière de journal, résultats de commandes/requestId et outbox pour reprendre sans doubler ni oublier un effet ; intentions locales non confirmées identifiées séparément avec leur version/contexte ;"
+        },
+        {
+          "line": 63,
+          "exact_line": "- droits applicables/version de politique et condition de réautorisation actuelle ; les droits historiques prouvent ce qui fut permis, pas automatiquement les droits futurs ;"
+        },
+        {
+          "line": 66,
+          "exact_line": "Une empreinte valide ou un dump présent ne prouve pas que toutes les pièces/associations/droits existent. Si contenu absent, référence ambiguë, lecteur incompatible ou droits inconnus : récupération déclarée incomplète, rapport et action précise, jamais substitution silencieuse par latest. Les queues et événements ne sont pas jetés comme des caches."
+        },
+        {
+          "line": 68,
+          "exact_line": "**Restauration avec nouvelles écritures** : figer la preuve du backup et l’inventaire courant, préserver écritures confirmées depuis la coupe et commandes pendantes. Préparer la récupération dans une copie isolée, comparer puis proposer un mapping/rejeu/résolution ou rapport de pertes explicite. Aucune bascule écrasant R12/R13 par R10 par défaut. Une bascule future exige son accord et une nouvelle authorityEpoch empêchant vieux workers/clients de réengager sur l’ancienne identité. La coexistence garde un writer unique ; ancien client non compatible explicitement bloqué ou read-only selon décision, jamais double écriture Studio/Atelier."
+        }
+      ]
+    },
+    {
+      "key": "lotR",
+      "path": "/workspace/work/mission003/agents/A2/LOT-R.md",
+      "sha256": "0979da3165d0283357b8714272e55070d2699f07befcce506ed9cb5cda2b180d",
+      "citations": []
+    },
+    {
+      "key": "dec",
+      "path": "/workspace/work/mission003/agents/A1/studio-18-decisions.json",
+      "sha256": "b83c6a3a17878b00998c8aa28d504b5b904164aade615c50bc0e3bb8e4deb130",
+      "citations": []
+    },
+    {
+      "key": "queue",
+      "path": "/workspace/work/resume496/agents/A2/NEXT-READY-POST203-A2.json",
+      "sha256": "aebe223472c8e61939d495fc0d903f4682e983e014dbda98485026317985ac55",
+      "citations": []
+    },
+    {
+      "key": "m08",
+      "path": "/workspace/work/mission003/repo/docs/ai-team/reports/reprise-496dcfc/M08-SYNTHESE-A0.md",
+      "sha256": "71c75f2952e4f84fb7178893a3c40f4be08b70094b0c6d9341fef64257eaf9c1",
+      "citations": [
+        {
+          "line": 26,
+          "exact_line": "Les 125 références historiques ne sont pas réécrites. Les absences, couvertures partielles et différences de portée restent tracées individuellement, à traiter dans des lots distincts après cadrage. Trois contradictions documentaires P2 supplémentaires sont [sourcées par A5](A5/M08-TROIS-CONTRADICTIONS-OUVERTES-A5.json) : DA03-13/D111, DA05-02/D060, DA04-07/Suivi/D125. Elles demandent une clarification documentaire ; elles n'autorisent aucune modification de norme, fonctionnalité ou décision historique."
+        }
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "id": "M05",
+      "nature": "Jointure sans nouveaucontrat",
+      "liens10choix11groupes": [
+        {
+          "choix_id_existant": "R3-COMP-01",
+          "intitule_existant": "Noms et compatibilité des versions",
+          "groupes_COEX03": [
+            "J01",
+            "J02",
+            "J03",
+            "J04",
+            "J05",
+            "J06",
+            "J07",
+            "J08",
+            "J09",
+            "J10",
+            "J11"
+          ],
+          "effets_lecteur_writer_migration": {
+            "lecteur": "Détecter format/version supportés avant reconstruction ; erreur explicite, jamais interprétation sousversion voisine.",
+            "writer": "Émettre version ratifiée et contenu exact ; aucun doublebump modèle/commandes automatique.",
+            "migration": "Conserver version source et rapport de conversion ; ancienne pièce non réécrite."
+          },
+          "choix_encore_ouvert": "Ratifier représentation/valeurs physiques des versions initiales et politique lecteur pour versions inconnues/plus récentes, sans choisir ici des numéros.",
+          "critere_existant": "Corpus versions supportées/non supportées, même contenu ancien inchangé ; revue A2/A5 et acte canonique avant persistance.",
+          "nouveau_choix_adopte": false,
+          "preuve_par_renvoi": "choices/choices/0"
+        },
+        {
+          "choix_id_existant": "R3-COMP-02",
+          "intitule_existant": "Commandes Atelier /1,/2,/3 versus enveloppe Studio",
+          "groupes_COEX03": [
+            "J01",
+            "J02",
+            "J04",
+            "J07",
+            "J08",
+            "J09",
+            "J10",
+            "J11"
+          ],
+          "effets_lecteur_writer_migration": {
+            "lecteur": "Lecteur de commandes vérifie opération et paramètres supportés, pas seulement chaîne de contrat acceptée.",
+            "writer": "Adaptateur public autorisé avec contrôle scope/parenté/writer ; pas injection d’enveloppe Studio brute sur route historique.",
+            "migration": "Journal/queue anciens conservés, aucune conversion silencieuse /2→/3 ni modèle1→modèlev3."
+          },
+          "choix_encore_ouvert": "Fixer matrice opération/version et contrat d’adaptation du contexte Studio/baseRevisionId vers services existants ; ne pas assimiler routeAtelier baseRevision numérique à identités Studio.",
+          "critere_existant": "Table ancien/nouveau opération par opération, cas valide/refusé/undo/replay et zéro effet sur refus ; matrice actuelle relue au SHA cible avant code.",
+          "nouveau_choix_adopte": false,
+          "preuve_par_renvoi": "choices/choices/1"
+        },
+        {
+          "choix_id_existant": "R3-COMP-03",
+          "intitule_existant": "Archives et propriétés inconnues",
+          "groupes_COEX03": [
+            "J01",
+            "J03",
+            "J05",
+            "J08",
+            "J09",
+            "J10",
+            "J11"
+          ],
+          "effets_lecteur_writer_migration": {
+            "lecteur": "Aucune promesse sérialiseur transparent ; distinguer import transformant de réouverture native.",
+            "writer": "Écrire format choisi sans écraser archive source ; vérifier ancienne révision.",
+            "migration": "Mapping et rapport nominatif des pertes ; pas migration exécutée dans ce dossier."
+          },
+          "choix_encore_ouvert": "Décider conservation des champs inconnus ou rapport de pertes/refus selon sens lecture/import/export, et lecteurs Studio initiaux.",
+          "critere_existant": "Corpus synthétique archive1 valide/invalide, format futur, champs inconnus et roundtrip borné ; preuve avant/après plus rapport explicite.",
+          "nouveau_choix_adopte": false,
+          "preuve_par_renvoi": "choices/choices/2"
+        },
+        {
+          "choix_id_existant": "R3-COMP-04",
+          "intitule_existant": "Lecture des publications héritées",
+          "groupes_COEX03": [
+            "J03",
+            "J05"
+          ],
+          "effets_lecteur_writer_migration": {
+            "lecteur": "Ne pas prendre commande/2 acceptée pour publication/2 lisible ; état nonlisible explicite et conservation pièce.",
+            "writer": "Publication sous contrat effectivement supporté ; approve/publish demeurent distincts.",
+            "migration": "Ancienne publication immuable ; pas réécriture de champcontrat absent ou desempreintes pour la rendre lisible."
+          },
+          "choix_encore_ouvert": "Ratifier politique de lecture contrat absent,/1,/2,/3 + version modèle supérieure ; conserver refus actuels tant qu’un élargissement et ses oracles ne sont pas approuvés.",
+          "critere_existant": "Matrice contrat absent,/1,/2,/3×modèle1/supérieur, refus explicites et hashes des pièces inchangés ; aucun latest substitué.",
+          "nouveau_choix_adopte": false,
+          "preuve_par_renvoi": "choices/choices/3"
+        },
+        {
+          "choix_id_existant": "R3-COMP-05",
+          "intitule_existant": "IDs physiques, parenté et coexistence des anciens forks",
+          "groupes_COEX03": [
+            "J01",
+            "J03",
+            "J06",
+            "J08",
+            "J09",
+            "J10",
+            "J11"
+          ],
+          "effets_lecteur_writer_migration": {
+            "lecteur": "Lecture garde anciens IDs et origine ; résolution de parenté serveur, aucun « dernier projet ».",
+            "writer": "Un écrivain canonique unique ; pas Studio etAtelier écrivant deuxcopies du mêmeobjet.",
+            "migration": "Décider plan migration/rollback séparé, source intacte ; aucun ID réutilisé ou renommé silencieusement."
+          },
+          "choix_encore_ouvert": "Choisir allocation/encodage/longueur/casse des IDs et mapping explicite forkprojet→étude/variante/provenance, avec refus collision/parentmixte ; pas UUID/SQL imposé ici.",
+          "critere_existant": "Cas parentsdifférents/IDinvalide/collision/fork, conservation de tous IDs sources, preuve de propriétaire/writer ; migration et restauration hors cette préparation.",
+          "nouveau_choix_adopte": false,
+          "preuve_par_renvoi": "choices/choices/4"
+        },
+        {
+          "choix_id_existant": "R3-COMP-06",
+          "intitule_existant": "Déduplication et expiration des résultats durables",
+          "groupes_COEX03": [
+            "J01",
+            "J02",
+            "J04",
+            "J07",
+            "J08",
+            "J09",
+            "J10"
+          ],
+          "effets_lecteur_writer_migration": {
+            "lecteur": "Après timeout, requête de résultat parrequestId ; pas annulationaffirmée sans preuve.",
+            "writer": "Mêmeclé/contenu même résultat durable ; autrecontenu refus ; preview→commit ne réutilise pas illicitement mêmeclé.",
+            "migration": "Résultats/queue anciens : stratégiecompatibilité explicite ; ne pas supprimer une preuve historique pour simplifier."
+          },
+          "choix_encore_ouvert": "Ratifier clé/portée authentifiée, canonicalisation du contenu de déduplication, durée du résultat et comportement aprèsexpiration ; aucun changement rétention décidé ici.",
+          "critere_existant": "Corpus replay identique/différent/têteavancée/expiration/ACKperdu, zéro nouvel effet et résultat cohérent. POC pur ne prouve pas transactions serveur.",
+          "nouveau_choix_adopte": false,
+          "preuve_par_renvoi": "choices/choices/5"
+        },
+        {
+          "choix_id_existant": "R3-COMP-07",
+          "intitule_existant": "Snapshot cohérent et frontière de commit/version",
+          "groupes_COEX03": [
+            "J01",
+            "J02",
+            "J03",
+            "J05",
+            "J08",
+            "J09",
+            "J10",
+            "J11"
+          ],
+          "effets_lecteur_writer_migration": {
+            "lecteur": "Interdire assemblage de plusieurs GET hétérogènes présenté comme snapshot ; anciennes sourcesexactes vérifiées.",
+            "writer": "Commit atomique avec une autorité par donnée ; statutlocal/pending ne confirme pas durabilité.",
+            "migration": "Rollback conserve nouvellesécritures ; aucune restauration en place de données inconnues."
+          },
+          "choix_encore_ouvert": "Choisir mécanisme transaction/isolement ou ensembles de versions pour lire et engager canonique/révision/journal/outbox de même coupe ; format physique ouvert.",
+          "critere_existant": "Cas interleaving, commitpartiel, échec/ACKperdu, vieille révision ; cohérence démontrée selon mécanisme adopté et autorisation d’essai applicable.",
+          "nouveau_choix_adopte": false,
+          "preuve_par_renvoi": "choices/choices/6"
+        },
+        {
+          "choix_id_existant": "R3-COMP-08",
+          "intitule_existant": "Canonicalisation et versions de contenu/publication",
+          "groupes_COEX03": [
+            "J03",
+            "J05",
+            "J08",
+            "J09",
+            "J10",
+            "J11"
+          ],
+          "effets_lecteur_writer_migration": {
+            "lecteur": "Comparer empreintes au procédé/version annoncé ; inconnu/divergent = état explicite, pas reconstruction silencieuse.",
+            "writer": "Empreinte sur contenu approuvé exact ; aucune décisionauto de signature ou stockage blob.",
+            "migration": "Anciennes empreintes ne sont pas recalculées puis réécrites ; nouvelle version documentée ou refus."
+          },
+          "choix_encore_ouvert": "Ratifier octets canoniques, encodage/données nonfinies/ordre des pièces, version du procédé et traitement des anciens lecteurs ; signature/URI seulement si retenues.",
+          "critere_existant": "Cas mêmecontenu/mêmep procédé, ordre modifié, pièce changée, nonfinitude et format inconnu ; ancienne pièce conservée et décision traçable.",
+          "nouveau_choix_adopte": false,
+          "preuve_par_renvoi": "choices/choices/7"
+        },
+        {
+          "choix_id_existant": "R3-COMP-09",
+          "intitule_existant": "Loader de l’export public polygonArea",
+          "groupes_COEX03": [
+            "J08",
+            "J09"
+          ],
+          "effets_lecteur_writer_migration": {
+            "lecteur": "Sans runnercompatible, pas importeffectif/lecteur expérimental présenté fonctionnel.",
+            "writer": "Moteur n’écrit pas stockage ; polygonArea reçoit données contrôlées via adaptateur candidat.",
+            "migration": "Pas nouveau package, script, copie moteur ou modificationapplication pour contourner résolution. Toute extension de périmètre doit être approuvée."
+          },
+          "choix_encore_ouvert": "Éprouver sous autorisation le runner existant exact, résolution workspace/TS ESM exports src/index.ts et spécificateurs .js→.ts, hooks et confinement ; décider compatible ou souspointbloqué.",
+          "critere_existant": "Commande/runner figés A5/A6, SHA final/graph identiques, aucune dépendance/service/network imprévu ; test futur seulement autorisé. Échec bloque ce souspoint, pas les autres READY.",
+          "nouveau_choix_adopte": false,
+          "preuve_par_renvoi": "choices/choices/8"
+        },
+        {
+          "choix_id_existant": "R3-COMP-10",
+          "intitule_existant": "Compatibilité des clients/offline et transition de versions",
+          "groupes_COEX03": [
+            "J01",
+            "J02",
+            "J03",
+            "J04",
+            "J05",
+            "J06",
+            "J07",
+            "J08",
+            "J09",
+            "J10",
+            "J11"
+          ],
+          "effets_lecteur_writer_migration": {
+            "lecteur": "Client ancien montre état explicite sans perdre champs ou appeler une opération inconnue ; réouvertureexacte préservée.",
+            "writer": "Refuser commit ancien/incompatible et doublewriter ; aucune purge silencieuse de file.",
+            "migration": "Rapport des commandes enattente, migration d’autorité explicite et retourarrière conservant source/nouvellesécritures, pas exécution ici."
+          },
+          "choix_encore_ouvert": "Fixer capacitédeclaredclient/version supportée, refus ou miseenrésolution des anciennes commandes offline et procédure de reprise avant changement d’autorité.",
+          "critere_existant": "Corpus queueancienne/nouvelle, conflitbase, commandeinconnue, rebase explicite, annulationinverse et intégritéhistoriquepreuves ; essais intégration seulement autorisés.",
+          "nouveau_choix_adopte": false,
+          "preuve_par_renvoi": "choices/choices/9"
+        }
+      ],
+      "limite": "Tous11groupes couverts parjointure ; pasdécision devers/schema/IDs/compatibilité ni extensionlecteur."
+    },
+    {
+      "id": "M07",
+      "nature": "Politique candidate par7modules, pas garde implémenté",
+      "sept_modules": [
+        "projets-sources",
+        "parcours",
+        "programmation",
+        "atelier",
+        "analyses",
+        "documents",
+        "collaboration"
+      ],
+      "politiques": [
+        {
+          "module": "projets-sources",
+          "runtime_candidat": "Vers un autre module seulement par façade publique déclarée au contrat de consommation (lecture/commande) et directionjustifiée ; imports profonds UI/bus/persistance privés interdits pour nouvelles arêtes.",
+          "type_only_candidat": "Types publics de contrat possibles, déclarés import type/export type lorsque sansvaleur ; ne dispense pas politique dépendance ni autorise type privé. Pas effet runtime présumé avant compilation.",
+          "service_commun": "Packages purs via exports publics et manifests ; services web neutres viafaçade ; aucun import apps/api enfrontend, appelAPI autorisé via contrattransport et droitsserveur.",
+          "baseline": "Arêtesexistantes conservées comme inventaire/écarts datés, jamais nouvelle permission automatique ; exception exactchemin/motif/owner/date à approuver.",
+          "statut": "Proposé, non implanté ni adopté"
+        },
+        {
+          "module": "parcours",
+          "runtime_candidat": "Vers un autre module seulement par façade publique déclarée au contrat de consommation (lecture/commande) et directionjustifiée ; imports profonds UI/bus/persistance privés interdits pour nouvelles arêtes.",
+          "type_only_candidat": "Types publics de contrat possibles, déclarés import type/export type lorsque sansvaleur ; ne dispense pas politique dépendance ni autorise type privé. Pas effet runtime présumé avant compilation.",
+          "service_commun": "Packages purs via exports publics et manifests ; services web neutres viafaçade ; aucun import apps/api enfrontend, appelAPI autorisé via contrattransport et droitsserveur.",
+          "baseline": "Arêtesexistantes conservées comme inventaire/écarts datés, jamais nouvelle permission automatique ; exception exactchemin/motif/owner/date à approuver.",
+          "statut": "Proposé, non implanté ni adopté"
+        },
+        {
+          "module": "programmation",
+          "runtime_candidat": "Vers un autre module seulement par façade publique déclarée au contrat de consommation (lecture/commande) et directionjustifiée ; imports profonds UI/bus/persistance privés interdits pour nouvelles arêtes.",
+          "type_only_candidat": "Types publics de contrat possibles, déclarés import type/export type lorsque sansvaleur ; ne dispense pas politique dépendance ni autorise type privé. Pas effet runtime présumé avant compilation.",
+          "service_commun": "Packages purs via exports publics et manifests ; services web neutres viafaçade ; aucun import apps/api enfrontend, appelAPI autorisé via contrattransport et droitsserveur.",
+          "baseline": "Arêtesexistantes conservées comme inventaire/écarts datés, jamais nouvelle permission automatique ; exception exactchemin/motif/owner/date à approuver.",
+          "statut": "Proposé, non implanté ni adopté"
+        },
+        {
+          "module": "atelier",
+          "runtime_candidat": "Vers un autre module seulement par façade publique déclarée au contrat de consommation (lecture/commande) et directionjustifiée ; imports profonds UI/bus/persistance privés interdits pour nouvelles arêtes.",
+          "type_only_candidat": "Types publics de contrat possibles, déclarés import type/export type lorsque sansvaleur ; ne dispense pas politique dépendance ni autorise type privé. Pas effet runtime présumé avant compilation.",
+          "service_commun": "Packages purs via exports publics et manifests ; services web neutres viafaçade ; aucun import apps/api enfrontend, appelAPI autorisé via contrattransport et droitsserveur.",
+          "baseline": "Arêtesexistantes conservées comme inventaire/écarts datés, jamais nouvelle permission automatique ; exception exactchemin/motif/owner/date à approuver.",
+          "statut": "Proposé, non implanté ni adopté"
+        },
+        {
+          "module": "analyses",
+          "runtime_candidat": "Vers un autre module seulement par façade publique déclarée au contrat de consommation (lecture/commande) et directionjustifiée ; imports profonds UI/bus/persistance privés interdits pour nouvelles arêtes.",
+          "type_only_candidat": "Types publics de contrat possibles, déclarés import type/export type lorsque sansvaleur ; ne dispense pas politique dépendance ni autorise type privé. Pas effet runtime présumé avant compilation.",
+          "service_commun": "Packages purs via exports publics et manifests ; services web neutres viafaçade ; aucun import apps/api enfrontend, appelAPI autorisé via contrattransport et droitsserveur.",
+          "baseline": "Arêtesexistantes conservées comme inventaire/écarts datés, jamais nouvelle permission automatique ; exception exactchemin/motif/owner/date à approuver.",
+          "statut": "Proposé, non implanté ni adopté"
+        },
+        {
+          "module": "documents",
+          "runtime_candidat": "Vers un autre module seulement par façade publique déclarée au contrat de consommation (lecture/commande) et directionjustifiée ; imports profonds UI/bus/persistance privés interdits pour nouvelles arêtes.",
+          "type_only_candidat": "Types publics de contrat possibles, déclarés import type/export type lorsque sansvaleur ; ne dispense pas politique dépendance ni autorise type privé. Pas effet runtime présumé avant compilation.",
+          "service_commun": "Packages purs via exports publics et manifests ; services web neutres viafaçade ; aucun import apps/api enfrontend, appelAPI autorisé via contrattransport et droitsserveur.",
+          "baseline": "Arêtesexistantes conservées comme inventaire/écarts datés, jamais nouvelle permission automatique ; exception exactchemin/motif/owner/date à approuver.",
+          "statut": "Proposé, non implanté ni adopté"
+        },
+        {
+          "module": "collaboration",
+          "runtime_candidat": "Vers un autre module seulement par façade publique déclarée au contrat de consommation (lecture/commande) et directionjustifiée ; imports profonds UI/bus/persistance privés interdits pour nouvelles arêtes.",
+          "type_only_candidat": "Types publics de contrat possibles, déclarés import type/export type lorsque sansvaleur ; ne dispense pas politique dépendance ni autorise type privé. Pas effet runtime présumé avant compilation.",
+          "service_commun": "Packages purs via exports publics et manifests ; services web neutres viafaçade ; aucun import apps/api enfrontend, appelAPI autorisé via contrattransport et droitsserveur.",
+          "baseline": "Arêtesexistantes conservées comme inventaire/écarts datés, jamais nouvelle permission automatique ; exception exactchemin/motif/owner/date à approuver.",
+          "statut": "Proposé, non implanté ni adopté"
+        }
+      ],
+      "imports25_reemployes": [
+        {
+          "source_pointer": "edges25/edges/0",
+          "source": "accueil",
+          "target": "pilotage",
+          "file": "apps/web/src/modules/accueil/DossierDashboard.tsx",
+          "line": 12,
+          "kind_historique": "runtime",
+          "specifier": "../pilotage/RoadmapPreview",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/1",
+          "source": "accueil",
+          "target": "module-registry",
+          "file": "apps/web/src/modules/accueil/SearchDialog.tsx",
+          "line": 5,
+          "kind_historique": "runtime",
+          "specifier": "../module-registry",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/2",
+          "source": "accueil",
+          "target": "atelier",
+          "file": "apps/web/src/modules/accueil/use-dossier-sync.ts",
+          "line": 8,
+          "kind_historique": "runtime",
+          "specifier": "../atelier/bus/etat-projet",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/3",
+          "source": "atelier",
+          "target": "parcours",
+          "file": "apps/web/src/modules/atelier/DesignReview.tsx",
+          "line": 17,
+          "kind_historique": "runtime",
+          "specifier": "../parcours/MapTilerCard",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/4",
+          "source": "atelier",
+          "target": "parcours",
+          "file": "apps/web/src/modules/atelier/DesignReview.tsx",
+          "line": 21,
+          "kind_historique": "runtime",
+          "specifier": "../parcours/HarmoniePanel",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/5",
+          "source": "atelier",
+          "target": "programmation",
+          "file": "apps/web/src/modules/atelier/DesignReview.tsx",
+          "line": 22,
+          "kind_historique": "runtime",
+          "specifier": "../programmation/TextConflicts",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/6",
+          "source": "parcours",
+          "target": "atelier",
+          "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+          "line": 16,
+          "kind_historique": "runtime",
+          "specifier": "../atelier/AtelierHarmonyPage",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/7",
+          "source": "parcours",
+          "target": "atelier",
+          "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+          "line": 17,
+          "kind_historique": "runtime",
+          "specifier": "../atelier/DesignReview",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/8",
+          "source": "parcours",
+          "target": "collaboration",
+          "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+          "line": 19,
+          "kind_historique": "runtime",
+          "specifier": "../collaboration/CollaborationModule",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/9",
+          "source": "parcours",
+          "target": "projets-sources",
+          "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+          "line": 20,
+          "kind_historique": "runtime",
+          "specifier": "../projets-sources/ImportProjectButton",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/10",
+          "source": "parcours",
+          "target": "projets-sources",
+          "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+          "line": 21,
+          "kind_historique": "runtime",
+          "specifier": "../projets-sources/ParcelleTool",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/11",
+          "source": "parcours",
+          "target": "projets-sources",
+          "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+          "line": 22,
+          "kind_historique": "runtime",
+          "specifier": "../projets-sources/StepSources",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/12",
+          "source": "parcours",
+          "target": "programmation",
+          "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+          "line": 23,
+          "kind_historique": "runtime",
+          "specifier": "../programmation/ProgrammeRepartition",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/13",
+          "source": "parcours",
+          "target": "programmation",
+          "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+          "line": 24,
+          "kind_historique": "runtime",
+          "specifier": "../programmation/ProgrammeCase",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/14",
+          "source": "parcours",
+          "target": "programmation",
+          "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+          "line": 25,
+          "kind_historique": "runtime",
+          "specifier": "../programmation/ProgrammeTransferFold",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/15",
+          "source": "parcours",
+          "target": "atelier",
+          "file": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+          "line": 31,
+          "kind_historique": "runtime-dynamic",
+          "specifier": "../atelier/nouveau/AtelierNouveau",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/16",
+          "source": "pilotage",
+          "target": "accueil",
+          "file": "apps/web/src/modules/pilotage/ProjectCockpitPage.tsx",
+          "line": 5,
+          "kind_historique": "runtime",
+          "specifier": "../accueil/dossier-data",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/17",
+          "source": "pilotage",
+          "target": "accueil",
+          "file": "apps/web/src/modules/pilotage/RoadmapPreview.tsx",
+          "line": 4,
+          "kind_historique": "runtime",
+          "specifier": "../accueil/dossier-data",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/18",
+          "source": "pilotage",
+          "target": "accueil",
+          "file": "apps/web/src/modules/pilotage/kpi-model.ts",
+          "line": 2,
+          "kind_historique": "runtime",
+          "specifier": "../accueil/dossier-state",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/19",
+          "source": "pilotage",
+          "target": "accueil",
+          "file": "apps/web/src/modules/pilotage/roadmap.ts",
+          "line": 2,
+          "kind_historique": "runtime",
+          "specifier": "../accueil/dossier-state",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/20",
+          "source": "programmation",
+          "target": "bibliotheque",
+          "file": "apps/web/src/modules/programmation/ProgrammeCase.tsx",
+          "line": 17,
+          "kind_historique": "runtime",
+          "specifier": "../bibliotheque/BuildingLibraryPage",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/21",
+          "source": "programmation",
+          "target": "bibliotheque",
+          "file": "apps/web/src/modules/programmation/ProgrammeCase.tsx",
+          "line": 18,
+          "kind_historique": "runtime",
+          "specifier": "../bibliotheque/building-library.css",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/22",
+          "source": "programmation",
+          "target": "bibliotheque",
+          "file": "apps/web/src/modules/programmation/ProgrammeLinks.tsx",
+          "line": 22,
+          "kind_historique": "runtime",
+          "specifier": "../bibliotheque/building-library.css",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/23",
+          "source": "projets-sources",
+          "target": "parcours",
+          "file": "apps/web/src/modules/projets-sources/ImportProjectButton.tsx",
+          "line": 12,
+          "kind_historique": "runtime",
+          "specifier": "../parcours/HarmoniePanel",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        },
+        {
+          "source_pointer": "edges25/edges/24",
+          "source": "projets-sources",
+          "target": "atelier",
+          "file": "apps/web/src/modules/projets-sources/ParcelleTool.tsx",
+          "line": 14,
+          "kind_historique": "runtime",
+          "specifier": "../atelier/bus/atelier-client",
+          "qualification": "Réemploi syntaxique historique ; pas nouvel inventaire à main actuel. Une façade permise n’est pas déduite de cette arête."
+        }
+      ],
+      "baseline_reference": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+      "comptes_historiques": {
+        "edges": 25,
+        "type_only_explicit": 0,
+        "syntax_value": 24,
+        "dynamic": 1,
+        "CSS_inclus": 2
+      },
+      "auxiliaires": "Accueil/pilotage etmodule-registry apparaissent au graphe, pas nouveauxmodulesmétier ; Studio reste futurmoduleautonome, interfacesàdéclarer.",
+      "PR152": "Réemploie AST/résolution/cyclespaquets-apps auheadf277 ; nepasréécrire ce garde ni prétendre frontières7modules déjà couvertes.",
+      "oracles_prescrits": [
+        "Importpublicpermis etimportprofondrefusé, runtime/type-only séparés",
+        "Alias/relative/require/dynamic/CSS analysés selonrègle, ciblecalculée refusée",
+        "Exceptionnommée exacte ne masque pasnouvellearête/cycle",
+        "Aucunweb→APIserverimport, aucunpaquetpur→UI/DOM/WASMimplicite"
+      ],
+      "choix_manquant": "Contratsfaçadesetconsommation, exceptionshistoriques etintégrationtestsgarde nonadoptés."
+    },
+    {
+      "id": "G2-01",
+      "nature": "Besoin décision→preuve proposée",
+      "besoins": [
+        {
+          "besoin_id_local_noncanonique": "2D-identites-pur",
+          "decisions": [
+            {
+              "id": "DEC-01",
+              "question_exacte": "Modèle physique du dessin 2D autonome et son stockage."
+            },
+            {
+              "id": "DEC-03",
+              "question_exacte": "Définition Étude / Variante / Révision et migration des projets."
+            },
+            {
+              "id": "DEC-18",
+              "question_exacte": "Réutilisation effective des moteurs et services Fadi."
+            }
+          ],
+          "risques_source": [
+            "RISK-01",
+            "RISK-08"
+          ],
+          "preuve_necessaire": "PérimètreA0 existant : autonomie2D/identités/réouverture/refus purs ; rectangle12→14m².",
+          "ce_qui_ne_se_demontre_pas": "Pas stockagephysique, authentificationserveur, transactionDB, association3D, renduGPU ou migrationréelle.",
+          "etat_et_trigger": "Dossierexpérimental existant uniquement ; autorisation+G1applicable+confinement manquants.",
+          "execute": false
+        },
+        {
+          "besoin_id_local_noncanonique": "3D-association",
+          "decisions": [
+            {
+              "id": "DEC-02",
+              "question_exacte": "Sémantique des associations et références topologiques 2D/3D."
+            },
+            {
+              "id": "DEC-18",
+              "question_exacte": "Réutilisation effective des moteurs et services Fadi."
+            }
+          ],
+          "risques_source": [
+            "RISK-01",
+            "RISK-10"
+          ],
+          "preuve_necessaire": "Futurbesoin : identité/hôtes/projections communes et 3D autonome sans esquisse obligatoire.",
+          "ce_qui_ne_se_demontre_pas": "Aucun corpus/harness/exécution défini ici ; ne pas recycler polygonArea comme preuve.",
+          "etat_et_trigger": "Préparer plus tard périmètre/corpus/oracle avant demandebornée propre, pas blocageartificiel du premierPOC2D.",
+          "execute": false
+        },
+        {
+          "besoin_id_local_noncanonique": "chargement-cache",
+          "decisions": [
+            {
+              "id": "DEC-05",
+              "question_exacte": "Support et gouvernance des manifests Registry."
+            },
+            {
+              "id": "DEC-06",
+              "question_exacte": "API et limites du Tool Manager."
+            },
+            {
+              "id": "DEC-07",
+              "question_exacte": "Granularité des chunks, préchargement et cache."
+            }
+          ],
+          "risques_source": [
+            "RISK-05"
+          ],
+          "preuve_necessaire": "Futurbesoin : requêtes/transfert/chunks exécutés/mémoire cachefroid-chaud, sans charger catalogueentier.",
+          "ce_qui_ne_se_demontre_pas": "Graphe statique et testsregistres ne mesurent ni SW ni runtime ; pas taux inventé.",
+          "etat_et_trigger": "Périmètre et baseline à préparer pour lotB applicable, pas exécution autorisée.",
+          "execute": false
+        },
+        {
+          "besoin_id_local_noncanonique": "conflit-reprise",
+          "decisions": [
+            {
+              "id": "DEC-12",
+              "question_exacte": "Historique et undo/redo entre sous-modèles."
+            },
+            {
+              "id": "DEC-14",
+              "question_exacte": "Profil et stratégie des outils utilisables hors ligne."
+            },
+            {
+              "id": "DEC-11",
+              "question_exacte": "Gestion des workers, mémoire et OCCT."
+            }
+          ],
+          "risques_source": [
+            "RISK-03",
+            "RISK-06"
+          ],
+          "preuve_necessaire": "Futurbesoin : requestId/concurrence/refusatomique, anciennegénérationworker, coupure et reprise sans duplication.",
+          "ce_qui_ne_se_demontre_pas": "Cas purs seuls ne prouvent pas transactionsserveur ni résilienceworker/process ; cibleDB exigerait mandat distinct.",
+          "etat_et_trigger": "ContratM17/M27 préparé ; corpus et périmètreexécution restent à autoriser.",
+          "execute": false
+        },
+        {
+          "besoin_id_local_noncanonique": "publication-restauration",
+          "decisions": [
+            {
+              "id": "DEC-16",
+              "question_exacte": "Manifeste de publication multi-sources."
+            },
+            {
+              "id": "DEC-03",
+              "question_exacte": "Définition Étude / Variante / Révision et migration des projets."
+            }
+          ],
+          "risques_source": [
+            "RISK-04",
+            "RISK-08",
+            "RISK-10"
+          ],
+          "preuve_necessaire": "Futurbesoin : ensembleimmuableexact, droitsactuels, pièces, restoreconservant nouvellesécritures.",
+          "ce_qui_ne_se_demontre_pas": "JSONhashcohérent ne vaut ni publicationmétier ni restaurationréelle.",
+          "etat_et_trigger": "RéemployerM24/M27 et matriceCOEX06 ; restauration/migration restent mandats distincts.",
+          "execute": false
+        }
+      ],
+      "limite": "Seul premierpérimètrePOC possède annexe concrète ; autresbesoins àcadrer selonlot, aucune nouvelle autorisation ouexécution."
+    },
+    {
+      "id": "G2-05",
+      "nature": "Risques→besoins et manque suffisant",
+      "risques": [
+        {
+          "risque_source": "RISK-01",
+          "liens_besoins": [
+            "2D-identites-pur",
+            "3D-association"
+          ],
+          "suffisance_G2_actuelle": false,
+          "reste": "Preuvesprescrites/faisabilitéstatique seulement ; aucune exécution ni verdict G2 disponible.",
+          "critere_porte": "Pour sous-ensemble concerné : preuve exacte de chaque risquecritique ou déclassement/exclusion explicite justifiée ; risque horslot conserve suivi, jamais coché traité."
+        },
+        {
+          "risque_source": "RISK-02",
+          "liens_besoins": [],
+          "suffisance_G2_actuelle": false,
+          "reste": "Besoin futur snapping/indexDEC09/lotC ; oracle fidélité avantperformance, pas condition du POCpur2D rectangle.",
+          "critere_porte": "Pour sous-ensemble concerné : preuve exacte de chaque risquecritique ou déclassement/exclusion explicite justifiée ; risque horslot conserve suivi, jamais coché traité."
+        },
+        {
+          "risque_source": "RISK-03",
+          "liens_besoins": [
+            "conflit-reprise"
+          ],
+          "suffisance_G2_actuelle": false,
+          "reste": "Preuvesprescrites/faisabilitéstatique seulement ; aucune exécution ni verdict G2 disponible.",
+          "critere_porte": "Pour sous-ensemble concerné : preuve exacte de chaque risquecritique ou déclassement/exclusion explicite justifiée ; risque horslot conserve suivi, jamais coché traité."
+        },
+        {
+          "risque_source": "RISK-04",
+          "liens_besoins": [
+            "publication-restauration"
+          ],
+          "suffisance_G2_actuelle": false,
+          "reste": "Preuvesprescrites/faisabilitéstatique seulement ; aucune exécution ni verdict G2 disponible.",
+          "critere_porte": "Pour sous-ensemble concerné : preuve exacte de chaque risquecritique ou déclassement/exclusion explicite justifiée ; risque horslot conserve suivi, jamais coché traité."
+        },
+        {
+          "risque_source": "RISK-05",
+          "liens_besoins": [
+            "chargement-cache"
+          ],
+          "suffisance_G2_actuelle": false,
+          "reste": "Preuvesprescrites/faisabilitéstatique seulement ; aucune exécution ni verdict G2 disponible.",
+          "critere_porte": "Pour sous-ensemble concerné : preuve exacte de chaque risquecritique ou déclassement/exclusion explicite justifiée ; risque horslot conserve suivi, jamais coché traité."
+        },
+        {
+          "risque_source": "RISK-06",
+          "liens_besoins": [
+            "conflit-reprise"
+          ],
+          "suffisance_G2_actuelle": false,
+          "reste": "Preuvesprescrites/faisabilitéstatique seulement ; aucune exécution ni verdict G2 disponible.",
+          "critere_porte": "Pour sous-ensemble concerné : preuve exacte de chaque risquecritique ou déclassement/exclusion explicite justifiée ; risque horslot conserve suivi, jamais coché traité."
+        },
+        {
+          "risque_source": "RISK-07",
+          "liens_besoins": [],
+          "suffisance_G2_actuelle": false,
+          "reste": "Validationserveur et extensionsMCP selonlotretenu ; aucun appelserveur/MCP autorisé, pas preuve depuisPOCpur.",
+          "critere_porte": "Pour sous-ensemble concerné : preuve exacte de chaque risquecritique ou déclassement/exclusion explicite justifiée ; risque horslot conserve suivi, jamais coché traité."
+        },
+        {
+          "risque_source": "RISK-08",
+          "liens_besoins": [
+            "2D-identites-pur",
+            "publication-restauration"
+          ],
+          "suffisance_G2_actuelle": false,
+          "reste": "Preuvesprescrites/faisabilitéstatique seulement ; aucune exécution ni verdict G2 disponible.",
+          "critere_porte": "Pour sous-ensemble concerné : preuve exacte de chaque risquecritique ou déclassement/exclusion explicite justifiée ; risque horslot conserve suivi, jamais coché traité."
+        },
+        {
+          "risque_source": "RISK-09",
+          "liens_besoins": [],
+          "suffisance_G2_actuelle": false,
+          "reste": "Appareilsréels/budgetsDEC13 ouverts ; aucune mesureGPU/SwiftShader substituée ; nonconditionnant POCpur sansGPU.",
+          "critere_porte": "Pour sous-ensemble concerné : preuve exacte de chaque risquecritique ou déclassement/exclusion explicite justifiée ; risque horslot conserve suivi, jamais coché traité."
+        },
+        {
+          "risque_source": "RISK-10",
+          "liens_besoins": [
+            "3D-association",
+            "publication-restauration"
+          ],
+          "suffisance_G2_actuelle": false,
+          "reste": "Preuvesprescrites/faisabilitéstatique seulement ; aucune exécution ni verdict G2 disponible.",
+          "critere_porte": "Pour sous-ensemble concerné : preuve exacte de chaque risquecritique ou déclassement/exclusion explicite justifiée ; risque horslot conserve suivi, jamais coché traité."
+        }
+      ],
+      "decision": "Aucune suffisance G2déclarée ; absencepreuves reste explicite et nonbloquante pourpréparations indépendantes."
+    },
+    {
+      "id": "COEX06",
+      "nature": "Complément preuves R1/R2/R3 etnouvellesécritures",
+      "conditions": [
+        {
+          "condition": "R1 comparaisonavant/après",
+          "pieces_attendues": [
+            "Inventaire source/cible mêmesidentités et mappingsProjet/Étude/Variante/Révision",
+            "Propriétés/quantités/associations/hôtes/unités/repères et éléments inconnus/pertes",
+            "Manifestes/pièces/empreintes/publicationshistorique exactes",
+            "Droits historiques et politiqueapplicableactuelle distingués"
+          ],
+          "nouvelles_ecritures": "Inventorier frontière sauvegarde et écritures confirmées aprèscoupe, request-results/outbox et intentionslocalespending ; comparer récupération proposée sans écraser dernierétat.",
+          "preuve_existante": "ContratsLOT-R/M17/M24/M27 etJSONdémonstratifs uniquement.",
+          "manque": "Corpuscomplet/lecteurs/formatstransformation/seuils/fidélité et exécutionnon disponibles."
+        },
+        {
+          "condition": "R2 restaurationtestée",
+          "pieces_attendues": [
+            "Sauvegardeexacte et coupecohérente document+révision+journal+request-results+outbox",
+            "Ciblejetableattestée et autorisationrestauration réelle distincte",
+            "Rapport récupération/rejeu/résolution et référence aux nouvellesécritures/queuespréservées",
+            "Refus droitsinconnus/lecteurincompatible/piècemanquante, paslatest"
+          ],
+          "nouvelles_ecritures": "Copieisolée, mappingreplayrésolution explicites ; nouvelleépoqueautoritéconceptuelle empêche anciensclients/workers de réengager, mécanismephysiqueouvert.",
+          "preuve_existante": "ExemplesM27 ne prouvent pas backupni restauration ; PR169 failclosed n’autorise pasDB3.",
+          "manque": "Aucune restauration exécutée ni cible/issuer autorisés dans ce lot."
+        },
+        {
+          "condition": "R3 acceptationexplicite",
+          "pieces_attendues": [
+            "Acteresponsable citantR1/R2, pertes et récupérations",
+            "Périmètre étude/données/build/schéma et anciensaccès/readOnly/refusserveur",
+            "Pointretour et responsable, traitement écriturespostbascule et filespending",
+            "Mandats distincts migration/retrait/fusion/production siopérationsconcernées"
+          ],
+          "nouvelles_ecritures": "Responsable accepte le devenir précis des écrituresaprèscoupe ; ancienbundle seul jamais rollbackdonnées.",
+          "preuve_existante": "Autorisationgénérale préparation et portes proposées ; aucun acte deretrait.",
+          "manque": "Acteapplicable et preuvesR1/R2réelles absents ; nepas soumettre retrait commeprêt."
+        }
+      ],
+      "limite": "Troisconditions existantesnonredéfinies ; pièces/preuves encoreprescrites, aucunerestauration/retrait."
+    }
+  ],
+  "nombre_deltas": 5,
+  "M08_pending": {
+    "question_existante": 6250906743,
+    "url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250906743",
+    "sujets": [
+      "DA03-13/D111",
+      "DA05-02/D060",
+      "DA04-07/Suivi/D125"
+    ],
+    "etat": "Annotations existantes conservées, réponse/clarificationàrecevoir ; aucun réaudit125 ni nouvellequestion."
+  },
+  "limites": [
+    "Aucunchoixadopté, interfacephysique ou règleexécutable créée.",
+    "Aucun code/test/POC/import/DB/service/helper/registre oucheckpointcanonique exécuté/modifié.",
+    "G0cadrage etorientationsdéjàretenues conservés ; G1–G4 nonpassés par cedossier.",
+    "Les preuvesauxréférenceshistoriques restent liéesàleursSHAs ; pas nouvelleCI niinventaireactuel prétendu.",
+    "Revueindépendante A5/A0 requise avant réceptiondocumentaire ; aucune coche/acceptationmetier."
+  ]
+}

@@ -4,7 +4,9 @@ Mis à jour : 2026-10-18 (UTC).
 
 ## État
 
-**STUDIO-V1 : Vérifié par recette automatique, acceptation utilisateur à obtenir.** [PR #181](https://github.com/RachEma-ux/Fadi/pull/181), `feat/156-studio-v1`, empilée sur la garde DB [#169](https://github.com/RachEma-ux/Fadi/pull/169) / `9b34dca`. Le propriétaire a autorisé le code et le profil neuf/jetable ([ACK #166](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6251787753)). Aucune fusion ni production.
+Autorisation du propriétaire : fusionner #181. Le candidat reprend `main@050e1d46` (#172 documentaire fusionnée pendant les contrôles), conserve les registres et intègre les commits de garde DB déjà présents dans la tranche testée. Les PR #178–#180 ne sont pas fusionnées cumulativement ; leurs apports restent à raccorder à un seul socle. Aucune opération de production autorisée.
+
+**STUDIO-V1 : Vérifié par recette automatique, acceptation utilisateur à obtenir.** [PR #181](https://github.com/RachEma-ux/Fadi/pull/181), `feat/156-studio-v1`, contenant les commits déjà testés de la garde DB [#169](https://github.com/RachEma-ux/Fadi/pull/169) / `9b34dca`. Le propriétaire a autorisé le code et le profil neuf/jetable ([ACK #166](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6251787753)). Le propriétaire a autorisé la fusion en chat (« Vas y fusionne »). La production reste exclue.
 
 La priorité est fonctionnelle : Fadi → Studio → projet autorisé → étude/variante → dessin 2D → modification → sauvegarde → fermeture/réouverture. Les préparations historiques restent dans [#172 / 149709e](https://github.com/RachEma-ux/Fadi/pull/172), sans nouvelle campagne documentaire ni clôture globale des missions/630 obligations.
 
@@ -14,7 +16,7 @@ La priorité est fonctionnelle : Fadi → Studio → projet autorisé → étude
 - UI réellement exercée : tracé à deux clics, rectangle numérique, sélection clavier, édition/déplacement, confirmation serveur, nouvelle session, mobile FR/EN. Le niveau Atelier est réellement persisté et son interface synchronisée ; Parcours conserve ses 21 étapes. Revues indépendantes A2/A5 favorables, captures inspectées par A5.
 - TypeScript et builds réussis ; suites pures/web **1 691 tests réussis, un ignoré**, garde DB/orchestrateur **138 tests simulés réussis**. La suite API historique avec remise à zéro de base n'a pas été exécutée ; DB3 reste distinct.
 - Profil local : PostgreSQL16/PostGIS3.4 neuf, rôle applicatif non administrateur, Node24/Chromium154. Identité/labels/volume/repère/endpoint vérifiés avant connexion ; reprise après changement de port Docker contrôlée. Secrets et état des comptes de recette hors Git. Les artifacts CI sont limités aux rapports expurgés et captures synthétiques.
-- Main observée `817bd36`, inchangée ; #169 et #172 non fusionnées. La CI du HEAD publié est à consulter dans [les contrôles #181](https://github.com/RachEma-ux/Fadi/pull/181/checks) ; une preuve locale ne vaut pas conclusion CI.
+- Main revalidée `050e1d46` après fusion externe de #172 ; les ajouts documentaires et registres de #172 sont conservés. #169 est incluse comme dépendance de code de #181, pas comme nouvelle portée fonctionnelle. La CI du HEAD publié est à consulter dans [les contrôles #181](https://github.com/RachEma-ux/Fadi/pull/181/checks) ; une preuve locale ne vaut pas conclusion CI.
 
 ## Points ouverts
 
@@ -28,4 +30,4 @@ La validation personnelle et l'accès distant à la démo ne sont pas acquis. L'
 
 ## Préconditions de clôture
 
-Vérifier la CI au SHA exact, faire constater le parcours au propriétaire et recueillir son acceptation. Pas de fusion automatique. Le SQL Studio est appliqué uniquement à la base neuve attestée ; aucun migrateur, schéma existant, sauvegarde, réglage GitHub ou déploiement de production n'est autorisé implicitement.
+Vérifier la CI au SHA exact, faire constater le parcours au propriétaire et recueillir son acceptation. Fusion de #181 autorisée explicitement par le propriétaire après vérification du candidat réconcilié ; cette autorisation ne vaut pas constat d’une recette personnelle ni clôture du MVP. Le SQL Studio est appliqué uniquement à la base neuve attestée ; aucun migrateur, schéma existant, sauvegarde, réglage GitHub ou déploiement de production n'est autorisé implicitement.

@@ -1,0 +1,52 @@
+{
+  "review": "Delta de rectification A5, original conservé",
+  "original": {
+    "path": "/workspace/work/resume496/agents/A5/REVUE-CLAUDE-REP-A5.json",
+    "sha256": "4ea23df97163186179e86077eaf494e5612a6dffaf015e3cf813bb5e67dc9058"
+  },
+  "correction_owner": "A5",
+  "error_acknowledgement": "A5 a attribué à tort au résumé MD E7 un code0. La ligne105 vise E3/main ; ligne133 E7 n’indique aucun exitcode. Aucune contradiction numérique MD/JSON E7 trouvée.",
+  "superseded_claims": [
+    "errata REP07-E7 : contradiction MDcode0/JSONcode1",
+    "condition erratum E7 obligatoire avant recevabilité REP07",
+    "mentions identiques dans messages A5 et résumé MD original"
+  ],
+  "sources": [
+    {
+      "path": "/workspace/work/resume496/incoming/docs/ai-team/reports/claude-m13-rep/REP-02-08-CONSTATS.md",
+      "sha256": "45847df90a26b94df5eaaa314e0dcbeadf1622751f729dd3b2049fe54b7225c8",
+      "lines": [
+        {
+          "line": 105,
+          "exact": "| E3 | copie isolée : `apps/web/src/modules/studio/a.ts` importe `../atelier/nouveau/interne` | code 0 (aucune règle de frontière entre modules web) |"
+        },
+        {
+          "line": 133,
+          "exact": "| [#152](https://github.com/RachEma-ux/Fadi/pull/152) « L1 — renforcer les garde-fous de l'architecture native » | brouillon, non fusionnée ; tête `f277723…`, base `5cf61d1` | `scripts/check-module-deps.mjs` (+165 / −80) | **REP-07 :** la réécriture résout les imports avec `ts.resolveModuleName` ou `path.resolve`. **Essai E6** (copie isolée, script de #152) : l'import relatif E2 est détecté (`FORBIDDEN_BOUNDARY : @fadi/web -> @fadi/api`). **Essai E7 :** l'import entre modules web E3 n'est **pas** détecté. Le faux négatif E2 est donc déjà traité par #152 : le correctif proposé plus haut devient inutile si #152 est fusionnée. Les frontières propres à Studio restent à ajouter dans tous les cas. |"
+        }
+      ]
+    },
+    {
+      "path": "/workspace/work/resume496/incoming/docs/ai-team/reports/claude-m13-rep/REP-07-ESSAIS.json",
+      "sha256": "45dbf15dd7092f22c42655c2853ffa42fcae0c05fcd8c5295a2bd524a54a31a8",
+      "E7": {
+        "id": "E7",
+        "cible": "copie isolée, script de la PR #152",
+        "fichier": "apps/web/src/modules/studio/a.ts",
+        "contenu": "import { y } from \"../atelier/nouveau/interne\";",
+        "code_sortie": 1,
+        "sortie": "seule violation : EMPTY_SCOPE propre à la copie ; aucun signalement de l'import entre modules web",
+        "lecture": "#152 n'introduit pas de frontière entre modules web ; règles Studio à ajouter"
+      }
+    }
+  ],
+  "corrected_interpretation": "E3/main code0 et E7/PR152 code1EMPTY_SCOPE sont deux essais distincts. E7 ne détecte pas la frontière intermodule ; le code1 correspond uniquement au scope synthétique vide. Le résumé est cohérent ; une annotation peut préciser la portée mais ne corrige pas une faute Claude.",
+  "REP07_corrected_verdict": "Recevable comme examen documentaire sans erratum numérique requis ; essais attribués àClaude, aucun rerunA5.",
+  "eight_documentary_exams": "Restent recevables individuellement sous limites de nature et source déjà déclarées ; aucun statut appliqué.",
+  "unchanged_limits": [
+    "198unitaires sont attribués àClaude106+48+22+22, pas preuve indépendanteA5/CI ni validationGPU/worker/SW/performance.",
+    "DeuxAccepté cadrageG0 CAD-DEC-01/G0-03 préservés ; candidat42=40VérifiéDoc+2AcceptéG0 seulement après réception/intégrationA0.",
+    "Pas de nouvel examen global, test, code, registre, coche ou gate."
+  ],
+  "next": "A0 joint original+delta ; A2 peut référencer la rectification ; ne pas réécrire original ni demander àClaude correction fictive."
+}

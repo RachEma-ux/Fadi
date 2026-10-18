@@ -1,0 +1,61 @@
+# Delta traçabilité onze fonctions v2
+
+{
+  "v1_sha256": "3d212ffb93dc33380ac313556cb36b00302246b82ac7096b466c530b4923c719",
+  "v2_sha256": "ea5300f241df47d168b1c3f0fc7180cd189b70d7d6b64e5f299a55522dd52f0c",
+  "v1_preservee": true,
+  "modifications_individuelles": [
+    {
+      "fonction": 5,
+      "id": "EX-020",
+      "motif": "Développement de la notation abrégée de l’index, omise dans extraction initiale ; aucun nouvel identifiant."
+    },
+    {
+      "fonction": 5,
+      "id": "EX-023",
+      "motif": "Développement de la notation abrégée de l’index, omise dans extraction initiale ; aucun nouvel identifiant."
+    },
+    {
+      "fonction": 6,
+      "id": "EX-018",
+      "motif": "Développement de la notation abrégée de l’index, omise dans extraction initiale ; aucun nouvel identifiant."
+    },
+    {
+      "fonction": 7,
+      "id": "IF-009",
+      "motif": "Développement de la notation abrégée de l’index, omise dans extraction initiale ; aucun nouvel identifiant."
+    },
+    {
+      "fonction": 7,
+      "id": "IF-011",
+      "motif": "Développement de la notation abrégée de l’index, omise dans extraction initiale ; aucun nouvel identifiant."
+    },
+    {
+      "fonction": 8,
+      "id": "EX-090",
+      "motif": "Développement de la notation abrégée de l’index, omise dans extraction initiale ; aucun nouvel identifiant."
+    }
+  ],
+  "comptes_avant": {
+    "fonctions": 11,
+    "selection": 49,
+    "hors_selection": 92,
+    "total_sources": 141,
+    "catalogue_oracles_source": 38,
+    "oracles_distincts_lies_candidats": 27
+  },
+  "comptes_apres": {
+    "fonctions": 11,
+    "selection": 53,
+    "hors_selection": 88,
+    "total_sources": 141,
+    "catalogue_oracles_source": 38,
+    "oracles_distincts_lies_candidats": 27
+  },
+  "NAV_source_ajoutee": {
+    "path": "/workspace/work/mission004/agents/A4/NAV-M004.json",
+    "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2",
+    "nature": "Neuf prescriptions NAV documentaires existantes, non exécutées"
+  },
+  "statuts": "Aucun statut métier/gate modifié ; zérocode/test/registre."
+}
