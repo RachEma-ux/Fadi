@@ -8770,5 +8770,8 @@
 "Une planche autonome": "An independent board",
 "Les tracés restent en brouillon jusqu’à la confirmation du serveur. Aucun modèle 3D n’est nécessaire.": "Drawings remain drafts until server confirmation. No 3D model is required.",
 "Studio": "Studio",
-"Space": "Space"
+"Space": "Space",
+"Saisissez des nombres finis dans tous les champs.": "Enter finite numbers in every field.",
+"La largeur et la hauteur doivent être strictement positives.": "Width and height must be strictly positive.",
+"Sauvegarde reçue, mais version courante indisponible. Réessayez la même sauvegarde.": "Save received, but the current version is unavailable. Retry the same save."
 }
