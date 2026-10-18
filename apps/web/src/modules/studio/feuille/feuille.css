@@ -1,0 +1,25 @@
+/* Boîte « Feuille » : réglages à gauche, aperçu à droite ; une colonne sur petit écran. */
+.studio-dialogue.studio-feuille{width:min(1180px,100%)}
+.studio-feuille-corps{display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:16px;align-items:start}
+.studio-feuille-reglages fieldset{border:1px solid #d5e0e3;border-radius:10px;margin:0 0 12px;padding:8px 12px;display:grid;gap:8px}
+.studio-feuille-reglages legend{font-weight:600;font-size:13px;padding:0 4px}
+.studio-feuille-reglages label{display:grid;gap:3px;font-size:13px}
+.studio-feuille-reglages label.studio-feuille-case{display:flex;align-items:center;gap:6px}
+.studio-feuille-reglages input[type=text],.studio-feuille-reglages select{font:inherit;padding:5px 7px;border:1px solid #b9c9ce;border-radius:6px;min-width:0}
+.studio-feuille-apercu-zone{min-width:0}
+.studio-feuille-resume{display:flex;flex-wrap:wrap;gap:4px 12px}
+.studio-feuille-apercu{background:#e8eef0;border-radius:8px;padding:10px;box-sizing:border-box}
+.studio-feuille-apercu svg{display:block;width:100%;height:auto;background:#fff;box-shadow:0 2px 10px #0d262c33}
+.studio-feuille-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.studio-feuille-actions button,.studio-feuille-actions a{display:inline-flex;align-items:center;gap:6px}
+.studio-feuille-actions a[aria-disabled=true]{opacity:.5;pointer-events:none}
+@media (max-width:760px){.studio-feuille-corps{grid-template-columns:1fr}}
+
+/* Copie destinée à l'impression : invisible à l'écran. */
+.studio-feuille-impression{display:none}
+@media print{
+  body.studio-feuille-imprime>*:not(.studio-feuille-impression){display:none!important}
+  body.studio-feuille-imprime{margin:0!important;padding:0!important;background:#fff!important}
+  body.studio-feuille-imprime>.studio-feuille-impression{display:block!important;overflow:hidden;break-inside:avoid}
+  .studio-feuille-impression svg{display:block;width:100%;height:100%}
+}
