@@ -341,7 +341,9 @@ const BAR_LENGTHS = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 20
 const BAR_MAX_MM = 44;
 
 function composeScaleBar(box: Bornes, denominator: number, locale: string): Primitive[] {
-  const length = [...BAR_LENGTHS].reverse().find((l) => studioSheetMm(l, denominator) <= BAR_MAX_MM) ?? BAR_LENGTHS[0]!;
+  // Très grande échelle (dessin minuscule ajusté) : la plus grande puissance de dix qui tient, jamais une barre qui déborde.
+  const length = [...BAR_LENGTHS].reverse().find((l) => studioSheetMm(l, denominator) <= BAR_MAX_MM)
+    ?? 10 ** Math.floor(Math.log10((BAR_MAX_MM * denominator) / 1000));
   const w = studioSheetMm(length, denominator);
   const x = box.min.x + 4, y = box.min.y + 2 * ROW + 3, h = 1.5;
   const fmt = (v: number) => `${new Intl.NumberFormat(locale, { maximumFractionDigits: 2, useGrouping: false }).format(v)} m`;

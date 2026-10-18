@@ -130,7 +130,10 @@ function compareObjects(from: StudioDocument, to: StudioDocument): StudioDiffere
 function compareLayers(from: StudioDocument, to: StudioDocument): StudioDifferenceCalque[] {
   const a = byId(from.layers), b = byId(to.layers);
   return sortedIds(a, b).map((id): StudioDifferenceCalque => {
-    const avant = a.get(id) ?? null, apres = b.get(id) ?? null;
+    let avant = a.get(id) ?? null, apres = b.get(id) ?? null;
+    // Le calque par défaut existe toujours (implicite : visible, non verrouillé) ; le rendre explicite n'est pas un ajout.
+    if (id === STUDIO_DEFAULT_LAYER_ID && !avant && apres) avant = { ...apres, visible: true, locked: false };
+    if (id === STUDIO_DEFAULT_LAYER_ID && avant && !apres) apres = { ...avant, visible: true, locked: false };
     if (!avant) return { id, etat: "ajoute", avant: null, apres: structuredClone(apres), proprietes: [] };
     if (!apres) return { id, etat: "supprime", avant: structuredClone(avant), apres: null, proprietes: [] };
     const proprietes: StudioProprieteCalque[] = [];

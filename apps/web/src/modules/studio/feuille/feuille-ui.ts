@@ -44,7 +44,8 @@ export function cartoucheInitial(s: SourcesCartouche): StudioSheetTitleBlock {
     study: s.etude?.name ?? "",
     variant: s.variante?.name ?? "",
     title: "",
-    revisionId: s.revision?.id ?? "",
+    // Forme courte (8 derniers caractères, comme l'historique) : la partie qui distingue les révisions reste lisible.
+    revisionId: s.revision?.id ? s.revision.id.slice(-8) : "",
     revisionDate: dateRevision(s.revision?.createdAt),
     author: auteur,
   };

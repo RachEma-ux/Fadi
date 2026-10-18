@@ -63,11 +63,13 @@ export function PanneauFeuille({ doc, cartouche, brouillonNonEnregistre, surFerm
   const apercu = resultat.svg ? svgSansProlog(resultat.svg) : "";
 
   // Impression : seule la feuille s'imprime (classe posée sur <body> tant que la boîte est ouverte).
+  const f = resultat.feuille;
+  // Seulement quand une feuille est composée : sinon Ctrl+P imprimerait une page vide.
   useEffect(() => {
+    if (!f) return;
     document.body.classList.add("studio-feuille-imprime");
     return () => document.body.classList.remove("studio-feuille-imprime");
-  }, []);
-  const f = resultat.feuille;
+  }, [f]);
 
   return (
     <Dialogue titre="Feuille" id="studio-feuille-titre" classe="studio-feuille" surFermer={surFermer}>
