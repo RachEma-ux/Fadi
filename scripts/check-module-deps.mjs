@@ -11,12 +11,19 @@
  * Il refuse aussi, dans `apps/web`, tout import pointant vers `apps/api`, et dans `apps/api` tout import
  * pointant vers `apps/web` (pas de dépendance circulaire entre applications).
  *
+ * Frontières Studio ↔ Atelier (ADR-STUDIO-NAV-01, #173), sur le chemin RÉSOLU de chaque import relatif :
+ * `apps/web/src/modules/studio/` n'importe ni l'Atelier, ni le Parcours, ni `routes/ProjectShell`, ni le mode immersif
+ * (`lib/use-immersive`) ; l'Atelier n'importe pas Studio. Les paquets purs (`@parcours/*`) restent la voie commune.
+ *
+ * `--root=<dossier>` contrôle un autre arbre (tests du script) ; par défaut, le dépôt qui contient ce script.
+ *
  * Sortie : code 1 et la liste des violations ; code 0 sinon. Lancé par `npm run typecheck`.
  */
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 
-const root = resolve(new URL("..", import.meta.url).pathname);
+const optionRacine = process.argv.find((a) => a.startsWith("--root="));
+const root = resolve(optionRacine ? optionRacine.slice("--root=".length) : new URL("..", import.meta.url).pathname);
 const violations = [];
 
 function walk(dir, out = []) {
@@ -83,6 +90,36 @@ for (const [app, forbidden] of [["apps/web", "apps/api"], ["apps/api", "apps/web
     const source = readFileSync(file, "utf8");
     for (const spec of specifiers(source)) {
       if (spec.includes(forbidden)) violations.push(`${relative(root, file)} : import vers ${forbidden} interdit (${spec})`);
+    }
+  }
+}
+
+// 3. Frontières Studio ↔ Atelier : chemins résolus depuis le fichier importateur (un `../../` ne contourne pas la règle).
+const webSrc = join(root, "apps/web/src");
+const FRONTIERES = [
+  {
+    de: "modules/studio",
+    interdits: ["modules/atelier", "modules/parcours", "routes/ProjectShell", "lib/use-immersive"],
+    motif: "Studio n'importe ni l'Atelier, ni le Parcours, ni ProjectShell, ni le mode immersif (ADR-STUDIO-NAV-01)",
+  },
+  { de: "modules/atelier", interdits: ["modules/studio"], motif: "l'Atelier ne dépend pas de Studio (ADR-STUDIO-NAV-01)" },
+];
+// Interfaces publiques de l'Atelier ouvertes à Studio : aucune n'est décidée ; une exception s'ajoute ici avec sa décision.
+const INTERFACES_PUBLIQUES = [];
+const sous = (chemin, prefixe) => chemin === prefixe || chemin.startsWith(`${prefixe}/`) || chemin.startsWith(`${prefixe}.`);
+if (existsSync(webSrc)) {
+  for (const file of walk(webSrc)) {
+    const depuis = relative(webSrc, file).split(sep).join("/");
+    const regles = FRONTIERES.filter((f) => sous(depuis, f.de));
+    if (regles.length === 0) continue;
+    for (const spec of specifiers(readFileSync(file, "utf8"))) {
+      if (!spec.startsWith(".")) continue;
+      const cible = relative(webSrc, resolve(dirname(file), spec)).split(sep).join("/");
+      if (INTERFACES_PUBLIQUES.some((i) => sous(cible, i))) continue;
+      for (const regle of regles) {
+        const interdit = regle.interdits.find((x) => sous(cible, x));
+        if (interdit) violations.push(`${relative(root, file)} : frontière ${regle.de} → ${interdit} interdite (${spec}) — ${regle.motif}`);
+      }
     }
   }
 }
