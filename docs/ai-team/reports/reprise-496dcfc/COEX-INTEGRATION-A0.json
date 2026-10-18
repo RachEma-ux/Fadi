@@ -1,0 +1,63 @@
+{
+  "date_UTC": "2026-10-18",
+  "source_commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+  "base_register_sha256": "283a2b5a8a21e4ad358b697d18c9cf97c02859ec4f69f1f7d953fd3afa7c8778",
+  "result_register_sha256": "cab84135db7d65398f2028b929cd89b70ddb43f12b35b238fe83c79f50f0f794",
+  "changes": [
+    {
+      "id": "ADR-04",
+      "avant": "En cours",
+      "apres": "Vérifié"
+    },
+    {
+      "id": "COEX-02",
+      "avant": "En cours",
+      "apres": "Vérifié"
+    },
+    {
+      "id": "COEX-01",
+      "avant": "En cours",
+      "apres": "En cours"
+    },
+    {
+      "id": "COEX-03",
+      "avant": "À définir",
+      "apres": "En cours"
+    },
+    {
+      "id": "COEX-04",
+      "avant": "À définir",
+      "apres": "En cours"
+    },
+    {
+      "id": "COEX-05",
+      "avant": "En cours",
+      "apres": "En cours"
+    },
+    {
+      "id": "COEX-06",
+      "avant": "À faire",
+      "apres": "En cours"
+    }
+  ],
+  "counts": {
+    "Vérifié": 42,
+    "En cours": 296,
+    "Accepté": 2,
+    "À définir": 22,
+    "À faire": 59,
+    "Bloqué": 209
+  },
+  "P630": 44,
+  "PDEV": null,
+  "options_COEX_adoptees": false,
+  "helper_execute": false,
+  "tests_attribues_Claude": 26,
+  "tests_executés_Codex": 0,
+  "reserves": [
+    "14 familles ne sont pas14 émetteurs",
+    "Autorité serveur distincte du clientUI unique",
+    "readOnlyUI ne prouve pas refus serveur",
+    "Interdiction toute copie bidirectionnelle plus large que règle source deux bases concurrentes"
+  ]
+}

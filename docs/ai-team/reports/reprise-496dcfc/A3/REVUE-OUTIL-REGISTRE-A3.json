@@ -1,0 +1,513 @@
+{
+  "report": "REVUE-OUTIL-REGISTRE-A3",
+  "reviewer": "A3",
+  "created_utc": "2026-10-18T14:11:48.239051+00:00",
+  "mode": "LECTURE_STATIQUE_AVANT_EXECUTION",
+  "tool_reference": "32267bf0536ad6b8f4fde546b4b96932b90254b1",
+  "baseline_main": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "sources": [
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1",
+      "sha256": "e896743da562fd8fd02b94de4e122ebc0a008870f6d8399e549982abe38b734d",
+      "same_as_commit": true,
+      "line_count": 241,
+      "git_blob": "3e674177670af3fe66385e8181821a9590d133cd"
+    },
+    {
+      "path": "docs/ai-team/test_tableau_registre.py",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1",
+      "sha256": "d6a1a359699b7f2c004595b816ddb674a9e164f1f1cfba343ef583aeb46e3385",
+      "same_as_commit": true,
+      "line_count": 104,
+      "git_blob": "5da8d3c6f2ded48fd74f844cdbe5b2a0b2a8e542"
+    }
+  ],
+  "citations": [
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 1,
+      "exact_line": "#!/usr/bin/env python3",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 6,
+      "exact_line": "puis intégré en une commande). L'outil ne décide rien : il ne coche aucune case source, n'accepte aucune",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 24,
+      "exact_line": "",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 25,
+      "exact_line": "REGISTRE = 'docs/workstreams/studio/task-register.json'",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 29,
+      "exact_line": "STATUTS = ('À définir', 'En cours', 'Bloqué', 'Vérifié', 'Accepté')",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 31,
+      "exact_line": "STATUTS_DELTA = ('À définir', 'En cours', 'Bloqué', 'Vérifié')",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 71,
+      "exact_line": "def controler(racine: Path, registre: dict) -> list[str]:",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 74,
+      "exact_line": "    if len(ids) != 630 or len(set(ids)) != 630:",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 76,
+      "exact_line": "    inconnus = sorted({t['statut'] for t in registre['tasks']} - set(STATUTS))",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 88,
+      "exact_line": "    declare = registre.get('progress', {}).get('P630', {})",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 103,
+      "exact_line": "            ecarts.append(f\"index M08 : total {cpt.get('total')} ≠ {len(entrees)} entrées\")",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 107,
+      "exact_line": "        for e in entrees:",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 130,
+      "exact_line": "def candidats(registre: dict) -> list[dict]:",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 139,
+      "exact_line": "    if delta.get('base_register_sha256') not in (None, sha256(contenu_registre)):",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 140,
+      "exact_line": "        erreurs.append('registre modifié depuis la préparation du delta : rebaser le delta, ne pas forcer')",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 153,
+      "exact_line": "            erreurs.append(f\"{i} : statut_avant {ch.get('statut_avant')!r} ≠ actuel {t['statut']!r}\")",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 155,
+      "exact_line": "            erreurs.append(f\"{i} : statut {ch.get('statut')!r} refusé par delta (Accepté = décision humaine)\")",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 159,
+      "exact_line": "        if ch.get('statut') == 'Vérifié':",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 163,
+      "exact_line": "                erreurs.append(f'{i} : Vérifié sans preuve ajoutée')",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 166,
+      "exact_line": "                erreurs.append(f'{i} : preuve sans type ni fichier/url')",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 172,
+      "exact_line": "def appliquer_delta(registre: dict, delta: dict) -> dict:",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 176,
+      "exact_line": "        t['historique'] = t.get('historique', []) + [{",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 180,
+      "exact_line": "        t['preuves'] = t.get('preuves', []) + ch.get('preuves_ajoutees', [])",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 182,
+      "exact_line": "            if cle in ch:",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 184,
+      "exact_line": "        t.setdefault('cloture', {})['condition_verifiee'] = ch.get('cloture', {}).get('condition_verifiee', False)",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 194,
+      "exact_line": "def main() -> int:",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 196,
+      "exact_line": "    parser.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[2])",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 200,
+      "exact_line": "    parser.add_argument('--ecrire', action='store_true', help='avec --delta : écrire le registre (propriétaire A0)')",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 203,
+      "exact_line": "    try:",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 207,
+      "exact_line": "            delta = json.loads(args.delta.read_text(encoding='utf-8'))",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 213,
+      "exact_line": "            if not args.ecrire:",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 216,
+      "exact_line": "            appliquer_delta(registre, delta)",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 219,
+      "exact_line": "            print(resume(registre))",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 234,
+      "exact_line": "        return 0",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/tableau_registre.py",
+      "line": 240,
+      "exact_line": "if __name__ == '__main__':",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/test_tableau_registre.py",
+      "line": 6,
+      "exact_line": "import tableau_registre as tr",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/test_tableau_registre.py",
+      "line": 16,
+      "exact_line": "    def setUp(self):",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/test_tableau_registre.py",
+      "line": 17,
+      "exact_line": "        taches = [tache(f'T-{n:03d}') for n in range(630)]",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/test_tableau_registre.py",
+      "line": 19,
+      "exact_line": "        taches[1] = tache('T-001', 'Accepté', True)",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/test_tableau_registre.py",
+      "line": 23,
+      "exact_line": "        self.dossier = tempfile.TemporaryDirectory()",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/test_tableau_registre.py",
+      "line": 30,
+      "exact_line": "    def tearDown(self):",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/test_tableau_registre.py",
+      "line": 31,
+      "exact_line": "        self.dossier.cleanup()",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/test_tableau_registre.py",
+      "line": 33,
+      "exact_line": "    def delta(self, **champ):",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/test_tableau_registre.py",
+      "line": 37,
+      "exact_line": "        return {'schema': 'delta-registre-v1', 'changements': [ch]}",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/test_tableau_registre.py",
+      "line": 66,
+      "exact_line": "    def test_delta_valide_et_applique(self):",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/test_tableau_registre.py",
+      "line": 76,
+      "exact_line": "    def test_delta_refuse_acceptation(self):",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/test_tableau_registre.py",
+      "line": 80,
+      "exact_line": "    def test_delta_refuse_concurrence(self):",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/test_tableau_registre.py",
+      "line": 82,
+      "exact_line": "        d = self.delta()",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/test_tableau_registre.py",
+      "line": 91,
+      "exact_line": "    def test_index_m08(self):",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    },
+    {
+      "path": "docs/ai-team/test_tableau_registre.py",
+      "line": 104,
+      "exact_line": "    unittest.main()",
+      "commit": "32267bf0536ad6b8f4fde546b4b96932b90254b1"
+    }
+  ],
+  "findings": [
+    {
+      "id": "REG-P1-01",
+      "priorite": "P1",
+      "titre": "Écriture directe et concurrence après validation",
+      "constat": "main lit le registre, valide le delta, le modifie en mémoire puis Path.write_text ouvre/tronque la destination. Aucun verrou, relecture CAS avant remplacement, destination temporaire sécurisée, fsync ou protocole de reprise. Une panne pendant écriture peut laisser un JSON partiel ; une mise à jour concurrente entre read et write peut être perdue même avec hash fourni.",
+      "ancrages": "tableau_registre.py:203–219",
+      "recommendation": "Proposer une opération documentaire transactionnelle revue séparément : verrou de writer, CAS obligatoire sur octets courants, nouvelle représentation validée avant toute mutation et stratégie de remplacement/reprise définie. Aucun --ecrire actuel sur registre canonique.",
+      "limite": "Aucun essai IO effectué ; chemin de code lu seulement."
+    },
+    {
+      "id": "REG-P1-02",
+      "priorite": "P1",
+      "titre": "Hash de base facultatif et preuves récentes écrasables",
+      "constat": "valider_delta accepte base_register_sha256 absent ou None. statut_avant ne protège pas une ligne dont statut est inchangé mais tests/conformite/suite/blocage/preuves ont évolué. appliquer_delta remplace ces champs à partir du delta ancien sans comparer leur contenu/version. Les preuves sont ajoutées mais pas protégées contre ajout de constat périmé ; historique ancien non effacé, état courant peut être dégradé.",
+      "ancrages": "tableau_registre.py:139–140,153,180–184",
+      "recommendation": "Exiger hash complet du registre courant et précondition de ligne/valeurs complètes ; rebase explicite sur le nouveau snapshot et maintien de tous les champs/proofs plus récents. Le registre HEAD2076 a déjà un hash différent du snapshot817 par active_preparations, même sans changement des tâches.",
+      "limite": "Contre-exemple raisonné, pas exécuté : statut identique, nouveau tests courant, ancien delta sans hash remplace tests."
+    },
+    {
+      "id": "REG-P1-03",
+      "priorite": "P1",
+      "titre": "Deux acceptations G0 non protégées",
+      "constat": "Le refus de nouvelle cible Accepté ne refuse pas un delta partant de Accepté vers En cours/Bloqué/Vérifié. appliquer_delta remet condition_verifiee à false par défaut, y compris pour un état historique protégé. CAD-DEC-01 et G0-03 acceptés au snapshot peuvent donc perdre leur état/P630 par delta ordinaire. Aucun contrôle des deux IDs/actes/nature G0 n’existe.",
+      "ancrages": "tableau_registre.py:153–159,184",
+      "recommendation": "Refuser mutation des IDs/actes/clôtures G0 acceptés hors décision explicite de révision et préserver leurs preuves intégralement. Test synthétique sur ces deux IDs exacts et vérification avant/après.",
+      "limite": "Contre-exemple raisonné non exécuté : statut_avant Accepté, statut En cours, cloture absent passe les contrôles de transitions actuels."
+    },
+    {
+      "id": "REG-P2-04",
+      "priorite": "P2",
+      "titre": "Sept états requis, seulement cinq reconnus",
+      "constat": "STATUTS omet À faire et Implémenté ; STATUTS_DELTA les refuse. resume affiche seulement5 états et controler les déclare inconnus. Cela contredit PR-07 et le manuel qui permet À faire lorsque le contrat est défini sans exécution.",
+      "ancrages": "tableau_registre.py:29–31,56–68,76,155",
+      "recommendation": "Aligner vocabulaire/compteurs/regex sur les7 états sans remapper silencieusement les historiques ni assimiler préparation à implémentation. Tant que non corrigé, mes propositions À faire ne doivent pas être converties artificiellement en En cours.",
+      "limite": "Aucun delta d’état appliqué par A3."
+    },
+    {
+      "id": "REG-P2-05",
+      "priorite": "P2",
+      "titre": "Exactitude des203 et conservation du corpus non contrôlées",
+      "constat": "controler vérifie630 entrées distinctes, pas leur ensemble exact contre missions/checklist ni les203 du blob a460fb3. Il ne valide pas texte source/ligne/propriétaire/mission/versions, ni cohérence profonde du schéma. Le flux --delta n’appelle même pas controler sur son entrée/sortie. JSON duplicate keys et champs inconnus ne sont pas refusés.",
+      "ancrages": "tableau_registre.py:71–88,135–169,207–219",
+      "recommendation": "Avant toute intégration, comparer exact630/203 avec sources autoritaires, conserver tous les owners, descriptions, preuves et attributs non ciblés ; validation stricte entrée/delta/sortie et pas de nouvelles pertes. Les203 sont égaux au snapshot par mon rapprochement séparé, pas par cet outil.",
+      "limite": "Les630 IDs synthétiques T-000..T-629 des tests ne constituent pas cette preuve canonique."
+    },
+    {
+      "id": "REG-P2-06",
+      "priorite": "P2",
+      "titre": "Preuve documentaire de Vérifié trop permissive",
+      "constat": "Pour Vérifié, true + une preuve contenant type/fichier-ou-url/limite suffisent. Ni existence/contenu/SHA, source de décision, condition de clôture, sens du test, fraîcheur, autorité de revue ou cohérence des champs ne sont démontrés. Une URL arbitraire ou r.md inexistant peut soutenir Vérifié et augmenter P630.",
+      "ancrages": "tableau_registre.py:160–169,184–192",
+      "recommendation": "Traiter validation comme schéma de proposition, jamais preuve de réalisation ; imposer revue A0/A5 de la condition ciblée et des liens immuables au SHA. Tests négatifs preuve absente/factice/ancienne et interdiction de promotion sémantique automatique.",
+      "limite": "L’outil ne coche effectivement aucune checklist ; ce bon point ne suffit pas à autoriser le statut Vérifié."
+    },
+    {
+      "id": "REG-P2-07",
+      "priorite": "P2",
+      "titre": "Contrôle cohérent plus faible que son message",
+      "constat": "Index M08 optionnel ; aucune exigence125 IDs uniques/ensemble exact. Contrôle de chemin seulement exists, chemins absolus/traversal possibles ; absence des mentions P630 ou revue125 dans checkpoints non refusée. Les expressions regex peuvent aussi traiter un compteur historique comme courant. Aucun scan de liens profonds ni preuves de ces contenus.",
+      "ancrages": "tableau_registre.py:94–126,228–233",
+      "recommendation": "Nommer précisément la portée du contrôle ; vérifier champs/IDs/chemins attendus et ancrage sous racine, distinguer section courante/historique et exiger marqueurs requis. Ne pas annoncer cohérence totale sur l’absence d’un index.",
+      "limite": "test_controle_coherent passe structurellement sans index M08 ; test_index_m08 couvre un chemin manquant seulement."
+    },
+    {
+      "id": "REG-P2-08",
+      "priorite": "P2",
+      "titre": "API mutable et CLI insuffisamment bornés",
+      "constat": "appliquer_delta modifie le dict fourni sans validation interne ; propriété A0 est un libellé, pas contrôle d’autorité. --root et --delta sont chemins arbitraires ; read/write suit les symlinks. --ecrire sans delta est ignoré plutôt que refusé. Pas de bornes de taille/types strictes, certains types inattendus peuvent lever AttributeError non capturée.",
+      "ancrages": "tableau_registre.py:172–200,234",
+      "recommendation": "Usage seulement sur snapshots approuvés, entrées synthétiques pour tests, chemins bornés et owner unique ; ne pas exposer la fonction d’application comme API sûre. Toute future CLI de mutation doit valider de nouveau et refuser les modes ambigus.",
+      "limite": "Pas de code applicatif/SQL/connexion présent ; risques circonscrits aux fichiers documentaires ciblés."
+    },
+    {
+      "id": "REG-P3-09",
+      "priorite": "P3",
+      "titre": "Journalisation non expurgée des entrées et portée des tests",
+      "constat": "Aucun secret littéral ou lecteur d’environnement identifié dans les deux fichiers, ni subprocess/socket/DB/HTTP. Mais stderr peut afficher valeurs de statut/ID/erreur/path issues du delta ; ce n’est pas un scanner ou une garantie d’absence de secret. Tests11 cas n’appellent pas main ni --ecrire, utilisent tempfile avec nettoyage de leur seul répertoire.",
+      "ancrages": "tableau_registre.py:151–169,210–212,234–235 ; test_tableau_registre.py:16–37",
+      "recommendation": "Fixtures exclusivement synthétiques, sources relues et hashes figés, environnement Python isolé et pycache désactivé ; limiter les logs avant publication. Ne pas conclure sûreté d’écriture/atomicité depuis ces11 tests purs.",
+      "limite": "Aucun test exécuté dans cette revue ; aucune prétention sur des résultats de la source Claude."
+    }
+  ],
+  "p0_observe": false,
+  "advice": {
+    "read_only_diagnostics": "Utilisables comme contrôles partiels après revue A0, jamais preuve exhaustive de conservation/autorité. Non exécutés ici.",
+    "unit_tests": "Avis favorable conditionnel pour exécution des seuls11 tests synthétiques après accord A0 de fin de revue ; aucun import applicatif/DB/réseau identifié. Aucun résultat annoncé.",
+    "write_or_apply": "Défavorable à --ecrire sur registre réel : trois risquesP1 et contrôles incomplets. Ne pas appliquer un delta depuis cette revue.",
+    "p630": "Aucun changement ;34/630 historique au snapshot817,2 acceptationsG0 conservées ;PDEV=N/D."
+  },
+  "effects": {
+    "module_import": "Définitions/constantes/imports stdlib, aucun IO de registre au top-level ; bloc main gardé __name__. Import de module applicatif interdit, mais pas présent.",
+    "cli_read_only": "Lecture JSON registre, quatre checkpoints, indexM08 éventuel et exists sur références ; impression stdout/stderr. Pas de sous-processus/HTTP/SQL importé ni appelé identifié.",
+    "cli_write": "Seul --delta + --ecrire déclenche Path.write_text du registre ; pas écriture STATUS/HANDOFF ou checklist ; pas atomicité assurée.",
+    "tests": "TemporaryDirectory, quatre checkpoint.md synthétiques et index/fichiers de test ; cleanup de son répertoire propre en tearDown. Aucune lecture du registre réel par les tests fournis ; main non appelé.",
+    "secrets": "Pas de valeur secrète identifiée dans source ; pas d’accès env/credential. Logs non expurgés : ne fournir aucune donnée sensible et relire toute publication."
+  },
+  "tests_existing": [
+    {
+      "nom": "test_controle_coherent",
+      "line": 39,
+      "executed": false
+    },
+    {
+      "nom": "test_checkpoint_divergent",
+      "line": 42,
+      "executed": false
+    },
+    {
+      "nom": "test_p630_declare_divergent",
+      "line": 48,
+      "executed": false
+    },
+    {
+      "nom": "test_verifie_sans_condition_hors_p630",
+      "line": 52,
+      "executed": false
+    },
+    {
+      "nom": "test_case_source_cochee_signalee",
+      "line": 56,
+      "executed": false
+    },
+    {
+      "nom": "test_candidats_lecture",
+      "line": 60,
+      "executed": false
+    },
+    {
+      "nom": "test_delta_valide_et_applique",
+      "line": 66,
+      "executed": false
+    },
+    {
+      "nom": "test_delta_refuse_acceptation",
+      "line": 76,
+      "executed": false
+    },
+    {
+      "nom": "test_delta_refuse_concurrence",
+      "line": 80,
+      "executed": false
+    },
+    {
+      "nom": "test_delta_refuse_id_inconnu_et_preuve_sans_limite",
+      "line": 86,
+      "executed": false
+    },
+    {
+      "nom": "test_index_m08",
+      "line": 91,
+      "executed": false
+    }
+  ],
+  "test_command_candidate": {
+    "status": "PROPOSE_APRES_REVUE_NON_EXECUTE",
+    "executable": "Python absolu revu par A0/A6",
+    "argv": [
+      "-I",
+      "-S",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "<scratch-neuf-contenant-seulement-les2-sources-aux-hashes-ci-dessus>",
+      "-p",
+      "test_tableau_registre.py",
+      "-v"
+    ],
+    "env": "Objet propre, TMPDIR vers scratch jetable identifié ; aucune URLDB/secret/PYTHONPATH hérité. Pas de fichier canonique copié en écriture.",
+    "preconditions": "Copie à octets identiques des deux fichiers uniquement et validation hashes ; source scratch isolée ; pas de --ecrire, main, import test voisin, global unittest/API/E2E ; observer11 cas attendus. -B empêche pycache, -I/-S limitent injections Python ; pas une sandbox OS."
+  },
+  "tests_missing_proposed": [
+    "CAS obligatoire y compris base absent/None ; modification de preuve au même statut puis écriture refusée.",
+    "Deux G0 CAD-DEC-01/G0-03 inchangés (statut/proofs/clôture/actes) malgré delta courant contradictoire.",
+    "Échec d’écriture partielle et mise à jour concurrente après validation : ancien fichier intact, aucun écrasement.",
+    "Conservation exacte630 IDs/203 ciblés, owner/mission/source/historique/attrs et tous les champs hors delta.",
+    "Sept états dont À faire/Implémenté ; aucun remapping d’Accepté ou d’un historique.",
+    "Schéma strict, valeurs/types malformés, JSON doublons, limites taille, path/symlink/traversal refusés.",
+    "Preuve inexistante/ancienne/incohérente, doublon ou déduction d’acceptation refusés.",
+    "Index125/IDs requis, références bornées et marqueurs courants manquants ; historiques non pris pour état présent.",
+    "CLI lecture seule sans écriture y compris pycache, refus --ecrire sans delta et validation appliquée à l’entrée/sortie."
+  ],
+  "next_action": "A0 peut décider de lancer les11 tests synthétiques isolés après cette revue ; réserver toute correction/outillage de mutation à son lot, conserver registre/preuves/G0 et intégrer seulement les propositions documentaires relues."
+}

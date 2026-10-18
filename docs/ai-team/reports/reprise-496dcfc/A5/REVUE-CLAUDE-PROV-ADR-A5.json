@@ -1,0 +1,307 @@
+{
+  "review": "A5 indépendante ClaudePROV/ADR cinqIDs",
+  "remise_commit": "b6794c64c7ff98fadf62868331f4297631201069",
+  "code_photo": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "current_register_reference": "0e0b386b4ac2711ee394d9907da943f050600b42",
+  "inputs": [
+    {
+      "path": "docs/ai-team/reports/claude-m11-prov/README.md",
+      "commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "sha256": "eb9eab6355f2a818015c6090f6192beb7623d2422608059703190229f5e23231"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m11-prov/PROV-03-05.md",
+      "commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "sha256": "10effdcf60897fd682a7170b27aa0b02de39a12a1d62fbbadb26b334d60d6515"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m11-prov/DELTA-REGISTRE-PROPOSE.json",
+      "commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "sha256": "25ac898e05a7396be400ad29a19831dacd32a88c4ff50ce759e4da445dc0cd51"
+    },
+    {
+      "path": "docs/continuity/decisions/ADR-STUDIO-NAV-01.md",
+      "commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "sha256": "14b67cab74ada41f955221c1189c6689d17390670eb9c3a398112b00fa0b0745"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-verif-169-171/README.md",
+      "commit": "b6794c64c7ff98fadf62868331f4297631201069",
+      "sha256": "8a5bc77b44d2fe1886304872cae2fde8b5532113e9160f53c8e86de5be413757"
+    }
+  ],
+  "items": [
+    {
+      "id": "ADR-01",
+      "obligation_exacte": "Ouvrir la décision d’intégration distincte proposée, par exemple ADR-STUDIO-NAV-01, sans remplacer une DEC existante.",
+      "current_status": "À faire",
+      "delta_expected_before": "À définir",
+      "stale_precondition": true,
+      "proposed_status": "Vérifié documentaire proposé sous revueA0",
+      "A5_verdict": "Recevable pour nature decondition documentaire, pas adoption ni réalisation",
+      "reason": "Verbeouvrir : statutProposé approprié pour ouverture documentdistinct ; ne remplaceDEC ni ne trancheADR03.",
+      "acceptation_metier": false,
+      "case_source_modifiee": false,
+      "source_anchor": "ADRsections1–6"
+    },
+    {
+      "id": "ADR-02",
+      "obligation_exacte": "Y documenter routes, contexte, droits, comportements mobile/plein écran, coexistence Atelier et tests NAV.",
+      "current_status": "En cours",
+      "delta_expected_before": "À définir",
+      "stale_precondition": true,
+      "proposed_status": "Vérifié documentaire proposé sous revueA0",
+      "A5_verdict": "Recevable pour nature decondition documentaire, pas adoption ni réalisation",
+      "reason": "Verbedocumenter : sixsujetsprésents et9NAV reliés ; choix routes/entrée/COEX toujoursproposés, aucune preuve navigationruntime.",
+      "acceptation_metier": false,
+      "case_source_modifiee": false,
+      "source_anchor": "ADRsections1–6"
+    },
+    {
+      "id": "PROV-03",
+      "obligation_exacte": "Conserver REP-01 comme observation du 18/10/2026 au commit 5cf61d1fed9ed523b331228af20bce93a4f2bf63, sans l’assimiler à un HEAD futur.",
+      "current_status": "En cours",
+      "delta_expected_before": "À définir",
+      "stale_precondition": true,
+      "proposed_status": "Vérifié documentaire proposé sous revueA0",
+      "A5_verdict": "Recevable pour nature decondition documentaire, pas adoption ni réalisation",
+      "reason": "REP01 reste photographie5cf historique ; rechercheMD et commentaires deprovenance ne deviennent pas validationHEADfutur.",
+      "acceptation_metier": false,
+      "case_source_modifiee": false,
+      "source_anchor": "PROV03–05 sourceMD/HTML au817 uniquement"
+    },
+    {
+      "id": "PROV-04",
+      "obligation_exacte": "Conserver les chemins de sources du plan et distinguer les résultats futurs de l’audit historique 3bcda929….",
+      "current_status": "En cours",
+      "delta_expected_before": "À définir",
+      "stale_precondition": true,
+      "proposed_status": "Vérifié documentaire proposé sous revueA0",
+      "A5_verdict": "Recevable pour nature decondition documentaire, pas adoption ni réalisation",
+      "reason": "10chemins résolus etempreintesREF01/02 contrôlées ; ancienaudit3bc distinct ettestsClaude non réattribuéscourant.",
+      "acceptation_metier": false,
+      "case_source_modifiee": false,
+      "source_anchor": "PROV03–05 sourceMD/HTML au817 uniquement"
+    },
+    {
+      "id": "PROV-05",
+      "obligation_exacte": "Documenter à chaque révision de la checklist les modifications du découpage, sans renuméroter EX, INV, IF, AC, TEST, NAV ou DEC.",
+      "current_status": "En cours",
+      "delta_expected_before": "À définir",
+      "stale_precondition": true,
+      "proposed_status": "Vérifié documentaire proposé sous revueA0",
+      "A5_verdict": "Recevable pour nature decondition documentaire, pas adoption ni réalisation",
+      "reason": "MD/HTML630IDs/ordre/libellés comparés indépendamment ; modificationdécoupageaucune pour cesrévisions, obligationréitérablechaquerévisionfuture.",
+      "acceptation_metier": false,
+      "case_source_modifiee": false,
+      "source_anchor": "PROV03–05 sourceMD/HTML au817 uniquement"
+    }
+  ],
+  "source_paths_10": [
+    {
+      "path": "apps/web/src/App.tsx",
+      "blob": "1098848dbf84d54189307e0ba0afad9d0f2b82f5",
+      "sha256": "681616c2ac297aa57c4d8824b777d6c3792105c3787ca315743958706acab8ee"
+    },
+    {
+      "path": "apps/web/src/routes/AppShell.tsx",
+      "blob": "1e784b7686ed10f60ab944cde660354a2bbac7c9",
+      "sha256": "6bf46cc9e7c15ade383af9b21790b20d2318d6ea30401f662fb7cb3291591c6b"
+    },
+    {
+      "path": "apps/web/src/routes/ProjectShell.tsx",
+      "blob": "a1d0584ace1b7c7b62c0c56ac77c0075b46c5844",
+      "sha256": "36194fa9f13c23f9ec2c086b3630637e00766bb42999f38bc6d8a8ad75ac0108"
+    },
+    {
+      "path": "apps/web/src/modules/module-registry.ts",
+      "blob": "ddd5fd90086076095e0b2eb552fcc0b46559ba01",
+      "sha256": "efa15fe628ea7bb1ccdb459d49545495fe88635a38ce5b8ef6347c844a2d5a48"
+    },
+    {
+      "path": "apps/web/src/lib/use-immersive.ts",
+      "blob": "ab382d7456d15a7fe32009818cd9d27c6ff19ba3",
+      "sha256": "1ccbc353ba3763965dea6b6a1cdf974576104edc0868fd67a99d8bc4a32af785"
+    },
+    {
+      "path": "scripts/check-module-deps.mjs",
+      "blob": "f3207476e238adb8e0c472c9561c3969a6879da1",
+      "sha256": "cc07dcf668b2f62a92a731b0dfded325e252f866de7f9ce7f4bf45862e48e6c4"
+    },
+    {
+      "path": "docs/continuity/README.md",
+      "blob": "dae46c4fd63a675da18e3573aadfc9f39ca24c5a",
+      "sha256": "e506f45775f5580641aec2a970bcdb5e5edeff20861c79927152ee5830a70704"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Definition_Officielle_Reference_V2_1.docx",
+      "blob": "e1d61ca38809e1faac6111c5ffb0881619b9a6dc",
+      "sha256": "5ad8bb2bc78c7eada33cfdaed571131b8966c6a4a4584786966acae9efd1c958"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "sha256": "98479152a8fd31b5871bc8bb3fe72aeeb5beb5929190b04a0e9ff167dbf91b5d"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "blob": "db5588eca8980efcd7276c1cc2182b9070c6eb38",
+      "sha256": "4976191179bafa59cbc3a24fef9c28c9f50dcc7fa9a0bd8573dc075586659ce3"
+    }
+  ],
+  "checklist_comparison": {
+    "MD_count": 630,
+    "HTML_count": 630,
+    "ids_order_equal": true,
+    "all_labels_equal": true,
+    "mismatches": [],
+    "normative_ids_renumbered": false,
+    "method": "Parsing Markdowncheckbox etseedJSONHTML seulement, aucun scriptapplication importé."
+  },
+  "historical_SHA_MD_occurrences_reviewed": [
+    {
+      "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+      "line": 97,
+      "exact": "- [ ] **REP-01** — Relever le commit de travail et le distinguer de REP-01 : 5cf61d1fed9ed523b331228af20bce93a4f2bf63."
+    },
+    {
+      "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+      "line": 1325,
+      "exact": "- [ ] **PROV-03** — Conserver REP-01 comme observation du 18/10/2026 au commit 5cf61d1fed9ed523b331228af20bce93a4f2bf63, sans l’assimiler à un HEAD futur."
+    },
+    {
+      "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+      "line": 1326,
+      "exact": "- [ ] **PROV-04** — Conserver les chemins de sources du plan et distinguer les résultats futurs de l’audit historique 3bcda929…."
+    },
+    {
+      "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "line": 19,
+      "exact": "| REP-01 | Lecture ciblée du dépôt au commit 5cf61d1fed9ed523b331228af20bce93a4f2bf63. | Points d’intégration du routage, de la navigation, de la modularité et du suivi. Ce n’est pas un nouvel audit exhaustif des moteurs. |"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "line": 52,
+      "exact": "Les deux Word de REF-01 et REF-02 présents dans `Studio/` ont les mêmes empreintes Git que les copies lues. L’annexe A de REF-02 reste, elle, un audit historique au commit `3bcda929…` : ses constats sur les moteurs doivent être requalifiés, pas assimilés à des tests actuels."
+    },
+    {
+      "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "line": 486,
+      "exact": "REP-01 : `RachEma-ux/Fadi`, branche `main`, commit `5cf61d1fed9ed523b331228af20bce93a4f2bf63`, relevé le 18 octobre 2026. Les fichiers ci-dessous ont été lus pour les constats du §2 et l’organisation de suivi du §9. Les références portent sur cette révision, pas sur un HEAD futur."
+    },
+    {
+      "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "line": 490,
+      "exact": "https://github.com/RachEma-ux/Fadi/blob/5cf61d1fed9ed523b331228af20bce93a4f2bf63/apps/web/src/App.tsx"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "line": 494,
+      "exact": "https://github.com/RachEma-ux/Fadi/blob/5cf61d1fed9ed523b331228af20bce93a4f2bf63/apps/web/src/routes/AppShell.tsx"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "line": 498,
+      "exact": "https://github.com/RachEma-ux/Fadi/blob/5cf61d1fed9ed523b331228af20bce93a4f2bf63/apps/web/src/routes/ProjectShell.tsx"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "line": 502,
+      "exact": "https://github.com/RachEma-ux/Fadi/blob/5cf61d1fed9ed523b331228af20bce93a4f2bf63/apps/web/src/modules/module-registry.ts"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "line": 506,
+      "exact": "https://github.com/RachEma-ux/Fadi/blob/5cf61d1fed9ed523b331228af20bce93a4f2bf63/apps/web/src/lib/use-immersive.ts"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "line": 510,
+      "exact": "https://github.com/RachEma-ux/Fadi/blob/5cf61d1fed9ed523b331228af20bce93a4f2bf63/scripts/check-module-deps.mjs"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "line": 514,
+      "exact": "https://github.com/RachEma-ux/Fadi/blob/5cf61d1fed9ed523b331228af20bce93a4f2bf63/docs/continuity/README.md"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-002-originals/A4-ux.md",
+      "line": 29,
+      "exact": "Lecture GitHub directe via `github_fetch_pr`, PR https://github.com/RachEma-ux/Fadi/pull/142 : **ouverte, non fusionnée**, `mergeable: false`, tête `0d9606059f383e993b4bc69d57700ff411856919`, base rapportée `3bcda9296eaa0a0376ca5d2279dd71f52a75184b`. Elle modifie ProjectShell, useImmersive et les styles pour conserver l'enveloppe Fadi, uniformiser neuf pages et adapter les gestes aux menus superposés. La recette 593/593 citée dans le corps vise `a383fa4555725b8643ffe8ea6ed91c8b65fd9fff`, pas une preuve exécutée sur la dernière tête. Aucun verdict CI actuel déduit ici. L'état actuel du code local conserve le masquage."
+    },
+    {
+      "path": "docs/ai-team/reports/mission-002-originals/L1-L6-consolidation-A0.md",
+      "line": 11,
+      "exact": "Main distant : 27c0c5a35e2f116752a83a9c66459484488a1975. Checkout local propre : work@aadd083ca282ed7db8af31f0fb3724c861b5107f. Comparaison GitHub officielle : trois fichiers ajoutés seulement (checklist Markdown/Word et archive d'audit), aucune différence applicative. work n'est pas un défaut par son nom ; contrôler SHA, arbre et provenance. Comparaison 5cf61d1… → 38c71f1… confirmée : deux commits, quatre documents Studio."
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A6/RAPPORT-A6-M01-M03-M04-M10.md",
+      "line": 61,
+      "exact": "Issue149 et ses trois commentaires ont été réellement lus. Corps ancien à cases non cochées n’est pas un verdict actuel. Commentaire6243033659 rapporte déploiement technique du SHA5cf61d1… à23:14:15UTC le17octobre et acceptation utilisateur « C est bon. La suite ? », sur captures transmises ; pas nouvel accès SSH. Commentaire6243082764 rapporte sauvegarde POST-validation : dump horodaté23:27:50UTC, snapshotd2107ead, résultat service success et contrôle métadonnées7/7 sans erreurs. Prévalidation6df3cf5c distincte. Ne pas redéployer ou refaire ces opérations par hypothèse."
+    },
+    {
+      "path": "docs/audits/2026-10-18-a0-codex-cloud.md",
+      "line": 150,
+      "exact": "| D03 — P2 | HANDOFF/STATUS purge décrivent #148 comme brouillon ; GitHub confirme sa fusion le 17 octobre à 20:20:11Z, merge 5cf61d1fed9ed523b331228af20bce93a4f2bf63. #147 reste ouverte. | Actualiser ensemble STATUS/HANDOFF ; distinguer fusion du lot et clôture de l’inventaire. |"
+    },
+    {
+      "path": "docs/workstreams/purge-drawall/HANDOFF.md",
+      "line": 7,
+      "exact": "La PR #148 est fusionnée depuis le 17 octobre 2026 au commit `5cf61d1fed9ed523b331228af20bce93a4f2bf63` ; #147 reste ouverte. Les mentions de PR brouillon et fichiers externes présents dans les sections antérieures ci-dessous sont des observations historiques, pas l’état courant. Les quatre documents interproduits retirés ne sont pas restaurés."
+    },
+    {
+      "path": "docs/workstreams/purge-drawall/STATUS.md",
+      "line": 7,
+      "exact": "La PR #148 est fusionnée depuis le 17 octobre 2026 au commit `5cf61d1fed9ed523b331228af20bce93a4f2bf63` ; #147 reste ouverte. Les mentions de PR brouillon et fichiers externes présents dans les sections antérieures ci-dessous sont des observations historiques, pas l’état courant. Les quatre documents interproduits retirés ne sont pas restaurés."
+    }
+  ],
+  "scope_note": "Recherche de provenanceMD définie parméthodeClaude, pas inventaireexhaustif HTML/CSV/JSON ; motif3bc présent aussi danscesformats sans enfaireerreursource. AucunSHAhistorique promuHEAD par piècesrelues.",
+  "ADR_status_check": {
+    "Propose_present": true,
+    "non_decided_explicit": true,
+    "six_topics_present": true,
+    "no_DEC_replaced": true,
+    "no_NAV_execution": true,
+    "quality_reserves": [
+      "COEX03autoritéunique≠clientunique etCOEX05synchronisationbasesconcurrentes≠toutecopie : réservesA2/A5 antérieures restent jointes àoptionsproposées, nonadoptées.",
+      "readOnlyUI ne prouvepasrefusserveurtransfert ; futurscontrats restentouverts.",
+      "ADR02documenté ne ferme niROUTE09 niADR03 niG1/G3 ; R9mêmeservice ne requiertpasimportprivé busAtelier."
+    ]
+  },
+  "test_attribution": {
+    "owner": "Claude horsCodex",
+    "reported_exact_SHA_tests": {
+      "PR171_5e0285d": 492,
+      "PR169_a15d650": 129
+    },
+    "reported_local_merge_pure_package_sum": 1673,
+    "sum_components": [
+      47,
+      95,
+      492,
+      744,
+      22,
+      273
+    ],
+    "sum_check": 1673,
+    "DB_guard129": "Suite distincte de ces1673, ne pas compter comme preuveDB3.",
+    "counterproofs": "20casCLASSIF visibles et2garde échecs déclarésClaude, pasrerunA5",
+    "CI": "Conditions évaluées localement ne sontpasGitHubActions réel ; fichiersCIrésolusproposés nonappliqués etrevueA6séparée.",
+    "raw_runner_logs": "Pas journauxrunnerbruts dans README remis ; attestationstructuréeClaude seulement, aucunepreuveindépendanteexécutionA5.",
+    "no_transfer": "TestsanciensCodex etnouveauxClaude restent auteurs/SHA distincts ; aucunAPI/DB/E2E/GPU/SW prouvé ici."
+  },
+  "delta_administration": {
+    "current_P630": 44,
+    "current_accepted_ids": [
+      "CAD-DEC-01",
+      "G0-03"
+    ],
+    "candidate_if_all_five_received": 49,
+    "candidate_composition": "47VérifiéDoc+2AcceptéG0, PDEV N/D",
+    "all5_stale_before": true,
+    "base_hash_matches_current": false,
+    "action": "Ne pas appliquer ancien delta à0e0 : A0 prépare deltaactualisé parID/statut/preuves plusrécentes sans réappliquer REP/COEX niqualification203 ; helper --ecrire jamais exécutéA5."
+  },
+  "verdict": "Cinqconditionsdocumentairesrecevables, sousstatutADRProposé et réserves antérieures ; intégrationdiffcibléA0 requise, aucune adoption/acceptationgate/capacité.",
+  "execution": "LectureGit/parsingJSONHTMLMD/hash uniquement ; aucuntest, runner, helper, SQL/API/DB/service/scan/réseau/code/registre/gate."
+}

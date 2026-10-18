@@ -1,0 +1,50 @@
+{
+  "date_UTC": "2026-10-18",
+  "base_doc_SHA": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+  "main_SHA": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "register_sha256": "d60edc05392b39d05d9b7db702fed496a13146cacf7e10bdb09f077cbbeb2b1e",
+  "counts": {
+    "Vérifié": 42,
+    "En cours": 296,
+    "Accepté": 2,
+    "À définir": 22,
+    "À faire": 59,
+    "Bloqué": 209
+  },
+  "IDs_textes_proprietaires_conserves": 630,
+  "taches_hors203_strictement_inchangees": 427,
+  "nouveaux_Verifie_documentaires": [
+    "ADR-04",
+    "COEX-02",
+    "REP-02",
+    "REP-03",
+    "REP-04",
+    "REP-05",
+    "REP-06",
+    "REP-07",
+    "REP-08",
+    "REP-09"
+  ],
+  "acceptations_G0_preexistantes_conservees": [
+    "CAD-DEC-01",
+    "G0-03"
+  ],
+  "P630": 44,
+  "PDEV": null,
+  "cases_source_HTML_cochees": 0,
+  "agent_pieces_byte_hash_checked": 223,
+  "JSON_parsed_changed": 52,
+  "relative_links_broken": 0,
+  "credential_patterns_detected": 0,
+  "source_blob_unchanged": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+  "chain_of_three_stages_valid": true,
+  "execution_checks": {
+    "unittest_documentaire": "14 réussis",
+    "coverage": "630/630,31 missions",
+    "continuity": "réussi après correction du format de sections/date",
+    "continuity_node_test": "1 entrée node réussie",
+    "isolation_nominale": "761 fichiers, réussi",
+    "git_diff_whitespace": "réussi, diff staged compris"
+  },
+  "scope_limit": "Contrôles documentaires et statiques seulement ; aucun nouveau test applicatif, DB, service, migration, déploiement, administration ou fusion. Citations de registres transitoires sont des snapshots, pas des empreintes actuelles."
+}

@@ -1,0 +1,354 @@
+{
+  "date_UTC": "2026-10-18",
+  "base_register_sha256": "cab84135db7d65398f2028b929cd89b70ddb43f12b35b238fe83c79f50f0f794",
+  "result_register_sha256": "d60edc05392b39d05d9b7db702fed496a13146cacf7e10bdb09f077cbbeb2b1e",
+  "scope": "20obligations et2liaisonsM05/M07, préparation seulement",
+  "complements": [
+    {
+      "id": "COEX-01",
+      "agent_auteur": "A1",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "En cours",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/RESIDUEL-COEX-G3-ADR05-A1.json",
+        "sha256": "18293a6e6d35966b033ffc8513bf713a3f0750c9072cdc3cd82a8aab2b6ffc95",
+        "ID": "COEX-01",
+        "auteur": "A1",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Lire la réponse6250995231 puis relier le choix reçu aux seules fonctions concernées ; aucun sort de composant adopté par la matrice."
+    },
+    {
+      "id": "G3-01",
+      "agent_auteur": "A1",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "En cours",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/RESIDUEL-COEX-G3-ADR05-A1.json",
+        "sha256": "18293a6e6d35966b033ffc8513bf713a3f0750c9072cdc3cd82a8aab2b6ffc95",
+        "ID": "G3-01",
+        "auteur": "A1",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Arbitrages physiques et interfaces I/A.1 applicables, puis dossier G3 exact à accepter ; les18DEC restent distinctes."
+    },
+    {
+      "id": "G3-03",
+      "agent_auteur": "A1",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "À faire",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/RESIDUEL-COEX-G3-ADR05-A1.json",
+        "sha256": "18293a6e6d35966b033ffc8513bf713a3f0750c9072cdc3cd82a8aab2b6ffc95",
+        "ID": "G3-03",
+        "auteur": "A1",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Obtenir personnes, disponibilités et estimations compétentes selon six demandes préparées ; aucune durée ou charge inventée."
+    },
+    {
+      "id": "ADR-05",
+      "agent_auteur": "A1",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "À faire",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/RESIDUEL-COEX-G3-ADR05-A1.json",
+        "sha256": "18293a6e6d35966b033ffc8513bf713a3f0750c9072cdc3cd82a8aab2b6ffc95",
+        "ID": "ADR-05",
+        "auteur": "A1",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Faire confirmer les priorités au cadrage du pilote ; les17 propositions qualitatives ne sont pas une décision acquise."
+    },
+    {
+      "id": "G2-01",
+      "agent_auteur": "A2",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "En cours",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A2/RESIDUEL-M05-M07-G2-COEX06-A2.json",
+        "sha256": "6c810dba9ad6aabd71693b6c7d20cbc4a99f22822387069a16e59c45ad583a4e",
+        "ID": "G2-01",
+        "auteur": "A2",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Lire réponse6250905795 ; autorisation bornée, G1 applicable et confinement effectif avant tout code/exécution du POC. Les autres besoins ne bloquent pas artificiellement ce premier périmètre."
+    },
+    {
+      "id": "G2-05",
+      "agent_auteur": "A2",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "À faire",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A2/RESIDUEL-M05-M07-G2-COEX06-A2.json",
+        "sha256": "6c810dba9ad6aabd71693b6c7d20cbc4a99f22822387069a16e59c45ad583a4e",
+        "ID": "G2-05",
+        "auteur": "A2",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Rapprocher les preuves effectivement produites des risques et DEC concernés après accord ; aucune suffisance de porte déduite des liens."
+    },
+    {
+      "id": "COEX-06",
+      "agent_auteur": "A2",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "En cours",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A2/RESIDUEL-M05-M07-G2-COEX06-A2.json",
+        "sha256": "6c810dba9ad6aabd71693b6c7d20cbc4a99f22822387069a16e59c45ad583a4e",
+        "ID": "COEX-06",
+        "auteur": "A2",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Lire6250998834 ; règle proposée distincte des preuves R1/R2 et accord propriétaire R3. Aucun retrait/restauration avant accords et cible attestée."
+    },
+    {
+      "id": "A.4-03",
+      "agent_auteur": "A3",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "En cours",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A3/RESIDUEL-ASSOCIATION-HISTORIQUE-A3.json",
+        "sha256": "c44c067f379edc1063320cab66246c3bfee49de93ec9eb915a19963960af662e",
+        "ID": "A.4-03",
+        "auteur": "A3",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Décider les identités/relations et le contrat applicable ; A5 instancie les cas AC001 dans le corpus autorisé après portes et accord du sous-lot."
+    },
+    {
+      "id": "A.4-04",
+      "agent_auteur": "A3",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "En cours",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A3/RESIDUEL-ASSOCIATION-HISTORIQUE-A3.json",
+        "sha256": "c44c067f379edc1063320cab66246c3bfee49de93ec9eb915a19963960af662e",
+        "ID": "A.4-04",
+        "auteur": "A3",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Ratifier les effets topologiques/suppression/fractionnement et politiques des références ; conserver les refus ambigus sans inventer de réparation."
+    },
+    {
+      "id": "A.4-07",
+      "agent_auteur": "A3",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "En cours",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A3/RESIDUEL-ASSOCIATION-HISTORIQUE-A3.json",
+        "sha256": "c44c067f379edc1063320cab66246c3bfee49de93ec9eb915a19963960af662e",
+        "ID": "A.4-07",
+        "auteur": "A3",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Qualifier le contrat de suivi source/cible/objet architectural et moteur public retenu ; les capacités actuelles ne prouvent pas une relation Studio."
+    },
+    {
+      "id": "A.5-09",
+      "agent_auteur": "A3",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "En cours",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A3/RESIDUEL-ASSOCIATION-HISTORIQUE-A3.json",
+        "sha256": "c44c067f379edc1063320cab66246c3bfee49de93ec9eb915a19963960af662e",
+        "ID": "A.5-09",
+        "auteur": "A3",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Décider les versions/identités/idempotence applicables et cible autorisée ; distinguer rejeu confirmé identique et nouvelle commande périmée avant assertions exécutables."
+    },
+    {
+      "id": "C.2-03",
+      "agent_auteur": "A4",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "En cours",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A4/RESIDUEL-PICKING-ADR-NAV-A4.json",
+        "sha256": "107e22d547abe2fd0dcf3c4127351e11aa444ebfb8923c47e6e6e1a99ff9ecfa",
+        "ID": "C.2-03",
+        "auteur": "A4",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Arbitrer les options UX de sélection et confirmer le contrat effets/identités ; A5 prépare le corpus pertinent. Aucun picking prêt par seule conservation d’ID."
+    },
+    {
+      "id": "ADR-01",
+      "agent_auteur": "A4",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "À faire",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A4/RESIDUEL-PICKING-ADR-NAV-A4.json",
+        "sha256": "107e22d547abe2fd0dcf3c4127351e11aa444ebfb8923c47e6e6e1a99ff9ecfa",
+        "ID": "ADR-01",
+        "auteur": "A4",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Recevoir l’ADR proposée annoncée par Claude6251022689 ; réconcilier l’addendum A4/A2 avant revue et décision, sans ADR concurrente."
+    },
+    {
+      "id": "ADR-02",
+      "agent_auteur": "A4",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "En cours",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A4/RESIDUEL-PICKING-ADR-NAV-A4.json",
+        "sha256": "107e22d547abe2fd0dcf3c4127351e11aa444ebfb8923c47e6e6e1a99ff9ecfa",
+        "ID": "ADR-02",
+        "auteur": "A4",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Recevoir la proposition Claude, comparer les lacunes physiques aux contrats NAV/M21 existants puis faire arbitrer ; aucun nouveau choix de route implicite."
+    },
+    {
+      "id": "C.1-01",
+      "agent_auteur": "A5",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "À faire",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A5/RESIDUEL-SPATIAL-RENDU-A5.json",
+        "sha256": "4c737ab2dd80f7e6d472647e9eefb59690f7668a6d9602c516449b722231a056",
+        "ID": "C.1-01",
+        "auteur": "A5",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Contrat projection/mapping/tolérances applicable et corpus/cible autorisés avant baseline ; DEC13 avant tout verdict de vitesse dépendant, aucune capacité chiffrée annoncée."
+    },
+    {
+      "id": "C.1-07",
+      "agent_auteur": "A5",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "En cours",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A5/RESIDUEL-SPATIAL-RENDU-A5.json",
+        "sha256": "4c737ab2dd80f7e6d472647e9eefb59690f7668a6d9602c516449b722231a056",
+        "ID": "C.1-07",
+        "auteur": "A5",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Même source/révision/oracle indépendant pour balayage et index ; seuil de stratégie à établir sur baseline autorisée, pas inventé."
+    },
+    {
+      "id": "C.2-02",
+      "agent_auteur": "A5",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "En cours",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A5/RESIDUEL-SPATIAL-RENDU-A5.json",
+        "sha256": "4c737ab2dd80f7e6d472647e9eefb59690f7668a6d9602c516449b722231a056",
+        "ID": "C.2-02",
+        "auteur": "A5",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Contrat mapping/révision/génération et corpus autorisés ; appliquer les cas suppression/réordonnancement/rebatch/instance sans faux résultat runtime."
+    },
+    {
+      "id": "C.2-05",
+      "agent_auteur": "A5",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "En cours",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A5/RESIDUEL-SPATIAL-RENDU-A5.json",
+        "sha256": "4c737ab2dd80f7e6d472647e9eefb59690f7668a6d9602c516449b722231a056",
+        "ID": "C.2-05",
+        "auteur": "A5",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Contrat effets/version/source et corpus autorisés ; comparer incrémental/reconstruction au même état, distinguer historique épinglé et courant obsolète."
+    },
+    {
+      "id": "COEX-03",
+      "agent_auteur": "A2",
+      "proprietaire_canonique": "A2",
+      "statut_conserve": "En cours",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A2/COEX03-COMPLEMENT-A2.json",
+        "sha256": "eac9b7efbf7623db99ea0fbaef0daa416c53a533581e20dc0c17f615711ddd8a",
+        "ID": "COEX-03",
+        "auteur": "A2",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Lire6250996328 et les trois réserves A2/A5 ; décider l’autorité par jeu sans confondre clients et autorité serveur. Aucun champ époque physique adopté."
+    },
+    {
+      "id": "X.1-09",
+      "agent_auteur": "A5",
+      "proprietaire_canonique": "A5",
+      "statut_conserve": "À faire",
+      "preuve": {
+        "type": "complement_documentaire_residuel_post203",
+        "fichier": "docs/ai-team/reports/reprise-496dcfc/A5/NEXT-READY-POST203-A5.json",
+        "sha256": "8823d852b14ef6b04dd2896419cdebf305757b1913a9adf3017b5d240c3228e6",
+        "ID": "X.1-09",
+        "auteur": "A5",
+        "date_UTC": "2026-10-18",
+        "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+      },
+      "prochain_declencheur": "Conserver les10PERF exacts et quatre réserves A4 ; fixer les contrats/budgets DEC13 pertinents puis autoriser l’instrumentation et les mesures sur cible identifiée."
+    }
+  ],
+  "P630_inchange": 44,
+  "PDEV": null,
+  "statuts_inchanges": true,
+  "normalisation_ID": {
+    "A2_deltas_4_COEX06": "COEX-06 canonique ; orthographe originale conservée dans la remise, aucun nouveauID"
+  },
+  "reserves_PERF_incorporees": [
+    "PERF04/08 disponibilité et coût de l’oracle séparés",
+    "PERF06 comparaison invalidation/reconstruction",
+    "PERF08 historique épinglé distinct du courant périmé",
+    "PERF09 ressource partagée utile distincte d’une fuite"
+  ],
+  "coordination_Claude": "ADR01/02 et PROV03..05 annoncés par Claude6251022689 ; addendum A4 sans ADR concurrente ; vérifier publication réelle avant toute revue.",
+  "suite_exacte": "Vérifier nouvelles réponses/livrables166 au checkpoint. Recevoir une pièce réellement publiée et intégrer son delta ; sinon les préconditions par ID ci-dessus restent ouvertes, sans répétition des préparations.",
+  "revues_independantes_association": [
+    {
+      "fichier": "docs/ai-team/reports/reprise-496dcfc/A2/REVUE-RESIDUEL-ASSOCIATION-A2.json",
+      "sha256": "2cf75f74e2c3aac7b7f72d772f61df55db8f73bc864e1ecbd4134156af826ca3",
+      "avis": "Favorable pour préparation documentaire seulement ;4IDs20sous-cas,46citations exactes, aucun test/gate/statut vérifié."
+    },
+    {
+      "fichier": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-RESIDUEL-ASSOCIATION-A5.json",
+      "sha256": "86864752f4ffb3355193ee73c3f2b5b5fceb529f4194d7c691cb46c355777d19",
+      "avis": "Favorable pour préparation documentaire seulement ;4IDs20sous-cas,46citations exactes, aucun test/gate/statut vérifié."
+    }
+  ]
+}

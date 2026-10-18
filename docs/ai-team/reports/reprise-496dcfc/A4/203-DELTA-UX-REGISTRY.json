@@ -1,0 +1,294 @@
+{
+  "document": "203 A4 — delta de contrats UX/Registry/Manager",
+  "status": "Proposé pour revue, non exécutable",
+  "executable": false,
+  "related_ids": [
+    "I.4-03",
+    "B.1-02",
+    "B.1-04",
+    "B.2-08"
+  ],
+  "source_reuse": [
+    {
+      "path": "docs/ai-team/reports/mission-004/A4/CONTRAT-NAV-M004.md",
+      "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob_sha1": "d8d95c166171c567625f798f5dc17867ce412ba8",
+      "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a",
+      "lines": [
+        15,
+        31
+      ],
+      "exact_excerpt": "| `/studio` | Accueil global, liste des projets/études autorisés, sélection explicite. Aucun projet fictif, aucune création au GET. |\n| `/studio/projets/:projectId` | Études du projet autorisé, création avec droit explicite ; pas de requête Parcours obligatoire. |\n| `/studio/projets/:projectId/etudes/:studyId` | Cadrage, sources et variantes de l'étude appartenant au projet. Étude sans variante permise, géométrie interdite sans variante. |\n| `/studio/projets/:projectId/etudes/:studyId/variantes/:variantId` | Révision de travail de la variante, contexte actif et droits reçus de la façade autorisée. |\n| `/studio/projets/:projectId/etudes/:studyId/variantes/:variantId/revisions/:revisionId` | Consultation d'une révision identifiée et immuable de cette variante. Éditer crée une intention explicite vers travail courant/nouvelle variante, jamais une mutation de cette révision. |\n\nTous les identifiants sont opaques, encodés comme segments ; type/longueur admis par contrat A2, jamais interprétés comme noms de fichiers. Résolution serveur vérifie existence **et** projectId↔studyId↔variantId↔revisionId et droits sur chaque ressource. Aucune redirection automatique vers le dernier projet en cas de lien interdit. Un contexte obsolète n'est pas remplacé silencieusement. Ordre de priorité : URL explicite autorisée, puis choix utilisateur ; dernier contexte personnel = suggestion seulement. Aucun paramètre URL ne transmet une permission.\n\nQuery proposée sur routes variantes/révisions : `domaine=dessin|bim|visualisation|documentation`. Dans `dessin` seulement, `planche=2d|3d`. Exemple complet : `/studio/projets/p1/etudes/s1/variantes/v1?domaine=dessin&planche=2d`. Exemple historique : `/studio/projets/p1/etudes/s1/variantes/v1/revisions/r8?domaine=bim`. Les IDs sont des exemples synthétiques.\n\nAbsence de domaine : écran d'accueil de variante, sans créer de planche. Absence de planche en dessin : choix explicite 2D/3D ; reprendre une préférence peut pré-sélectionner le choix sans créer de géométrie. Domaine inconnu/planche inconnue ou `planche` hors dessin : afficher un état URL non reconnue et lien vers contexte parent valide, aucune mutation ; pas de substitution métier silencieuse. Paramètres d'interface sans effet métier (panneau/caméra) restent hors de ce contrat initial. Ne pas coder de données privées dans URL ou analytics.\n\nPrécédent/suivant et refresh conservent les segments et choix domaine/planche ; changement de domaine crée une entrée d'historique. Canonicalisation pure de paramètres d'affichage peut utiliser replace, sans perdre contexte ni modifier les modèles. Les liens historiques ne pointent jamais implicitement vers « latest ». Les chemins d'API ne sont pas déduits mécaniquement des routes web.\n\n## Façade de contexte proposée pour A2/M17\n\nStudioShell autonome sous AppShell/RequireAuth ; aucune dépendance à ProjectShell, aucune iframe. Une façade partagée fournit contexte demandé/validé, droits effectifs, révision de base/courante, métadonnées de bandeau et état de synchronisation. Schéma logique candidat : `{ projectId, studyId?, variantId?, requestedRevisionId?, baseRevisionId?, effectivePermissions, accessState, freshness, writerAuthority, schemaVersion }`. Le champ writerAuthority désigne le propriétaire d’écriture unique décidé pour le jeu de données pendant coexistence ; schemaVersion borne compatibilité/reprise (à définir avec M17/M27). Aucun outil n'est actif avant résolution du propriétaire de sa donnée ; géométrie 2D, géométrie 3D libre et objet associé gardent leurs autorités distinctes."
+    },
+    {
+      "path": "docs/ai-team/reports/mission-004/A4/M21-CONTRAT-MINIMAL.md",
+      "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob_sha1": "c1b92a7d26705c89a2775e8d567244b7103ac8a6",
+      "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625",
+      "lines": [
+        13,
+        25
+      ],
+      "exact_excerpt": "### 2. Responsabilités et identité\n\n- Registry : métadonnées et contrats de capacités légers, indépendants des modèles/objets de scène. Domaines stables dessin/bim/visualisation/documentation. Planche2D/3D existe en dessin seulement ; une capacité peut agir dans plusieurs contextes via adaptateurs explicités.\n- ToolId canonique stable distinct du label FR/EN, du raccourci, du commandType et de l’objectId métier. `example.*` signale un exemple non réservé ; sa publication ne migre aucun identifiant actuel.\n- CapabilityId exprime l’intention logique. Même libellé ne signifie pas même capacité ; une vue dérivée ne devient pas un éditeur indépendant.\n- Manager : découvre/recherche, réconcilie profil/contexte, résout chargement/activation et cycle des machines. N’effectue pas calcul géométrique autoritaire, ne valide pas les droits centraux et n’écrit pas directement les données.\n- Les intentions vont vers contrats commande serveur ; la scène reste reconstruisible. Objet associé a un propriétaire d’écriture unique ; pas un exemplaire2D et un exemplaire3D concurrents.\n\nLes deux `echelle` de la palette Atelier n’ont pas le même sens. Exemple alias scoping catalogue+version+fiche distingue DA-07-13 objet et DA-02-05 homothétie ; historique version «à qualifier». Sans discriminateur, résultat **ambigu** : aucune activation/migration automatique, présenter choix nommé. Table proposée ne renomme pas commandes, favoris ni historique persistés. A2 doit identifier stockage et compatibilité avant tout sous-lot de correction autorisé.\n\n### 3. Contextes indépendants et façade\n\nChaque activation garde projectId/studyId/variantId/baseRevisionId, utilisateur/permissions effectives, writerAuthority/schemaVersion et propriétaire de document/modèle. Contexte résolu serveur, jamais seulement URL/dernier projet. Domaines peuvent être ouverts sans initialiser les moteurs des autres domaines."
+    },
+    {
+      "path": "docs/ai-team/reports/mission-004/A4/M21-CONTRAT-MINIMAL.md",
+      "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "blob_sha1": "c1b92a7d26705c89a2775e8d567244b7103ac8a6",
+      "sha256": "a960c80420f65b964e59bb827fb388ffec162ef3654c8508c5040430a49fe625",
+      "lines": [
+        33,
+        49
+      ],
+      "exact_excerpt": "Les commandes de revue/publication ne requièrent aucune planche active. Approbation et publication sont deux permissions distinctes ; cumul explicitement configuré et tracé seulement. L’administrateur technique ne reçoit pas ces droits implicitement. Offline : une décision centrale peut être préparée selon contrat, jamais confirmée approuvée/publiée hors serveur.\n\n### 4. Dimensions d’état et transitions\n\nNe pas coder un seul booléen «disponible» :\n\n| Dimension | Valeurs logiques proposées | Effet utilisateur |\n|---|---|---|\n| Profil | visible/masqué/favori | Outil masqué retrouvable ; pas supprimé ni interdit. |\n| Contexte | compatible/incompatible/à résoudre | Motif exact sans divulgation sensible ; pas activation hors propriétaire. |\n| Permission | autorisé/refusé/à revalider | Refus client guide, serveur décide ; importer un profil n’élève rien. |\n| Ressources | non chargées/chargement/prêtes/échec ; cache compatible/incomplet | Progression/retry ; catalogue seul ≠ outiloffline utilisable. |\n| Exécution | inactive/active/preview/pending/confirmée/refusée/conflit/périmée | Preview ≠ mutation ; pending ≠ engagement durable central. |\n\nCycle IF-005 : découvert → contexte/droits → dépendances → code chargé → initialisé/prêt → actif → suspendu/désactivé, avec branches de refus/incompatibilité/horsligne/chargement/noyau. Les valeurs JSON ne contiennent aucun code de machine ni module importable.\n\nActivation1 demande contexte et ressources manquantes ; activation2 sur même ressource mutualise sans doubler noyau/worker. Si utilisateur change projet pendant chargement, annuler l’activation UI et ne jamais réadresser l’intention ; résultat tardif ne s’applique pas au nouveau contexte. Fermer outil après commande envoyée ne prouve pas annulation serveur : suivre requestId et résultat dans contexte d’origine. Désactivation ne détruit pas une ressource partagée encore utilisée."
+    }
+  ],
+  "url_state_contract": {
+    "reuse": "NAV-DELTA-G1-v2 et NAV-004/005/006/007 existants ; aucune nouvelle numérotation",
+    "state_fields": [
+      "authenticatedActor",
+      "authorizedProjectId",
+      "authorizedStudyId",
+      "authorizedVariantId",
+      "requestedRevisionId",
+      "baseRevisionId",
+      "domaine",
+      "planche",
+      "writerAuthority",
+      "schemaVersion"
+    ],
+    "resolution": "Serveur vérifie parenté et droits ; URL autorisée prime la préférence personnelle. Aucun champ client n’accorde un droit.",
+    "transition_table": [
+      {
+        "event": "Historique/refresh",
+        "result": "Restituer les mêmes P/S/V/R/domaine/planche autorisés ; révision historique reste en consultation."
+      },
+      {
+        "event": "Domaine absent",
+        "result": "Accueil variante sans création de planche."
+      },
+      {
+        "event": "Dessin sans planche",
+        "result": "Choix explicite 2D/3D sans géométrie implicite."
+      },
+      {
+        "event": "Domaine/planche invalide ou planche hors dessin",
+        "result": "État URL non reconnue avec retour parent autorisé, aucune mutation."
+      },
+      {
+        "event": "Contexte change pendant envoi",
+        "result": "Garde NAV-007 ; intention/requestId et résultat gardent le contexte initial, aucun réadressage."
+      },
+      {
+        "event": "Réponse tardive P1 après affichageP2",
+        "result": "Ignorer pour affichageP2 sans perdre suivi d’une commande serveur éventuelle deP1."
+      },
+      {
+        "event": "FR/EN ou mobile plein écran",
+        "result": "Langue/disposition ne remplace pas identité ou propriétaire ; garde pending et focus accessibles."
+      }
+    ],
+    "physical_url_approval": "Chemins existants candidats, pas nouvelle validation du contrat physique."
+  },
+  "registry_record_contract": {
+    "required_for_retained_capability": [
+      "toolId canonique stable",
+      "capabilityId stable",
+      "domaine/modes/planches admissibles",
+      "propriétaire de contrat et composant mainteneur",
+      "contractVersion et lien vers contrat",
+      "permissions effectives décidées serveur",
+      "result_category distincte du writerAuthority",
+      "alias de provenance et fenêtre de compatibilité",
+      "états indisponible/incompatible/refusé/échec nommés"
+    ],
+    "not_identifiers": [
+      "label FR/EN",
+      "raccourci",
+      "objectId métier",
+      "commandType seul"
+    ],
+    "retained_catalogue": null,
+    "canonical_owner_assignments": null,
+    "reason_open": "Les huit example.* ne constituent pas la liste retenue ni des toolId réservés ; composants et responsables réels doivent être confirmés avant de fixer le catalogue."
+  },
+  "example_records_reused": [
+    {
+      "example_tool_id": "example.studio.line2d",
+      "capability": "drawing.line.create",
+      "domain": "dessin",
+      "writer_candidate": "drawing2d",
+      "result_category": "drawing2d",
+      "contract_owner_confirmed": null,
+      "canonical_tool_id": null,
+      "reserved": false,
+      "source": {
+        "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+        "path": "docs/ai-team/reports/mission-004/A4/M21-CATALOGUE-EXEMPLES.json",
+        "json_pointer": "/tools/0"
+      }
+    },
+    {
+      "example_tool_id": "example.studio.pushpull3d",
+      "capability": "model.face.pushpull",
+      "domain": "dessin",
+      "writer_candidate": "model3d",
+      "result_category": "free3d",
+      "contract_owner_confirmed": null,
+      "canonical_tool_id": null,
+      "reserved": false,
+      "source": {
+        "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+        "path": "docs/ai-team/reports/mission-004/A4/M21-CATALOGUE-EXEMPLES.json",
+        "json_pointer": "/tools/1"
+      }
+    },
+    {
+      "example_tool_id": "example.studio.wall-associated",
+      "capability": "architecture.wall.edit",
+      "domain": "dessin",
+      "writer_candidate": "associated",
+      "result_category": "architectural-object",
+      "contract_owner_confirmed": null,
+      "canonical_tool_id": null,
+      "reserved": false,
+      "source": {
+        "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+        "path": "docs/ai-team/reports/mission-004/A4/M21-CATALOGUE-EXEMPLES.json",
+        "json_pointer": "/tools/2"
+      }
+    },
+    {
+      "example_tool_id": "example.studio.ladder",
+      "capability": "architecture.ladder.create",
+      "domain": "dessin",
+      "writer_candidate": "associated",
+      "result_category": "architectural-object",
+      "contract_owner_confirmed": null,
+      "canonical_tool_id": null,
+      "reserved": false,
+      "source": {
+        "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+        "path": "docs/ai-team/reports/mission-004/A4/M21-CATALOGUE-EXEMPLES.json",
+        "json_pointer": "/tools/3"
+      }
+    },
+    {
+      "example_tool_id": "example.studio.scale2d",
+      "capability": "drawing.scale",
+      "domain": "dessin",
+      "writer_candidate": "drawing2d",
+      "result_category": "drawing2d",
+      "contract_owner_confirmed": null,
+      "canonical_tool_id": null,
+      "reserved": false,
+      "source": {
+        "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+        "path": "docs/ai-team/reports/mission-004/A4/M21-CATALOGUE-EXEMPLES.json",
+        "json_pointer": "/tools/4"
+      }
+    },
+    {
+      "example_tool_id": "example.studio.check",
+      "capability": "checks.run",
+      "domain": "bim",
+      "writer_candidate": null,
+      "result_category": "derived-check-result",
+      "contract_owner_confirmed": null,
+      "canonical_tool_id": null,
+      "reserved": false,
+      "source": {
+        "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+        "path": "docs/ai-team/reports/mission-004/A4/M21-CATALOGUE-EXEMPLES.json",
+        "json_pointer": "/tools/5"
+      }
+    },
+    {
+      "example_tool_id": "example.studio.approve",
+      "capability": "review.approve",
+      "domain": "documentation",
+      "writer_candidate": null,
+      "result_category": "review-decision",
+      "contract_owner_confirmed": null,
+      "canonical_tool_id": null,
+      "reserved": false,
+      "source": {
+        "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+        "path": "docs/ai-team/reports/mission-004/A4/M21-CATALOGUE-EXEMPLES.json",
+        "json_pointer": "/tools/6"
+      }
+    },
+    {
+      "example_tool_id": "example.studio.publish",
+      "capability": "publication.publish",
+      "domain": "documentation",
+      "writer_candidate": null,
+      "result_category": "immutable-publication",
+      "contract_owner_confirmed": null,
+      "canonical_tool_id": null,
+      "reserved": false,
+      "source": {
+        "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+        "path": "docs/ai-team/reports/mission-004/A4/M21-CATALOGUE-EXEMPLES.json",
+        "json_pointer": "/tools/7"
+      }
+    }
+  ],
+  "alias_policy_delta": {
+    "source_examples": [
+      {
+        "catalogue": "atelier-palette",
+        "version": "historical-to-qualify",
+        "legacy_id": "echelle",
+        "discriminator": "DA-07-13",
+        "candidate_target": "example.studio.ladder"
+      },
+      {
+        "catalogue": "atelier-palette",
+        "version": "historical-to-qualify",
+        "legacy_id": "echelle",
+        "discriminator": "DA-02-05",
+        "candidate_target": "example.studio.scale2d"
+      }
+    ],
+    "lookup_key": [
+      "catalogue",
+      "version",
+      "legacy_id",
+      "discriminator"
+    ],
+    "unresolved_version": "historical-to-qualify reste inconnu, pas une version admise en production",
+    "resolution": [
+      "Aucune correspondance : indisponible, aucun renommage silencieux.",
+      "Une correspondance complète et contrat adopté : proposer cible avec provenance, sans exécuter une migration.",
+      "Plusieurs correspondances ou discriminateur absent : ambigu, choix nommé ; ne jamais prendre le premier résultat.",
+      "Alias pointant une cible absente ou chaîne cyclique : refus explicite et rapport, pas activation."
+    ],
+    "compatibility_to_decide": [
+      "stockages réels favoris/profils/historique concernés",
+      "versions source/cible réellement supportées",
+      "échéance éventuelle et conservation des anciens IDs",
+      "allocation et propriétaire de chaque ID retenu"
+    ],
+    "no_changes": "Aucune commande, favori, historique ou profil persisté renommé par cette pièce."
+  },
+  "team_profile_option": {
+    "state": "Option non retenue tant que contrat absent",
+    "default_activation": false,
+    "membership_or_permission_grant": false,
+    "ordinary_personal_profile_unaffected": true,
+    "necessary_future_contract": [
+      "propriétaire et droit de publier le profil",
+      "version/compatibilité et précédence équipe/personnel",
+      "conflits/synchronisation et retrait",
+      "diff explicite avant adoption et retour profil précédent"
+    ],
+    "fallback": "Si aucun contrat équipe retenu : profil personnel et découverte restent utilisables ; aucun profil équipe fabriqué ni imposé.",
+    "adversarial_oracles": [
+      "Importer un profil équipe ne confère pas approve/publish ou écriture.",
+      "Désactiver l’option ne modifie aucune géométrie ni révision.",
+      "Conflit de préférences sans contrat : conserver l’existant, état explicite, aucun écrasement."
+    ]
+  },
+  "validation": "Revue documentaire seulement ; aucun catalogue industriel fixé, alias migré, profil activé ou loader exécuté."
+}

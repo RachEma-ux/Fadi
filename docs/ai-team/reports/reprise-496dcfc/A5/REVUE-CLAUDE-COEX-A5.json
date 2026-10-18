@@ -1,0 +1,1363 @@
+{
+  "review": "A5 indépendante Claude COEX01..06/ADR04",
+  "remise_commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+  "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "inputs": [
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/ADR-04-REGISTRE-RISQUES.json",
+      "commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "sha256": "bd8da03b9cdc6b7d671261ae1d65e393c010dd0c331b61cdc42c1b94567175b4"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/ADR-04-REGISTRE-RISQUES.md",
+      "commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "sha256": "46dd592f20c45a6e3a4b27ef73d712973dd809009bf4b5d4dd93f9ae6e1d7501"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/COEX-01-QUALIFICATION.json",
+      "commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "sha256": "3801912ae414f1f07d1b5cbd5904f20f928b36470e1b04ee09395996bbcdbdae"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/COEX-01-QUALIFICATION.md",
+      "commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "sha256": "c3aa0012bf8b3a47579f37efebaee83670397c563fb60cfe82a28ccfe1081547"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "sha256": "1f2a520254eca039a43dfa6cc892c1efcd42b7fec4d01ae820332d22bc0a72a1"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/DELTA-REGISTRE-PROPOSE.json",
+      "commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "sha256": "5bab2816ea74caa41d229c0d09bcf1ef4e77c979c8bdf25966c72e7895d4f1c6"
+    },
+    {
+      "path": "docs/ai-team/reports/claude-m13-coex/README.md",
+      "commit": "3b9c3ebd79b5786c5e0f3bb0135c2e9e38b5a089",
+      "sha256": "8f990bcc4e495e574253fed61c3d13e12c4006e35c8af55cda1cf7d9e6c7ec04"
+    }
+  ],
+  "scope": "Lecture des sept livrables complets, sources ponctuelles des14accès, persistance/variantes/cache/migration, sourceWord10risques et Plan§10 ; aucune prétention audit de chaque fonction ou exécution application.",
+  "access_count": 14,
+  "accesses": [
+    {
+      "id": "H01",
+      "description": "Module projet `?module=atelier` (bouton de `ProjectModuleNav`, validé contre `MODULES`)",
+      "sources_read": [
+        {
+          "path": "apps/web/src/routes/ProjectShell.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "36194fa9f13c23f9ec2c086b3630637e00766bb42999f38bc6d8a8ad75ac0108",
+          "lines": [
+            54,
+            54
+          ],
+          "exact": "  const activeModule = requestedModule && MODULES.some((m) => m.id === requestedModule) ? requestedModule : searchParams.has(\"etape\") ? \"parcours\" : \"accueil\";"
+        },
+        {
+          "path": "apps/web/src/routes/ProjectShell.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "36194fa9f13c23f9ec2c086b3630637e00766bb42999f38bc6d8a8ad75ac0108",
+          "lines": [
+            150,
+            158
+          ],
+          "exact": "        {activeModule === \"atelier\" && (\n          <>\n            {/* Module Atelier : la page de l'Atelier Architectural (bandeau du prototype, enveloppe effacée) ; « ← » ramène au parcours. */}\n            <StageStrip title=\"Atelier Architectural\" stage={null} subtitle={`${project.code} — ${project.name}`} onBack={() => selectModule(\"parcours\")} onHome={() => navigate(\"/projets\")} />\n            <Suspense fallback={<p role=\"status\">Chargement de l’Atelier…</p>}>\n              <AtelierNouveau projectId={projectId} readOnly={!access.canWrite} protectedReference={project.exampleMode === \"reference\"} code={project.code} nomProjet={project.name} />\n            </Suspense>\n          </>\n        )}"
+        },
+        {
+          "path": "apps/web/src/routes/ProjectModuleNav.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "b507359d70e2cf524903a39c639a4f915df194ce97705eac17f9a17e90d1b1ff",
+          "lines": [
+            25,
+            25
+          ],
+          "exact": "    {MODULES.map((module) => <button"
+        }
+      ],
+      "verdict": "Accès ou famille de liens identifié statiquement, pas réussite navigation",
+      "limit": "Aucun navigateur exécuté."
+    },
+    {
+      "id": "H02",
+      "description": "Étapes 10 et 11 du Parcours (l'Atelier dans l'étape)",
+      "sources_read": [
+        {
+          "path": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "f708c98dd9c5ce74a0d3f328afeefa33f4948b51d2c398dff81adf4129863795",
+          "lines": [
+            232,
+            234
+          ],
+          "exact": "  const atelierStep = step.number === 10 || step.number === 11;\n  // Étapes 10 / 11 : la page est l'Atelier Architectural (prototype) — enveloppe de Fadi effacée, titre et intro repliés sous le dessin (`stage10-fold`).\n  useImmersive(atelierStep);"
+        }
+      ],
+      "verdict": "Accès ou famille de liens identifié statiquement, pas réussite navigation",
+      "limit": "Aucun navigateur exécuté."
+    },
+    {
+      "id": "H03",
+      "description": "Recherche de projet (entrée « Atelier » du projet)",
+      "sources_read": [
+        {
+          "path": "apps/web/src/modules/accueil/SearchDialog.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "34c5ea27ca1badf5003d21a7f5352e0058052fd54e95e4b7888bdf7e979a47de",
+          "lines": [
+            21,
+            21
+          ],
+          "exact": "    ...MODULES.map((m) => ({ id: m.id, title: m.label, context: \"Module du projet\", href: `/projets/${projectId}?module=${m.id}` })),"
+        }
+      ],
+      "verdict": "Accès ou famille de liens identifié statiquement, pas réussite navigation",
+      "limit": "Aucun navigateur exécuté."
+    },
+    {
+      "id": "H04",
+      "description": "Tableau de bord du dossier (« Ouvrir l'Atelier », reprise du travail en cours)",
+      "sources_read": [
+        {
+          "path": "apps/web/src/modules/accueil/dossier-state.ts",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "9db232db4b747dbe4e6dbcdd2916a7f4e28e8b26bdb913f6a703e8a38e6310b3",
+          "lines": [
+            58,
+            58
+          ],
+          "exact": "  if (input.currentWork === \"atelier\") return { label: \"Ouvrir l’Atelier\", detail: \"Retrouvez la maquette, les plans et les vues de ce dossier dans l’Atelier.\", href: `/projets/${encodeURIComponent(projectId)}?module=atelier`, disabled: false };"
+        },
+        {
+          "path": "apps/web/src/modules/accueil/DossierDashboard.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "bcd4cbd93cca8c159eb885c8fc3f1105a6b3b055da59ca45226313112954a1d8",
+          "lines": [
+            121,
+            121
+          ],
+          "exact": "    {!applicationHome && <><section className=\"dossier-modules\" aria-labelledby=\"dossier-modules-heading\"><h2 id=\"dossier-modules-heading\">Modules du projet</h2><div>{([{ module: \"projets-sources\", icon: \"site\", title: \"Explorer la parcelle\", description: \"Site, limites et contexte\" }, { module: \"programmation\", icon: \"programme\", title: \"Organiser le programme\", description: reference ? \"Référence · non enregistrée\" : \"Espaces, surfaces et besoins\" }, { module: \"atelier\", icon: \"cube\", title: \"Concevoir dans l’Atelier\", description: \"Plans, volumes et détails\" }] as { module: string; icon: IconName; title: string; description: string }[]).map((item) => <Link key={item.module} className=\"panel\" to={moduleLink(item.module)}><Icon name={item.icon} size={26} /><span><strong>{item.title}</strong><small>{item.description}</small></span><Icon name=\"arrow-right\" size={18} /></Link>)}</div></section>"
+        }
+      ],
+      "verdict": "Accès ou famille de liens identifié statiquement, pas réussite navigation",
+      "limit": "Aucun navigateur exécuté."
+    },
+    {
+      "id": "H05",
+      "description": "Historique (événements modèle et enregistrement → Atelier)",
+      "sources_read": [
+        {
+          "path": "apps/web/src/modules/accueil/history-view-model.ts",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "c9fac4425f929e2ae658bd94f01377db7fd88ac50f1b05e76bc11b1f4b0d728e",
+          "lines": [
+            65,
+            65
+          ],
+          "exact": "  if (event.kind === \"modele\" || event.kind === \"enregistrement\") return { to: `${base}?module=atelier`, label: \"Ouvrir l’Atelier du dossier\" };"
+        }
+      ],
+      "verdict": "Accès ou famille de liens identifié statiquement, pas réussite navigation",
+      "limit": "Aucun navigateur exécuté."
+    },
+    {
+      "id": "H06",
+      "description": "Notifications (modification, verrou)",
+      "sources_read": [
+        {
+          "path": "apps/web/src/components/NotificationBell.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "67028105b045b4040a7e8f5786e01cdabd4a2394cd3bee137a05e1625f26c377",
+          "lines": [
+            23,
+            23
+          ],
+          "exact": "  if (n.kind === \"modification\" || n.kind === \"verrou\") return \"/projets/\" + n.projectId + \"?module=atelier\";"
+        }
+      ],
+      "verdict": "Accès ou famille de liens identifié statiquement, pas réussite navigation",
+      "limit": "Aucun navigateur exécuté."
+    },
+    {
+      "id": "H07",
+      "description": "Panneau des conflits (« ouvrir l'Atelier »)",
+      "sources_read": [
+        {
+          "path": "apps/web/src/components/ConflictPanel.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "d2ac0e5479507cb98e3a8e10d3c15fc55168b8d27ac5c261013cad2672595832",
+          "lines": [
+            180,
+            180
+          ],
+          "exact": "        <Link to={`/projets/${projectId}?module=atelier`}>ouvrir l’Atelier</Link>"
+        }
+      ],
+      "verdict": "Accès ou famille de liens identifié statiquement, pas réussite navigation",
+      "limit": "Aucun navigateur exécuté."
+    },
+    {
+      "id": "H08",
+      "description": "Collaboration (lien vers une révision de l'Atelier)",
+      "sources_read": [
+        {
+          "path": "apps/web/src/modules/collaboration/CollaborationModule.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "e6fd03629abd5b5d1a4ed39a5f057c8500326280c2213379341b973303a7f24a",
+          "lines": [
+            74,
+            74
+          ],
+          "exact": "          <Link to={`/projets/${projectId}?module=atelier`}>Atelier, révision {c.atelierRevision}</Link>"
+        }
+      ],
+      "verdict": "Accès ou famille de liens identifié statiquement, pas réussite navigation",
+      "limit": "Aucun navigateur exécuté."
+    },
+    {
+      "id": "H09",
+      "description": "Programmation (« Comparer au modèle dessiné »)",
+      "sources_read": [
+        {
+          "path": "apps/web/src/modules/programmation/ProgrammeLinks.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "65bd59aa563ecc2ba201c47567c688835e70a00b3fcc857fe77f0a357db6f823",
+          "lines": [
+            59,
+            59
+          ],
+          "exact": "      <Link className=\"bl-button\" to={`${base}?module=atelier`}>"
+        }
+      ],
+      "verdict": "Accès ou famille de liens identifié statiquement, pas réussite navigation",
+      "limit": "Aucun navigateur exécuté."
+    },
+    {
+      "id": "H10",
+      "description": "Paramètres (« Ouvrir l'Atelier du projet »)",
+      "sources_read": [
+        {
+          "path": "apps/web/src/routes/ParametresPage.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "0e9f2c71317a81e622bbef610130cd5d7d6a1ba8c79ff525044109bc8bc29cf5",
+          "lines": [
+            150,
+            150
+          ],
+          "exact": "                    <Link to={`/projets/${projectId}?module=atelier`}>Ouvrir l’Atelier du projet</Link> — {count} écriture(s), rejouée(s) à l’ouverture"
+        }
+      ],
+      "verdict": "Accès ou famille de liens identifié statiquement, pas réussite navigation",
+      "limit": "Aucun navigateur exécuté."
+    },
+    {
+      "id": "H11",
+      "description": "Versions et variantes (ouverture d'une variante, qui est un projet, dans l'Atelier)",
+      "sources_read": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/panneaux/Versions.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "80b192be382c57f1c92a147dbf03e9e2fc067d597b5b447a7838ffaa3ee848ea",
+          "lines": [
+            315,
+            315
+          ],
+          "exact": "              navigate(`/projets/${v.id}?module=atelier`, { state: { notice: `Variante « ${nom} » créée depuis la révision ${v.forkRevision}.` } });"
+        }
+      ],
+      "verdict": "Accès ou famille de liens identifié statiquement, pas réussite navigation",
+      "limit": "Aucun navigateur exécuté."
+    },
+    {
+      "id": "H12",
+      "description": "Pilotage (capacité `atelier-core` → module `atelier`)",
+      "sources_read": [
+        {
+          "path": "apps/web/src/modules/pilotage/capabilities.ts",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "22a00b1cc973a5c23d5dd40b23fab81f7ceda465132d0b8672268a729c009750",
+          "lines": [
+            19,
+            19
+          ],
+          "exact": "  { key: \"atelier-core\", label: \"Atelier 2D/3D\", state: \"available\", module: \"atelier\", note: \"Outils natifs existants ; vérifier la disponibilité de chaque outil spécialisé.\" },"
+        }
+      ],
+      "verdict": "Accès ou famille de liens identifié statiquement, pas réussite navigation",
+      "limit": "H12 descripteur capacité, consommateur émetteur doit être nommé avant recette exhaustive."
+    },
+    {
+      "id": "H13",
+      "description": "API `/projects/:projectId/atelier/*` : modèle, commandes, journal, versions, publications, verrous, exports, solides exacts, graphes",
+      "sources_read": [
+        {
+          "path": "apps/api/src/routes/atelier-commands.ts",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "efc43e42757bd328338d240169720c6604cca832882573c0fecd8a5f01c50d32",
+          "lines": [
+            1,
+            12
+          ],
+          "exact": "/**\n * Service de commandes de l'Atelier (cahier des charges §5.4 ; Architecture V4 §6). Monté sous\n * `/projects/:projectId/atelier` :\n *\n * - `GET /model`, `GET /model/niveaux/:niveauId` : instantané du modèle typé ;\n * - `POST /commands` : lot de commandes (enveloppe `atelier-commands/1`) — droits relus, verrou de ligne,\n *   `baseRevision` = révision courante sinon 409 détaillé, mêmes réducteurs que le navigateur, transaction\n *   (différentiel + journal + boîte de sortie + `projects.model_revision + 1`), idempotence par `requestId` ;\n * - `POST /commands/essai` : exécution à blanc (validation sans transaction) ;\n * - `POST /commands/annuler`, `POST /commands/retablir` : inverse d'une entrée du journal, nouvelle microversion ;\n * - `GET /journal?apres=n` : entrées depuis une révision ; `GET /problemes` : références à réparer, problèmes,\n *   documents périmés, état du bilan ;"
+        }
+      ],
+      "verdict": "Accès ou famille de liens identifié statiquement, pas réussite navigation",
+      "limit": "H13 famille API, pas écran."
+    },
+    {
+      "id": "H14",
+      "description": "Liens profonds déjà diffusés (`/projets/:id?module=atelier`, `?etape=10`)",
+      "sources_read": [
+        {
+          "path": "apps/web/src/App.tsx",
+          "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "sha256": "681616c2ac297aa57c4d8824b777d6c3792105c3787ca315743958706acab8ee",
+          "lines": [
+            86,
+            87
+          ],
+          "exact": "        <Route path=\"/\" element={<Navigate to=\"/accueil\" replace />} />\n        <Route path=\"*\" element={<Navigate to=\"/accueil\" replace />} />"
+        }
+      ],
+      "verdict": "Accès ou famille de liens identifié statiquement, pas réussite navigation",
+      "limit": "H14 formes déjà représentées H01/H02, pas un 14e émetteur indépendant."
+    }
+  ],
+  "component_count": 22,
+  "component_proposals": [
+    {
+      "id": "C01",
+      "proposed_qualification": [
+        "Conserver"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "Chemin client unique vers le service de commandes : file locale, rejeu (`packages/atelier-model/src/sync.ts`). Studio doit passer par le même bus (RISK-07, R9).",
+      "condition": "ARC-07 et ARC-DATA-05 : enveloppe enrichie du contexte étude / variante (DEC-03)"
+    },
+    {
+      "id": "C02",
+      "proposed_qualification": [
+        "Isoler"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "Point d'entrée de l'Atelier actuel. Studio ne l'embarque pas (ARC-10, Plan §3.1).",
+      "condition": "ADR-STUDIO-NAV-01"
+    },
+    {
+      "id": "C03",
+      "proposed_qualification": [
+        "Compléter"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "OBS-01 : SVG React ; OBS-02 : accrochage sans index spatial. C'est le candidat au document 2D autonome, sous l'orientation DEC-01.",
+      "condition": "DEC-08, DEC-09, lot C ; non-régression d'accrochage"
+    },
+    {
+      "id": "C04",
+      "proposed_qualification": [
+        "Compléter"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "OBS-03 et OBS-04 : WebGL2 avec WebGPU en option, reconstruction complète à chaque état. Aucun test ne couvre le fichier.",
+      "condition": "DEC-10, lot C ; tests à créer avant toute optimisation"
+    },
+    {
+      "id": "C05",
+      "proposed_qualification": [
+        "Conserver",
+        "Corriger"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "OBS-05 : candidat Planche 3D. OBS-09 : historique local et commande `planche.operation`. L'en-tête `historique.ts:4` est périmé.",
+      "condition": "Contrat d'historique hybride (lot A) ; correction du commentaire dans un lot autorisé"
+    },
+    {
+      "id": "C06",
+      "proposed_qualification": [
+        "Corriger"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "OBS-07 : après une erreur, le worker n'est jamais recréé dans la session, et aucune demande n'a de délai d'attente.",
+      "condition": "Lot D (résilience), TEST-014, TEST-015 et TEST-037"
+    },
+    {
+      "id": "C07",
+      "proposed_qualification": [
+        "Compléter"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "OBS-08 : worker dédié avec repli sur le fil principal, modèle entier copié à chaque demande, aucune annulation.",
+      "condition": "Lot D et lot E"
+    },
+    {
+      "id": "C08",
+      "proposed_qualification": [
+        "Isoler"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "Interface propre à l'Atelier (barre D-195, réglages, versions…). Plan §3.3 : « la réutilisation d'une fonction ne signifie pas recopier l'ensemble du module ».",
+      "condition": "ARC-04 ; chaque reprise justifiée par une fiche"
+    },
+    {
+      "id": "C09",
+      "proposed_qualification": [
+        "Corriger"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "OBS-11 : 111 entrées pour 110 identifiants. La collision `echelle` (lignes 84 et 120) masque la première entrée dans `OUTILS_PAR_ID`.",
+      "condition": "Lot B (registre) ; correction de code à autoriser"
+    },
+    {
+      "id": "C10",
+      "proposed_qualification": [
+        "Isoler"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "Propres à l'ergonomie de l'Atelier. La règle d'or de la Planche (icône, barre, raccourci) s'applique à ses outils.",
+      "condition": "Le registre Studio (lot B) définit les siens"
+    },
+    {
+      "id": "C11",
+      "proposed_qualification": [
+        "Conserver"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "AGENTS.md : Harmonie est intégrée aux étapes. Studio ne la duplique pas.",
+      "condition": "Aucune"
+    },
+    {
+      "id": "C12",
+      "proposed_qualification": [
+        "Isoler"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "REP-05 : drapeau global qui masque la barre latérale (NAV-008). La PR #142, ouverte, le transforme.",
+      "condition": "Lecture de #142 si elle est fusionnée"
+    },
+    {
+      "id": "C13",
+      "proposed_qualification": [
+        "Conserver"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "Modèle canonique, réducteurs purs et commandes, partagés entre navigateur et serveur (R9). Les identités Étude / Variante / Révision sont à ajouter selon l'orientation DEC-03.",
+      "condition": "DEC-01, DEC-02, DEC-03 (contrats physiques ouverts)"
+    },
+    {
+      "id": "C14",
+      "proposed_qualification": [
+        "Conserver"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "OBS-06 : six registres importés statiquement, ce qui empêche un chargement sélectif. Le catalogue compte 52 outils.",
+      "condition": "DEC-05, DEC-06, DEC-07, lot B.3"
+    },
+    {
+      "id": "C15",
+      "proposed_qualification": [
+        "Conserver"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "Seul point d'entrée d'`occt-wasm`, sous la frontière LGPL D-177. 22 tests réussis ([REP-09](../claude-m13-rep/REP-09-REQUALIFICATION.md)).",
+      "condition": "DEC-18 (licences et frontières)"
+    },
+    {
+      "id": "C16",
+      "proposed_qualification": [
+        "Conserver"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "Géométrie et repères purs, et distinction exigence / hypothèse / recommandation (AGENTS.md).",
+      "condition": "Aucune"
+    },
+    {
+      "id": "C17",
+      "proposed_qualification": [
+        "Conserver"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "Seul écrivain du modèle (R9, [P/…/atelier-modele.ts#L5-L6](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/lib/atelier-modele.ts#L5-L6)). Il impose la révision de base (409), l'idempotence et le journal ([#L1-L12](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/routes/atelier-commands.ts#L1-L12)).",
+      "condition": "ARC-DATA-05 à ARC-DATA-07"
+    },
+    {
+      "id": "C18",
+      "proposed_qualification": [
+        "Conserver"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "Écriture par différentiel, appelée seulement par le service de commandes et les imports contrôlés.",
+      "condition": "DEC-01 et DEC-03 : correspondance avec le stockage Studio"
+    },
+    {
+      "id": "C19",
+      "proposed_qualification": [
+        "Conserver",
+        "Correspondance explicite"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "Une variante actuelle est un **projet** bifurqué (`atelier_variants.project_id` / `parent_id`, [L499-L515](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/db/schema.ts#L499-L515)). Ce n'est pas la Variante Studio de DEC-03. Une correspondance explicite est requise, sans migration silencieuse.",
+      "condition": "DEC-03, MIG-COEX-02"
+    },
+    {
+      "id": "C20",
+      "proposed_qualification": [
+        "Conserver"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "Elle passe déjà par la boucle contrôlée et les mêmes commandes (R9). Studio ne crée pas de seconde boucle.",
+      "condition": "RISK-07"
+    },
+    {
+      "id": "C21",
+      "proposed_qualification": [
+        "Conserver"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "Elle contient les commandes hors ligne en attente. MIG-COEX-04 interdit de les supprimer avant bascule.",
+      "condition": "MIG-COEX-04, TEST-036"
+    },
+    {
+      "id": "C22",
+      "proposed_qualification": [
+        "Compléter"
+      ],
+      "decision": "À prendre (question #166)",
+      "verdict": "Proposition bornée cohérente, aucune décision appliquée",
+      "scope_limit": "Par répertoire/fichier principal ; pas chaque fonction, pas couverture tests ni total de fonctionnalités.",
+      "source_claim": "OBS-10 : tous les morceaux du build sont précachés, y compris ceux chargés à la demande.",
+      "condition": "DEC-07, lot B.3, TEST-016"
+    }
+  ],
+  "component_partition_claim_checked": {
+    "conserver": 12,
+    "completer_seul": 4,
+    "corriger": 2,
+    "isoler": 4,
+    "remplacer": 0,
+    "retirer": 0,
+    "total": 22,
+    "C05": "conserver, correction documentaire secondaire sans double comptage"
+  },
+  "risk_source": {
+    "path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+    "blob_expected": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+    "sha256": "98479152a8fd31b5871bc8bb3fe72aeeb5beb5929190b04a0e9ff167dbf91b5d",
+    "method": "Word XML lignes tableaux w:tr/w:tc/w:t, aucune normalisation orthographique",
+    "checks": [
+      {
+        "id": "RISK-01",
+        "exact_equal_word_row": true,
+        "source_word_row": {
+          "id": "RISK-01",
+          "risque": "Double autorité 2D/3D",
+          "gravite_initiale": "Critique",
+          "mesure": "Protocole d’associations, objets canoniques, tests 001–010."
+        },
+        "candidate_row": {
+          "id": "RISK-01",
+          "risque": "Double autorité 2D/3D",
+          "gravite_initiale": "Critique",
+          "mesure": "Protocole d’associations, objets canoniques, tests 001–010."
+        }
+      },
+      {
+        "id": "RISK-02",
+        "exact_equal_word_row": true,
+        "source_word_row": {
+          "id": "RISK-02",
+          "risque": "Snapping différent après indexation",
+          "gravite_initiale": "Critique",
+          "mesure": "Oracle de géométrie + tests densité et ambiguïtés."
+        },
+        "candidate_row": {
+          "id": "RISK-02",
+          "risque": "Snapping différent après indexation",
+          "gravite_initiale": "Critique",
+          "mesure": "Oracle de géométrie + tests densité et ambiguïtés."
+        }
+      },
+      {
+        "id": "RISK-03",
+        "exact_equal_word_row": true,
+        "source_word_row": {
+          "id": "RISK-03",
+          "risque": "Commande rejouée ou conflit perdu",
+          "gravite_initiale": "Critique",
+          "mesure": "Idempotence, transaction et E2E concurrent."
+        },
+        "candidate_row": {
+          "id": "RISK-03",
+          "risque": "Commande rejouée ou conflit perdu",
+          "gravite_initiale": "Critique",
+          "mesure": "Idempotence, transaction et E2E concurrent."
+        }
+      },
+      {
+        "id": "RISK-04",
+        "exact_equal_word_row": true,
+        "source_word_row": {
+          "id": "RISK-04",
+          "risque": "Publication sur mauvais contenu",
+          "gravite_initiale": "Critique",
+          "mesure": "Manifeste immuable, empreintes, garde d’approbation."
+        },
+        "candidate_row": {
+          "id": "RISK-04",
+          "risque": "Publication sur mauvais contenu",
+          "gravite_initiale": "Critique",
+          "mesure": "Manifeste immuable, empreintes, garde d’approbation."
+        }
+      },
+      {
+        "id": "RISK-05",
+        "exact_equal_word_row": true,
+        "source_word_row": {
+          "id": "RISK-05",
+          "risque": "Profil personnalisable mais tous moteurs chargés",
+          "gravite_initiale": "Élevée",
+          "mesure": "Contrôle bundles/service worker et mesure cache froid."
+        },
+        "candidate_row": {
+          "id": "RISK-05",
+          "risque": "Profil personnalisable mais tous moteurs chargés",
+          "gravite_initiale": "Élevée",
+          "mesure": "Contrôle bundles/service worker et mesure cache froid."
+        }
+      },
+      {
+        "id": "RISK-06",
+        "exact_equal_word_row": true,
+        "source_word_row": {
+          "id": "RISK-06",
+          "risque": "Memory leak OCCT/Three",
+          "gravite_initiale": "Élevée",
+          "mesure": "Bench fermeture/réouverture + limites/concurrence."
+        },
+        "candidate_row": {
+          "id": "RISK-06",
+          "risque": "Memory leak OCCT/Three",
+          "gravite_initiale": "Élevée",
+          "mesure": "Bench fermeture/réouverture + limites/concurrence."
+        }
+      },
+      {
+        "id": "RISK-07",
+        "exact_equal_word_row": true,
+        "source_word_row": {
+          "id": "RISK-07",
+          "risque": "Extension/MCP contournant les droits",
+          "gravite_initiale": "Critique",
+          "mesure": "Même bus de commandes et validation serveur."
+        },
+        "candidate_row": {
+          "id": "RISK-07",
+          "risque": "Extension/MCP contournant les droits",
+          "gravite_initiale": "Critique",
+          "mesure": "Même bus de commandes et validation serveur."
+        }
+      },
+      {
+        "id": "RISK-08",
+        "exact_equal_word_row": true,
+        "source_word_row": {
+          "id": "RISK-08",
+          "risque": "Migration détruisant références et historique",
+          "gravite_initiale": "Critique",
+          "mesure": "Corpus historique, dry-run, sauvegarde restaurable, rollback."
+        },
+        "candidate_row": {
+          "id": "RISK-08",
+          "risque": "Migration détruisant références et historique",
+          "gravite_initiale": "Critique",
+          "mesure": "Corpus historique, dry-run, sauvegarde restaurable, rollback."
+        }
+      },
+      {
+        "id": "RISK-09",
+        "exact_equal_word_row": true,
+        "source_word_row": {
+          "id": "RISK-09",
+          "risque": "Mesures GPU non transférables",
+          "gravite_initiale": "Moyenne/élevée",
+          "mesure": "Profils appareils réels + séparation CPU/GPU."
+        },
+        "candidate_row": {
+          "id": "RISK-09",
+          "risque": "Mesures GPU non transférables",
+          "gravite_initiale": "Moyenne/élevée",
+          "mesure": "Profils appareils réels + séparation CPU/GPU."
+        }
+      },
+      {
+        "id": "RISK-10",
+        "exact_equal_word_row": true,
+        "source_word_row": {
+          "id": "RISK-10",
+          "risque": "Formats annoncés au-delà de la couverture",
+          "gravite_initiale": "Élevée",
+          "mesure": "Matrice par entité/sens, rapports de perte et tests aller-retour."
+        },
+        "candidate_row": {
+          "id": "RISK-10",
+          "risque": "Formats annoncés au-delà de la couverture",
+          "gravite_initiale": "Élevée",
+          "mesure": "Matrice par entité/sens, rapports de perte et tests aller-retour."
+        }
+      }
+    ]
+  },
+  "navigation_risks": [
+    {
+      "id_propose": "NAV-R01",
+      "risque": "Studio réduit à un raccourci vers l’Atelier, ou servi par ProjectShell",
+      "origine": "Plan §10",
+      "preuves": [
+        "REP-04",
+        "REP-06"
+      ],
+      "recette": "NAV-002, ROUTE-09",
+      "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+    },
+    {
+      "id_propose": "NAV-R02",
+      "risque": "Barre latérale masquée par le mode immersif",
+      "origine": "Plan §10",
+      "preuves": [
+        "REP-05",
+        "PR #142"
+      ],
+      "recette": "NAV-008",
+      "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+    },
+    {
+      "id_propose": "NAV-R03",
+      "risque": "Mauvais projet dans le bandeau ou la commande",
+      "origine": "Plan §10",
+      "preuves": [
+        "REP-02",
+        "REP-03"
+      ],
+      "recette": "NAV-006",
+      "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+    },
+    {
+      "id_propose": "NAV-R04",
+      "risque": "Lien Studio invalide ou refusé redirigé silencieusement",
+      "origine": "Ajout Claude (REP-02)",
+      "preuves": [
+        "REP-02"
+      ],
+      "recette": "NAV-004",
+      "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+    },
+    {
+      "id_propose": "NAV-R05",
+      "risque": "Échec de chargement d’un morceau Studio bloquant la navigation",
+      "origine": "Ajout Claude (REP-02)",
+      "preuves": [
+        "REP-02"
+      ],
+      "recette": "NAV-008",
+      "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+    },
+    {
+      "id_propose": "NAV-R06",
+      "risque": "Accès historiques Atelier cassés par le lot I",
+      "origine": "Ajout Claude (COEX-02)",
+      "preuves": [
+        "COEX-02"
+      ],
+      "recette": "NAV-009",
+      "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+    },
+    {
+      "id_propose": "NAV-R07",
+      "risque": "Frontière Studio ↔ Atelier non contrôlée par la CI",
+      "origine": "Ajout Claude (REP-07)",
+      "preuves": [
+        "REP-07 E3/E7"
+      ],
+      "recette": "règles check-module-deps",
+      "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+    }
+  ],
+  "navigation_count": 7,
+  "risk_mapping_review": "RISK03/07/09 restent source même absents tableauPlan ; ligne worker partiellement RISK06 (fuite mémoire≠résilience) correctement bornée ; NAV-R01..07 propositions distinctes NAV001..009, priorités ADR05 non confirmées.",
+  "key_sources": [
+    {
+      "path": "apps/api/src/lib/atelier-modele.ts",
+      "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "sha256": "36e38ba149fe3512862d5a94fca4e18f1f0a6da4214e201c1047afe51e2948dc",
+      "lines": [
+        1,
+        12
+      ],
+      "exact": "/**\n * Persistance du modèle typé de l'Atelier (`@parcours/atelier-model`, contrat `modele-atelier/1`) dans les tables\n * `atelier_*` (cahier des charges §5.5). Lecture complète ou par niveau, écriture par différentiel (seules les\n * entrées changées sont réécrites, à partir du même instantané différentiel qui sert d'inverse), remplacement\n * complet à l'import. Le modèle en mémoire est l'état sur lequel les réducteurs purs s'exécutent ; la base n'est\n * jamais modifiée par une route hors du service de commandes (R9).\n */\nimport { and, eq, inArray } from \"drizzle-orm\";\nimport type { Calque, Definition, Groupe, ModeleAtelier, Niveau, OccurrenceQuelconque, Probleme, Reference, Relation } from \"@parcours/atelier-model\";\nimport { differentiel, modeleVide } from \"@parcours/atelier-model\";\nimport type { db } from \"../db/client.js\";\nimport { atelierCalques, atelierDefinitions, atelierGroupes, atelierNiveaux, atelierObjets, atelierProblemes, atelierReferences, atelierRelations, atelierSite } from \"../db/schema.js\";"
+    },
+    {
+      "path": "apps/api/src/db/schema.ts",
+      "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "sha256": "2bbdbff5fd05a454f334824a45dcd47b2d0b675e98a71a33780a593b2e956396",
+      "lines": [
+        499,
+        515
+      ],
+      "exact": "export const atelierVariants = pgTable(\"atelier_variants\", {\n  projectId: text(\"project_id\").primaryKey().references(() => projects.id, { onDelete: \"cascade\" }),\n  parentId: text(\"parent_id\").notNull().references(() => projects.id, { onDelete: \"cascade\" }),\n  nom: text(\"nom\").notNull(),\n  /** Révision du tronc au moment de la bifurcation. */\n  forkRevision: integer(\"fork_revision\").notNull(),\n  /** Révision de la variante juste après la bifurcation (son journal propre commence après). */\n  baseRevision: integer(\"base_revision\").notNull(),\n  forkEmpreinte: text(\"fork_empreinte\").notNull(),\n  statut: text(\"statut\").$type<\"ouverte\" | \"fusionnee\">().notNull().default(\"ouverte\"),\n  fusionRevision: integer(\"fusion_revision\"),\n  fusionAt: timestamp(\"fusion_at\", { withTimezone: true }),\n  /** Dernière mise à jour de la variante depuis le tronc (D-136) : révision du tronc rejouée jusque-là. */\n  syncRevision: integer(\"sync_revision\"),\n  authorId: text(\"author_id\").notNull().references(() => users.id, { onDelete: \"cascade\" }),\n  createdAt: timestamp(\"created_at\", { withTimezone: true }).defaultNow().notNull(),\n});"
+    },
+    {
+      "path": "apps/web/src/lib/local-store.ts",
+      "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "sha256": "428682daffde62434e92aec7932c80360af72b1e4af8671f1d023bc05f22d82b",
+      "lines": [
+        58,
+        64
+      ],
+      "exact": "    this.version(1).stores({ outbox: \"id, projectId\", modelCache: \"projectId\" });\n    this.version(2).stores({ outbox: \"id, projectId\", modelCache: \"projectId\", keyValue: \"key\" });\n    this.version(3).stores({ outbox: \"id, projectId\", modelCache: \"projectId\", keyValue: \"key\", lots: \"id, projectId, ordre\" });\n    // Lot 4 (bascule) : la file clé / valeur de l'ancien moteur disparaît ; le cache de modèle change de forme (vidé).\n    this.version(4)\n      .stores({ outbox: null, modelCache: \"projectId\", keyValue: \"key\", lots: \"id, projectId, ordre\" })\n      .upgrade((tx) => tx.table(\"modelCache\").clear());"
+    },
+    {
+      "path": "apps/api/src/db/bascule.ts",
+      "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "sha256": "7c9a89af5edf19944590786d4b0a23a986b898f824ca965a39f29924d5ed0328",
+      "lines": [
+        1,
+        10
+      ],
+      "exact": "/**\n * Migration de bascule (lot 4, cahier §5.5) — appliquée après `init.sql` par `npm run db:migrate` et par le\n * démarrage `MIGRATE_ON_START=1`, idempotente :\n *\n * 1. chaque projet qui n'a encore que l'ancien magasin du moteur V14 (`atelier_store`) reçoit son modèle typé par\n *    l'importeur à sens unique du lot 1 (sans arrondi, rapport d'import au journal) — aucun dessin n'est perdu ;\n * 2. les tables de l'ancien moteur (`atelier_store`, `architectural_objects`, `levels`) sont supprimées.\n *\n * Seule lecture restante du format de clés du moteur V14 dans le serveur.\n */"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "sha": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "sha256": "4976191179bafa59cbc3a24fef9c28c9f50dcc7fa9a0bd8573dc075586659ce3",
+      "lines": [
+        332,
+        349
+      ],
+      "exact": "## 10. Décisions et risques à traiter avant engagement\n\nLes DEC-01 à DEC-18 de REF-02 restent inchangées ; leur affectation aux lots figure en annexe B. Pour l’entrée verticale, ouvrir une décision d’intégration distincte, par exemple ADR-STUDIO-NAV-01. Elle décrit les routes, le contexte, les droits, le comportement mobile/plein écran, la coexistence Atelier et les tests NAV. Ce nouvel identifiant du plan ne remplace aucune DEC existante.\n\n| Risque prioritaire | Mesure dans le plan |\n|---|---|\n| Studio réduit à un raccourci vers l’Atelier | Lot I, routes propres, absence de prérequis Parcours et NAV-002. |\n| Barre latérale supprimée par un ancien mode immersif | Ne pas réutiliser cet effet automatiquement ; NAV-008 et recette mobile. |\n| Mauvais projet dans le bandeau ou la commande | Résolution de contexte partagée ; URL et appartenance vérifiées côté serveur. |\n| Données ou historique dupliqués entre Atelier et Studio | A.1/A.5 et transfert explicite d’autorité lors de R. |\n| Tous les moteurs téléchargés malgré une barre réduite | B.3, vérification imports/bundles/précache et TEST-016. |\n| Snapping ou picking altéré par optimisation | Corpus X et TEST-022/023, comparaison avec oracle. |\n| Worker en échec ou résultat périmé | Lot D, TEST-014/015/037, pas d’engagement anticipé. |\n| Dossier publié différent du contenu approuvé | E.4, manifeste immuable, TEST-030/038. |\n| Format promis au-delà de la couverture | E.6, matrice par sens/version/entité et rapport de pertes. |\n| Perte lors de migration ou changement de cache | R, simulation, TEST-034/036, restauration et gestion des files. |\n\nLa priorité d’un risque est confirmée au cadrage du pilote. Les risques RISK-01 à RISK-10 du référentiel restent le registre source ; le tableau ci-dessus les traduit pour l’intégration et y ajoute les risques de navigation."
+    }
+  ],
+  "links_bound_checks": [
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/ADR-04-REGISTRE-RISQUES.md",
+      "target": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "lines": [
+        332,
+        349
+      ],
+      "bounds_valid": true,
+      "sha256": "4976191179bafa59cbc3a24fef9c28c9f50dcc7fa9a0bd8573dc075586659ce3"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/ADR-04-REGISTRE-RISQUES.md",
+      "target": "apps/web/src/App.tsx",
+      "lines": [
+        86,
+        87
+      ],
+      "bounds_valid": true,
+      "sha256": "681616c2ac297aa57c4d8824b777d6c3792105c3787ca315743958706acab8ee"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-01-QUALIFICATION.md",
+      "target": "apps/api/src/lib/atelier-modele.ts",
+      "lines": [
+        5,
+        6
+      ],
+      "bounds_valid": true,
+      "sha256": "36e38ba149fe3512862d5a94fca4e18f1f0a6da4214e201c1047afe51e2948dc"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-01-QUALIFICATION.md",
+      "target": "apps/api/src/routes/atelier-commands.ts",
+      "lines": [
+        1,
+        12
+      ],
+      "bounds_valid": true,
+      "sha256": "efc43e42757bd328338d240169720c6604cca832882573c0fecd8a5f01c50d32"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-01-QUALIFICATION.md",
+      "target": "apps/api/src/db/schema.ts",
+      "lines": [
+        310,
+        445
+      ],
+      "bounds_valid": true,
+      "sha256": "2bbdbff5fd05a454f334824a45dcd47b2d0b675e98a71a33780a593b2e956396"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-01-QUALIFICATION.md",
+      "target": "apps/api/src/db/schema.ts",
+      "lines": [
+        486,
+        572
+      ],
+      "bounds_valid": true,
+      "sha256": "2bbdbff5fd05a454f334824a45dcd47b2d0b675e98a71a33780a593b2e956396"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-01-QUALIFICATION.md",
+      "target": "apps/api/src/db/schema.ts",
+      "lines": [
+        499,
+        515
+      ],
+      "bounds_valid": true,
+      "sha256": "2bbdbff5fd05a454f334824a45dcd47b2d0b675e98a71a33780a593b2e956396"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-01-QUALIFICATION.md",
+      "target": "apps/api/src/db/schema.ts",
+      "lines": [
+        574,
+        605
+      ],
+      "bounds_valid": true,
+      "sha256": "2bbdbff5fd05a454f334824a45dcd47b2d0b675e98a71a33780a593b2e956396"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-01-QUALIFICATION.md",
+      "target": "apps/web/src/lib/local-store.ts",
+      "lines": [
+        58,
+        64
+      ],
+      "bounds_valid": true,
+      "sha256": "428682daffde62434e92aec7932c80360af72b1e4af8671f1d023bc05f22d82b"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/routes/ProjectShell.tsx",
+      "lines": [
+        54,
+        54
+      ],
+      "bounds_valid": true,
+      "sha256": "36194fa9f13c23f9ec2c086b3630637e00766bb42999f38bc6d8a8ad75ac0108"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/routes/ProjectShell.tsx",
+      "lines": [
+        150,
+        158
+      ],
+      "bounds_valid": true,
+      "sha256": "36194fa9f13c23f9ec2c086b3630637e00766bb42999f38bc6d8a8ad75ac0108"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/routes/ProjectModuleNav.tsx",
+      "lines": [
+        25,
+        25
+      ],
+      "bounds_valid": true,
+      "sha256": "b507359d70e2cf524903a39c639a4f915df194ce97705eac17f9a17e90d1b1ff"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/modules/parcours/ParcoursModule.tsx",
+      "lines": [
+        232,
+        234
+      ],
+      "bounds_valid": true,
+      "sha256": "f708c98dd9c5ce74a0d3f328afeefa33f4948b51d2c398dff81adf4129863795"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/modules/accueil/SearchDialog.tsx",
+      "lines": [
+        21,
+        21
+      ],
+      "bounds_valid": true,
+      "sha256": "34c5ea27ca1badf5003d21a7f5352e0058052fd54e95e4b7888bdf7e979a47de"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/modules/accueil/dossier-state.ts",
+      "lines": [
+        58,
+        58
+      ],
+      "bounds_valid": true,
+      "sha256": "9db232db4b747dbe4e6dbcdd2916a7f4e28e8b26bdb913f6a703e8a38e6310b3"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/modules/accueil/DossierDashboard.tsx",
+      "lines": [
+        121,
+        121
+      ],
+      "bounds_valid": true,
+      "sha256": "bcd4cbd93cca8c159eb885c8fc3f1105a6b3b055da59ca45226313112954a1d8"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/modules/accueil/history-view-model.ts",
+      "lines": [
+        65,
+        65
+      ],
+      "bounds_valid": true,
+      "sha256": "c9fac4425f929e2ae658bd94f01377db7fd88ac50f1b05e76bc11b1f4b0d728e"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/components/NotificationBell.tsx",
+      "lines": [
+        23,
+        23
+      ],
+      "bounds_valid": true,
+      "sha256": "67028105b045b4040a7e8f5786e01cdabd4a2394cd3bee137a05e1625f26c377"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/components/ConflictPanel.tsx",
+      "lines": [
+        180,
+        180
+      ],
+      "bounds_valid": true,
+      "sha256": "d2ac0e5479507cb98e3a8e10d3c15fc55168b8d27ac5c261013cad2672595832"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/modules/collaboration/CollaborationModule.tsx",
+      "lines": [
+        74,
+        74
+      ],
+      "bounds_valid": true,
+      "sha256": "e6fd03629abd5b5d1a4ed39a5f057c8500326280c2213379341b973303a7f24a"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/modules/programmation/ProgrammeLinks.tsx",
+      "lines": [
+        59,
+        59
+      ],
+      "bounds_valid": true,
+      "sha256": "65bd59aa563ecc2ba201c47567c688835e70a00b3fcc857fe77f0a357db6f823"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/routes/ParametresPage.tsx",
+      "lines": [
+        150,
+        150
+      ],
+      "bounds_valid": true,
+      "sha256": "0e9f2c71317a81e622bbef610130cd5d7d6a1ba8c79ff525044109bc8bc29cf5"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/modules/atelier/nouveau/panneaux/Versions.tsx",
+      "lines": [
+        315,
+        315
+      ],
+      "bounds_valid": true,
+      "sha256": "80b192be382c57f1c92a147dbf03e9e2fc067d597b5b447a7838ffaa3ee848ea"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/modules/pilotage/capabilities.ts",
+      "lines": [
+        19,
+        19
+      ],
+      "bounds_valid": true,
+      "sha256": "22a00b1cc973a5c23d5dd40b23fab81f7ceda465132d0b8672268a729c009750"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/api/src/routes/atelier-commands.ts",
+      "lines": [
+        1,
+        12
+      ],
+      "bounds_valid": true,
+      "sha256": "efc43e42757bd328338d240169720c6604cca832882573c0fecd8a5f01c50d32"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/App.tsx",
+      "lines": [
+        86,
+        87
+      ],
+      "bounds_valid": true,
+      "sha256": "681616c2ac297aa57c4d8824b777d6c3792105c3787ca315743958706acab8ee"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "docs/atelier-cahier-des-charges.md",
+      "lines": [
+        118,
+        118
+      ],
+      "bounds_valid": true,
+      "sha256": "65c36a53a35fc732a8ef2d7f29316689ad1539bb562ddc7b381b7043d97c7584"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/api/src/routes/atelier-commands.ts",
+      "lines": [
+        8,
+        8
+      ],
+      "bounds_valid": true,
+      "sha256": "efc43e42757bd328338d240169720c6604cca832882573c0fecd8a5f01c50d32"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/lib/local-store.ts",
+      "lines": [
+        58,
+        64
+      ],
+      "bounds_valid": true,
+      "sha256": "428682daffde62434e92aec7932c80360af72b1e4af8671f1d023bc05f22d82b"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/routes/ProjectShell.tsx",
+      "lines": [
+        155,
+        155
+      ],
+      "bounds_valid": true,
+      "sha256": "36194fa9f13c23f9ec2c086b3630637e00766bb42999f38bc6d8a8ad75ac0108"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/App.tsx",
+      "lines": [
+        86,
+        87
+      ],
+      "bounds_valid": true,
+      "sha256": "681616c2ac297aa57c4d8824b777d6c3792105c3787ca315743958706acab8ee"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "packages/atelier-model/src/sync.ts",
+      "lines": [
+        1,
+        5
+      ],
+      "bounds_valid": true,
+      "sha256": "9d131871ae178996c075ddcd7fc63a399cfa35c117cb506694221fee9810dd56"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "docs/atelier/decisions.md",
+      "lines": [
+        140,
+        140
+      ],
+      "bounds_valid": true,
+      "sha256": "91bd4cd64d0a67d1fdb3e6acd6582703e88024fabd5b3b1f333f79a8094cad26"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/api/src/db/bascule.ts",
+      "lines": [
+        1,
+        10
+      ],
+      "bounds_valid": true,
+      "sha256": "7c9a89af5edf19944590786d4b0a23a986b898f824ca965a39f29924d5ed0328"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/web/src/routes/ProjectShell.tsx",
+      "lines": [
+        97,
+        99
+      ],
+      "bounds_valid": true,
+      "sha256": "36194fa9f13c23f9ec2c086b3630637e00766bb42999f38bc6d8a8ad75ac0108"
+    },
+    {
+      "from": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+      "target": "apps/api/src/db/bascule.ts",
+      "lines": [
+        1,
+        10
+      ],
+      "bounds_valid": true,
+      "sha256": "7c9a89af5edf19944590786d4b0a23a986b898f824ca965a39f29924d5ed0328"
+    }
+  ],
+  "link_bounds_errors": [],
+  "items": [
+    {
+      "id": "ADR-04",
+      "proposed_status_in_delta": "Vérifié",
+      "A5_verdict": "Recevable Vérifié documentaire proposé, pas runtime/acceptation",
+      "nature": "Conserver10risques exacts et rattacher7NAVrisques proposés",
+      "source_condition": "Conserver RISK-01 à RISK-10 du référentiel comme registre source et rattacher les risques de navigation supplémentaires.",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "decision_question": "Questions Claude déjà ouvertes #166, non dupliquées",
+      "limit": "COEX-01 reste qualification22groupes, pas exhaustive par fonction ; COEX03 autorité client/périmètre nécessite contrôle serveur, readOnlyUI ne prouve pas transfert ou sécurité ; COEX06 restauration réelle non exécutée."
+    },
+    {
+      "id": "COEX-02",
+      "proposed_status_in_delta": "Vérifié",
+      "A5_verdict": "Recevable Vérifié documentaire proposé, pas runtime/acceptation",
+      "nature": "Prévoir contrat de non-suppression, inventaire14familles",
+      "source_condition": "Prévoir l’ajout de Studio sans suppression immédiate des accès historiques.",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "decision_question": "Questions Claude déjà ouvertes #166, non dupliquées",
+      "limit": "COEX-01 reste qualification22groupes, pas exhaustive par fonction ; COEX03 autorité client/périmètre nécessite contrôle serveur, readOnlyUI ne prouve pas transfert ou sécurité ; COEX06 restauration réelle non exécutée."
+    },
+    {
+      "id": "COEX-01",
+      "proposed_status_in_delta": "En cours",
+      "A5_verdict": "En cours recevable : choix/ratification encore demandé, pas décision acquise",
+      "nature": "Recommandation/dossier à arbitrer",
+      "source_condition": "Qualifier chaque composant Atelier : conserver, compléter, corriger, isoler, remplacer ou retirer, avec preuve et décision.",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "decision_question": "Questions Claude déjà ouvertes #166, non dupliquées",
+      "limit": "COEX-01 reste qualification22groupes, pas exhaustive par fonction ; COEX03 autorité client/périmètre nécessite contrôle serveur, readOnlyUI ne prouve pas transfert ou sécurité ; COEX06 restauration réelle non exécutée."
+    },
+    {
+      "id": "COEX-03",
+      "proposed_status_in_delta": "En cours",
+      "A5_verdict": "En cours recevable : choix/ratification encore demandé, pas décision acquise",
+      "nature": "Recommandation/dossier à arbitrer",
+      "source_condition": "Choisir un propriétaire d’écriture unique pour chaque jeu de données pendant la coexistence.",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "decision_question": "Questions Claude déjà ouvertes #166, non dupliquées",
+      "limit": "COEX-01 reste qualification22groupes, pas exhaustive par fonction ; COEX03 autorité client/périmètre nécessite contrôle serveur, readOnlyUI ne prouve pas transfert ou sécurité ; COEX06 restauration réelle non exécutée."
+    },
+    {
+      "id": "COEX-04",
+      "proposed_status_in_delta": "En cours",
+      "A5_verdict": "En cours recevable : choix/ratification encore demandé, pas décision acquise",
+      "nature": "Recommandation/dossier à arbitrer",
+      "source_condition": "Décider, pour les études migrées, une redirection contrôlée ou un accès historique en lecture seule.",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "decision_question": "Questions Claude déjà ouvertes #166, non dupliquées",
+      "limit": "COEX-01 reste qualification22groupes, pas exhaustive par fonction ; COEX03 autorité client/périmètre nécessite contrôle serveur, readOnlyUI ne prouve pas transfert ou sécurité ; COEX06 restauration réelle non exécutée."
+    },
+    {
+      "id": "COEX-05",
+      "proposed_status_in_delta": "En cours",
+      "A5_verdict": "En cours recevable : choix/ratification encore demandé, pas décision acquise",
+      "nature": "Recommandation/dossier à arbitrer",
+      "source_condition": "Interdire une synchronisation artisanale entre deux bases métier concurrentes.",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "decision_question": "Questions Claude déjà ouvertes #166, non dupliquées",
+      "limit": "COEX-01 reste qualification22groupes, pas exhaustive par fonction ; COEX03 autorité client/périmètre nécessite contrôle serveur, readOnlyUI ne prouve pas transfert ou sécurité ; COEX06 restauration réelle non exécutée."
+    },
+    {
+      "id": "COEX-06",
+      "proposed_status_in_delta": "En cours",
+      "A5_verdict": "En cours recevable : choix/ratification encore demandé, pas décision acquise",
+      "nature": "Recommandation/dossier à arbitrer",
+      "source_condition": "Conditionner tout retrait définitif à la comparaison avant/après, à une restauration testée et à l’acceptation explicite.",
+      "case_source_modifiee": false,
+      "acceptation_metier": false,
+      "decision_question": "Questions Claude déjà ouvertes #166, non dupliquées",
+      "limit": "COEX-01 reste qualification22groupes, pas exhaustive par fonction ; COEX03 autorité client/périmètre nécessite contrôle serveur, readOnlyUI ne prouve pas transfert ou sécurité ; COEX06 restauration réelle non exécutée."
+    }
+  ],
+  "delta_review": {
+    "ids_exact": true,
+    "disjoint_REP": true,
+    "baseline_hash_matches": true,
+    "two_verified_five_in_progress": true,
+    "accepted_baseline_preserved": [
+      "CAD-DEC-01",
+      "G0-03"
+    ],
+    "helper_owner": "A3 séparément, aucun appel --ecrire/A5"
+  },
+  "tests": {
+    "owner": "Claude Code distinct Codex",
+    "reported_by_parent": 26,
+    "README_statement": "unittest discover -p test_*.py réussi, dont12testsoutil ; total26=14existants+12outil attribué Claude",
+    "raw_logs_provided": false,
+    "independent_execution_A5": false,
+    "CI_observed_by_A5": false,
+    "limits": "Essai chaîne delta fait parClaude sur copietemporaire, jamais preuve registre réel ;198testsREP non dupliqués, aucune preuve NAV009/runtime/business."
+  },
+  "reservations_factuelles": [
+    {
+      "id": "COEX-PORTÉE-H",
+      "severity": "Précision documentaire",
+      "finding": "H01..H14 sont14familles, pas14émetteurs distincts ; H12 capacitémetadata et H14 forme réutilisée. Avant NAV009 nommer consommateurs/contexte/droits, aucun échec runtime déduit."
+    },
+    {
+      "id": "COEX-CLIENT-AUTORITE",
+      "severity": "Condition futur lot",
+      "finding": "readOnly/protectedReferenceUI existent mais ne prouvent aucun contrôle serveur transfertautorité Studio. Migration/lecturehistorique reste contrat candidat ; décisionsCOEX03/04 requises."
+    },
+    {
+      "id": "ACCEPTES-BASELINE",
+      "severity": "Précision de compteur",
+      "finding": "RienAccepté doit qualifier cette remise seulement : conserverCAD-DEC-01/G0-03 ; siREP8+COEX2intégrés,44=42VérifiéDoc+2AcceptéG0, PDEV N/D."
+    }
+  ],
+  "verdict": "ADR04 etCOEX02 recevables comme conditions documentaires ; cinqautresEn cours, sansacceptation/décision implicite. Réserves bornées àjoindre, aucune correctionapplicative requise par examen.",
+  "execution": "Gitshow/parsing/hash/WordXML seulement ; aucun test/helper/SQL/API/service/scan/admin/fusion, aucun registre ou code modifié."
+}

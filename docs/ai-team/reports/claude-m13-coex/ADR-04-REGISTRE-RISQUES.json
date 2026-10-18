@@ -1,0 +1,182 @@
+{
+  "tache": "ADR-04",
+  "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "source": {
+    "document": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+    "blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+    "section": "21.3 Principaux risques de livraison",
+    "methode": "extraction des paragraphes w:t du Word, comparaison mot pour mot automatique avec le tableau Markdown"
+  },
+  "registre_source": [
+    {
+      "id": "RISK-01",
+      "risque": "Double autorité 2D/3D",
+      "gravite_initiale": "Critique",
+      "mesure": "Protocole d’associations, objets canoniques, tests 001–010."
+    },
+    {
+      "id": "RISK-02",
+      "risque": "Snapping différent après indexation",
+      "gravite_initiale": "Critique",
+      "mesure": "Oracle de géométrie + tests densité et ambiguïtés."
+    },
+    {
+      "id": "RISK-03",
+      "risque": "Commande rejouée ou conflit perdu",
+      "gravite_initiale": "Critique",
+      "mesure": "Idempotence, transaction et E2E concurrent."
+    },
+    {
+      "id": "RISK-04",
+      "risque": "Publication sur mauvais contenu",
+      "gravite_initiale": "Critique",
+      "mesure": "Manifeste immuable, empreintes, garde d’approbation."
+    },
+    {
+      "id": "RISK-05",
+      "risque": "Profil personnalisable mais tous moteurs chargés",
+      "gravite_initiale": "Élevée",
+      "mesure": "Contrôle bundles/service worker et mesure cache froid."
+    },
+    {
+      "id": "RISK-06",
+      "risque": "Memory leak OCCT/Three",
+      "gravite_initiale": "Élevée",
+      "mesure": "Bench fermeture/réouverture + limites/concurrence."
+    },
+    {
+      "id": "RISK-07",
+      "risque": "Extension/MCP contournant les droits",
+      "gravite_initiale": "Critique",
+      "mesure": "Même bus de commandes et validation serveur."
+    },
+    {
+      "id": "RISK-08",
+      "risque": "Migration détruisant références et historique",
+      "gravite_initiale": "Critique",
+      "mesure": "Corpus historique, dry-run, sauvegarde restaurable, rollback."
+    },
+    {
+      "id": "RISK-09",
+      "risque": "Mesures GPU non transférables",
+      "gravite_initiale": "Moyenne/élevée",
+      "mesure": "Profils appareils réels + séparation CPU/GPU."
+    },
+    {
+      "id": "RISK-10",
+      "risque": "Formats annoncés au-delà de la couverture",
+      "gravite_initiale": "Élevée",
+      "mesure": "Matrice par entité/sens, rapports de perte et tests aller-retour."
+    }
+  ],
+  "correspondance_plan_10": {
+    "NAV-R01": null,
+    "NAV-R02": null,
+    "NAV-R03": [
+      "RISK-07 (partiel)"
+    ],
+    "Données ou historique dupliqués": [
+      "RISK-01",
+      "RISK-08"
+    ],
+    "Tous les moteurs téléchargés": [
+      "RISK-05"
+    ],
+    "Snapping ou picking altéré": [
+      "RISK-02"
+    ],
+    "Worker en échec ou résultat périmé": [
+      "RISK-06 (partiel)"
+    ],
+    "Dossier publié différent": [
+      "RISK-04"
+    ],
+    "Format promis au-delà": [
+      "RISK-10"
+    ],
+    "Perte lors de migration ou cache": [
+      "RISK-08"
+    ]
+  },
+  "risques_source_sans_ligne_plan": [
+    "RISK-03",
+    "RISK-07",
+    "RISK-09"
+  ],
+  "risques_navigation_rattaches": [
+    {
+      "id_propose": "NAV-R01",
+      "risque": "Studio réduit à un raccourci vers l’Atelier, ou servi par ProjectShell",
+      "origine": "Plan §10",
+      "preuves": [
+        "REP-04",
+        "REP-06"
+      ],
+      "recette": "NAV-002, ROUTE-09",
+      "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+    },
+    {
+      "id_propose": "NAV-R02",
+      "risque": "Barre latérale masquée par le mode immersif",
+      "origine": "Plan §10",
+      "preuves": [
+        "REP-05",
+        "PR #142"
+      ],
+      "recette": "NAV-008",
+      "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+    },
+    {
+      "id_propose": "NAV-R03",
+      "risque": "Mauvais projet dans le bandeau ou la commande",
+      "origine": "Plan §10",
+      "preuves": [
+        "REP-02",
+        "REP-03"
+      ],
+      "recette": "NAV-006",
+      "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+    },
+    {
+      "id_propose": "NAV-R04",
+      "risque": "Lien Studio invalide ou refusé redirigé silencieusement",
+      "origine": "Ajout Claude (REP-02)",
+      "preuves": [
+        "REP-02"
+      ],
+      "recette": "NAV-004",
+      "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+    },
+    {
+      "id_propose": "NAV-R05",
+      "risque": "Échec de chargement d’un morceau Studio bloquant la navigation",
+      "origine": "Ajout Claude (REP-02)",
+      "preuves": [
+        "REP-02"
+      ],
+      "recette": "NAV-008",
+      "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+    },
+    {
+      "id_propose": "NAV-R06",
+      "risque": "Accès historiques Atelier cassés par le lot I",
+      "origine": "Ajout Claude (COEX-02)",
+      "preuves": [
+        "COEX-02"
+      ],
+      "recette": "NAV-009",
+      "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+    },
+    {
+      "id_propose": "NAV-R07",
+      "risque": "Frontière Studio ↔ Atelier non contrôlée par la CI",
+      "origine": "Ajout Claude (REP-07)",
+      "preuves": [
+        "REP-07 E3/E7"
+      ],
+      "recette": "règles check-module-deps",
+      "priorite": "à confirmer au cadrage du pilote (ADR-05)"
+    }
+  ],
+  "limite": "Identifiants NAV-R0n proposés, non adoptés ; aucune priorité confirmée ; aucun test exécuté."
+}

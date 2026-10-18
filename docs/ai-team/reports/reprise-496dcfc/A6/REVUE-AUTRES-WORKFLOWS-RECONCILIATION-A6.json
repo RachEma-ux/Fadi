@@ -1,0 +1,394 @@
+{
+  "pass": true,
+  "method": "Lecture des index : git ls-files/show :path/rev-parse/diff --cached ; aucun script importé/exécuté, aucun réseau/service/DB",
+  "results": [
+    {
+      "PR": 169,
+      "HEAD": "9b34dca9de8c3d1432d6f19315e4f0049d8bfd01",
+      "parents": "a15d65044ca4454bf3159f4155e51465b2a70a2c 817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "index_paths": 1771,
+      "workflows": [
+        {
+          "path": ".github/workflows/audit-drawall.yml",
+          "index_blob": "ccfb63fa8dbaa05a048f30a1e1bc58c17fba6475",
+          "main817_blob": "ccfb63fa8dbaa05a048f30a1e1bc58c17fba6475",
+          "old_head_blob": "ccfb63fa8dbaa05a048f30a1e1bc58c17fba6475",
+          "identical_main817": true,
+          "sha256": "3d30cf39f4180f79ca131db072b1c3fad2624009f6f3e737f3908ad96fb6448a",
+          "triggers": [
+            "pull_request(paths)",
+            "workflow_dispatch"
+          ],
+          "PR_update_eligible": false,
+          "jobs": [
+            "inventory"
+          ],
+          "services": false,
+          "app_or_DB_operations": false,
+          "actions": [
+            "actions/checkout@v4",
+            "actions/setup-node@v4",
+            "actions/upload-artifact@v4"
+          ],
+          "forbidden_auto_triggers": false
+        },
+        {
+          "path": ".github/workflows/builder-deploy.yml",
+          "index_blob": "3dbb71528143744a7a53054a0ff0c406a62f8c7d",
+          "main817_blob": "3dbb71528143744a7a53054a0ff0c406a62f8c7d",
+          "old_head_blob": "3dbb71528143744a7a53054a0ff0c406a62f8c7d",
+          "identical_main817": true,
+          "sha256": "44f7e4938a65c0bd12c4320f1de98fb6da0f07a9247faac9b450670f6a420b89",
+          "triggers": [
+            "workflow_dispatch"
+          ],
+          "PR_update_eligible": false,
+          "jobs": [
+            "deploy"
+          ],
+          "services": true,
+          "app_or_DB_operations": true,
+          "actions": [
+            "actions/checkout@v4",
+            "actions/setup-node@v4",
+            "actions/upload-artifact@v4"
+          ],
+          "forbidden_auto_triggers": false
+        },
+        {
+          "path": ".github/workflows/codex-missions.yml",
+          "index_blob": "ecc7e3a1b5a9c84d5db30e356d8662185b48d760",
+          "main817_blob": "ecc7e3a1b5a9c84d5db30e356d8662185b48d760",
+          "old_head_blob": null,
+          "identical_main817": true,
+          "sha256": "a9001f9777603d031d0f0ff82195f0f3bbb00e281989a0e3302e3ef5b4965143",
+          "triggers": [
+            "pull_request",
+            "push(main)",
+            "workflow_dispatch"
+          ],
+          "PR_update_eligible": true,
+          "jobs": [
+            "mission-coverage"
+          ],
+          "services": false,
+          "app_or_DB_operations": false,
+          "actions": [
+            "actions/checkout@v4",
+            "actions/upload-artifact@v4"
+          ],
+          "forbidden_auto_triggers": false
+        },
+        {
+          "path": ".github/workflows/continuity.yml",
+          "index_blob": "5c6bc7002de47f6b39be0caa88688d34e1b6ca14",
+          "main817_blob": "5c6bc7002de47f6b39be0caa88688d34e1b6ca14",
+          "old_head_blob": "5c6bc7002de47f6b39be0caa88688d34e1b6ca14",
+          "identical_main817": true,
+          "sha256": "b9386c3801a6067412ec6f9ff8c60ff9adc5967dabc30220d8a3515593f3e721",
+          "triggers": [
+            "pull_request",
+            "push(main)",
+            "workflow_dispatch"
+          ],
+          "PR_update_eligible": true,
+          "jobs": [
+            "continuity-check"
+          ],
+          "services": false,
+          "app_or_DB_operations": false,
+          "actions": [
+            "actions/checkout@v4",
+            "actions/setup-node@v4"
+          ],
+          "forbidden_auto_triggers": false
+        },
+        {
+          "path": ".github/workflows/fadi-isolation.yml",
+          "index_blob": "3c70238dbfe4488b1d8d3ff39c3cadcb15f0e4b6",
+          "main817_blob": "3c70238dbfe4488b1d8d3ff39c3cadcb15f0e4b6",
+          "old_head_blob": "3c70238dbfe4488b1d8d3ff39c3cadcb15f0e4b6",
+          "identical_main817": true,
+          "sha256": "9ebe99c16b94a3d5e0f67c9f8df645673a97215f7445f05d106e0f29c4955202",
+          "triggers": [
+            "pull_request",
+            "push(main)",
+            "workflow_dispatch"
+          ],
+          "PR_update_eligible": true,
+          "jobs": [
+            "no-foreign-app-reference"
+          ],
+          "services": false,
+          "app_or_DB_operations": false,
+          "actions": [
+            "actions/checkout@v4",
+            "actions/setup-node@v4"
+          ],
+          "forbidden_auto_triggers": false
+        }
+      ],
+      "transitive_scripts": [
+        {
+          "path": "scripts/check-continuity.test.mjs",
+          "index_blob": "f4ceac4a25e1e7cbf80a488ef15981a9f0d61d01",
+          "main817_blob": "f4ceac4a25e1e7cbf80a488ef15981a9f0d61d01",
+          "identical_main817": true
+        },
+        {
+          "path": "scripts/check-continuity.mjs",
+          "index_blob": "67b106aab65e818e1f4c5815ff9163a23c9638c8",
+          "main817_blob": "67b106aab65e818e1f4c5815ff9163a23c9638c8",
+          "identical_main817": true
+        },
+        {
+          "path": "scripts/continuity.mjs",
+          "index_blob": "99657e32137ee6ac962e17db957673ad163e5837",
+          "main817_blob": "99657e32137ee6ac962e17db957673ad163e5837",
+          "identical_main817": true
+        },
+        {
+          "path": "scripts/check-fadi-isolation.mjs",
+          "index_blob": "ea1a60b3a1d21abf0ba70a8face7ec1f43489230",
+          "main817_blob": "ea1a60b3a1d21abf0ba70a8face7ec1f43489230",
+          "identical_main817": true
+        },
+        {
+          "path": "scripts/audit-drawall-in-fadi.mjs",
+          "index_blob": "0b6e7eff312c610c7a26d111108a177513e475bb",
+          "main817_blob": "0b6e7eff312c610c7a26d111108a177513e475bb",
+          "identical_main817": true
+        },
+        {
+          "path": "docs/ai-team/test_check_missions.py",
+          "index_blob": "16f1b0d813f0500178783872a688a7e7c0f11839",
+          "main817_blob": "16f1b0d813f0500178783872a688a7e7c0f11839",
+          "identical_main817": true
+        },
+        {
+          "path": "docs/ai-team/check_missions.py",
+          "index_blob": "7dfe4df3a93e216095217c42571e7789f6261ae9",
+          "main817_blob": "7dfe4df3a93e216095217c42571e7789f6261ae9",
+          "identical_main817": true
+        }
+      ],
+      "diff_paths_vs_main817": [
+        ".github/workflows/ci.yml",
+        "README.md",
+        "apps/api/.env.test.example",
+        "apps/api/README.md",
+        "apps/api/package.json",
+        "apps/api/src/app.test.ts",
+        "apps/api/src/db/client.ts",
+        "apps/api/src/routes/atelier-automatisation-p2.test.ts",
+        "apps/api/src/routes/atelier-bois-tolerie.test.ts",
+        "apps/api/src/routes/atelier-commands.test.ts",
+        "apps/api/src/routes/atelier-coordination.test.ts",
+        "apps/api/src/routes/atelier-documentation.test.ts",
+        "apps/api/src/routes/atelier-exact.test.ts",
+        "apps/api/src/routes/atelier-mecanique.test.ts",
+        "apps/api/src/routes/atelier-planches.test.ts",
+        "apps/api/src/routes/atelier-reseaux.test.ts",
+        "apps/api/src/routes/atelier-structure.test.ts",
+        "apps/api/src/routes/history.test.ts",
+        "apps/api/src/testing/README.md",
+        "apps/api/src/testing/approved-test-authorities.ts",
+        "apps/api/src/testing/client-integration.test.ts",
+        "apps/api/src/testing/guarded-test-pool.test.ts",
+        "apps/api/src/testing/guarded-test-pool.ts",
+        "apps/api/src/testing/test-database.ts",
+        "apps/api/src/testing/test-target.review.test.ts",
+        "apps/api/src/testing/test-target.ts",
+        "apps/api/vitest.guard.config.ts",
+        "apps/api/vitest.guard.setup.ts",
+        "apps/api/vitest.setup.ts",
+        "package.json"
+      ]
+    },
+    {
+      "PR": 171,
+      "HEAD": "25bca793c483bcb99c5254a86efabbd1f8b29015",
+      "parents": "5e0285d37f23c7c539502664036f0a2ff0986409 817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+      "index_paths": 1762,
+      "workflows": [
+        {
+          "path": ".github/workflows/audit-drawall.yml",
+          "index_blob": "ccfb63fa8dbaa05a048f30a1e1bc58c17fba6475",
+          "main817_blob": "ccfb63fa8dbaa05a048f30a1e1bc58c17fba6475",
+          "old_head_blob": "ccfb63fa8dbaa05a048f30a1e1bc58c17fba6475",
+          "identical_main817": true,
+          "sha256": "3d30cf39f4180f79ca131db072b1c3fad2624009f6f3e737f3908ad96fb6448a",
+          "triggers": [
+            "pull_request(paths)",
+            "workflow_dispatch"
+          ],
+          "PR_update_eligible": false,
+          "jobs": [
+            "inventory"
+          ],
+          "services": false,
+          "app_or_DB_operations": false,
+          "actions": [
+            "actions/checkout@v4",
+            "actions/setup-node@v4",
+            "actions/upload-artifact@v4"
+          ],
+          "forbidden_auto_triggers": false
+        },
+        {
+          "path": ".github/workflows/builder-deploy.yml",
+          "index_blob": "3dbb71528143744a7a53054a0ff0c406a62f8c7d",
+          "main817_blob": "3dbb71528143744a7a53054a0ff0c406a62f8c7d",
+          "old_head_blob": "3dbb71528143744a7a53054a0ff0c406a62f8c7d",
+          "identical_main817": true,
+          "sha256": "44f7e4938a65c0bd12c4320f1de98fb6da0f07a9247faac9b450670f6a420b89",
+          "triggers": [
+            "workflow_dispatch"
+          ],
+          "PR_update_eligible": false,
+          "jobs": [
+            "deploy"
+          ],
+          "services": true,
+          "app_or_DB_operations": true,
+          "actions": [
+            "actions/checkout@v4",
+            "actions/setup-node@v4",
+            "actions/upload-artifact@v4"
+          ],
+          "forbidden_auto_triggers": false
+        },
+        {
+          "path": ".github/workflows/codex-missions.yml",
+          "index_blob": "ecc7e3a1b5a9c84d5db30e356d8662185b48d760",
+          "main817_blob": "ecc7e3a1b5a9c84d5db30e356d8662185b48d760",
+          "old_head_blob": null,
+          "identical_main817": true,
+          "sha256": "a9001f9777603d031d0f0ff82195f0f3bbb00e281989a0e3302e3ef5b4965143",
+          "triggers": [
+            "pull_request",
+            "push(main)",
+            "workflow_dispatch"
+          ],
+          "PR_update_eligible": true,
+          "jobs": [
+            "mission-coverage"
+          ],
+          "services": false,
+          "app_or_DB_operations": false,
+          "actions": [
+            "actions/checkout@v4",
+            "actions/upload-artifact@v4"
+          ],
+          "forbidden_auto_triggers": false
+        },
+        {
+          "path": ".github/workflows/continuity.yml",
+          "index_blob": "5c6bc7002de47f6b39be0caa88688d34e1b6ca14",
+          "main817_blob": "5c6bc7002de47f6b39be0caa88688d34e1b6ca14",
+          "old_head_blob": "5c6bc7002de47f6b39be0caa88688d34e1b6ca14",
+          "identical_main817": true,
+          "sha256": "b9386c3801a6067412ec6f9ff8c60ff9adc5967dabc30220d8a3515593f3e721",
+          "triggers": [
+            "pull_request",
+            "push(main)",
+            "workflow_dispatch"
+          ],
+          "PR_update_eligible": true,
+          "jobs": [
+            "continuity-check"
+          ],
+          "services": false,
+          "app_or_DB_operations": false,
+          "actions": [
+            "actions/checkout@v4",
+            "actions/setup-node@v4"
+          ],
+          "forbidden_auto_triggers": false
+        },
+        {
+          "path": ".github/workflows/fadi-isolation.yml",
+          "index_blob": "3c70238dbfe4488b1d8d3ff39c3cadcb15f0e4b6",
+          "main817_blob": "3c70238dbfe4488b1d8d3ff39c3cadcb15f0e4b6",
+          "old_head_blob": "3c70238dbfe4488b1d8d3ff39c3cadcb15f0e4b6",
+          "identical_main817": true,
+          "sha256": "9ebe99c16b94a3d5e0f67c9f8df645673a97215f7445f05d106e0f29c4955202",
+          "triggers": [
+            "pull_request",
+            "push(main)",
+            "workflow_dispatch"
+          ],
+          "PR_update_eligible": true,
+          "jobs": [
+            "no-foreign-app-reference"
+          ],
+          "services": false,
+          "app_or_DB_operations": false,
+          "actions": [
+            "actions/checkout@v4",
+            "actions/setup-node@v4"
+          ],
+          "forbidden_auto_triggers": false
+        }
+      ],
+      "transitive_scripts": [
+        {
+          "path": "scripts/check-continuity.test.mjs",
+          "index_blob": "f4ceac4a25e1e7cbf80a488ef15981a9f0d61d01",
+          "main817_blob": "f4ceac4a25e1e7cbf80a488ef15981a9f0d61d01",
+          "identical_main817": true
+        },
+        {
+          "path": "scripts/check-continuity.mjs",
+          "index_blob": "67b106aab65e818e1f4c5815ff9163a23c9638c8",
+          "main817_blob": "67b106aab65e818e1f4c5815ff9163a23c9638c8",
+          "identical_main817": true
+        },
+        {
+          "path": "scripts/continuity.mjs",
+          "index_blob": "99657e32137ee6ac962e17db957673ad163e5837",
+          "main817_blob": "99657e32137ee6ac962e17db957673ad163e5837",
+          "identical_main817": true
+        },
+        {
+          "path": "scripts/check-fadi-isolation.mjs",
+          "index_blob": "ea1a60b3a1d21abf0ba70a8face7ec1f43489230",
+          "main817_blob": "ea1a60b3a1d21abf0ba70a8face7ec1f43489230",
+          "identical_main817": true
+        },
+        {
+          "path": "scripts/audit-drawall-in-fadi.mjs",
+          "index_blob": "0b6e7eff312c610c7a26d111108a177513e475bb",
+          "main817_blob": "0b6e7eff312c610c7a26d111108a177513e475bb",
+          "identical_main817": true
+        },
+        {
+          "path": "docs/ai-team/test_check_missions.py",
+          "index_blob": "16f1b0d813f0500178783872a688a7e7c0f11839",
+          "main817_blob": "16f1b0d813f0500178783872a688a7e7c0f11839",
+          "identical_main817": true
+        },
+        {
+          "path": "docs/ai-team/check_missions.py",
+          "index_blob": "7dfe4df3a93e216095217c42571e7789f6261ae9",
+          "main817_blob": "7dfe4df3a93e216095217c42571e7789f6261ae9",
+          "identical_main817": true
+        }
+      ],
+      "diff_paths_vs_main817": [
+        ".github/workflows/ci.yml",
+        "packages/atelier-model/src/commandes/classification-conservation.test.ts",
+        "packages/atelier-model/src/commandes/commandes.test.ts",
+        "packages/atelier-model/src/commandes/organisation.ts"
+      ]
+    }
+  ],
+  "behaviors": {
+    "codex-missions": "Tests Python documentaires stdlib/tempfile ; export RUNNER_TEMP/upload artifact. Aucun npm/application/DB.",
+    "continuity": "node:test avec fixtures temporaires supprimées, validation docs ; import continuity.mjs ne lance pas CLI init. git fetch origin BASE_REF entre guillemets = réseau GitHub ; execFileSync git diff sans shell.",
+    "fadi-isolation": "node --check et lecture fs/path/url ; aucun import applicatif/driver.",
+    "audit-drawall": "Inventaire local Fadi, écriture rapport JSON et upload ; aucun changement DrawAll. Filtre chemins vérifié sur diff actuel.",
+    "builder-deploy": "Dispatch manuel SEULEMENT, non éligible à mise à jour PR/push branche. Contient réellement PostgreSQL/migration/npm test/TRUNCATE/API/tunnel public/permission deployments write : aucune exécution autorisée."
+  },
+  "limits": "Actions checkout/setup/upload et git fetch impliquent réseau GitHub ; tests documentaires modifient leurs fixtures temporaires, export écrit RUNNER_TEMP. Pas zéro IO/réseau mais aucun DB/API/migration dans autres workflows éligibles. Aucun workflow_run/repository_dispatch/pull_request_target. A3 a déjà committé localement : HEAD et parents actuels enregistrés ; index lu sans supposer MERGE_HEAD présent. CI ci.yml revue séparément ; aucune preuve CI futur SHA ni accord fusion main/admin."
+}
