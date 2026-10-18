@@ -22,7 +22,7 @@ jobs:
           node-version: 22
       - run: npm ci --no-audit --no-fund
       - name: Régressions et témoins des garde-fous
-        run: node --test scripts/architecture-guards*.test.mjs
+        run: node --test scripts/architecture-guards*.test.mjs scripts/check-module-deps.test.mjs
       - name: Frontières et cycles sur le dépôt réel
         run: node scripts/check-module-deps.mjs
       - name: Isolation nominale sur le dépôt réel

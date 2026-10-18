@@ -13,6 +13,23 @@ const inside = (base, file) => file === base || file.startsWith(base + path.sep)
 const bare = (s) => s.startsWith('node:') ? 'node:' : s.startsWith('@') ? s.split('/').slice(0, 2).join('/') : s.split('/')[0];
 const literal = (n) => n && (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) ? n.text : null;
 
+/**
+ * Frontières Studio ↔ Atelier (ADR-STUDIO-NAV-01, #173), sur le chemin RÉSOLU de chaque import de `apps/web/src` :
+ * `modules/studio/` n'importe ni l'Atelier, ni le Parcours, ni `routes/ProjectShell`, ni le mode immersif
+ * (`lib/use-immersive`) ; l'Atelier n'importe pas Studio. Les paquets purs (`@parcours/*`) restent la voie commune.
+ */
+const FRONTIERES_WEB = [
+  {
+    de: 'modules/studio',
+    interdits: ['modules/atelier', 'modules/parcours', 'routes/ProjectShell', 'lib/use-immersive'],
+    motif: "Studio n'importe ni l'Atelier, ni le Parcours, ni ProjectShell, ni le mode immersif (ADR-STUDIO-NAV-01)",
+  },
+  { de: 'modules/atelier', interdits: ['modules/studio'], motif: "l'Atelier ne dépend pas de Studio (ADR-STUDIO-NAV-01)" },
+];
+// Interfaces publiques de l'Atelier ouvertes à Studio : aucune n'est décidée ; une exception s'ajoute ici avec sa décision.
+const INTERFACES_PUBLIQUES = [];
+const sous = (chemin, prefixe) => chemin === prefixe || chemin.startsWith(`${prefixe}/`) || chemin.startsWith(`${prefixe}.`);
+
 export function checkModuleDependencies(root = DEFAULT_ROOT) {
   root = fs.realpathSync(root);
   const errors = [], units = [], optionsCache = new Map(), graph = new Map();
@@ -109,6 +126,17 @@ export function checkModuleDependencies(root = DEFAULT_ROOT) {
       }
       const a = ontology(file), b = ontology(target);
       if (a && b && a !== b) fail(file, 'ONTOLOGY_BOUNDARY', `${a} -> ${b} (${spec})`);
+      const webSrc = path.join(root, 'apps', 'web', 'src');
+      if (inside(webSrc, file) && inside(webSrc, target)) {
+        const depuis = path.relative(webSrc, file).split(path.sep).join('/');
+        const cible = path.relative(webSrc, target).split(path.sep).join('/');
+        if (!INTERFACES_PUBLIQUES.some((i) => sous(cible, i))) {
+          for (const regle of FRONTIERES_WEB.filter((f) => sous(depuis, f.de))) {
+            const interdit = regle.interdits.find((x) => sous(cible, x));
+            if (interdit) fail(file, 'STUDIO_BOUNDARY', `frontière ${regle.de} → ${interdit} interdite (${spec}) — ${regle.motif}`);
+          }
+        }
+      }
       return;
     } else if (target && inside(root, target) && !target.includes(path.sep + 'node_modules' + path.sep)) {
       fail(file, 'UNMANAGED_SOURCE', spec); return;
@@ -172,7 +200,9 @@ export function checkModuleDependencies(root = DEFAULT_ROOT) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const result = checkModuleDependencies();
+    // `--root=<dossier>` contrôle un autre arbre (tests du script) ; par défaut, le dépôt qui contient ce script.
+    const optionRacine = process.argv.find((a) => a.startsWith('--root='));
+    const result = checkModuleDependencies(optionRacine ? path.resolve(optionRacine.slice('--root='.length)) : undefined);
     if (result.errors.length) { console.error(`check-module-deps : ${result.errors.length} violation(s)\n- ${result.errors.join('\n- ')}`); process.exitCode = 1; }
     else console.log(`check-module-deps : ${result.filesChecked} fichiers, ${result.importsChecked} imports ; frontières et graphes de paquets conformes.`);
   } catch (error) { console.error('check-module-deps : audit impossible : ' + error.message); process.exitCode = 2; }
