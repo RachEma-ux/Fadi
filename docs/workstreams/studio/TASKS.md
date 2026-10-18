@@ -2,6 +2,8 @@
 
 ## En cours
 
+- STUDIO-V1 — [PR #181](https://github.com/RachEma-ux/Fadi/pull/181) : parcours 2D persistant vérifié (52 contrôles réels), fusion autorisée par le propriétaire ; conserver les registres #172 et raccorder les apports concurrents #178–#180 à un seul socle. Recette personnelle et MVP complet non déduits de la fusion.
+
 Branche documentaire canonique `docs/156-codex-missions-completes`, continuation [PR #172](https://github.com/RachEma-ux/Fadi/pull/172) en brouillon. Dernier checkpoint publié et vérifié avant cette mise à jour : `0e0b386b4ac2711ee394d9907da943f050600b42`. Main observée `817bd36e7d4b1ab60ab9c00309509c7cdfed0798`, non protégée. Une autre session a fusionné #165 le 18 octobre à13:41:12 UTC (head fa9f0db, merge817bd36) ; A0 n’a effectué aucune fusion. PR #169 draft à `9b34dca9de8c3d1432d6f19315e4f0049d8bfd01` et #171 draft à `25bca793c483bcb99c5254a86efabbd1f8b29015` restent distinctes et non fusionnées.
 
 **31 missions ouvertes :25 En cours,6 Bloquées** (M03/M18/M19/M20/M22/M28). Les dépendances sont locales aux opérations. Registre unique : **22 À définir /58 À faire /292 En cours /209 Bloqué /47 Vérifié documentaire /2 Accepté cadrage G0 =630**. Les 203 définitions ont été revues individuellement ; leur qualification ne clôt pas les obligations. Quinze obligations documentaires REP-02..09, ADR-04, COEX-02, ADR-01/02 et PROV-03..05 ont une preuve et deux revues indépendantes selon leur nature. **P630=49/630=7,8% documentaire/cadrage ; PDEV=N/D**, faute de DEV_SCOPE et baseline acceptés. Aucune case source/HTML cochée ni fonctionnalité Studio acceptée.

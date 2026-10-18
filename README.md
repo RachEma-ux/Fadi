@@ -78,12 +78,17 @@ npm ci
 cp apps/api/.env.example apps/api/.env   # adjust DATABASE_URL to your local Postgres role / password
 npm run db:migrate                        # idempotent (apps/api/src/db/init.sql)
 npm run typecheck
-npm test
+npm run test:db-guard                    # Mission 004: entirely simulated, no database connection
 npm run build
 
 npm run dev:api      # terminal 1 — API on :3001
 npm run dev          # terminal 2 — web app on :5173, proxies /auth, /projects, /examples, /library, /notifications to the API
 ```
+
+The DB-1/2 lot permits only the simulated guard tests above. Full `npm test`, database migrations,
+API/E2E recipes and restore trials require the separately authorized DB-3 scope and an attested disposable
+target. Runtime test authorities are deliberately empty until that provisioning review; `DATABASE_URL`
+is never a fallback for tests. See `apps/api/src/testing/README.md` for the implemented boundary.
 
 End-to-end scenario (Playwright, Chromium), against the built API serving the built web app itself (production mode —
 `WEB_DIST`; `vite preview` is no longer needed):
@@ -151,9 +156,11 @@ regenerates every extracted dataset from it.
 - `packages/core-geometry` — the supplied geometry extraction (preserved, tested) plus the site zoning geometry.
 - `docs` — `architecture.md` (the plan and where the repository stands), `migration/` (matrix, step sheets,
   reference inventory, captures).
-- `.github/workflows/ci.yml` — typecheck, migrations, ~200 tests across the workspaces, production build, the full
+- `.github/workflows/ci.yml` — typecheck, migrations, tests across the workspaces, production build, the full
   Playwright scenario against a PostGIS service in production serving mode (captures published as an artifact), the
   backup → restore verification on the scenario's database, and the Docker image built and probed.
+  The dedicated `fix/157-test-database-guard` pull request runs a separate, entirely simulated DB-1/2 job;
+  PostgreSQL/API/E2E/image jobs are explicitly not executed there and DB-3 is not validated by its result.
 
 Checks that cannot run here are stated rather than assumed: the MapTiler service is simulated in the scenario
 (no real call from CI), notifications exist in the application only (no mail service), and regulatory checks beyond the

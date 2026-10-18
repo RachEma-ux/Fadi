@@ -4,7 +4,9 @@
   "description": "Modèle typé de l'Atelier : ontologie building.architecture, commandes et réducteurs purs, références topologiques, quantités, importeur P.118, projection vers l'entrée d'analyse.",
   "contracts": {
     "atelier-commands": 2,
-    "modele-atelier": 1
+    "modele-atelier": 1,
+    "studio-commands": 1,
+    "studio-document": 1
   },
   "allowedDependencies": [
     "@parcours/core-geometry",

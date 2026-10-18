@@ -1,4 +1,6 @@
 export * from "./unites.js";
+export * from "./studio/document-2d.js";
+export * from "./studio/registry.js";
 export * from "./ontologie.js";
 export * from "./modele.js";
 export * from "./geometrie.js";

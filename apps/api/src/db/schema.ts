@@ -12,6 +12,7 @@
  * l'erreur de repères que `docs/architecture.md` interdit.
  */
 import { boolean, customType, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import type { StudioDocument, StudioEnvelope } from "@parcours/atelier-model";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
 const geography = customType<{ data: string; driverData: string }>({
@@ -603,3 +604,46 @@ export const atelierPropositions = pgTable("atelier_propositions", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   decidedAt: timestamp("decided_at", { withTimezone: true }),
 });
+
+/** Studio V1 : contexte autonome ; les données Atelier et Parcours restent distinctes. */
+export interface StudioContext {
+  study: { id: string; name: string; projectId: string };
+  variant: { id: string; name: string; studyId: string; headRevisionId: string };
+  revision: { id: string; parentRevisionId: string | null; document: StudioDocument };
+  canWrite: boolean;
+}
+
+export const studioStudies = pgTable("studio_studies", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  // Les FK cycliques initialVariant/head sont différées dans studio-v1.sql.
+  initialVariantId: text("initial_variant_id").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_studies_project_idx").on(t.projectId)]);
+
+export const studioVariants = pgTable("studio_variants", {
+  id: text("id").primaryKey(),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  headRevisionId: text("head_revision_id").notNull(),
+}, (t) => [uniqueIndex("studio_variants_study_id_unique").on(t.studyId, t.id)]);
+
+/** Append-only : une réponse historique n'est jamais reconstruite depuis le head actuel. */
+export const studioRevisions = pgTable("studio_revisions", {
+  id: text("id").primaryKey(),
+  variantId: text("variant_id").notNull().references(() => studioVariants.id, { onDelete: "cascade" }),
+  parentRevisionId: text("parent_revision_id"),
+  document: jsonb("document").$type<StudioDocument>().notNull(),
+  // null uniquement pour la première révision vide, créée avec l'étude.
+  envelope: jsonb("envelope").$type<StudioEnvelope | null>(),
+  requestId: text("request_id").notNull(),
+  payloadHash: text("payload_hash").notNull(),
+  source: text("source").$type<"authenticated-session" | "study-initialization">().notNull(),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  response: jsonb("response").$type<StudioContext>().notNull(),
+}, (t) => [
+  uniqueIndex("studio_revisions_request_unique").on(t.variantId, t.requestId),
+  uniqueIndex("studio_revisions_variant_id_unique").on(t.variantId, t.id),
+]);
