@@ -1,0 +1,254 @@
+{
+  "schema": "delta-registre-v1",
+  "origine": "Claude Code — M13 COEX-01..06 et ADR-04, hors équipe Codex",
+  "rapport": "docs/ai-team/reports/claude-m13-coex/README.md",
+  "base_register_sha256": "7c5da578b34f775329e40827d8b99b6b7796d2055f9a1151725140c0013e686b",
+  "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "annonce": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250925570",
+  "statut_de_ce_delta": "Proposé — indépendant du delta REP-02..09 (IDs disjoints) ; à revoir par A2/A5 puis intégrer par A0 ; non appliqué par son auteur.",
+  "changements": [
+    {
+      "id": "ADR-04",
+      "statut_avant": "À définir",
+      "statut": "Vérifié",
+      "cloture": {
+        "condition_verifiee": true,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Lecture statique",
+        "portee": "Dossier documentaire au commit 817bd36, pas recette"
+      },
+      "blocage": {
+        "cause": null,
+        "responsable": "A2",
+        "essais_effectues": "RISK-01..10 recopiés mot pour mot de REF-02 §21.3 (blob ce7cf46, contrôle automatique), correspondance avec le Plan §10, 3 risques de navigation du Plan et 4 ajoutés (NAV-R01..07 proposés) rattachés avec preuves.",
+        "deblocage": null
+      },
+      "suite": "Adopter ou modifier les identifiants NAV-R0n ; ADR-05 confirme les priorités au cadrage du pilote.",
+      "preuves_ajoutees": [
+        {
+          "type": "lecture_statique",
+          "fichier": "docs/ai-team/reports/claude-m13-coex/ADR-04-REGISTRE-RISQUES.md",
+          "section": "ADR-04",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6250925570",
+          "constat": "RISK-01..10 recopiés mot pour mot de REF-02 §21.3 (blob ce7cf46, contrôle automatique), correspondance avec le Plan §10, 3 risques de navigation du Plan et 4 ajoutés (NAV-R01..07 proposés) rattachés avec preuves.",
+          "limite": "Aucune conformité Studio, aucun test/recette exécuté, aucune case source cochée ; revue A2/A5 et intégration A0 requises."
+        },
+        {
+          "type": "annexe_structuree",
+          "fichier": "docs/ai-team/reports/claude-m13-coex/ADR-04-REGISTRE-RISQUES.json",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Extraction Word et comparaison mot pour mot ; aucun test."
+        }
+      ]
+    },
+    {
+      "id": "COEX-02",
+      "statut_avant": "À définir",
+      "statut": "Vérifié",
+      "cloture": {
+        "condition_verifiee": true,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Lecture statique",
+        "portee": "Dossier documentaire au commit 817bd36, pas recette"
+      },
+      "blocage": {
+        "cause": null,
+        "responsable": "A2",
+        "essais_effectues": "14 accès historiques à l’Atelier inventoriés avec preuves (H01–H14) et contrat de non-suppression pour le lot I (MIG-COEX-07, NAV-009).",
+        "deblocage": null
+      },
+      "suite": "Appliquer le contrat au lot I ; NAV-009 reste à exécuter.",
+      "preuves_ajoutees": [
+        {
+          "type": "lecture_statique",
+          "fichier": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+          "section": "COEX-02",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6250925570",
+          "constat": "14 accès historiques à l’Atelier inventoriés avec preuves (H01–H14) et contrat de non-suppression pour le lot I (MIG-COEX-07, NAV-009).",
+          "limite": "Aucune conformité Studio, aucun test/recette exécuté, aucune case source cochée ; revue A2/A5 et intégration A0 requises."
+        }
+      ]
+    },
+    {
+      "id": "COEX-01",
+      "statut_avant": "À définir",
+      "statut": "En cours",
+      "cloture": {
+        "condition_verifiee": false,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Lecture statique",
+        "portee": "Dossier documentaire au commit 817bd36, pas recette"
+      },
+      "blocage": {
+        "cause": "Décision ou ratification requise ; options et recommandation préparées.",
+        "responsable": "A2",
+        "essais_effectues": "22 composants qualifiés en proposition (12 conserver, 4 compléter, 2 corriger, 4 isoler, 0 remplacer, 0 retirer) avec preuves.",
+        "deblocage": "Décision demandée dans #166 (Q-CLAUDE-COEX-01) ; ensuite fiche par fonction avant toute reprise."
+      },
+      "suite": "Décision demandée dans #166 (Q-CLAUDE-COEX-01) ; ensuite fiche par fonction avant toute reprise.",
+      "preuves_ajoutees": [
+        {
+          "type": "lecture_statique",
+          "fichier": "docs/ai-team/reports/claude-m13-coex/COEX-01-QUALIFICATION.md",
+          "section": "COEX-01",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6250925570",
+          "constat": "22 composants qualifiés en proposition (12 conserver, 4 compléter, 2 corriger, 4 isoler, 0 remplacer, 0 retirer) avec preuves.",
+          "limite": "Aucune conformité Studio, aucun test/recette exécuté, aucune case source cochée ; revue A2/A5 et intégration A0 requises."
+        },
+        {
+          "type": "annexe_structuree",
+          "fichier": "docs/ai-team/reports/claude-m13-coex/COEX-01-QUALIFICATION.json",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "limite": "Proposition non décidée."
+        }
+      ]
+    },
+    {
+      "id": "COEX-03",
+      "statut_avant": "À définir",
+      "statut": "En cours",
+      "cloture": {
+        "condition_verifiee": false,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Lecture statique",
+        "portee": "Dossier documentaire au commit 817bd36, pas recette"
+      },
+      "blocage": {
+        "cause": "Décision ou ratification requise ; options et recommandation préparées.",
+        "responsable": "A2",
+        "essais_effectues": "Écrivains actuels par jeu de données relevés (R9 : service de commandes seul écrivain du modèle) ; options A (recommandée) / B.",
+        "deblocage": "Décision demandée dans #166 (Q-CLAUDE-COEX-03)."
+      },
+      "suite": "Décision demandée dans #166 (Q-CLAUDE-COEX-03).",
+      "preuves_ajoutees": [
+        {
+          "type": "lecture_statique",
+          "fichier": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+          "section": "COEX-03",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6250925570",
+          "constat": "Écrivains actuels par jeu de données relevés (R9 : service de commandes seul écrivain du modèle) ; options A (recommandée) / B.",
+          "limite": "Aucune conformité Studio, aucun test/recette exécuté, aucune case source cochée ; revue A2/A5 et intégration A0 requises."
+        }
+      ]
+    },
+    {
+      "id": "COEX-04",
+      "statut_avant": "À définir",
+      "statut": "En cours",
+      "cloture": {
+        "condition_verifiee": false,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Lecture statique",
+        "portee": "Dossier documentaire au commit 817bd36, pas recette"
+      },
+      "blocage": {
+        "cause": "Décision ou ratification requise ; options et recommandation préparées.",
+        "responsable": "A2",
+        "essais_effectues": "Précédents (readOnly existant, 10 émetteurs de liens profonds, variantes = projets) ; options A (recommandée) / B / C.",
+        "deblocage": "Décision demandée dans #166 (Q-CLAUDE-COEX-04), dépend de DEC-03 et MIG-COEX-02/05."
+      },
+      "suite": "Décision demandée dans #166 (Q-CLAUDE-COEX-04), dépend de DEC-03 et MIG-COEX-02/05.",
+      "preuves_ajoutees": [
+        {
+          "type": "lecture_statique",
+          "fichier": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+          "section": "COEX-04",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6250925570",
+          "constat": "Précédents (readOnly existant, 10 émetteurs de liens profonds, variantes = projets) ; options A (recommandée) / B / C.",
+          "limite": "Aucune conformité Studio, aucun test/recette exécuté, aucune case source cochée ; revue A2/A5 et intégration A0 requises."
+        }
+      ]
+    },
+    {
+      "id": "COEX-05",
+      "statut_avant": "À définir",
+      "statut": "En cours",
+      "cloture": {
+        "condition_verifiee": false,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Lecture statique",
+        "portee": "Dossier documentaire au commit 817bd36, pas recette"
+      },
+      "blocage": {
+        "cause": "Décision ou ratification requise ; options et recommandation préparées.",
+        "responsable": "A2",
+        "essais_effectues": "Mécanismes de transfert existants qualifiés (rejeu validé, D-136, bascule lot 4) ; règle d’interdiction et critères de vérification proposés.",
+        "deblocage": "Ratification demandée dans #166 (Q-CLAUDE-COEX-05-06)."
+      },
+      "suite": "Ratification demandée dans #166 (Q-CLAUDE-COEX-05-06).",
+      "preuves_ajoutees": [
+        {
+          "type": "lecture_statique",
+          "fichier": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+          "section": "COEX-05",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6250925570",
+          "constat": "Mécanismes de transfert existants qualifiés (rejeu validé, D-136, bascule lot 4) ; règle d’interdiction et critères de vérification proposés.",
+          "limite": "Aucune conformité Studio, aucun test/recette exécuté, aucune case source cochée ; revue A2/A5 et intégration A0 requises."
+        }
+      ]
+    },
+    {
+      "id": "COEX-06",
+      "statut_avant": "À définir",
+      "statut": "En cours",
+      "cloture": {
+        "condition_verifiee": false,
+        "case_source_modifiee": false,
+        "acceptation_metier": false
+      },
+      "conformite": "Non évaluée pour le produit Studio",
+      "tests": {
+        "etat": "Lecture statique",
+        "portee": "Dossier documentaire au commit 817bd36, pas recette"
+      },
+      "blocage": {
+        "cause": "Décision ou ratification requise ; options et recommandation préparées.",
+        "responsable": "A2",
+        "essais_effectues": "Porte de retrait R1 comparaison / R2 restauration testée sur cible jetable / R3 acceptation explicite, avec précédent du lot 4.",
+        "deblocage": "Ratification demandée dans #166 (Q-CLAUDE-COEX-05-06)."
+      },
+      "suite": "Ratification demandée dans #166 (Q-CLAUDE-COEX-05-06).",
+      "preuves_ajoutees": [
+        {
+          "type": "lecture_statique",
+          "fichier": "docs/ai-team/reports/claude-m13-coex/COEX-02-06-DOSSIERS.md",
+          "section": "COEX-06",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6250925570",
+          "constat": "Porte de retrait R1 comparaison / R2 restauration testée sur cible jetable / R3 acceptation explicite, avec précédent du lot 4.",
+          "limite": "Aucune conformité Studio, aucun test/recette exécuté, aucune case source cochée ; revue A2/A5 et intégration A0 requises."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "objet": "Revue indépendante A2 du delta v2 seulement ; revue initiale conservée sans modification",
+  "provenance": [
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1.json",
+      "sha256": "3d212ffb93dc33380ac313556cb36b00302246b82ac7096b466c530b4923c719"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1-v2.json",
+      "sha256": "ea5300f241df47d168b1c3f0fc7180cd189b70d7d6b64e5f299a55522dd52f0c"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1-v2.md",
+      "sha256": "3aa3c9505476b10e2a42e8a1ce8fffeab52787e6562d365a408994588d1d1269"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1-v2-DELTA.json",
+      "sha256": "a69d50bdc3d269fa98e20c7b6c2840f06b5502c1179e76df207118d8735e8706"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1-v2-DELTA.md",
+      "sha256": "c62ddc909d629952b5196bfc17754f56ea406f44622ced920387ce026c20480c"
+    },
+    {
+      "path": "/workspace/work/resume496/agents/A2/G1-ONZE-FONCTIONS-REVUE-A2.json",
+      "sha256": "d37d5786692f428d1582d1e7a44215c82716ec843e3e0dfb12b8ce2e83127fee"
+    }
+  ],
+  "methode": "Diff structures V1/V2 ; vérification exacte des seuls six ajouts dans les fiches déjà extraites et quatre nouvelles relations TEST dans le CSV existant ; partition par ensembles et conservation des88 objets hors sélection ; aucun retraitement de l’extraction141.",
+  "six_liaisons": [
+    {
+      "fonction": 5,
+      "id": "EX-020",
+      "nature_lien": "Référence explicite de l’index documentaire (pas preuve normative fonctionnelle)",
+      "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "paragraphes": [
+        363
+      ],
+      "texte_sha256": "69a841adb3cc3f179dd205a71c64b0738ebfa254f273d981a5b171d99226eb6b",
+      "verdict": "Ajout explicite conforme à index et fiche source existante ; aucune obligation inventée."
+    },
+    {
+      "fonction": 5,
+      "id": "EX-023",
+      "nature_lien": "Référence explicite de l’index documentaire (pas preuve normative fonctionnelle)",
+      "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "paragraphes": [
+        414
+      ],
+      "texte_sha256": "a0cf94c30996e42c419425e218068ef1b34cd245916e8417d5a4312d94a79c29",
+      "verdict": "Ajout explicite conforme à index et fiche source existante ; aucune obligation inventée."
+    },
+    {
+      "fonction": 6,
+      "id": "EX-018",
+      "nature_lien": "Référence explicite de l’index documentaire (pas preuve normative fonctionnelle)",
+      "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "paragraphes": [
+        332
+      ],
+      "texte_sha256": "755e27fa6b035e4c2a6d50735d2eb53d1a8a71d71ab627b6e959ce2556c87fb3",
+      "verdict": "Ajout explicite conforme à index et fiche source existante ; aucune obligation inventée."
+    },
+    {
+      "fonction": 7,
+      "id": "IF-009",
+      "nature_lien": "Référence explicite de l’index documentaire (pas preuve normative fonctionnelle)",
+      "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "paragraphes": [
+        765
+      ],
+      "texte_sha256": "d8153b9b873c0db35bc838dbec5cf6db6447949bd487e6b40f2d3cd6d8947016",
+      "verdict": "Ajout explicite conforme à index et fiche source existante ; aucune obligation inventée."
+    },
+    {
+      "fonction": 7,
+      "id": "IF-011",
+      "nature_lien": "Référence explicite de l’index documentaire (pas preuve normative fonctionnelle)",
+      "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "paragraphes": [
+        868
+      ],
+      "texte_sha256": "fa626e8b9cab05e927e5383fd3479773ba468a96d5ed7843f6610a90235205c4",
+      "verdict": "Ajout explicite conforme à index et fiche source existante ; aucune obligation inventée."
+    },
+    {
+      "fonction": 8,
+      "id": "EX-090",
+      "nature_lien": "Référence explicite de l’index documentaire (pas preuve normative fonctionnelle)",
+      "source_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "paragraphes": [
+        869
+      ],
+      "texte_sha256": "dba646f69f4b5e4afd7b492f03b1ef2fe1caa1a4cda8e7a636983f642d7d26a6",
+      "verdict": "Ajout explicite conforme à index et fiche source existante ; aucune obligation inventée."
+    }
+  ],
+  "liaisons_TEST_supplementaires": [
+    {
+      "fonction": 5,
+      "id": "TEST-002",
+      "verdict": "Nouvelle relation candidate vers TEST déjà existant ; copie exacte des trois champs oracle ; aucune exécution."
+    },
+    {
+      "fonction": 5,
+      "id": "TEST-005",
+      "verdict": "Nouvelle relation candidate vers TEST déjà existant ; copie exacte des trois champs oracle ; aucune exécution."
+    },
+    {
+      "fonction": 7,
+      "id": "TEST-013",
+      "verdict": "Nouvelle relation candidate vers TEST déjà existant ; copie exacte des trois champs oracle ; aucune exécution."
+    },
+    {
+      "fonction": 7,
+      "id": "TEST-038",
+      "verdict": "Nouvelle relation candidate vers TEST déjà existant ; copie exacte des trois champs oracle ; aucune exécution."
+    }
+  ],
+  "partition": {
+    "selection": 53,
+    "hors_selection": 88,
+    "union": 141,
+    "intersection": 0,
+    "relations_fonction_exigence": 70,
+    "quatre_exigences_deplacees_depuis_hors_selection": [
+      "EX-018",
+      "EX-020",
+      "EX-023",
+      "EX-090"
+    ],
+    "aucune_suppression": true
+  },
+  "oracles": {
+    "catalogue_source": 38,
+    "distincts_lies": 27,
+    "union_inchangee_depuis_v1": true,
+    "couverture_deduite": false
+  },
+  "NAV": {
+    "source_ajoutee": [
+      {
+        "path": "/workspace/work/mission004/agents/A4/NAV-M004.json",
+        "sha256": "5ba81ec74028a5112af6c5f0d83b5bd21fdd3b70d5017a1c27123d0219450ed2",
+        "nature": "Neuf prescriptions NAV documentaires existantes, non exécutées"
+      }
+    ],
+    "ids_existants": [
+      "NAV-001",
+      "NAV-002",
+      "NAV-003",
+      "NAV-004",
+      "NAV-005",
+      "NAV-006",
+      "NAV-007",
+      "NAV-008",
+      "NAV-009"
+    ],
+    "statut": "Neuf prescriptions documentaires non exécutées"
+  },
+  "ecarts": [],
+  "reserves_initiales": {
+    "R1": "Levée : six références explicites rattachées aux bonnes fonctions.",
+    "R2": "Levée : MD distingue catalogue38 et27 candidats liés.",
+    "R3": "Levée : source NAV existante ajoutée et hash vérifié."
+  },
+  "verdict": "Favorable au delta documentaire borné ; aucune réserve nouvelle détectée.",
+  "limites": [
+    "Aucun statut de capacité, acceptation métier ou gate G1 modifié.",
+    "Les liens EX/INV/IF/AC/NAV/TEST restent prescriptions ou candidats, jamais couverture exécutée.",
+    "Les88 exigences hors sélection et11AC sont conservés ; aucun périmètre DEV_SCOPE déduit.",
+    "Aucun code, import applicatif, DB, service, test, POC ou registre exécuté ou modifié.",
+    "Les limites de pertinence des rapprochements proposés et contrats physiques restent celles de la revue initiale."
+  ]
+}

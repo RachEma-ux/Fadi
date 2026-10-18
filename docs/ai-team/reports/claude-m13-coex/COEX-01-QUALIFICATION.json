@@ -1,0 +1,260 @@
+{
+  "tache": "COEX-01",
+  "commit": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+  "nature": "Qualification proposée ; décision non prise",
+  "composants": [
+    {
+      "id": "C01",
+      "composant": "Bus client `apps/web/src/modules/atelier/bus/` (`atelier-client.ts`, `etat-projet.ts`)",
+      "taille_tests": "599 lignes",
+      "qualification_proposee": [
+        "Conserver"
+      ],
+      "motif_preuve": "Chemin client unique vers le service de commandes : file locale, rejeu (`packages/atelier-model/src/sync.ts`). Studio doit passer par le même bus (RISK-07, R9).",
+      "condition_decision": "ARC-07 et ARC-DATA-05 : enveloppe enrichie du contexte étude / variante (DEC-03)",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C02",
+      "composant": "Enveloppe `nouveau/AtelierNouveau.tsx`",
+      "taille_tests": "946 lignes",
+      "qualification_proposee": [
+        "Isoler"
+      ],
+      "motif_preuve": "Point d'entrée de l'Atelier actuel. Studio ne l'embarque pas (ARC-10, Plan §3.1).",
+      "condition_decision": "ADR-STUDIO-NAV-01",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C03",
+      "composant": "Plan 2D `nouveau/plan2d/` (`Plan2D.tsx`, `rendu.tsx`, `accrochage.ts`…)",
+      "taille_tests": "3 360 lignes ; aucun test propre, tests dans `nouveau.test.ts`",
+      "qualification_proposee": [
+        "Compléter"
+      ],
+      "motif_preuve": "OBS-01 : SVG React ; OBS-02 : accrochage sans index spatial. C'est le candidat au document 2D autonome, sous l'orientation DEC-01.",
+      "condition_decision": "DEC-08, DEC-09, lot C ; non-régression d'accrochage",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C04",
+      "composant": "Vue 3D `nouveau/vue3d/scene3d.ts`",
+      "taille_tests": "1 931 lignes ; **0 test**",
+      "qualification_proposee": [
+        "Compléter"
+      ],
+      "motif_preuve": "OBS-03 et OBS-04 : WebGL2 avec WebGPU en option, reconstruction complète à chaque état. Aucun test ne couvre le fichier.",
+      "condition_decision": "DEC-10, lot C ; tests à créer avant toute optimisation",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C05",
+      "composant": "Planche `nouveau/planche/`",
+      "taille_tests": "7 882 lignes, 8 fichiers de test",
+      "qualification_proposee": [
+        "Conserver",
+        "Corriger"
+      ],
+      "motif_preuve": "OBS-05 : candidat Planche 3D. OBS-09 : historique local et commande `planche.operation`. L'en-tête `historique.ts:4` est périmé.",
+      "condition_decision": "Contrat d'historique hybride (lot A) ; correction du commentaire dans un lot autorisé",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C06",
+      "composant": "Noyau exact client `nouveau/exact/`",
+      "taille_tests": "285 lignes, 1 test",
+      "qualification_proposee": [
+        "Corriger"
+      ],
+      "motif_preuve": "OBS-07 : après une erreur, le worker n'est jamais recréé dans la session, et aucune demande n'a de délai d'attente.",
+      "condition_decision": "Lot D (résilience), TEST-014, TEST-015 et TEST-037",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C07",
+      "composant": "Génération documentaire `nouveau/documents/`",
+      "taille_tests": "1 020 lignes ; tests dans `atelier-model/src/documents`",
+      "qualification_proposee": [
+        "Compléter"
+      ],
+      "motif_preuve": "OBS-08 : worker dédié avec repli sur le fil principal, modèle entier copié à chaque demande, aucune annulation.",
+      "condition_decision": "Lot D et lot E",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C08",
+      "composant": "Panneaux `nouveau/panneaux/` (32 fichiers)",
+      "taille_tests": "9 177 lignes, 1 test",
+      "qualification_proposee": [
+        "Isoler"
+      ],
+      "motif_preuve": "Interface propre à l'Atelier (barre D-195, réglages, versions…). Plan §3.3 : « la réutilisation d'une fonction ne signifie pas recopier l'ensemble du module ».",
+      "condition_decision": "ARC-04 ; chaque reprise justifiée par une fiche",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C09",
+      "composant": "Palette `nouveau/outils.ts`",
+      "taille_tests": "182 lignes",
+      "qualification_proposee": [
+        "Corriger"
+      ],
+      "motif_preuve": "OBS-11 : 111 entrées pour 110 identifiants. La collision `echelle` (lignes 84 et 120) masque la première entrée dans `OUTILS_PAR_ID`.",
+      "condition_decision": "Lot B (registre) ; correction de code à autoriser",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C10",
+      "composant": "État d'interface, navigation, raccourcis, actions (`nouveau/etat-ui.ts`, `navigation*.ts`, `raccourcis.ts`, `actions.ts`, `messages.ts`)",
+      "taille_tests": "≈ 1 900 lignes",
+      "qualification_proposee": [
+        "Isoler"
+      ],
+      "motif_preuve": "Propres à l'ergonomie de l'Atelier. La règle d'or de la Planche (icône, barre, raccourci) s'applique à ses outils.",
+      "condition_decision": "Le registre Studio (lot B) définit les siens",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C11",
+      "composant": "Revue de conception et Harmonie (`DesignReview.tsx`, `AtelierHarmonyPage.tsx`)",
+      "taille_tests": "772 lignes",
+      "qualification_proposee": [
+        "Conserver"
+      ],
+      "motif_preuve": "AGENTS.md : Harmonie est intégrée aux étapes. Studio ne la duplique pas.",
+      "condition_decision": "Aucune",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C12",
+      "composant": "Mode immersif `apps/web/src/lib/use-immersive.ts`",
+      "taille_tests": "18 lignes",
+      "qualification_proposee": [
+        "Isoler"
+      ],
+      "motif_preuve": "REP-05 : drapeau global qui masque la barre latérale (NAV-008). La PR #142, ouverte, le transforme.",
+      "condition_decision": "Lecture de #142 si elle est fusionnée",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C13",
+      "composant": "Paquet `packages/atelier-model`",
+      "taille_tests": "129 sources, 106 tests",
+      "qualification_proposee": [
+        "Conserver"
+      ],
+      "motif_preuve": "Modèle canonique, réducteurs purs et commandes, partagés entre navigateur et serveur (R9). Les identités Étude / Variante / Révision sont à ajouter selon l'orientation DEC-03.",
+      "condition_decision": "DEC-01, DEC-02, DEC-03 (contrats physiques ouverts)",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C14",
+      "composant": "Paquet `packages/planche-model`",
+      "taille_tests": "64 sources, 61 tests",
+      "qualification_proposee": [
+        "Conserver"
+      ],
+      "motif_preuve": "OBS-06 : six registres importés statiquement, ce qui empêche un chargement sélectif. Le catalogue compte 52 outils.",
+      "condition_decision": "DEC-05, DEC-06, DEC-07, lot B.3",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C15",
+      "composant": "Paquet `packages/geometry-exact`",
+      "taille_tests": "1 source, 1 test",
+      "qualification_proposee": [
+        "Conserver"
+      ],
+      "motif_preuve": "Seul point d'entrée d'`occt-wasm`, sous la frontière LGPL D-177. 22 tests réussis ([REP-09](../claude-m13-rep/REP-09-REQUALIFICATION.md)).",
+      "condition_decision": "DEC-18 (licences et frontières)",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C16",
+      "composant": "Paquets `core-geometry` et `domain-model`",
+      "taille_tests": "23 sources, 17 tests",
+      "qualification_proposee": [
+        "Conserver"
+      ],
+      "motif_preuve": "Géométrie et repères purs, et distinction exigence / hypothèse / recommandation (AGENTS.md).",
+      "condition_decision": "Aucune",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C17",
+      "composant": "Service de commandes `apps/api/src/routes/atelier-commands.ts`",
+      "taille_tests": "—",
+      "qualification_proposee": [
+        "Conserver"
+      ],
+      "motif_preuve": "Seul écrivain du modèle (R9, [P/…/atelier-modele.ts#L5-L6](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/lib/atelier-modele.ts#L5-L6)). Il impose la révision de base (409), l'idempotence et le journal ([#L1-L12](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/routes/atelier-commands.ts#L1-L12)).",
+      "condition_decision": "ARC-DATA-05 à ARC-DATA-07",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C18",
+      "composant": "Persistance du modèle `apps/api/src/lib/atelier-modele.ts` et tables `atelier_*`",
+      "taille_tests": "9 tables ([schema.ts#L310-L445](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/db/schema.ts#L310-L445))",
+      "qualification_proposee": [
+        "Conserver"
+      ],
+      "motif_preuve": "Écriture par différentiel, appelée seulement par le service de commandes et les imports contrôlés.",
+      "condition_decision": "DEC-01 et DEC-03 : correspondance avec le stockage Studio",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C19",
+      "composant": "Versions, variantes, publications et verrous `routes/atelier-versions.ts`, `lib/atelier-versions.ts`",
+      "taille_tests": "tables [L486-L572](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/db/schema.ts#L486-L572)",
+      "qualification_proposee": [
+        "Conserver",
+        "Correspondance explicite"
+      ],
+      "motif_preuve": "Une variante actuelle est un **projet** bifurqué (`atelier_variants.project_id` / `parent_id`, [L499-L515](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/db/schema.ts#L499-L515)). Ce n'est pas la Variante Studio de DEC-03. Une correspondance explicite est requise, sans migration silencieuse.",
+      "condition_decision": "DEC-03, MIG-COEX-02",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C20",
+      "composant": "Automatisation `routes/atelier-automatisation.ts` (scripts, propositions, graphes)",
+      "taille_tests": "tables [L574-L600](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/api/src/db/schema.ts#L574-L605)",
+      "qualification_proposee": [
+        "Conserver"
+      ],
+      "motif_preuve": "Elle passe déjà par la boucle contrôlée et les mêmes commandes (R9). Studio ne crée pas de seconde boucle.",
+      "condition_decision": "RISK-07",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C21",
+      "composant": "File locale `apps/web/src/lib/local-store.ts` (Dexie `fadi-local` v4 : `lots`, `modelCache`, `keyValue`)",
+      "taille_tests": "[#L58-L64](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/web/src/lib/local-store.ts#L58-L64)",
+      "qualification_proposee": [
+        "Conserver"
+      ],
+      "motif_preuve": "Elle contient les commandes hors ligne en attente. MIG-COEX-04 interdit de les supprimer avant bascule.",
+      "condition_decision": "MIG-COEX-04, TEST-036",
+      "decision": "À prendre (question #166)"
+    },
+    {
+      "id": "C22",
+      "composant": "Précache du service worker `apps/web/vite.config.ts` et `public/sw.js`",
+      "taille_tests": "0 test",
+      "qualification_proposee": [
+        "Compléter"
+      ],
+      "motif_preuve": "OBS-10 : tous les morceaux du build sont précachés, y compris ceux chargés à la demande.",
+      "condition_decision": "DEC-07, lot B.3, TEST-016",
+      "decision": "À prendre (question #166)"
+    }
+  ],
+  "bilan": {
+    "conserver": 12,
+    "completer": 4,
+    "corriger": 2,
+    "isoler": 4,
+    "remplacer": 0,
+    "retirer": 0
+  },
+  "limite": "Granularité répertoire/fichier principal ; aucune exécution de test pour COEX-01."
+}
