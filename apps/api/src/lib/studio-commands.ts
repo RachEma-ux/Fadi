@@ -100,7 +100,7 @@ export async function createStudioStudy(projectId: string, actorId: string, name
     await tx.insert(studioRevisions).values({
       id: revisionId, variantId, parentRevisionId: null, document: response.revision.document, envelope: null,
       requestId: newId("initialization"), payloadHash: createHash("sha256").update(JSON.stringify({ projectId, studyId, variantId, name })).digest("hex"),
-      authorId: actorId, response,
+      source: "study-initialization", authorId: actorId, response,
     });
     return response;
   });
@@ -150,7 +150,7 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
           study: current.study, variant: { ...current.variant, headRevisionId: id },
           revision: { id, parentRevisionId: current.variant.headRevisionId, document }, canWrite: true,
         };
-        await transaction.insert(studioRevisions).values({ id, variantId: scope.variantId, parentRevisionId: current.variant.headRevisionId, document, envelope, requestId: envelope.requestId, payloadHash, authorId: actorId, response });
+        await transaction.insert(studioRevisions).values({ id, variantId: scope.variantId, parentRevisionId: current.variant.headRevisionId, document, envelope, requestId: envelope.requestId, payloadHash, source: "authenticated-session", authorId: actorId, response });
         await transaction.update(studioVariants).set({ headRevisionId: id }).where(eq(studioVariants.id, scope.variantId));
         return { ...response, replayed: false };
       },

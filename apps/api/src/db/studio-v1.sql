@@ -28,6 +28,7 @@ CREATE TABLE studio_revisions (
   envelope jsonb,
   request_id text NOT NULL,
   payload_hash text NOT NULL CHECK (payload_hash ~ '^[0-9a-f]{64}$'),
+  source text NOT NULL CHECK (source IN ('authenticated-session', 'study-initialization')),
   author_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   created_at timestamptz NOT NULL DEFAULT now(),
   response jsonb NOT NULL,
