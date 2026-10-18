@@ -2,7 +2,7 @@
 import { and, asc, desc, eq } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { applyStudioCommands, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, StudioValidationError, validateStudioDocument, type StudioEnvelope } from "@parcours/atelier-model";
+import { applyStudioCommands, exportStudioDxf, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, StudioValidationError, validateStudioDocument, type StudioEnvelope } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { projectMembers, studioRevisions, studioStudies, studioVariants, type StudioContext } from "../db/schema.js";
 import { newId } from "./ids.js";
@@ -15,6 +15,8 @@ export class StudioRequestError extends Error {
   constructor(readonly status: number, readonly body: Record<string, unknown>) { super("studio_request_refused"); }
 }
 const identifier = z.string().min(1).max(128).regex(/^[A-Za-z0-9._:-]+$/);
+/** Règle d'identifiant des requêtes Studio (enveloppes, créations idempotentes, révision exportée). */
+export const studioIdentifierSchema = identifier;
 const envelopeSchema = z.object({
   contractVersion: z.literal(STUDIO_CONTRACT), requestId: identifier, baseRevisionId: identifier,
   commands: z.array(z.object({
@@ -138,46 +140,100 @@ export async function listStudioRevisions(q: Querier, scope: StudioScope, actorI
   return { revisions: rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() })) };
 }
 
-export async function createStudioStudy(projectId: string, actorId: string, name: string): Promise<StudioContext> {
+export type StudioCreation = StudioContext & { replayed: boolean };
+
+/**
+ * Rejeu d'une création identifiée par `requestId` : la réponse 201 d'origine est relue dans la révision
+ * d'initialisation (append-only), jamais reconstruite. Autre auteur ou autre nom → 409 request_conflict.
+ */
+async function replayCreation(tx: Tx, variantId: string, source: "study-initialization" | "variant-initialization", actorId: string, name: string, storedName: (response: StudioContext) => string): Promise<StudioCreation> {
+  const [initial] = await tx.select({ authorId: studioRevisions.authorId, response: studioRevisions.response }).from(studioRevisions)
+    .where(and(eq(studioRevisions.variantId, variantId), eq(studioRevisions.source, source))).limit(1);
+  if (!initial) throw new Error("studio_creation_without_initial_revision");
+  if (initial.authorId !== actorId || storedName(initial.response) !== name) {
+    throw new StudioRequestError(409, { error: "request_conflict", message: "Cet identifiant de requête est déjà utilisé pour un autre contenu ou auteur." });
+  }
+  return { ...structuredClone(initial.response), replayed: true };
+}
+
+export async function createStudioStudy(projectId: string, actorId: string, name: string, requestId?: string): Promise<StudioCreation> {
   return db.transaction(async (tx) => {
+    // Verrou du projet avant la recherche du rejeu : deux créations concurrentes du même requestId sont sérialisées.
     assertAccess(await lockedAccess(tx, projectId, actorId), actorId, "modify");
+    if (requestId !== undefined) {
+      const [previous] = await tx.select({ initialVariantId: studioStudies.initialVariantId }).from(studioStudies)
+        .where(and(eq(studioStudies.projectId, projectId), eq(studioStudies.creationRequestId, requestId))).limit(1);
+      if (previous) return replayCreation(tx, previous.initialVariantId, "study-initialization", actorId, name, (r) => r.study.name);
+    }
     const studyId = newId("studio_study"), variantId = newId("studio_variant"), revisionId = newId("studio_revision");
     const response: StudioContext = {
       study: { id: studyId, name, projectId },
       variant: { id: variantId, name: "Variante initiale", studyId, headRevisionId: revisionId },
       revision: { id: revisionId, parentRevisionId: null, document: newStudioDocument(newId("studio_document")) }, canWrite: true,
     };
-    await tx.insert(studioStudies).values({ id: studyId, projectId, name, initialVariantId: variantId });
+    await tx.insert(studioStudies).values({ id: studyId, projectId, name, initialVariantId: variantId, creationRequestId: requestId ?? null });
     await tx.insert(studioVariants).values({ id: variantId, studyId, name: response.variant.name, headRevisionId: revisionId });
     await tx.insert(studioRevisions).values({
       id: revisionId, variantId, parentRevisionId: null, document: response.revision.document, envelope: null,
       requestId: newId("initialization"), payloadHash: createHash("sha256").update(JSON.stringify({ projectId, studyId, variantId, name })).digest("hex"),
       source: "study-initialization", authorId: actorId, response,
     });
-    return response;
+    return { ...response, replayed: false };
   });
 }
 
 /** Nouvelle variante d'une étude existante : une seule révision initiale, document vide, sans parent. */
-export async function createStudioVariant(projectId: string, studyId: string, actorId: string, name: string): Promise<StudioContext> {
+export async function createStudioVariant(projectId: string, studyId: string, actorId: string, name: string, requestId?: string): Promise<StudioCreation> {
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
     assertAccess(access, actorId, "modify");
+    if (requestId !== undefined) {
+      const [previous] = await tx.select({ id: studioVariants.id }).from(studioVariants)
+        .where(and(eq(studioVariants.studyId, study.id), eq(studioVariants.creationRequestId, requestId))).limit(1);
+      if (previous) return replayCreation(tx, previous.id, "variant-initialization", actorId, name, (r) => r.variant.name);
+    }
     const variantId = newId("studio_variant"), revisionId = newId("studio_revision");
     const response: StudioContext = {
       study: { id: study.id, name: study.name, projectId },
       variant: { id: variantId, name, studyId: study.id, headRevisionId: revisionId },
       revision: { id: revisionId, parentRevisionId: null, document: newStudioDocument(newId("studio_document")) }, canWrite: true,
     };
-    await tx.insert(studioVariants).values({ id: variantId, studyId: study.id, name, headRevisionId: revisionId });
+    await tx.insert(studioVariants).values({ id: variantId, studyId: study.id, name, headRevisionId: revisionId, creationRequestId: requestId ?? null });
     await tx.insert(studioRevisions).values({
       id: revisionId, variantId, parentRevisionId: null, document: response.revision.document, envelope: null,
       requestId: newId("initialization"), payloadHash: createHash("sha256").update(JSON.stringify({ projectId, studyId: study.id, variantId, name })).digest("hex"),
       source: "variant-initialization", authorId: actorId, response,
     });
-    return response;
+    return { ...response, replayed: false };
   });
+}
+
+export const STUDIO_EXPORT_FORMATS = ["svg", "dxf"] as const;
+export type StudioExportFormat = (typeof STUDIO_EXPORT_FORMATS)[number];
+export const STUDIO_EXPORT_CONTENT_TYPES: Readonly<Record<StudioExportFormat, string>> = Object.freeze({
+  svg: "image/svg+xml; charset=utf-8",
+  dxf: "application/dxf",
+});
+export interface StudioExportFile { format: StudioExportFormat; contentType: string; filename: string; revisionId: string; body: string }
+
+/** Segment de nom de fichier : ASCII sans diacritiques, [a-z0-9._-], 60 caractères au plus, sinon la valeur de repli. */
+export function studioFileSegment(value: string, fallback: string): string {
+  const slug = value.normalize("NFD").replace(/\p{M}+/gu, "").toLowerCase().replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^[-.]+|[-.]+$/g, "").slice(0, 60).replace(/[-.]+$/g, "");
+  return slug || fallback;
+}
+
+/** Fichier d'export d'une révision (tête par défaut) : mêmes droits et mêmes 403 / 404 que la lecture. */
+export async function exportStudioVariant(q: Querier, scope: StudioScope, actorId: string, format: StudioExportFormat, revisionId?: string): Promise<StudioExportFile> {
+  const context = await readStudioContext(q, scope, actorId, revisionId);
+  const doc = context.revision.document;
+  const body = format === "svg" ? exportStudioSvg(doc) : exportStudioDxf(doc);
+  const filename = [
+    studioFileSegment(context.study.name, "etude"), studioFileSegment(context.variant.name, "variante"),
+    studioFileSegment(context.revision.id.slice(-8), "revision"),
+  ].join("-") + `.${format}`;
+  return { format, contentType: STUDIO_EXPORT_CONTENT_TYPES[format], filename, revisionId: context.revision.id, body };
 }
 
 export async function submitStudioCommands(scope: StudioScope, actorId: string, input: unknown): Promise<StudioContext & { replayed: boolean }> {

@@ -13,6 +13,12 @@ import { StudioRefus } from "./studio-ecrans";
 import { VariantWorkspace } from "./VariantWorkspace";
 import "./studio.css";
 
+/** Une création non confirmée (réseau, 5xx) se rejoue avec le même requestId : le serveur rend la même étude ou variante, sans doublon. */
+function demandeId(demande: { current: { nom: string; id: string } | null }, nom: string): string {
+  if (demande.current?.nom !== nom) demande.current = { nom, id: crypto.randomUUID() };
+  return demande.current.id;
+}
+
 const refused = (e: unknown) => e instanceof ApiError && [401, 403, 404].includes(e.status);
 const retry = (n: number, e: unknown) => !refused(e) && n < 1;
 
@@ -159,6 +165,7 @@ function CreerEtude({ projectId, indisponible }: { projectId: string; indisponib
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const enCours = useRef(false);
+  const demande = useRef<{ nom: string; id: string } | null>(null);
   const navigate = useNavigate();
   const client = useQueryClient();
   async function create(e: FormEvent) {
@@ -166,10 +173,11 @@ function CreerEtude({ projectId, indisponible }: { projectId: string; indisponib
     if (!name.trim() || enCours.current) return;
     enCours.current = true; setCreating(true); setError("");
     try {
-      const c = await api.createStudioStudy(projectId, name.trim());
+      const c = await api.createStudioStudy(projectId, name.trim(), demandeId(demande, name.trim()));
+      demande.current = null;
       navigate(cheminVarianteStudio(projectId, c.study.id, c.variant.id));
     } catch (err) {
-      setError(err instanceof ApiError && err.status < 500 ? "Création refusée par le serveur." : "Création non confirmée. Actualisez la liste avant de réessayer.");
+      setError(err instanceof ApiError && err.status < 500 ? "Création refusée par le serveur." : "Création non confirmée. Réessayez : la même demande sera rejouée sans doublon.");
     } finally {
       enCours.current = false; setCreating(false);
       void client.invalidateQueries({ queryKey: ["studio-studies", projectId] });
@@ -226,6 +234,7 @@ function CreerVariante({ projectId, studyId }: { projectId: string; studyId: str
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const enCours = useRef(false);
+  const demande = useRef<{ nom: string; id: string } | null>(null);
   const navigate = useNavigate();
   const client = useQueryClient();
   async function create(e: FormEvent) {
@@ -233,10 +242,11 @@ function CreerVariante({ projectId, studyId }: { projectId: string; studyId: str
     if (!name.trim() || enCours.current) return;
     enCours.current = true; setCreating(true); setError("");
     try {
-      const c = await api.createStudioVariant(projectId, studyId, name.trim());
+      const c = await api.createStudioVariant(projectId, studyId, name.trim(), demandeId(demande, name.trim()));
+      demande.current = null;
       navigate(cheminVarianteStudio(projectId, studyId, c.variant.id));
     } catch (err) {
-      setError(err instanceof ApiError && err.status < 500 ? "Création refusée par le serveur." : "Création non confirmée. Actualisez la liste avant de réessayer.");
+      setError(err instanceof ApiError && err.status < 500 ? "Création refusée par le serveur." : "Création non confirmée. Réessayez : la même demande sera rejouée sans doublon.");
     } finally {
       enCours.current = false; setCreating(false);
       void client.invalidateQueries({ queryKey: ["studio-study", projectId, studyId] });

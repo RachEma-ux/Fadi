@@ -738,13 +738,20 @@ export interface StudioRevisionSummary { id: string; parentRevisionId: string | 
 const studioRoot = (p: string) => `/projects/${encodeURIComponent(p)}/studio/studies`;
 const studioStudyPath = (p: string, s: string) => `${studioRoot(p)}/${encodeURIComponent(s)}`;
 const studioVariantPath = (p: string, s: string, v: string) => `${studioStudyPath(p, s)}/variants/${encodeURIComponent(v)}`;
+/**
+ * Adresse d'export d'une variante (pièce jointe SVG ou DXF produite par le serveur, même origine : le cookie de session
+ * suit le lien). Sans `revisionId`, le serveur exporte la tête ; avec, la révision historique affichée.
+ */
+export function studioExportUrl(p: string, s: string, v: string, format: "svg" | "dxf", revisionId?: string | null): string {
+  return `${studioVariantPath(p, s, v)}/export?format=${format}${revisionId ? `&revision=${encodeURIComponent(revisionId)}` : ""}`;
+}
 export const api = {
   studioStudies: (p: string) => request<{ studies: StudioStudySummary[] }>(studioRoot(p)),
-  createStudioStudy: (p: string, name: string) => request<StudioContext>(studioRoot(p), { method: "POST", body: JSON.stringify({ name }) }),
+  createStudioStudy: (p: string, name: string, requestId?: string) => request<StudioContext>(studioRoot(p), { method: "POST", body: JSON.stringify(requestId ? { name, requestId } : { name }) }),
   studioStudy: (p: string, s: string) => request<StudioStudyDetail>(studioStudyPath(p, s)),
   studioVariants: (p: string, s: string) => request<{ variants: StudioVariantSummary[] }>(`${studioStudyPath(p, s)}/variants`),
   /** Nouvelle variante : document vide, révision initiale et tête créées par le serveur. */
-  createStudioVariant: (p: string, s: string, name: string) => request<StudioContext>(`${studioStudyPath(p, s)}/variants`, { method: "POST", body: JSON.stringify({ name }) }),
+  createStudioVariant: (p: string, s: string, name: string, requestId?: string) => request<StudioContext>(`${studioStudyPath(p, s)}/variants`, { method: "POST", body: JSON.stringify(requestId ? { name, requestId } : { name }) }),
   studioContext: (p: string, s: string, v: string) => request<StudioContext>(studioVariantPath(p, s, v)),
   studioRevisions: (p: string, s: string, v: string) => request<{ revisions: StudioRevisionSummary[] }>(`${studioVariantPath(p, s, v)}/revisions`),
   /** Révision historique : toujours en lecture seule (`canWrite` faux côté serveur). */

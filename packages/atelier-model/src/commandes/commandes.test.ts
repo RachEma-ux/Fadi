@@ -275,11 +275,17 @@ describe("propriétés BIM, classification, groupes (DA-06-07, DA-06-08, DA-03-1
     expect(() => appliquer(e, [{ type: "propriete.definir", params: { id: "w", nom: "x", valeur: 1, statut: "certifiee" } }])).toThrow(ErreurCommande);
   });
 
-  it("classification : code déclaré dans un système, classe IFC tirée de l'ontologie (jamais devinée), retrait", () => {
-    const r = appliquer(base(), [{ type: "classification.affecter", params: { id: "w", systeme: "Uniclass", code: "EF_25_10" } }]).etat;
+  it("classification : code déclaré dans un système sans fabriquer de déclaration IFC, retrait et inverse exact", () => {
+    const e = base();
+    const ajout = appliquer(e, [{ type: "classification.affecter", params: { id: "w", systeme: "Uniclass", code: "EF_25_10" } }]);
+    const r = ajout.etat;
     expect(r.objets["w"]!.proprietes["classification:Uniclass"]).toEqual({ valeur: "EF_25_10", provenance: "saisie", statut: "declaree" });
-    expect(r.objets["w"]!.proprietes["classeIfc"]).toEqual({ valeur: "IfcWall", provenance: "regle", statut: "verifiee" });
-    expect(appliquer(r, [{ type: "classification.affecter", params: { id: "w", systeme: "Uniclass", code: null } }]).etat.objets["w"]!.proprietes["classification:Uniclass"]).toBeUndefined();
+    expect(Object.hasOwn(r.objets["w"]!.proprietes, "classeIfc")).toBe(false);
+    expect(appliquer(r, [ajout.inverse]).etat).toEqual(e);
+    const retrait = appliquer(r, [{ type: "classification.affecter", params: { id: "w", systeme: "Uniclass", code: null } }]);
+    expect(retrait.etat.objets["w"]!.proprietes["classification:Uniclass"]).toBeUndefined();
+    expect(Object.hasOwn(retrait.etat.objets["w"]!.proprietes, "classeIfc")).toBe(false);
+    expect(appliquer(retrait.etat, [retrait.inverse]).etat).toEqual(r);
   });
 
   it("multicorps limité : deux solides rassemblés dans un groupe, déplacés ensemble, puis le groupe dissous", () => {
