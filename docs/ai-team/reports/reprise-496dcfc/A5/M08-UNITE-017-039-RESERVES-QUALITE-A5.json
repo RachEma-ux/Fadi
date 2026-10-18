@@ -1,0 +1,166 @@
+{
+  "reviewer": "A5 qualité réserves/supersessions uniquement",
+  "code_reference": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "scope": "Fiches entières DA02-01..15 lues pendant revues M08 ; décisionsD043/060/073/088/116/146/174 relues directement auSHA. Pas prétention de seconde revue autonome des109assertionsunitaires réservéeA3.",
+  "A2_input_sha256": "f950dacb5d26fa79ea60e8fc4623d412e41c259ea7c889c814bd6ef28131078a",
+  "rows": [
+    {
+      "entry": "M08-PATH-019",
+      "old": "Pièce refusée par copie, prescription générale",
+      "decisions": [
+        64
+      ],
+      "fiche": "docs/atelier/fiches/DA-02-02.md",
+      "verdict": "Remplacée dans sa portée parD060, historique conservé",
+      "scope": "transformer.copier de pièces avec codes garder(défaut),vider,suivant ; ne pas rétablir refus général. Ce n’est pas permission de copier tout objet lié sans contrôles.",
+      "oracles_current": "Préserver contour/propriétés/identité des nouveaux objets selon contrat copie ; choixcodes et numérofinal premierlibre/zéros ; autres refus/atomicité/inverse/rejeu restent à prouver. Aucune preuve de succès déduite de décision.",
+      "decision_evidence": [
+        {
+          "path": "docs/atelier/decisions.md",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "91bd4cd64d0a67d1fdb3e6acd6582703e88024fabd5b3b1f333f79a8094cad26",
+          "line": 64,
+          "exact_line": "| D-060 | 2026-10-05 | `objet.changerClasse` { id, classe, params? } entre esquisse fermée (polygone, polyligne fermée, rectangle, hachure), dalle, pièce et zone : contour gardé (trous gardés entre dalle, pièce et zone ; vers une esquisse : refus s'il y en a), paramètres de la classe d'arrivée fournis par la commande et validés comme à la création (épaisseur, nom…), identifiant, niveau, calque, groupe, phase et propriétés gardés, type retiré ; refus si l'objet est lié (cote, relation, contrainte, programme) ou sur un calque verrouillé. `transformer.copier` accepte `codes` ∈ { garder (défaut, comportement antérieur), vider, suivant } pour les pièces copiées : « suivant » porte le numéro final au premier numéro libre du projet (zéros gardés), un code sans numéro reçoit « -2 », « -3 »… Inspecteur « Changer en » ; outil Copier : Alt = codes suivants. | Fiches DA-05-12, DA-02-02 (extensions). | Chef de projet | compléments |"
+        }
+      ],
+      "fiche_full_sha256": "fe232596e7c430eb532e5289d11bc4ffd2043fc2289f6723ade37ba20e40e3eb",
+      "fiche_validation_exact": [
+        {
+          "line": 24,
+          "text": "| Validation | **Unité** (`packages/atelier-model/src/commandes/transformer.test.ts`) : copier un mur portant une porte : 2 murs, 2 portes, `t` égal, `repere` absent sur la copie ; copie de poteau : `statutConception` absent ; copie de cotation rattachée : libre ; même enveloppe, mêmes identifiants ; inverse supprime exactement les copies ; `piece` refusée. |"
+        }
+      ],
+      "fiche_suivi_exact": "\n\n- Fait (D-039) : vers un autre niveau — `niveauCible` de `transformer.deplacer` / `transformer.copier` (les ouvertures suivent leur mur ; escalier et mur dont le niveau haut ne serait plus au-dessus : refusés) ; inspecteur « Vers un autre niveau » ; tests `niveaux-transfert.test.ts`, e2e `atelier-complements.mjs`.\n- Fait (D-043) : extension réalisée (voir la décision) ; tests `transformations-plus.test.ts`.\n- Fait (D-060) : copie de pièce avec nouveau code (`codes` : garder, vider, suivant ; Alt avec l'outil Copier) ; tests `changer-classe.test.ts`, `nouveau.test.ts`.\n- Fait (D-147) : presse-papiers (Ctrl+C / Ctrl+V) : copie vers le même projet, un autre niveau ou un autre projet (définitions, calques par nom, hôtes suivis, liens retirés nommés) ; tests `presse-papiers.test.ts`, e2e `atelier-complements.mjs`.\n"
+    },
+    {
+      "entry": "M08-PATH-023",
+      "old": "PoteauL refusé miroir, prescription générale",
+      "decisions": [
+        150
+      ],
+      "fiche": "docs/atelier/fiches/DA-02-04.md",
+      "verdict": "Remplacée pour profilL décrit parD146",
+      "scope": "L utiliseclémiroir réservée àL ; T/U demi-tour complémentaire,rectangle/cercle/I invariants. Pas généralisation à tout profil asymétrique arbitraire ou catalogueinconnu.",
+      "oracles_current": "Section réellement réfléchie et non simple angle ; deuxsymétries identité ; orientation/paramètres/propriétés préservés, inverse et références. Les suites de cette extension n’ont pas été intégralement relues parA5 ici.",
+      "decision_evidence": [
+        {
+          "path": "docs/atelier/decisions.md",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "91bd4cd64d0a67d1fdb3e6acd6582703e88024fabd5b3b1f333f79a8094cad26",
+          "line": 150,
+          "exact_line": "| D-146 | 2026-10-06 | Symétrie des poteaux profilés et orientation des textes. Poteau : l'image par symétrie d'axe φ est rotation (2φ − θ) ∘ retournement de l'axe local y — rectangle, cercle et I invariants ; T et U (symétriques selon x → −x) : demi-tour ajouté ; cornière L (sans symétrie) : clé facultative miroir (section retournée, réservée à L ; deux symétries = identité), aussi réglable dans l'inspecteur. Texte : clé facultative angle (degrés, ramené dans ]−180, 180], nul = omis) — suit la rotation, réfléchi puis ramené lisible (]−90°, 90°]) au miroir, transformé par l'échelle non uniforme ; dessiné tourné au plan de travail, dans les vues (SVG, PDF, DXF) et l'export DXF du plan ; rotation des TEXT, ATTRIB (degrés) et MTEXT (radians) relue à l'import DXF, rotation du bloc ajoutée ; inspecteur « Orientation ». | DA-02-04 | Chef de projet | compléments |"
+        }
+      ],
+      "fiche_full_sha256": "3e03353961cc215549b6fce5706f9a4ff90d17114a71188276ff7ced153fccdb",
+      "fiche_validation_exact": [
+        {
+          "line": 24,
+          "text": "| Validation | **Unité** (`packages/atelier-model/src/commandes/transformer.test.ts`) : mur d'extrémités (1 ; 0) et (3 ; 0), alignement gauche, axe x = 0 : extrémités (−1 ; 0) et (−3 ; 0), alignement droite, corps = image miroir (valeurs vérifiables à la main) ; porte : `t` inchangé ; cotation sur `face-gauche` : « à réparer » ; original gardé : image neuve, références intactes ; poteau en L refusé ; axe dégénéré refusé ; inverse bit à bit. |"
+        }
+      ],
+      "fiche_suivi_exact": "\n\n- Fait (D-071) : miroir d'une occurrence de bloc (contenu retourné, angle réfléchi ; deux miroirs = identité) et d'un poteau (angle réfléchi) ; tests `bloc.test.ts`.\n- Fait (D-146) : symétrie des poteaux T, U, L (cornière retournée) et orientation des textes (rotation, miroir lisible, vues, DXF) ; tests `symetrie-textes-poteaux.test.ts`, e2e `atelier-complements.mjs`.\n"
+    },
+    {
+      "entry": "M08-PATH-025",
+      "old": "Escalier refusé échelle, prescription générale",
+      "decisions": [
+        92
+      ],
+      "fiche": "docs/atelier/fiches/DA-02-05.md",
+      "verdict": "Remplacée parD088 pour échelle axe escalier",
+      "scope": "Axe mis àéchelle ; largeur,hauteuràfranchir,contremarches conservées ; giron suit longueur ; aucune règleconfort inventée. Pas permission de redimensionner toutes dimensions typées.",
+      "oracles_current": "Séparer coordonnéesaxe/résultatlargeur/hauteur/contremarches/giron, autresobjets intacts, inverse étatcomplet et facteursinvalides. Décision ne prouve ni runtime ni conformitéstructurelle.",
+      "decision_evidence": [
+        {
+          "path": "docs/atelier/decisions.md",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "91bd4cd64d0a67d1fdb3e6acd6582703e88024fabd5b3b1f333f79a8094cad26",
+          "line": 92,
+          "exact_line": "| D-088 | 2026-10-05 | Échelle d'un escalier (DA-02-05) : l'axe est mis à l'échelle, les dimensions typées (largeur, hauteur à franchir, contremarches) gardées comme pour les murs, le giron suit la longueur, aucune règle de confort. Étirer un arc (angle de l'extrémité suivie, centre et rayon gardés) ou un cercle (rayon jusqu'au point) (DA-02-06). Propriétés des groupes et des calques (DA-06-07, DA-05-05) : `propriete.definir` avec `groupeId` ou `calqueCible`, mêmes règles (nombre sans unité refusé), colonnes proprietes, archive ; inspecteur du groupe et « Gérer les calques ». | DA-02-05, DA-02-06, DA-06-07, DA-05-05 | Chef de projet | compléments |"
+        }
+      ],
+      "fiche_full_sha256": "31a8dd8389f2209d3e17b1bca8f6f973809fa7651d53b16b9223c302b980e7cb",
+      "fiche_validation_exact": [
+        {
+          "line": 23,
+          "text": "| Validation | **Unité** (`packages/atelier-model/src/commandes/transformer.test.ts`) : facteur 2 d'un carré autour d'un coin : côtés doublés, coin fixe (valeurs vérifiables à la main) ; mur : `epaisseur` et `hauteur` inchangées, porte à `t` inchangé ; poteau : `point` mis à l'échelle, section inchangée ; facteurs 0, −1 et 1 refusés ; escalier refusé ; longueur de référence : facteur = voulu / actuel ; inverse bit à bit. |"
+        }
+      ],
+      "fiche_suivi_exact": "\n\n- Fait (D-088) : échelle d'un escalier (axe ; dimensions typées gardées) ; tests `commandes.test.ts`.\n- Fait (D-145) : échelle non uniforme (`facteurY`, outil Échelle « fx;fy ») ; refus nommés pour arcs, murs courbes, blocs, objets importés ; tests `echelle-non-uniforme.test.ts`, `nouveau.test.ts`, e2e `atelier-complements.mjs`.\n"
+    },
+    {
+      "entry": "M08-PATH-035",
+      "old": "Rayonnul refusé raccord, prescription générale",
+      "decisions": [
+        47,
+        77
+      ],
+      "fiche": "docs/atelier/fiches/DA-02-10.md",
+      "verdict": "Remplacée conditionnellement D043 ; refusavec arc maintenu D073",
+      "scope": "Deuxlignes avec rayon0 : jonction angle sansarc ; ligne–arc ouarc–arc rayon0 refusé. Ne pas étiqueter tout rayonnul nonapplicable, ni réclamer unarc de rayon0.",
+      "oracles_current": "Deuxlignes sejoignent exactement, aucunecréationarc, inverse exact ; refusavec arc et inputintact ; parallèles/calques/niveaux invalides ne deviennent pas admis.",
+      "decision_evidence": [
+        {
+          "path": "docs/atelier/decisions.md",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "91bd4cd64d0a67d1fdb3e6acd6582703e88024fabd5b3b1f333f79a8094cad26",
+          "line": 47,
+          "exact_line": "| D-043 | 2026-10-04 | Transformations complémentaires : `transformer.tourner` et `transformer.echelle` avec `copie` (garder l'original ; Alt pendant la rotation) ; `transformer.copier` avec `vecteurs` (copies à pas irréguliers, une révision) ; `transformer.prolonger` d'une `longueur` donnée sans frontière (outil Prolonger : longueur renseignée, clic près de l'extrémité) ; `transformer.raccorder` de rayon nul = jonction d'angle (ajustement ou prolongement des deux lignes, sans arc) ; `mur.scinder` à plusieurs `positions` (inspecteur : « Scinder en parts égales » ; les références à réparer proposent tous les morceaux) ; `transformer.joindre` (lignes et polylignes jointives → polyligne, polygone si la chaîne se referme ; un objet visé par une cote, une contrainte ou une relation : refus, rien n'est réparé en silence). | Fiches DA-01-02, DA-02-02, DA-02-03, DA-02-08, DA-02-10, DA-02-13, DA-07-01 (extensions). | Chef de projet | compléments |"
+        },
+        {
+          "path": "docs/atelier/decisions.md",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "91bd4cd64d0a67d1fdb3e6acd6582703e88024fabd5b3b1f333f79a8094cad26",
+          "line": 77,
+          "exact_line": "| D-073 | 2026-10-05 | Ajuster et prolonger généralisés (DA-02-07, DA-02-08) : objet = mur, escalier, ligne ou polyligne ouverte sans arc ; limite = axe (droite infinie, comme avant), tracé discrétisé (polyligne y compris arcs, arc, ellipse, spline, rectangle, contours de dalle, pièce, zone…) ou cercle exact ; prolonger : l'extrémité qui atteint la limite au plus court ; ajuster : coupure à la rencontre la plus proche d'une extrémité, sommets intermédiaires retirés ; refus motivés. Raccord tangent ligne–arc et arc–arc (DA-02-10) : centre à l'intersection des courbes décalées du rayon, choix au plus près du coin, éléments ajustés jusqu'aux points de tangence ; rayon nul refusé avec un arc. | DA-02-07, DA-02-08, DA-02-10 | Chef de projet | compléments |"
+        }
+      ],
+      "fiche_full_sha256": "7be59c54b70d9b94c7d83226ad542d8a5ac0c42455d18d18c97521e77e1fcbd6",
+      "fiche_validation_exact": [
+        {
+          "line": 23,
+          "text": "| Validation | **Unité** (`packages/atelier-model/src/commandes/transformer.test.ts` et `packages/core-geometry`) : deux lignes perpendiculaires, rayon `r` : arc de quart de cercle tangent aux deux, centre à la distance `r` de chaque ligne (valeurs vérifiables à la main) ; lignes parallèles refusées ; rayon maximal calculé ; rayon nul refusé ; inverse rétablit les extrémités et supprime l'arc. |"
+        }
+      ],
+      "fiche_suivi_exact": "\n- Fait (D-043) : extension réalisée (voir la décision) ; tests `transformations-plus.test.ts`.\n- Fait (D-063) : raccord de sommets de polyligne, polygone et rectangle (`esquisse.arrondirSommets`, segments en arc) ; tests `esquisse/arcs-polyligne.test.ts`.\n- Fait (D-073) : raccord tangent ligne–arc et arc–arc ; tests `ajuster-chemin.test.ts`.\n- Fait (D-094) : raccord multiple (un raccord par coin jointif de la sélection, un seul lot) ; tests `chanfrein-arc.test.ts`, `nouveau.test.ts`, e2e `atelier-complements.mjs`.\n"
+    },
+    {
+      "entry": "M08-PATH-027",
+      "old": "Rectangle toujours rectangle sous étirement",
+      "decisions": [
+        120
+      ],
+      "fiche": "docs/atelier/fiches/DA-02-06.md",
+      "verdict": "Nonconclu pour ancien chemin ; ne pas supprimer invariant globalement",
+      "scope": "D116 nouveau transformer.etirerFenetre peut convertir rectangleenpolygone ; ancien transformer.etirer et adaptateurfenêtrehistorique doivent être distingués. D116 n’abroge pas silencieusement chaque chemin antérieur.",
+      "oracles_current": "Cartographier commandeexacte/cibles et branche dudéplacement ; objetentier vs partiel, sommetsfenêtre, voisinsinchangés, distanceporteextrémitéfixe, lockedobjets laissés selonD116 et refusformeinvalides. Testnouveauchemin ne prouve pas ancien maintienrectangle.",
+      "decision_evidence": [
+        {
+          "path": "docs/atelier/decisions.md",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "91bd4cd64d0a67d1fdb3e6acd6582703e88024fabd5b3b1f333f79a8094cad26",
+          "line": 120,
+          "exact_line": "| D-116 | 2026-10-06 | Étirer par fenêtre polygonale : transformer.etirerFenetre (niveau, fenêtre ≥ 3 sommets tracée au lasso libre, dx, dy) déplace les sommets compris dans la fenêtre — objet entièrement compris déplacé, partiellement compris étiré (extrémité de mur ou d'escalier via transformer.etirer, ouvertures à distance conservée de l'extrémité fixe ; sommets de polyligne, polygone, contour de dalle, pièce, zone, toiture, garde-corps ; rectangle devenu polygone) ; arcs, cercles, ellipses par leur centre ; poteaux, blocs, textes par leur point. Objets verrouillés ou sur calque verrouillé/gelé laissés ; hachures et solides associés suivent leur source ; contour qui se croise ou paramètres invalides : refus motivé ; un lot, inverse exact. Outil « Étirer par fenêtre » (lasso, base, destination ; Échap abandonne). | DA-02-06 | Chef de projet | compléments |"
+        }
+      ],
+      "fiche_full_sha256": "296bb2a58105ae771fa094d63429439f0441aa407d531b1cb969ead98f5c1717",
+      "fiche_validation_exact": [
+        {
+          "line": 25,
+          "text": "| Validation | **Unité** (`packages/atelier-model/src/commandes/transformer.test.ts`) : mur de 4 m portant une porte à 1 m de `a`, extrémité `b` étirée à 3 m : porte toujours à 1 m de `a` (`t` de 0,25 à 1/3) ; extrémité `a` étirée : distance à `b` conservée ; fenêtre englobant tout le mur : translation, `t` inchangé ; porte de 1,4 m dans un mur raccourci à 1 m : « à réparer », non supprimée ; rectangle toujours rectangle ; polygone auto-sécant refusé ; inverse bit à bit. |"
+        }
+      ],
+      "fiche_suivi_exact": "\n- Fait (D-047) : extension réalisée (voir la décision) ; tests `architecture-plus.test.ts`, e2e `atelier-complements.mjs`.\n- Fait (D-088) : étirer un arc ou un cercle ; tests `ajuster-chemin.test.ts`.\n- Fait (D-116) : fenêtre polygonale (lasso libre) — `transformer.etirerFenetre`, outil « Étirer par fenêtre » ; tests `etirer-fenetre.test.ts`, e2e `atelier-complements.mjs`.\n"
+    }
+  ],
+  "D174": {
+    "path": "docs/atelier/decisions.md",
+    "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+    "sha256": "91bd4cd64d0a67d1fdb3e6acd6582703e88024fabd5b3b1f333f79a8094cad26",
+    "line": 178,
+    "exact_line": "| D-174 | 2026-10-08 | **Acceptation par le maître d'ouvrage** (« Continue tout est ok », après l'état des lieux « que reste-t-il pour une application universelle ») des lots Atelier 0 à 9 et compléments, et des lots Planche 1 à 7 (PR #84 à #91 sur `main`). Effet : les 71 fiches DA et les 35 fiches PL passent de « prototype » / « spécifiée » à **« disponible »** avec leur preuve liée inchangée (R8, D-007) ; les limites déclarées (recette §7, lacunes L-1 à L-37 du cahier Planche, synchronisation de la Planche par relecture à 60 s) restent déclarées et ne sont pas levées par l'acceptation. Les décisions 10.1 encore ouvertes (licence OCCT, fournisseur de modèle de langage, stockage objet, compte buildingSMART, D-016) ne sont pas tranchées par cette acceptation. | Cahier §0 (acceptation entre lots), §10.1-1 ; recette §6. | Maître d'ouvrage | 0–9, Planche 1–7 |"
+  },
+  "verdict": "Quatre refus généraux historiques ne sont plus oracles courants dans portée amendée explicite ; D116 reste nonconclu pour vieux chemin. Aucun texte supprimé, décision modifiée ou capacitévérifiée par existence décision.",
+  "pending": "Rapprocher revue développement109A3 puis contrôler matrice réserves/avisA5 en attribuant les lectures ; A0 seul intègre.",
+  "execution": "LectureGit/source et JSONdocumentaire seulement ; zéro test/browser/app/API/DB/service/réseau"
+}

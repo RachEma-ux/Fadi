@@ -1,4 +1,4 @@
-# Chantier Atelier Architecture (DrawAll V4.1) — dossier de suivi
+# Chantier Atelier Architecture Fadi — dossier de suivi
 
 > **Décision Fadi — 17 octobre 2026 (Issue #147).** Les capacités de dessin et les fonctions industrielles (mécanique, structure, bois, tôlerie, MEP, etc.) restent natives à Fadi. Les normes techniques restent référencées selon leur organisme d'origine ; les éléments propres au produit DrawAll sont exclus du référentiel opérationnel Fadi. Les fiches historiques `DA-...` ne sont pas supprimées sans remplacement sûr de leur traçabilité et de leurs tests.
 

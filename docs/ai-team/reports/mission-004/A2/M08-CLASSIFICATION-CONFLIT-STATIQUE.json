@@ -1,0 +1,508 @@
+{
+  "mission": "004/M08/A2",
+  "severity": "P2",
+  "status": "CONFLIT_CONTRAT_CONFIRME_STATIQUEMENT_SANS_REPRODUCTION_RUNTIME",
+  "reference": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "reference_kind": "PR169, aucune fusion main affirmée",
+  "independent_verification": "A2 a relu réducteur complet, dispatcher individuel/ids, décisions D065/D111/D112/D174, fiche et oracles à partir de git show immuable. Aucun test exécuté.",
+  "finding": "Instruction organisation.ts:436 écrit la correspondance CLASSES[o.classe].ifc dans la propriété canonique classeIfc, provenance regle/statut verifiee, après branches code présent et code=null. L’état retourné inclut ces propriétés. La fiche interdit cette déduction et D111 garde la déclaration sans mutation par le contrôle dérivé.",
+  "scope_static_consequences": [
+    "Propriété absente susceptible d’être créée lors d’une commande de code externe acceptée.",
+    "Déclaration existante saisie/importée susceptible d’être remplacée, y compris lors du retrait code=null.",
+    "Dispatcher id et ids appelle ce même réducteur.",
+    "Oracle commandes.test.ts:281 exige cette écriture ; oracle annexe-c.test.ts conserve la déclaration dans un scénario distinct qui ne combine pas code externe et contrôle."
+  ],
+  "decision_interpretations": [
+    {
+      "id": "D-065",
+      "line": 69,
+      "conclusion": "Validation de code et libellé de référentiel ; pas autorisation explicite d’une substitution canonique classeIfc."
+    },
+    {
+      "id": "D-111",
+      "line": 115,
+      "conclusion": "Contrôle dérivé, déclaration non corrigée, aucun écrit au modèle ; export annexe C distinct."
+    },
+    {
+      "id": "D-112",
+      "line": 116,
+      "conclusion": "Proposition puis lot explicite de codes, mêmes contrôles ; pas substitution supplémentaire classeIfc autorisée."
+    },
+    {
+      "id": "D-174",
+      "line": 178,
+      "conclusion": "Acceptation et preuve historique conservées ; pas réécriture implicite des décisions ni autorisation du nouveau correctif."
+    }
+  ],
+  "sources": [
+    {
+      "path": "packages/atelier-model/src/commandes/organisation.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "8c2f00472ec1dd9a903071396940a092eef1cbc9",
+      "sha256": "792399409ba93824808c5ca445ee3d169fc02d68bb0e7ee0541455eee17af26b",
+      "evidence": [
+        {
+          "line": 414,
+          "exact_line": "/** Classification : la classe IFC vient de l'ontologie (jamais devinée autrement) ; un code de classification externe est déclaré, avec son système. */"
+        },
+        {
+          "line": 415,
+          "exact_line": "export function affecterClassification(etat: ModeleAtelier, p: Brut): ResultatCommande {"
+        },
+        {
+          "line": 416,
+          "exact_line": "  const id = lire.objet(etat, p, \"id\");"
+        },
+        {
+          "line": 417,
+          "exact_line": "  const systeme = lire.chaine(p, \"systeme\");"
+        },
+        {
+          "line": 418,
+          "exact_line": "  const code = lire.chaineOuNull(p, \"code\");"
+        },
+        {
+          "line": 419,
+          "exact_line": "  const o = etat.objets[id]!;"
+        },
+        {
+          "line": 420,
+          "exact_line": "  const proprietes = { ...o.proprietes };"
+        },
+        {
+          "line": 421,
+          "exact_line": "  // Référentiel chargé pour ce système (D-065) : le code doit y figurer ; il est alors « vérifié » et son libellé noté."
+        },
+        {
+          "line": 422,
+          "exact_line": "  const ref = code === null ? null : referentielDu(etat, systeme);"
+        },
+        {
+          "line": 423,
+          "exact_line": "  if (ref && !(code! in ref.params.codes)) {"
+        },
+        {
+          "line": 424,
+          "exact_line": "    const proches = codesProches(ref.params, code!);"
+        },
+        {
+          "line": 425,
+          "exact_line": "    throw new ErreurCommande(\"precondition\", \"code\", `code « ${code} » absent du référentiel ${ref.nom} (source : ${ref.params.source})${proches.length ? ` ; codes proches : ${proches.join(\", \")}` : \"\"}`);"
+        },
+        {
+          "line": 426,
+          "exact_line": "  }"
+        },
+        {
+          "line": 427,
+          "exact_line": "  if (code === null) {"
+        },
+        {
+          "line": 428,
+          "exact_line": "    delete proprietes[`classification:${systeme}`];"
+        },
+        {
+          "line": 429,
+          "exact_line": "    delete proprietes[`classification:${systeme}:libelle`];"
+        },
+        {
+          "line": 430,
+          "exact_line": "  } else {"
+        },
+        {
+          "line": 431,
+          "exact_line": "    proprietes[`classification:${systeme}`] = { valeur: code, provenance: \"saisie\", statut: ref ? \"verifiee\" : \"declaree\" };"
+        },
+        {
+          "line": 432,
+          "exact_line": "    const libelle = ref?.params.codes[code];"
+        },
+        {
+          "line": 433,
+          "exact_line": "    if (libelle) proprietes[`classification:${systeme}:libelle`] = { valeur: libelle, provenance: \"import\", statut: \"verifiee\" };"
+        },
+        {
+          "line": 434,
+          "exact_line": "    else delete proprietes[`classification:${systeme}:libelle`];"
+        },
+        {
+          "line": 435,
+          "exact_line": "  }"
+        },
+        {
+          "line": 436,
+          "exact_line": "  proprietes[\"classeIfc\"] = { valeur: CLASSES[o.classe].ifc, provenance: \"regle\", statut: \"verifiee\" };"
+        },
+        {
+          "line": 437,
+          "exact_line": "  const effets = effetsVides();"
+        },
+        {
+          "line": 438,
+          "exact_line": "  effets.modifies.push(id);"
+        },
+        {
+          "line": 439,
+          "exact_line": "  return { etat: { ...etat, objets: { ...etat.objets, [id]: { ...o, proprietes } as OccurrenceQuelconque } }, effets };"
+        }
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/index.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "6df8663bc325337bd4cd2aa5c7dab0b2ece3619e",
+      "sha256": "ee0dd04b4976c17d5f77a261730d239c8d125a2442ca8013c464d59dc8ce09b3",
+      "evidence": [
+        {
+          "line": 291,
+          "exact_line": "  // Plusieurs objets d'un coup (D-112, classification par règle) : `ids` au lieu de `id`, mêmes contrôles pour chacun."
+        },
+        {
+          "line": 292,
+          "exact_line": "  \"classification.affecter\": (etat, p) => {"
+        },
+        {
+          "line": 293,
+          "exact_line": "    if (!Array.isArray(p[\"ids\"])) return affecterClassification(etat, p);"
+        },
+        {
+          "line": 294,
+          "exact_line": "    const ids = (p[\"ids\"] as unknown[]).filter((x): x is string => typeof x === \"string\");"
+        },
+        {
+          "line": 295,
+          "exact_line": "    if (!ids.length || ids.length > 5000) throw new ErreurCommande(\"invalide\", \"ids\", \"de 1 à 5000 objets\");"
+        },
+        {
+          "line": 296,
+          "exact_line": "    let courant = etat;"
+        },
+        {
+          "line": 297,
+          "exact_line": "    let effets = effetsVides();"
+        },
+        {
+          "line": 298,
+          "exact_line": "    for (const id of ids) {"
+        },
+        {
+          "line": 299,
+          "exact_line": "      const r = affecterClassification(courant, { ...p, id });"
+        },
+        {
+          "line": 300,
+          "exact_line": "      courant = r.etat;"
+        },
+        {
+          "line": 301,
+          "exact_line": "      effets = fusionnerEffets(effets, r.effets);"
+        },
+        {
+          "line": 302,
+          "exact_line": "    }"
+        },
+        {
+          "line": 303,
+          "exact_line": "    return { etat: courant, effets };"
+        }
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "458b232273b5e5529ff6489804371cba011901db",
+      "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+      "evidence": [
+        {
+          "line": 278,
+          "exact_line": "  it(\"classification : code déclaré dans un système, classe IFC tirée de l'ontologie (jamais devinée), retrait\", () => {"
+        },
+        {
+          "line": 279,
+          "exact_line": "    const r = appliquer(base(), [{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"Uniclass\", code: \"EF_25_10\" } }]).etat;"
+        },
+        {
+          "line": 280,
+          "exact_line": "    expect(r.objets[\"w\"]!.proprietes[\"classification:Uniclass\"]).toEqual({ valeur: \"EF_25_10\", provenance: \"saisie\", statut: \"declaree\" });"
+        },
+        {
+          "line": 281,
+          "exact_line": "    expect(r.objets[\"w\"]!.proprietes[\"classeIfc\"]).toEqual({ valeur: \"IfcWall\", provenance: \"regle\", statut: \"verifiee\" });"
+        },
+        {
+          "line": 282,
+          "exact_line": "    expect(appliquer(r, [{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"Uniclass\", code: null } }]).etat.objets[\"w\"]!.proprietes[\"classification:Uniclass\"]).toBeUndefined();"
+        },
+        {
+          "line": 283,
+          "exact_line": "  });"
+        }
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/annexe-c.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "91b42157ac23f1ab5ee7391f87292c7711af69de",
+      "sha256": "d1862832a2da82c63be358c29302130f45ae1baef7137bbfafcde4a9ed85ede0",
+      "evidence": [
+        {
+          "line": 2,
+          "exact_line": " * Contrôle croisé classe Fadi / classe IFC (D-111, DA-06-08, annexe C du cahier) : la correspondance de l'annexe C"
+        },
+        {
+          "line": 3,
+          "exact_line": " * dit en quelles classes IFC 4.3 chaque classe Fadi s'exporte. Une classe IFC déclarée sur un objet (propriété"
+        },
+        {
+          "line": 4,
+          "exact_line": " * `classeIfc`, saisie ou importée) qui n'en fait pas partie est signalée — jamais corrigée : l'export garde la classe"
+        },
+        {
+          "line": 5,
+          "exact_line": " * de l'annexe C, la déclaration reste telle quelle (R3, R16). Pur et dérivé : rien n'est écrit au modèle."
+        },
+        {
+          "line": 62,
+          "exact_line": "export function controleClassesIfc(etat: ModeleAtelier): IncoherenceClasseIfc[] {"
+        },
+        {
+          "line": 63,
+          "exact_line": "  const out: IncoherenceClasseIfc[] = [];"
+        },
+        {
+          "line": 64,
+          "exact_line": "  for (const o of Object.values(etat.objets)) {"
+        },
+        {
+          "line": 65,
+          "exact_line": "    // Objet importé d'IFC : sa classe lue est conservée telle quelle (R16), rien à confronter."
+        },
+        {
+          "line": 66,
+          "exact_line": "    if (o.classe === \"objet-importe\") continue;"
+        },
+        {
+          "line": 67,
+          "exact_line": "    const v = o.proprietes?.[\"classeIfc\"]?.valeur;"
+        },
+        {
+          "line": 68,
+          "exact_line": "    if (typeof v !== \"string\" || !v.trim()) continue;"
+        },
+        {
+          "line": 69,
+          "exact_line": "    const attendues = classesIfcAttendues(o.classe);"
+        },
+        {
+          "line": 70,
+          "exact_line": "    if (attendues.some((a) => a.toLowerCase() === v.trim().toLowerCase())) continue;"
+        },
+        {
+          "line": 71,
+          "exact_line": "    out.push({ objetId: o.id, classe: o.classe, declaree: v.trim(), attendues, message: `${CLASSES[o.classe].libelle} ${o.id} : classe IFC déclarée ${v.trim()}, annexe C : ${attendues.join(\" ou \")} (exporté ainsi, déclaration conservée)` });"
+        },
+        {
+          "line": 72,
+          "exact_line": "  }"
+        },
+        {
+          "line": 73,
+          "exact_line": "  return out.sort((a, b) => (a.objetId < b.objetId ? -1 : 1));"
+        }
+      ]
+    },
+    {
+      "path": "packages/atelier-model/src/annexe-c.test.ts",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "f02e7add67412d09797be94a628813fa0c320aac",
+      "sha256": "19840668ea9f1b829611a0edf6203f30f3148a702e5e5b89510b20ee2f149d72",
+      "evidence": [
+        {
+          "line": 17,
+          "exact_line": "  it(\"classe IFC déclarée incohérente : signalée (problèmes, rapport IFC), jamais corrigée ; cohérente ou classée par la règle : rien\", () => {"
+        },
+        {
+          "line": 18,
+          "exact_line": "    const e = appliquerLot(modeleVide(), lot(["
+        },
+        {
+          "line": 19,
+          "exact_line": "      { type: \"niveau.creer\", params: { id: \"n\", nom: \"R\", elevation: 0, hauteur: 3 } },"
+        },
+        {
+          "line": 20,
+          "exact_line": "      { type: \"mur.tracer\", params: { id: \"w1\", niveauId: \"n\", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3) } },"
+        },
+        {
+          "line": 21,
+          "exact_line": "      { type: \"mur.tracer\", params: { id: \"w2\", niveauId: \"n\", a: pt(0, 3), b: pt(4, 3), epaisseur: m(0.2), hauteur: m(3) } },"
+        },
+        {
+          "line": 22,
+          "exact_line": "      { type: \"propriete.definir\", params: { id: \"w1\", nom: \"classeIfc\", valeur: \"IfcDoor\" } },"
+        },
+        {
+          "line": 23,
+          "exact_line": "      { type: \"propriete.definir\", params: { id: \"w2\", nom: \"classeIfc\", valeur: \"ifcwall\" } },"
+        },
+        {
+          "line": 24,
+          "exact_line": "    ])).etat;"
+        },
+        {
+          "line": 25,
+          "exact_line": "    const x = controleClassesIfc(e);"
+        },
+        {
+          "line": 26,
+          "exact_line": "    expect(x.map((i) => [i.objetId, i.declaree, i.attendues])).toEqual([[\"w1\", \"IfcDoor\", [\"IfcWall\"]]]);"
+        },
+        {
+          "line": 27,
+          "exact_line": "    expect(e.objets[\"w1\"]!.proprietes[\"classeIfc\"]!.valeur).toBe(\"IfcDoor\");"
+        },
+        {
+          "line": 28,
+          "exact_line": "    const r = exporterIfc(e, { projet: { id: \"p\", nom: \"t\", code: \"T\" }, revision: 1, horodatage: \"2026-10-06T00:00:00\" });"
+        },
+        {
+          "line": 29,
+          "exact_line": "    expect(r.rapport.remarques.some((t) => /w1 : classe IFC déclarée IfcDoor, annexe C : IfcWall/.test(t))).toBe(true);"
+        },
+        {
+          "line": 30,
+          "exact_line": "    expect(r.contenu).toMatch(/IFCWALL\\(/);"
+        }
+      ]
+    },
+    {
+      "path": "docs/atelier/fiches/DA-06-08.md",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "638dfb5f01c53c9b957b9e01282ed4a10c82b53c",
+      "sha256": "f3bd2e6ee66292b6d558036c2c9604984a51624e0a0e0789433141f92d0e8ac6",
+      "evidence": [
+        {
+          "line": 3,
+          "exact_line": "**État : disponible (lots 3a, 6) — acceptée le 8 octobre 2026 (D-174)** (à spécifier → spécifiée → prototype → vérifiée → disponible). Preuve liée : `packages/atelier-model/src/commandes/commandes.test.ts` (`classification.affecter`), export IFC (`echanges/echanges.test.ts`) ; comptes rendus `lots/lot-3a.md`, `lot-6.md`."
+        },
+        {
+          "line": 7,
+          "exact_line": "| Identité | DA-06-08 (M05, étape cible P1). Sous-exigences : -a classe IFC d'un objet ou d'une définition ; -b référence de classification (système, code) ; -c retrait (« non classé »). Ces deux déclarations sont distinctes de la classe Fadi (DA-05-02, nature de l'objet). Contrat : `classification.affecter` (annexe B), classe IFC et code de classification facultatifs (§5.2). |"
+        },
+        {
+          "line": 8,
+          "exact_line": "| Situation utilisateur | Déclarer à quelle classe IFC et à quel code d'un système de classification appartient un élément, pour la nomenclature et l'export, sans que Fadi le devine. |"
+        },
+        {
+          "line": 9,
+          "exact_line": "| Entrées et unités | `classification.affecter` : `cible` (`objetId`, ou identifiant de définition : `typeId`, `blocId` d'un composant), `classeIfc` (nom de classe du schéma IFC 4.3, par exemple `IfcWall`) et/ou `classification` `{ systeme, edition, code, libelle }` ; `null` retire (« non classé »). `systeme` est nommé par l'utilisateur ; un `code` sans `systeme` est refusé (ambigu). Aucune grandeur : pas d'unité. |"
+        },
+        {
+          "line": 11,
+          "exact_line": "| | **R3 : jamais devinée.** Aucune classe IFC ni aucun code n'est déduit du nom, de la forme, du type, du rôle ou de la classe Fadi. Un objet sans affectation est « non classé ». La correspondance classe Fadi → classe IFC (annexe C, lot 6) ne sert qu'à l'export, est nommée au rapport d'échange et n'écrit rien dans le modèle. |"
+        },
+        {
+          "line": 12,
+          "exact_line": "| | **Héritage.** Une classification posée sur une définition (type, composant) s'applique à ses occurrences ; celle de l'occurrence la surcharge ; modifier la définition ne réécrit jamais une surcharge. |"
+        },
+        {
+          "line": 13,
+          "exact_line": "| | **Contrôles.** Classe IFC absente du schéma 4.3 chargé : refusée, avec la liste des classes proches ; code ou système vide : refusé ; aucun référentiel de codes n'est livré : le code est validé seulement comme texte non vide ; aucune cohérence croisée classe Fadi / classe IFC n'est contrôlée au lot 3a ni présentée comme vérifiée (contrôle déclaré non exécuté, annexe C, lot 6) ; cible d'un calque verrouillé : lot refusé en entier. |"
+        },
+        {
+          "line": 15,
+          "exact_line": "| Données et dépendances | Classification portée par les occurrences et les `definition` (comme DA-06-07) : `classeIfc` et référence de classification, provenance (`saisie`, `import`) et statut (`declaree`, `a-verifier`). Liste des classes IFC 4.3 : issue du schéma publié, versionnée, jamais saisie à la main. Événement de commande validée : quantités et bilan « à recalculer » (R11, T07) ; microversion +1. |"
+        },
+        {
+          "line": 17,
+          "exact_line": "| Cas limites | **Valeurs.** Classe IFC valide mais incohérente avec la classe Fadi (par exemple `IfcDoor` sur un `mur`) : admise au lot 3a avec le statut `declaree`, signalée dans le panneau des problèmes dès que l'annexe C est chargée (lot 6) ; même code sur plusieurs objets : admis ; système inconnu : admis, nommé tel quel. |"
+        },
+        {
+          "line": 19,
+          "exact_line": "| Compatibilité | Import P.118 : aucune classification déduite des types (`cloison`, `mur`, `non-type`), des rôles de solides ou des noms ; un champ de classification présent dans l'export est repris tel quel (provenance `import`), sinon l'objet est « non classé » (R7, rapport nominatif). |"
+        },
+        {
+          "line": 20,
+          "exact_line": "| | IFC : `IfcClassification` et `IfcClassificationReference` (`ReferencedSource`, `Identification`) à l'import et à l'export ; classe IFC d'une entité importée conservée telle que lue (R16) ; `IfcWallType` et autres types : DA-05-14 et DA-05-15. DXF : sans objet. |"
+        },
+        {
+          "line": 21,
+          "exact_line": "| Validation | **Unité** (`packages/atelier-model/src/commandes/classification.test.ts`) : affectation à un objet, à une définition, héritage et surcharge ; classe IFC inconnue refusée ; code sans système refusé ; aucun objet classé sans commande (état importé de P.118 : tous « non classés » hors champs d'export) ; retrait ; inverse restitue. |"
+        },
+        {
+          "line": 23,
+          "exact_line": "| | **e2e** (`apps/web/e2e/scenarios/05-atelier.mjs`, bloc « Propriétés · classification ») : copie de travail de P.118 : tous les objets « non classés » au départ ; affecter `IfcWall` à un type de mur (hérité par ses murs) et un code de classification à `EX118-mezz-W-009` ; annuler ; recharger : identique ; second navigateur à la même révision. |"
+        },
+        {
+          "line": 24,
+          "exact_line": "| Règles métier | Aucune règle réglementaire. R3 : une classification n'est jamais devinée ni complétée ; aucun système de classification (CFC, Uniclass, OmniClass…) n'est livré ni présumé. R16 : un objet importé d'IFC n'a pas d'historique paramétrique inventé. |"
+        },
+        {
+          "line": 29,
+          "exact_line": "- Fait (D-065) : référentiels de classification chargés explicitement (CSV, système, édition, source) avec validation des codes et libellés ; classification dans l'inspecteur (objet ou sélection) ; export IFC (IfcClassification, IfcClassificationReference, IfcRelAssociatesClassification) ; tests `referentiels.test.ts`, e2e `atelier-complements.mjs`."
+        },
+        {
+          "line": 30,
+          "exact_line": "- Fait (D-111) : contrôle croisé classe Fadi / classe IFC (annexe C) — une classe IFC déclarée hors de la correspondance est listée dans les problèmes et nommée au rapport d'échange IFC, jamais corrigée (l'export garde la classe de l'annexe C) ; tests `annexe-c.test.ts`, `atelier-commands.test.ts`. Reste : classification en lot par règle (proposition)."
+        },
+        {
+          "line": 31,
+          "exact_line": "- Fait (D-112) : classification en lot par règle (classe Fadi, type et niveau facultatifs ; proposition affichée — objets visés, déjà classés et verrouillés écartés — puis un seul lot `classification.affecter` avec `ids`) ; tests `annexe-c.test.ts`, e2e `atelier-complements.mjs`."
+        }
+      ]
+    },
+    {
+      "path": "docs/atelier/decisions.md",
+      "commit": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+      "git_blob": "46d9f06852af152522bf1431dda245f811e1b153",
+      "sha256": "91bd4cd64d0a67d1fdb3e6acd6582703e88024fabd5b3b1f333f79a8094cad26",
+      "evidence": [
+        {
+          "line": 69,
+          "exact_line": "| D-065 | 2026-10-05 | Référentiels de classification : définitions `referentiel-classification` { systeme, edition, source, codes } chargées par `referentiel.charger` (un par système, recharger remplace, version suivante) et retirées par `referentiel.retirer` ; codes et libellés viennent du fichier de l'utilisateur (CSV « code ; libellé », en-tête « code » ignoré, séparateur détecté), jamais de Fadi. `classification.affecter` : si un référentiel du système est chargé, un code absent est refusé (codes proches proposés, ordre lexical) et un code présent est « vérifié », son libellé noté (`classification:<système>:libelle`) ; sans référentiel, comportement antérieur (« déclaré »). Inspecteur : section Classification (objet ou sélection, un lot), référentiels chargés. Export IFC : IfcClassification (source et édition du référentiel s'il est chargé), IfcClassificationReference (code, libellé), IfcRelAssociatesClassification. Exclus des fichiers de bibliothèque et de la reprise. Contrôle croisé classe Fadi / classe IFC : non traité. | Fiche DA-06-08 (extensions). | Chef de projet | compléments |"
+        },
+        {
+          "line": 115,
+          "exact_line": "| D-111 | 2026-10-06 | Contrôle croisé classe Fadi / classe IFC : la correspondance de l'annexe C (classes IFC admises par classe Fadi ; à défaut, celle de l'ontologie) est confrontée à la propriété classeIfc des objets (saisie ou importée ; objets importés d'IFC exclus, R16). Une déclaration hors correspondance est listée dans le panneau des problèmes (« Classes IFC à vérifier ») et nommée au rapport d'échange IFC ; elle n'est jamais corrigée et l'export garde la classe de l'annexe C. Dérivé, rien n'est écrit au modèle. | DA-06-08 | Chef de projet | compléments |"
+        },
+        {
+          "line": 116,
+          "exact_line": "| D-112 | 2026-10-06 | Classification en lot par règle : une règle (classe Fadi, type et niveau facultatifs, système, code) donne une proposition affichée avant toute écriture — objets visés, objets déjà classés dans ce système écartés (sauf « remplacer »), objets verrouillés écartés — puis « Appliquer » envoie un seul lot : classification.affecter accepte ids (1 à 5000 objets, mêmes contrôles que pour un objet, code vérifié au référentiel s'il est chargé). Jamais appliquée d'office (R3). Navigateur : « Classer par règle ». | DA-06-08 | Chef de projet | compléments |"
+        },
+        {
+          "line": 178,
+          "exact_line": "| D-174 | 2026-10-08 | **Acceptation par le maître d'ouvrage** (« Continue tout est ok », après l'état des lieux « que reste-t-il pour une application universelle ») des lots Atelier 0 à 9 et compléments, et des lots Planche 1 à 7 (PR #84 à #91 sur `main`). Effet : les 71 fiches DA et les 35 fiches PL passent de « prototype » / « spécifiée » à **« disponible »** avec leur preuve liée inchangée (R8, D-007) ; les limites déclarées (recette §7, lacunes L-1 à L-37 du cahier Planche, synchronisation de la Planche par relecture à 60 s) restent déclarées et ne sont pas levées par l'acceptation. Les décisions 10.1 encore ouvertes (licence OCCT, fournisseur de modèle de langage, stockage objet, compte buildingSMART, D-016) ne sont pas tranchées par cette acceptation. | Cahier §0 (acceptation entre lots), §10.1-1 ; recette §6. | Maître d'ouvrage | 0–9, Planche 1–7 |"
+        }
+      ]
+    }
+  ],
+  "proposed_authorization_scope": {
+    "state": "A_AUTORISER_AUCUNE_IMPLEMENTATION",
+    "owner": "A3 seul auteur après accord ; A2 contrat, A5 oracles, A0 intégration et revue",
+    "primary_files": [
+      "packages/atelier-model/src/commandes/organisation.ts",
+      "packages/atelier-model/src/commandes/commandes.test.ts"
+    ],
+    "possible_pure_tests": "Compléments classification/annexe C bornés après inventaire des assertions dépendantes ; pas modification présumée du dispatcher ou export.",
+    "acceptance": [
+      "Code externe ajouté/modifié/retiré ne crée pas classeIfc absente et conserve déclaration existante avec valeur/provenance/statut/attributs.",
+      "Cas saisie/import, cohérent/incohérent, individuel/ids ; refus atomiques et inverse exact.",
+      "D065 conservée : code/libellé vérifié uniquement si référentiel valide ; refus code inconnu.",
+      "Contrôle D111 non mutateur et export annexe C conservés, aucune certification IFC implicite.",
+      "Oracle contradictoire remplacé par assertions de conservation sans suppression des autres garanties ; preuve tests purs et revue A5."
+    ],
+    "excluded": [
+      "DB réelle, API/E2E, migration et nettoyage de données déjà écrites",
+      "Modification des décisions, normes, acceptation historique, fiches et mapping125",
+      "Implémentation globale types/héritage, nouvelle API ou UI, changement schéma DB",
+      "Commit/PR/fusion/production par A2"
+    ],
+    "rollback": "Build compatible, sans réécriture des données ; préserver nouvelles déclarations et preuves. Anciennes valeurs calculées non réparées par supposition ; reprise éventuelle nécessite autorisation distincte."
+  },
+  "limits": [
+    "Conflit de code/oracle/contrat statique, aucune session, base ou perte particulière reproduite.",
+    "Pas recherche exhaustive de toutes décisions historiques hors périmètre nommé, aucune affirmation de volume de données affectées.",
+    "Aucune correction applicative, décision réécrite, oracle édité ou migration exécutée."
+  ],
+  "next_action": "A0 publie preuves et demande autorisation distincte du lot borné ; ne pas remettre au vote les décisions déjà actées."
+}

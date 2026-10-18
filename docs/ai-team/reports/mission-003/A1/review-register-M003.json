@@ -1,0 +1,137 @@
+{
+  "reviewer": "A1",
+  "mission": "003",
+  "date": "2026-10-18",
+  "snapshot_sha256": "e8023a990484e4bff52b7ba4a63c8bc95d4d20c78f32125d549f37b8c0b4486f",
+  "perimetre": "Revue cohérence états/comptes/provenance seulement, pas conformité Studio",
+  "checks": {
+    "630_IDs": {
+      "resultat": "Réussi",
+      "detail": "630 IDs uniques comparés à source canonique, sans omission/ajout"
+    },
+    "630_textes": {
+      "resultat": "Réussi",
+      "detail": "Descriptions comparées exactement à texte checklist"
+    },
+    "TR-": {
+      "resultat": "Réussi",
+      "detail": "141 TR- au statut En cours"
+    },
+    "DEC-": {
+      "resultat": "Réussi",
+      "detail": "18 DEC- au statut En cours"
+    },
+    "NAV-": {
+      "resultat": "Réussi",
+      "detail": "9 NAV- au statut Bloqué"
+    },
+    "six_sources_seulement": {
+      "resultat": "Réussi",
+      "detail": "Exactement six contrôles documentaires vérifiés ; aucune capacité métier"
+    },
+    "aucune_case_acceptation": {
+      "resultat": "Réussi",
+      "detail": "630 cases source inchangées et zéro acceptation métier"
+    },
+    "condition_verifiee": {
+      "resultat": "Réussi",
+      "detail": "Condition vérifiée uniquement pour six contrôles de provenance"
+    },
+    "SRC-01_preuve": {
+      "resultat": "Réussi",
+      "detail": "Preuve retrouvée inchangée dans originalCSV, fichiers cités présents, tests métier non applicables"
+    },
+    "SRC-02_preuve": {
+      "resultat": "Réussi",
+      "detail": "Preuve retrouvée inchangée dans originalCSV, fichiers cités présents, tests métier non applicables"
+    },
+    "SRC-03_preuve": {
+      "resultat": "Réussi",
+      "detail": "Preuve retrouvée inchangée dans originalCSV, fichiers cités présents, tests métier non applicables"
+    },
+    "REP-01_preuve": {
+      "resultat": "Réussi",
+      "detail": "Preuve retrouvée inchangée dans originalCSV, fichiers cités présents, tests métier non applicables"
+    },
+    "PROV-01_preuve": {
+      "resultat": "Réussi",
+      "detail": "Preuve retrouvée inchangée dans originalCSV, fichiers cités présents, tests métier non applicables"
+    },
+    "PROV-02_preuve": {
+      "resultat": "Réussi",
+      "detail": "Preuve retrouvée inchangée dans originalCSV, fichiers cités présents, tests métier non applicables"
+    },
+    "original_immutable": {
+      "resultat": "Réussi",
+      "detail": "Empreinte originalCSV égale à provenance enregistrée"
+    },
+    "18_decisions_ouvertes": {
+      "resultat": "Réussi",
+      "detail": "Statut tâche DEC En cours distinct du statut décision À définir"
+    },
+    "P630": {
+      "resultat": "Réussi",
+      "detail": "6/630=0,95238095% arrondi au dixième=1,0% ; six contrôles provenance seulement"
+    },
+    "PDEV_ND": {
+      "resultat": "Réussi",
+      "detail": "PDEV non défini : DEV_SCOPE/baseline acceptée non établis ; aucun dénominateur inventé"
+    }
+  },
+  "preuves_six_sources": [
+    {
+      "id": "SRC-01",
+      "nature": "Identification/enregistrement/conservation de source/version/empreinte documentaire",
+      "preuve_originale_exacte": true,
+      "fichiers_preuves_presents": true,
+      "valeur": "Lecture du document + git hash-object local : e1d61ca38809e1faac6111c5ffb0881619b9a6dc",
+      "limite": "Aucune preuve de réalisation Studio ni acceptation ; occurrence documentaire datée, à requalifier avant travail nouveau"
+    },
+    {
+      "id": "SRC-02",
+      "nature": "Identification/enregistrement/conservation de source/version/empreinte documentaire",
+      "preuve_originale_exacte": true,
+      "fichiers_preuves_presents": true,
+      "valeur": "Lecture du document + git hash-object local : ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "limite": "Aucune preuve de réalisation Studio ni acceptation ; occurrence documentaire datée, à requalifier avant travail nouveau"
+    },
+    {
+      "id": "SRC-03",
+      "nature": "Identification/enregistrement/conservation de source/version/empreinte documentaire",
+      "preuve_originale_exacte": true,
+      "fichiers_preuves_presents": true,
+      "valeur": "Lecture du document + git hash-object local : db5588eca8980efcd7276c1cc2182b9070c6eb38",
+      "limite": "Aucune preuve de réalisation Studio ni acceptation ; occurrence documentaire datée, à requalifier avant travail nouveau"
+    },
+    {
+      "id": "REP-01",
+      "nature": "Relevé du commit de travail historique distinct du plan, pas HEAD courant",
+      "preuve_originale_exacte": true,
+      "fichiers_preuves_presents": true,
+      "valeur": "git rev-parse HEAD = aadd083ca282ed7db8af31f0fb3724c861b5107f ; distinct de REP-01 historique 5cf61d1...",
+      "limite": "Aucune preuve de réalisation Studio ni acceptation ; occurrence documentaire datée, à requalifier avant travail nouveau"
+    },
+    {
+      "id": "PROV-01",
+      "nature": "Identification/enregistrement/conservation de source/version/empreinte documentaire",
+      "preuve_originale_exacte": true,
+      "fichiers_preuves_presents": true,
+      "valeur": "Lecture du document + git hash-object local : e1d61ca38809e1faac6111c5ffb0881619b9a6dc",
+      "limite": "Aucune preuve de réalisation Studio ni acceptation ; occurrence documentaire datée, à requalifier avant travail nouveau"
+    },
+    {
+      "id": "PROV-02",
+      "nature": "Identification/enregistrement/conservation de source/version/empreinte documentaire",
+      "preuve_originale_exacte": true,
+      "fichiers_preuves_presents": true,
+      "valeur": "Lecture du document + git hash-object local : ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "limite": "Aucune preuve de réalisation Studio ni acceptation ; occurrence documentaire datée, à requalifier avant travail nouveau"
+    }
+  ],
+  "anomalies_bloquantes": [],
+  "conclusion": "Aucune erreur bloquante détectée",
+  "statut_code_produit": "Non évalué ; aucun test applicatif exécuté",
+  "M12_close": false,
+  "gates_acceptes": false,
+  "repo_modifie_par_revue": false
+}

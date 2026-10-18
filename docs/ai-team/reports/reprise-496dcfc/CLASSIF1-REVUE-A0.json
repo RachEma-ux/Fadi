@@ -1,0 +1,24 @@
+{
+  "CIpure": "ancienjobsidentiquessaufconditions ; aucunservice ; commandeslimitéesàinstallignore/types/testworkspaceatelier/build",
+  "workflow_sha256": "cb3cc0beba7eb213a961056c7c3d58c6b4f64f409f385814568fc5680ab75819",
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "cb3cc0beba7eb213a961056c7c3d58c6b4f64f409f385814568fc5680ab75819"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/classification-conservation.test.ts",
+      "sha256": "a0e30f9ca0480538dcdb6959cb318ecc365726c0139025678ebed658e3f4db15"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "sha256": "6f1fd64ec0ff7244e13706cba3deb5d2ce55a8a7ac7ffd42bb11aea7b3bb7057"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/organisation.ts",
+      "sha256": "cc6fc5d7174e69079ce2b6180a117518c15e03e3c2bbdae58fc930ebf86970ad"
+    }
+  ],
+  "DB_reelle": false,
+  "portee": "Revue statique A0, pas exécution du workflow."
+}

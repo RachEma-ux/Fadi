@@ -1,0 +1,55 @@
+{
+  "fixtures": [
+    {
+      "corpus_id": "S1",
+      "path": "fixtures/S1.json",
+      "sha256": "7aaf1edcd2aa175e4e77f624c87a563f0d67a4048e31d190e4fb0f50b9e0238c",
+      "state": "Fixture documentaire constituée, non exécutée",
+      "source_of_numbers": "TEST009/010 pourS2 ; valeurs synthétiques déclarées pourautres corpus"
+    },
+    {
+      "corpus_id": "S2",
+      "path": "fixtures/S2.json",
+      "sha256": "13e6f20368111ca3da701e1dc9dab5e5e099cd1deefe7306b853abf4d53b5e88",
+      "state": "Fixture documentaire constituée, non exécutée",
+      "source_of_numbers": "TEST009/010 pourS2 ; valeurs synthétiques déclarées pourautres corpus"
+    },
+    {
+      "corpus_id": "S3",
+      "path": "fixtures/S3.json",
+      "sha256": "719c89a3df0bdefe6ead943af1c6f642b80e66b7ffd9dd1eb2eb087f8565cf12",
+      "state": "Fixture documentaire constituée, non exécutée",
+      "source_of_numbers": "TEST009/010 pourS2 ; valeurs synthétiques déclarées pourautres corpus"
+    },
+    {
+      "corpus_id": "S4",
+      "path": "fixtures/S4.json",
+      "sha256": "7885150682612d0e3034087b4f9087d437e6aa1ef411d6e4679352492268541d",
+      "state": "Fixture documentaire constituée, non exécutée",
+      "source_of_numbers": "TEST009/010 pourS2 ; valeurs synthétiques déclarées pourautres corpus"
+    },
+    {
+      "corpus_id": "S5",
+      "path": "fixtures/S5.json",
+      "sha256": "53659cd76c46f44d6e5acd39e8de2c3a3b3495b52d622a1650a06f1bb8b3243c",
+      "state": "Fixture documentaire constituée, non exécutée",
+      "source_of_numbers": "TEST009/010 pourS2 ; valeurs synthétiques déclarées pourautres corpus"
+    },
+    {
+      "corpus_id": "S6",
+      "path": "fixtures/S6.json",
+      "sha256": "fd8845ba3d359e40cfc1d9e64d0dff8257610f3f110cff8ad5355696df47ec9c",
+      "state": "Fixture documentaire constituée, non exécutée",
+      "source_of_numbers": "TEST009/010 pourS2 ; valeurs synthétiques déclarées pourautres corpus"
+    },
+    {
+      "corpus_id": "S7",
+      "path": "fixtures/S7.json",
+      "sha256": "997ebca9d3a76ef07f20419a41bbf6e39ef184b164ec19af1aecf44699fc6008",
+      "state": "Fixture documentaire constituée, non exécutée",
+      "source_of_numbers": "TEST009/010 pourS2 ; valeurs synthétiques déclarées pourautres corpus"
+    }
+  ],
+  "count": 7,
+  "acceptance": "Aucune conformitéStudio ni performance prouvée"
+}

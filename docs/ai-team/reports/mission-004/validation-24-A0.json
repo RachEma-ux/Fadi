@@ -1,0 +1,15 @@
+{
+  "nouveaux_IDs": 24,
+  "ancres_contenu_exactes": 47,
+  "revue_A5_sha256": "0c96759ca024086773f0989471d0ca0926ad4e452d122dfa3cdce5990506473c",
+  "erreurs": [],
+  "statuts630": {
+    "Vérifié": 30,
+    "À définir": 234,
+    "Bloqué": 207,
+    "En cours": 159
+  },
+  "cases_source_modifiees": 0,
+  "acceptation_produit": false,
+  "note": "Le snapshot est local jusqu’à publication de son commit ; ne pas annoncer30/630 publiés avant push."
+}

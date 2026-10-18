@@ -1,0 +1,20 @@
+{
+  "identites630inchangees": true,
+  "delta_IDs": [
+    "CAD-DEC-01",
+    "G0-01",
+    "G0-02",
+    "G0-03"
+  ],
+  "statuts": {
+    "Vérifié": 32,
+    "À définir": 203,
+    "En cours": 186,
+    "Accepté": 2,
+    "Bloqué": 207
+  },
+  "cases_source_modifiees": 0,
+  "acceptation_produit": false,
+  "lienslocaux": 29,
+  "erreurs": []
+}

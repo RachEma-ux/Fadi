@@ -1,0 +1,6 @@
+{
+  "sources": 7,
+  "lignes_exactes": 96,
+  "erreurs": [],
+  "preuve": "LectureGitSHA169, pas reproduction runtime ni mutation."
+}

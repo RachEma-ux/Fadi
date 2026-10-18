@@ -1,0 +1,163 @@
+{
+  "observed_at_utc": "2026-10-18 13:18:37 UTC",
+  "head_sha": "b1023605b965b27ff56fabf179756592673c98d4",
+  "runs": [
+    {
+      "id": 39129967610,
+      "name": "CI",
+      "head_sha": "b1023605b965b27ff56fabf179756592673c98d4",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39129967610"
+    },
+    {
+      "id": 39129967593,
+      "name": "Audit isolation DrawAll (Fadi uniquement)",
+      "head_sha": "b1023605b965b27ff56fabf179756592673c98d4",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39129967593"
+    },
+    {
+      "id": 39129967601,
+      "name": "Fadi — isolation des autres applications",
+      "head_sha": "b1023605b965b27ff56fabf179756592673c98d4",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39129967601"
+    },
+    {
+      "id": 39129967590,
+      "name": "Continuité de développement",
+      "head_sha": "b1023605b965b27ff56fabf179756592673c98d4",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39129967590"
+    },
+    {
+      "id": 39129967587,
+      "name": "Codex — couverture des missions",
+      "head_sha": "b1023605b965b27ff56fabf179756592673c98d4",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/RachEma-ux/Fadi/actions/runs/39129967587"
+    }
+  ],
+  "jobs": [
+    {
+      "id": 117682953687,
+      "name": "Mission 004 — documentation sans base (intégration non exécutée)",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 39129967610,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Refuser un diff hors du périmètre documentaire avant les contrôles",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Tests unitaires du validateur documentaire sans base ni réseau",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Couverture des 31 missions et 630 affectations",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Continuité — tests et structure",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Isolation nominale Fadi",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Déclarer les vérifications d'intégration non effectuées",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19
+        }
+      ]
+    },
+    {
+      "id": 117682954564,
+      "name": "e2e",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_id": 39129967610,
+      "logs_url": null,
+      "steps": null
+    },
+    {
+      "id": 117682954684,
+      "name": "validate",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_id": 39129967610,
+      "logs_url": null,
+      "steps": null
+    },
+    {
+      "id": 117682954702,
+      "name": "image",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_id": 39129967610,
+      "logs_url": null,
+      "steps": null
+    }
+  ],
+  "limite": "Preuve du SHA b102 seulement. Jobs DB skipped avant services ; aucune recette applicative."
+}

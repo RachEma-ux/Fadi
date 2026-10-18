@@ -1,0 +1,43 @@
+{
+  "date_utc": "2026-10-18T04:10:00Z",
+  "main": "27c0c5a35e2f116752a83a9c66459484488a1975",
+  "protected": false,
+  "runtime": {
+    "revision": "10",
+    "observed_revision": "10",
+    "current": true,
+    "state": "running",
+    "network": "enforced",
+    "same_environment_id": true
+  },
+  "ports": {
+    "localhost_3001": "ECONNREFUSED",
+    "localhost_3002": "ECONNREFUSED",
+    "localhost_5173": "ECONNREFUSED",
+    "localhost_5432": "ECONNREFUSED",
+    "proxy_8080": "connected",
+    "proxy_8088": "ECONNREFUSED"
+  },
+  "docker": {
+    "container": "fadi-onboarding-db",
+    "image": "postgis/postgis:16-3.4",
+    "running": false,
+    "exit_code": 255,
+    "oom_killed": false,
+    "error": "",
+    "started": "2026-10-18T02:44:34.223093493Z",
+    "finished": "2026-10-18T03:52:07.048637257Z"
+  },
+  "ci": {
+    "run": 39095745108,
+    "event": "push",
+    "status": "in_progress",
+    "validate": "success",
+    "image": "success",
+    "e2e": "in_progress",
+    "continuity_run": 39095745135,
+    "continuity": "success",
+    "isolation_run": 39095745118,
+    "isolation": "success"
+  }
+}

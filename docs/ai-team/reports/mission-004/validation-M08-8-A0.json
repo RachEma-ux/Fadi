@@ -1,0 +1,15 @@
+{
+  "sous_attendus": 52,
+  "sources": 15,
+  "citations_exactes": 183,
+  "erreurs": [],
+  "classes": {
+    "partielle": 27,
+    "absente": 18,
+    "presente": 7
+  },
+  "portee": "Comparaison de sources et assertions ; aucun test exécuté ou équivalence complète attestée.",
+  "occurrences_toutes_sections": 183,
+  "citations_uniques_fichier_ligne_SHA_texte": 131,
+  "precision": "178 occurrences dans les52sous-attendus +3suppléments +2finding ;131citationsuniques. Toutes exactes ; aucun scénario exécuté."
+}

@@ -1,0 +1,2055 @@
+{
+  "review": "A5 inventaire préalable indépendant A3-CLASSIF-1",
+  "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+  "authorization": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250110849",
+  "status": "Inventaire statique produit ; revue croisée A2 nécessaire avant écriture A3",
+  "execution": "Aucun test applicatif, service, API, DB, réseau ; recherches Git et extraction documentaire seulement",
+  "consumers": [
+    {
+      "consumer": "verrous et inverse",
+      "impact": "Barrière contrôle après réducteur et inverse différentiel : garder tests au niveau appliquerLot, pas appel direct seul.",
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/commandes/verrous.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "696198e5e7925f61b1bee99581191cc0641eeb1bc62fd2b08797c7d60b6f6997",
+          "lines": [
+            {
+              "line": 45,
+              "text": "export function controlerVerrous(avant: ModeleAtelier, apres: ModeleAtelier, type: string): void {"
+            },
+            {
+              "line": 46,
+              "text": "  if (type === \"objet.verrouiller\" || type.startsWith(\"interne.\")) return;"
+            },
+            {
+              "line": 47,
+              "text": "  if (avant.objets === apres.objets) return;"
+            },
+            {
+              "line": 48,
+              "text": "  const groupesVerrouilles = Object.values(avant.groupes).some((g) => g.verrouille);"
+            },
+            {
+              "line": 49,
+              "text": "  const calquesGeles = Object.values(avant.calques).some((c) => c.gele);"
+            },
+            {
+              "line": 50,
+              "text": "  for (const o of Object.values(avant.objets)) {"
+            },
+            {
+              "line": 51,
+              "text": "    if (!o.verrouille && !(groupesVerrouilles && o.groupeId && avant.groupes[o.groupeId]?.verrouille) && !(calquesGeles && o.calqueId && avant.calques[o.calqueId]?.gele)) continue;"
+            },
+            {
+              "line": 52,
+              "text": "    const n = apres.objets[o.id];"
+            },
+            {
+              "line": 53,
+              "text": "    if (n === o || (n && egaux(n, o))) continue;"
+            },
+            {
+              "line": 54,
+              "text": "    const raison = raisonVerrou(avant, o)!;"
+            },
+            {
+              "line": 55,
+              "text": "    throw new ErreurCommande(\"precondition\", \"id\", `${o.id} : ${raison} — ${n ? \"modification\" : \"suppression\"} refusée, ${avant.calques[o.calqueId ?? \"\"]?.gele && !o.verrouille ? \"dégeler le calque\" : \"le déverrouiller\"} d'abord`);"
+            }
+          ]
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/index.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "ee0dd04b4976c17d5f77a261730d239c8d125a2442ca8013c464d59dc8ce09b3",
+          "lines": [
+            {
+              "line": 377,
+              "text": "export function appliquerCommande(etat: ModeleAtelier, commande: Commande, ctx: ContexteCommande): { etat: ModeleAtelier; effets: Effets } {"
+            },
+            {
+              "line": 378,
+              "text": "  const reducteur = REDUCTEURS[commande.type];"
+            },
+            {
+              "line": 379,
+              "text": "  if (!reducteur) throw new ErreurCommande(\"inconnue\", \"type\", `commande inconnue : ${commande.type}`);"
+            },
+            {
+              "line": 380,
+              "text": "  if (typeof commande.params !== \"object\" || commande.params === null) throw new ErreurCommande(\"invalide\", \"params\", \"paramètres requis\");"
+            },
+            {
+              "line": 381,
+              "text": "  let r = reducteur(etat, commande.params, ctx, commande.cibles ?? []);"
+            },
+            {
+              "line": 382,
+              "text": "  const cl = controlerLiaisons(etat, r.etat, ctx);"
+            },
+            {
+              "line": 383,
+              "text": "  r = { etat: cl.etat, effets: fusionnerEffets(r.effets, cl.effets) };"
+            },
+            {
+              "line": 384,
+              "text": "  const cs = controlerStructure(etat, r.etat, ctx);"
+            },
+            {
+              "line": 385,
+              "text": "  r = { etat: cs.etat, effets: fusionnerEffets(r.effets, cs.effets) };"
+            },
+            {
+              "line": 386,
+              "text": "  const cb = controlerBois(etat, r.etat, ctx);"
+            },
+            {
+              "line": 387,
+              "text": "  r = { etat: cb.etat, effets: fusionnerEffets(r.effets, cb.effets) };"
+            },
+            {
+              "line": 388,
+              "text": "  const cr = controlerReseau(etat, r.etat, ctx);"
+            },
+            {
+              "line": 389,
+              "text": "  r = { etat: cr.etat, effets: fusionnerEffets(r.effets, cr.effets) };"
+            },
+            {
+              "line": 390,
+              "text": "  // Règles par ontologie (P2-8) : chaque occurrence d'une classe visée est rejugée après chaque commande ; jamais corrigée."
+            },
+            {
+              "line": 391,
+              "text": "  const cg = controlerReglesClasses(etat, r.etat, ctx);"
+            },
+            {
+              "line": 392,
+              "text": "  r = { etat: cg.etat, effets: fusionnerEffets(r.effets, cg.effets) };"
+            },
+            {
+              "line": 393,
+              "text": "  const c00 = controlerContraintes(etat, r.etat, commande.type, r.effets, ctx);"
+            },
+            {
+              "line": 394,
+              "text": "  // Contraintes verticales (D-155) : avant le contrôle des verrous, pour qu'un porté verrouillé refuse le lot."
+            },
+            {
+              "line": 395,
+              "text": "  const c0 = commande.type === \"interne.restaurer\" ? c00 : suivrePoses(c00.etat, c00.effets);"
+            },
+            {
+              "line": 396,
+              "text": "  controlerVerrous(etat, c0.etat, commande.type);"
+            },
+            {
+              "line": 397,
+              "text": "  return commande.type === \"interne.restaurer\" ? c0 : suivreHachures(c0.etat, c0.effets);"
+            }
+          ]
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/index.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "ee0dd04b4976c17d5f77a261730d239c8d125a2442ca8013c464d59dc8ce09b3",
+          "lines": [
+            {
+              "line": 410,
+              "text": "export function appliquerLot(etat: ModeleAtelier, enveloppe: Enveloppe): ResultatLot {"
+            },
+            {
+              "line": 411,
+              "text": "  if (!(CONTRATS_ACCEPTES as readonly string[]).includes(enveloppe.contract)) throw new ErreurCommande(\"invalide\", \"contract\", `contrat non pris en charge : ${enveloppe.contract} (attendu ${CONTRAT_COMMANDES})`);"
+            },
+            {
+              "line": 412,
+              "text": "  if (!Array.isArray(enveloppe.commands) || enveloppe.commands.length === 0) throw new ErreurCommande(\"invalide\", \"commands\", \"lot vide\");"
+            },
+            {
+              "line": 413,
+              "text": "  if (enveloppe.commands.length > 500) throw new ErreurCommande(\"invalide\", \"commands\", \"lot trop grand (500 commandes maximum)\");"
+            },
+            {
+              "line": 414,
+              "text": "  const ctx: ContexteCommande = { ids: generateurIds(enveloppe.requestId) };"
+            },
+            {
+              "line": 415,
+              "text": "  let courant = etat;"
+            },
+            {
+              "line": 416,
+              "text": "  let effets = effetsVides();"
+            },
+            {
+              "line": 417,
+              "text": "  const parCommande: Effets[] = [];"
+            },
+            {
+              "line": 418,
+              "text": "  enveloppe.commands.forEach((commande, i) => {"
+            },
+            {
+              "line": 419,
+              "text": "    try {"
+            },
+            {
+              "line": 420,
+              "text": "      const r = appliquerCommande(courant, commande, ctx);"
+            },
+            {
+              "line": 421,
+              "text": "      courant = r.etat;"
+            },
+            {
+              "line": 422,
+              "text": "      effets = fusionnerEffets(effets, r.effets);"
+            },
+            {
+              "line": 423,
+              "text": "      parCommande.push(r.effets);"
+            },
+            {
+              "line": 424,
+              "text": "    } catch (err) {"
+            },
+            {
+              "line": 425,
+              "text": "      if (err instanceof ErreurCommande) throw new ErreurCommande(err.code, `commands[${i}].${err.chemin}`, `commands[${i}].${err.chemin} : ${err.message}`);"
+            },
+            {
+              "line": 426,
+              "text": "      throw err;"
+            },
+            {
+              "line": 427,
+              "text": "    }"
+            },
+            {
+              "line": 428,
+              "text": "  });"
+            },
+            {
+              "line": 429,
+              "text": "  return { etat: courant, effets, parCommande, inverse: commandeInverse(differentiel(etat, courant)) };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "consumer": "E2E lecture seulement",
+      "impact": "Référentiel code/libellé et règle exactement+1 : assertions existantes lues, à ne pas affaiblir et à ne pas exécuter ici.",
+      "evidence": [
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+          "lines": [
+            {
+              "line": 807,
+              "text": "  await page.locator(\"[data-classification] > summary\").click();"
+            },
+            {
+              "line": 808,
+              "text": "  await page.locator(\".classif-referentiels > summary\").click();"
+            },
+            {
+              "line": 809,
+              "text": "  await page.locator('[data-referentiel=\"systeme\"]').fill(\"CFC-e2e\");"
+            },
+            {
+              "line": 810,
+              "text": "  await page.locator('[data-referentiel=\"edition\"]').fill(\"2017\");"
+            },
+            {
+              "line": 811,
+              "text": "  await page.locator('[data-referentiel=\"fichier\"]').setInputFiles({ name: \"cfc-e2e.csv\", mimeType: \"text/csv\", buffer: Buffer.from(\"Code;Libellé\\n211;Maçonnerie\\n214;Charpente\\n\") });"
+            },
+            {
+              "line": 812,
+              "text": "  let ref = null;"
+            },
+            {
+              "line": 813,
+              "text": "  for (let k = 0; k < 30 && !ref; k++) {"
+            },
+            {
+              "line": 814,
+              "text": "    ref = Object.values((await modele(pid)).modele.definitions).find((d) => d.classe === \"referentiel-classification\" && d.params.systeme === \"CFC-e2e\") ?? null;"
+            },
+            {
+              "line": 815,
+              "text": "    if (!ref) await page.waitForTimeout(500);"
+            },
+            {
+              "line": 816,
+              "text": "  }"
+            },
+            {
+              "line": 817,
+              "text": "  await page.locator('[data-classif=\"systeme\"]').fill(\"CFC-e2e\");"
+            },
+            {
+              "line": 818,
+              "text": "  await page.locator('[data-classif=\"code\"]').fill(\"211\");"
+            },
+            {
+              "line": 819,
+              "text": "  await page.locator('[data-classification] button:has-text(\"Classer\")').click();"
+            },
+            {
+              "line": 820,
+              "text": "  let prop = null;"
+            },
+            {
+              "line": 821,
+              "text": "  for (let k = 0; k < 30 && !prop; k++) {"
+            },
+            {
+              "line": 822,
+              "text": "    prop = (await modele(pid)).modele.objets[murA.id]?.proprietes[\"classification:CFC-e2e\"] ?? null;"
+            },
+            {
+              "line": 823,
+              "text": "    if (!prop) await page.waitForTimeout(500);"
+            },
+            {
+              "line": 824,
+              "text": "  }"
+            },
+            {
+              "line": 825,
+              "text": "  check(\"classification : référentiel chargé depuis un CSV, code vérifié et libellé noté sur le mur\", !!ref && Object.keys(ref.params.codes).length === 2 && prop?.statut === \"verifiee\" && (await modele(pid)).modele.objets[murA.id]?.proprietes[\"classification:CFC-e2e:libelle\"]?.valeur === \"Maçonnerie\", `${JSON.stringify(ref?.params?.codes ?? null)} · ${JSON.stringify(prop)}`);"
+            }
+          ]
+        },
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+          "lines": [
+            {
+              "line": 1732,
+              "text": "// Classer par règle (D-112) : murs du niveau actif, proposition affichée, un seul lot."
+            },
+            {
+              "line": 1733,
+              "text": "{"
+            },
+            {
+              "line": 1734,
+              "text": "  await page.keyboard.press(\"Escape\");"
+            },
+            {
+              "line": 1735,
+              "text": "  await attendreEnregistre().catch(() => {});"
+            },
+            {
+              "line": 1736,
+              "text": "  const avant = await modele(pid);"
+            },
+            {
+              "line": 1737,
+              "text": "  await page.locator(\"[data-classer-regle] > summary\").click();"
+            },
+            {
+              "line": 1738,
+              "text": "  await page.locator('[data-regle=\"classe\"]').selectOption(\"mur\");"
+            },
+            {
+              "line": 1739,
+              "text": "  await page.locator(\"[data-classer-regle] input[type=checkbox]\").first().check();"
+            },
+            {
+              "line": 1740,
+              "text": "  await page.locator('[data-regle=\"systeme\"]').fill(\"E2E\");"
+            },
+            {
+              "line": 1741,
+              "text": "  await page.locator('[data-regle=\"code\"]').fill(\"R-1\");"
+            },
+            {
+              "line": 1742,
+              "text": "  const n = Number(await page.locator(\"[data-regle-proposition]\").getAttribute(\"data-regle-proposition\").catch(() => \"0\"));"
+            },
+            {
+              "line": 1743,
+              "text": "  await page.locator(\"[data-regle-appliquer]\").click();"
+            },
+            {
+              "line": 1744,
+              "text": "  let classes = 0;"
+            },
+            {
+              "line": 1745,
+              "text": "  let rev = avant.revision;"
+            },
+            {
+              "line": 1746,
+              "text": "  for (let k = 0; k < 30 && classes < n; k++) {"
+            },
+            {
+              "line": 1747,
+              "text": "    const md = await modele(pid);"
+            },
+            {
+              "line": 1748,
+              "text": "    classes = Object.values(md.modele.objets).filter((o) => o.proprietes?.[\"classification:E2E\"]?.valeur === \"R-1\").length;"
+            },
+            {
+              "line": 1749,
+              "text": "    rev = md.revision;"
+            },
+            {
+              "line": 1750,
+              "text": "    if (classes < n) await page.waitForTimeout(500);"
+            },
+            {
+              "line": 1751,
+              "text": "  }"
+            },
+            {
+              "line": 1752,
+              "text": "  check(\"classer par règle : murs du niveau actif proposés puis classés en un seul lot\", n > 0 && classes === n && rev === avant.revision + 1, `${n} · ${classes} · r${avant.revision} → r${rev}`);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "consumer": "canonique",
+      "impact": "Écriture à retirer dans périmètre autorisé ; mêmes effets et propriété externe conservés.",
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/commandes/organisation.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "792399409ba93824808c5ca445ee3d169fc02d68bb0e7ee0541455eee17af26b",
+          "lines": [
+            {
+              "line": 414,
+              "text": "/** Classification : la classe IFC vient de l'ontologie (jamais devinée autrement) ; un code de classification externe est déclaré, avec son système. */"
+            },
+            {
+              "line": 415,
+              "text": "export function affecterClassification(etat: ModeleAtelier, p: Brut): ResultatCommande {"
+            },
+            {
+              "line": 416,
+              "text": "  const id = lire.objet(etat, p, \"id\");"
+            },
+            {
+              "line": 417,
+              "text": "  const systeme = lire.chaine(p, \"systeme\");"
+            },
+            {
+              "line": 418,
+              "text": "  const code = lire.chaineOuNull(p, \"code\");"
+            },
+            {
+              "line": 419,
+              "text": "  const o = etat.objets[id]!;"
+            },
+            {
+              "line": 420,
+              "text": "  const proprietes = { ...o.proprietes };"
+            },
+            {
+              "line": 421,
+              "text": "  // Référentiel chargé pour ce système (D-065) : le code doit y figurer ; il est alors « vérifié » et son libellé noté."
+            },
+            {
+              "line": 422,
+              "text": "  const ref = code === null ? null : referentielDu(etat, systeme);"
+            },
+            {
+              "line": 423,
+              "text": "  if (ref && !(code! in ref.params.codes)) {"
+            },
+            {
+              "line": 424,
+              "text": "    const proches = codesProches(ref.params, code!);"
+            },
+            {
+              "line": 425,
+              "text": "    throw new ErreurCommande(\"precondition\", \"code\", `code « ${code} » absent du référentiel ${ref.nom} (source : ${ref.params.source})${proches.length ? ` ; codes proches : ${proches.join(\", \")}` : \"\"}`);"
+            },
+            {
+              "line": 426,
+              "text": "  }"
+            },
+            {
+              "line": 427,
+              "text": "  if (code === null) {"
+            },
+            {
+              "line": 428,
+              "text": "    delete proprietes[`classification:${systeme}`];"
+            },
+            {
+              "line": 429,
+              "text": "    delete proprietes[`classification:${systeme}:libelle`];"
+            },
+            {
+              "line": 430,
+              "text": "  } else {"
+            },
+            {
+              "line": 431,
+              "text": "    proprietes[`classification:${systeme}`] = { valeur: code, provenance: \"saisie\", statut: ref ? \"verifiee\" : \"declaree\" };"
+            },
+            {
+              "line": 432,
+              "text": "    const libelle = ref?.params.codes[code];"
+            },
+            {
+              "line": 433,
+              "text": "    if (libelle) proprietes[`classification:${systeme}:libelle`] = { valeur: libelle, provenance: \"import\", statut: \"verifiee\" };"
+            },
+            {
+              "line": 434,
+              "text": "    else delete proprietes[`classification:${systeme}:libelle`];"
+            },
+            {
+              "line": 435,
+              "text": "  }"
+            },
+            {
+              "line": 436,
+              "text": "  proprietes[\"classeIfc\"] = { valeur: CLASSES[o.classe].ifc, provenance: \"regle\", statut: \"verifiee\" };"
+            },
+            {
+              "line": 437,
+              "text": "  const effets = effetsVides();"
+            },
+            {
+              "line": 438,
+              "text": "  effets.modifies.push(id);"
+            },
+            {
+              "line": 439,
+              "text": "  return { etat: { ...etat, objets: { ...etat.objets, [id]: { ...o, proprietes } as OccurrenceQuelconque } }, effets };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "consumer": "dispatcher",
+      "impact": "id/ids; lecture de chaque cible et agrégation. Refus deuxième cible doit laisser entrée intégralement intacte.",
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/commandes/index.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "ee0dd04b4976c17d5f77a261730d239c8d125a2442ca8013c464d59dc8ce09b3",
+          "lines": [
+            {
+              "line": 291,
+              "text": "  // Plusieurs objets d'un coup (D-112, classification par règle) : `ids` au lieu de `id`, mêmes contrôles pour chacun."
+            },
+            {
+              "line": 292,
+              "text": "  \"classification.affecter\": (etat, p) => {"
+            },
+            {
+              "line": 293,
+              "text": "    if (!Array.isArray(p[\"ids\"])) return affecterClassification(etat, p);"
+            },
+            {
+              "line": 294,
+              "text": "    const ids = (p[\"ids\"] as unknown[]).filter((x): x is string => typeof x === \"string\");"
+            },
+            {
+              "line": 295,
+              "text": "    if (!ids.length || ids.length > 5000) throw new ErreurCommande(\"invalide\", \"ids\", \"de 1 à 5000 objets\");"
+            },
+            {
+              "line": 296,
+              "text": "    let courant = etat;"
+            },
+            {
+              "line": 297,
+              "text": "    let effets = effetsVides();"
+            },
+            {
+              "line": 298,
+              "text": "    for (const id of ids) {"
+            },
+            {
+              "line": 299,
+              "text": "      const r = affecterClassification(courant, { ...p, id });"
+            },
+            {
+              "line": 300,
+              "text": "      courant = r.etat;"
+            },
+            {
+              "line": 301,
+              "text": "      effets = fusionnerEffets(effets, r.effets);"
+            },
+            {
+              "line": 302,
+              "text": "    }"
+            },
+            {
+              "line": 303,
+              "text": "    return { etat: courant, effets };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "consumer": "controle",
+      "impact": "Lit classeIfc, ignore objet-importe, comparaison case-insensitive, sans mutation ; absence ne crée pas anomalie.",
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/annexe-c.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "d1862832a2da82c63be358c29302130f45ae1baef7137bbfafcde4a9ed85ede0",
+          "lines": [
+            {
+              "line": 62,
+              "text": "export function controleClassesIfc(etat: ModeleAtelier): IncoherenceClasseIfc[] {"
+            },
+            {
+              "line": 63,
+              "text": "  const out: IncoherenceClasseIfc[] = [];"
+            },
+            {
+              "line": 64,
+              "text": "  for (const o of Object.values(etat.objets)) {"
+            },
+            {
+              "line": 65,
+              "text": "    // Objet importé d'IFC : sa classe lue est conservée telle quelle (R16), rien à confronter."
+            },
+            {
+              "line": 66,
+              "text": "    if (o.classe === \"objet-importe\") continue;"
+            },
+            {
+              "line": 67,
+              "text": "    const v = o.proprietes?.[\"classeIfc\"]?.valeur;"
+            },
+            {
+              "line": 68,
+              "text": "    if (typeof v !== \"string\" || !v.trim()) continue;"
+            },
+            {
+              "line": 69,
+              "text": "    const attendues = classesIfcAttendues(o.classe);"
+            },
+            {
+              "line": 70,
+              "text": "    if (attendues.some((a) => a.toLowerCase() === v.trim().toLowerCase())) continue;"
+            },
+            {
+              "line": 71,
+              "text": "    out.push({ objetId: o.id, classe: o.classe, declaree: v.trim(), attendues, message: `${CLASSES[o.classe].libelle} ${o.id} : classe IFC déclarée ${v.trim()}, annexe C : ${attendues.join(\" ou \")} (exporté ainsi, déclaration conservée)` });"
+            },
+            {
+              "line": 72,
+              "text": "  }"
+            },
+            {
+              "line": 73,
+              "text": "  return out.sort((a, b) => (a.objetId < b.objetId ? -1 : 1));"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "consumer": "export",
+      "impact": "Codes classifications regroupés indépendamment, AnnexeC reste autorité export et remarques de déclaration incohérente.",
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/echanges/ifc.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "4e3de1b2be7a5b7974744e45ee536b26e1daca05bc877d6e07c9a397bc5ea520",
+          "lines": [
+            {
+              "line": 1116,
+              "text": "  // Classification (D-065) : IfcClassification par système (source et édition du référentiel chargé, sinon non"
+            },
+            {
+              "line": 1117,
+              "text": "  // renseignées), IfcClassificationReference par code (libellé du référentiel), une association par code."
+            },
+            {
+              "line": 1118,
+              "text": "  const parCode = new Map<string, { systeme: string; code: string; libelle: string | null; objets: number[] }>();"
+            },
+            {
+              "line": 1119,
+              "text": "  // Ordre déterministe (l'ordre de lecture des objets en base varie) : objets par identifiant, propriétés par nom."
+            },
+            {
+              "line": 1120,
+              "text": "  for (const o of (Object.values(etat.objets) as OccurrenceQuelconque[]).sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0))) {"
+            },
+            {
+              "line": 1121,
+              "text": "    const idProduit = produits.get(o.id);"
+            },
+            {
+              "line": 1122,
+              "text": "    if (!idProduit) continue;"
+            },
+            {
+              "line": 1123,
+              "text": "    for (const [k, v] of Object.entries(o.proprietes).sort(([x], [y]) => (x < y ? -1 : x > y ? 1 : 0))) {"
+            },
+            {
+              "line": 1124,
+              "text": "      if (!k.startsWith(\"classification:\") || k.endsWith(\":libelle\")) continue;"
+            },
+            {
+              "line": 1125,
+              "text": "      const systeme = k.slice(\"classification:\".length);"
+            },
+            {
+              "line": 1126,
+              "text": "      const code = String(v.valeur);"
+            },
+            {
+              "line": 1127,
+              "text": "      const cle = `${systeme}\\u0000${code}`;"
+            },
+            {
+              "line": 1128,
+              "text": "      const e = parCode.get(cle) ?? { systeme, code, libelle: (o.proprietes[`${k}:libelle`]?.valeur as string | undefined) ?? null, objets: [] };"
+            },
+            {
+              "line": 1129,
+              "text": "      e.objets.push(idProduit);"
+            },
+            {
+              "line": 1130,
+              "text": "      parCode.set(cle, e);"
+            },
+            {
+              "line": 1131,
+              "text": "    }"
+            },
+            {
+              "line": 1132,
+              "text": "  }"
+            },
+            {
+              "line": 1133,
+              "text": "  if (parCode.size) {"
+            },
+            {
+              "line": 1134,
+              "text": "    const systemes = new Map<string, number>();"
+            },
+            {
+              "line": 1135,
+              "text": "    for (const e of [...parCode.values()].sort((x, y) => (x.systeme < y.systeme ? -1 : x.systeme > y.systeme ? 1 : x.code < y.code ? -1 : x.code > y.code ? 1 : 0))) {"
+            },
+            {
+              "line": 1136,
+              "text": "      let idSys = systemes.get(e.systeme);"
+            },
+            {
+              "line": 1137,
+              "text": "      if (idSys === undefined) {"
+            },
+            {
+              "line": 1138,
+              "text": "        const r = referentielDu(etat, e.systeme);"
+            },
+            {
+              "line": 1139,
+              "text": "        idSys = s.ajouter(`IFCCLASSIFICATION(${r ? chaineStep(r.params.source) : \"$\"},${r?.params.edition ? chaineStep(r.params.edition) : \"$\"},$,${chaineStep(e.systeme)},$,$,$)`);"
+            },
+            {
+              "line": 1140,
+              "text": "        systemes.set(e.systeme, idSys);"
+            },
+            {
+              "line": 1141,
+              "text": "      }"
+            },
+            {
+              "line": 1142,
+              "text": "      const idRef = s.ajouter(`IFCCLASSIFICATIONREFERENCE($,${chaineStep(e.code)},${e.libelle ? chaineStep(e.libelle) : \"$\"},${ref(idSys)},$,$)`);"
+            },
+            {
+              "line": 1143,
+              "text": "      s.ajouter(`IFCRELASSOCIATESCLASSIFICATION(${gid(`rel-classification|${e.systeme}|${e.code}`)},$,$,$,${liste([...e.objets].sort((x, y) => x - y))},${ref(idRef)})`);"
+            },
+            {
+              "line": 1144,
+              "text": "    }"
+            },
+            {
+              "line": 1145,
+              "text": "    remarques.add(`${parCode.size} code(s) de classification écrit(s) (IfcClassificationReference) dans ${systemes.size} système(s) ; codes vérifiés seulement si un référentiel était chargé.`);"
+            }
+          ]
+        },
+        {
+          "path": "packages/atelier-model/src/echanges/ifc.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "4e3de1b2be7a5b7974744e45ee536b26e1daca05bc877d6e07c9a397bc5ea520",
+          "lines": [
+            {
+              "line": 1185,
+              "text": "  const contenu = [...entete, ...s.lignes, \"ENDSEC;\", \"END-ISO-10303-21;\", \"\"].join(\"\\n\");"
+            },
+            {
+              "line": 1186,
+              "text": "  // Contrôle croisé annexe C (D-111) : une classe IFC déclarée différente de l'annexe C est nommée, jamais suivie."
+            },
+            {
+              "line": 1187,
+              "text": "  for (const x of controleClassesIfc(etat)) remarques.add(`${x.message}.`);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "consumer": "API lecture",
+      "impact": "Réponse classesIfc dérivée ; assertion API de déclaration IfcDoor doit rester cohérente mais non exécutée dans ce lot.",
+      "evidence": [
+        {
+          "path": "apps/api/src/routes/atelier-commands.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "efc43e42757bd328338d240169720c6604cca832882573c0fecd8a5f01c50d32",
+          "lines": [
+            {
+              "line": 228,
+              "text": "    references: charge ? referencesAReparer(charge.etat) : [],"
+            },
+            {
+              "line": 229,
+              "text": "    problemes: charge ? Object.values(charge.etat.problemes) : [],"
+            },
+            {
+              "line": 230,
+              "text": "    collisions: charge ? collisions(charge.etat) : [],"
+            },
+            {
+              "line": 231,
+              "text": "    // Contrôle croisé classe Fadi / classe IFC (D-111, annexe C) : signalé, jamais corrigé."
+            },
+            {
+              "line": 232,
+              "text": "    classesIfc: charge ? controleClassesIfc(charge.etat) : [],"
+            },
+            {
+              "line": 233,
+              "text": "    documentsPerimes: documents,"
+            },
+            {
+              "line": 234,
+              "text": "    bilan: {"
+            }
+          ]
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+          "lines": [
+            {
+              "line": 948,
+              "text": "describe(\"problèmes : classes IFC à vérifier (D-111)\", () => {"
+            },
+            {
+              "line": 949,
+              "text": "  it(\"une classe IFC déclarée hors de l'annexe C est listée dans les problèmes\", async () => {"
+            },
+            {
+              "line": 950,
+              "text": "    const owner = await registerAndLogin(\"owner-annexec@example.com\");"
+            },
+            {
+              "line": 951,
+              "text": "    const pid = await projetVide(owner);"
+            },
+            {
+              "line": 952,
+              "text": "    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"c1\", 0, [niveau, mur(\"m1\"), { type: \"propriete.definir\", params: { id: \"m1\", nom: \"classeIfc\", valeur: \"IfcDoor\" } }]))).status).toBe(200);"
+            },
+            {
+              "line": 953,
+              "text": "    const p = (await owner.get(`/projects/${pid}/atelier/problemes`)).body;"
+            },
+            {
+              "line": 954,
+              "text": "    expect(p.classesIfc).toHaveLength(1);"
+            },
+            {
+              "line": 955,
+              "text": "    expect(p.classesIfc[0]).toMatchObject({ objetId: \"m1\", declaree: \"IfcDoor\", attendues: [\"IfcWall\"] });"
+            },
+            {
+              "line": 956,
+              "text": "  });"
+            },
+            {
+              "line": 957,
+              "text": "});"
+            },
+            {
+              "line": 958,
+              "text": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "consumer": "UI émetteurs",
+      "impact": "Retrait individuel et formulaire multi-sélection émettent classification.affecter ; pas de lecture explicite classeIfc dans ces handlers.",
+      "evidence": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/panneaux/Complements.tsx",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "97c34ce0c3a04271db430dd6d9d5a9b31d506e0ff6a800eb4e2566133b548b03",
+          "lines": [
+            {
+              "line": 69,
+              "text": "  const actuels = sel.length === 1 ? Object.entries(sel[0]!.proprietes).filter(([k]) => k.startsWith(\"classification:\") && !k.endsWith(\":libelle\")).map(([k, v]) => ({ systeme: k.slice(\"classification:\".length), code: String(v.valeur), statut: v.statut, libelle: sel[0]!.proprietes[`${k}:libelle`]?.valeur as string | undefined })) : [];"
+            },
+            {
+              "line": 70,
+              "text": "  const codes = ref ? Object.keys(ref.p.codes).filter((c) => !code || c.startsWith(code)).slice(0, 200) : [];"
+            },
+            {
+              "line": 71,
+              "text": "  return ("
+            },
+            {
+              "line": 72,
+              "text": "    <details className=\"inspecteur-classification\" data-classification>"
+            },
+            {
+              "line": 73,
+              "text": "      <summary>Classification{actuels.length ? ` (${actuels.length})` : \"\"}</summary>"
+            },
+            {
+              "line": 74,
+              "text": "      {actuels.length > 0 && ("
+            },
+            {
+              "line": 75,
+              "text": "        <ul>"
+            },
+            {
+              "line": 76,
+              "text": "          {actuels.map((a) => ("
+            },
+            {
+              "line": 77,
+              "text": "            <li key={a.systeme}>"
+            },
+            {
+              "line": 78,
+              "text": "              {a.systeme} : <strong>{a.code}</strong>{a.libelle ? ` — ${a.libelle}` : \"\"} <span className=\"nav-detail\">{a.statut === \"verifiee\" ? \"vérifié au référentiel\" : \"déclaré\"}</span>"
+            },
+            {
+              "line": 79,
+              "text": "              {!readOnly && <button type=\"button\" className=\"lien\" onClick={() => onCommandes([{ type: \"classification.affecter\", params: { id: sel[0]!.id, systeme: a.systeme, code: null } }], `Retirer la classification ${a.systeme}`)}>Retirer</button>}"
+            },
+            {
+              "line": 80,
+              "text": "            </li>"
+            },
+            {
+              "line": 81,
+              "text": "          ))}"
+            },
+            {
+              "line": 82,
+              "text": "        </ul>"
+            },
+            {
+              "line": 83,
+              "text": "      )}"
+            },
+            {
+              "line": 84,
+              "text": "      {!readOnly && ("
+            },
+            {
+              "line": 85,
+              "text": "        <form className=\"classif-formulaire\" onSubmit={(e) => { e.preventDefault(); if (systeme.trim() && code.trim()) onCommandes(sel.map((o) => ({ type: \"classification.affecter\", params: { id: o.id, systeme: systeme.trim(), code: code.trim() } })), `Classer ${sel.length > 1 ? `${sel.length} objets` : sel[0]!.id} : ${systeme.trim()} ${code.trim()}`); }}>"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "consumer": "proposition règle",
+      "impact": "Écarte verrouillés et déjà classés, génère commande ids ; pas application automatique.",
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/classification-regle.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "4c9cbe7f83402e33f83b0d31c2caba9f3118f3efd00f4c786cb4bf75bdf4c469",
+          "lines": [
+            {
+              "line": 31,
+              "text": "export function proposerClassification(etat: ModeleAtelier, r: RegleClassification): PropositionClassification {"
+            },
+            {
+              "line": 32,
+              "text": "  const systeme = r.systeme.trim();"
+            },
+            {
+              "line": 33,
+              "text": "  const code = r.code.trim();"
+            },
+            {
+              "line": 34,
+              "text": "  const cibles: string[] = [];"
+            },
+            {
+              "line": 35,
+              "text": "  const dejaClasses: string[] = [];"
+            },
+            {
+              "line": 36,
+              "text": "  const verrouilles: string[] = [];"
+            },
+            {
+              "line": 37,
+              "text": "  for (const o of Object.values(etat.objets).sort((a, b) => (a.id < b.id ? -1 : 1))) {"
+            },
+            {
+              "line": 38,
+              "text": "    if (o.classe !== r.classe) continue;"
+            },
+            {
+              "line": 39,
+              "text": "    if (r.definitionId !== undefined && r.definitionId !== null && o.definitionId !== r.definitionId) continue;"
+            },
+            {
+              "line": 40,
+              "text": "    if (r.niveauId && o.niveauId !== r.niveauId) continue;"
+            },
+            {
+              "line": 41,
+              "text": "    if (raisonVerrou(etat, o)) {"
+            },
+            {
+              "line": 42,
+              "text": "      verrouilles.push(o.id);"
+            },
+            {
+              "line": 43,
+              "text": "      continue;"
+            },
+            {
+              "line": 44,
+              "text": "    }"
+            },
+            {
+              "line": 45,
+              "text": "    const actuel = o.proprietes[`classification:${systeme}`]?.valeur;"
+            },
+            {
+              "line": 46,
+              "text": "    if (actuel !== undefined && !r.remplacer) {"
+            },
+            {
+              "line": 47,
+              "text": "      dejaClasses.push(o.id);"
+            },
+            {
+              "line": 48,
+              "text": "      continue;"
+            },
+            {
+              "line": 49,
+              "text": "    }"
+            },
+            {
+              "line": 50,
+              "text": "    if (actuel === code) continue;"
+            },
+            {
+              "line": 51,
+              "text": "    cibles.push(o.id);"
+            },
+            {
+              "line": 52,
+              "text": "  }"
+            },
+            {
+              "line": 53,
+              "text": "  const commandes: Commande[] = systeme && code && cibles.length ? [{ type: \"classification.affecter\", params: { ids: cibles, systeme, code } }] : [];"
+            },
+            {
+              "line": 54,
+              "text": "  return { cibles, dejaClasses, verrouilles, commandes, label: `Classer ${cibles.length} objet(s) ${r.classe} : ${systeme} ${code}` };"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "consumer": "UI propriétés génériques",
+      "impact": "Inspecteur255 et matrice1551 lisent propriétés occurrences ; absence conservée peut diminuer compteur/colonne et laisser diagnostic visible. Le helper2030 sert groupe/calque, distinct du périmètre occurrenceCLASSIF1 : aucune propagation à ces cibles. Aucun changement UI autorisé.",
+      "evidence": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/panneaux/Inspecteur.tsx",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "add64226d4b65c59c1fcb25d0b61f3548618d22150fdc8db92492566585437b7",
+          "lines": [
+            {
+              "line": 255,
+              "text": "      {Object.keys(o.proprietes).length > 0 && ("
+            },
+            {
+              "line": 256,
+              "text": "        <details className=\"inspecteur-proprietes\">"
+            },
+            {
+              "line": 257,
+              "text": "          <summary>Propriétés ({Object.keys(o.proprietes).length})</summary>"
+            },
+            {
+              "line": 258,
+              "text": "          <dl>"
+            },
+            {
+              "line": 259,
+              "text": "            {Object.entries(o.proprietes).map(([k, p]) => ("
+            },
+            {
+              "line": 260,
+              "text": "              <div key={k} className=\"champ\">"
+            },
+            {
+              "line": 261,
+              "text": "                <dt>{k}</dt>"
+            },
+            {
+              "line": 262,
+              "text": "                <dd>"
+            },
+            {
+              "line": 263,
+              "text": "                  {formatValeur(p.valeur)}{p.unite ? ` ${p.unite}` : \"\"} <span className={`statut statut-${p.statut}`}>{p.provenance} · {p.statut === \"a-verifier\" ? \"à vérifier\" : p.statut === \"verifiee\" ? \"vérifiée\" : \"déclarée\"}</span>"
+            }
+          ]
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/panneaux/Inspecteur.tsx",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "add64226d4b65c59c1fcb25d0b61f3548618d22150fdc8db92492566585437b7",
+          "lines": [
+            {
+              "line": 1545,
+              "text": "function TableauProprietes({ sel, readOnly, onCommandes }: { sel: OccurrenceQuelconque[]; readOnly: boolean; onCommandes: PropsInspecteur[\"onCommandes\"] }) {"
+            },
+            {
+              "line": 1546,
+              "text": "  const lignes = sel.slice(0, 200);"
+            },
+            {
+              "line": 1547,
+              "text": "  const [colonnesAjoutees, setColonnesAjoutees] = useState<string[]>([]);"
+            },
+            {
+              "line": 1548,
+              "text": "  const [nouvelle, setNouvelle] = useState(\"\");"
+            },
+            {
+              "line": 1549,
+              "text": "  const [brouillon, setBrouillon] = useState<Record<string, string>>({});"
+            },
+            {
+              "line": 1550,
+              "text": "  const [erreur, setErreur] = useState<string | null>(null);"
+            },
+            {
+              "line": 1551,
+              "text": "  const colonnes = [...new Set([...lignes.flatMap((o) => Object.keys(o.proprietes).filter((k) => !k.startsWith(\"classification:\"))), ...colonnesAjoutees])].sort((a, b) => a.localeCompare(b, \"fr\"));"
+            },
+            {
+              "line": 1552,
+              "text": "  const texte = (o: OccurrenceQuelconque, k: string) => {"
+            },
+            {
+              "line": 1553,
+              "text": "    const v = o.proprietes[k]?.valeur;"
+            },
+            {
+              "line": 1554,
+              "text": "    return v === undefined || v === null ? \"\" : typeof v === \"number\" ? String(v).replace(\".\", \",\") : String(v);"
+            },
+            {
+              "line": 1555,
+              "text": "  };"
+            },
+            {
+              "line": 1556,
+              "text": "  const unite = (k: string) => lignes.map((o) => o.proprietes[k]?.unite).find((u) => !!u) ?? null;"
+            }
+          ]
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/panneaux/Inspecteur.tsx",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "add64226d4b65c59c1fcb25d0b61f3548618d22150fdc8db92492566585437b7",
+          "lines": [
+            {
+              "line": 2030,
+              "text": "  const entrees = Object.entries(proprietes ?? {}).sort(([a], [b]) => a.localeCompare(b, \"fr\"));"
+            },
+            {
+              "line": 2031,
+              "text": "  const ajouter = () => {"
+            },
+            {
+              "line": 2032,
+              "text": "    const v = valeur.trim();"
+            },
+            {
+              "line": 2033,
+              "text": "    let val: string | number = v;"
+            },
+            {
+              "line": 2034,
+              "text": "    if (/^-?\\d+(?:[.,]\\d+)?$/.test(v)) {"
+            },
+            {
+              "line": 2035,
+              "text": "      if (!unite.trim()) return setErreur(\"Valeur numérique sans unité : renseignez l'unité (rien n'est supposé).\");"
+            },
+            {
+              "line": 2036,
+              "text": "      val = Number(v.replace(\",\", \".\"));"
+            },
+            {
+              "line": 2037,
+              "text": "    }"
+            },
+            {
+              "line": 2038,
+              "text": "    setErreur(null);"
+            },
+            {
+              "line": 2039,
+              "text": "    onCommandes([{ type: \"propriete.definir\", params: { ...cible, nom: nom.trim(), valeur: val, ...(unite.trim() ? { unite: unite.trim() } : {}) } }], `Propriété « ${nom.trim()} » du ${libelle}`);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "consumer": "composants propriétés effectives",
+      "impact": "Projection générique conserve provenance source occurrence/définition ; pas de mutation ou nouveau mécanisme héritage à créer.",
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/commandes/bloc.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "b7d91a3bb472f5e11bacd8304543c6075403a6f3175a85981c776004ccf6d4c6",
+          "lines": [
+            {
+              "line": 211,
+              "text": "/** Propriétés effectives d'une occurrence de composant : celles de la définition, surchargées par l'occurrence. */"
+            },
+            {
+              "line": 212,
+              "text": "export function proprietesEffectives(etat: ModeleAtelier, o: OccurrenceQuelconque): Record<string, { valeur: unknown; unite: string | null; source: \"definition\" | \"occurrence\" }> {"
+            },
+            {
+              "line": 213,
+              "text": "  const out: Record<string, { valeur: unknown; unite: string | null; source: \"definition\" | \"occurrence\" }> = {};"
+            },
+            {
+              "line": 214,
+              "text": "  const def = o.definitionId ? etat.definitions[o.definitionId] : undefined;"
+            },
+            {
+              "line": 215,
+              "text": "  if (estBloc(def)) for (const [k, v] of Object.entries((def.params as unknown as ParamsDefinitionBloc).proprietes ?? {})) out[k] = { valeur: v.valeur, unite: v.unite, source: \"definition\" };"
+            },
+            {
+              "line": 216,
+              "text": "  for (const [k, v] of Object.entries(o.proprietes)) out[k] = { valeur: v.valeur, unite: v.unite ?? null, source: \"occurrence\" };"
+            },
+            {
+              "line": 217,
+              "text": "  return out;"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "consumer": "oracle obsolète",
+      "impact": "Assertion contradictoire commande281 à actualiser, conservation assertion code280 et retrait282.",
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+          "lines": [
+            {
+              "line": 277,
+              "text": ""
+            },
+            {
+              "line": 278,
+              "text": "  it(\"classification : code déclaré dans un système, classe IFC tirée de l'ontologie (jamais devinée), retrait\", () => {"
+            },
+            {
+              "line": 279,
+              "text": "    const r = appliquer(base(), [{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"Uniclass\", code: \"EF_25_10\" } }]).etat;"
+            },
+            {
+              "line": 280,
+              "text": "    expect(r.objets[\"w\"]!.proprietes[\"classification:Uniclass\"]).toEqual({ valeur: \"EF_25_10\", provenance: \"saisie\", statut: \"declaree\" });"
+            },
+            {
+              "line": 281,
+              "text": "    expect(r.objets[\"w\"]!.proprietes[\"classeIfc\"]).toEqual({ valeur: \"IfcWall\", provenance: \"regle\", statut: \"verifiee\" });"
+            },
+            {
+              "line": 282,
+              "text": "    expect(appliquer(r, [{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"Uniclass\", code: null } }]).etat.objets[\"w\"]!.proprietes[\"classification:Uniclass\"]).toBeUndefined();"
+            },
+            {
+              "line": 283,
+              "text": "  });"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "consumer": "oracle référentiel",
+      "impact": "Code libre déclaré / chargé vérifié / code absent refusé / retrait code+libellé ; associations IFC à conserver.",
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "a3a870f1f187e3475d0a5d7f298f961e4665ff712bdab918dc15f1bd6b3f2c7a",
+          "lines": [
+            {
+              "line": 15,
+              "text": "describe(\"référentiels de classification chargés explicitement (D-065)\", () => {"
+            },
+            {
+              "line": 16,
+              "text": "  it(\"sans référentiel : code texte, « déclaré » ; avec : code vérifié, libellé noté ; code absent refusé avec codes proches\", () => {"
+            },
+            {
+              "line": 17,
+              "text": "    const e = base();"
+            },
+            {
+              "line": 18,
+              "text": "    const libre = appliquerLot(e, lot([{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"CFC\", code: \"999\" } }], \"l\")).etat;"
+            },
+            {
+              "line": 19,
+              "text": "    expect(libre.objets[\"w\"]!.proprietes[\"classification:CFC\"]).toMatchObject({ valeur: \"999\", statut: \"declaree\" });"
+            },
+            {
+              "line": 20,
+              "text": "    const r = appliquerLot(e, lot([charger, { type: \"classification.affecter\", params: { id: \"w\", systeme: \"CFC\", code: \"211.1\" } }], \"c\")).etat;"
+            },
+            {
+              "line": 21,
+              "text": "    expect(r.objets[\"w\"]!.proprietes[\"classification:CFC\"]).toMatchObject({ valeur: \"211.1\", statut: \"verifiee\" });"
+            },
+            {
+              "line": 22,
+              "text": "    expect(r.objets[\"w\"]!.proprietes[\"classification:CFC:libelle\"]).toMatchObject({ valeur: \"Échafaudages\" });"
+            },
+            {
+              "line": 23,
+              "text": "    expect(() => appliquerLot(r, lot([{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"CFC\", code: \"212\" } }]))).toThrow(/absent du référentiel CFC \\(2017\\).*codes proches : 211, 211\\.1, 214/);"
+            },
+            {
+              "line": 24,
+              "text": "    // Retrait : code et libellé disparaissent."
+            },
+            {
+              "line": 25,
+              "text": "    const x = appliquerLot(r, lot([{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"CFC\", code: null } }], \"x\")).etat;"
+            },
+            {
+              "line": 26,
+              "text": "    expect(Object.keys(x.objets[\"w\"]!.proprietes).filter((k) => k.startsWith(\"classification:\"))).toEqual([]);"
+            }
+          ]
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "a3a870f1f187e3475d0a5d7f298f961e4665ff712bdab918dc15f1bd6b3f2c7a",
+          "lines": [
+            {
+              "line": 51,
+              "text": "describe(\"classification à l'export IFC (D-065)\", () => {"
+            },
+            {
+              "line": 52,
+              "text": "  it(\"IfcClassification (source, édition), IfcClassificationReference (code, libellé), association à l'objet\", async () => {"
+            },
+            {
+              "line": 53,
+              "text": "    const { exporterIfc } = await import(\"../echanges/ifc.js\");"
+            },
+            {
+              "line": 54,
+              "text": "    const e = appliquerLot(base(), lot([charger, { type: \"classification.affecter\", params: { id: \"w\", systeme: \"CFC\", code: \"211.1\" } }], \"c\")).etat;"
+            },
+            {
+              "line": 55,
+              "text": "    const ifc = exporterIfc(e, { projet: { id: \"p\", nom: \"Essai\", code: \"E\" }, revision: 1, horodatage: \"2026-10-05T00:00:00\" }).contenu;"
+            },
+            {
+              "line": 56,
+              "text": "    expect(ifc).toMatch(/IFCCLASSIFICATION\\('fichier cfc\\.csv \\(saisi par l\\\\X2\\\\[0-9A-F]+\\\\X0\\\\utilisateur\\)'|IFCCLASSIFICATION\\('fichier cfc\\.csv/);"
+            },
+            {
+              "line": 57,
+              "text": "    expect(ifc).toMatch(/IFCCLASSIFICATIONREFERENCE\\(\\$,'211\\.1',/);"
+            },
+            {
+              "line": 58,
+              "text": "    expect(ifc).toMatch(/IFCRELASSOCIATESCLASSIFICATION\\(/);"
+            },
+            {
+              "line": 59,
+              "text": "    const sans = exporterIfc(base(), { projet: { id: \"p\", nom: \"Essai\", code: \"E\" }, revision: 1, horodatage: \"2026-10-05T00:00:00\" }).contenu;"
+            },
+            {
+              "line": 60,
+              "text": "    expect(sans).not.toMatch(/IFCCLASSIFICATION/);"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "consumer": "oracle contrôle/export",
+      "impact": "Déclaration incohérente conservée, diagnostic et exportIFCWALL ; règleids exclus et inverse exact déjà assertés, manque combinaison classification et déclaration.",
+      "evidence": [
+        {
+          "path": "packages/atelier-model/src/annexe-c.test.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "19840668ea9f1b829611a0edf6203f30f3148a702e5e5b89510b20ee2f149d72",
+          "lines": [
+            {
+              "line": 17,
+              "text": "  it(\"classe IFC déclarée incohérente : signalée (problèmes, rapport IFC), jamais corrigée ; cohérente ou classée par la règle : rien\", () => {"
+            },
+            {
+              "line": 18,
+              "text": "    const e = appliquerLot(modeleVide(), lot(["
+            },
+            {
+              "line": 19,
+              "text": "      { type: \"niveau.creer\", params: { id: \"n\", nom: \"R\", elevation: 0, hauteur: 3 } },"
+            },
+            {
+              "line": 20,
+              "text": "      { type: \"mur.tracer\", params: { id: \"w1\", niveauId: \"n\", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3) } },"
+            },
+            {
+              "line": 21,
+              "text": "      { type: \"mur.tracer\", params: { id: \"w2\", niveauId: \"n\", a: pt(0, 3), b: pt(4, 3), epaisseur: m(0.2), hauteur: m(3) } },"
+            },
+            {
+              "line": 22,
+              "text": "      { type: \"propriete.definir\", params: { id: \"w1\", nom: \"classeIfc\", valeur: \"IfcDoor\" } },"
+            },
+            {
+              "line": 23,
+              "text": "      { type: \"propriete.definir\", params: { id: \"w2\", nom: \"classeIfc\", valeur: \"ifcwall\" } },"
+            },
+            {
+              "line": 24,
+              "text": "    ])).etat;"
+            },
+            {
+              "line": 25,
+              "text": "    const x = controleClassesIfc(e);"
+            },
+            {
+              "line": 26,
+              "text": "    expect(x.map((i) => [i.objetId, i.declaree, i.attendues])).toEqual([[\"w1\", \"IfcDoor\", [\"IfcWall\"]]]);"
+            },
+            {
+              "line": 27,
+              "text": "    expect(e.objets[\"w1\"]!.proprietes[\"classeIfc\"]!.valeur).toBe(\"IfcDoor\");"
+            },
+            {
+              "line": 28,
+              "text": "    const r = exporterIfc(e, { projet: { id: \"p\", nom: \"t\", code: \"T\" }, revision: 1, horodatage: \"2026-10-06T00:00:00\" });"
+            },
+            {
+              "line": 29,
+              "text": "    expect(r.rapport.remarques.some((t) => /w1 : classe IFC déclarée IfcDoor, annexe C : IfcWall/.test(t))).toBe(true);"
+            },
+            {
+              "line": 30,
+              "text": "    expect(r.contenu).toMatch(/IFCWALL\\(/);"
+            }
+          ]
+        },
+        {
+          "path": "packages/atelier-model/src/annexe-c.test.ts",
+          "sha": "a15d65044ca4454bf3159f4155e51465b2a70a2c",
+          "sha256": "19840668ea9f1b829611a0edf6203f30f3148a702e5e5b89510b20ee2f149d72",
+          "lines": [
+            {
+              "line": 34,
+              "text": "describe(\"classification en lot par règle (D-112)\", () => {"
+            },
+            {
+              "line": 35,
+              "text": "  it(\"proposition par classe, type et niveau ; déjà classés et verrouillés écartés ; un seul lot, inverse exact\", async () => {"
+            },
+            {
+              "line": 36,
+              "text": "    const { proposerClassification } = await import(\"./classification-regle.js\");"
+            },
+            {
+              "line": 37,
+              "text": "    const e = appliquerLot(modeleVide(), lot(["
+            },
+            {
+              "line": 38,
+              "text": "      { type: \"niveau.creer\", params: { id: \"n\", nom: \"R\", elevation: 0, hauteur: 3 } },"
+            },
+            {
+              "line": 39,
+              "text": "      { type: \"niveau.creer\", params: { id: \"n2\", nom: \"R+1\", elevation: 3, hauteur: 3 } },"
+            },
+            {
+              "line": 40,
+              "text": "      { type: \"mur.tracer\", params: { id: \"w1\", niveauId: \"n\", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3) } },"
+            },
+            {
+              "line": 41,
+              "text": "      { type: \"mur.tracer\", params: { id: \"w2\", niveauId: \"n\", a: pt(0, 3), b: pt(4, 3), epaisseur: m(0.2), hauteur: m(3) } },"
+            },
+            {
+              "line": 42,
+              "text": "      { type: \"mur.tracer\", params: { id: \"w3\", niveauId: \"n2\", a: pt(0, 3), b: pt(4, 3), epaisseur: m(0.2), hauteur: m(3) } },"
+            },
+            {
+              "line": 43,
+              "text": "      { type: \"mur.tracer\", params: { id: \"w4\", niveauId: \"n\", a: pt(9, 3), b: pt(9, 5), epaisseur: m(0.2), hauteur: m(3) } },"
+            },
+            {
+              "line": 44,
+              "text": "      { type: \"classification.affecter\", params: { id: \"w2\", systeme: \"CFC\", code: \"211\" } },"
+            },
+            {
+              "line": 45,
+              "text": "      { type: \"objet.verrouiller\", params: { ids: [\"w4\"], verrouille: true } },"
+            },
+            {
+              "line": 46,
+              "text": "    ])).etat;"
+            },
+            {
+              "line": 47,
+              "text": "    const p = proposerClassification(e, { classe: \"mur\", systeme: \"CFC\", code: \"214\", niveauId: \"n\" });"
+            },
+            {
+              "line": 48,
+              "text": "    expect(p.cibles).toEqual([\"w1\"]);"
+            },
+            {
+              "line": 49,
+              "text": "    expect(p.dejaClasses).toEqual([\"w2\"]);"
+            },
+            {
+              "line": 50,
+              "text": "    expect(p.verrouilles).toEqual([\"w4\"]);"
+            },
+            {
+              "line": 51,
+              "text": "    expect(p.commandes).toEqual([{ type: \"classification.affecter\", params: { ids: [\"w1\"], systeme: \"CFC\", code: \"214\" } }]);"
+            },
+            {
+              "line": 52,
+              "text": "    expect(e.objets[\"w1\"]!.proprietes[\"classification:CFC\"]).toBeUndefined();"
+            },
+            {
+              "line": 53,
+              "text": "    const tous = proposerClassification(e, { classe: \"mur\", systeme: \"CFC\", code: \"214\", remplacer: true });"
+            },
+            {
+              "line": 54,
+              "text": "    expect(tous.cibles).toEqual([\"w1\", \"w2\", \"w3\"]);"
+            },
+            {
+              "line": 55,
+              "text": "    const r = appliquerLot(e, lot(tous.commandes, \"a\"));"
+            },
+            {
+              "line": 56,
+              "text": "    expect([\"w1\", \"w2\", \"w3\"].map((id) => r.etat.objets[id]!.proprietes[\"classification:CFC\"]!.valeur)).toEqual([\"214\", \"214\", \"214\"]);"
+            },
+            {
+              "line": 57,
+              "text": "    expect(appliquerLot(r.etat, lot([r.inverse], \"i\")).etat).toEqual(e);"
+            },
+            {
+              "line": 58,
+              "text": "    expect(proposerClassification(e, { classe: \"mur\", systeme: \"CFC\", code: \"\" }).commandes).toEqual([]);"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "literal_searches": [
+    {
+      "literal": "classeIfc",
+      "occurrences": 12,
+      "hits": [
+        {
+          "path": "apps/api/src/routes/atelier-commands.test.ts",
+          "line": 952,
+          "text": "    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe(\"c1\", 0, [niveau, mur(\"m1\"), { type: \"propriete.definir\", params: { id: \"m1\", nom: \"classeIfc\", valeur: \"IfcDoor\" } }]))).status).toBe(200);"
+        },
+        {
+          "path": "packages/atelier-model/src/annexe-c.test.ts",
+          "line": 22,
+          "text": "      { type: \"propriete.definir\", params: { id: \"w1\", nom: \"classeIfc\", valeur: \"IfcDoor\" } },"
+        },
+        {
+          "path": "packages/atelier-model/src/annexe-c.test.ts",
+          "line": 23,
+          "text": "      { type: \"propriete.definir\", params: { id: \"w2\", nom: \"classeIfc\", valeur: \"ifcwall\" } },"
+        },
+        {
+          "path": "packages/atelier-model/src/annexe-c.test.ts",
+          "line": 27,
+          "text": "    expect(e.objets[\"w1\"]!.proprietes[\"classeIfc\"]!.valeur).toBe(\"IfcDoor\");"
+        },
+        {
+          "path": "packages/atelier-model/src/annexe-c.ts",
+          "line": 4,
+          "text": " * `classeIfc`, saisie ou importée) qui n'en fait pas partie est signalée — jamais corrigée : l'export garde la classe"
+        },
+        {
+          "path": "packages/atelier-model/src/annexe-c.ts",
+          "line": 67,
+          "text": "    const v = o.proprietes?.[\"classeIfc\"]?.valeur;"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 281,
+          "text": "    expect(r.objets[\"w\"]!.proprietes[\"classeIfc\"]).toEqual({ valeur: \"IfcWall\", provenance: \"regle\", statut: \"verifiee\" });"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/organisation.ts",
+          "line": 436,
+          "text": "  proprietes[\"classeIfc\"] = { valeur: CLASSES[o.classe].ifc, provenance: \"regle\", statut: \"verifiee\" };"
+        },
+        {
+          "path": "packages/atelier-model/src/echanges/ifc.ts",
+          "line": 397,
+          "text": "          const classeIfc = ouv.classe === \"porte\" ? \"IFCDOOR\" : \"IFCWINDOW\";"
+        },
+        {
+          "path": "packages/atelier-model/src/echanges/ifc.ts",
+          "line": 430,
+          "text": "          const remplissage = s.ajouter(`${classeIfc}(${gid(ouv.id)},$,${opt(ouv.params.repere ?? ouv.id)},$,$,${ref(placementRemplissage)},${ref(forme([corpsSolide(corps)]))},${opt(ouv.params.repere)},${reelStep(ouv.params.hauteur.value)},${reelStep(w)},${ouv.classe === \"porte\" ? \".DOOR.\" : \".WINDOW.\"},${operation},${operationLibre})`);"
+        },
+        {
+          "path": "packages/atelier-model/src/echanges/ifc.ts",
+          "line": 493,
+          "text": "        const classeIfc = o.classe === \"escalier\" ? \"IFCSTAIR\" : o.classe === \"garde-corps\" ? \"IFCRAILING\" : \"IFCBUILDINGELEMENTPROXY\";"
+        },
+        {
+          "path": "packages/atelier-model/src/echanges/ifc.ts",
+          "line": 495,
+          "text": "        const id = s.ajouter(`${classeIfc}(${gid(o.id)},$,${opt(nom ?? (def ? def.nom : o.id))},$,${o.classe === \"solide\" ? chaineStep(o.params.role) : \"$\"},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : \"$\"},$,${type})`);"
+        }
+      ]
+    },
+    {
+      "literal": "classification.affecter",
+      "occurrences": 15,
+      "hits": [
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/panneaux/Complements.tsx",
+          "line": 79,
+          "text": "              {!readOnly && <button type=\"button\" className=\"lien\" onClick={() => onCommandes([{ type: \"classification.affecter\", params: { id: sel[0]!.id, systeme: a.systeme, code: null } }], `Retirer la classification ${a.systeme}`)}>Retirer</button>}"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/panneaux/Complements.tsx",
+          "line": 85,
+          "text": "        <form className=\"classif-formulaire\" onSubmit={(e) => { e.preventDefault(); if (systeme.trim() && code.trim()) onCommandes(sel.map((o) => ({ type: \"classification.affecter\", params: { id: o.id, systeme: systeme.trim(), code: code.trim() } })), `Classer ${sel.length > 1 ? `${sel.length} objets` : sel[0]!.id} : ${systeme.trim()} ${code.trim()}`); }}>"
+        },
+        {
+          "path": "packages/atelier-model/src/annexe-c.test.ts",
+          "line": 44,
+          "text": "      { type: \"classification.affecter\", params: { id: \"w2\", systeme: \"CFC\", code: \"211\" } },"
+        },
+        {
+          "path": "packages/atelier-model/src/annexe-c.test.ts",
+          "line": 51,
+          "text": "    expect(p.commandes).toEqual([{ type: \"classification.affecter\", params: { ids: [\"w1\"], systeme: \"CFC\", code: \"214\" } }]);"
+        },
+        {
+          "path": "packages/atelier-model/src/classification-regle.ts",
+          "line": 3,
+          "text": " * désigne des objets ; la proposition liste les cibles et les commandes `classification.affecter` d'un seul lot, que"
+        },
+        {
+          "path": "packages/atelier-model/src/classification-regle.ts",
+          "line": 53,
+          "text": "  const commandes: Commande[] = systeme && code && cibles.length ? [{ type: \"classification.affecter\", params: { ids: cibles, systeme, code } }] : [];"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 279,
+          "text": "    const r = appliquer(base(), [{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"Uniclass\", code: \"EF_25_10\" } }]).etat;"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 282,
+          "text": "    expect(appliquer(r, [{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"Uniclass\", code: null } }]).etat.objets[\"w\"]!.proprietes[\"classification:Uniclass\"]).toBeUndefined();"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/index.ts",
+          "line": 292,
+          "text": "  \"classification.affecter\": (etat, p) => {"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+          "line": 18,
+          "text": "    const libre = appliquerLot(e, lot([{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"CFC\", code: \"999\" } }], \"l\")).etat;"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+          "line": 20,
+          "text": "    const r = appliquerLot(e, lot([charger, { type: \"classification.affecter\", params: { id: \"w\", systeme: \"CFC\", code: \"211.1\" } }], \"c\")).etat;"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+          "line": 23,
+          "text": "    expect(() => appliquerLot(r, lot([{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"CFC\", code: \"212\" } }]))).toThrow(/absent du référentiel CFC \\(2017\\).*codes proches : 211, 211\\.1, 214/);"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+          "line": 25,
+          "text": "    const x = appliquerLot(r, lot([{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"CFC\", code: null } }], \"x\")).etat;"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+          "line": 54,
+          "text": "    const e = appliquerLot(base(), lot([charger, { type: \"classification.affecter\", params: { id: \"w\", systeme: \"CFC\", code: \"211.1\" } }], \"c\")).etat;"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/referentiels.ts",
+          "line": 5,
+          "text": " * remplace (version suivante). Quand un référentiel du système existe, `classification.affecter` refuse un code qui"
+        }
+      ]
+    },
+    {
+      "literal": "affecterClassification",
+      "occurrences": 4,
+      "hits": [
+        {
+          "path": "packages/atelier-model/src/commandes/index.ts",
+          "line": 60,
+          "text": "import { affecterClassification, affecterPhase, definirPropriete, rattacherReference, reducteursCalque, reducteursDefinition, reducteursGroupe, reducteursNiveau, reducteursSite, reducteursType, reparerReference } from \"./organisation.js\";"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/index.ts",
+          "line": 293,
+          "text": "    if (!Array.isArray(p[\"ids\"])) return affecterClassification(etat, p);"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/index.ts",
+          "line": 299,
+          "text": "      const r = affecterClassification(courant, { ...p, id });"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/organisation.ts",
+          "line": 415,
+          "text": "export function affecterClassification(etat: ModeleAtelier, p: Brut): ResultatCommande {"
+        }
+      ]
+    },
+    {
+      "literal": "controleClassesIfc",
+      "occurrences": 7,
+      "hits": [
+        {
+          "path": "apps/api/src/routes/atelier-commands.ts",
+          "line": 29,
+          "text": "  controleClassesIfc,"
+        },
+        {
+          "path": "apps/api/src/routes/atelier-commands.ts",
+          "line": 232,
+          "text": "    classesIfc: charge ? controleClassesIfc(charge.etat) : [],"
+        },
+        {
+          "path": "packages/atelier-model/src/annexe-c.test.ts",
+          "line": 2,
+          "text": "import { ANNEXE_C, classesIfcAttendues, controleClassesIfc } from \"./annexe-c.js\";"
+        },
+        {
+          "path": "packages/atelier-model/src/annexe-c.test.ts",
+          "line": 25,
+          "text": "    const x = controleClassesIfc(e);"
+        },
+        {
+          "path": "packages/atelier-model/src/annexe-c.ts",
+          "line": 62,
+          "text": "export function controleClassesIfc(etat: ModeleAtelier): IncoherenceClasseIfc[] {"
+        },
+        {
+          "path": "packages/atelier-model/src/echanges/ifc.ts",
+          "line": 44,
+          "text": "import { controleClassesIfc } from \"../annexe-c.js\";"
+        },
+        {
+          "path": "packages/atelier-model/src/echanges/ifc.ts",
+          "line": 1187,
+          "text": "  for (const x of controleClassesIfc(etat)) remarques.add(`${x.message}.`);"
+        }
+      ]
+    },
+    {
+      "literal": "classification:",
+      "occurrences": 25,
+      "hits": [
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "line": 822,
+          "text": "    prop = (await modele(pid)).modele.objets[murA.id]?.proprietes[\"classification:CFC-e2e\"] ?? null;"
+        },
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "line": 825,
+          "text": "  check(\"classification : référentiel chargé depuis un CSV, code vérifié et libellé noté sur le mur\", !!ref && Object.keys(ref.params.codes).length === 2 && prop?.statut === \"verifiee\" && (await modele(pid)).modele.objets[murA.id]?.proprietes[\"classification:CFC-e2e:libelle\"]?.valeur === \"Maçonnerie\", `${JSON.stringify(ref?.params?.codes ?? null)} · ${JSON.stringify(prop)}`);"
+        },
+        {
+          "path": "apps/web/e2e/atelier-complements.mjs",
+          "line": 1748,
+          "text": "    classes = Object.values(md.modele.objets).filter((o) => o.proprietes?.[\"classification:E2E\"]?.valeur === \"R-1\").length;"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/panneaux/Complements.tsx",
+          "line": 69,
+          "text": "  const actuels = sel.length === 1 ? Object.entries(sel[0]!.proprietes).filter(([k]) => k.startsWith(\"classification:\") && !k.endsWith(\":libelle\")).map(([k, v]) => ({ systeme: k.slice(\"classification:\".length), code: String(v.valeur), statut: v.statut, libelle: sel[0]!.proprietes[`${k}:libelle`]?.valeur as string | undefined })) : [];"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/panneaux/Complements.tsx",
+          "line": 212,
+          "text": "            onCommandes([{ type: \"bloc.definir\", params: { nom: nom.trim(), nature, cibles: sel.map((o) => o.id), pointDeBase: pt(base.x, base.y), bibliotheque: biblio.trim() || null, classification: nature === \"composant\" ? classification.trim() || null : null, remplacer } }], `${nature === \"composant\" ? \"Composant\" : \"Bloc\"} « ${nom.trim()} »`);"
+        },
+        {
+          "path": "apps/web/src/modules/atelier/nouveau/panneaux/Inspecteur.tsx",
+          "line": 1551,
+          "text": "  const colonnes = [...new Set([...lignes.flatMap((o) => Object.keys(o.proprietes).filter((k) => !k.startsWith(\"classification:\"))), ...colonnesAjoutees])].sort((a, b) => a.localeCompare(b, \"fr\"));"
+        },
+        {
+          "path": "packages/atelier-model/src/annexe-c.test.ts",
+          "line": 52,
+          "text": "    expect(e.objets[\"w1\"]!.proprietes[\"classification:CFC\"]).toBeUndefined();"
+        },
+        {
+          "path": "packages/atelier-model/src/annexe-c.test.ts",
+          "line": 56,
+          "text": "    expect([\"w1\", \"w2\", \"w3\"].map((id) => r.etat.objets[id]!.proprietes[\"classification:CFC\"]!.valeur)).toEqual([\"214\", \"214\", \"214\"]);"
+        },
+        {
+          "path": "packages/atelier-model/src/classification-regle.ts",
+          "line": 45,
+          "text": "    const actuel = o.proprietes[`classification:${systeme}`]?.valeur;"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/bloc.test.ts",
+          "line": 72,
+          "text": "      { type: \"bloc.definir\", params: { id: \"c\", nom: \"Lavabo\", nature: \"composant\", cibles: [\"e2\"], pointDeBase: pt(10.6, 10.4), proprietes: { marque: { valeur: \"non renseignée\" }, debit: { valeur: 12, unite: \"l/min\" } }, classification: \"Sanitaires\" } },"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/bloc.ts",
+          "line": 54,
+          "text": "  classification: string | null;"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/bloc.ts",
+          "line": 142,
+          "text": "      classification: p[\"classification\"] === undefined && anciens ? anciens.classification : lire.chaineOuNull(p, \"classification\"),"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 280,
+          "text": "    expect(r.objets[\"w\"]!.proprietes[\"classification:Uniclass\"]).toEqual({ valeur: \"EF_25_10\", provenance: \"saisie\", statut: \"declaree\" });"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+          "line": 282,
+          "text": "    expect(appliquer(r, [{ type: \"classification.affecter\", params: { id: \"w\", systeme: \"Uniclass\", code: null } }]).etat.objets[\"w\"]!.proprietes[\"classification:Uniclass\"]).toBeUndefined();"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/organisation.ts",
+          "line": 428,
+          "text": "    delete proprietes[`classification:${systeme}`];"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/organisation.ts",
+          "line": 429,
+          "text": "    delete proprietes[`classification:${systeme}:libelle`];"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/organisation.ts",
+          "line": 431,
+          "text": "    proprietes[`classification:${systeme}`] = { valeur: code, provenance: \"saisie\", statut: ref ? \"verifiee\" : \"declaree\" };"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/organisation.ts",
+          "line": 433,
+          "text": "    if (libelle) proprietes[`classification:${systeme}:libelle`] = { valeur: libelle, provenance: \"import\", statut: \"verifiee\" };"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/organisation.ts",
+          "line": 434,
+          "text": "    else delete proprietes[`classification:${systeme}:libelle`];"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+          "line": 19,
+          "text": "    expect(libre.objets[\"w\"]!.proprietes[\"classification:CFC\"]).toMatchObject({ valeur: \"999\", statut: \"declaree\" });"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+          "line": 21,
+          "text": "    expect(r.objets[\"w\"]!.proprietes[\"classification:CFC\"]).toMatchObject({ valeur: \"211.1\", statut: \"verifiee\" });"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+          "line": 22,
+          "text": "    expect(r.objets[\"w\"]!.proprietes[\"classification:CFC:libelle\"]).toMatchObject({ valeur: \"Échafaudages\" });"
+        },
+        {
+          "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+          "line": 26,
+          "text": "    expect(Object.keys(x.objets[\"w\"]!.proprietes).filter((k) => k.startsWith(\"classification:\"))).toEqual([]);"
+        },
+        {
+          "path": "packages/atelier-model/src/echanges/ifc.ts",
+          "line": 1124,
+          "text": "      if (!k.startsWith(\"classification:\") || k.endsWith(\":libelle\")) continue;"
+        },
+        {
+          "path": "packages/atelier-model/src/echanges/ifc.ts",
+          "line": 1125,
+          "text": "      const systeme = k.slice(\"classification:\".length);"
+        }
+      ]
+    }
+  ],
+  "missing_proofs": [
+    "Combiner affectation/remplacement/retrait avec classeIfc absente, saisie et importée, cohérente/incohérente, métadonnées inconnues.",
+    "Même invariance ids, id inconnu/verrou/code invalide après cible valide : entrée profonde, effets et inverse exacts ; répétabilité, objets exclus et référentiel inchangés.",
+    "Après classification contrôle/export purs : déclaration conservée, diagnostic présent si incompatible, IFC AnnexeC et associations code conservés ; absence de mutation par contrôle/export.",
+    "État historique déjà marqué regle/verifiee doit être conservé tel quel : aucune inférence de provenance ni nettoyage automatique."
+  ],
+  "bounded_risk_verdict": "Aucun lecteur explicite exigeant de maintenir écriture calculée identifié. Impacts génériques affichage/propriétés et diagnostics explicités ; pas autorisation de modifier UI/API/engine/schema ni données. Si A2/A3 découvre un effet nécessitant autre code ou assertion diminuée, suspendre nouvelle écriture concernée et soumettre extension.",
+  "scope_limits": [
+    "Recherche littérale complète apps/packages au SHA, pas preuve exhaustive contre clés construites dynamiquement, consommateurs externes/plugins/anciens clients ou données réelles.",
+    "Les occurrences locales classeIfc dans export sont des variables de projection, pas lecture de propriété canonique.",
+    "Définitions/types décrits fiche ne sont pas soudain implémentés par ce correctif occurrences.",
+    "API/E2E de non-régression restent hors mandat ; assertions existantes lues seulement."
+  ],
+  "sources": [
+    {
+      "path": "apps/api/src/routes/atelier-commands.test.ts",
+      "sha256": "bb11d10219f4fd5b76a66f6e5d2243cdf71b8715fafda823e6e066c07ceac841",
+      "git_blob": "4cf62fb62154cd7435fff87cc801d1e89ccaad76"
+    },
+    {
+      "path": "apps/api/src/routes/atelier-commands.ts",
+      "sha256": "efc43e42757bd328338d240169720c6604cca832882573c0fecd8a5f01c50d32",
+      "git_blob": "ec21af8ea3b0501725b15ab8555d612845802c9a"
+    },
+    {
+      "path": "apps/web/e2e/atelier-complements.mjs",
+      "sha256": "da1a53bf7397461eafe0d0202ef3036f4d78985f957f63488f044c1c4e279280",
+      "git_blob": "a38c75ae79336e1afa058142ce3650ac974e5d58"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Complements.tsx",
+      "sha256": "97c34ce0c3a04271db430dd6d9d5a9b31d506e0ff6a800eb4e2566133b548b03",
+      "git_blob": "67b88849202f65d571845f73b9ec266251c1b9ce"
+    },
+    {
+      "path": "apps/web/src/modules/atelier/nouveau/panneaux/Inspecteur.tsx",
+      "sha256": "add64226d4b65c59c1fcb25d0b61f3548618d22150fdc8db92492566585437b7",
+      "git_blob": "d70715cb71ab5e63c435ab29ebd91027ce04bceb"
+    },
+    {
+      "path": "packages/atelier-model/src/annexe-c.test.ts",
+      "sha256": "19840668ea9f1b829611a0edf6203f30f3148a702e5e5b89510b20ee2f149d72",
+      "git_blob": "f02e7add67412d09797be94a628813fa0c320aac"
+    },
+    {
+      "path": "packages/atelier-model/src/annexe-c.ts",
+      "sha256": "d1862832a2da82c63be358c29302130f45ae1baef7137bbfafcde4a9ed85ede0",
+      "git_blob": "91b42157ac23f1ab5ee7391f87292c7711af69de"
+    },
+    {
+      "path": "packages/atelier-model/src/classification-regle.ts",
+      "sha256": "4c9cbe7f83402e33f83b0d31c2caba9f3118f3efd00f4c786cb4bf75bdf4c469",
+      "git_blob": "e55a345796421a28023f8770863bc40e1e176fd5"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/bloc.ts",
+      "sha256": "b7d91a3bb472f5e11bacd8304543c6075403a6f3175a85981c776004ccf6d4c6",
+      "git_blob": "19d394220f070aca70bb704d6ce054e3dd618851"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/commandes.test.ts",
+      "sha256": "e8598df2c9d9fb1a1bdc9e64cd114eae2129c6df67f85f76ea0aa5182215cce5",
+      "git_blob": "458b232273b5e5529ff6489804371cba011901db"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/index.ts",
+      "sha256": "ee0dd04b4976c17d5f77a261730d239c8d125a2442ca8013c464d59dc8ce09b3",
+      "git_blob": "6df8663bc325337bd4cd2aa5c7dab0b2ece3619e"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/organisation.ts",
+      "sha256": "792399409ba93824808c5ca445ee3d169fc02d68bb0e7ee0541455eee17af26b",
+      "git_blob": "8c2f00472ec1dd9a903071396940a092eef1cbc9"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/referentiels.test.ts",
+      "sha256": "a3a870f1f187e3475d0a5d7f298f961e4665ff712bdab918dc15f1bd6b3f2c7a",
+      "git_blob": "6a2dbb2e60eb300e988cec2996fff80264fce0c4"
+    },
+    {
+      "path": "packages/atelier-model/src/commandes/verrous.ts",
+      "sha256": "696198e5e7925f61b1bee99581191cc0641eeb1bc62fd2b08797c7d60b6f6997",
+      "git_blob": "1667fe8b59ccc2aea877f8ba08bac0f67f78e918"
+    },
+    {
+      "path": "packages/atelier-model/src/echanges/ifc.ts",
+      "sha256": "4e3de1b2be7a5b7974744e45ee536b26e1daca05bc877d6e07c9a397bc5ea520",
+      "git_blob": "3b31a7df41007a681d9bbb8c656e475e4d123465"
+    }
+  ]
+}

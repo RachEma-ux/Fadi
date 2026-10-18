@@ -1,0 +1,28 @@
+{
+  "review_scope": "Complément documentaire borné ROUTE-03 avant revue A5",
+  "source_id": "ROUTE-03",
+  "source_path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+  "source_line": 129,
+  "texte_exact": "Décrire l’option /studio/projets/:projectId/etudes/:studyId pour le cadrage, les sources et les variantes.",
+  "changes": [
+    "Route étude mentionne maintenant cadrage/sources/variantes explicitement.",
+    "Section dédiée lecture/provenance/droits/rattachement-import explicite et pas conversion implicite ; aucun import exécuté.",
+    "Zone variantes accessible vide, création uniquement intentionnelle et autorisée ; pas géométrie par navigation.",
+    "Maquette documentaire écran étude vide ajoutée."
+  ],
+  "artifacts": [
+    {
+      "path": "CONTRAT-NAV-M004.md",
+      "sha256": "746c21331595c748b9f1775a44c3c2848f9807dd729ff7b761debaf062457c7a"
+    },
+    {
+      "path": "MAQUETTES-DOCUMENTAIRES.md",
+      "sha256": "911a0721ed0a72ecf48478c63b635efd5dbe9c112d1de08e18fdd8c56f06baab"
+    }
+  ],
+  "limits": [
+    "Aucune modification du texte source ou du registre canonique",
+    "Aucune coche de réalisation, aucun test UI, aucun code ni import",
+    "Complétude documentaire à revue A5 ; G1 non passée"
+  ]
+}

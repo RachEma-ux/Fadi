@@ -1,0 +1,1592 @@
+{
+  "scope": "23 fichiers nominaux, revue ciblée des occurrences et contexte ; dispositions proposées non appliquées. 465 autres fichiers DA (269fiches176codes20autres) pas encore qualifiés sémantiquement ; indirects/binaires/horsmarqueurs non exhaustifs.",
+  "rows": [
+    {
+      "path": ".github/workflows/audit-drawall.yml",
+      "category": "E-REPOSITORY-METADATA",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        1,
+        6,
+        7,
+        8,
+        24,
+        26,
+        30,
+        31
+      ],
+      "da_lines": [],
+      "semantic_disposition_proposed": "CONSERVER",
+      "semantic_reason": "Interdiction/garantie de conservation native, audit historique, décision datée ou contrôle d’isolation ; pas dépendance opérationnelle démontrée dans occurrences relues.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 1,
+          "exact_line": "name: Audit isolation DrawAll (Fadi uniquement)",
+          "type": "CONTROLE_ISOLATION",
+          "proposed_action": "Conserver identité du contrôle, motif recherché et scope ; pas suppression du contrôle pour éliminer le mot.",
+          "proof": ".github/workflows/audit-drawall.yml:1@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 6,
+          "exact_line": "      - \"scripts/audit-drawall-in-fadi.mjs\"",
+          "type": "CONTROLE_ISOLATION",
+          "proposed_action": "Conserver identité du contrôle, motif recherché et scope ; pas suppression du contrôle pour éliminer le mot.",
+          "proof": ".github/workflows/audit-drawall.yml:6@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 7,
+          "exact_line": "      - \"docs/workstreams/purge-drawall/**\"",
+          "type": "CONTROLE_ISOLATION",
+          "proposed_action": "Conserver identité du contrôle, motif recherché et scope ; pas suppression du contrôle pour éliminer le mot.",
+          "proof": ".github/workflows/audit-drawall.yml:7@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 8,
+          "exact_line": "      - \".github/workflows/audit-drawall.yml\"",
+          "type": "CONTROLE_ISOLATION",
+          "proposed_action": "Conserver identité du contrôle, motif recherché et scope ; pas suppression du contrôle pour éliminer le mot.",
+          "proof": ".github/workflows/audit-drawall.yml:8@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 24,
+          "exact_line": "        run: node --check scripts/audit-drawall-in-fadi.mjs",
+          "type": "CONTROLE_ISOLATION",
+          "proposed_action": "Conserver identité du contrôle, motif recherché et scope ; pas suppression du contrôle pour éliminer le mot.",
+          "proof": ".github/workflows/audit-drawall.yml:24@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 26,
+          "exact_line": "        run: node scripts/audit-drawall-in-fadi.mjs audit-drawall/fadi-report.json",
+          "type": "CONTROLE_ISOLATION",
+          "proposed_action": "Conserver identité du contrôle, motif recherché et scope ; pas suppression du contrôle pour éliminer le mot.",
+          "proof": ".github/workflows/audit-drawall.yml:26@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 30,
+          "exact_line": "          name: fadi-drawall-inventory",
+          "type": "CONTROLE_ISOLATION",
+          "proposed_action": "Conserver identité du contrôle, motif recherché et scope ; pas suppression du contrôle pour éliminer le mot.",
+          "proof": ".github/workflows/audit-drawall.yml:30@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 31,
+          "exact_line": "          path: audit-drawall/fadi-report.json",
+          "type": "CONTROLE_ISOLATION",
+          "proposed_action": "Conserver identité du contrôle, motif recherché et scope ; pas suppression du contrôle pour éliminer le mot.",
+          "proof": ".github/workflows/audit-drawall.yml:31@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "AGENTS.md",
+      "category": "E-REPOSITORY-METADATA",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        41
+      ],
+      "da_lines": [],
+      "semantic_disposition_proposed": "CONSERVER",
+      "semantic_reason": "Interdiction/garantie de conservation native, audit historique, décision datée ou contrôle d’isolation ; pas dépendance opérationnelle démontrée dans occurrences relues.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 41,
+          "exact_line": "- Ce programme conserve toutes les restrictions précédentes : POC/correctifs et portes G0–G4 selon autorisation, aucune fusion, administration ou production implicitement autorisée ; aucun test destructif sur une cible non explicitement jetable. Ne jamais modifier DrawAll ni supprimer les capacités industrielles/règles de dessin natives Fadi.",
+          "type": "RESTRICTION_OU_SUIVI_LEGITIME",
+          "proposed_action": "Conserver interdiction/suivi et liens du chantier ; pas référence contractuelle opérationnelle au produit externe démontrée.",
+          "proof": "AGENTS.md:41@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/ai-team/CODEX-START-HERE.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        17,
+        62
+      ],
+      "da_lines": [],
+      "semantic_disposition_proposed": "CONSERVER",
+      "semantic_reason": "Interdiction/garantie de conservation native, audit historique, décision datée ou contrôle d’isolation ; pas dépendance opérationnelle démontrée dans occurrences relues.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 17,
+          "exact_line": "Pour ce programme, reprendre `docs/workstreams/ai-team/`. Pour Studio, reprendre `docs/workstreams/studio/`. Les journaux de `architecture-webapp`, `purge-drawall`, Atelier, Planche et exploitation restent canoniques pour leurs propres décisions et faits.",
+          "type": "RESTRICTION_OU_SUIVI_LEGITIME",
+          "proposed_action": "Conserver interdiction/suivi et liens du chantier ; pas référence contractuelle opérationnelle au produit externe démontrée.",
+          "proof": "docs/ai-team/CODEX-START-HERE.md:17@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 62,
+          "exact_line": "Fadi seul ; ne jamais agir sur le dépôt DrawAll. Préserver les fonctions industrielles, les normes et leur provenance/licence légitime ; aucun retrait fondé sur un préfixe `DA-`. Conserver les 21 étapes, Harmonie intégrée, modèles géométriques hors React, commandes/révisions et droits serveur. Studio autonome dans Fadi ne signifie ni iframe Atelier, ni seconde application, ni seconde autorité métier.",
+          "type": "RESTRICTION_OU_SUIVI_LEGITIME",
+          "proposed_action": "Conserver interdiction/suivi et liens du chantier ; pas référence contractuelle opérationnelle au produit externe démontrée.",
+          "proof": "docs/ai-team/CODEX-START-HERE.md:62@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/ai-team/MISSIONS.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        79
+      ],
+      "da_lines": [],
+      "semantic_disposition_proposed": "CONSERVER",
+      "semantic_reason": "Interdiction/garantie de conservation native, audit historique, décision datée ou contrôle d’isolation ; pas dépendance opérationnelle démontrée dans occurrences relues.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 79,
+          "exact_line": "**Acceptation :** chaque élément maintenu/retiré est justifié ; aucun lien opérationnel non traité dans le périmètre qualifié ; limites du scanner exposées ; aucun changement dans DrawAll. Ne pas clôturer sur la seule réussite d’une recherche nominale.",
+          "type": "RESTRICTION_OU_SUIVI_LEGITIME",
+          "proposed_action": "Conserver interdiction/suivi et liens du chantier ; pas référence contractuelle opérationnelle au produit externe démontrée.",
+          "proof": "docs/ai-team/MISSIONS.md:79@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/atelier/README.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        1,
+        3
+      ],
+      "da_lines": [],
+      "semantic_disposition_proposed": "ADAPTER",
+      "semantic_reason": "Titre opérationnel autre produit ; conserver décision native et histoire, remplacer titre dans lot autorisé.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 1,
+          "exact_line": "# Chantier Atelier Architecture (DrawAll V4.1) — dossier de suivi",
+          "type": "ATTRIBUTION_OPERATIONNELLE_A_ADAPTER",
+          "proposed_action": "# Chantier Atelier Architecture Fadi — dossier de suivi ; ajouter note provenance datée sans réattribution historique.",
+          "proof": "docs/atelier/README.md:1@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 3,
+          "exact_line": "> **Décision Fadi — 17 octobre 2026 (Issue #147).** Les capacités de dessin et les fonctions industrielles (mécanique, structure, bois, tôlerie, MEP, etc.) restent natives à Fadi. Les normes techniques restent référencées selon leur organisme d'origine ; les éléments propres au produit DrawAll sont exclus du référentiel opérationnel Fadi. Les fiches historiques `DA-...` ne sont pas supprimées sans remplacement sûr de leur traçabilité et de leurs tests.",
+          "type": "RESTRICTION_OU_SUIVI_LEGITIME",
+          "proposed_action": "Conserver interdiction/suivi et liens du chantier ; pas référence contractuelle opérationnelle au produit externe démontrée.",
+          "proof": "docs/atelier/README.md:3@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/atelier/decisions.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        204
+      ],
+      "da_lines": [
+        16,
+        22,
+        26,
+        28,
+        30,
+        34,
+        40,
+        41,
+        43,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        197
+      ],
+      "semantic_disposition_proposed": "CONSERVER",
+      "semantic_reason": "Interdiction/garantie de conservation native, audit historique, décision datée ou contrôle d’isolation ; pas dépendance opérationnelle démontrée dans occurrences relues.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 204,
+          "exact_line": "| D-200 | 2026-10-10 | **Planche : programme d'amélioration des outils engagé à partir de l'analyse de l'extension DBS MetalFab 2.2.** Demande du maître d'ouvrage du 10 octobre 2026 : « Refais tout le travail dans la Planche de Fadi et implémente les mêmes fonctions dans la Planche de Fadi ». (a) Analyse par catégorie des fichiers partagés (code Ruby chiffré analysé par nom, taille et appels ; boîtes de dialogue ; gabarits de profils `.skp` à formules `w`, `h`, `t` ; graphismes ; signature et licence — ni code, ni image, ni texte repris) : `docs/planche/analyses/rapport-metalfab-par-categorie.md` ; SU Splat **non analysé** (non téléchargé), `ms_c2c_line_2p` **signalé, non analysé**. (b) Table d'améliorations, une ligne par outil du catalogue (45) plus les fonctions transversales et nouvelles, avec preuve dans le code, limites, paramètres, priorité, critère d'acceptation et lot : `table-ameliorations-outils.md` et `.csv`. (c) Programme en lots ordonnés **Planche 8 à 18** (`programme-lots.md`) : L8 modes explicites de Pousser/Tirer et vrai Étirement, L9 registre unique des commandes et clavier, L10 Suivez-moi complet, L11–L14 chaîne des profilés (noyau, outils, onglet et coupe, liste de débit), L15 révolution, L16 Texte 3D, L17 édition des pièces, L18 compléments ; un lot = une PR, un lot à la fois, acceptation entre deux lots. (d) Données : dimensions, masses linéiques et masses volumiques seulement depuis un catalogue sourcé (D-180) ou une saisie, sinon « non évaluée » ; coûts, imbrication en barres et conversion vers les ontologies de l'Atelier (P-10) restent des décisions du maître d'ouvrage. (e) **DrawAll hors périmètre** sur instruction du maître d'ouvrage : son dépôt n'est ni lu, ni modifié, ni cité. Numéro pris après D-196 à D-199 (PR #109 et #110, non encore fusionnées). | Demande du maître d'ouvrage ; critique externe transmise par lui (bases séparées, registre réel des raccourcis, création / accrochage / contrainte distingués, Tab et flèches selon le focus, Maj jamais à la fois activation et modificateur, identités distinctes, preuve et critère par ligne, Étirement sans effet, Suivez-moi sans trous ni chemin interactif, pas de révolution, aperçu plat du Texte 3D). | Maître d'ouvrage (demande, engagement), chef de projet (analyse, programme) | Planche 8–18 (programme) |",
+          "type": "DECISION_HISTORIQUE",
+          "proposed_action": "Conserver D-200 datée et mention exclusion ; ne pas réécrire décisions historiques.",
+          "proof": "docs/atelier/decisions.md:204@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/atelier-cahier-des-charges.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        21
+      ],
+      "da_lines": [
+        364,
+        414,
+        441,
+        486,
+        487,
+        498,
+        499,
+        525,
+        526,
+        562,
+        686,
+        697
+      ],
+      "semantic_disposition_proposed": "CONSERVER",
+      "semantic_reason": "Interdiction/garantie de conservation native, audit historique, décision datée ou contrôle d’isolation ; pas dépendance opérationnelle démontrée dans occurrences relues.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 21,
+          "exact_line": "> **Périmètre natif Fadi — décision du 17 octobre 2026 (Issue #147).** Toutes les fonctions industrielles intégrées à l'Atelier Fadi et toutes les règles techniques/normatives de dessin sont **conservées** comme fonctionnalités et règles propres à Fadi. Ce cahier définit leurs comportements sans référence normative au produit DrawAll. Les identifiants historiques `DA-...` demeurent des clés de traçabilité provisoires tant que leur remplacement compatible avec les exports, données et tests n'est pas validé. Les normes externes et leurs versions restent créditées à leurs organismes ; aucun emprunt ne doit être présenté comme une norme créée par Fadi. Toute évolution doit disposer d'une fiche Fadi, de critères de vérification et de tests.",
+          "type": "NORME_OFFICIELLE_ET_CONSERVATION_NATIVE",
+          "proposed_action": "Conserver déclaration : fonctions/règles natives et sources normatives/licences officielles maintenues ; aucune exigence au produit externe créée par cette mention.",
+          "proof": "docs/atelier-cahier-des-charges.md:21@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/atelier-cahier-p2.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        11
+      ],
+      "da_lines": [
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        94,
+        95,
+        96,
+        101,
+        102,
+        103,
+        122,
+        126,
+        147,
+        198,
+        199,
+        200,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207,
+        208,
+        209,
+        210,
+        211,
+        212,
+        213,
+        214,
+        215,
+        216,
+        217,
+        218,
+        219,
+        220,
+        221,
+        222,
+        223,
+        224,
+        225,
+        226,
+        227,
+        228,
+        229,
+        230,
+        231,
+        232,
+        233,
+        234,
+        235,
+        236,
+        237,
+        238,
+        239,
+        240,
+        241,
+        242,
+        243,
+        244,
+        245,
+        246,
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        253,
+        254,
+        255,
+        256,
+        257,
+        258,
+        259,
+        260,
+        261,
+        262,
+        263,
+        264,
+        265,
+        266,
+        267,
+        268,
+        269,
+        270,
+        271,
+        272,
+        273,
+        274,
+        275,
+        276,
+        277,
+        278,
+        279,
+        280,
+        281,
+        282,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
+        289,
+        290,
+        291,
+        292,
+        293,
+        294,
+        295,
+        296,
+        297,
+        298,
+        299,
+        300,
+        301,
+        302,
+        303,
+        304,
+        305,
+        306,
+        307,
+        308,
+        309,
+        310,
+        311,
+        312,
+        313,
+        314,
+        315,
+        316,
+        317,
+        318,
+        319,
+        320,
+        321,
+        322,
+        323,
+        324,
+        325,
+        326,
+        327,
+        328,
+        329,
+        330,
+        331,
+        332,
+        333,
+        334,
+        335,
+        336,
+        337,
+        338,
+        339,
+        340,
+        341,
+        342,
+        343,
+        344,
+        345,
+        346,
+        347,
+        348,
+        349,
+        350,
+        351,
+        352,
+        353,
+        354,
+        355,
+        356,
+        357,
+        358,
+        359,
+        360,
+        361,
+        362,
+        363,
+        364,
+        365,
+        366,
+        367,
+        368,
+        369,
+        370,
+        371,
+        372,
+        373,
+        374,
+        375,
+        376,
+        377,
+        378,
+        379,
+        380,
+        381,
+        382,
+        383,
+        384,
+        385,
+        386,
+        387,
+        388,
+        389,
+        390,
+        391,
+        392,
+        393,
+        394,
+        395,
+        396,
+        397,
+        398,
+        399,
+        400,
+        401,
+        402,
+        403,
+        404,
+        405,
+        406,
+        407,
+        408,
+        409,
+        410,
+        411,
+        412,
+        413,
+        414,
+        415,
+        416,
+        417,
+        418,
+        419,
+        420,
+        421,
+        422,
+        423,
+        424,
+        425,
+        426,
+        427,
+        428,
+        429,
+        430,
+        431,
+        432,
+        433,
+        434,
+        435,
+        436,
+        437,
+        438,
+        439,
+        440,
+        441,
+        442,
+        443,
+        444,
+        445,
+        446,
+        447,
+        448,
+        449,
+        450,
+        451,
+        452,
+        453,
+        454,
+        455,
+        456,
+        457,
+        458,
+        459,
+        460,
+        461,
+        462,
+        463,
+        464,
+        465,
+        466,
+        467
+      ],
+      "semantic_disposition_proposed": "CONSERVER",
+      "semantic_reason": "Interdiction/garantie de conservation native, audit historique, décision datée ou contrôle d’isolation ; pas dépendance opérationnelle démontrée dans occurrences relues.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 11,
+          "exact_line": "> **Décision Fadi du 17 octobre 2026, Issue #147.** Les ontologies et outils P2 (mécanique, structure, bois, tôlerie, réseaux/MEP, formes libres, coordination, fabrication et échanges) sont **conservés comme parties natives de Fadi**. Les règles normatives de dessin, symboles, unités, tolérances et exigences d'échange demeurent applicables selon leurs sources officielles, indépendamment du produit DrawAll. La nomenclature ancienne `DA-…` n'est qu'un identifiant historique de traçabilité jusqu'à une migration sûre ; conserver les tests et les objets existants.",
+          "type": "NORME_OFFICIELLE_ET_CONSERVATION_NATIVE",
+          "proposed_action": "Conserver déclaration : fonctions/règles natives et sources normatives/licences officielles maintenues ; aucune exigence au produit externe créée par cette mention.",
+          "proof": "docs/atelier-cahier-p2.md:11@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/audits/2026-10-18-a0-codex-cloud.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        15,
+        21,
+        94,
+        136,
+        153,
+        168
+      ],
+      "da_lines": [],
+      "semantic_disposition_proposed": "CONSERVER",
+      "semantic_reason": "Interdiction/garantie de conservation native, audit historique, décision datée ou contrôle d’isolation ; pas dépendance opérationnelle démontrée dans occurrences relues.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 15,
+          "exact_line": "L’architecture observée conserve le monolithe modulaire, les sept modules métier, les 21 étapes et Planche dans Atelier. Les fonctions industrielles disposent de modèles, routes et recettes Fadi. Aucun couplage nominal exécutable vers DrawAll n’est détecté dans les 761 fichiers contrôlés ; l’autonomie exhaustive ne peut pas être déduite de ce seul scanner.",
+          "type": "AUDIT_HISTORIQUE",
+          "proposed_action": "Conserver audit daté et limites ; ajouter nouveau rapport distinct plutôt que corriger rétroactivement ses constats.",
+          "proof": "docs/audits/2026-10-18-a0-codex-cloud.md:15@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 21,
+          "exact_line": "Documents consultés : AGENTS.md, docs/architecture.md, docs/continuity/README.md, index des chantiers, puis HANDOFF → STATUS → TASKS → CONTEXT pour purge-drawall et architecture-webapp ; README des sept modules, registre, manifestes, contrats de commandes, routage, authentification, droits, workflows et recettes Atelier/P2/Planche.",
+          "type": "AUDIT_HISTORIQUE",
+          "proposed_action": "Conserver audit daté et limites ; ajouter nouveau rapport distinct plutôt que corriger rétroactivement ses constats.",
+          "proof": "docs/audits/2026-10-18-a0-codex-cloud.md:21@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 94,
+          "exact_line": "| DrawAll | Aucun couplage nominal exécutable détecté dans le périmètre scanné ; autonomie exhaustive indirecte/documentaire non établie. |",
+          "type": "AUDIT_HISTORIQUE",
+          "proposed_action": "Conserver audit daté et limites ; ajouter nouveau rapport distinct plutôt que corriger rétroactivement ses constats.",
+          "proof": "docs/audits/2026-10-18-a0-codex-cloud.md:94@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 136,
+          "exact_line": "La qualification exhaustive des 494 fichiers de l’inventaire historique DrawAll reste à terminer. Les citations historiques, normes officielles, licences et capacités Fadi ne doivent pas être supprimées indistinctement.",
+          "type": "AUDIT_HISTORIQUE",
+          "proposed_action": "Conserver audit daté et limites ; ajouter nouveau rapport distinct plutôt que corriger rétroactivement ses constats.",
+          "proof": "docs/audits/2026-10-18-a0-codex-cloud.md:136@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 153,
+          "exact_line": "| I01 — P2 | docs/atelier/README.md:1 conserve « DrawAll V4.1 » ; scanner limité aux sources sélectionnées ; inventaire incomplet. | Justifier les éléments maintenus et éliminer les dépendances opérationnelles, en conservant normes, provenance et compatibilité. |",
+          "type": "AUDIT_HISTORIQUE",
+          "proposed_action": "Conserver audit daté et limites ; ajouter nouveau rapport distinct plutôt que corriger rétroactivement ses constats.",
+          "proof": "docs/audits/2026-10-18-a0-codex-cloud.md:153@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 168,
+          "exact_line": "| A2 Architecture | Contrats, graphe des dépendances et autonomie DrawAll. | P2 ; rapprochement A1. | Interfaces explicites, compatibilité documentée, frontières approuvées. |",
+          "type": "AUDIT_HISTORIQUE",
+          "proposed_action": "Conserver audit daté et limites ; ajouter nouveau rapport distinct plutôt que corriger rétroactivement ses constats.",
+          "proof": "docs/audits/2026-10-18-a0-codex-cloud.md:168@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/migration/etapes/10.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        77
+      ],
+      "da_lines": [],
+      "semantic_disposition_proposed": "ADAPTER",
+      "semantic_reason": "Ancienne attribution DrawAll V4.1 dans matrice/fiches de migration ; référence composants Fadi et lots existants, pas import produit. Actualiser attribution opérationnelle en gardant fait historique daté et preuves.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 77,
+          "exact_line": "| Atelier natif (3D, niveaux, créateur de vue, couches, exports PNG/SVG) | ✅ | Atelier reconstruit sur le modèle typé (lot 4 DrawAll V4.1 : modules/atelier/nouveau, packages/atelier-model ; l'ancien moteur extrait est retiré, ses projets repris par la migration de bascule) ; commandes typées journalisées avec révision (atelier_commands, 409 détaillé), plan 2D, vue 3D three.js, niveaux, coupes et façades, exports DXF / SVG / CSV / PNG au catalogue ; référence protégée de l'exemple : première modification validée dans une copie de travail automatique ; e2e : dessin d'un mur → copie « P.118 — copie de travail · Atelier », +1 objet, annulation → −1, rechargement |",
+          "type": "ATTRIBUTION_OPERATIONNELLE_ET_PREUVE_HISTORIQUE",
+          "proposed_action": "Remplacer étiquette produit dans description courante par Atelier Fadi, conserver liens des lots/preuves et note de provenance historique distincte ; aucune modification des capacités/états sans nouvelles preuves.",
+          "proof": "docs/migration/etapes/10.md:77@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/migration/etapes/11.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        72
+      ],
+      "da_lines": [],
+      "semantic_disposition_proposed": "ADAPTER",
+      "semantic_reason": "Ancienne attribution DrawAll V4.1 dans matrice/fiches de migration ; référence composants Fadi et lots existants, pas import produit. Actualiser attribution opérationnelle en gardant fait historique daté et preuves.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 72,
+          "exact_line": "| Atelier natif en plan orienté nord (coupes A–A / B–B, affichage objets / cotes) | ✅ | Atelier reconstruit sur le modèle typé (lot 4 DrawAll V4.1 : modules/atelier/nouveau, packages/atelier-model ; l'ancien moteur extrait est retiré, ses projets repris par la migration de bascule) ; commandes typées journalisées avec révision (atelier_commands, 409 détaillé), plan 2D, vue 3D three.js, niveaux, coupes et façades, exports DXF / SVG / CSV / PNG au catalogue ; référence protégée de l'exemple : première modification validée dans une copie de travail automatique ; e2e : dessin d'un mur → copie « P.118 — copie de travail · Atelier », +1 objet, annulation → −1, rechargement |",
+          "type": "ATTRIBUTION_OPERATIONNELLE_ET_PREUVE_HISTORIQUE",
+          "proposed_action": "Remplacer étiquette produit dans description courante par Atelier Fadi, conserver liens des lots/preuves et note de provenance historique distincte ; aucune modification des capacités/états sans nouvelles preuves.",
+          "proof": "docs/migration/etapes/11.md:72@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/migration/matrix.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        71,
+        73,
+        74,
+        75,
+        76
+      ],
+      "da_lines": [
+        101
+      ],
+      "semantic_disposition_proposed": "ADAPTER",
+      "semantic_reason": "Ancienne attribution DrawAll V4.1 dans matrice/fiches de migration ; référence composants Fadi et lots existants, pas import produit. Actualiser attribution opérationnelle en gardant fait historique daté et preuves.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 71,
+          "exact_line": "| Atelier du prototype (Design Atelier V14-3) : plan, 3D, Volume / Éclaté / Plan / Coupe N–S / E–O / façades, niveaux, outils de dessin, exports, annuler / rétablir | **Remplacer** (chantier DrawAll V4.1, `docs/atelier-cahier-des-charges.md` ; l'ancien moteur extrait a été supprimé à la bascule, lot 4) | `packages/atelier-model` (modèle typé, 90 commandes, réducteurs purs, maillages 3D, exports) ; `apps/api/src/routes/atelier-commands.ts` (cycle transactionnel, journal, 409 détaillé) ; `apps/web/src/modules/atelier/nouveau/` (cinq repères, plan SVG, vue three.js WebGL2 chargée à la demande, présentations bâtiment / niveau / éclaté, coupes horizontale et verticales, quatre façades, pousser / tirer) monté dans l'onglet Atelier et aux étapes 10 / 11 | ✅ | e2e 6b / 6b' (site EPSG:26191 · 1345,55 m², 6 niveaux, 6 × 3 présentations et 7 vues techniques non vides) ; `apps/web/e2e/atelier-nouveau.mjs` (36 contrôles) ; `docs/atelier/lots/lot-3a.md`, `lot-3b.md`, `lot-4.md` |",
+          "type": "ATTRIBUTION_OPERATIONNELLE_ET_PREUVE_HISTORIQUE",
+          "proposed_action": "Remplacer étiquette produit dans description courante par Atelier Fadi, conserver liens des lots/preuves et note de provenance historique distincte ; aucune modification des capacités/états sans nouvelles preuves.",
+          "proof": "docs/migration/matrix.md:71@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 73,
+          "exact_line": "| Exports du prototype (DXF, JSON) étendus aux échanges DrawAll V4.1 : maquette IFC 4.3 (`IFC4X3_ADD2`) exportée avec `IfcMapConversion` depuis le CRS de la parcelle, importée en représentations (classe et GlobalId d'origine), import DXF 2D en fond de plan, rapport de fidélité par échange, manifeste du paquet natif | Remplacer (lot 6) | `packages/atelier-model/src/echanges/` (`ifc.ts`, `import-ifc.ts`, `import-dxf.ts`) ; `apps/api/src/lib/atelier-ifc.ts` (web-ifc) ; `GET …/documents/atelier/modele.ifc`, `POST …/atelier/import-ifc` ; `nouveau/panneaux/Echanges.tsx` ; `docs/atelier/matrice-echanges.md` | ✅ (conformité testée, non certifiée ; ouverture dans un visualiseur tiers à constater par le maître d'ouvrage) | `echanges.test.ts` (11) ; `atelier-commands.test.ts` « échanges IFC » ; corpus IfcOpenShell en CI ; `apps/web/e2e/atelier-echanges.mjs` ; `docs/atelier/lots/lot-6.md` |",
+          "type": "ATTRIBUTION_OPERATIONNELLE_ET_PREUVE_HISTORIQUE",
+          "proposed_action": "Remplacer étiquette produit dans description courante par Atelier Fadi, conserver liens des lots/preuves et note de provenance historique distincte ; aucune modification des capacités/états sans nouvelles preuves.",
+          "proof": "docs/migration/matrix.md:73@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 74,
+          "exact_line": "| Révisions du modèle étendues (DrawAll V4.1, lot 7) : consultation d'une révision passée (`GET …/atelier/model?revision=n`, reconstituée par les inverses du journal), versions nommées immuables comparées et restaurables, variantes (projets bifurqués) fusionnées par rejeu validé avec conflits explicites, publications figées (version, catalogues, documents en volumes SHA-256), verrous logiques fins (423), collisions d'architecture, comparaison d'une vue entre versions | Remplacer (lot 7) | `packages/atelier-model/src/versions.ts` ; `apps/api/src/routes/atelier-versions.ts`, `lib/atelier-versions.ts` ; tables `atelier_versions`, `atelier_variants`, `atelier_publications`, `atelier_locks`, `volumes` ; `nouveau/panneaux/Versions.tsx`, mode Documents (`ComparaisonVue`) | ✅ | `versions.test.ts` (6) ; `atelier-commands.test.ts` « lot 7 » (4) ; `apps/web/e2e/atelier-versions.mjs` ; `scripts/verify-restore.sh` (versions, publications, volumes) ; `docs/atelier/lots/lot-7.md` |",
+          "type": "ATTRIBUTION_OPERATIONNELLE_ET_PREUVE_HISTORIQUE",
+          "proposed_action": "Remplacer étiquette produit dans description courante par Atelier Fadi, conserver liens des lots/preuves et note de provenance historique distincte ; aucune modification des capacités/états sans nouvelles preuves.",
+          "proof": "docs/migration/matrix.md:74@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 75,
+          "exact_line": "| Automatisation et assistant (DrawAll V4.1, lot 8 ; absents du prototype) : API de script = commandes (`POST …/atelier/scripts/:id/essai` et `/executer`, bibliothèque versionnée), assistant à boucle contrôlée (`POST …/atelier/assistant/propositions`, accord par `…/accepter`), règles déterministes de Fadi sans fournisseur de modèle de langage | Ajouter (lot 8) | `packages/atelier-model/src/automatisation/` (`scripts.ts`, `assistant.ts`) ; `apps/api/src/routes/atelier-automatisation.ts` ; tables `atelier_scripts`, `atelier_propositions` ; `nouveau/panneaux/Automatisation.tsx` | ✅ (fournisseur de modèle de langage : décision du maître d'ouvrage, §10.1) | `automatisation.test.ts` (8) ; `atelier-commands.test.ts` « lot 8 » (3) ; `apps/web/e2e/atelier-automatisation.mjs` ; `docs/atelier/lots/lot-8.md` |",
+          "type": "ATTRIBUTION_OPERATIONNELLE_ET_PREUVE_HISTORIQUE",
+          "proposed_action": "Remplacer étiquette produit dans description courante par Atelier Fadi, conserver liens des lots/preuves et note de provenance historique distincte ; aucune modification des capacités/états sans nouvelles preuves.",
+          "proof": "docs/migration/matrix.md:75@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 76,
+          "exact_line": "| Compléments (DrawAll V4.1, après le lot 9 ; absents du prototype) : historique d'un objet, consultation d'un état passé en lecture seule, réutilisation d'une partie d'un autre modèle (`POST …/atelier/reprise/apercu`, `/reprise`), références externes à la publication d'un autre projet (`refexterne.rattacher` / `.detacher`, `GET …/atelier/references-externes`) | Ajouter | `packages/atelier-model/src/reprise.ts`, `commandes/refexterne.ts`, `documents/refexterne-rendu.ts` ; `apps/api/src/lib/atelier-refexterne.ts`, `routes/atelier-versions.ts` ; `nouveau/panneaux/Reprise.tsx`, `ReferencesExternes.tsx` | ✅ | `reprise.test.ts` (3), `refexterne.test.ts` (2) ; `atelier-commands.test.ts` « compléments » (3) ; `apps/web/e2e/atelier-complements.mjs` ; `docs/atelier/lots/complements.md` |",
+          "type": "ATTRIBUTION_OPERATIONNELLE_ET_PREUVE_HISTORIQUE",
+          "proposed_action": "Remplacer étiquette produit dans description courante par Atelier Fadi, conserver liens des lots/preuves et note de provenance historique distincte ; aucune modification des capacités/états sans nouvelles preuves.",
+          "proof": "docs/migration/matrix.md:76@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/planche/analyses/programme-lots.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        7
+      ],
+      "da_lines": [],
+      "semantic_disposition_proposed": "CONSERVER",
+      "semantic_reason": "Interdiction/garantie de conservation native, audit historique, décision datée ou contrôle d’isolation ; pas dépendance opérationnelle démontrée dans occurrences relues.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 7,
+          "exact_line": "courant). DrawAll est hors périmètre sur instruction du maître d'ouvrage.",
+          "type": "RESTRICTION_OU_SUIVI_LEGITIME",
+          "proposed_action": "Conserver interdiction/suivi et liens du chantier ; pas référence contractuelle opérationnelle au produit externe démontrée.",
+          "proof": "docs/planche/analyses/programme-lots.md:7@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/planche/cahier-planche.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        3
+      ],
+      "da_lines": [
+        68,
+        932
+      ],
+      "semantic_disposition_proposed": "CONSERVER",
+      "semantic_reason": "Interdiction/garantie de conservation native, audit historique, décision datée ou contrôle d’isolation ; pas dépendance opérationnelle démontrée dans occurrences relues.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 3,
+          "exact_line": "> **Décision de conservation native Fadi (17 octobre 2026, Issue #147).** Toutes les règles techniques et normatives de dessin de la Planche (cotation, précision, unités, géométrie, symboles, hachures, calques et échanges) sont conservées dans Fadi. Les normes externes restent citées avec leurs versions et sources réelles ; aucune règle n'est dépendante du produit DrawAll. Les éventuels identifiants hérités ne seront migrés qu'avec contrôle de compatibilité.",
+          "type": "NORME_OFFICIELLE_ET_CONSERVATION_NATIVE",
+          "proposed_action": "Conserver déclaration : fonctions/règles natives et sources normatives/licences officielles maintenues ; aucune exigence au produit externe créée par cette mention.",
+          "proof": "docs/planche/cahier-planche.md:3@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/workstreams/README.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        9
+      ],
+      "da_lines": [],
+      "semantic_disposition_proposed": "CONSERVER",
+      "semantic_reason": "Interdiction/garantie de conservation native, audit historique, décision datée ou contrôle d’isolation ; pas dépendance opérationnelle démontrée dans occurrences relues.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 9,
+          "exact_line": "| Purge DrawAll hors Fadi | **Audit et arbitrage en cours** ; aucun changement au dépôt DrawAll | [purge-drawall/](purge-drawall/CONTEXT.md) | [Issue #147](https://github.com/RachEma-ux/Fadi/issues/147) |",
+          "type": "RESTRICTION_OU_SUIVI_LEGITIME",
+          "proposed_action": "Conserver interdiction/suivi et liens du chantier ; pas référence contractuelle opérationnelle au produit externe démontrée.",
+          "proof": "docs/workstreams/README.md:9@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/workstreams/ai-team/CONTEXT.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        17
+      ],
+      "da_lines": [],
+      "semantic_disposition_proposed": "CONSERVER",
+      "semantic_reason": "Interdiction/garantie de conservation native, audit historique, décision datée ou contrôle d’isolation ; pas dépendance opérationnelle démontrée dans occurrences relues.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 17,
+          "exact_line": "Aucun changement de DrawAll ; préserver normes, fonctions industrielles et 21 étapes. Correction/POC/G0–G4 selon accord ; pas de fusion, administration ni production implicites. Aucun test destructif sur base inconnue. Le dépôt est public.",
+          "type": "RESTRICTION_OU_SUIVI_LEGITIME",
+          "proposed_action": "Conserver interdiction/suivi et liens du chantier ; pas référence contractuelle opérationnelle au produit externe démontrée.",
+          "proof": "docs/workstreams/ai-team/CONTEXT.md:17@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/workstreams/purge-drawall/CONTEXT.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        1,
+        5,
+        9,
+        10,
+        16,
+        23,
+        33,
+        35,
+        36
+      ],
+      "da_lines": [],
+      "semantic_disposition_proposed": "CONSERVER_PREUVE_ET_ACTUALISER",
+      "semantic_reason": "Suivi légitime de séparation ; mentions PR148 brouillon/artefacts présents et anciennes métriques ne sont plus faits courants. STATUS/HANDOFF ensemble, ne pas effacer relevés historiques.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 1,
+          "exact_line": "# Purge des éléments DrawAll dans Fadi — Contexte",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/CONTEXT.md:1@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 5,
+          "exact_line": "Séparer définitivement **Fadi** de **DrawAll**, autre application possédant son propre dépôt. N'effectuer **aucune modification du dépôt DrawAll**. Purger les artefacts DrawAll introduits dans Fadi, sans supprimer par simple association de nom les fonctionnalités Fadi actives avant examen de leur impact et du mandat fonctionnel.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/CONTEXT.md:5@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 9,
+          "exact_line": "- Inclus : audits de dépôts, origine documentaire, liens normatifs à DrawAll dans Fadi, composants potentiellement transférés et dépendances ; changements uniquement sur `RachEma-ux/Fadi` en branche de travail.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/CONTEXT.md:9@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 10,
+          "exact_line": "- Exclus : opérations dans le dépôt DrawAll ; réécriture d'historique Git, suppression sur `main` sans tests et revue, changement de base de données de production, suppression d'un composant Atelier/Planche utilisé sans analyse ni décision.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/CONTEXT.md:10@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 16,
+          "exact_line": "- `docs/atelier/decisions.md`, `docs/atelier-cahier-des-charges.md`, `docs/atelier-cahier-p2.md`, `docs/atelier-drawall.md`, `docs/drawall/` : références actuellement présentes à examiner, **pas** une nouvelle autorisation de livrer leurs fonctions.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/CONTEXT.md:16@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 23,
+          "exact_line": "- Aucune action GitHub sur `DrawAll` : ni appel de modification, ni commit, ni PR.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/CONTEXT.md:23@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 33,
+          "exact_line": "- **Conserver toutes les règles normatives de dessin applicables à Fadi**, avec leurs exigences, unités, tolérances, représentations, symboles, vérifications et références normatives pertinentes. Ne pas confondre norme technique (p. ex. IFC, ISO, conventions de cotation) et produit DrawAll.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/CONTEXT.md:33@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 35,
+          "exact_line": "- Purger toute référence ou dépendance *au produit DrawAll* dans la documentation opérationnelle et le code Fadi. Toute transformation des identifiants `DA-...` devra être précédée d'un inventaire de leurs usages dans les données, exports, API et tests, avec compatibilité de migration.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/CONTEXT.md:35@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 36,
+          "exact_line": "- Ne supprimer **aucune fonction industrielle ni règle de dessin** et ne modifier en aucun cas le dépôt DrawAll.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/CONTEXT.md:36@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/workstreams/purge-drawall/HANDOFF.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        1,
+        8,
+        10,
+        15,
+        17,
+        18,
+        23,
+        24,
+        30,
+        46
+      ],
+      "da_lines": [],
+      "semantic_disposition_proposed": "CONSERVER_PREUVE_ET_ACTUALISER",
+      "semantic_reason": "Suivi légitime de séparation ; mentions PR148 brouillon/artefacts présents et anciennes métriques ne sont plus faits courants. STATUS/HANDOFF ensemble, ne pas effacer relevés historiques.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 1,
+          "exact_line": "# Purge DrawAll dans Fadi — Reprise de session",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/HANDOFF.md:1@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 8,
+          "exact_line": "- **Interdit** : écrire ou supprimer quoi que ce soit dans un dépôt `DrawAll`.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/HANDOFF.md:8@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 10,
+          "exact_line": "- Branche : `chore/147-remove-drawall-contamination` créée sur `main`.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/HANDOFF.md:10@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 15,
+          "exact_line": "- 3 documents produits DrawAll isolés sous `docs/drawall/`, et `docs/atelier-drawall.md` présente une proposition de reconstruction Fadi selon DrawAll.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/HANDOFF.md:15@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 17,
+          "exact_line": "- Un inventaire automatique a été exécuté sur GitHub (1261 fichiers scannés, 494 touchés, 2267 lignes) ; artefact `fadi-drawall-inventory` du workflow de la PR #148.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/HANDOFF.md:17@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 18,
+          "exact_line": "- Cinq occurrences nominales dans les sources ont été corrigées et un garde-fou CI vérifie les sources Fadi. **Les trois documents `docs/drawall/` et `docs/atelier-drawall.md` sont désormais supprimés de la branche Fadi uniquement**, avec mise à jour des principaux liens entrants. Le dépôt DrawAll est inchangé.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/HANDOFF.md:18@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 23,
+          "exact_line": "1. Examiner le rapport `fadi-drawall-inventory`, notamment les 180 fichiers de code (majoritairement des identifiants `DA-...`) et les 269 fiches ; suivre l'audit dans l'Issue #147.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/HANDOFF.md:23@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 24,
+          "exact_line": "2. Établir la matrice `RETIRER / ADAPTER / CONSERVER (Fadi) / ARBITRER` à la granularité fichier/fonction et relever les liens entrants vers les trois documents purs DrawAll.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/HANDOFF.md:24@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 30,
+          "exact_line": "- 17 octobre 2026 : l'utilisateur confirme explicitement le maintien des fonctions industrielles **et** des règles normatives de dessin comme capacités natives Fadi ; aucun lien DrawAll et aucun changement au dépôt DrawAll. Ne pas rouvrir cette question comme une incertitude.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/HANDOFF.md:30@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 46,
+          "exact_line": "Fadi-Serv et la branche `main` restent inchangés. Tout audit est en lecture seule dans le dépôt Fadi ; aucune opération sur DrawAll.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/HANDOFF.md:46@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/workstreams/purge-drawall/INVENTORY.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        1,
+        5,
+        11,
+        12,
+        22,
+        23,
+        24,
+        26,
+        30,
+        31,
+        49,
+        51
+      ],
+      "da_lines": [],
+      "semantic_disposition_proposed": "CONSERVER_PREUVE_ET_ACTUALISER",
+      "semantic_reason": "Suivi légitime de séparation ; mentions PR148 brouillon/artefacts présents et anciennes métriques ne sont plus faits courants. STATUS/HANDOFF ensemble, ne pas effacer relevés historiques.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 1,
+          "exact_line": "# Inventaire contrôlé — Contamination DrawAll dans Fadi",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/INVENTORY.md:1@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 5,
+          "exact_line": "Le rapport exhaustif est produit par `.github/workflows/audit-drawall.yml`, artefact `fadi-drawall-inventory`. Il recense des occurrences textuelles de `DrawAll` et des identifiants `DA-NN-NN` : un résultat de recherche n'est **pas** une preuve qu'un fichier entier appartient à une autre application.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/INVENTORY.md:5@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 11,
+          "exact_line": "| A. Documents autonomes propres à DrawAll | 3 | 355 | **Retirer du dépôt Fadi** après cartographie des liens ; source historique consultable via historique Git |",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/INVENTORY.md:11@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 12,
+          "exact_line": "| B. Contrat interproduits `docs/atelier-drawall.md` | 1 | 17 | **Adapter/archiver ou retirer**, après vérification des cahiers et de leurs consommateurs |",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/INVENTORY.md:12@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 22,
+          "exact_line": "- `docs/drawall/DrawAll_v4.1_Architecture.md`",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/INVENTORY.md:22@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 23,
+          "exact_line": "- `docs/drawall/DrawAll_v4.1_Concept.md`",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/INVENTORY.md:23@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 24,
+          "exact_line": "- `docs/drawall/DrawAll_v4.1_Exigences_Sources.md`",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/INVENTORY.md:24@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 26,
+          "exact_line": "Ces trois documents décrivent **explicitement l'application DrawAll** et ne sont pas des spécifications officielles Fadi. Leur retrait du dépôt Fadi est justifié indépendamment de la décision sur les fonctionnalités Fadi.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/INVENTORY.md:26@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 30,
+          "exact_line": "- `docs/atelier-cahier-p2.md` : cahier de l'Atelier au-delà de la seule architecture, avec ontologies mécanique, structure, tôlerie, bois, MEP et formes libres, déclarées livrées selon diverses décisions. Ce document porte des décisions Fadi et un emprunt explicite au référentiel DrawAll.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/INVENTORY.md:30@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 31,
+          "exact_line": "- `packages/atelier-model/src/ontologies/{mechanical,sheetmetal,mep,timber,structure}/` : composants métier présents dans le code Fadi. **Une fonction mécanique ne doit pas être présumée propre à DrawAll uniquement à cause de son domaine**.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/INVENTORY.md:31@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 49,
+          "exact_line": "**Décision prise le 17 octobre 2026 : les fonctionnalités industrielles et les règles normatives de dessin doivent toutes être conservées comme capacités natives Fadi.** Purger les artefacts externes, corriger les cahiers et enlever les dépendances DrawAll, sans retirer les outils, les modèles persistés ni les règles techniques. Préserver l'identification légitime des normes officielles et les licences ; toute migration de code ou d'identifiants nécessite compatibilité et tests.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/INVENTORY.md:49@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 51,
+          "exact_line": "**Le dépôt DrawAll n'est jamais une destination de modification dans cette opération.** GitHub `main` et Fadi-Serv sont préservés tant que la PR de nettoyage n'est pas testée, revue et fusionnée.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/INVENTORY.md:51@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/workstreams/purge-drawall/STATUS.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        1,
+        7,
+        11,
+        12,
+        15,
+        18,
+        22,
+        33,
+        42
+      ],
+      "da_lines": [
+        23
+      ],
+      "semantic_disposition_proposed": "CONSERVER_PREUVE_ET_ACTUALISER",
+      "semantic_reason": "Suivi légitime de séparation ; mentions PR148 brouillon/artefacts présents et anciennes métriques ne sont plus faits courants. STATUS/HANDOFF ensemble, ne pas effacer relevés historiques.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 1,
+          "exact_line": "# Purge DrawAll dans Fadi — Statut",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/STATUS.md:1@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 7,
+          "exact_line": "**En cours — la portée fonctionnelle est désormais décidée : conserver toutes les fonctions industrielles et toutes les règles normatives de dessin comme capacités natives Fadi.** Purge des seules références et artefacts propres au produit DrawAll.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/STATUS.md:7@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 11,
+          "exact_line": "- Sur `main`, l'arbre Git de `RachEma-ux/Fadi` compte 1538 éléments (fichiers et répertoires) au moment de l'audit ; 3 documents `docs/drawall/` et 269 fiches `docs/atelier/fiches/DA-*.md`.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/STATUS.md:11@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 12,
+          "exact_line": "- **Rapport exhaustif GitHub Actions validé** : 1261 fichiers texte scannés, 494 fichiers avec occurrence, 2267 lignes pertinentes ; détails téléchargeables dans l'artefact `fadi-drawall-inventory` du workflow `Audit isolation DrawAll (Fadi uniquement)`. Répartition : 3 documents de l'autre produit ; 1 contrat interproduits ; 269 fiches DA ; 37 docs Fadi ; 180 fichiers de code Fadi ; 4 métadonnées. Scanner basé sur des marqueurs : les hits ne sont pas tous des éléments à supprimer.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/STATUS.md:12@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 15,
+          "exact_line": "- Des références DrawAll apparaissent dans `README.md`, `CLAUDE.md`, `docs/architecture.md`, `docs/atelier-cahier-des-charges.md`, `docs/atelier-cahier-p2.md`, `docs/atelier/README.md` et `docs/atelier-drawall.md`.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/STATUS.md:15@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 18,
+          "exact_line": "- `main` reste source de production ; aucune modification n'a été effectuée sur le dépôt DrawAll.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/STATUS.md:18@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 22,
+          "exact_line": "- CI GitHub Actions : jobs validate, e2e et image terminés avec succès ; continuité de développement, inventaire DrawAll et isolation nominale également réussis. Les recettes P2 structure, mécanique, bois, tôlerie, réseaux, documentation et coordination ont été exécutées dans le job E2E.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/STATUS.md:22@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 33,
+          "exact_line": "- Éviter de confondre réécriture du nom DrawAll et suppression effective des dépendances.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/STATUS.md:33@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 42,
+          "exact_line": "- Branche : `chore/147-remove-drawall-contamination`.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/STATUS.md:42@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "docs/workstreams/purge-drawall/TASKS.md",
+      "category": "B-FADI-DOCUMENTATION",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        1,
+        6,
+        19,
+        21,
+        30,
+        34,
+        35
+      ],
+      "da_lines": [],
+      "semantic_disposition_proposed": "CONSERVER_PREUVE_ET_ACTUALISER",
+      "semantic_reason": "Suivi légitime de séparation ; mentions PR148 brouillon/artefacts présents et anciennes métriques ne sont plus faits courants. STATUS/HANDOFF ensemble, ne pas effacer relevés historiques.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 1,
+          "exact_line": "# Purge DrawAll dans Fadi — Tâches",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/TASKS.md:1@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 6,
+          "exact_line": "- [ ] PURGE-03 — Établir la matrice **RETIRER les artefacts DrawAll / ADAPTER les cahiers Fadi / CONSERVER toutes les fonctions et règles de dessin / MIGRER les identifiants avec compatibilité**.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/TASKS.md:6@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 19,
+          "exact_line": "- Suppression sur branche de 4 fichiers clairement liés au produit distinct (`docs/drawall/` ×3 et `docs/atelier-drawall.md`) ; principaux liens supprimés ou redirigés.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/TASKS.md:19@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 21,
+          "exact_line": "- Inventaire de base : trois fichiers `docs/drawall/`, une proposition `docs/atelier-drawall.md`, environ 269 fiches Atelier `DA-*.md` présentes dans le dépôt (classification fonctionnelle en cours).",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/TASKS.md:21@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 30,
+          "exact_line": "- Aucun lien actif à DrawAll, aucune modification du dépôt DrawAll.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/TASKS.md:30@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 34,
+          "exact_line": "- Aucun lien d'exécution ou référentiel actif de Fadi vers le produit DrawAll ; tous les fichiers suspects justifiés, supprimés ou explicitement maintenus comme éléments Fadi.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/TASKS.md:34@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 35,
+          "exact_line": "- Traçabilité des suppressions ; absence d'action sur le dépôt DrawAll.",
+          "type": "SUIVI_HISTORIQUE_OU_POINT_REPRISE",
+          "proposed_action": "Conserver relevé daté ; distinguer ancien inventaire et fait courant PR148 fusionnée, retirer seulement présupposition de présence actuelle des quatre fichiers supprimés ; STATUS/HANDOFF même futur lot.",
+          "proof": "docs/workstreams/purge-drawall/TASKS.md:35@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "scripts/audit-drawall-in-fadi.mjs",
+      "category": "E-REPOSITORY-METADATA",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        3,
+        4,
+        13,
+        31,
+        32,
+        49,
+        53,
+        63
+      ],
+      "da_lines": [],
+      "semantic_disposition_proposed": "CONSERVER",
+      "semantic_reason": "Interdiction/garantie de conservation native, audit historique, décision datée ou contrôle d’isolation ; pas dépendance opérationnelle démontrée dans occurrences relues.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 3,
+          "exact_line": " * Ne consulte ni ne modifie un autre dépôt GitHub, dont DrawAll.",
+          "type": "CONTROLE_ISOLATION",
+          "proposed_action": "Conserver identité du contrôle, motif recherché et scope ; pas suppression du contrôle pour éliminer le mot.",
+          "proof": "scripts/audit-drawall-in-fadi.mjs:3@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 4,
+          "exact_line": " * Usage : node scripts/audit-drawall-in-fadi.mjs [chemin-rapport-json]",
+          "type": "CONTROLE_ISOLATION",
+          "proposed_action": "Conserver identité du contrôle, motif recherché et scope ; pas suppression du contrôle pour éliminer le mot.",
+          "proof": "scripts/audit-drawall-in-fadi.mjs:4@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 13,
+          "exact_line": "const bad=/draw[\\s_-]?all|docs\\/drawall|(?:\\bDA-\\d{2}-\\d{2}\\b)/gi;",
+          "type": "CONTROLE_ISOLATION",
+          "proposed_action": "Conserver identité du contrôle, motif recherché et scope ; pas suppression du contrôle pour éliminer le mot.",
+          "proof": "scripts/audit-drawall-in-fadi.mjs:13@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 31,
+          "exact_line": " if(p.startsWith('docs/drawall/'))return 'A-OTHER-PRODUCT-REFERENCE';",
+          "type": "CONTROLE_ISOLATION",
+          "proposed_action": "Conserver identité du contrôle, motif recherché et scope ; pas suppression du contrôle pour éliminer le mot.",
+          "proof": "scripts/audit-drawall-in-fadi.mjs:31@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 32,
+          "exact_line": " if(p==='docs/atelier-drawall.md')return 'B-CROSS-PRODUCT-CONTRACT';",
+          "type": "CONTROLE_ISOLATION",
+          "proposed_action": "Conserver identité du contrôle, motif recherché et scope ; pas suppression du contrôle pour éliminer le mot.",
+          "proof": "scripts/audit-drawall-in-fadi.mjs:32@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 49,
+          "exact_line": "  if(hits.length||/drawall/i.test(f.path))reports.push({path:f.path,category:classify(f.path),occurrences:hits.length,hits});",
+          "type": "CONTROLE_ISOLATION",
+          "proposed_action": "Conserver identité du contrôle, motif recherché et scope ; pas suppression du contrôle pour éliminer le mot.",
+          "proof": "scripts/audit-drawall-in-fadi.mjs:49@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 53,
+          "exact_line": " return {generated_at:new Date().toISOString(),repository:'RachEma-ux/Fadi',mode:'read-only',scope:'this checkout only; no DrawAll repository operations',summary,files:reports};",
+          "type": "CONTROLE_ISOLATION",
+          "proposed_action": "Conserver identité du contrôle, motif recherché et scope ; pas suppression du contrôle pour éliminer le mot.",
+          "proof": "scripts/audit-drawall-in-fadi.mjs:53@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        },
+        {
+          "line": 63,
+          "exact_line": " console.log('AUDIT_DRAWALL_FADI_OK : inventaire uniquement, aucune suppression.');",
+          "type": "CONTROLE_ISOLATION",
+          "proposed_action": "Conserver identité du contrôle, motif recherché et scope ; pas suppression du contrôle pour éliminer le mot.",
+          "proof": "scripts/audit-drawall-in-fadi.mjs:63@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    },
+    {
+      "path": "scripts/check-fadi-isolation.mjs",
+      "category": "E-REPOSITORY-METADATA",
+      "proposed_disposition": "REVUE_DOCUMENTAIRE_INDIVIDUELLE",
+      "reason": "Marqueur nominal présent : distinguer journal historique, interdiction, contrat et titre opérationnel.",
+      "nominal_lines": [
+        11
+      ],
+      "da_lines": [],
+      "semantic_disposition_proposed": "CONSERVER",
+      "semantic_reason": "Interdiction/garantie de conservation native, audit historique, décision datée ou contrôle d’isolation ; pas dépendance opérationnelle démontrée dans occurrences relues.",
+      "review_scope": "Occurrences nominales listées et contexte ciblé, pas chaque ligne complète du document ni toutes références entrantes.",
+      "occurrences_reviewed": [
+        {
+          "line": 11,
+          "exact_line": "const forbidden=/draw[ _-]?all|docs\\/drawall/i;",
+          "type": "CONTROLE_ISOLATION",
+          "proposed_action": "Conserver identité du contrôle, motif recherché et scope ; pas suppression du contrôle pour éliminer le mot.",
+          "proof": "scripts/check-fadi-isolation.mjs:11@a09c11d397c8527987c3d1c4410ebb2eb240a819",
+          "review_limit": "Contexte ciblé de l’occurrence ; pas preuve absence de lien sans marqueur ou actif externe."
+        }
+      ]
+    }
+  ]
+}

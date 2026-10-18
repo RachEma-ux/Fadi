@@ -1,0 +1,41 @@
+{
+  "observed_utc": "2026-10-18",
+  "run_id": 39117137782,
+  "head_sha": "76e43d19645dc8a8ffd91282177e6a31d123f73a",
+  "conclusion": "failure",
+  "run_attempt": 1,
+  "updated_at": "2026-10-18T10:12:44Z",
+  "jobs": [
+    {
+      "id": 117645106144,
+      "name": "e2e",
+      "conclusion": "failure",
+      "failed_steps": [
+        {
+          "number": 17,
+          "name": "Recette des compléments — historique, consultation, reprise, références externes (apps/web/e2e/atelier-complements.mjs)"
+        }
+      ]
+    },
+    {
+      "id": 117645106317,
+      "name": "validate",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 117645106342,
+      "name": "image",
+      "conclusion": "success",
+      "failed_steps": []
+    }
+  ],
+  "selected_log_lines": [
+    "2026-10-18T10:09:45.2989106Z ✗ raccord multiple : quatre lignes jointives, quatre arcs créés en un seul lot — 200 · arcs 0 → 4 · r90 → r90",
+    "2026-10-18T10:12:40.4569168Z ##[error]Process completed with exit code 1.",
+    "2026-10-18T10:12:40.4967984Z ##[error]663:✗ raccord multiple : quatre lignes jointives, quatre arcs créés en un seul lot — 200 · arcs 0 → 4 · r90 → r90"
+  ],
+  "expected_assertion": "check(\"raccord multiple : quatre lignes jointives, quatre arcs créés en un seul lot\", r0.status === 200 && arcs === arcsAvant + 4 && rev === avant.revision + 1, `${r0.status} · arcs ${arcsAvant} → ${arcs} · r${avant.revision} → r${rev}`);\n}\n\n// Calque gelé (D-103) : geler depuis le navigateur retire",
+  "root_cause": "non établie ; décalage révision observé démontré, hypothèse concurrence à vérifier",
+  "rerun_performed": false
+}

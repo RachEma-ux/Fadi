@@ -1,0 +1,1493 @@
+{
+  "type": "Exemples JSON documentaires nonexécutables, pasformatnatif/API/POC/contratphysiqueratifié",
+  "orientations": {
+    "DEC01": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250110124",
+    "DEC03": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6250110501",
+    "portee": "Orientations logiques retenues pour préparerG1, ni choix physique ratifié ni code/POCautorisé"
+  },
+  "valid_examples": [
+    {
+      "exampleId": "G1-DOC-POS-STUDY",
+      "expected": "Étude sansvariante permise, géométrieabsente",
+      "project": {
+        "projectId": "example-project-G1",
+        "authority": "Fadi-project-service-fixture-only"
+      },
+      "study": {
+        "studyId": "example-study-G1",
+        "projectId": "example-project-G1",
+        "sources": [],
+        "brief": "Étude synthétique documentaire, pasprojetcréé"
+      },
+      "variants": [],
+      "canonicalDocuments": [],
+      "execution": "Non exécuté ; cohérence documentaire seulement"
+    },
+    {
+      "exampleId": "G1-DOC-POS-2D",
+      "expected": "Dessin2Dcanonique autonome, révisionimmuable, aucun3D requis",
+      "project": {
+        "projectId": "example-project-G1",
+        "authority": "Fadi-project-service-fixture-only"
+      },
+      "study": {
+        "studyId": "example-study-G1",
+        "projectId": "example-project-G1",
+        "sources": [],
+        "brief": "Étude synthétique documentaire, pasprojetcréé"
+      },
+      "variant": {
+        "variantId": "example-variant-A",
+        "studyId": "example-study-G1",
+        "projectId": "example-project-G1",
+        "headRevisionId": "example-revision-A1"
+      },
+      "revision": {
+        "revisionId": "example-revision-A1",
+        "scope": {
+          "projectId": "example-project-G1",
+          "studyId": "example-study-G1",
+          "variantId": "example-variant-A"
+        },
+        "parentRevisionIds": [],
+        "transactionId": "example-transaction-A1",
+        "immutable": true,
+        "canonicalSources": [
+          {
+            "authority": "drawing2d",
+            "documentId": "example-drawing-A",
+            "documentVersion": "1",
+            "contentHash": "6f0345555cead78d19637d5faf1b88c039be68a96a4a757ceefa5b24ab8b9662"
+          }
+        ]
+      },
+      "canonicalDocument2D": {
+        "schemaVersion": "documentary-not-runtime-1",
+        "documentId": "example-drawing-A",
+        "documentVersion": "1",
+        "scope": {
+          "projectId": "example-project-G1",
+          "studyId": "example-study-G1",
+          "variantId": "example-variant-A"
+        },
+        "revisionId": "example-revision-A1",
+        "authority": "drawing2d",
+        "writerAuthority": "drawing2d",
+        "coordinateFrame": {
+          "frameId": "example-plane-A",
+          "kind": "document2d",
+          "lengthUnit": "m"
+        },
+        "layers": [
+          {
+            "layerId": "example-layer-1",
+            "name": "Calque synthétique"
+          }
+        ],
+        "primitives": [
+          {
+            "primitiveId": "example-line-1",
+            "kind": "line",
+            "points": [
+              [
+                0,
+                0
+              ],
+              [
+                6,
+                0
+              ]
+            ],
+            "layerId": "example-layer-1"
+          }
+        ],
+        "annotations": [
+          {
+            "annotationId": "example-text-1",
+            "kind": "text",
+            "value": "Exemple documentaire G1"
+          }
+        ],
+        "dimensions": [
+          {
+            "dimensionId": "example-dimension-1",
+            "targetPrimitiveIds": [
+              "example-line-1"
+            ],
+            "value": 6,
+            "unit": "m"
+          }
+        ],
+        "constraints": [],
+        "relations3D": [],
+        "provenance": {
+          "origin": "Synthetic documentary example A1",
+          "version": "1",
+          "real_project_data": false
+        }
+      },
+      "runtime_schema_supported": false,
+      "execution": "Non exécuté ; schéma documentaire pasformat acceptéparFadi"
+    },
+    {
+      "exampleId": "G1-DOC-POS-NEXT-REVISION",
+      "expected": "Nouvelle révision et contenu2D, anciennesrévision/pièceconservées, identitésdocument/primitivesstables",
+      "project": {
+        "projectId": "example-project-G1",
+        "authority": "Fadi-project-service-fixture-only"
+      },
+      "study": {
+        "studyId": "example-study-G1",
+        "projectId": "example-project-G1",
+        "sources": [],
+        "brief": "Étude synthétique documentaire, pasprojetcréé"
+      },
+      "variant": {
+        "variantId": "example-variant-A",
+        "studyId": "example-study-G1",
+        "projectId": "example-project-G1",
+        "headRevisionId": "example-revision-A2"
+      },
+      "revision": {
+        "revisionId": "example-revision-A2",
+        "scope": {
+          "projectId": "example-project-G1",
+          "studyId": "example-study-G1",
+          "variantId": "example-variant-A"
+        },
+        "parentRevisionIds": [
+          "example-revision-A1"
+        ],
+        "transactionId": "example-transaction-A2",
+        "immutable": true,
+        "canonicalSources": [
+          {
+            "authority": "drawing2d",
+            "documentId": "example-drawing-A",
+            "documentVersion": "2",
+            "contentHash": "ed419cbef86169d0011c06e6d6d4c1ed6436a26fd9199a55036b97b205d724f4"
+          }
+        ]
+      },
+      "canonicalDocument2D": {
+        "schemaVersion": "documentary-not-runtime-1",
+        "documentId": "example-drawing-A",
+        "documentVersion": "2",
+        "scope": {
+          "projectId": "example-project-G1",
+          "studyId": "example-study-G1",
+          "variantId": "example-variant-A"
+        },
+        "revisionId": "example-revision-A2",
+        "authority": "drawing2d",
+        "writerAuthority": "drawing2d",
+        "coordinateFrame": {
+          "frameId": "example-plane-A",
+          "kind": "document2d",
+          "lengthUnit": "m"
+        },
+        "layers": [
+          {
+            "layerId": "example-layer-1",
+            "name": "Calque synthétique"
+          }
+        ],
+        "primitives": [
+          {
+            "primitiveId": "example-line-1",
+            "kind": "line",
+            "points": [
+              [
+                0,
+                0
+              ],
+              [
+                7,
+                0
+              ]
+            ],
+            "layerId": "example-layer-1"
+          }
+        ],
+        "annotations": [
+          {
+            "annotationId": "example-text-1",
+            "kind": "text",
+            "value": "Exemple documentaire G1"
+          }
+        ],
+        "dimensions": [
+          {
+            "dimensionId": "example-dimension-1",
+            "targetPrimitiveIds": [
+              "example-line-1"
+            ],
+            "value": 7,
+            "unit": "m"
+          }
+        ],
+        "constraints": [],
+        "relations3D": [],
+        "provenance": {
+          "origin": "Synthetic documentary example A1",
+          "version": "1",
+          "real_project_data": false
+        }
+      },
+      "runtime_schema_supported": false,
+      "execution": "Non exécuté ; schéma documentaire pasformat acceptéparFadi",
+      "previousRevisionRetained": {
+        "revisionId": "example-revision-A1",
+        "scope": {
+          "projectId": "example-project-G1",
+          "studyId": "example-study-G1",
+          "variantId": "example-variant-A"
+        },
+        "parentRevisionIds": [],
+        "transactionId": "example-transaction-A1",
+        "immutable": true,
+        "canonicalSources": [
+          {
+            "authority": "drawing2d",
+            "documentId": "example-drawing-A",
+            "documentVersion": "1",
+            "contentHash": "6f0345555cead78d19637d5faf1b88c039be68a96a4a757ceefa5b24ab8b9662"
+          }
+        ]
+      },
+      "previousContentRetained": {
+        "schemaVersion": "documentary-not-runtime-1",
+        "documentId": "example-drawing-A",
+        "documentVersion": "1",
+        "scope": {
+          "projectId": "example-project-G1",
+          "studyId": "example-study-G1",
+          "variantId": "example-variant-A"
+        },
+        "revisionId": "example-revision-A1",
+        "authority": "drawing2d",
+        "writerAuthority": "drawing2d",
+        "coordinateFrame": {
+          "frameId": "example-plane-A",
+          "kind": "document2d",
+          "lengthUnit": "m"
+        },
+        "layers": [
+          {
+            "layerId": "example-layer-1",
+            "name": "Calque synthétique"
+          }
+        ],
+        "primitives": [
+          {
+            "primitiveId": "example-line-1",
+            "kind": "line",
+            "points": [
+              [
+                0,
+                0
+              ],
+              [
+                6,
+                0
+              ]
+            ],
+            "layerId": "example-layer-1"
+          }
+        ],
+        "annotations": [
+          {
+            "annotationId": "example-text-1",
+            "kind": "text",
+            "value": "Exemple documentaire G1"
+          }
+        ],
+        "dimensions": [
+          {
+            "dimensionId": "example-dimension-1",
+            "targetPrimitiveIds": [
+              "example-line-1"
+            ],
+            "value": 6,
+            "unit": "m"
+          }
+        ],
+        "constraints": [],
+        "relations3D": [],
+        "provenance": {
+          "origin": "Synthetic documentary example A1",
+          "version": "1",
+          "real_project_data": false
+        }
+      }
+    }
+  ],
+  "invalid_examples": [
+    {
+      "exampleId": "G1-DOC-NEG-ORPHAN",
+      "cause_cible": "Géométrie sansvariante propriétaire",
+      "payload": {
+        "exampleId": "G1-DOC-POS-2D",
+        "expected": "Dessin2Dcanonique autonome, révisionimmuable, aucun3D requis",
+        "project": {
+          "projectId": "example-project-G1",
+          "authority": "Fadi-project-service-fixture-only"
+        },
+        "study": {
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "sources": [],
+          "brief": "Étude synthétique documentaire, pasprojetcréé"
+        },
+        "variant": {
+          "variantId": "example-variant-A",
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "headRevisionId": "example-revision-A1"
+        },
+        "revision": {
+          "revisionId": "example-revision-A1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": null
+          },
+          "parentRevisionIds": [],
+          "transactionId": "example-transaction-A1",
+          "immutable": true,
+          "canonicalSources": [
+            {
+              "authority": "drawing2d",
+              "documentId": "example-drawing-A",
+              "documentVersion": "1",
+              "contentHash": "6f0345555cead78d19637d5faf1b88c039be68a96a4a757ceefa5b24ab8b9662"
+            }
+          ]
+        },
+        "canonicalDocument2D": {
+          "schemaVersion": "documentary-not-runtime-1",
+          "documentId": "example-drawing-A",
+          "documentVersion": "1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": null
+          },
+          "revisionId": "example-revision-A1",
+          "authority": "drawing2d",
+          "writerAuthority": "drawing2d",
+          "coordinateFrame": {
+            "frameId": "example-plane-A",
+            "kind": "document2d",
+            "lengthUnit": "m"
+          },
+          "layers": [
+            {
+              "layerId": "example-layer-1",
+              "name": "Calque synthétique"
+            }
+          ],
+          "primitives": [
+            {
+              "primitiveId": "example-line-1",
+              "kind": "line",
+              "points": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  6,
+                  0
+                ]
+              ],
+              "layerId": "example-layer-1"
+            }
+          ],
+          "annotations": [
+            {
+              "annotationId": "example-text-1",
+              "kind": "text",
+              "value": "Exemple documentaire G1"
+            }
+          ],
+          "dimensions": [
+            {
+              "dimensionId": "example-dimension-1",
+              "targetPrimitiveIds": [
+                "example-line-1"
+              ],
+              "value": 6,
+              "unit": "m"
+            }
+          ],
+          "constraints": [],
+          "relations3D": [],
+          "provenance": {
+            "origin": "Synthetic documentary example A1",
+            "version": "1",
+            "real_project_data": false
+          }
+        },
+        "runtime_schema_supported": false,
+        "execution": "Non exécuté ; schéma documentaire pasformat acceptéparFadi"
+      },
+      "expected": "Refus/erreur explicite sansmutationcanonique ; jamaispreuveexécutée",
+      "validation_order": "Ordre contrôlesphysiques non arrêté ; hashobsolète peut aussi être constaté",
+      "execution": "Non exécuté"
+    },
+    {
+      "exampleId": "G1-DOC-NEG-PARENTS",
+      "cause_cible": "Étude d’un autreprojet",
+      "payload": {
+        "exampleId": "G1-DOC-POS-2D",
+        "expected": "Dessin2Dcanonique autonome, révisionimmuable, aucun3D requis",
+        "project": {
+          "projectId": "example-project-G1",
+          "authority": "Fadi-project-service-fixture-only"
+        },
+        "study": {
+          "studyId": "example-study-G1",
+          "projectId": "example-foreign-project",
+          "sources": [],
+          "brief": "Étude synthétique documentaire, pasprojetcréé"
+        },
+        "variant": {
+          "variantId": "example-variant-A",
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "headRevisionId": "example-revision-A1"
+        },
+        "revision": {
+          "revisionId": "example-revision-A1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "parentRevisionIds": [],
+          "transactionId": "example-transaction-A1",
+          "immutable": true,
+          "canonicalSources": [
+            {
+              "authority": "drawing2d",
+              "documentId": "example-drawing-A",
+              "documentVersion": "1",
+              "contentHash": "6f0345555cead78d19637d5faf1b88c039be68a96a4a757ceefa5b24ab8b9662"
+            }
+          ]
+        },
+        "canonicalDocument2D": {
+          "schemaVersion": "documentary-not-runtime-1",
+          "documentId": "example-drawing-A",
+          "documentVersion": "1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "revisionId": "example-revision-A1",
+          "authority": "drawing2d",
+          "writerAuthority": "drawing2d",
+          "coordinateFrame": {
+            "frameId": "example-plane-A",
+            "kind": "document2d",
+            "lengthUnit": "m"
+          },
+          "layers": [
+            {
+              "layerId": "example-layer-1",
+              "name": "Calque synthétique"
+            }
+          ],
+          "primitives": [
+            {
+              "primitiveId": "example-line-1",
+              "kind": "line",
+              "points": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  6,
+                  0
+                ]
+              ],
+              "layerId": "example-layer-1"
+            }
+          ],
+          "annotations": [
+            {
+              "annotationId": "example-text-1",
+              "kind": "text",
+              "value": "Exemple documentaire G1"
+            }
+          ],
+          "dimensions": [
+            {
+              "dimensionId": "example-dimension-1",
+              "targetPrimitiveIds": [
+                "example-line-1"
+              ],
+              "value": 6,
+              "unit": "m"
+            }
+          ],
+          "constraints": [],
+          "relations3D": [],
+          "provenance": {
+            "origin": "Synthetic documentary example A1",
+            "version": "1",
+            "real_project_data": false
+          }
+        },
+        "runtime_schema_supported": false,
+        "execution": "Non exécuté ; schéma documentaire pasformat acceptéparFadi"
+      },
+      "expected": "Refus/erreur explicite sansmutationcanonique ; jamaispreuveexécutée",
+      "validation_order": "Ordre contrôlesphysiques non arrêté ; hashobsolète peut aussi être constaté",
+      "execution": "Non exécuté"
+    },
+    {
+      "exampleId": "G1-DOC-NEG-IMMUTABLE",
+      "cause_cible": "Mutationd’une révisionhistorique au lieu nouvellecommande",
+      "payload": {
+        "exampleId": "G1-DOC-POS-2D",
+        "expected": "Dessin2Dcanonique autonome, révisionimmuable, aucun3D requis",
+        "project": {
+          "projectId": "example-project-G1",
+          "authority": "Fadi-project-service-fixture-only"
+        },
+        "study": {
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "sources": [],
+          "brief": "Étude synthétique documentaire, pasprojetcréé"
+        },
+        "variant": {
+          "variantId": "example-variant-A",
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "headRevisionId": "example-revision-A1"
+        },
+        "revision": {
+          "revisionId": "example-revision-A1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "parentRevisionIds": [],
+          "transactionId": "example-transaction-A1",
+          "immutable": true,
+          "canonicalSources": [
+            {
+              "authority": "drawing2d",
+              "documentId": "example-drawing-A",
+              "documentVersion": "1",
+              "contentHash": "6f0345555cead78d19637d5faf1b88c039be68a96a4a757ceefa5b24ab8b9662"
+            }
+          ]
+        },
+        "canonicalDocument2D": {
+          "schemaVersion": "documentary-not-runtime-1",
+          "documentId": "example-drawing-A",
+          "documentVersion": "1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "revisionId": "example-revision-A1",
+          "authority": "drawing2d",
+          "writerAuthority": "drawing2d",
+          "coordinateFrame": {
+            "frameId": "example-plane-A",
+            "kind": "document2d",
+            "lengthUnit": "m"
+          },
+          "layers": [
+            {
+              "layerId": "example-layer-1",
+              "name": "Calque synthétique"
+            }
+          ],
+          "primitives": [
+            {
+              "primitiveId": "example-line-1",
+              "kind": "line",
+              "points": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  6,
+                  0
+                ]
+              ],
+              "layerId": "example-layer-1"
+            }
+          ],
+          "annotations": [
+            {
+              "annotationId": "example-text-1",
+              "kind": "text",
+              "value": "Exemple documentaire G1"
+            }
+          ],
+          "dimensions": [
+            {
+              "dimensionId": "example-dimension-1",
+              "targetPrimitiveIds": [
+                "example-line-1"
+              ],
+              "value": 6,
+              "unit": "m"
+            }
+          ],
+          "constraints": [],
+          "relations3D": [],
+          "provenance": {
+            "origin": "Synthetic documentary example A1",
+            "version": "1",
+            "real_project_data": false
+          }
+        },
+        "runtime_schema_supported": false,
+        "execution": "Non exécuté ; schéma documentaire pasformat acceptéparFadi",
+        "requestedActionFixture": {
+          "action": "editStoredRevision",
+          "revisionId": "example-revision-A1"
+        }
+      },
+      "expected": "Refus/erreur explicite sansmutationcanonique ; jamaispreuveexécutée",
+      "validation_order": "Ordre contrôlesphysiques non arrêté ; hashobsolète peut aussi être constaté",
+      "execution": "Non exécuté"
+    },
+    {
+      "exampleId": "G1-DOC-NEG-UNIT",
+      "cause_cible": "Coordonnées2D sansunité explicite",
+      "payload": {
+        "exampleId": "G1-DOC-POS-2D",
+        "expected": "Dessin2Dcanonique autonome, révisionimmuable, aucun3D requis",
+        "project": {
+          "projectId": "example-project-G1",
+          "authority": "Fadi-project-service-fixture-only"
+        },
+        "study": {
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "sources": [],
+          "brief": "Étude synthétique documentaire, pasprojetcréé"
+        },
+        "variant": {
+          "variantId": "example-variant-A",
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "headRevisionId": "example-revision-A1"
+        },
+        "revision": {
+          "revisionId": "example-revision-A1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "parentRevisionIds": [],
+          "transactionId": "example-transaction-A1",
+          "immutable": true,
+          "canonicalSources": [
+            {
+              "authority": "drawing2d",
+              "documentId": "example-drawing-A",
+              "documentVersion": "1",
+              "contentHash": "6f0345555cead78d19637d5faf1b88c039be68a96a4a757ceefa5b24ab8b9662"
+            }
+          ]
+        },
+        "canonicalDocument2D": {
+          "schemaVersion": "documentary-not-runtime-1",
+          "documentId": "example-drawing-A",
+          "documentVersion": "1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "revisionId": "example-revision-A1",
+          "authority": "drawing2d",
+          "writerAuthority": "drawing2d",
+          "coordinateFrame": {
+            "frameId": "example-plane-A",
+            "kind": "document2d"
+          },
+          "layers": [
+            {
+              "layerId": "example-layer-1",
+              "name": "Calque synthétique"
+            }
+          ],
+          "primitives": [
+            {
+              "primitiveId": "example-line-1",
+              "kind": "line",
+              "points": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  6,
+                  0
+                ]
+              ],
+              "layerId": "example-layer-1"
+            }
+          ],
+          "annotations": [
+            {
+              "annotationId": "example-text-1",
+              "kind": "text",
+              "value": "Exemple documentaire G1"
+            }
+          ],
+          "dimensions": [
+            {
+              "dimensionId": "example-dimension-1",
+              "targetPrimitiveIds": [
+                "example-line-1"
+              ],
+              "value": 6,
+              "unit": "m"
+            }
+          ],
+          "constraints": [],
+          "relations3D": [],
+          "provenance": {
+            "origin": "Synthetic documentary example A1",
+            "version": "1",
+            "real_project_data": false
+          }
+        },
+        "runtime_schema_supported": false,
+        "execution": "Non exécuté ; schéma documentaire pasformat acceptéparFadi"
+      },
+      "expected": "Refus/erreur explicite sansmutationcanonique ; jamaispreuveexécutée",
+      "validation_order": "Ordre contrôlesphysiques non arrêté ; hashobsolète peut aussi être constaté",
+      "execution": "Non exécuté"
+    },
+    {
+      "exampleId": "G1-DOC-NEG-ID-REUSE",
+      "cause_cible": "Deuxprimitives réutilisentmêmeID",
+      "payload": {
+        "exampleId": "G1-DOC-POS-2D",
+        "expected": "Dessin2Dcanonique autonome, révisionimmuable, aucun3D requis",
+        "project": {
+          "projectId": "example-project-G1",
+          "authority": "Fadi-project-service-fixture-only"
+        },
+        "study": {
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "sources": [],
+          "brief": "Étude synthétique documentaire, pasprojetcréé"
+        },
+        "variant": {
+          "variantId": "example-variant-A",
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "headRevisionId": "example-revision-A1"
+        },
+        "revision": {
+          "revisionId": "example-revision-A1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "parentRevisionIds": [],
+          "transactionId": "example-transaction-A1",
+          "immutable": true,
+          "canonicalSources": [
+            {
+              "authority": "drawing2d",
+              "documentId": "example-drawing-A",
+              "documentVersion": "1",
+              "contentHash": "6f0345555cead78d19637d5faf1b88c039be68a96a4a757ceefa5b24ab8b9662"
+            }
+          ]
+        },
+        "canonicalDocument2D": {
+          "schemaVersion": "documentary-not-runtime-1",
+          "documentId": "example-drawing-A",
+          "documentVersion": "1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "revisionId": "example-revision-A1",
+          "authority": "drawing2d",
+          "writerAuthority": "drawing2d",
+          "coordinateFrame": {
+            "frameId": "example-plane-A",
+            "kind": "document2d",
+            "lengthUnit": "m"
+          },
+          "layers": [
+            {
+              "layerId": "example-layer-1",
+              "name": "Calque synthétique"
+            }
+          ],
+          "primitives": [
+            {
+              "primitiveId": "example-line-1",
+              "kind": "line",
+              "points": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  6,
+                  0
+                ]
+              ],
+              "layerId": "example-layer-1"
+            },
+            {
+              "primitiveId": "example-line-1",
+              "kind": "line",
+              "points": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  6,
+                  0
+                ]
+              ],
+              "layerId": "example-layer-1"
+            }
+          ],
+          "annotations": [
+            {
+              "annotationId": "example-text-1",
+              "kind": "text",
+              "value": "Exemple documentaire G1"
+            }
+          ],
+          "dimensions": [
+            {
+              "dimensionId": "example-dimension-1",
+              "targetPrimitiveIds": [
+                "example-line-1"
+              ],
+              "value": 6,
+              "unit": "m"
+            }
+          ],
+          "constraints": [],
+          "relations3D": [],
+          "provenance": {
+            "origin": "Synthetic documentary example A1",
+            "version": "1",
+            "real_project_data": false
+          }
+        },
+        "runtime_schema_supported": false,
+        "execution": "Non exécuté ; schéma documentaire pasformat acceptéparFadi"
+      },
+      "expected": "Refus/erreur explicite sansmutationcanonique ; jamaispreuveexécutée",
+      "validation_order": "Ordre contrôlesphysiques non arrêté ; hashobsolète peut aussi être constaté",
+      "execution": "Non exécuté"
+    },
+    {
+      "exampleId": "G1-DOC-NEG-STALE-BASE",
+      "cause_cible": "Base commande incompatible têtecourante",
+      "payload": {
+        "exampleId": "G1-DOC-POS-2D",
+        "expected": "Dessin2Dcanonique autonome, révisionimmuable, aucun3D requis",
+        "project": {
+          "projectId": "example-project-G1",
+          "authority": "Fadi-project-service-fixture-only"
+        },
+        "study": {
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "sources": [],
+          "brief": "Étude synthétique documentaire, pasprojetcréé"
+        },
+        "variant": {
+          "variantId": "example-variant-A",
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "headRevisionId": "example-revision-A1"
+        },
+        "revision": {
+          "revisionId": "example-revision-A1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "parentRevisionIds": [],
+          "transactionId": "example-transaction-A1",
+          "immutable": true,
+          "canonicalSources": [
+            {
+              "authority": "drawing2d",
+              "documentId": "example-drawing-A",
+              "documentVersion": "1",
+              "contentHash": "6f0345555cead78d19637d5faf1b88c039be68a96a4a757ceefa5b24ab8b9662"
+            }
+          ]
+        },
+        "canonicalDocument2D": {
+          "schemaVersion": "documentary-not-runtime-1",
+          "documentId": "example-drawing-A",
+          "documentVersion": "1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "revisionId": "example-revision-A1",
+          "authority": "drawing2d",
+          "writerAuthority": "drawing2d",
+          "coordinateFrame": {
+            "frameId": "example-plane-A",
+            "kind": "document2d",
+            "lengthUnit": "m"
+          },
+          "layers": [
+            {
+              "layerId": "example-layer-1",
+              "name": "Calque synthétique"
+            }
+          ],
+          "primitives": [
+            {
+              "primitiveId": "example-line-1",
+              "kind": "line",
+              "points": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  6,
+                  0
+                ]
+              ],
+              "layerId": "example-layer-1"
+            }
+          ],
+          "annotations": [
+            {
+              "annotationId": "example-text-1",
+              "kind": "text",
+              "value": "Exemple documentaire G1"
+            }
+          ],
+          "dimensions": [
+            {
+              "dimensionId": "example-dimension-1",
+              "targetPrimitiveIds": [
+                "example-line-1"
+              ],
+              "value": 6,
+              "unit": "m"
+            }
+          ],
+          "constraints": [],
+          "relations3D": [],
+          "provenance": {
+            "origin": "Synthetic documentary example A1",
+            "version": "1",
+            "real_project_data": false
+          }
+        },
+        "runtime_schema_supported": false,
+        "execution": "Non exécuté ; schéma documentaire pasformat acceptéparFadi",
+        "commandPreconditionFixture": {
+          "baseRevisionId": "example-old-revision",
+          "currentRevisionId": "example-revision-A1",
+          "requestId": "example-request-1"
+        }
+      },
+      "expected": "Refus/erreur explicite sansmutationcanonique ; jamaispreuveexécutée",
+      "validation_order": "Ordre contrôlesphysiques non arrêté ; hashobsolète peut aussi être constaté",
+      "execution": "Non exécuté"
+    },
+    {
+      "exampleId": "G1-DOC-NEG-WRITER",
+      "cause_cible": "Writer modèle3D choisi pour document2D",
+      "payload": {
+        "exampleId": "G1-DOC-POS-2D",
+        "expected": "Dessin2Dcanonique autonome, révisionimmuable, aucun3D requis",
+        "project": {
+          "projectId": "example-project-G1",
+          "authority": "Fadi-project-service-fixture-only"
+        },
+        "study": {
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "sources": [],
+          "brief": "Étude synthétique documentaire, pasprojetcréé"
+        },
+        "variant": {
+          "variantId": "example-variant-A",
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "headRevisionId": "example-revision-A1"
+        },
+        "revision": {
+          "revisionId": "example-revision-A1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "parentRevisionIds": [],
+          "transactionId": "example-transaction-A1",
+          "immutable": true,
+          "canonicalSources": [
+            {
+              "authority": "drawing2d",
+              "documentId": "example-drawing-A",
+              "documentVersion": "1",
+              "contentHash": "6f0345555cead78d19637d5faf1b88c039be68a96a4a757ceefa5b24ab8b9662"
+            }
+          ]
+        },
+        "canonicalDocument2D": {
+          "schemaVersion": "documentary-not-runtime-1",
+          "documentId": "example-drawing-A",
+          "documentVersion": "1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "revisionId": "example-revision-A1",
+          "authority": "drawing2d",
+          "writerAuthority": "model3d",
+          "coordinateFrame": {
+            "frameId": "example-plane-A",
+            "kind": "document2d",
+            "lengthUnit": "m"
+          },
+          "layers": [
+            {
+              "layerId": "example-layer-1",
+              "name": "Calque synthétique"
+            }
+          ],
+          "primitives": [
+            {
+              "primitiveId": "example-line-1",
+              "kind": "line",
+              "points": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  6,
+                  0
+                ]
+              ],
+              "layerId": "example-layer-1"
+            }
+          ],
+          "annotations": [
+            {
+              "annotationId": "example-text-1",
+              "kind": "text",
+              "value": "Exemple documentaire G1"
+            }
+          ],
+          "dimensions": [
+            {
+              "dimensionId": "example-dimension-1",
+              "targetPrimitiveIds": [
+                "example-line-1"
+              ],
+              "value": 6,
+              "unit": "m"
+            }
+          ],
+          "constraints": [],
+          "relations3D": [],
+          "provenance": {
+            "origin": "Synthetic documentary example A1",
+            "version": "1",
+            "real_project_data": false
+          }
+        },
+        "runtime_schema_supported": false,
+        "execution": "Non exécuté ; schéma documentaire pasformat acceptéparFadi"
+      },
+      "expected": "Refus/erreur explicite sansmutationcanonique ; jamaispreuveexécutée",
+      "validation_order": "Ordre contrôlesphysiques non arrêté ; hashobsolète peut aussi être constaté",
+      "execution": "Non exécuté"
+    },
+    {
+      "exampleId": "G1-DOC-NEG-TARGET",
+      "cause_cible": "Cote référence primitive inconnue",
+      "payload": {
+        "exampleId": "G1-DOC-POS-2D",
+        "expected": "Dessin2Dcanonique autonome, révisionimmuable, aucun3D requis",
+        "project": {
+          "projectId": "example-project-G1",
+          "authority": "Fadi-project-service-fixture-only"
+        },
+        "study": {
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "sources": [],
+          "brief": "Étude synthétique documentaire, pasprojetcréé"
+        },
+        "variant": {
+          "variantId": "example-variant-A",
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "headRevisionId": "example-revision-A1"
+        },
+        "revision": {
+          "revisionId": "example-revision-A1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "parentRevisionIds": [],
+          "transactionId": "example-transaction-A1",
+          "immutable": true,
+          "canonicalSources": [
+            {
+              "authority": "drawing2d",
+              "documentId": "example-drawing-A",
+              "documentVersion": "1",
+              "contentHash": "6f0345555cead78d19637d5faf1b88c039be68a96a4a757ceefa5b24ab8b9662"
+            }
+          ]
+        },
+        "canonicalDocument2D": {
+          "schemaVersion": "documentary-not-runtime-1",
+          "documentId": "example-drawing-A",
+          "documentVersion": "1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "revisionId": "example-revision-A1",
+          "authority": "drawing2d",
+          "writerAuthority": "drawing2d",
+          "coordinateFrame": {
+            "frameId": "example-plane-A",
+            "kind": "document2d",
+            "lengthUnit": "m"
+          },
+          "layers": [
+            {
+              "layerId": "example-layer-1",
+              "name": "Calque synthétique"
+            }
+          ],
+          "primitives": [
+            {
+              "primitiveId": "example-line-1",
+              "kind": "line",
+              "points": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  6,
+                  0
+                ]
+              ],
+              "layerId": "example-layer-1"
+            }
+          ],
+          "annotations": [
+            {
+              "annotationId": "example-text-1",
+              "kind": "text",
+              "value": "Exemple documentaire G1"
+            }
+          ],
+          "dimensions": [
+            {
+              "dimensionId": "example-dimension-1",
+              "targetPrimitiveIds": [
+                "example-missing-primitive"
+              ],
+              "value": 6,
+              "unit": "m"
+            }
+          ],
+          "constraints": [],
+          "relations3D": [],
+          "provenance": {
+            "origin": "Synthetic documentary example A1",
+            "version": "1",
+            "real_project_data": false
+          }
+        },
+        "runtime_schema_supported": false,
+        "execution": "Non exécuté ; schéma documentaire pasformat acceptéparFadi"
+      },
+      "expected": "Refus/erreur explicite sansmutationcanonique ; jamaispreuveexécutée",
+      "validation_order": "Ordre contrôlesphysiques non arrêté ; hashobsolète peut aussi être constaté",
+      "execution": "Non exécuté"
+    },
+    {
+      "exampleId": "G1-DOC-NEG-MIGRATION",
+      "cause_cible": "Ancienprojetfork présenté comme étude/variante sans mapping",
+      "payload": {
+        "exampleId": "G1-DOC-POS-2D",
+        "expected": "Dessin2Dcanonique autonome, révisionimmuable, aucun3D requis",
+        "project": {
+          "projectId": "example-project-G1",
+          "authority": "Fadi-project-service-fixture-only"
+        },
+        "study": {
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "sources": [],
+          "brief": "Étude synthétique documentaire, pasprojetcréé"
+        },
+        "variant": {
+          "variantId": "example-variant-A",
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "headRevisionId": "example-revision-A1"
+        },
+        "revision": {
+          "revisionId": "example-revision-A1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "parentRevisionIds": [],
+          "transactionId": "example-transaction-A1",
+          "immutable": true,
+          "canonicalSources": [
+            {
+              "authority": "drawing2d",
+              "documentId": "example-drawing-A",
+              "documentVersion": "1",
+              "contentHash": "6f0345555cead78d19637d5faf1b88c039be68a96a4a757ceefa5b24ab8b9662"
+            }
+          ]
+        },
+        "canonicalDocument2D": {
+          "schemaVersion": "documentary-not-runtime-1",
+          "documentId": "example-drawing-A",
+          "documentVersion": "1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "revisionId": "example-revision-A1",
+          "authority": "drawing2d",
+          "writerAuthority": "drawing2d",
+          "coordinateFrame": {
+            "frameId": "example-plane-A",
+            "kind": "document2d",
+            "lengthUnit": "m"
+          },
+          "layers": [
+            {
+              "layerId": "example-layer-1",
+              "name": "Calque synthétique"
+            }
+          ],
+          "primitives": [
+            {
+              "primitiveId": "example-line-1",
+              "kind": "line",
+              "points": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  6,
+                  0
+                ]
+              ],
+              "layerId": "example-layer-1"
+            }
+          ],
+          "annotations": [
+            {
+              "annotationId": "example-text-1",
+              "kind": "text",
+              "value": "Exemple documentaire G1"
+            }
+          ],
+          "dimensions": [
+            {
+              "dimensionId": "example-dimension-1",
+              "targetPrimitiveIds": [
+                "example-line-1"
+              ],
+              "value": 6,
+              "unit": "m"
+            }
+          ],
+          "constraints": [],
+          "relations3D": [],
+          "provenance": {
+            "origin": "Synthetic documentary example A1",
+            "version": "1",
+            "real_project_data": false
+          }
+        },
+        "runtime_schema_supported": false,
+        "execution": "Non exécuté ; schéma documentaire pasformat acceptéparFadi",
+        "legacyMappingFixture": {
+          "legacyProjectId": "example-legacy-fork",
+          "studyId": null,
+          "variantId": null,
+          "provenance": null,
+          "migrationClaim": "implicit-complete"
+        }
+      },
+      "expected": "Refus/erreur explicite sansmutationcanonique ; jamaispreuveexécutée",
+      "validation_order": "Ordre contrôlesphysiques non arrêté ; hashobsolète peut aussi être constaté",
+      "execution": "Non exécuté"
+    },
+    {
+      "exampleId": "G1-DOC-NEG-LATEST",
+      "cause_cible": "Réouverturehistorique substitue latest",
+      "payload": {
+        "exampleId": "G1-DOC-POS-2D",
+        "expected": "Dessin2Dcanonique autonome, révisionimmuable, aucun3D requis",
+        "project": {
+          "projectId": "example-project-G1",
+          "authority": "Fadi-project-service-fixture-only"
+        },
+        "study": {
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "sources": [],
+          "brief": "Étude synthétique documentaire, pasprojetcréé"
+        },
+        "variant": {
+          "variantId": "example-variant-A",
+          "studyId": "example-study-G1",
+          "projectId": "example-project-G1",
+          "headRevisionId": "example-revision-A1"
+        },
+        "revision": {
+          "revisionId": "example-revision-A1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "parentRevisionIds": [],
+          "transactionId": "example-transaction-A1",
+          "immutable": true,
+          "canonicalSources": [
+            {
+              "authority": "drawing2d",
+              "documentId": "example-drawing-A",
+              "documentVersion": "1",
+              "contentHash": "6f0345555cead78d19637d5faf1b88c039be68a96a4a757ceefa5b24ab8b9662"
+            }
+          ]
+        },
+        "canonicalDocument2D": {
+          "schemaVersion": "documentary-not-runtime-1",
+          "documentId": "example-drawing-A",
+          "documentVersion": "1",
+          "scope": {
+            "projectId": "example-project-G1",
+            "studyId": "example-study-G1",
+            "variantId": "example-variant-A"
+          },
+          "revisionId": "example-revision-A1",
+          "authority": "drawing2d",
+          "writerAuthority": "drawing2d",
+          "coordinateFrame": {
+            "frameId": "example-plane-A",
+            "kind": "document2d",
+            "lengthUnit": "m"
+          },
+          "layers": [
+            {
+              "layerId": "example-layer-1",
+              "name": "Calque synthétique"
+            }
+          ],
+          "primitives": [
+            {
+              "primitiveId": "example-line-1",
+              "kind": "line",
+              "points": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  6,
+                  0
+                ]
+              ],
+              "layerId": "example-layer-1"
+            }
+          ],
+          "annotations": [
+            {
+              "annotationId": "example-text-1",
+              "kind": "text",
+              "value": "Exemple documentaire G1"
+            }
+          ],
+          "dimensions": [
+            {
+              "dimensionId": "example-dimension-1",
+              "targetPrimitiveIds": [
+                "example-line-1"
+              ],
+              "value": 6,
+              "unit": "m"
+            }
+          ],
+          "constraints": [],
+          "relations3D": [],
+          "provenance": {
+            "origin": "Synthetic documentary example A1",
+            "version": "1",
+            "real_project_data": false
+          }
+        },
+        "runtime_schema_supported": false,
+        "execution": "Non exécuté ; schéma documentaire pasformat acceptéparFadi",
+        "reopenIntentFixture": {
+          "revisionId": "example-revision-A1",
+          "fallbackToLatest": true
+        }
+      },
+      "expected": "Refus/erreur explicite sansmutationcanonique ; jamaispreuveexécutée",
+      "validation_order": "Ordre contrôlesphysiques non arrêté ; hashobsolète peut aussi être constaté",
+      "execution": "Non exécuté"
+    }
+  ],
+  "note_validite": "Valide=relationslogiquescohérentes soushypothèsesfixture, aucun lecteurStudio exécuté ; invalidesJSONsyntaxiquementbienformésavecfauteexplicite",
+  "hash_demo": "Empreintes internesJSONtriécompactpourliensillustratifsuniquement, pasdécisioncanonicalisationproduction"
+}
