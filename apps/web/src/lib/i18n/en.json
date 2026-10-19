@@ -9534,5 +9534,22 @@
 "{0} cote(s) angulaire(s) à résoudre : un segment lié a été supprimé.": "{0} angular dimension(s) to resolve: a linked segment was deleted.",
 "À résoudre : un segment lié a été supprimé.": "To resolve: a linked segment was deleted.",
 "Angle mesuré :": "Measured angle:",
-"Associée : suit les segments.": "Associative: follows the segments."
+"Associée : suit les segments.": "Associative: follows the segments.",
+"Courbes": "Curves",
+"Annotation": "Annotation",
+"Vue / Accrochage": "View / Snapping",
+"Importer / Exporter": "Import / Export",
+"Plus d’outils": "More tools",
+"Menu Sélection": "Select menu",
+"Menu Dessin": "Drawing menu",
+"Menu Courbes": "Curves menu",
+"Menu Annotation": "Annotation menu",
+"Menu Modification": "Change menu",
+"Menu Calques": "Layers menu",
+"Menu Volume": "Volume menu",
+"Menu Vue / Accrochage": "View / Snapping menu",
+"Menu Présentation": "Presentation menu",
+"Menu Importer / Exporter": "Import / Export menu",
+"Menu Édition": "Edition menu",
+"Menu Catalogue": "Catalogue menu"
 }

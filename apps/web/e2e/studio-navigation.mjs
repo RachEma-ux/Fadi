@@ -47,6 +47,24 @@ async function nouvelUtilisateur(nom, viewport = { width: 1280, height: 900 }) {
 
 const titre = (page) => page.locator("[data-studio] h1").first().textContent();
 
+/**
+ * Barre compacte (une rangée) : un bouton rangé dans le menu « ▾ » de sa famille ou dans « Plus » existe toujours dans
+ * le document (menu fermé = masqué) ; pour l'utiliser, on ouvre d'abord ce menu, comme le ferait l'utilisateur.
+ */
+async function atteindre(barre, selecteur) {
+  const el = barre.locator(selecteur).first();
+  await el.waitFor({ state: "attached" });
+  if (!(await el.isVisible())) {
+    const menu = await el.evaluate((n) => n.closest("[data-studio-menu-liste]")?.id ?? null);
+    if (menu) await barre.locator(`[aria-controls="${menu}"]`).click();
+    await el.waitFor({ state: "visible" });
+  }
+  return el;
+}
+/** Bouton (ou lien) de la barre par son nom exact, qu'il soit dans la rangée ou dans un menu. */
+const element = (barre, nom) => barre.locator(`:is(button,a)[aria-label="${nom}"]`);
+const cliquerBouton = async (barre, nom) => (await atteindre(barre, `:is(button,a)[aria-label="${nom}"]`)).click();
+
 try {
   const a = await nouvelUtilisateur("a");
   const pA = await a.api("post", "/projects", { code: "P.STU.A", name: "Studio — Projet A" });
@@ -156,10 +174,10 @@ try {
   // Enregistrement par commandes : un rectangle saisi, une révision de plus dans l'historique.
   const outils = page.getByRole("toolbar", { name: "Outils de dessin" });
   const proprietes = page.getByRole("complementary", { name: "Propriétés du dessin" });
-  await outils.getByRole("button", { name: /^Rectangle/ }).click();
+  await cliquerBouton(outils, "Rectangle");
   for (const [nom, v] of [["X", 2], ["Y", 2], ["Largeur", 4], ["Hauteur", 3]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
   await proprietes.getByRole("button", { name: "Ajouter au dessin", exact: true }).click();
-  await outils.getByRole("button", { name: "Enregistrer", exact: true }).click();
+  await cliquerBouton(outils, "Enregistrer");
   await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
   const historique = page.locator("[data-studio-revisions] li[data-studio-revision]");
   await page.waitForFunction(() => document.querySelectorAll("[data-studio-revisions] li[data-studio-revision]").length === 2);
@@ -173,7 +191,7 @@ try {
   await historique.nth(1).locator("a:not([data-studio-comparer-tete])").click();
   await page.waitForURL(`${BASE}/studio/projets/${pA.id}/etudes/${studyId}/variantes/${variantId}?revision=${encodeURIComponent(ancienne)}`);
   await page.locator("[data-studio-lecture-seule-revision]").waitFor();
-  check("révision passée : document d'origine (vide), lecture seule, enregistrement désactivé", (await page.locator('svg [role="button"]').count()) === 0 && (await outils.getByRole("button", { name: "Enregistrer", exact: true }).isDisabled()));
+  check("révision passée : document d'origine (vide), lecture seule, enregistrement désactivé", (await page.locator('svg [role="button"]').count()) === 0 && (await element(outils, "Enregistrer").isDisabled()));
   await page.reload();
   await page.locator("[data-studio-lecture-seule-revision]").waitFor();
   check("révision passée : l'actualisation restitue la même révision", page.url().endsWith(`?revision=${encodeURIComponent(ancienne)}`));
@@ -213,7 +231,7 @@ try {
   check("lecteur : voit les variantes sans formulaire de création", (await b.page.locator("[data-studio-creer-variante]").count()) === 0);
   await b.page.goto(base);
   await b.page.locator("[data-studio-lecture-seule]").waitFor();
-  check("lecteur : la variante s'ouvre en lecture seule", await b.page.getByRole("toolbar", { name: "Outils de dessin" }).getByRole("button", { name: "Enregistrer", exact: true }).isDisabled());
+  check("lecteur : la variante s'ouvre en lecture seule", await element(b.page.getByRole("toolbar", { name: "Outils de dessin" }), "Enregistrer").isDisabled());
 
   // Étapes du Parcours liées : choix multiple sur la page de l'étude (libellés du serveur, ceux des étapes du projet),
   // enregistrées par la route Studio ; le lecteur voit sans modifier.
@@ -292,7 +310,7 @@ try {
   };
   const lignes = page.locator('svg [role="button"][aria-label^="Ligne "]');
   const cote = page.locator("svg [data-studio-cote]");
-  await outils.getByRole("button", { name: "Ligne", exact: true }).click();
+  await cliquerBouton(outils, "Ligne");
   await cliquer(2, 8);
   await cliquer(6, 8);
   // Le pointeur est arrondi au pixel puis au centimètre : on compare à la géométrie tracée, pas aux points visés.
@@ -301,15 +319,15 @@ try {
   check("planche : deux clics tracent une ligne", (await lignes.count()) === 1 && Math.abs(tracee[0] - 2) < 0.05 && Math.abs(tracee[2] - 6) < 0.05, tracee.join(" "));
   const longueur = Math.hypot(tracee[2] - tracee[0], tracee[3] - tracee[1]);
   await page.keyboard.press("Shift+C");
-  check("planche : Maj+C choisit l'outil Cote", (await outils.getByRole("button", { name: "Cote", exact: true }).getAttribute("aria-pressed")) === "true");
+  check("planche : Maj+C choisit l'outil Cote", (await element(outils, "Cote").getAttribute("aria-pressed")) === "true");
   await cliquer(2.08, 8.06);
   await cliquer(5.93, 7.95);
   await cote.waitFor({ state: "attached" });
   const texte = (await cote.locator("text").textContent()) ?? "";
   check("cote : accrochée aux extrémités, valeur mesurée affichée en mètres", (await cote.getAttribute("data-studio-cote-valeur")) === longueur.toFixed(3) && texte === `${longueur.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 3 })} m` && /^\d+,\d{2,3} m$/.test(texte) && (await cote.getAttribute("data-studio-cote-etat")) === "resolue", texte);
-  await outils.getByRole("button", { name: "Sélection", exact: true }).click();
+  await cliquerBouton(outils, "Sélection");
   await lignes.press("Enter");
-  await outils.getByRole("button", { name: "Déplacer", exact: true }).click();
+  await cliquerBouton(outils, "Déplacer");
   for (const [nom, v] of [["Déplacement X", 1], ["Déplacement Y", 1]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
   await proprietes.getByRole("button", { name: "Déplacer la sélection", exact: true }).click();
   const attache = cote.locator(".studio-cote-attache").first();
@@ -321,11 +339,11 @@ try {
   await page.keyboard.press("Delete");
   await page.locator("[data-studio-cotes-a-resoudre]").waitFor();
   check("suppression (Suppr) : la ligne disparaît, la cote passe « à résoudre »", (await lignes.count()) === 0 && (await cote.getAttribute("data-studio-cote-etat")) === "a-resoudre" && (await cote.locator("text").textContent()) === "à résoudre");
-  await outils.getByRole("button", { name: "Nouveau calque", exact: true }).click();
+  await cliquerBouton(outils, "Nouveau calque");
   const rangees = page.locator("[data-studio-calque-ligne]");
   check("calques : « Nouveau calque » ajoute un calque, devenu actif", (await rangees.count()) === 2 && (await rangees.nth(1).getAttribute("aria-current")) === "true");
   const calqueId = await rangees.nth(1).getAttribute("data-studio-calque-ligne");
-  await outils.getByRole("button", { name: "Rectangle", exact: true }).click();
+  await cliquerBouton(outils, "Rectangle");
   for (const [nom, v] of [["X", 10], ["Y", 10], ["Largeur", 2], ["Hauteur", 1]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
   await proprietes.getByRole("button", { name: "Ajouter au dessin", exact: true }).click();
   const surCalque = page.locator(`svg [data-studio-calque="${calqueId}"]`);
@@ -343,13 +361,13 @@ try {
   await page.route("**/commands", (route) => { if (!coupe) { coupe = true; return route.abort("failed"); } return route.continue(); });
   await page.keyboard.press("Control+s");
   await page.locator("[data-studio-erreur-planche]").filter({ hasText: "Confirmation serveur indisponible" }).waitFor();
-  await outils.getByRole("button", { name: "Réessayer la sauvegarde", exact: true }).click();
+  await cliquerBouton(outils, "Réessayer la sauvegarde");
   await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
   await page.unroute("**/commands");
   const enveloppe = envois[0];
   check("enregistrement (Ctrl+S) : un lot de commandes studio-commands/1 sur la tête", envois.length === 2 && enveloppe.contractVersion === "studio-commands/1" && enveloppe.commands.map((c) => c.toolId).join() === "studio.dessin.ligne,studio.dessin.cote,studio.dessin.deplacer,studio.dessin.supprimer,studio.calque.creer,studio.dessin.rectangle,studio.calque.modifier", enveloppe.commands.map((c) => c.toolId).join());
   check("nouvel essai : même requestId, même contenu", envois[1].requestId === enveloppe.requestId && JSON.stringify(envois[1]) === JSON.stringify(enveloppe));
-  check("après enregistrement : annuler ne porte que sur les modifications non enregistrées", await outils.getByRole("button", { name: "Annuler", exact: true }).isDisabled());
+  check("après enregistrement : annuler ne porte que sur les modifications non enregistrées", await element(outils, "Annuler").isDisabled());
   const variantePath = `/projects/${pA.id}/studio/studies/${studyId}/variants/${variantId}`;
   const enregistre = await a.api("get", variantePath);
   const empreinte = () => page.locator("svg [role=button]").evaluateAll((els) => els.map((e) => [e.getAttribute("aria-label"), e.getAttribute("data-studio-calque"), e.getAttribute("data-studio-cote-etat"), e.innerHTML]).join("|"));
@@ -361,7 +379,7 @@ try {
   const doc = relu.revision.document;
   check("document enregistré : cote à résoudre, calque masqué, rectangle sur ce calque", doc.dimensions?.length === 1 && doc.dimensions[0].toResolve === true && doc.layers?.some((l) => l.id === calqueId && l.visible === false) && doc.objects.some((o) => o.layerId === calqueId));
   // Conflit : la tête avance ailleurs ; l'enregistrement de l'interface est refusé sans rien écraser.
-  await outils.getByRole("button", { name: "Ligne", exact: true }).click();
+  await cliquerBouton(outils, "Ligne");
   await cliquer(1, 12);
   await cliquer(4, 12);
   const autre = await a.api("post", `${variantePath}/commands`, { contractVersion: "studio-commands/1", requestId: `autre-${Date.now()}`, baseRevisionId: relu.revision.id, commands: [{ toolId: "studio.dessin.ligne", params: { id: `autre-${Date.now()}`, type: "line", start: { x: 0, y: 0 }, end: { x: 1, y: 0 } } }] });
@@ -388,7 +406,7 @@ try {
   await vueChangee(vb0);
   const vb1 = await vueBox();
   check("vue : « = » rapproche la vue (zoom avant)", vb1[2] < vb0[2] && Math.abs(vb1[2] / vb1[3] - vb0[2] / vb0[3]) < 1e-9, `${vb0.join(" ")} → ${vb1.join(" ")}`);
-  await outils.getByRole("button", { name: "Zoom arrière", exact: true }).click();
+  await cliquerBouton(outils, "Zoom arrière");
   const vb2 = await vueBox();
   check("vue : « Zoom arrière » éloigne la vue", Math.abs(vb2[2] - vb0[2]) < 1e-9, vb2.join(" "));
   await planche.scrollIntoViewIfNeeded();
@@ -407,7 +425,7 @@ try {
   check("vue : le bouton du milieu déplace la vue sans zoomer", Math.abs(vb4[2] - vb3[2]) < 1e-9 && vb4[0] < vb3[0] && vb4[1] < vb3[1], `${vb3.join(" ")} → ${vb4.join(" ")}`);
   check("vue : zoom et panoramique ne changent pas le document", (await portee()).includes("(0 commande(s)") && (await a.api("get", variantePath)).revision.id === teteAvantVue.id);
 
-  await outils.getByRole("button", { name: "Cadrer", exact: true }).click();
+  await cliquerBouton(outils, "Cadrer");
   await planche.scrollIntoViewIfNeeded();
   const choisis = page.locator("svg .selected");
   const glisser = async ([x0, y0], [x1, y1], avantRelache) => {
@@ -436,7 +454,7 @@ try {
   check("Échap : la sélection est vidée", (await choisis.count()) === 0);
   await glisser([-0.5, -0.5], [6.5, 5.5]);
   await page.keyboard.press("F9");
-  check("F9 : l'accrochage à la grille est activé", (await outils.getByRole("button", { name: "Accrocher à la grille", exact: true }).getAttribute("aria-pressed")) === "true");
+  check("F9 : l'accrochage à la grille est activé", (await element(outils, "Accrocher à la grille").getAttribute("aria-pressed")) === "true");
   const rectangleAffiche = page.locator(`[data-studio-objet="${rect0.id}"] rect`);
   let apercuX = null;
   await glisser([4.1, 3.3], [5.1, 4.3], async () => { apercuX = await rectangleAffiche.getAttribute("x"); });
@@ -463,9 +481,9 @@ try {
   check("palette Ctrl+K : « Ligne » est la première proposition", (await palette.locator('[role="option"]').first().getAttribute("data-studio-palette-entree")) === "studio.dessin.ligne");
   await page.keyboard.press("Enter");
   await palette.waitFor({ state: "detached" });
-  check("palette Ctrl+K : Entrée lance l'outil Ligne", (await outils.getByRole("button", { name: "Ligne", exact: true }).getAttribute("aria-pressed")) === "true");
-  await outils.getByRole("button", { name: "Sélection", exact: true }).click();
-  await outils.getByRole("button", { name: "Outils", exact: true }).click();
+  check("palette Ctrl+K : Entrée lance l'outil Ligne", (await element(outils, "Ligne").getAttribute("aria-pressed")) === "true");
+  await cliquerBouton(outils, "Sélection");
+  await cliquerBouton(outils, "Outils");
   const gestionnaire = page.locator("[data-studio-gestionnaire-outils]");
   await gestionnaire.waitFor();
   check("Outils : le catalogue liste tout le registre", (await gestionnaire.locator("[data-studio-catalogue-entree]").count()) >= 25 && (await gestionnaire.locator('[data-studio-catalogue-entree="studio.dessin.ligne"] [data-studio-exposition="none"]').count()) === 1);
@@ -485,7 +503,7 @@ try {
   // Vue 3D (Maj+D) du brouillon : un canevas rendu, objets non extrudés comptés ; enregistrement, extrusion relue.
   const idsLignes = () => page.locator('svg [role="button"][aria-label^="Ligne "]').evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-objet")));
   const lignesAvant = await idsLignes();
-  await outils.getByRole("button", { name: "Ligne", exact: true }).click();
+  await cliquerBouton(outils, "Ligne");
   await proprietes.getByLabel("X", { exact: true }).fill("10");
   await proprietes.getByLabel("Y", { exact: true }).fill("10");
   await proprietes.getByLabel("X final", { exact: true }).fill("14");
@@ -493,13 +511,13 @@ try {
   await proprietes.getByRole("button", { name: "Ajouter au dessin", exact: true }).click();
   const murId = (await idsLignes()).find((id) => !lignesAvant.includes(id));
   check("volume : une ligne tracée pour l'extrusion", !!murId);
-  await outils.getByRole("button", { name: "Sélection", exact: true }).click();
+  await cliquerBouton(outils, "Sélection");
   await page.locator(`[data-studio-objet="${murId}"]`).focus();
   await page.keyboard.press("Enter");
   const formExtrusion = page.locator("[data-studio-extrusion]");
   await formExtrusion.waitFor();
   check("volume : aucune valeur d'extrusion proposée (non évaluée)", (await formExtrusion.getByLabel("Hauteur (m)").inputValue()) === "" && (await formExtrusion.getByLabel("Épaisseur (m, lignes, facultative)").inputValue()) === "" && (await formExtrusion.getAttribute("data-studio-extrusion")) !== null && (await page.locator("[data-studio-extrusion-etat]").getAttribute("data-studio-extrusion-etat")) === "plat");
-  check("volume : Extruder (Maj+E) et Aplatir (Maj+F) dans la barre Volume", (await outils.locator('[data-studio-barre="volume"] [data-studio-outil="studio.objet.extruder"][aria-keyshortcuts="Shift+E"]').count()) === 1 && (await outils.locator('[data-studio-barre="volume"] [data-studio-outil="studio.objet.aplatir"][aria-keyshortcuts="Shift+F"]').count()) === 1);
+  check("volume : Extruder (Maj+E) et Aplatir (Maj+F) dans la barre Volume", (await outils.locator('[data-studio-famille="volume"] [data-studio-outil="studio.objet.extruder"][aria-keyshortcuts="Shift+E"]').count()) === 1 && (await outils.locator('[data-studio-famille="volume"] [data-studio-outil="studio.objet.aplatir"][aria-keyshortcuts="Shift+F"]').count()) === 1);
   await formExtrusion.getByLabel("Base (m)").fill("0");
   await formExtrusion.getByLabel("Hauteur (m)").fill("2.5");
   await formExtrusion.getByLabel("Épaisseur (m, lignes, facultative)").fill("0.2");
@@ -537,15 +555,15 @@ try {
   await page.keyboard.press("Enter");
   await formExtrusion.waitFor();
   check("volume : après actualisation, les valeurs saisies sont relues", (await formExtrusion.getByLabel("Hauteur (m)").inputValue()) === "2.5" && (await formExtrusion.getByLabel("Épaisseur (m, lignes, facultative)").inputValue()) === "0.2" && (await page.locator("[data-studio-extrusion-etat]").getAttribute("data-studio-extrusion-etat")) === "extrude");
-  await outils.locator('[data-studio-commande="vue-3d"]').click();
+  await (await atteindre(outils, '[data-studio-commande="vue-3d"]')).click();
   await vue3d.locator("canvas[data-studio-vue3d-canvas]").waitFor();
   check("Vue 3D : relue après actualisation, le volume est rendu", (await vue3d.getAttribute("data-studio-volumes")) === "1");
-  await outils.locator('[data-studio-commande="vue-3d"]').click();
+  await (await atteindre(outils, '[data-studio-commande="vue-3d"]')).click();
   await planche.waitFor();
 
   // Feuille (Maj+P, barre Présentation) : A3 paysage à 1:100, cartouche prérempli (nom de l'étude), feuille SVG
   // téléchargée à sa taille réelle, impression de la seule feuille.
-  const boutonFeuille = outils.locator('[data-studio-barre="presentation"] [data-studio-commande="feuille"][aria-keyshortcuts="Shift+P"]');
+  const boutonFeuille = outils.locator('[data-studio-famille="presentation"] [data-studio-commande="feuille"][aria-keyshortcuts="Shift+P"]');
   check("Feuille : commande dans la barre Présentation, raccourci Maj+P", (await boutonFeuille.count()) === 1);
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Shift+P");
@@ -583,7 +601,7 @@ try {
   // LWPOLYLINE fermée, 1 CIRCLE, 1 ARC) → rapport (tout est pris : le cercle et l'arc deviennent des courbes), 5 objets
   // convertis en mètres, annulable, enregistré, relu identique ; un import de 600 lignes part en deux enveloppes de
   // 500 commandes au plus.
-  const boutonImport = outils.locator('[data-studio-barre="import"] [data-studio-commande="importer-dxf"][aria-keyshortcuts="Shift+U"]');
+  const boutonImport = outils.locator('[data-studio-famille="echanges"] [data-studio-commande="importer-dxf"][aria-keyshortcuts="Shift+U"]');
   check("Import DXF : commande de la barre Importer (Maj+U), indisponible en lecture seule", (await boutonImport.count()) === 1 && (await boutonImport.isDisabled()));
   await page.goto(base);
   await page.locator('svg [role="button"]').first().waitFor({ state: "attached" });
@@ -651,16 +669,16 @@ try {
   // Accrochage aux sommets coupé le temps du tracé : les points visés ne sont pas attirés par les objets existants.
   await page.keyboard.press("Shift+S");
   check("courbes : Cercle (C), Arc (A), Polyligne (P) dans la barre Dessin, Décaler (O) dans Modification, icônes propres",
-    (await outils.locator('[data-studio-barre="dessin"] [data-studio-outil="studio.dessin.cercle"][aria-keyshortcuts="C"] svg path').count()) === 1
-    && (await outils.locator('[data-studio-barre="dessin"] [data-studio-outil="studio.dessin.arc"][aria-keyshortcuts="A"]').count()) === 1
-    && (await outils.locator('[data-studio-barre="dessin"] [data-studio-outil="studio.dessin.polyligne"][aria-keyshortcuts="P"]').count()) === 1
-    && (await outils.locator('[data-studio-barre="modification"] [data-studio-outil="studio.dessin.decaler"][aria-keyshortcuts="O"]').count()) === 1
-    && (await outils.locator('[data-studio-barre="edition"] [data-studio-commande="fermer-polyligne"][aria-keyshortcuts="Shift+Enter"]').count()) === 1);
+    (await outils.locator('[data-studio-famille="dessin"] [data-studio-outil="studio.dessin.cercle"][aria-keyshortcuts="C"] svg path').count()) === 1
+    && (await outils.locator('[data-studio-famille="courbes"] [data-studio-outil="studio.dessin.arc"][aria-keyshortcuts="A"]').count()) === 1
+    && (await outils.locator('[data-studio-famille="courbes"] [data-studio-outil="studio.dessin.polyligne"][aria-keyshortcuts="P"]').count()) === 1
+    && (await outils.locator('[data-studio-famille="modification"] [data-studio-outil="studio.dessin.decaler"][aria-keyshortcuts="O"]').count()) === 1
+    && (await outils.locator('[data-studio-famille="courbes"] [data-studio-commande="fermer-polyligne"][aria-keyshortcuts="Shift+Enter"]').count()) === 1);
   const idsDe = (type) => page.locator(`svg [data-studio-type="${type}"]`).evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-objet")));
   const avantCourbes = { circle: await idsDe("circle"), arc: await idsDe("arc"), polyline: await idsDe("polyline") };
   const nouveaux = async (type) => (await idsDe(type)).filter((id) => !avantCourbes[type].includes(id));
   await page.keyboard.press("c");
-  check("courbes : C choisit l'outil Cercle", (await outils.getByRole("button", { name: "Cercle", exact: true }).getAttribute("aria-pressed")) === "true");
+  check("courbes : C choisit l'outil Cercle", (await element(outils, "Cercle").getAttribute("aria-pressed")) === "true");
   await cliquer(15, 12);
   await cliquer(16, 12);
   check("courbes : deux clics (centre, point du cercle) tracent un cercle", (await nouveaux("circle")).length === 1);
@@ -683,13 +701,13 @@ try {
   await page.keyboard.press("Shift+Enter");
   const [polyId] = await nouveaux("polyline");
   check("courbes : Maj+Entrée ferme la polyligne", !!polyId && (await page.locator(`[data-studio-objet="${polyId}"] path`).getAttribute("d")).endsWith("Z"));
-  await outils.getByRole("button", { name: "Sélection", exact: true }).click();
+  await cliquerBouton(outils, "Sélection");
   await page.locator(`[data-studio-objet="${polyId}"]`).focus();
   await page.keyboard.press("Enter");
   await page.locator(`[data-studio-selection="${polyId}"]`).waitFor();
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("o");
-  check("courbes : O choisit l'outil Décaler", (await outils.getByRole("button", { name: "Décaler", exact: true }).getAttribute("aria-pressed")) === "true");
+  check("courbes : O choisit l'outil Décaler", (await element(outils, "Décaler").getAttribute("aria-pressed")) === "true");
   await proprietes.getByLabel("Distance", { exact: true }).fill("0.5");
   await proprietes.getByRole("button", { name: "Décaler la sélection", exact: true }).click();
   const decalees = await nouveaux("polyline");
@@ -966,7 +984,7 @@ try {
     apresPremier.revision.document.objects.length === teteInitiale.document.objects.length + 500 && (await portee()).includes("(100 commande(s)")
     && (await page.locator(".studio-context [title]").first().getAttribute("title")) === apresPremier.revision.id
     && (await page.locator("[data-studio-erreur-planche]").textContent()).includes("100 commande(s) non envoyée(s)"), await portee());
-  await outils.getByRole("button", { name: "Enregistrer", exact: true }).click();
+  await cliquerBouton(outils, "Enregistrer");
   await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
   const lotsGrand = envois.slice(avantGrand);
   const grandRelu = await a.api("get", cheminInitial);
@@ -1181,6 +1199,43 @@ try {
   await mobile.locator("[data-studio-revisions] li").first().waitFor();
   check("mobile : la variante et son historique ne débordent pas", await mobile.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await mobile.screenshot({ path: join(OUT, "studio-mobile.png") });
+
+  // Barre compacte : une seule rangée d'outils (familles repliables « ▾ », « Plus »), la planche commence dans la moitié
+  // haute de l'écran au bureau (1440×1000, 1280×720) comme au téléphone (390×844), sans débordement horizontal.
+  for (const [largeur, hauteur] of [[1440, 1000], [1280, 720], [390, 844]]) {
+    await mobile.setViewportSize({ width: largeur, height: hauteur });
+    await mobile.goto(base);
+    await mobile.getByRole("group", { name: "Planche de dessin 2D", exact: true }).waitFor();
+    const m = await mobile.evaluate(() => {
+      const barre = document.querySelector('[role="toolbar"][aria-label="Outils de dessin"]');
+      const lignes = new Set([...barre.querySelectorAll("[data-studio-ligne]")].filter((e) => e.offsetParent).map((e) => Math.round(e.getBoundingClientRect().top)));
+      return {
+        planche: Math.round(document.querySelector('[aria-label="Planche de dessin 2D"]').getBoundingClientRect().top + window.scrollY),
+        rangees: lignes.size, debordeBarre: barre.scrollWidth > barre.clientWidth + 1, debordePage: document.documentElement.scrollWidth > window.innerWidth + 1,
+      };
+    });
+    check(`barre compacte ${largeur}×${hauteur} : une rangée, planche au-dessus de la moitié de l'écran (${m.planche} px < ${hauteur / 2} px)`,
+      m.planche < hauteur / 2 && m.rangees === 1 && !m.debordeBarre && !m.debordePage, JSON.stringify(m));
+    await mobile.screenshot({ path: join(OUT, `studio-barre-compacte-${largeur}x${hauteur}.png`) });
+  }
+  // Menus de famille au clavier : flèche bas ouvre sur le premier élément, les flèches parcourent, Échap referme et
+  // rend le focus au bouton ; au téléphone, les familles qui ne tiennent pas sont dans « Plus » (boutons nommés).
+  const barreMobile = mobile.getByRole("toolbar", { name: "Outils de dessin" });
+  const plus = barreMobile.locator('[data-studio-menu="plus"]');
+  check("téléphone : menu « Plus » (aria-haspopup, fermé)", (await plus.getAttribute("aria-haspopup")) === "true" && (await plus.getAttribute("aria-expanded")) === "false");
+  await plus.focus();
+  await mobile.keyboard.press("ArrowDown");
+  const listePlus = mobile.locator(`#${await plus.getAttribute("aria-controls")}`.replace(/:/g, "\\:"));
+  await listePlus.waitFor();
+  const focus1 = await mobile.evaluate(() => document.activeElement?.getAttribute("aria-label"));
+  await mobile.keyboard.press("ArrowDown");
+  const focus2 = await mobile.evaluate(() => document.activeElement?.getAttribute("aria-label"));
+  const nomsVisibles = await listePlus.locator("[data-studio-nav] > span").evaluateAll((s) => s.filter((x) => x.offsetParent).length);
+  check("menu « Plus » au clavier : ouvert, focus sur le premier élément puis le suivant, noms visibles",
+    (await plus.getAttribute("aria-expanded")) === "true" && !!focus1 && !!focus2 && focus1 !== focus2 && nomsVisibles > 0, `${focus1} → ${focus2}`);
+  await mobile.keyboard.press("Escape");
+  check("menu « Plus » : Échap referme et rend le focus au bouton",
+    (await plus.getAttribute("aria-expanded")) === "false" && (await mobile.evaluate(() => document.activeElement?.getAttribute("data-studio-menu"))) === "plus" && !(await listePlus.isVisible()));
 
   // NAV-009 : les parcours existants restent atteignables.
   await page.goto(`${BASE}/projets/${pA.id}?module=atelier`);
