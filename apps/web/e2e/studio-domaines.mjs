@@ -159,6 +159,15 @@ try {
   await page.reload();
   await page.locator("[data-studio-vue3d]").waitFor();
   check("I.4-03 : l'actualisation restitue la Planche 3D", (await page.locator('[data-studio-planche="3d"]').getAttribute("aria-pressed")) === "true");
+  // Revue Codex #204 : une navigation interne qui retire `planche` (même variante, sans remontage) revient à la
+  // Planche 2D, valeur par défaut de la route ; le retour arrière restitue la Planche 3D.
+  await page.evaluate((u) => { history.pushState(history.state, "", u); dispatchEvent(new PopStateEvent("popstate", { state: history.state })); }, `${base}?domaine=dessin`);
+  await page.waitForFunction(() => document.querySelector('[data-studio-planche="2d"]')?.getAttribute("aria-pressed") === "true");
+  check("I.4-03 : paramètre `planche` retiré par l'adresse → Planche 2D (défaut de la route)", (await page.locator("[data-studio-vue3d]").count()) === 0);
+  await page.goBack();
+  await page.waitForURL(`${base}?domaine=dessin&planche=3d`);
+  await page.locator("[data-studio-vue3d]").waitFor();
+  check("I.4-03 : retour arrière → Planche 3D restituée", (await page.locator('[data-studio-planche="3d"]').getAttribute("aria-pressed")) === "true");
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Shift+D");
   await page.waitForURL(`${base}?domaine=dessin&planche=2d`);

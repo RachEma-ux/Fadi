@@ -196,15 +196,35 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const plancheActive: PlancheStudio = vue3d ? "3d" : "2d";
   const [adresseSuivie, setAdresseSuivie] = useState(domaine !== null);
   const telephone = useEcranTelephone();
-  useEffect(() => { if (domaine) setDomaineActif(domaine); }, [domaine]);
-  useEffect(() => { if (planche) setVue3d(planche === "3d"); }, [planche]);
+  // L'adresse fait foi quand elle change de l'extérieur (lien, retour arrière, paramètre retiré) : un paramètre absent
+  // vaut sa valeur par défaut (domaine Dessin, planche 2D), selon le contrat de route (revue Codex #204). Les écritures
+  // faites par l'espace lui-même (`ecritAdresse`) ne sont pas relues, pour ne pas défaire un choix en cours ; le montage
+  // initial non plus (état d'origine conservé pour une adresse sans paramètre).
+  const ecritAdresse = useRef<{ domaine: DomaineStudio | null; planche: PlancheStudio | null } | null>(null);
+  const adresseMontee = useRef(false);
+  useEffect(() => {
+    const premier = !adresseMontee.current;
+    adresseMontee.current = true;
+    const ecrit = ecritAdresse.current;
+    if (ecrit && ecrit.domaine === (domaine ?? null) && ecrit.planche === (planche ?? null)) { ecritAdresse.current = null; return; }
+    if (premier) {
+      if (domaine) setDomaineActif(domaine);
+      if (planche) setVue3d(planche === "3d");
+      return;
+    }
+    setDomaineActif(domaine ?? DOMAINE_PAR_DEFAUT);
+    setVue3d((planche ?? PLANCHE_PAR_DEFAUT) === "3d");
+  }, [domaine, planche]);
   /** Domaine et planche inscrits dans l'adresse, repris par les liens vers une autre révision de la variante. */
   const adresseDomaine: OptionsDomaineVariante = adresseSuivie ? { domaine: domaineActif, planche: domaineActif === "dessin" ? plancheActive : null } : {};
   useEffect(() => {
     if (!surAdresse || !adresseSuivie) return;
     const voulu = { domaine: domaineActif, planche: domaineActif === "dessin" ? plancheActive : null, commentaires };
     const lu = { domaine: domaine ?? DOMAINE_PAR_DEFAUT, planche: domaine === "dessin" ? planche ?? PLANCHE_PAR_DEFAUT : null, commentaires: commentairesOuverts };
-    if (voulu.domaine !== lu.domaine || voulu.planche !== lu.planche || voulu.commentaires !== lu.commentaires) surAdresse(voulu);
+    if (voulu.domaine !== lu.domaine || voulu.planche !== lu.planche || voulu.commentaires !== lu.commentaires) {
+      ecritAdresse.current = { domaine: voulu.domaine, planche: voulu.planche };
+      surAdresse(voulu);
+    }
   }, [adresseSuivie, domaineActif, plancheActive, commentaires]);
   /**
    * Porte le focus sur un élément visible du domaine — son titre, ou, quand le titre de Dessin et modélisation est

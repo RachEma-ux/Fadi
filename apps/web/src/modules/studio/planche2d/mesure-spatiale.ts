@@ -15,6 +15,8 @@ import type { StudioDocument, StudioLayer, StudioPoint } from "@parcours/atelier
 import { alea, genererCorpus, type SceneDocuments } from "@parcours/atelier-model/studio-corpus";
 import { boiteAutour, indexAccrochage, indexLineaire } from "./accrochage/entites";
 import { SEUIL_INDEX_SPATIAL } from "./index-spatial";
+import { contoursMurs } from "./architecture/architecture-ui";
+import { estVisible } from "./calques";
 import { elements, murs, segments, selectionParRectangle, selectionParRectangleLineaire } from "./selection";
 
 export interface Statistiques { n: number; min: number; p50: number; p95: number; p99: number; max: number; moyenne: number }
@@ -129,12 +131,14 @@ export function mesurerCorpus(scene: SceneDocuments, taille: number, opts: Optio
   const selLin = mesurer(opts, rectangles, ([a, b]) => selectionParRectangleLineaire(doc, a, b));
   const selIdx = mesurer(opts, rectangles, ([a, b]) => selectionParRectangle(doc, a, b, 0));
 
-  // Accrochage : index linéaire et grille construits chacun une fois, puis mêmes zones.
+  // Accrochage : mêmes formes que l'éditeur (`outils/gestes.ts`) — objets visibles et contours des murs visibles (revue
+  // Codex #204) ; index linéaire et grille construits chacun une fois, puis mêmes zones.
+  const formesAccrochage = [...doc.objects.filter((x) => estVisible(doc, x.layerId)), ...contoursMurs(doc, (l) => estVisible(doc, l))];
   const t2 = opts.maintenant();
-  const lin = indexLineaire(doc.objects);
+  const lin = indexLineaire(formesAccrochage);
   const constructionLineaireAcc = opts.maintenant() - t2;
   const t3 = opts.maintenant();
-  const idx = indexAccrochage(doc.objects, 0);
+  const idx = indexAccrochage(formesAccrochage, 0);
   const constructionIndexAcc = opts.maintenant() - t3;
   const ids = (z: Parameters<typeof lin.formes>[0], i: typeof lin) => i.formes(z).map((f) => f.forme.id);
   const accLin = mesurer(opts, survols, (z) => ids(z, lin));
@@ -143,8 +147,8 @@ export function mesurerCorpus(scene: SceneDocuments, taille: number, opts: Optio
   const n = elements(doc).length + murs(doc).length;
   const moyenne = (rs: unknown[]) => rs.reduce<number>((s, x) => s + (x as unknown[]).length, 0) / Math.max(1, rs.length);
   return {
-    scene, taille, feuillets: corpus.documents.length, elementsPlanche: n, formesAccrochables: doc.objects.length, emprise: zone,
-    cheminActuel: { selection: n >= SEUIL_INDEX_SPATIAL ? "index" : "lineaire", accrochage: doc.objects.length >= SEUIL_INDEX_SPATIAL ? "index" : "lineaire", seuil: SEUIL_INDEX_SPATIAL },
+    scene, taille, feuillets: corpus.documents.length, elementsPlanche: n, formesAccrochables: formesAccrochage.length, emprise: zone,
+    cheminActuel: { selection: n >= SEUIL_INDEX_SPATIAL ? "index" : "lineaire", accrochage: formesAccrochage.length >= SEUIL_INDEX_SPATIAL ? "index" : "lineaire", seuil: SEUIL_INDEX_SPATIAL },
     selection: {
       lineaire: statistiques(selLin.temps), indexe: statistiques(selIdx.temps), constructionIndexMs: constructionIndexSel, constructionLineaireMs: constructionLineaireSel,
       divergences: memes(selLin.resultats, selIdx.resultats), resultatsMoyens: moyenne(selLin.resultats),
