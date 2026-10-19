@@ -16,10 +16,12 @@ export type StudioPoint = Pick<Point2, "x" | "y">;
 /** Calque implicite des objets sans `layerId` ; il peut être matérialisé dans `layers` pour être réglé. */
 export const STUDIO_DEFAULT_LAYER_ID = "default" as const;
 /** Limites reprises de la Planche 2D de la pile (calques, objets) ; un document au-delà est refusé, jamais tronqué. */
-export const STUDIO_LIMITS = Object.freeze({ layers: 200, objects: 20_000, layerName: 80, polylinePoints: 5000, extrudedRing: 1024 } as const);
+export const STUDIO_LIMITS = Object.freeze({ layers: 200, objects: 20_000, layerName: 80, polylinePoints: 5000, extrudedRing: 1024, extrudedRingsTotal: 200_000 } as const);
 /**
  * Bornes techniques des courbes (pas des valeurs métier) : `polylinePoints` sommets par polyligne ; `extrudedRing` sommets
- * du contour discrétisé d'une polyligne fermée extrudée (contrôle de simplicité et triangulation bornés) ; renflement
+ * du contour discrétisé d'une polyligne fermée extrudée (contrôle de simplicité et triangulation bornés) ;
+ * `extrudedRingsTotal` sommets discrétisés pour toutes les polylignes fermées extrudées d'un document (budget des
+ * écritures ; une révision enregistrée reste lisible) ; renflement
  * (`bulge`) de valeur absolue 10⁶ au plus.
  */
 export const STUDIO_BULGE_MAX = 1e6;
@@ -289,6 +291,30 @@ function angle(value: unknown, path: string): number {
   return Object.is(a, -0) ? 0 : a;
 }
 
+/**
+ * Contrôle de simplicité (O(n²)) mémorisé par contour : un document relu (chaque lecture, chaque lot) ne repaie pas le
+ * contrôle de ses contours déjà vus. Mémoire bornée (les plus anciens contours sont oubliés). Le résultat ne dépend que
+ * des coordonnées : la mémoire ne change jamais une décision.
+ */
+const MEMO_ANNEAUX = new Map<string, boolean>();
+const MEMO_ANNEAUX_MAX = 4096;
+function anneauSimpleMemo(ring: readonly StudioPoint[]): boolean {
+  const cle = ring.map((p) => `${p.x},${p.y}`).join(";");
+  const vu = MEMO_ANNEAUX.get(cle);
+  if (vu !== undefined) return vu;
+  const simple = studioRingSimple(ring);
+  if (MEMO_ANNEAUX.size >= MEMO_ANNEAUX_MAX) MEMO_ANNEAUX.delete(MEMO_ANNEAUX.keys().next().value!);
+  MEMO_ANNEAUX.set(cle, simple);
+  return simple;
+}
+
+/** Sommets discrétisés des polylignes fermées extrudées d'un document (charge des contrôles de simplicité). */
+export function studioExtrudedRingVertices(objects: readonly StudioShape[]): number {
+  let n = 0;
+  for (const o of objects) if (o.type === "polyline" && o.closed && o.extrusion) n += studioPolylinePath(o).length;
+  return n;
+}
+
 function polyline(value: unknown, path: string): StudioPolyline {
   const o = record(value, ["id", "type", "points", "closed"], path, ["layerId", "bulges", "extrusion"]);
   const raw = array(o.points, `${path}.points`);
@@ -316,7 +342,7 @@ function polyline(value: unknown, path: string): StudioPolyline {
   if (extrusion.extrusion && closed) {
     const ring = studioPolylinePath(out);
     if (ring.length > STUDIO_LIMITS.extrudedRing) fail(`${path}.extrusion`, `contour de ${STUDIO_LIMITS.extrudedRing} sommets discrétisés au plus pour une extrusion`);
-    if (!studioRingSimple(ring)) fail(`${path}.extrusion`, "une polyligne fermée extrudée doit avoir un contour simple (sans croisement)");
+    if (!anneauSimpleMemo(ring)) fail(`${path}.extrusion`, "une polyligne fermée extrudée doit avoir un contour simple (sans croisement)");
   }
   return out;
 }
@@ -742,6 +768,8 @@ export const STUDIO_APPLIED_TOOL_IDS: readonly StudioCommandToolId[] = Object.fr
 /** Apply to a private clone; a rejected lot never mutates document or caller inputs. */
 export function applyStudioCommands(document: StudioDocument, commands: readonly StudioCommand[]): StudioDocument {
   const current = validateStudioDocument(document);
+  // Charge avant le lot, relevée avant toute mutation (l'état partage les tableaux de `current`).
+  const avant = studioExtrudedRingVertices(current.objects);
   const state: State = {
     id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [],
     ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id)]),
@@ -756,7 +784,14 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
     HANDLERS[toolId as StudioCommandToolId](state, c.params, path);
   }
   // Contrôle final : limites, unicité et liens sur le document entier, avant de rendre la copie.
-  return validateStudioDocument(output(state.id, state.objects, state.layers, state.dimensions));
+  const result = validateStudioDocument(output(state.id, state.objects, state.layers, state.dimensions));
+  // Budget d'écriture des extrusions de polylignes fermées : un lot ne peut pas le dépasser ni l'aggraver une fois
+  // dépassé ; une révision enregistrée reste toujours lisible (le budget ne s'applique qu'aux écritures).
+  const apres = studioExtrudedRingVertices(result.objects);
+  if (apres > STUDIO_LIMITS.extrudedRingsTotal && apres > avant) {
+    fail("studioDocument.objects", `${STUDIO_LIMITS.extrudedRingsTotal} sommets discrétisés au plus pour l’ensemble des polylignes fermées extrudées du document`);
+  }
+  return result;
 }
 
 /** Selection is a read, never a persisted command or revision. */

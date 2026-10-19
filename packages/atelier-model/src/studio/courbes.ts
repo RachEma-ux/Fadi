@@ -318,6 +318,11 @@ export function studioArcFromCenter(c: StudioPoint, start: StudioPoint, end: Stu
 
 // ——— Décalage ———
 
+/** Onglet d'une jonction droite : 10 fois la distance au plus. */
+export const STUDIO_ONGLET_MAX = 10;
+/** Sommets discrétisés au plus pour contrôler les croisements d'un décalé (borne technique, contrôle O(n²)). */
+export const STUDIO_OFFSET_CONTROLE_MAX = 4096;
+
 export type StudioOffsetResult = { ok: true; shape: StudioShape } | { ok: false; raison: string };
 
 const nano = (v: number): number => {
@@ -384,20 +389,23 @@ function offsetPolyline(o: StudioPolyline, distance: number, id: string, calque:
     segs.push({ a: { x: c.x + (s.a.x - c.x) * k, y: c.y + (s.a.y - c.y) * k }, b: { x: c.x + (s.b.x - c.x) * k, y: c.y + (s.b.y - c.y) * k }, bulge: s.bulge, dir: null });
   }
   const tol = 1e-8 * Math.max(1, echelle);
-  const jonction = (e: SegmentDecale, s: SegmentDecale): StudioPoint | string => {
+  const jonction = (e: SegmentDecale, s: SegmentDecale, sommet: StudioPoint): StudioPoint | string => {
     if (Math.hypot(e.b.x - s.a.x, e.b.y - s.a.y) <= tol) return e.dir ? s.a : e.b;
     if (!e.dir || !s.dir) return "jonction non tangente entre un segment courbe et un autre segment";
     const den = e.dir.x * s.dir.y - e.dir.y * s.dir.x;
     if (Math.abs(den) <= 1e-12) return "segments consécutifs en aller-retour";
     const t = ((s.a.x - e.b.x) * s.dir.y - (s.a.y - e.b.y) * s.dir.x) / den;
-    return { x: e.b.x + e.dir.x * t, y: e.b.y + e.dir.y * t };
+    const p = { x: e.b.x + e.dir.x * t, y: e.b.y + e.dir.y * t };
+    // Limite d'onglet : au-delà, le sommet partirait au loin ; refus plutôt qu'un chanfrein inventé.
+    if (Math.hypot(p.x - sommet.x, p.y - sommet.y) > STUDIO_ONGLET_MAX * Math.abs(distance)) return `angle trop aigu : l’onglet dépasserait ${STUDIO_ONGLET_MAX} fois la distance`;
+    return p;
   };
   const n = o.points.length;
   const points: StudioPoint[] = [];
   for (let i = 0; i < n; i++) {
     const avant = i > 0 ? segs[i - 1] : o.closed ? segs[segs.length - 1] : undefined;
     const apres = i < segs.length ? segs[i] : undefined;
-    const p = avant && apres ? jonction(avant, apres) : apres ? apres.a : avant!.b;
+    const p = avant && apres ? jonction(avant, apres, o.points[i]!) : apres ? apres.a : avant!.b;
     if (typeof p === "string") return { ok: false, raison: p };
     points.push(pt(p));
   }
@@ -407,5 +415,22 @@ function offsetPolyline(o: StudioPolyline, distance: number, id: string, calque:
     if (a.x === b.x && a.y === b.y) return { ok: false, raison: "un segment décalé serait de longueur nulle" };
     if (d && (b.x - a.x) * d.x + (b.y - a.y) * d.y <= 0) return { ok: false, raison: "décalage plus grand qu’un segment : le segment serait retourné" };
   }
-  return { ok: true, shape: { id, type: "polyline", ...calque, points, closed: o.closed, ...(o.bulges ? { bulges: [...o.bulges] } : {}) } };
+  const shape: StudioPolyline = { id, type: "polyline", ...calque, points, closed: o.closed, ...(o.bulges ? { bulges: [...o.bulges] } : {}) };
+  // Croisements : un décalé qui se recoupe (alors que la source ne se recoupait pas) n'existe pas en tant que tel.
+  const source = studioPolylinePath(o), resultat = studioPolylinePath(shape);
+  if (Math.max(source.length, resultat.length) > STUDIO_OFFSET_CONTROLE_MAX) return { ok: false, raison: `polyligne de plus de ${STUDIO_OFFSET_CONTROLE_MAX} sommets discrétisés : croisements du décalé non contrôlables` };
+  if (studioPathSimple(source, o.closed) && !studioPathSimple(resultat, o.closed)) return { ok: false, raison: "le décalé se recouperait (côtés qui se croisent)" };
+  return { ok: true, shape };
+}
+
+/** Tracé simple : anneau simple (fermé) ou chemin ouvert dont aucun segment ne touche un segment non voisin. */
+export function studioPathSimple(path: readonly StudioPoint[], closed: boolean): boolean {
+  if (closed) return studioRingSimple(path);
+  for (let i = 0; i + 1 < path.length; i++) {
+    const a = path[i]!, b = path[i + 1]!;
+    const c = path[i + 2];
+    if (c && cross(a, b, c) === 0 && (b.x - a.x) * (c.x - b.x) + (b.y - a.y) * (c.y - b.y) < 0) return false;
+    for (let j = i + 2; j + 1 < path.length; j++) if (studioSegmentsTouch(a, b, path[j]!, path[j + 1]!)) return false;
+  }
+  return true;
 }
