@@ -1,0 +1,20 @@
+/* Boîte « Matrice d'échanges » : tableau en lecture seule, défilement horizontal propre au tableau sur petit écran. */
+.studio-dialogue.studio-echanges{width:min(1180px,100%)}
+.studio-echanges-corps{display:grid;gap:10px;min-width:0}
+.studio-echanges-corps>p{margin:0}
+.studio-echanges-filtre{display:inline-flex;align-items:center;gap:8px;font-size:13px}
+.studio-echanges-filtre select{font:inherit;padding:4px 7px;border:1px solid #b9c9ce;border-radius:6px}
+.studio-echanges-tableau{overflow-x:auto;max-height:65vh;overflow-y:auto}
+.studio-echanges-tableau table{border-collapse:collapse;width:100%;font-size:13px}
+.studio-echanges-tableau th,.studio-echanges-tableau td{border-bottom:1px solid rgba(127,127,127,.3);padding:6px 8px;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+.studio-echanges-tableau thead th{position:sticky;top:0;background:var(--surface,#fff)}
+.studio-echanges-famille{display:block;font-weight:400;font-size:12px;opacity:.75}
+.studio-echanges-statut{border-radius:999px;padding:1px 8px;border:1px solid rgba(127,127,127,.5);white-space:nowrap}
+.studio-echanges-statut-livre{font-weight:600}
+.studio-echanges-details{margin-top:6px}
+.studio-echanges-details h3{margin:8px 0 4px;font-size:13px}
+.studio-echanges-details ul{margin:0;padding-left:18px}
+.studio-echanges-details p{margin:4px 0}
+.studio-echanges-fidelite{border-collapse:collapse;font-size:12px}
+.studio-echanges-fidelite td,.studio-echanges-fidelite th{padding:3px 6px}
+.studio-echanges-preuves code{font-size:12px}

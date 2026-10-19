@@ -1,0 +1,3471 @@
+{
+ "scene": "S7",
+ "definition": "Scène S7 : session hors réseau puis reconnectée.",
+ "synthetique": true,
+ "licence": "Licence à valider par le maître d'ouvrage (corpus synthétique, généré par le dépôt Fadi : géométrie seule, aucune source tierce).",
+ "avertissement": "Géométrie synthétique de test : aucune donnée de projet réelle ni inventée ; tailles illustratives (X.1-10), non des engagements de capacité.",
+ "couverture": {
+  "representes": [
+   "état de départ de la session hors réseau : plan de niveau synthétique (murs, ouvertures, axes, cotes liées, textes)",
+   "session hors réseau puis reconnectée, jouée par la recette studio-corpus-s7.mjs : dessin au clavier, rechargement depuis l'appareil, enregistrement hors ligne, reconnexion",
+   "après reconnexion : une seule révision ajoutée, corpus de départ intact à l'octet, ajout hors ligne présent"
+  ],
+  "absents": [
+   {
+    "element": "session dans le document",
+    "raison": "studio-document/1 ne porte ni session ni état de connexion : la session est jouée par la recette e2e, le corpus n'en est que l'état de départ"
+   },
+   {
+    "element": "écriture concurrente pendant la coupure",
+    "raison": "un seul appareil dans S7 : le conflit sans écrasement est couvert par studio-hors-ligne.mjs, pas par ce corpus"
+   }
+  ]
+ },
+ "empreinte": "023960d66b42e6e115f16a02c010ec7fc51d88a11c2bf8bbc59c152ee806df97",
+ "document": {
+  "id": "s7-100-f1",
+  "schemaVersion": "studio-document/1",
+  "units": "m",
+  "frame": "local-2d",
+  "objects": [
+   {
+    "id": "s7-0-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 0,
+     "y": 3
+    },
+    "end": {
+     "x": 6,
+     "y": 3
+    }
+   },
+   {
+    "id": "s7-0-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 3,
+     "y": 0
+    },
+    "end": {
+     "x": 3,
+     "y": 6
+    }
+   },
+   {
+    "id": "s7-1-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 6,
+     "y": 3
+    },
+    "end": {
+     "x": 12,
+     "y": 3
+    }
+   },
+   {
+    "id": "s7-1-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 9,
+     "y": 0
+    },
+    "end": {
+     "x": 9,
+     "y": 6
+    }
+   },
+   {
+    "id": "s7-2-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 12,
+     "y": 3
+    },
+    "end": {
+     "x": 18,
+     "y": 3
+    }
+   },
+   {
+    "id": "s7-2-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 15,
+     "y": 0
+    },
+    "end": {
+     "x": 15,
+     "y": 6
+    }
+   },
+   {
+    "id": "s7-3-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 18,
+     "y": 3
+    },
+    "end": {
+     "x": 24,
+     "y": 3
+    }
+   },
+   {
+    "id": "s7-3-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 21,
+     "y": 0
+    },
+    "end": {
+     "x": 21,
+     "y": 6
+    }
+   },
+   {
+    "id": "s7-4-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 0,
+     "y": 9
+    },
+    "end": {
+     "x": 6,
+     "y": 9
+    }
+   },
+   {
+    "id": "s7-4-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 3,
+     "y": 6
+    },
+    "end": {
+     "x": 3,
+     "y": 12
+    }
+   },
+   {
+    "id": "s7-5-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 6,
+     "y": 9
+    },
+    "end": {
+     "x": 12,
+     "y": 9
+    }
+   },
+   {
+    "id": "s7-5-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 9,
+     "y": 6
+    },
+    "end": {
+     "x": 9,
+     "y": 12
+    }
+   },
+   {
+    "id": "s7-6-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 12,
+     "y": 9
+    },
+    "end": {
+     "x": 18,
+     "y": 9
+    }
+   },
+   {
+    "id": "s7-6-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 15,
+     "y": 6
+    },
+    "end": {
+     "x": 15,
+     "y": 12
+    }
+   },
+   {
+    "id": "s7-7-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 18,
+     "y": 9
+    },
+    "end": {
+     "x": 24,
+     "y": 9
+    }
+   },
+   {
+    "id": "s7-7-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 21,
+     "y": 6
+    },
+    "end": {
+     "x": 21,
+     "y": 12
+    }
+   },
+   {
+    "id": "s7-8-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 0,
+     "y": 15
+    },
+    "end": {
+     "x": 6,
+     "y": 15
+    }
+   },
+   {
+    "id": "s7-8-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 3,
+     "y": 12
+    },
+    "end": {
+     "x": 3,
+     "y": 18
+    }
+   },
+   {
+    "id": "s7-9-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 6,
+     "y": 15
+    },
+    "end": {
+     "x": 12,
+     "y": 15
+    }
+   },
+   {
+    "id": "s7-9-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 9,
+     "y": 12
+    },
+    "end": {
+     "x": 9,
+     "y": 18
+    }
+   },
+   {
+    "id": "s7-10-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 12,
+     "y": 15
+    },
+    "end": {
+     "x": 18,
+     "y": 15
+    }
+   },
+   {
+    "id": "s7-10-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 15,
+     "y": 12
+    },
+    "end": {
+     "x": 15,
+     "y": 18
+    }
+   },
+   {
+    "id": "s7-11-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 18,
+     "y": 15
+    },
+    "end": {
+     "x": 24,
+     "y": 15
+    }
+   },
+   {
+    "id": "s7-11-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 21,
+     "y": 12
+    },
+    "end": {
+     "x": 21,
+     "y": 18
+    }
+   }
+  ],
+  "layers": [
+   {
+    "id": "murs",
+    "name": "Murs (synthétique)",
+    "visible": true,
+    "locked": false
+   },
+   {
+    "id": "axes",
+    "name": "Axes de référence (synthétique)",
+    "visible": true,
+    "locked": false
+   },
+   {
+    "id": "cotes",
+    "name": "Cotes (synthétique)",
+    "visible": true,
+    "locked": false
+   },
+   {
+    "id": "textes",
+    "name": "Textes (synthétique)",
+    "visible": true,
+    "locked": false
+   }
+  ],
+  "dimensions": [
+   {
+    "id": "s7-0-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 0,
+     "y": 3
+    },
+    "end": {
+     "x": 6,
+     "y": 3
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-0-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-0-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   },
+   {
+    "id": "s7-1-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 6,
+     "y": 3
+    },
+    "end": {
+     "x": 12,
+     "y": 3
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-1-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-1-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   },
+   {
+    "id": "s7-2-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 12,
+     "y": 3
+    },
+    "end": {
+     "x": 18,
+     "y": 3
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-2-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-2-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   },
+   {
+    "id": "s7-3-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 18,
+     "y": 3
+    },
+    "end": {
+     "x": 24,
+     "y": 3
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-3-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-3-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   },
+   {
+    "id": "s7-4-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 0,
+     "y": 9
+    },
+    "end": {
+     "x": 6,
+     "y": 9
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-4-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-4-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   },
+   {
+    "id": "s7-5-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 6,
+     "y": 9
+    },
+    "end": {
+     "x": 12,
+     "y": 9
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-5-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-5-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   },
+   {
+    "id": "s7-6-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 12,
+     "y": 9
+    },
+    "end": {
+     "x": 18,
+     "y": 9
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-6-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-6-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   },
+   {
+    "id": "s7-7-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 18,
+     "y": 9
+    },
+    "end": {
+     "x": 24,
+     "y": 9
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-7-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-7-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   },
+   {
+    "id": "s7-8-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 0,
+     "y": 15
+    },
+    "end": {
+     "x": 6,
+     "y": 15
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-8-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-8-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   },
+   {
+    "id": "s7-9-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 6,
+     "y": 15
+    },
+    "end": {
+     "x": 12,
+     "y": 15
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-9-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-9-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   },
+   {
+    "id": "s7-10-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 12,
+     "y": 15
+    },
+    "end": {
+     "x": 18,
+     "y": 15
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-10-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-10-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   },
+   {
+    "id": "s7-11-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 18,
+     "y": 15
+    },
+    "end": {
+     "x": 24,
+     "y": 15
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-11-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-11-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   }
+  ],
+  "annotations": [
+   {
+    "id": "s7-0-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 0.5,
+     "y": 0.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 0",
+    "justification": "left"
+   },
+   {
+    "id": "s7-1-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 6.5,
+     "y": 0.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 1",
+    "justification": "left"
+   },
+   {
+    "id": "s7-2-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 12.5,
+     "y": 0.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 2",
+    "justification": "left"
+   },
+   {
+    "id": "s7-3-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 18.5,
+     "y": 0.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 3",
+    "justification": "left"
+   },
+   {
+    "id": "s7-4-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 0.5,
+     "y": 6.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 4",
+    "justification": "left"
+   },
+   {
+    "id": "s7-5-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 6.5,
+     "y": 6.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 5",
+    "justification": "left"
+   },
+   {
+    "id": "s7-6-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 12.5,
+     "y": 6.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 6",
+    "justification": "left"
+   },
+   {
+    "id": "s7-7-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 18.5,
+     "y": 6.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 7",
+    "justification": "left"
+   },
+   {
+    "id": "s7-8-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 0.5,
+     "y": 12.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 8",
+    "justification": "left"
+   },
+   {
+    "id": "s7-9-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 6.5,
+     "y": 12.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 9",
+    "justification": "left"
+   },
+   {
+    "id": "s7-10-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 12.5,
+     "y": 12.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 10",
+    "justification": "left"
+   },
+   {
+    "id": "s7-11-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 18.5,
+     "y": 12.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 11",
+    "justification": "left"
+   }
+  ],
+  "architecture": [
+   {
+    "id": "s7-0-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 0,
+      "y": 0
+     },
+     {
+      "x": 6,
+      "y": 0
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-0-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 0,
+      "y": 0
+     },
+     {
+      "x": 0,
+      "y": 6
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-0-porte",
+    "type": "opening",
+    "hostId": "s7-0-mur-h",
+    "position": 1,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   },
+   {
+    "id": "s7-0-fenetre",
+    "type": "opening",
+    "hostId": "s7-0-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   },
+   {
+    "id": "s7-1-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 6,
+      "y": 0
+     },
+     {
+      "x": 12,
+      "y": 0
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-1-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 6,
+      "y": 0
+     },
+     {
+      "x": 6,
+      "y": 6
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-1-porte",
+    "type": "opening",
+    "hostId": "s7-1-mur-h",
+    "position": 3,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   },
+   {
+    "id": "s7-1-fenetre",
+    "type": "opening",
+    "hostId": "s7-1-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   },
+   {
+    "id": "s7-2-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 12,
+      "y": 0
+     },
+     {
+      "x": 18,
+      "y": 0
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-2-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 12,
+      "y": 0
+     },
+     {
+      "x": 12,
+      "y": 6
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-2-porte",
+    "type": "opening",
+    "hostId": "s7-2-mur-h",
+    "position": 2,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   },
+   {
+    "id": "s7-2-fenetre",
+    "type": "opening",
+    "hostId": "s7-2-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   },
+   {
+    "id": "s7-3-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 18,
+      "y": 0
+     },
+     {
+      "x": 24,
+      "y": 0
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-3-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 18,
+      "y": 0
+     },
+     {
+      "x": 18,
+      "y": 6
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-3-porte",
+    "type": "opening",
+    "hostId": "s7-3-mur-h",
+    "position": 1,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   },
+   {
+    "id": "s7-3-fenetre",
+    "type": "opening",
+    "hostId": "s7-3-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   },
+   {
+    "id": "s7-4-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 0,
+      "y": 6
+     },
+     {
+      "x": 6,
+      "y": 6
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-4-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 0,
+      "y": 6
+     },
+     {
+      "x": 0,
+      "y": 12
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-4-porte",
+    "type": "opening",
+    "hostId": "s7-4-mur-h",
+    "position": 2,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   },
+   {
+    "id": "s7-4-fenetre",
+    "type": "opening",
+    "hostId": "s7-4-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   },
+   {
+    "id": "s7-5-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 6,
+      "y": 6
+     },
+     {
+      "x": 12,
+      "y": 6
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-5-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 6,
+      "y": 6
+     },
+     {
+      "x": 6,
+      "y": 12
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-5-porte",
+    "type": "opening",
+    "hostId": "s7-5-mur-h",
+    "position": 2,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   },
+   {
+    "id": "s7-5-fenetre",
+    "type": "opening",
+    "hostId": "s7-5-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   },
+   {
+    "id": "s7-6-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 12,
+      "y": 6
+     },
+     {
+      "x": 18,
+      "y": 6
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-6-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 12,
+      "y": 6
+     },
+     {
+      "x": 12,
+      "y": 12
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-6-porte",
+    "type": "opening",
+    "hostId": "s7-6-mur-h",
+    "position": 2,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   },
+   {
+    "id": "s7-6-fenetre",
+    "type": "opening",
+    "hostId": "s7-6-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   },
+   {
+    "id": "s7-7-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 18,
+      "y": 6
+     },
+     {
+      "x": 24,
+      "y": 6
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-7-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 18,
+      "y": 6
+     },
+     {
+      "x": 18,
+      "y": 12
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-7-porte",
+    "type": "opening",
+    "hostId": "s7-7-mur-h",
+    "position": 1,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   },
+   {
+    "id": "s7-7-fenetre",
+    "type": "opening",
+    "hostId": "s7-7-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   },
+   {
+    "id": "s7-8-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 0,
+      "y": 12
+     },
+     {
+      "x": 6,
+      "y": 12
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-8-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 0,
+      "y": 12
+     },
+     {
+      "x": 0,
+      "y": 18
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-8-porte",
+    "type": "opening",
+    "hostId": "s7-8-mur-h",
+    "position": 2,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   },
+   {
+    "id": "s7-8-fenetre",
+    "type": "opening",
+    "hostId": "s7-8-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   },
+   {
+    "id": "s7-9-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 6,
+      "y": 12
+     },
+     {
+      "x": 12,
+      "y": 12
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-9-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 6,
+      "y": 12
+     },
+     {
+      "x": 6,
+      "y": 18
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-9-porte",
+    "type": "opening",
+    "hostId": "s7-9-mur-h",
+    "position": 2,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   },
+   {
+    "id": "s7-9-fenetre",
+    "type": "opening",
+    "hostId": "s7-9-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   },
+   {
+    "id": "s7-10-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 12,
+      "y": 12
+     },
+     {
+      "x": 18,
+      "y": 12
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-10-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 12,
+      "y": 12
+     },
+     {
+      "x": 12,
+      "y": 18
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-10-porte",
+    "type": "opening",
+    "hostId": "s7-10-mur-h",
+    "position": 2,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   },
+   {
+    "id": "s7-10-fenetre",
+    "type": "opening",
+    "hostId": "s7-10-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   },
+   {
+    "id": "s7-11-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 18,
+      "y": 12
+     },
+     {
+      "x": 24,
+      "y": 12
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-11-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 18,
+      "y": 12
+     },
+     {
+      "x": 18,
+      "y": 18
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-11-porte",
+    "type": "opening",
+    "hostId": "s7-11-mur-h",
+    "position": 1,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   },
+   {
+    "id": "s7-11-fenetre",
+    "type": "opening",
+    "hostId": "s7-11-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   },
+   {
+    "id": "s7-12-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 0,
+      "y": 18
+     },
+     {
+      "x": 6,
+      "y": 18
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-12-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 0,
+      "y": 18
+     },
+     {
+      "x": 0,
+      "y": 24
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   },
+   {
+    "id": "s7-12-porte",
+    "type": "opening",
+    "hostId": "s7-12-mur-h",
+    "position": 3,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   },
+   {
+    "id": "s7-12-fenetre",
+    "type": "opening",
+    "hostId": "s7-12-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   }
+  ]
+ },
+ "commandes": [
+  {
+   "toolId": "studio.calque.creer",
+   "params": {
+    "id": "murs",
+    "name": "Murs (synthétique)",
+    "visible": true,
+    "locked": false
+   }
+  },
+  {
+   "toolId": "studio.calque.creer",
+   "params": {
+    "id": "axes",
+    "name": "Axes de référence (synthétique)",
+    "visible": true,
+    "locked": false
+   }
+  },
+  {
+   "toolId": "studio.calque.creer",
+   "params": {
+    "id": "cotes",
+    "name": "Cotes (synthétique)",
+    "visible": true,
+    "locked": false
+   }
+  },
+  {
+   "toolId": "studio.calque.creer",
+   "params": {
+    "id": "textes",
+    "name": "Textes (synthétique)",
+    "visible": true,
+    "locked": false
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-0-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 0,
+     "y": 3
+    },
+    "end": {
+     "x": 6,
+     "y": 3
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-0-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 3,
+     "y": 0
+    },
+    "end": {
+     "x": 3,
+     "y": 6
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-1-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 6,
+     "y": 3
+    },
+    "end": {
+     "x": 12,
+     "y": 3
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-1-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 9,
+     "y": 0
+    },
+    "end": {
+     "x": 9,
+     "y": 6
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-2-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 12,
+     "y": 3
+    },
+    "end": {
+     "x": 18,
+     "y": 3
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-2-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 15,
+     "y": 0
+    },
+    "end": {
+     "x": 15,
+     "y": 6
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-3-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 18,
+     "y": 3
+    },
+    "end": {
+     "x": 24,
+     "y": 3
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-3-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 21,
+     "y": 0
+    },
+    "end": {
+     "x": 21,
+     "y": 6
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-4-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 0,
+     "y": 9
+    },
+    "end": {
+     "x": 6,
+     "y": 9
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-4-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 3,
+     "y": 6
+    },
+    "end": {
+     "x": 3,
+     "y": 12
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-5-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 6,
+     "y": 9
+    },
+    "end": {
+     "x": 12,
+     "y": 9
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-5-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 9,
+     "y": 6
+    },
+    "end": {
+     "x": 9,
+     "y": 12
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-6-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 12,
+     "y": 9
+    },
+    "end": {
+     "x": 18,
+     "y": 9
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-6-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 15,
+     "y": 6
+    },
+    "end": {
+     "x": 15,
+     "y": 12
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-7-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 18,
+     "y": 9
+    },
+    "end": {
+     "x": 24,
+     "y": 9
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-7-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 21,
+     "y": 6
+    },
+    "end": {
+     "x": 21,
+     "y": 12
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-8-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 0,
+     "y": 15
+    },
+    "end": {
+     "x": 6,
+     "y": 15
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-8-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 3,
+     "y": 12
+    },
+    "end": {
+     "x": 3,
+     "y": 18
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-9-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 6,
+     "y": 15
+    },
+    "end": {
+     "x": 12,
+     "y": 15
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-9-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 9,
+     "y": 12
+    },
+    "end": {
+     "x": 9,
+     "y": 18
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-10-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 12,
+     "y": 15
+    },
+    "end": {
+     "x": 18,
+     "y": 15
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-10-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 15,
+     "y": 12
+    },
+    "end": {
+     "x": 15,
+     "y": 18
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-11-axe-h",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 18,
+     "y": 15
+    },
+    "end": {
+     "x": 24,
+     "y": 15
+    }
+   }
+  },
+  {
+   "toolId": "studio.dessin.ligne",
+   "params": {
+    "id": "s7-11-axe-v",
+    "type": "line",
+    "layerId": "axes",
+    "start": {
+     "x": 21,
+     "y": 12
+    },
+    "end": {
+     "x": 21,
+     "y": 18
+    }
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-0-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 0,
+      "y": 0
+     },
+     {
+      "x": 6,
+      "y": 0
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-0-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 0,
+      "y": 0
+     },
+     {
+      "x": 0,
+      "y": 6
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-0-porte",
+    "type": "opening",
+    "hostId": "s7-0-mur-h",
+    "position": 1,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-0-fenetre",
+    "type": "opening",
+    "hostId": "s7-0-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-1-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 6,
+      "y": 0
+     },
+     {
+      "x": 12,
+      "y": 0
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-1-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 6,
+      "y": 0
+     },
+     {
+      "x": 6,
+      "y": 6
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-1-porte",
+    "type": "opening",
+    "hostId": "s7-1-mur-h",
+    "position": 3,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-1-fenetre",
+    "type": "opening",
+    "hostId": "s7-1-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-2-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 12,
+      "y": 0
+     },
+     {
+      "x": 18,
+      "y": 0
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-2-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 12,
+      "y": 0
+     },
+     {
+      "x": 12,
+      "y": 6
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-2-porte",
+    "type": "opening",
+    "hostId": "s7-2-mur-h",
+    "position": 2,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-2-fenetre",
+    "type": "opening",
+    "hostId": "s7-2-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-3-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 18,
+      "y": 0
+     },
+     {
+      "x": 24,
+      "y": 0
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-3-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 18,
+      "y": 0
+     },
+     {
+      "x": 18,
+      "y": 6
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-3-porte",
+    "type": "opening",
+    "hostId": "s7-3-mur-h",
+    "position": 1,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-3-fenetre",
+    "type": "opening",
+    "hostId": "s7-3-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-4-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 0,
+      "y": 6
+     },
+     {
+      "x": 6,
+      "y": 6
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-4-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 0,
+      "y": 6
+     },
+     {
+      "x": 0,
+      "y": 12
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-4-porte",
+    "type": "opening",
+    "hostId": "s7-4-mur-h",
+    "position": 2,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-4-fenetre",
+    "type": "opening",
+    "hostId": "s7-4-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-5-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 6,
+      "y": 6
+     },
+     {
+      "x": 12,
+      "y": 6
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-5-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 6,
+      "y": 6
+     },
+     {
+      "x": 6,
+      "y": 12
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-5-porte",
+    "type": "opening",
+    "hostId": "s7-5-mur-h",
+    "position": 2,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-5-fenetre",
+    "type": "opening",
+    "hostId": "s7-5-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-6-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 12,
+      "y": 6
+     },
+     {
+      "x": 18,
+      "y": 6
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-6-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 12,
+      "y": 6
+     },
+     {
+      "x": 12,
+      "y": 12
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-6-porte",
+    "type": "opening",
+    "hostId": "s7-6-mur-h",
+    "position": 2,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-6-fenetre",
+    "type": "opening",
+    "hostId": "s7-6-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-7-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 18,
+      "y": 6
+     },
+     {
+      "x": 24,
+      "y": 6
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-7-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 18,
+      "y": 6
+     },
+     {
+      "x": 18,
+      "y": 12
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-7-porte",
+    "type": "opening",
+    "hostId": "s7-7-mur-h",
+    "position": 1,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-7-fenetre",
+    "type": "opening",
+    "hostId": "s7-7-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-8-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 0,
+      "y": 12
+     },
+     {
+      "x": 6,
+      "y": 12
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-8-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 0,
+      "y": 12
+     },
+     {
+      "x": 0,
+      "y": 18
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-8-porte",
+    "type": "opening",
+    "hostId": "s7-8-mur-h",
+    "position": 2,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-8-fenetre",
+    "type": "opening",
+    "hostId": "s7-8-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-9-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 6,
+      "y": 12
+     },
+     {
+      "x": 12,
+      "y": 12
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-9-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 6,
+      "y": 12
+     },
+     {
+      "x": 6,
+      "y": 18
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-9-porte",
+    "type": "opening",
+    "hostId": "s7-9-mur-h",
+    "position": 2,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-9-fenetre",
+    "type": "opening",
+    "hostId": "s7-9-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-10-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 12,
+      "y": 12
+     },
+     {
+      "x": 18,
+      "y": 12
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-10-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 12,
+      "y": 12
+     },
+     {
+      "x": 12,
+      "y": 18
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-10-porte",
+    "type": "opening",
+    "hostId": "s7-10-mur-h",
+    "position": 2,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-10-fenetre",
+    "type": "opening",
+    "hostId": "s7-10-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-11-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 18,
+      "y": 12
+     },
+     {
+      "x": 24,
+      "y": 12
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-11-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 18,
+      "y": 12
+     },
+     {
+      "x": 18,
+      "y": 18
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-11-porte",
+    "type": "opening",
+    "hostId": "s7-11-mur-h",
+    "position": 1,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-11-fenetre",
+    "type": "opening",
+    "hostId": "s7-11-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-12-mur-h",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 0,
+      "y": 18
+     },
+     {
+      "x": 6,
+      "y": 18
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.mur",
+   "params": {
+    "id": "s7-12-mur-v",
+    "type": "wall",
+    "layerId": "murs",
+    "axis": [
+     {
+      "x": 0,
+      "y": 18
+     },
+     {
+      "x": 0,
+      "y": 24
+     }
+    ],
+    "thickness": 0.2,
+    "height": 3,
+    "base": 0,
+    "justification": "center"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-12-porte",
+    "type": "opening",
+    "hostId": "s7-12-mur-h",
+    "position": 3,
+    "width": 1,
+    "height": 2.1,
+    "sill": 0,
+    "kind": "porte"
+   }
+  },
+  {
+   "toolId": "studio.architecture.ouverture",
+   "params": {
+    "id": "s7-12-fenetre",
+    "type": "opening",
+    "hostId": "s7-12-mur-v",
+    "position": 2.5,
+    "width": 0.6,
+    "height": 0.7,
+    "sill": 1.2,
+    "kind": "fenetre"
+   }
+  },
+  {
+   "toolId": "studio.dessin.cote",
+   "params": {
+    "id": "s7-0-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 0,
+     "y": 3
+    },
+    "end": {
+     "x": 6,
+     "y": 3
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-0-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-0-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   }
+  },
+  {
+   "toolId": "studio.dessin.cote",
+   "params": {
+    "id": "s7-1-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 6,
+     "y": 3
+    },
+    "end": {
+     "x": 12,
+     "y": 3
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-1-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-1-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   }
+  },
+  {
+   "toolId": "studio.dessin.cote",
+   "params": {
+    "id": "s7-2-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 12,
+     "y": 3
+    },
+    "end": {
+     "x": 18,
+     "y": 3
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-2-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-2-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   }
+  },
+  {
+   "toolId": "studio.dessin.cote",
+   "params": {
+    "id": "s7-3-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 18,
+     "y": 3
+    },
+    "end": {
+     "x": 24,
+     "y": 3
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-3-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-3-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   }
+  },
+  {
+   "toolId": "studio.dessin.cote",
+   "params": {
+    "id": "s7-4-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 0,
+     "y": 9
+    },
+    "end": {
+     "x": 6,
+     "y": 9
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-4-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-4-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   }
+  },
+  {
+   "toolId": "studio.dessin.cote",
+   "params": {
+    "id": "s7-5-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 6,
+     "y": 9
+    },
+    "end": {
+     "x": 12,
+     "y": 9
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-5-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-5-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   }
+  },
+  {
+   "toolId": "studio.dessin.cote",
+   "params": {
+    "id": "s7-6-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 12,
+     "y": 9
+    },
+    "end": {
+     "x": 18,
+     "y": 9
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-6-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-6-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   }
+  },
+  {
+   "toolId": "studio.dessin.cote",
+   "params": {
+    "id": "s7-7-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 18,
+     "y": 9
+    },
+    "end": {
+     "x": 24,
+     "y": 9
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-7-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-7-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   }
+  },
+  {
+   "toolId": "studio.dessin.cote",
+   "params": {
+    "id": "s7-8-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 0,
+     "y": 15
+    },
+    "end": {
+     "x": 6,
+     "y": 15
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-8-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-8-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   }
+  },
+  {
+   "toolId": "studio.dessin.cote",
+   "params": {
+    "id": "s7-9-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 6,
+     "y": 15
+    },
+    "end": {
+     "x": 12,
+     "y": 15
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-9-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-9-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   }
+  },
+  {
+   "toolId": "studio.dessin.cote",
+   "params": {
+    "id": "s7-10-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 12,
+     "y": 15
+    },
+    "end": {
+     "x": 18,
+     "y": 15
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-10-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-10-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   }
+  },
+  {
+   "toolId": "studio.dessin.cote",
+   "params": {
+    "id": "s7-11-cote-axe",
+    "type": "dimension",
+    "layerId": "cotes",
+    "start": {
+     "x": 18,
+     "y": 15
+    },
+    "end": {
+     "x": 24,
+     "y": 15
+    },
+    "offset": 0.6,
+    "links": {
+     "start": {
+      "objectId": "s7-11-axe-h",
+      "anchor": "start"
+     },
+     "end": {
+      "objectId": "s7-11-axe-h",
+      "anchor": "end"
+     }
+    },
+    "toResolve": false
+   }
+  },
+  {
+   "toolId": "studio.dessin.texte",
+   "params": {
+    "id": "s7-0-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 0.5,
+     "y": 0.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 0",
+    "justification": "left"
+   }
+  },
+  {
+   "toolId": "studio.dessin.texte",
+   "params": {
+    "id": "s7-1-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 6.5,
+     "y": 0.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 1",
+    "justification": "left"
+   }
+  },
+  {
+   "toolId": "studio.dessin.texte",
+   "params": {
+    "id": "s7-2-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 12.5,
+     "y": 0.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 2",
+    "justification": "left"
+   }
+  },
+  {
+   "toolId": "studio.dessin.texte",
+   "params": {
+    "id": "s7-3-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 18.5,
+     "y": 0.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 3",
+    "justification": "left"
+   }
+  },
+  {
+   "toolId": "studio.dessin.texte",
+   "params": {
+    "id": "s7-4-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 0.5,
+     "y": 6.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 4",
+    "justification": "left"
+   }
+  },
+  {
+   "toolId": "studio.dessin.texte",
+   "params": {
+    "id": "s7-5-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 6.5,
+     "y": 6.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 5",
+    "justification": "left"
+   }
+  },
+  {
+   "toolId": "studio.dessin.texte",
+   "params": {
+    "id": "s7-6-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 12.5,
+     "y": 6.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 6",
+    "justification": "left"
+   }
+  },
+  {
+   "toolId": "studio.dessin.texte",
+   "params": {
+    "id": "s7-7-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 18.5,
+     "y": 6.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 7",
+    "justification": "left"
+   }
+  },
+  {
+   "toolId": "studio.dessin.texte",
+   "params": {
+    "id": "s7-8-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 0.5,
+     "y": 12.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 8",
+    "justification": "left"
+   }
+  },
+  {
+   "toolId": "studio.dessin.texte",
+   "params": {
+    "id": "s7-9-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 6.5,
+     "y": 12.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 9",
+    "justification": "left"
+   }
+  },
+  {
+   "toolId": "studio.dessin.texte",
+   "params": {
+    "id": "s7-10-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 12.5,
+     "y": 12.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 10",
+    "justification": "left"
+   }
+  },
+  {
+   "toolId": "studio.dessin.texte",
+   "params": {
+    "id": "s7-11-piece",
+    "type": "text",
+    "layerId": "textes",
+    "position": {
+     "x": 18.5,
+     "y": 12.5
+    },
+    "height": 0.25,
+    "rotation": 0,
+    "content": "Pièce synthétique 11",
+    "justification": "left"
+   }
+  }
+ ],
+ "session": {
+  "revisionsAjoutees": 1,
+  "objets": 25,
+  "primitives": 101,
+  "rectangle": {
+   "origin": {
+    "x": -10,
+    "y": -10
+   },
+   "width": 2,
+   "height": 1
+  },
+  "murs": {
+   "brut": 93.59999999999997,
+   "deduit": 6.551999999999998,
+   "net": 87.04800000000003,
+   "premier": {
+    "id": "s7-0-mur-h",
+    "brut": 3.6000000000000005,
+    "deduit": 0.42000000000000004,
+    "net": 3.1800000000000006
+   }
+  }
+ }
+}

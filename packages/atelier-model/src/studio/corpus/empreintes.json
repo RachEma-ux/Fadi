@@ -1,0 +1,256 @@
+{
+  "$commentaire": "Empreintes conservées des corpus de qualification Studio S1–S7 (REF-02 §18.2, X.1-08) : SHA-256 du corpus (suite des empreintes de ses feuillets), des SVG de référence et empreintes de contenu du maillage 3D dérivé, par scène et par taille illustrative (X.1-10, pas un engagement de capacité) ; plans S6 : SHA-256 du plan entier (base, variantes, étapes, exigences). Géométrie synthétique. Réécrites seulement par STUDIO_CORPUS_ECRIRE=1 (corpus.test.ts), entrée par entrée, chacune calculée en entier ; les entrées lourdes exigent STUDIO_CORPUS_LOURD=1. « plateforme » : Node et ICU de la dernière écriture.",
+  "plateforme": {
+    "node": "22.22.0",
+    "icu": "77.1"
+  },
+  "scenes": {
+    "S1": {
+      "100": {
+        "corpus": "278a4499afbe19757761fdc4a538556e3390d5132ed876cee54563b03a71fda0",
+        "feuillets": 1,
+        "svg": [
+          "c0d63fa2780896f703794710196e63fc0ba177760f2255dc845bc225e0ff9ffa"
+        ],
+        "maillage": [
+          "1823d67796d41358"
+        ]
+      },
+      "10000": {
+        "corpus": "bebb02711a6b068cf3c5185421b8119ae59b4c031cbd813d0fe4b485e871d926",
+        "feuillets": 1,
+        "svg": [
+          "b97a7354c7b0659e67a1ce8d6f1a072f5b3fb59cbfa63f60aac7d08ee1eee7de"
+        ],
+        "maillage": [
+          "f4af1555516581d8"
+        ]
+      },
+      "100000": {
+        "corpus": "284e048db594118fda1eb51efbbfe0c2c43d8271a6de52a1e2e7f0d6e994f6bf",
+        "feuillets": 6,
+        "svg": [
+          "12c46ddc268df89d6faf37d1f658f901f98742b3bbdc92ecb3ee4bcfb2b7285a",
+          "988e0d773ee28c3db52d75c5918f69777f0b962aa844c632483aca87a906f3ac",
+          "fa1805d2c3361d29f42fd01bef0f84067f9b72a9693c01fd964ab7055e26fbaa",
+          "22032bf2311baeb9b6dc69b4019a71a6bc026e64bcebbb0ef2d8b14f2629401e",
+          "8089db54cb9e1dfc3093f99078c8394cd3d1aee341680889e9c2ff07c6445405",
+          "9af1cd8d4794c0e9d6ca8c7b7062a56b2b3542b68329b8224b6c0f663601f99f"
+        ],
+        "maillage": [
+          "16065f8e392bf4d1",
+          "715c3fc45fb2821f",
+          "2e7dfed5d739411a",
+          "e023b73fe9442038",
+          "2788038060c2926f",
+          "49d973ec98066859"
+        ]
+      }
+    },
+    "S2": {
+      "100": {
+        "corpus": "b529af2eae3616fd89312d8847d5e640e040af0655307e36c8039d1fb89b0712",
+        "feuillets": 1,
+        "svg": [
+          "7c10fab3d61e97f2667d05c3ffe90b8e8484547bed8ce0af3f1a7879318c9fe9"
+        ],
+        "maillage": [
+          "4db8e4948890b227"
+        ]
+      },
+      "10000": {
+        "corpus": "d7f165a9490f71721f43339432e128bacbd1409ceead121c72c1a360b87427a9",
+        "feuillets": 1,
+        "svg": [
+          "166502e09e565184253c66003a6f8a076b59e336ba64e668a8297ffa1f1d1c9b"
+        ],
+        "maillage": [
+          "1ff1f6dab7060cbf"
+        ]
+      },
+      "100000": {
+        "corpus": "55ebe57cfb68804f115daf8ffaa862102a40981d505ba1a0f52c0ed3957df21e",
+        "feuillets": 5,
+        "svg": [
+          "bbaae3c979f6ac1219ffcacd4ea93d77fdb6b8dc170c7276fb0d85a86935e8f3",
+          "eaacf926672b9b5deabdce4b6cded7a9465c7d80b10f3893d1c7b974e9f980cd",
+          "2a54a95aafdee08d6f09947383f343c1cb88cda26ef10644d5d036d897e7b844",
+          "f005f070e29fb3a482f0184cdcd760695492d35eae09b906b02219e75ea1b2e3",
+          "1ea88f4e5a9c08d7fdfd328342c279a987dbc5f9ac43d1754c37c40a32f27776"
+        ],
+        "maillage": [
+          "e7cb003abdcf65c7",
+          "1daf35726cf9d6e1",
+          "2caaf70e387f7f91",
+          "6e32110377e8a570",
+          "c88d204e36b869bd"
+        ]
+      }
+    },
+    "S3": {
+      "100": {
+        "corpus": "e926abbb166a34909f15a2e9be98d8e0ed429200ecfc99c7b78be19382c3b1e1",
+        "feuillets": 1,
+        "svg": [
+          "d3f710ae1c9561dc02e8d447ad68ea58a8871a21c49c5b97bf036ea237300bf8"
+        ],
+        "maillage": [
+          "e8c2d2dbe7f27b86"
+        ]
+      },
+      "10000": {
+        "corpus": "daa2f9e0281558d4adab770fc602012fbf5b5ba077f5d3cd60a13e0c1f659c2b",
+        "feuillets": 1,
+        "svg": [
+          "898b01bedffced158ca1917dbbd66108dd3cee554c23aeebae24377966f58d1e"
+        ],
+        "maillage": [
+          "aae2fe5b5ee7afe0"
+        ]
+      },
+      "100000": {
+        "corpus": "53eaa00e6455c986d7bd3e89f9a64f88facc19fa64b961287cb3462bbbe6e215",
+        "feuillets": 5,
+        "svg": [
+          "095272e5b10a03b7d5343f7907f0e3789986b69916b0ee9057d9e7bfb900c4f5",
+          "18d85ebfd41c8ad5aed28b9467e21eb337ae68fcffc4e90e51247e2c786250f2",
+          "26df3bb67f0e6d3d3ffb72aee67fbf4d7e8d44b2705a91daf2180ec085b99911",
+          "a28b47322f00b3bfb7af9e458d05c051cc0470968ec856ce43c5490d00f4acf9",
+          "754793d3b7a642828cb7b7661d33287876d64a5b5d85ee7c479fb1996177e54e"
+        ],
+        "maillage": [
+          "c21742e82563c12b",
+          "ed540a37e3e1b978",
+          "bafdab53bed0ad5e",
+          "421f080ad7ad2ec3",
+          "ce03afedcbef1bcc"
+        ]
+      }
+    },
+    "S4": {
+      "100": {
+        "corpus": "eb35d5b8bea9d0a21d94a4e3b4ec7c877236d8c1ee0c7272ecd980192d8ac96f",
+        "feuillets": 1,
+        "svg": [
+          "224fc24306f93ff38a3fb6636f31166129d347c359ef59a3107ad1f799d35407"
+        ],
+        "maillage": [
+          "53b8f4ef9deb6ca0"
+        ]
+      },
+      "10000": {
+        "corpus": "108b91c98a03f68b0d714b23c4c8cb6ea89a7dcc192d0fd060ad47dd9bdc6244",
+        "feuillets": 1,
+        "svg": [
+          "ec94534725c63b15f595146e836b63307fac4db9d75d582d077e3b938489fd37"
+        ],
+        "maillage": [
+          "80dc0249ec8de2ce"
+        ]
+      },
+      "100000": {
+        "corpus": "13feb7c099f8fe0e00521b1fa1f71e6e667b0ec2abba7a7426d7703174bbbf57",
+        "feuillets": 5,
+        "svg": [
+          "a89dd00f4e20baf5cd3efdc65e0bd9da62bbfb747805dc81f3e7e1df13ee894d",
+          "4a1bbe7e9531fd6b0eee57cf560b77872e8ed0c66528e8887cea07c6eb256651",
+          "bd4b6c0e2e5dbaf3485fdb58de3c1d71a7d3d002714cc003759aafccfa937fad",
+          "c3a3369794196bb31dcd2389793a791f7bc395bfc3841c6695d4e418f6a5aba3",
+          "d5ec61851e70cf163a453fe7d46ffcdd75d81aa3b991bc485b11ccc83f08748c"
+        ],
+        "maillage": [
+          "8a4c3a627d2a7641",
+          "adc767efe5c5d422",
+          "7f79cd483e5b96ed",
+          "603d23a3375308da",
+          "bd0ee0b7a3bf662e"
+        ]
+      }
+    },
+    "S5": {
+      "100": {
+        "corpus": "6afdfa7823cbc34c97f763337b02c16fc4e347c97d35767baa24f924643d01d4",
+        "feuillets": 1,
+        "svg": [
+          "3958f0d399d99473293c2ef0590fae36802efe682511fc501fa2d2f8474793e0"
+        ],
+        "maillage": [
+          "9f8799ef9acf6900"
+        ]
+      },
+      "10000": {
+        "corpus": "f54a5bce4cb4f94c7e6118f9f5c0ba507f58cefa24555afe2befa7165225efbf",
+        "feuillets": 1,
+        "svg": [
+          "b1dc93b5d76037ff521c5126d6c5f3ddcc58f2983fbfbd1ede45259e4d2b21b6"
+        ],
+        "maillage": [
+          "b7d8da20ccdfb895"
+        ]
+      },
+      "100000": {
+        "corpus": "5e17ffe43eb4e7f2ca970b6f16aa5cc1e43c1c93fa419724c6571b7f0c6b7883",
+        "feuillets": 6,
+        "svg": [
+          "e248d07acb75ce5a537a9a184f4aac2e58476b6b91804f7d6f1b7f181b50f968",
+          "ace6bf47d3ca5b31266d6d14dfa1e206c0cae86b2d9780508c50da7929aea606",
+          "0c769ef97feada1644f3da268ff84d729e8224089e417c5f19f28e95c5f0f50b",
+          "e4d0b3d6fd8b795b2de3c6e46d0656708178c9f11107b745824d2b6033c6368d",
+          "c06c7326fbfa05112a32186740d9aec27fc0821f6f4b8e5518c28b6fc27fc2d2",
+          "0950e1c79ed2ade3a01db8cd4252d6cc6568562ba1949191a5728f66831c7245"
+        ],
+        "maillage": [
+          "d7d4bb24a439d87b",
+          "49cb5502fbcdd2c3",
+          "3e5b9d20315e68e9",
+          "b0753c693ecb7d0c",
+          "91576d3c370fc007",
+          "64d31dfd562d69d2"
+        ]
+      }
+    },
+    "S7": {
+      "100": {
+        "corpus": "023960d66b42e6e115f16a02c010ec7fc51d88a11c2bf8bbc59c152ee806df97",
+        "feuillets": 1,
+        "svg": [
+          "52a529a830ae9f02f30000bc9925e8250d7aee990ac09ed70441cac47d90d4cb"
+        ],
+        "maillage": [
+          "611cedd22bdb8389"
+        ]
+      },
+      "10000": {
+        "corpus": "384a23a53491be4dd30f8ef69fe6116cec5913394ad6197741b5504899f5194b",
+        "feuillets": 1,
+        "svg": [
+          "8606d3f53d95440de3d1f91ddb85e4e17ad0af63497cd92145a966e83528f895"
+        ],
+        "maillage": [
+          "f6d389da95b3753f"
+        ]
+      },
+      "100000": {
+        "corpus": "84fce7984fd6db7eae18b372d97bdd7c7a2eb649d2122943e6ba42d213109713",
+        "feuillets": 5,
+        "svg": [
+          "fc3ff29ae1cca64315ce0c535813c94bbbc862bebfe58925d46c8fd58c1875fc",
+          "427fbd2bee103c5dd608a61a0f1311ebb22ffd335f60a2830af4e4fb41f03ea1",
+          "468cd4d7a2219bafaf98881dd486c721a48ceb6978064c161a7d10b3625b8625",
+          "1c56734b6a01ba1daa966666c40c77bb90b02ae584f64035446f24e84668e3a2",
+          "e0ac4ef30d70fadeb5d8f7493f7a5faa7eb9763503b3cf74b29de02c323740df"
+        ],
+        "maillage": [
+          "fad9f07add51191f",
+          "980cecbebe9203b5",
+          "5512ead2c02d9435",
+          "a45ea8ff8bd486bc",
+          "ddddf2c63915288d"
+        ]
+      }
+    }
+  },
+  "plans": {
+    "S6": "71fe389c32b18dd66a062dfc02a4b164915033e9f5f6d5db284172b1e32acca2"
+  }
+}

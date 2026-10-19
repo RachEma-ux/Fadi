@@ -6,13 +6,19 @@
  */
 import { Link } from "react-router-dom";
 import type { StudioContext } from "../../../lib/api";
-import { cheminProjetStudio, cheminVarianteStudio } from "../routes-studio";
+import { cheminProjetStudio, cheminVarianteStudio, type OptionsDomaineVariante } from "../routes-studio";
+import { PLANCHES_STUDIO, type PlancheStudio } from "../domaines/domaines";
 import { etatHorsLigne, type EntreeEtatHorsLigne } from "../hors-ligne/etat";
 import { warning } from "./etat-variante";
 import "../hors-ligne/hors-ligne.css";
 
-export function EnTeteStudio({ context }: { context: StudioContext | null }) {
-  return <header className="studio-heading"><div><p className="studio-eyebrow">FADI / STUDIO</p><h1>{context ? <span translate="no">{context.study.name}</span> : "Votre espace de dessin"}</h1><p>Dessin 2D · Repère local · Mètres</p></div><span className="studio-badge">Planche 2D</span></header>;
+/** Sous-titre de l'en-tête selon la planche active (libellés existants : « Dessin 2D », « Vue 3D »). */
+export const SOUS_TITRE_PLANCHE: Readonly<Record<PlancheStudio, string>> = Object.freeze({ "2d": "Dessin 2D · Repère local · Mètres", "3d": "Vue 3D · Repère local · Mètres" });
+
+/** Le badge et le sous-titre suivent la planche active (I.4-02 : Planche 2D ou Planche 3D). */
+export function EnTeteStudio({ context, planche = "2d" }: { context: StudioContext | null; planche?: PlancheStudio }) {
+  const libelle = PLANCHES_STUDIO.find((p) => p.id === planche)!.libelleFR;
+  return <header className="studio-heading"><div><p className="studio-eyebrow">FADI / STUDIO</p><h1>{context ? <span translate="no">{context.study.name}</span> : "Votre espace de dessin"}</h1><p data-studio-sous-titre>{SOUS_TITRE_PLANCHE[planche]}</p></div><span className="studio-badge" data-studio-planche-active>{libelle}</span></header>;
 }
 
 /** `surRecharger` : abandon confirmé du brouillon (conservé hors ligne compris) puis relecture de la version serveur. */
@@ -53,9 +59,11 @@ export interface PropsBandeauVariante {
   surCommentaires: () => void;
   /** État de connexion (version courante seulement) et choix du brouillon hors ligne en conflit. */
   connexion?: { etat: EntreeEtatHorsLigne; surRecharger: () => void; surReporter: () => void };
+  /** Domaine et planche inscrits dans l'adresse (I.4-03), repris par « Revenir à la version courante ». */
+  adresse?: OptionsDomaineVariante;
 }
 
 /** Bandeau de révision historique, contexte (études, variante, révision, état) et bascule des commentaires. */
-export function BandeauVariante({ projectId, studyId, variantId, context, historical, etat, commentaires, surCommentaires, connexion }: PropsBandeauVariante) {
-  return <>{historical && <div className="studio-alert studio-history-banner" data-studio-lecture-seule-revision><span>Révision historique en lecture seule. Aucune modification n’est possible ici.</span><Link to={cheminVarianteStudio(projectId, studyId, variantId)}>Revenir à la version courante</Link></div>}<div className="studio-context"><Link to={cheminProjetStudio(projectId)}>Études</Link><span translate="no">{context.variant.name}</span><span>Révision <span translate="no" title={context.revision.id}>{context.revision.id.slice(-8)}</span></span><span role="status" data-studio-etat>{etat}</span>{!historical && connexion && <EtatConnexionStudio etat={connexion.etat} />}<button type="button" aria-pressed={commentaires} onClick={surCommentaires} data-studio-basculer-commentaires>Commentaires</button></div>{!historical && connexion && <ChoixConflitStudio {...connexion} />}{!context.canWrite && <p role="status" data-studio-lecture-seule>Lecture seule</p>}</>;
+export function BandeauVariante({ projectId, studyId, variantId, context, historical, etat, commentaires, surCommentaires, connexion, adresse = {} }: PropsBandeauVariante) {
+  return <>{historical && <div className="studio-alert studio-history-banner" data-studio-lecture-seule-revision><span>Révision historique en lecture seule. Aucune modification n’est possible ici.</span><Link to={cheminVarianteStudio(projectId, studyId, variantId, null, adresse)} data-studio-version-courante>Revenir à la version courante</Link></div>}<div className="studio-context"><Link to={cheminProjetStudio(projectId)}>Études</Link><span translate="no">{context.variant.name}</span><span>Révision <span translate="no" title={context.revision.id}>{context.revision.id.slice(-8)}</span></span><span role="status" data-studio-etat>{etat}</span>{!historical && connexion && <EtatConnexionStudio etat={connexion.etat} />}<button type="button" aria-pressed={commentaires} onClick={surCommentaires} data-studio-basculer-commentaires>Commentaires</button></div>{!historical && connexion && <ChoixConflitStudio {...connexion} />}{!context.canWrite && <p role="status" data-studio-lecture-seule>Lecture seule</p>}</>;
 }

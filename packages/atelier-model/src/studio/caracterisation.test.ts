@@ -323,6 +323,10 @@ const AJOUTS = {
     // Rapport de fidélité des exports (E.6-03, `echanges/rapport-fidelite.ts`).
     "STUDIO_CAPACITES_EXPORT", "STUDIO_FORMATS_ECHANGE", "STUDIO_LISTES_ECHANGE", "STUDIO_RAISONS_FIDELITE", "STUDIO_RAPPORT_FIDELITE_SCHEMA",
     "STUDIO_STATUTS_FIDELITE", "studioRapportFidelite",
+    // Matrice d'échanges versionnée (E.6-01 à E.6-05, `echanges/matrice-echanges.ts`).
+    "STUDIO_COUVERTURE_EXPORT", "STUDIO_MATRICE_ECHANGES", "STUDIO_MATRICE_ECHANGES_DATE", "STUDIO_MATRICE_ECHANGES_REVISION", "STUDIO_MATRICE_ECHANGES_SCHEMA",
+    "STUDIO_STATUT_DE_RAISON", "STUDIO_STATUTS_ECHANGE", "controlerMatriceEchanges", "studioCouvertureFormat", "studioMatriceEchangesMarkdown",
+    "STUDIO_DECISIONS_RENONCEMENT", "studioDeclareConformite", "studioTextesEntree",
     // Propriétés, exigences versionnées et écarts (E.1-01 à E.1-06, `exigences/`).
     "STUDIO_LIMITES_EXIGENCES", "STUDIO_LIMITES_PROPRIETES", "ciblePropriete", "proprietesDe", "validerPropriete", "valeurPropriete",
     "SCHEMA_PROPRIETE", "SCHEMA_RETRAIT_PROPRIETE", "accepterExigence", "COMPARAISONS_EXIGENCE", "exigenceUtilisable", "preparerVersion",

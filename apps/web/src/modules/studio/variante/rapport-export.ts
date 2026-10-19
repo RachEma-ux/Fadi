@@ -16,6 +16,7 @@ export const LIBELLES_RAISON_FIDELITE: Readonly<Record<StudioRaisonFidelite, str
   "texte-exact": "Texte exact",
   "extrusion-exacte": "Extrusion exacte",
   "profil-exact": "Profil exact",
+  "surface-exacte": "Surface verticale exacte (sans solide)",
   "ouverture-evidee": "Ouverture évidée dans le mur (porte / fenêtre si déclarée)",
   "extrusion-non-portee": "Extrusion non portée (2D seulement)",
   "arcs-discretises": "Arcs discrétisés en segments",

@@ -26,14 +26,14 @@ describe("adresses de Studio", () => {
   });
 
   it("variante : version courante sans paramètre, révision historique par ?revision=, aller-retour exact", () => {
-    const base = { vue: "variante", projectId: "p_1", studyId: "s_2", variantId: "v_3", commentaires: false };
+    const base = { vue: "variante", projectId: "p_1", studyId: "s_2", variantId: "v_3", commentaires: false, domaine: null, planche: null };
     expect(lire(cheminVarianteStudio("p_1", "s_2", "v_3"))).toEqual({ ...base, revisionId: null });
     expect(cheminVarianteStudio("p_1", "s_2", "v_3")).not.toContain("?");
     expect(lire(cheminVarianteStudio("p_1", "s_2", "v_3", "studio_revision_4"))).toEqual({ ...base, revisionId: "studio_revision_4" });
   });
 
   it("variante : commentaires=ouverts ouvre le panneau des commentaires, seul ou avec une révision, aller-retour exact", () => {
-    const base = { vue: "variante", projectId: "p_1", studyId: "s_2", variantId: "v_3" };
+    const base = { vue: "variante", projectId: "p_1", studyId: "s_2", variantId: "v_3", domaine: null, planche: null };
     expect(cheminVarianteStudio("p_1", "s_2", "v_3", null, { commentaires: true })).toBe("/studio/projets/p_1/etudes/s_2/variantes/v_3?commentaires=ouverts");
     expect(lire(cheminVarianteStudio("p_1", "s_2", "v_3", null, { commentaires: true }))).toEqual({ ...base, revisionId: null, commentaires: true });
     expect(lire(cheminVarianteStudio("p_1", "s_2", "v_3", "r_4", { commentaires: true }))).toEqual({ ...base, revisionId: "r_4", commentaires: true });
@@ -42,11 +42,44 @@ describe("adresses de Studio", () => {
 
   it("variante : paramètre répété, vide, non admis ou étranger → adresse non reconnue", () => {
     const chemin = "/studio/projets/p_1/etudes/s_2/variantes/v_3";
-    for (const q of ["?revision=a&revision=b", "?revision=", "?revision=..%2Fx", "?domaine=dessin", "?planche=2d", "?vue=x", "?revision=a&x=1", "?commentaires=", "?commentaires=1", "?commentaires=ouverts&commentaires=ouverts", "?commentaires=fermes"]) {
+    for (const q of ["?revision=a&revision=b", "?revision=", "?revision=..%2Fx", "?planche=2d", "?vue=x", "?revision=a&x=1", "?commentaires=", "?commentaires=1", "?commentaires=ouverts&commentaires=ouverts", "?commentaires=fermes"]) {
       expect(lireRouteStudio(chemin, q).vue).toBe("inconnue");
     }
     expect(lireRouteStudio("/studio/projets/p_1/etudes/s_2/variantes").vue).toBe("inconnue");
     expect(lireRouteStudio(`${chemin}/x`).vue).toBe("inconnue");
+  });
+
+  // I.4-03 (proposition, ADR-STUDIO-NAV-01 §1) : domaine et planche actifs, facultatifs et additifs.
+  it("variante : domaine actif, planche seulement avec domaine=dessin, combinables avec revision et commentaires, aller-retour exact", () => {
+    const base = { vue: "variante", projectId: "p_1", studyId: "s_2", variantId: "v_3", revisionId: null, commentaires: false };
+    for (const domaine of ["dessin", "bim", "visualisation", "documentation"] as const) {
+      const chemin = cheminVarianteStudio("p_1", "s_2", "v_3", null, { domaine });
+      expect(chemin).toBe(`/studio/projets/p_1/etudes/s_2/variantes/v_3?domaine=${domaine}`);
+      expect(lire(chemin)).toEqual({ ...base, domaine, planche: null });
+    }
+    for (const planche of ["2d", "3d"] as const) {
+      const chemin = cheminVarianteStudio("p_1", "s_2", "v_3", null, { domaine: "dessin", planche });
+      expect(chemin).toBe(`/studio/projets/p_1/etudes/s_2/variantes/v_3?domaine=dessin&planche=${planche}`);
+      expect(lire(chemin)).toEqual({ ...base, domaine: "dessin", planche });
+    }
+    // Une planche n'est jamais écrite hors de Dessin et modélisation.
+    expect(cheminVarianteStudio("p_1", "s_2", "v_3", null, { domaine: "bim", planche: "3d" })).toBe("/studio/projets/p_1/etudes/s_2/variantes/v_3?domaine=bim");
+    const tout = cheminVarianteStudio("p_1", "s_2", "v_3", "r_4", { commentaires: true, domaine: "dessin", planche: "3d" });
+    expect(tout).toBe("/studio/projets/p_1/etudes/s_2/variantes/v_3?revision=r_4&commentaires=ouverts&domaine=dessin&planche=3d");
+    expect(lire(tout)).toEqual({ ...base, revisionId: "r_4", commentaires: true, domaine: "dessin", planche: "3d" });
+    // Rétrocompatibilité : sans les nouveaux paramètres, l'adresse est exactement celle d'avant.
+    expect(cheminVarianteStudio("p_1", "s_2", "v_3", "r_4", { commentaires: true })).toBe("/studio/projets/p_1/etudes/s_2/variantes/v_3?revision=r_4&commentaires=ouverts");
+  });
+
+  it("variante : domaine ou planche inconnu, vide, répété, ou planche hors de dessin → adresse non reconnue", () => {
+    const chemin = "/studio/projets/p_1/etudes/s_2/variantes/v_3";
+    for (const q of ["?domaine=", "?domaine=x", "?domaine=Dessin", "?domaine=dessin&domaine=bim", "?domaine=bim&planche=3d", "?domaine=documentation&planche=2d",
+      "?planche=3d", "?domaine=dessin&planche=", "?domaine=dessin&planche=4d", "?domaine=dessin&planche=2d&planche=3d", "?domaine=dessin&x=1"]) {
+      expect(lireRouteStudio(chemin, q).vue, q).toBe("inconnue");
+    }
+    // Les paramètres de domaine ne valent que sur une variante.
+    expect(lireRouteStudio("/studio/projets/p_1", "?domaine=dessin").vue).toBe("inconnue");
+    expect(lireRouteStudio("/studio/projets/p_1/etudes/s_2", "?domaine=bim").vue).toBe("inconnue");
   });
 
   it("comparaison : sans paramètre, tête ou révision de chaque côté, aller-retour exact", () => {

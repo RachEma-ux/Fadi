@@ -5,8 +5,13 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Contrôle lourd du corpus Studio (job `corpus-lourd` seul) : à la demande et chaque semaine. Les autres jobs ne
+  # tournent que sur `push` / `pull_request` (condition en tête de leur `if`) : leur déclenchement est inchangé.
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * 1"
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '-corpus-lourd' || '' }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 permissions:
   contents: read
@@ -16,7 +21,7 @@ jobs:
   # réussit sans exécuter la recette et le dit dans son résumé : il peut donc être un contrôle requis.
   studio-v1-validation:
     name: Studio V1 — API, navigateur et réouverture sur PostGIS neuf
-    if: ${{ github.repository == 'RachEma-ux/Fadi' }}
+    if: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && github.repository == 'RachEma-ux/Fadi' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -203,7 +208,7 @@ jobs:
 
   validate:
     # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.
-    if: ${{ (!((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main'))) && !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'feat/156-studio-v1' && (github.base_ref == 'main' || github.base_ref == 'fix/157-test-database-guard')) }}
+    if: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && (!((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main'))) && !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'feat/156-studio-v1' && (github.base_ref == 'main' || github.base_ref == 'fix/157-test-database-guard')) }}
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -283,7 +288,7 @@ jobs:
   e2e-shard:
     name: e2e (${{ matrix.shard }})
     # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.
-    if: ${{ (!((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main'))) && !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'feat/156-studio-v1' && (github.base_ref == 'main' || github.base_ref == 'fix/157-test-database-guard')) }}
+    if: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && (!((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main'))) && !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'feat/156-studio-v1' && (github.base_ref == 'main' || github.base_ref == 'fix/157-test-database-guard')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
@@ -361,6 +366,11 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/studio-navigation.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des domaines Studio — quatre domaines de la référence, planches seulement dans Dessin et modélisation, domaine et planche dans l'adresse (proposition I.4-03), clavier, téléphone (apps/web/e2e/studio-domaines.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-domaines.mjs 2>&1 | tee -a e2e.log
       - name: Recette des publications Studio — cycle, approbation liée, approbation périmée 409, paquet figé, retrait journalisé, droits (apps/web/e2e/studio-publication.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |
@@ -386,6 +396,16 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-hors-ligne node apps/web/e2e/studio-hors-ligne.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du corpus S6 — étude à variantes et révisions créée par l'API, têtes, dossier et contrôles conformes à l'oracle (apps/web/e2e/studio-corpus-s6.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-corpus-s6.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du corpus S7 — session hors réseau puis reconnectée sur le corpus de départ, une révision, corpus intact (apps/web/e2e/studio-corpus-s7.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-corpus-s7 node apps/web/e2e/studio-corpus-s7.mjs 2>&1 | tee -a e2e.log
       - name: Recette du contrat de commandes Studio — deux comptes, aperçu annulé, conflit signalé et report revalidé, chevauchement confirmé, annulation concurrente, coupure rejouée, refus atomique (apps/web/e2e/studio-conflits.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |
@@ -420,6 +440,11 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/studio-dossier.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la matrice d'échanges Studio — commande Q, entrées livrées et reportées, couverture IFC par type, filtre, lecture seule (apps/web/e2e/studio-echanges.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-echanges.mjs 2>&1 | tee -a e2e.log
       - name: Recette des préférences de notification — type masqué, projet en sourdine, état lu relu (apps/web/e2e/notifications-preferences.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |
@@ -455,6 +480,31 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/atelier-complements.mjs 2>&1 | tee -a e2e.log
+      # MIG-01 à MIG-10, MIG-COEX-03/04/06 : simulation de migration vers Studio en lecture seule, sur une base NEUVE
+      # (fadi_mig) peuplée du jeu synthétique déclaré — jamais sur une base existante. La recette crée un rôle SELECT
+      # seul, compare l'empreinte de chaque table avant / après et exige le refus de toute écriture (25006, 42501).
+      - name: Simulation de migration — base neuve, jeu synthétique, lecture seule prouvée, rapport JSON + Markdown (scripts/migration/)
+        if: ${{ matrix.shard == 'complements' }}
+        env:
+          PGPASSWORD: fadi_ci_password
+        run: |
+          set -o pipefail
+          node --test scripts/migration/migration-lib.test.mjs
+          npx tsx --test scripts/migration/simulation-studio.test.mjs
+          psql -h localhost -U fadi -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS fadi_mig;" -c "CREATE DATABASE fadi_mig;"
+          psql -h localhost -U fadi -d fadi_mig -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+          DATABASE_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_mig npm run db:migrate
+          mkdir -p rapport-migration
+          FADI_JEU_SYNTHETIQUE=fadi_mig DATABASE_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_mig node scripts/migration/jeu-synthetique.mjs --file-locale rapport-migration/file-locale.json
+          MIG_ADMIN_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_mig MIG_BASE=fadi_mig MIG_SORTIE=rapport-migration npx tsx scripts/migration/recette-simulation.mjs 2>&1 | tee -a e2e.log
+      - name: Rapports de simulation de migration
+        if: ${{ always() && matrix.shard == 'complements' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulation-migration
+          path: rapport-migration/
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Recette de la disposition Canevas — ergonomie SketchUp Web (apps/web/e2e/atelier-canevas.mjs)
         if: ${{ matrix.shard == 'atelier' }}
         run: |
@@ -692,7 +742,7 @@ jobs:
   e2e:
     needs: e2e-shard
     # Même condition que les tranches : sauté exactement quand elles le sont.
-    if: ${{ always() && (!((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main'))) && !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'feat/156-studio-v1' && (github.base_ref == 'main' || github.base_ref == 'fix/157-test-database-guard')) }}
+    if: ${{ always() && (github.event_name == 'push' || github.event_name == 'pull_request') && (!((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main'))) && !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'feat/156-studio-v1' && (github.base_ref == 'main' || github.base_ref == 'fix/157-test-database-guard')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -705,7 +755,7 @@ jobs:
 
   image:
     # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.
-    if: ${{ (!((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main'))) && !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'feat/156-studio-v1' && (github.base_ref == 'main' || github.base_ref == 'fix/157-test-database-guard')) }}
+    if: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && (!((github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'docs/156-codex-missions-completes' && github.base_ref == 'main') || (github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'fix/157-test-database-guard' && github.base_ref == 'main'))) && !(github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'feat/156-studio-v1' && (github.base_ref == 'main' || github.base_ref == 'fix/157-test-database-guard')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
@@ -744,3 +794,25 @@ jobs:
         run: |
           docker logs fadi 2>&1 | tail -n 50
           if [ "${{ job.status }}" != "success" ]; then echo "::error title=image-log::$(docker logs fadi 2>&1 | tail -n 20 | tr '\n' '|' | cut -c1-900)"; fi
+
+  # Contrôle lourd du corpus de qualification Studio (X.1-10) : références visuelles à 10 000 et tout à 100 000
+  # primitives (`STUDIO_CORPUS_LOURD=1`), hors du chemin des PR. À la demande (workflow_dispatch) et chaque semaine.
+  corpus-lourd:
+    name: Corpus Studio lourd (10 000 / 100 000 primitives)
+    if: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.repository == 'RachEma-ux/Fadi' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - name: Corpus S1–S7 lourd — empreintes, oracles et références visuelles (npm run test:corpus-lourd)
+        run: npm run test:corpus-lourd

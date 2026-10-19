@@ -17,7 +17,7 @@ export type IdCommandeEditeur =
   | "accrochage-perpendiculaire" | "accrochage-tangente" | "accrochage-proche"
   | "reperage-orthogonal" | "reperage-polaire" | "pas-polaire"
   | "importer-dxf" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille" | "dossier"
-  | "exporter-png"
+  | "exporter-png" | "echanges"
   | "outils" | "palette"
   | "exigences";
 export type GroupeCommande = "edition" | "vue" | "accrochage" | "reperage" | "visualisation" | "import" | "export" | "presentation" | "catalogue" | "exigences";
@@ -31,7 +31,7 @@ export type IconeCommande =
   | "studio-snap-perpendicular" | "studio-snap-tangent" | "studio-snap-nearest"
   | "studio-track-ortho" | "studio-track-polar" | "studio-track-polar-step"
   | "studio-import-dxf" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet" | "studio-dossier"
-  | "studio-export-png"
+  | "studio-export-png" | "studio-exchanges"
   | "studio-catalog" | "studio-palette"
   | "studio-requirements";
 
@@ -100,6 +100,9 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "exporter-dxf", libelleFR: "Exporter DXF", raccourci: "Shift+X", iconeSymbolique: "studio-export-dxf", groupe: "export", ecrit: false, telechargement: "dxf" },
   // IFC4X3 des seuls objets extrudés (Maj+I : I comme IFC, libre et non réservé).
   { id: "exporter-ifc", libelleFR: "Exporter IFC", raccourci: "Shift+I", iconeSymbolique: "studio-export-ifc", groupe: "export", ecrit: false, telechargement: "ifc" },
+  // Matrice d'échanges (E.6-01 à E.6-05), en lecture seule : Q, dernière lettre seule libre (non réservée, hors des
+  // lettres d'outils) ; toutes les combinaisons Maj+lettre sont prises. Lecture admise.
+  { id: "echanges", libelleFR: "Matrice d’échanges", raccourci: "Q", iconeSymbolique: "studio-exchanges", groupe: "export", ecrit: false },
   // Feuille de présentation (format, échelle, cartouche) : Maj+P (P comme page) ; Ctrl+P reste l'impression du navigateur.
   { id: "feuille", libelleFR: "Feuille", raccourci: "Shift+P", iconeSymbolique: "studio-sheet", groupe: "presentation", ecrit: false },
   // Feuilles composées et dossier de conception (E.3) : Ctrl+Maj+D (D comme dossier) ; toutes les lettres Maj+… sont
