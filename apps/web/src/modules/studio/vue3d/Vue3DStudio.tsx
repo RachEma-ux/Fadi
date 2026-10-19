@@ -10,9 +10,18 @@
  * les commandes `studio.solide.*` du brouillon ; aucun geste de navigation ne modifie le document.
  * Coupe horizontale (A.3-07, Maj+K) : `couperStudio` à la cote saisie, dessinée en surimpression dérivée, non
  * modifiable, chaque contour rattaché à son solide. Studio n'importe aucun module de l'Atelier.
- * Maillage en tâche de fond (D.1/D.2, `taches/`) : `studioMesh3d` tourne dans le groupe de Workers ; le maillage
+ * Maillage en tâche de fond (D.1/D.2, `taches/`) : le maillage tourne dans le groupe de Workers ; le maillage
  * précédent reste affiché jusqu'au suivant et un maillage remplacé n'est jamais affiché. Ressources GPU libérées à
  * chaque reconstruction et au démontage (`ressources-gpu.ts`, D.3-02) ; compteurs exposés sur le canevas.
+ *
+ * Projections versionnées et invalidation minimale (lot C.2, `projections.ts` du modèle) : entre le document du cache
+ * et le document courant, `projectionsAInvalider` désigne les seuls objets à remailler (et leurs dépendants : hôte et
+ * ouvertures d'un mur, cotes liées, objets visés par une apparence) ; le Worker ne maille qu'eux
+ * (`maillage.3d.objets`), les autres morceaux sont repris du cache, et l'assemblage rend exactement `studioMesh3d`.
+ * Reconstruction complète quand l'exactitude l'exige (calques modifiés, ampleur). Côté GPU (`scene-rendu.ts`), chaque
+ * objet three.js est rangé sous la clé de contenu de son morceau et son aspect : seuls les objets dont la signature
+ * change sont reconstruits (et les remplacés libérés) ; murs et volumes extrudés sont fusionnés en lots stables dont la
+ * table de désignation (`picking.ts`) résout un clic vers le bon identifiant, jamais vers un objet supprimé.
  *
  * Visualisation (lot E.5, `scenes/`) : scènes enregistrées (caméra relevée de la vue, calques montrés, mode
  * d'affichage), rappelées sans modifier le modèle ; apparence d'affichage (couleur, finition) d'un calque ou d'un
@@ -24,13 +33,17 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
-  couperStudio, studioApparenceResolue, studioDocumentToutVisible, studioFiltrerMaillageScene, studioMesh3d, studioNomFichierRendu, studioProvenanceRendu, studioScenes, studioVolumeSolide,
-  type StudioCameraScene, type StudioCommand, type StudioCoupe, type StudioDocument, type StudioFinitionAffichage, type StudioMesh3d, type StudioModeAffichage, type StudioScene,
+  couperStudio, projectionsAInvalider, studioApparenceResolue, studioAssemblerMaillage, studioDocumentToutVisible, studioFiltrerMaillageScene, studioFusionnerMorceaux, studioMaillerObjets,
+  studioNomFichierRendu, studioProvenanceRendu, studioScenes, studioVersionProjection, studioVolumeSolide,
+  type StudioCacheMaillage, type StudioCameraScene, type StudioCommand, type StudioCoupe, type StudioDocument, type StudioFinitionAffichage, type StudioInvalidation, type StudioMesh3d,
+  type StudioModeAffichage, type StudioMorceauMaillage, type StudioScene,
 } from "@parcours/atelier-model";
 import { empreinteDe } from "../taches/empreinte";
 import { useTache } from "../taches/useTache";
 import { MESSAGES_TACHE } from "../taches/messages";
 import { compteGpu, libererObjet, vider } from "./ressources-gpu";
+import { cleAspect, objetsVolume, preparer, SceneRendu, type AspectVolume, type DonneesLot, type EntreeRendu, type GeometrieObjet } from "./scene-rendu";
+import { designer, type Impact } from "./picking";
 import { Icon } from "../../../components/Icon";
 import { estSelectionnable } from "../planche2d/calques";
 import { LOCALE } from "../../../lib/i18n";
@@ -42,7 +55,7 @@ import { CLE_PROVENANCE_PNG, insererTextePng } from "./scenes/png";
 import { PanneauVisualisation } from "./scenes/PanneauVisualisation";
 import {
   calquesVisualisation, cameraScene, commandeApparence, commandeMiseAJourScene, commandeNouvelleScene, commandeRetraitApparence, commandeSuppressionScene,
-  apparenceDe, couleurEntiere, hautCamera, MODE_INITIAL, parametresMateriau, prochainNomScene, type DemandeVue3d,
+  apparenceDe, couleurEntiere, hautCamera, MODE_INITIAL, prochainNomScene, type DemandeVue3d,
 } from "./scenes/scenes-ui";
 import "./vue3d.css";
 
@@ -87,6 +100,8 @@ interface Moteur {
   /** Murs (vides compris) et ouvertures (A.4), désignables. */
   architecture: THREE.Group;
   surimpression: THREE.Group;
+  /** Scènes de rendu incrémentales (C.2) des trois groupes. */
+  rendus: { contenu: SceneRendu; libres: SceneRendu; architecture: SceneRendu };
   rendre: () => void;
   /** Caméra déplacée (navigation, rappel) : la scène active est réévaluée. */
   surCamera: () => void;
@@ -99,69 +114,98 @@ const MAILLAGE_VIDE: StudioMesh3d = Object.freeze({
   frame: "local-3d", units: "m", source: { frame: "local-2d", conversion: "(x, y) → (x, y, z)" }, solids: [], outlines: [], nonExtruded: 0, hidden: 0, bounds: null,
 }) as StudioMesh3d;
 
-/** Aspect d'affichage d'un volume : couleur (apparence ou défaut de la vue), finition, mode d'affichage. */
-interface Aspect { couleur: number; finition?: StudioFinitionAffichage; mode: StudioModeAffichage; apparence: boolean }
-
-function solide(groupe: THREE.Group, s: { id: string; vertices: { x: number; y: number; z: number }[]; triangles: [number, number, number][]; edges: [number, number][] }, aspect: Aspect, double: boolean, libre: boolean) {
-  const g = new THREE.BufferGeometry();
-  g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(s.vertices.flatMap((v) => [v.x, v.y, v.z])), 3));
-  g.setIndex(s.triangles.flat());
-  g.computeVertexNormals();
-  const p = parametresMateriau(aspect.finition);
-  const matiere = new THREE.MeshStandardMaterial({ color: aspect.couleur, roughness: p.roughness, metalness: p.metalness, transparent: p.transparent, opacity: p.opacity, depthWrite: !p.transparent, flatShading: true, side: double || p.transparent ? THREE.DoubleSide : THREE.FrontSide });
-  // Filaire : la surface reste désignable (clic) mais n'est pas dessinée.
-  matiere.visible = aspect.mode !== "wireframe";
-  const surface = new THREE.Mesh(g, matiere);
-  surface.name = s.id;
-  if (libre) surface.userData.solide = s.id;
-  groupe.add(surface);
-  if (aspect.mode === "shaded") return;
-  const a = new THREE.BufferGeometry();
-  a.setAttribute("position", new THREE.BufferAttribute(new Float32Array(s.edges.flatMap(([i, j]) => [i, j].flatMap((k) => [s.vertices[k]!.x, s.vertices[k]!.y, s.vertices[k]!.z]))), 3));
-  groupe.add(new THREE.LineSegments(a, new THREE.LineBasicMaterial({ color: aspect.mode === "wireframe" && aspect.apparence ? aspect.couleur : 0x234f5b })));
-}
-
 /** Aspect d'un volume : la sélection l'emporte, puis l'apparence d'affichage (objet, sinon calque), puis le défaut. */
-function aspectDe(doc: StudioDocument, mode: StudioModeAffichage, o: { id: string; layerId?: string }, defaut: number, choisi: boolean): Aspect {
+function aspectDe(doc: StudioDocument, mode: StudioModeAffichage, o: { id: string; layerId?: string }, defaut: number, choisi: boolean, double = false): AspectVolume {
   const a = studioApparenceResolue(doc, o.id, o.layerId);
-  if (choisi) return { couleur: 0xf0b44c, mode, apparence: false };
-  return a ? { couleur: couleurEntiere(a.color), ...(a.finish ? { finition: a.finish } : {}), mode, apparence: true } : { couleur: defaut, mode, apparence: false };
+  if (choisi) return { couleur: 0xf0b44c, mode, apparence: false, double };
+  return a ? { couleur: couleurEntiere(a.color), ...(a.finish ? { finition: a.finish } : {}), mode, apparence: true, double } : { couleur: defaut, mode, apparence: false, double };
 }
 
-/** Murs opaques et ouvertures (boîte du vide, translucide) ; chaque maillage porte l'identifiant de son objet. */
-function construireArchitecture(m: Moteur, mesh: StudioMesh3d, selection: string | null, doc: StudioDocument, mode: StudioModeAffichage) {
-  vider(m.architecture);
-  for (const a of mesh.architecture ?? []) {
-    const choisi = a.id === selection;
-    const avant = m.architecture.children.length;
-    if (a.type === "wall") solide(m.architecture, a, aspectDe(doc, mode, a, 0xd8d2c4, choisi), false, false);
-    else {
-      const g = new THREE.BufferGeometry();
-      g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(a.vertices.flatMap((v) => [v.x, v.y, v.z])), 3));
-      g.setIndex(a.triangles.flat());
-      // Le vide d'une ouverture ne prend que l'apparence de l'ouverture elle-même (pas celle du calque de son mur).
-      const propre = studioApparenceResolue(doc, a.id, undefined);
-      const teinte = choisi ? 0xf0b44c : propre?.source === "object" ? couleurEntiere(propre.color) : 0x7fb2d6;
-      const vide = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: teinte, transparent: true, opacity: choisi ? 0.45 : 0.2, depthWrite: false }));
-      vide.name = a.id;
-      m.architecture.add(vide);
+/** Volume construit seul : surface (nommée, données de désignation) et arêtes selon le mode. */
+function volumeSeul(g: GeometrieObjet, aspect: AspectVolume, nom: string, donnees: Record<string, string>): THREE.Object3D[] {
+  const { surface, aretes } = objetsVolume([preparer(g)], aspect);
+  surface.name = nom;
+  const objets: THREE.Object3D[] = aretes ? [surface, aretes] : [surface];
+  for (const o of objets) Object.assign(o.userData, donnees);
+  return objets;
+}
+
+/** Ce que la scène de rendu lit : maillage affiché, clés de contenu de ses morceaux, document et réglages courants. */
+interface Lecture {
+  mesh: StudioMesh3d;
+  /** Clé de projection de chaque morceau affiché (signature de son objet three.js). */
+  cle: (id: string) => string;
+  doc: StudioDocument;
+  mode: StudioModeAffichage;
+  selection: string | null;
+  selectionArchitecture: string | null;
+  /** Objet encore présent dans le document courant (un objet supprimé disparaît sans attendre le maillage suivant). */
+  present: (id: string) => boolean;
+}
+
+/** Volumes des objets 2D extrudés (en lots) et contours plats (seuls). */
+function entreesContenu(l: Lecture): EntreeRendu[] {
+  const out: EntreeRendu[] = [];
+  for (const s of l.mesh.solids) {
+    if (!l.present(s.id)) continue;
+    out.push({ id: s.id, signature: l.cle(s.id), lot: "contenu", geometrie: s, aspect: aspectDe(l.doc, l.mode, s, s.type === "line" ? 0xd9d2c3 : 0xb9d3cf, false, s.kind === "wall-surface") });
+  }
+  for (const o of l.mesh.outlines) {
+    if (!l.present(o.id)) continue;
+    out.push({
+      id: o.id, signature: l.cle(o.id), construire: () => {
+        const g = new THREE.BufferGeometry().setFromPoints(o.points.map((p) => new THREE.Vector3(p.x, p.y, p.z)));
+        const mat = new THREE.LineDashedMaterial({ color: 0x8a6a3a, dashSize: 0.15, gapSize: 0.1 });
+        const ligne = o.closed ? new THREE.LineLoop(g, mat) : new THREE.Line(g, mat);
+        ligne.computeLineDistances();
+        return [ligne];
+      },
+    });
+  }
+  return out;
+}
+
+/** Solides libres, construits seuls et désignables. */
+function entreesLibres(l: Lecture): EntreeRendu[] {
+  return (l.mesh.freeSolids ?? []).filter((s) => l.present(s.id)).map((s) => {
+    const aspect = aspectDe(l.doc, l.mode, s, 0xc9bde3, s.id === l.selection);
+    return { id: s.id, signature: `${l.cle(s.id)}|${cleAspect(aspect)}`, construire: () => volumeSeul(s, aspect, s.id, { solide: s.id }) };
+  });
+}
+
+/**
+ * Murs opaques (en lots, sauf le mur sélectionné, construit seul à sa couleur de sélection) et ouvertures (boîte du
+ * vide, translucide, seule) ; chaque objet seul porte l'identifiant de son objet, chaque lot sa table de désignation.
+ */
+function entreesArchitecture(l: Lecture): EntreeRendu[] {
+  const out: EntreeRendu[] = [];
+  for (const a of l.mesh.architecture ?? []) {
+    if (!l.present(a.id)) continue;
+    const choisi = a.id === l.selectionArchitecture;
+    if (a.type === "wall") {
+      const aspect = aspectDe(l.doc, l.mode, a, 0xd8d2c4, choisi);
+      out.push(choisi
+        ? { id: a.id, signature: `${l.cle(a.id)}|${cleAspect(aspect)}`, construire: () => volumeSeul(a, aspect, a.id, { architecture: a.id }) }
+        : { id: a.id, signature: l.cle(a.id), lot: "mur", geometrie: a, aspect });
+      continue;
     }
-    for (const enfant of m.architecture.children.slice(avant)) enfant.userData.architecture = a.id;
+    // Le vide d'une ouverture ne prend que l'apparence de l'ouverture elle-même (pas celle du calque de son mur).
+    const propre = studioApparenceResolue(l.doc, a.id, undefined);
+    const teinte = choisi ? 0xf0b44c : propre?.source === "object" ? couleurEntiere(propre.color) : 0x7fb2d6;
+    out.push({
+      id: a.id, signature: `${l.cle(a.id)}|${teinte.toString(16)}|${choisi ? 1 : 0}`, construire: () => {
+        const g = new THREE.BufferGeometry();
+        const p = preparer(a);
+        g.setAttribute("position", new THREE.BufferAttribute(p.positions, 3));
+        g.setIndex(new THREE.BufferAttribute(p.index, 1));
+        const vide = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: teinte, transparent: true, opacity: choisi ? 0.45 : 0.2, depthWrite: false }));
+        vide.name = a.id;
+        vide.userData.architecture = a.id;
+        return [vide];
+      },
+    });
   }
-}
-
-function construire(m: Moteur, mesh: StudioMesh3d, selection: string | null, doc: StudioDocument, mode: StudioModeAffichage) {
-  vider(m.contenu);
-  vider(m.libres);
-  for (const s of mesh.solids) solide(m.contenu, s, aspectDe(doc, mode, s, s.type === "line" ? 0xd9d2c3 : 0xb9d3cf, false), s.kind === "wall-surface", false);
-  for (const o of mesh.outlines) {
-    const g = new THREE.BufferGeometry().setFromPoints(o.points.map((p) => new THREE.Vector3(p.x, p.y, p.z)));
-    const mat = new THREE.LineDashedMaterial({ color: 0x8a6a3a, dashSize: 0.15, gapSize: 0.1 });
-    const l = o.closed ? new THREE.LineLoop(g, mat) : new THREE.Line(g, mat);
-    l.computeLineDistances();
-    m.contenu.add(l);
-  }
-  for (const s of mesh.freeSolids ?? []) solide(m.libres, s, aspectDe(doc, mode, s, 0xc9bde3, s.id === selection), false, true);
+  return out;
 }
 
 /** Caméra relevée de la vue (repère de rendu = `local-3d`, conversion `cameraScene`). */
@@ -248,6 +292,32 @@ function poserControles(m: Moteur, navigation: Navigation3d) {
   m.controls = c;
 }
 
+/** Plan de maillage d'un document : cache de départ, invalidation, objets à mailler (null : tous). */
+interface PlanMaillage { doc: StudioDocument; base: StudioCacheMaillage | null; invalidation: StudioInvalidation; ids: string[] | null }
+/** Maillage assemblé : cache par objet, maillage complet, révision d'entrée et bilan du remaillage. */
+interface Assemble { cache: StudioCacheMaillage; mesh: StudioMesh3d; revision: string; remailles: number; invalidation: StudioInvalidation }
+/** Plans gardés en attente de leur résultat (une rafale de commandes en périme la plupart). */
+const PLANS_GARDES = 16;
+let sansCle = 0;
+
+/** Impact d'un rayon three.js : identifiant porté par l'objet seul, ou triangle d'un lot et sa table. */
+function impact(h: THREE.Intersection): Impact {
+  const lot = h.object.userData.lot as DonneesLot | undefined;
+  if (lot) return { distance: h.distance, table: lot.table, triangle: h.faceIndex ?? null };
+  const id = (h.object.userData.solide ?? h.object.userData.architecture) as string | undefined;
+  return id === undefined ? { distance: h.distance } : { distance: h.distance, id };
+}
+
+/** Centre à l'écran (coordonnées client) de l'objet `id` du maillage affiché ; null s'il n'est pas affiché. */
+function centreEcran(m: Moteur, mesh: StudioMesh3d, id: string): { x: number; y: number } | null {
+  const e = [...mesh.solids, ...(mesh.freeSolids ?? []), ...(mesh.architecture ?? [])].find((x) => x.id === id);
+  if (!e || !e.vertices.length) return null;
+  const b = new THREE.Box3().setFromPoints(e.vertices.map((v) => new THREE.Vector3(v.x, v.y, v.z)));
+  const c = b.getCenter(new THREE.Vector3()).project(m.camera);
+  const r = m.renderer.domElement.getBoundingClientRect();
+  return { x: r.left + ((c.x + 1) / 2) * r.width, y: r.top + ((1 - c.y) / 2) * r.height };
+}
+
 function Champ({ nom, libelle, valeur, surValeur, requis = true }: { nom: string; libelle: string; valeur: number; surValeur: (v: number) => void; requis?: boolean }) {
   return <label>{libelle}
     <input type="number" step="any" required={requis} name={nom} value={Number.isFinite(valeur) ? valeur : ""} onChange={(e) => surValeur(e.target.value === "" ? Number.NaN : e.target.valueAsNumber)} />
@@ -282,11 +352,35 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const montreScene = calquesMontres !== null;
   const docMaillage = useMemo(() => (montreScene ? studioDocumentToutVisible(doc) : doc), [doc, montreScene]);
   const empreinte = empreinteDe(docMaillage);
-  const maillage = useTache<{ document: StudioDocument }, StudioMesh3d>(
-    { cle: "studio.maillage-3d", classe: "fond", nature: "maillage.3d", charge: { document: docMaillage }, empreinte },
-    { initial: () => studioMesh3d(docMaillage) },
+  // Invalidation minimale (C.2) : plan de maillage du document courant, relatif au dernier cache assemblé ; le Worker ne
+  // maille que les objets invalidés (tous pour une reconstruction complète). Plans gardés par révision, le temps que leur
+  // résultat arrive.
+  const base = useRef<Assemble | null>(null);
+  const plans = useRef(new Map<string, PlanMaillage>());
+  const plan = useMemo<PlanMaillage>(() => {
+    const b = base.current;
+    const invalidation = projectionsAInvalider(b?.cache.doc ?? null, docMaillage);
+    return { doc: docMaillage, base: b?.cache ?? null, invalidation, ids: invalidation.complet ? null : invalidation.ids };
+  }, [docMaillage]);
+  if (!plans.current.has(empreinte.revision)) {
+    plans.current.set(empreinte.revision, plan);
+    for (const k of plans.current.keys()) if (plans.current.size > PLANS_GARDES) plans.current.delete(k);
+  }
+  const maillage = useTache<{ document: StudioDocument; ids: string[] | null }, StudioMorceauMaillage[]>(
+    { cle: "studio.maillage-3d", classe: "fond", nature: "maillage.3d.objets", charge: { document: docMaillage, ids: plan.ids }, empreinte },
+    { initial: () => studioMaillerObjets(docMaillage, plan.ids) },
   );
-  const brut = maillage.valeur ?? MAILLAGE_VIDE;
+  const dernier = useRef<Assemble | null>(null);
+  const assemble = useMemo<Assemble | null>(() => {
+    const p = maillage.revision === null ? undefined : plans.current.get(maillage.revision);
+    if (!maillage.valeur || !p || maillage.revision === null) return dernier.current;
+    const cache = studioFusionnerMorceaux(p.base, p.doc, p.invalidation, maillage.valeur);
+    return { cache, mesh: studioAssemblerMaillage(p.doc, cache.morceaux), revision: maillage.revision, remailles: maillage.valeur.length, invalidation: p.invalidation };
+  }, [maillage.valeur, maillage.revision]);
+  dernier.current = assemble;
+  useEffect(() => { if (assemble) base.current = assemble; }, [assemble]);
+  const brut = assemble?.mesh ?? MAILLAGE_VIDE;
+  const version = useMemo(() => (assemble ? studioVersionProjection(assemble.cache.doc, "maillage-3d", assemble.revision) : null), [assemble]);
   const mesh = useMemo(() => (calquesMontres && brut !== MAILLAGE_VIDE ? studioFiltrerMaillageScene(brut, calquesMontres) : brut), [brut, calquesMontres]);
   /** Le maillage affiché est celui du document courant (pas un maillage antérieur encore affiché pendant le calcul). */
   const maillageAJour = maillage.valeur !== undefined && maillage.revision === empreinte.revision;
@@ -310,14 +404,25 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       if (p) { setBoite((v) => ({ ...v, x: auCentimetre(p.x), y: auCentimetre(p.y), z: 0 })); setErreur(""); }
       return;
     }
-    const touche = rayon.intersectObjects(m.libres.children, false).find((h) => typeof h.object.userData.solide === "string");
+    // Désignation (C.2-02, C.2-03) : objet seul par son identifiant, lot par sa table (triangle → identifiant) ; un
+    // identifiant absent du document courant (objet supprimé, maillage affiché encore antérieur) laisse passer l'objet
+    // derrière, jamais un identifiant périmé.
+    const solidesCourants = new Set((doc.solides ?? []).map((x) => x.id));
+    const touche = designer(rayon.intersectObjects(m.libres.children, false).filter((h) => h.object instanceof THREE.Mesh).map(impact), (id) => solidesCourants.has(id));
     // Mur ou ouverture (A.4) : l'ouverture, boîte du vide, l'emporte sur le mur qu'elle traverse.
     // Seuls les murs et ouvertures d'un calque affiché et déverrouillé se désignent (comme sur la planche 2D).
-    const designables = new Set((mesh.architecture ?? []).filter((a) => estSelectionnable(doc, a.layerId)).map((a) => a.id));
-    const touches = rayon.intersectObjects(m.architecture.children, false).filter((h) => h.object instanceof THREE.Mesh && designables.has(h.object.userData.architecture as string));
-    const archi = touches.find((h) => mesh.architecture?.some((a) => a.id === h.object.userData.architecture && a.type === "opening")) ?? touches[0];
-    if (archi && (!touche || archi.distance <= touche.distance)) { surSelectionArchitecture?.(archi.object.userData.architecture as string); return; }
-    surSelection?.((touche?.object.userData.solide as string | undefined) ?? null);
+    const archiCourante = new Map((doc.architecture ?? []).map((x) => [x.id, x]));
+    const affiches = new Set((mesh.architecture ?? []).map((a) => a.id));
+    const designable = (id: string) => {
+      const a = archiCourante.get(id);
+      if (!a || !affiches.has(id)) return false;
+      const hote = a.type === "wall" ? a : archiCourante.get(a.hostId);
+      return hote?.type === "wall" && estSelectionnable(doc, hote.layerId);
+    };
+    const impacts = rayon.intersectObjects(m.architecture.children, false).filter((h) => h.object instanceof THREE.Mesh).map(impact);
+    const archi = designer(impacts, (id) => designable(id) && archiCourante.get(id)?.type === "opening") ?? designer(impacts, designable);
+    if (archi && (!touche || archi.distance <= touche.distance)) { surSelectionArchitecture?.(archi.id); return; }
+    surSelection?.(touche?.id ?? null);
   };
 
   useEffect(() => {
@@ -346,6 +451,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     scene.add(contenu, libres, architecture, surimpression);
     const m: Moteur = {
       renderer, scene, perspective, plan, camera: perspective, controls: null, contenu, libres, architecture, surimpression,
+      rendus: { contenu: new SceneRendu(contenu), libres: new SceneRendu(libres), architecture: new SceneRendu(architecture) },
       rendre: () => {
         renderer.render(scene, m.camera);
         // Compteurs GPU (recette D.3-02) : ils reviennent à leur ligne de base après chaque reconstruction.
@@ -384,6 +490,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       m.controls?.removeEventListener("change", m.rendre);
       m.controls?.removeEventListener("change", m.surCamera);
       m.controls?.dispose();
+      m.rendus.contenu.vider(); m.rendus.libres.vider(); m.rendus.architecture.vider();
       vider(contenu); vider(libres); vider(architecture); vider(surimpression);
       libererObjet(grille);
       renderer.forceContextLoss();
@@ -410,11 +517,29 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
 
   useEffect(() => {
     const m = moteur.current; if (!m) return;
-    construire(m, mesh, selection, doc, mode);
-    construireArchitecture(m, mesh, selectionArchitecture, doc, mode);
+    const morceaux = assemble?.cache.morceaux;
+    const presents = new Set([...doc.objects.map((o) => o.id), ...(doc.solides ?? []).map((o) => o.id), ...(doc.architecture ?? []).map((o) => o.id)]);
+    const l: Lecture = {
+      mesh, doc, mode, selection, selectionArchitecture, present: (id) => presents.has(id),
+      // Clé de contenu du morceau ; à défaut (jamais pour un maillage assemblé), une clé unique force la reconstruction.
+      cle: (id) => morceaux?.get(id)?.cle ?? `?${++sansCle}`,
+    };
+    const v = version ? `${version.revision}:${version.contenu}` : "";
+    const bilans = [m.rendus.contenu.mettreAJour(entreesContenu(l), v), m.rendus.libres.mettreAJour(entreesLibres(l), v), m.rendus.architecture.mettreAJour(entreesArchitecture(l), v)];
+    const el = m.renderer.domElement;
+    el.dataset.studioRenduReconstruits = String(bilans.reduce((n, b) => n + b.construits + b.lotsConstruits, 0));
+    el.dataset.studioRenduConserves = String(bilans.reduce((n, b) => n + b.conserves, 0));
+    el.dataset.studioRenduLots = String(m.rendus.contenu.taille.lots + m.rendus.architecture.taille.lots);
     if (!cadre.current && mesh !== MAILLAGE_VIDE) { cadrer(m, mesh); cadre.current = true; }
     else m.rendre();
-  }, [mesh, selection, selectionArchitecture, indisponible, doc, mode]);
+  }, [mesh, assemble, version, selection, selectionArchitecture, indisponible, doc, mode]);
+
+  // Recette (C.2-03) : position à l'écran du centre d'un objet affiché, pour cliquer là où il est (ou était).
+  useEffect(() => {
+    const crochet = { ecran: (id: string) => { const m = moteur.current; return m ? centreEcran(m, mesh, id) : null; } };
+    (globalThis as { __fadiVue3d?: unknown }).__fadiVue3d = crochet;
+    return () => { if ((globalThis as { __fadiVue3d?: unknown }).__fadiVue3d === crochet) delete (globalThis as { __fadiVue3d?: unknown }).__fadiVue3d; };
+  }, [mesh]);
 
   useEffect(() => {
     const m = moteur.current; if (!m) return;
@@ -544,7 +669,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const libres = mesh.freeSolids?.length ?? 0;
   const architecture = mesh.architecture ?? [];
   return (
-    <section className="studio-vue3d" aria-label="Vue 3D" data-studio-vue3d data-studio-maillage={maillage.etat} data-studio-maillage-revision={maillage.revision ?? ""} data-studio-revision-courante={empreinte.revision} data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-architecture-3d={architecture.length} data-studio-navigation={navigation}
+    <section className="studio-vue3d" aria-label="Vue 3D" data-studio-vue3d data-studio-maillage={maillage.etat} data-studio-maillage-revision={maillage.revision ?? ""} data-studio-revision-courante={empreinte.revision}
+      data-studio-projection-version={version ? `${version.revision}:${version.contenu}` : ""} data-studio-remailles={assemble?.remailles ?? ""} data-studio-invalidation={assemble ? (assemble.invalidation.complet ? `complet:${assemble.invalidation.raison}` : "partiel") : ""} data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-architecture-3d={architecture.length} data-studio-navigation={navigation}
       data-studio-affichage={mode} data-studio-scene-active={sceneActive ?? ""} data-studio-calques-montres={calquesMontres?.join(" ") ?? ""}>
       <div className="studio-vue3d-bandeau">
         <span role="status" data-studio-vue3d-decompte><span>{`${mesh.solids.length} volume(s)`}</span>{" · "}<span>{`${mesh.nonExtruded} objet(s) non extrudé(s), dessinés à plat`}</span>{libres > 0 && <>{" · "}<span>{`${libres} solide(s) libre(s)`}</span></>}</span>
