@@ -18,6 +18,15 @@ export function listeCalques(doc: StudioDocument): CalqueAffiche[] {
   return [{ id: STUDIO_DEFAULT_LAYER_ID, name: NOM_CALQUE_DEFAUT, visible: true, locked: false, implicite: true }, ...layers];
 }
 
+/**
+ * Calque actif effectif : le calque demandé s'il existe encore, sinon le premier calque de la liste (repli après une
+ * annulation, une version serveur rechargée ou un calque disparu). `repli` vrai quand le calque demandé a disparu.
+ */
+export function calqueActifOuPremier<C extends { id: string }>(calques: readonly C[], demande: string): { calque: C | undefined; repli: boolean } {
+  const trouve = calques.find((c) => c.id === demande);
+  return trouve ? { calque: trouve, repli: false } : { calque: calques[0], repli: calques.length > 0 };
+}
+
 /** Un objet sur un calque inconnu n'est ni affiché ni modifiable (le modèle le refuserait). */
 export const estVisible = (doc: StudioDocument, layerId: string | undefined): boolean => studioLayerState(doc, layerId)?.visible ?? false;
 export const estVerrouille = (doc: StudioDocument, layerId: string | undefined): boolean => studioLayerState(doc, layerId)?.locked ?? true;

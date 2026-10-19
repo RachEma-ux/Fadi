@@ -36,7 +36,10 @@ import { StudioRefus } from "./studio-ecrans";
 import { BarreOutils } from "./planche2d/BarreOutils";
 import { annulerBrouillon, appliquerBrouillon, commandesEnAttente, creerBrouillon, documentBrouillon, messageRefus, peutAnnuler, peutRetablir, retablirBrouillon, type Brouillon } from "./planche2d/brouillon";
 import { commandeDisponible, outilDisponible } from "./variante/disponibilite";
-import { commandeReglage, estVisible, layerIdPour, listeCalques, prochainNomCalque } from "./planche2d/calques";
+import { calqueActifOuPremier, commandeReglage, estVisible, layerIdPour, listeCalques, prochainNomCalque } from "./planche2d/calques";
+import { ListeElements } from "./planche2d/ListeElements";
+import { AvisRevision } from "./variante/AvisRevision";
+import { useFocusConserve } from "./variante/useFocusConserve";
 import type { EntreeCatalogue } from "./planche2d/catalogue";
 import { Dessin2D, type PointPose } from "./planche2d/Dessin2D";
 import { cadrer, emprise } from "./planche2d/geometrie-2d";
@@ -113,6 +116,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     surRebase: (accuse, rebase) => { setContext(accuse); setBrouillon(rebase); cancelTrace(); },
   });
   const { pending, uncertain, blocked } = enr;
+  useFocusConserve(pending);
   dirty.current = commands.length > 0 || !!trace || pending || uncertain;
   const writable = !historical && !!context?.canWrite && !pending && !uncertain && !blocked;
   // Données réelles du cartouche de la feuille (mêmes clés que le fil d'Ariane et l'historique : cache partagé).
@@ -130,7 +134,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const itemDe = (id: string | undefined) => (id && drawing ? drawing.objects.find(o => o.id === id) ?? drawing.dimensions?.find(d => d.id === id) ?? null : null);
   const selected = selectionIds.length === 1 ? itemDe(selectionIds[0]) : null;
   const calques = drawing ? listeCalques(drawing) : [];
-  const actif = calques.find(c => c.id === calqueActif) ?? calques[0];
+  const { calque: actif, repli: calqueReplie } = calqueActifOuPremier(calques, calqueActif);
+  // Le calque actif a disparu : le premier calque devient réellement actif (il ne reviendra pas seul après un rétablir).
+  useEffect(() => { if (calqueReplie && actif) setCalqueActif(actif.id); }, [calqueReplie, actif?.id]);
   // Le champ de renommage reprend le nom du calque actif quand celui-ci change (choix, création, annulation).
   useEffect(() => { if (actif) setNomCalque(actif.name); }, [actif?.id, actif?.name]);
 
@@ -358,6 +364,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     <EnTeteStudio context={context} />
     <AlerteStudio error={error} blocked={blocked && !enr.horsLigne.conflit} surRecharger={() => void enr.rechargerServeur()} />
     {loading && <p role="status">Chargement de la planche…</p>}
+    {context && drawing && !historical && <AvisRevision projectId={projectId} studyId={studyId} variantId={variantId} teteAffichee={context.variant.headRevisionId} actif={!pending && !blocked && !uncertain && !enr.horsLigne.conflit} nonEnregistre={commands.length > 0}
+      surRecharger={async () => { const c = await api.studioContext(projectId, studyId, variantId); if (!alive.current) return; setContext(c); setBrouillon(creerBrouillon(c.revision.document)); cancelTrace(); enr.setSaved(false); setError(""); }} />}
     {context && drawing && <><BandeauVariante projectId={projectId} studyId={studyId} variantId={variantId} context={context} historical={historical} etat={etat} commentaires={commentaires} surCommentaires={() => setCommentaires(v => !v)}
       connexion={{ etat: enr.horsLigne, surRecharger: () => void enr.rechargerServeur(), surReporter: () => void enr.reporter() }} />
     <BarreOutils outil={tool} outilDisponible={toolAvailable} commandeDisponible={commandAvailable} libelleCommande={uncertain ? { enregistrer: "Réessayer la sauvegarde" } : undefined}
@@ -381,6 +389,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
         values={values} surValeur={(k, v) => setValues(x => ({ ...x, [k]: v }))} modeArc={modeArc} surModeArc={m => { setModeArc(m); cancelTrace(); }}
         sommetsTexte={sommetsTexte} surSommets={setSommetsTexte} fermee={fermee} surFermee={setFermee} surSoumettre={numeric} />}
       calques={<PanneauCalques doc={drawing} actif={actif?.id ?? STUDIO_DEFAULT_LAYER_ID} modifiable={writable} nom={nomCalque} nomRef={nomRef} surActif={id => setCalqueActif(id)} surNom={setNomCalque} surReglage={setLayer} surRenommer={renameLayer} />} /></div>
+    <ListeElements doc={drawing} selection={selectionIds} modifiable={writable} surSelection={select} surSupprimer={() => runTool("studio.dessin.supprimer")} />
     {commentaires && <div id="studio-commentaires"><PanneauCommentaires projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} revision={context.revision.document} dessin={drawing}
       selection={selectionIds} canWrite={!historical && context.canWrite} surSelection={ids => { setTool("studio.dessin.selection"); cancelTrace(); select(ids); }} /></div>}
     <RevisionsPanel projectId={projectId} studyId={studyId} variantId={variantId} headRevisionId={context.variant.headRevisionId} shownRevisionId={context.revision.id} />
