@@ -127,82 +127,92 @@ jobs:
 
       - name: Install cloudflared
         run: |
-          curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
+          curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
           chmod +x cloudflared
+          ./cloudflared --version
 
       - name: Publish a public URL
         run: |
           set -uo pipefail
 
-          # The free Cloudflare quick-tunnel API is best-effort and
-          # occasionally returns a 500 that kills cloudflared before any URL
-          # is published. Retry the whole tunnel a few times rather than
-          # fail the deploy on one transient blip.
+          # cloudflared affiche l'adresse *.trycloudflare.com AVANT d'avoir ouvert sa connexion vers Cloudflare : une
+          # adresse affichée n'est donc pas une adresse qui répond (run 39243674363 : 30 essais dns=non http=000, URL
+          # publiée quand même, DNS_PROBE_FINISHED_NXDOMAIN sur le téléphone). Une tentative n'est retenue que si la
+          # connexion est enregistrée, si le nom répond sur 1.1.1.1 et 8.8.8.8 et si l'application répond (HTTP 200)
+          # à travers le tunnel ; sinon le tunnel est arrêté et relancé (nouvelle adresse). Après 3 échecs, le job
+          # échoue : aucune adresse morte n'est annoncée.
+          # --protocol http2 (TCP 443) : le protocole par défaut, QUIC (UDP 7844), est souvent mal acheminé depuis les
+          # runners GitHub et laisse le tunnel sans connexion.
           TUNNEL_URL=""
           TUNNEL_PID=""
-          for outer in $(seq 1 3); do
-            echo "🌐 Starting Cloudflare tunnel (attempt ${outer}/3)..."
-            : > tunnel.log
-            ./cloudflared tunnel --url http://localhost:3001 >> tunnel.log 2>&1 &
-            TUNNEL_PID=$!
-
-            for attempt in $(seq 1 12); do
-              if ! kill -0 "$TUNNEL_PID" 2>/dev/null; then
-                echo "⚠️ cloudflared exited before publishing a URL on attempt ${outer}"
-                cat tunnel.log || true
-                break
-              fi
-              TUNNEL_URL=$(grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' tunnel.log | head -1 || true)
-              if [ -n "$TUNNEL_URL" ]; then
-                echo "✅ Tunnel URL published on outer ${outer}, inner ${attempt}"
-                break
-              fi
-              echo "⌛ Waiting for tunnel URL (outer ${outer}, inner ${attempt}/12)..."
-              sleep 5
-            done
-
-            if [ -n "$TUNNEL_URL" ]; then
-              break
-            fi
+          READY=""
+          stop_tunnel() {
             if [ -n "$TUNNEL_PID" ] && kill -0 "$TUNNEL_PID" 2>/dev/null; then
               kill "$TUNNEL_PID" 2>/dev/null || true
               wait "$TUNNEL_PID" 2>/dev/null || true
             fi
-            [ "$outer" -lt 3 ] && { echo "🔁 Retrying cloudflared in 10s..."; sleep 10; }
+          }
+          for outer in $(seq 1 3); do
+            echo "🌐 Starting Cloudflare tunnel (attempt ${outer}/3)..."
+            : > tunnel.log
+            ./cloudflared tunnel --no-autoupdate --protocol http2 --url http://localhost:3001 >> tunnel.log 2>&1 &
+            TUNNEL_PID=$!
+            TUNNEL_URL=""
+
+            # 1. Adresse affichée et connexion enregistrée (90 s au plus).
+            REGISTERED=""
+            for attempt in $(seq 1 18); do
+              if ! kill -0 "$TUNNEL_PID" 2>/dev/null; then
+                echo "⚠️ cloudflared s'est arrêté (tentative ${outer})"
+                break
+              fi
+              TUNNEL_URL=$(grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' tunnel.log | head -1 || true)
+              grep -q 'Registered tunnel connection' tunnel.log && REGISTERED=1
+              if [ -n "$TUNNEL_URL" ] && [ -n "$REGISTERED" ]; then
+                echo "✅ Adresse ${TUNNEL_URL} et connexion enregistrée (tentative ${outer}, ${attempt} essai(s))"
+                break
+              fi
+              echo "⌛ Tunnel (tentative ${outer}, essai ${attempt}/18) : adresse=${TUNNEL_URL:-aucune} connexion=${REGISTERED:-non}"
+              sleep 5
+            done
+
+            # 2. Nom résolu sur des résolveurs publics et application servie à travers le tunnel (120 s au plus).
+            # Le nom vient d'être créé : un téléphone qui l'ouvre trop tôt garde quelques minutes une réponse négative
+            # (DNS_PROBE_FINISHED_NXDOMAIN). On n'annonce l'adresse qu'une fois qu'elle répond.
+            if [ -n "$TUNNEL_URL" ] && [ -n "$REGISTERED" ]; then
+              HOST="${TUNNEL_URL#https://}"
+              for attempt in $(seq 1 24); do
+                DNS_OK=""
+                if command -v dig >/dev/null 2>&1; then
+                  [ -n "$(dig +short +time=3 +tries=1 "$HOST" @1.1.1.1 2>/dev/null)" ] && [ -n "$(dig +short +time=3 +tries=1 "$HOST" @8.8.8.8 2>/dev/null)" ] && DNS_OK=1
+                else
+                  getent hosts "$HOST" >/dev/null 2>&1 && DNS_OK=1
+                fi
+                HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$TUNNEL_URL/" 2>/dev/null || true)
+                if [ -n "$DNS_OK" ] && [ "$HTTP_CODE" = "200" ]; then
+                  READY=1
+                  echo "✅ Nom résolu sur 1.1.1.1 et 8.8.8.8, application servie à travers le tunnel (HTTP ${HTTP_CODE}) après ${attempt} essai(s)"
+                  break
+                fi
+                echo "⌛ Propagation DNS / tunnel (tentative ${outer}, essai ${attempt}/24) : dns=${DNS_OK:-non} http=${HTTP_CODE:-000}"
+                sleep 5
+              done
+            fi
+
+            [ -n "$READY" ] && break
+            echo "⚠️ Tentative ${outer} sans adresse joignable — journal de cloudflared :"
+            tail -n 40 tunnel.log || true
+            stop_tunnel
+            [ "$outer" -lt 3 ] && { echo "🔁 Nouveau tunnel dans 10 s..."; sleep 10; }
           done
 
-          if [ -z "$TUNNEL_URL" ]; then
-            echo "❌ Tunnel URL was not published after 3 attempts"
-            cat tunnel.log || true
+          if [ -z "$READY" ]; then
+            echo "❌ Aucun tunnel joignable après 3 tentatives : aucune URL n'est publiée (voir le journal de cloudflared ci-dessus et l'artefact des journaux)."
             exit 1
           fi
 
           echo "$TUNNEL_URL" > app_url.txt
           echo "$TUNNEL_PID" > tunnel.pid
-
-          # Le nom *.trycloudflare.com vient d'être créé : un téléphone qui l'ouvre dans la foulée reçoit
-          # souvent « DNS_PROBE_FINISHED_NXDOMAIN » (propagation + cache négatif du résolveur). On attend que
-          # le nom réponde sur des résolveurs publics et que l'application réponde à travers le tunnel avant
-          # d'annoncer l'URL — la durée demandée court à partir de ce moment-là.
-          HOST="${TUNNEL_URL#https://}"
-          READY=""
-          for attempt in $(seq 1 30); do
-            DNS_OK=""
-            if command -v dig >/dev/null 2>&1; then
-              [ -n "$(dig +short +time=3 +tries=1 "$HOST" @1.1.1.1 2>/dev/null)" ] && [ -n "$(dig +short +time=3 +tries=1 "$HOST" @8.8.8.8 2>/dev/null)" ] && DNS_OK=1
-            else
-              getent hosts "$HOST" >/dev/null 2>&1 && DNS_OK=1
-            fi
-            HTTP_CODE=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "$TUNNEL_URL/" 2>/dev/null || echo 000)
-            if [ -n "$DNS_OK" ] && [ "$HTTP_CODE" = "200" ]; then
-              READY=1
-              echo "✅ Nom résolu sur 1.1.1.1 et 8.8.8.8, application servie à travers le tunnel (HTTP ${HTTP_CODE}) après ${attempt} essai(s)"
-              break
-            fi
-            echo "⌛ Propagation DNS / tunnel (essai ${attempt}/30) : dns=${DNS_OK:-non} http=${HTTP_CODE}"
-            sleep 5
-          done
-          [ -n "$READY" ] || echo "⚠️ Le nom ou le tunnel ne répond pas encore depuis le runner après 150 s : l'URL est publiée quand même, réessayez après une minute."
 
           # Annotation du job : l'URL est lisible par l'API GitHub (check-runs) dès cette étape,
           # sans attendre la fin du run ni ouvrir les journaux.
