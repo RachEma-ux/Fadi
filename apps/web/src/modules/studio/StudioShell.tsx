@@ -263,11 +263,49 @@ function StudioProjet({ projectId, archives }: { projectId: string; archives: bo
           ))}
         </ul>
       )}
+      {p.role === "proprietaire" && p.sourceExampleId === EXEMPLE_P118 && etudes.data?.studies.length === 0 && <ChargerExempleP118 projectId={p.id} />}
       <ApercuDomaines ouvert={etudes.data?.studies.length === 0} />
       {lecteur
         ? <p data-studio-lecture-seule>Ce projet vous est partagé en lecture : la création d’études est réservée à son propriétaire et à ses éditeurs.</p>
         : <CreerEtude projectId={p.id} indisponible={etudes.isError} />}
     </section>
+  );
+}
+
+/** Exemple importable P.118 : seul exemple dont le serveur sait installer une étude Studio (`lib/studio-exemple.ts`). */
+const EXEMPLE_P118 = "p118-exemple-complet";
+
+/**
+ * « Charger l’exemple Studio P.118 » : ACTION DE PAGE (comme « Créer l’étude »), pas un outil d’éditeur — elle ne
+ * figure donc ni au registre des outils, ni dans une barre, et n’a pas de raccourci (la règle d’or porte sur les outils
+ * et commandes de l’éditeur). Propriétaire seulement, projet issu de l’exemple sans étude : le serveur installe l’étude
+ * exemple (une variante par niveau, par le contrat de commandes), de façon idempotente, puis l’étude s’ouvre.
+ */
+function ChargerExempleP118({ projectId }: { projectId: string }) {
+  const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState("");
+  const navigate = useNavigate();
+  const client = useQueryClient();
+  async function charger() {
+    if (enCours) return;
+    setEnCours(true); setErreur("");
+    try {
+      const r = await api.installStudioExample(projectId);
+      await client.invalidateQueries({ queryKey: ["studio-studies", projectId] });
+      navigate(cheminEtudeStudio(projectId, r.etude.study.id));
+    } catch (err) {
+      setErreur(err instanceof ApiError && err.status < 500 ? "Chargement refusé par le serveur." : "Chargement non confirmé. Réessayez : l’installation reprend sans doublon.");
+    } finally {
+      setEnCours(false);
+    }
+  }
+  return (
+    <div className="studio-create" data-studio-exemple-p118>
+      <h3>Exemple Studio</h3>
+      <p>Ce projet vient de l’exemple P.118 : son étude exemple dessine chaque niveau à partir des plans de l’exemple (murs, ouvertures, cotes, textes, contours). Ce que Studio ne sait pas représenter est déclaré absent, jamais simulé.</p>
+      <button type="button" disabled={enCours} onClick={() => void charger()} data-studio-charger-exemple>{enCours ? "Chargement de l’exemple…" : "Charger l’exemple Studio P.118"}</button>
+      {erreur && <p role="alert">{erreur}</p>}
+    </div>
   );
 }
 

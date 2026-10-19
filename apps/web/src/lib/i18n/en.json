@@ -1,4 +1,10 @@
 {
+"Exemple Studio": "Studio example",
+"Ce projet vient de l’exemple P.118 : son étude exemple dessine chaque niveau à partir des plans de l’exemple (murs, ouvertures, cotes, textes, contours). Ce que Studio ne sait pas représenter est déclaré absent, jamais simulé.": "This project comes from the P.118 example: its example study draws each level from the example's plans (walls, openings, dimensions, texts, outlines). What Studio cannot represent is declared absent, never simulated.",
+"Charger l’exemple Studio P.118": "Load the P.118 Studio example",
+"Chargement de l’exemple…": "Loading the example…",
+"Chargement refusé par le serveur.": "Loading refused by the server.",
+"Chargement non confirmé. Réessayez : l’installation reprend sans doublon.": "Loading not confirmed. Try again: the installation resumes without duplicates.",
 "Domaines et outils du Studio": "Studio domains and tools",
 "Les planches et les outils de travail s’ouvrent dans l’espace de travail d’une variante. Ouvrez une étude, ou créez-en une : elle ouvre sa variante initiale avec ces quatre domaines.": "The boards and working tools open in a variant's workspace. Open a study, or create one: it opens its initial variant with these four domains.",
 "Communs aux domaines (rattachement à définir)": "Shared by the domains (assignment to be decided)",
