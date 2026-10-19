@@ -1,7 +1,7 @@
 # Fadi — préproduction isolée (projet Docker Compose « fadi-preprod »).
 # Même image que la production (Dockerfile racine), base PostGIS propre, volumes et réseaux propres, aucune ressource de
-# la production référencée. Ne se pilote que par `fadi-preprod` (deploy/preprod/fadi-preprod), qui fournit FADI_SRC
-# (copie de travail figée sur un commit), FADI_COMMIT, FADI_PREPROD_OUT et le fichier d'environnement de la préproduction.
+# la production référencée, aucun montage de l'hôte. Ne se pilote que par `fadi-preprod` (deploy/preprod/fadi-preprod),
+# qui fournit FADI_SRC (copie de travail figée sur le commit approuvé), FADI_COMMIT et le fichier d'environnement.
 #
 # Exposition : 127.0.0.1:3101 seulement (hôte). L'accès public preprod.fadimmo.com passe par proxy/ (phase 4, sur accord).
 # Migrations : MIGRATE_ON_START=0 ; `fadi-preprod migrate` applique init.sql une fois, sur cette base seulement.
@@ -86,8 +86,9 @@ services:
       ARCHIVE_SIGNING_KEY: ${PREPROD_ARCHIVE_SIGNING_KEY}
       AUTH_RATE_LIMIT: ${PREPROD_AUTH_RATE_LIMIT:-500}
       API_RATE_LIMIT: ${PREPROD_API_RATE_LIMIT:-5000}
+    # Rapports et sauvegardes dans des volumes nommés (jamais l'hôte) ; `fadi-preprod` en extrait les fichiers ordinaires.
     volumes:
-      - ${FADI_PREPROD_OUT:?FADI_PREPROD_OUT manquant}:/out
+      - fadi-preprod-out:/out
       - fadi-preprod-backups:/backups
     mem_limit: 3g
     cpus: 2
@@ -98,6 +99,8 @@ volumes:
     name: fadi-preprod-db
   fadi-preprod-backups:
     name: fadi-preprod-backups
+  fadi-preprod-out:
+    name: fadi-preprod-out
 
 networks:
   internal:

@@ -17,5 +17,8 @@ COPY packages/geometry-exact/package.json packages/geometry-exact/
 RUN npm ci --no-audit --no-fund
 COPY . .
 RUN npm run build && chown -R pwuser:pwuser /work
+# Points de montage des volumes fadi-preprod-out et fadi-preprod-backups : un volume neuf hérite de ce propriétaire et
+# de ces droits (pwuser seul).
+RUN install -d -o pwuser -g pwuser -m 0700 /out /backups
 USER pwuser
 CMD ["node", "--version"]
