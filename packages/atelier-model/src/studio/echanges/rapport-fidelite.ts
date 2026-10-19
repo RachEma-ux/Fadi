@@ -82,7 +82,8 @@ function texteDxf(content: string): StudioJugementFidelite {
  *   associatives, hauteur du texte = réglage d'export) ; TEXT à la hauteur saisie, ASCII échappé ; solides absents ;
  * - IFC : objets extrudés seulement (non extrudés : non couverts) ; cercle en profil exact ; arcs et renflements
  *   discrétisés (`STUDIO_SEGMENTS_PAR_TOUR`) ; cotes et annotations non écrites ; solides libres en profils exacts ;
- * - architecture (A.4) : mur tracé exact en SVG / DXF (contour, lacunes aux ouvertures) et extrusion exacte en IFC
+ * - architecture (A.4) : mur en SVG / DXF tracé en plan (contour, lacunes aux ouvertures) sans sa hauteur ni sa base
+ *   (approché, comme une extrusion déclarée), extrusion exacte en IFC
  *   (`IfcWall`) ; ouverture en SVG / DXF : simple lacune du mur quelle que soit son allège (approchée), en IFC :
  *   `IfcOpeningElement` + `IfcRelVoidsElement` exacts (`IfcDoor` / `IfcWindow` seulement si le type est déclaré).
  */
@@ -116,7 +117,7 @@ export const STUDIO_CAPACITES_EXPORT: {
     prism: { svg: () => nonCouvert("solide-hors-2d"), dxf: () => nonCouvert("solide-hors-2d"), ifc: () => exact("profil-exact") },
   },
   architecture: {
-    wall: { svg: () => exact("trace-exact"), dxf: () => exact("trace-exact"), ifc: () => exact("extrusion-exacte") },
+    wall: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
     opening: { svg: () => approche("ouverture-en-lacune"), dxf: () => approche("ouverture-en-lacune"), ifc: () => exact("ouverture-evidee") },
   },
 });
