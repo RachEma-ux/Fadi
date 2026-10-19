@@ -331,6 +331,8 @@ const AJOUTS = {
     // Projections versionnées et invalidation minimale (lot C.2, `projections.ts`).
     "STUDIO_PROJECTIONS", "STUDIO_SEUIL_INVALIDATION", "projectionsAInvalider", "studioAssemblerMaillage", "studioClesProjection", "studioEmpreinteContenu",
     "studioFusionnerMorceaux", "studioJsonStable", "studioMaillerObjets", "studioMesh3dIncremental", "studioVersionProjection",
+    // Ajustements de quantités enregistrés (E.3-05, `quantites-ajustements.ts`, extension additive).
+    "STUDIO_LIMITES_AJUSTEMENTS", "appliquerAjustementsEnregistres", "controlerSaisieAjustement", "etatCibleQuantite", "evaluerAjustementsQuantites", "jsonCanoniqueQuantites",
   ]),
 };
 function sansAjouts(value: unknown): unknown {

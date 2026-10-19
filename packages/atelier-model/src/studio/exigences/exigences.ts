@@ -1,4 +1,4 @@
-import { GRANDEURS_QUANTITE, UNITE_GRANDEUR, type GrandeurQuantite, type NatureQuantite } from "../quantites.js";
+import { GRANDEURS_QUANTITE, UNITE_GRANDEUR, type GrandeurQuantite, type NatureQuantite } from "../metre/grandeurs.js";
 import { array, fail, finite, identifier, record } from "../noyau/validation.js";
 import { STUDIO_LIMITES_EXIGENCES, STUDIO_LIMITES_PROPRIETES } from "./limites.js";
 

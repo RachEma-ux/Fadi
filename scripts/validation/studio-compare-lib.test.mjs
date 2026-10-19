@@ -113,3 +113,22 @@ test('lot E.1 : jeux d\'exigences et contrôles comparés et contrôlés', () =>
   assert.ok(details.includes('B : version du jeu absente'));
   assert.ok(details.includes('B : empreinte du document différente de la révision'));
 });
+
+test('E.3-05 : ajustements du métré comparés (auteur par adresse) et contrôlés', () => {
+  const withQ = (projectId, owner, editor, value = 4.5) => {
+    const t = side(projectId, owner, editor);
+    t.studio_quantity_adjustments = [{ id: 'qa1', study_id: 's1', variant_id: 'v1', revision_id: 'r1', seq: 1, target_kind: 'objet', target_id: 'l1', quantity: 'longueur', value, unit: 'm', target_state: { cible: 'objet' }, motif: 'Relevé', author_id: editor }];
+    return t;
+  };
+  assert.deepEqual(integrityAnomalies(withQ('pA', 'uA1', 'uA2'), 'A'), []);
+  const a = normalizeTables(withQ('pA', 'uA1', 'uA2'), { projectId: 'pA', emails: emailsA });
+  assert.deepEqual(compareTables(a, normalizeTables(withQ('pB', 'uB1', 'uB2'), { projectId: 'pB', emails: emailsB })).anomalies, []);
+  assert.ok(compareTables(a, normalizeTables(withQ('pB', 'uB1', 'uB2', 5), { projectId: 'pB', emails: emailsB })).anomalies.some((x) => x.table === 'studio_quantity_adjustments' && /value/.test(x.detail)));
+  // Auteur différent (restauration non vérifiée : compte qui restaure) : signalé.
+  assert.ok(compareTables(a, normalizeTables(withQ('pB', 'uB1', 'uB1'), { projectId: 'pB', emails: emailsB })).anomalies.some((x) => x.table === 'studio_quantity_adjustments' && /author_id/.test(x.detail)));
+  const bad = withQ('pA', 'uA1', 'uA2');
+  bad.studio_quantity_adjustments.push({ ...bad.studio_quantity_adjustments[0], id: 'qa2', revision_id: 'r9' });
+  const details = integrityAnomalies(bad, 'B').map((x) => x.detail);
+  assert.ok(details.includes('B : séquence en double'));
+  assert.ok(details.includes('B : révision de l\'ajustement absente'));
+});

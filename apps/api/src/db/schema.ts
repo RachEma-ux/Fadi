@@ -12,7 +12,7 @@
  * l'erreur de repères que `docs/architecture.md` interdit.
  */
 import { boolean, customType, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
-import type { ConclusionControle, EtatExecution, ExigenceStudio, ResultatControle, StudioDocument, StudioEnvelope } from "@parcours/atelier-model";
+import type { ConclusionControle, EtatExecution, ExigenceStudio, GrandeurQuantite, ResultatControle, StudioDocument, StudioEnvelope, UniteQuantite } from "@parcours/atelier-model";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
 const geography = customType<{ data: string; driverData: string }>({
@@ -874,3 +874,28 @@ export const studioRequirementChecks = pgTable("studio_requirement_checks", {
   requestId: text("request_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("studio_requirement_checks_variant_idx").on(t.variantId, t.createdAt)]);
+
+/**
+ * Ajustements manuels du métré Studio (E.3-05, lib/studio-quantites.ts) : journal en ajout seul, versionné par variante
+ * (`seq`), UPDATE refusée par déclencheur (init.sql). La quantité brute n'est jamais stockée comme vérité : elle reste
+ * dérivée du document ; `derivedValue` et `targetState` décrivent la cible à la révision de l'ajustement.
+ */
+export const studioQuantityAdjustments = pgTable("studio_quantity_adjustments", {
+  id: text("id").primaryKey(),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  variantId: text("variant_id").notNull(),
+  revisionId: text("revision_id").notNull(),
+  seq: integer("seq").notNull(),
+  targetKind: text("target_kind").$type<"objet" | "calque">().notNull(),
+  targetId: text("target_id").notNull(),
+  quantity: text("quantity").$type<GrandeurQuantite>().notNull(),
+  value: doublePrecision("value"),
+  unit: text("unit").$type<UniteQuantite>().notNull(),
+  derivedValue: doublePrecision("derived_value"),
+  targetState: jsonb("target_state").$type<Record<string, unknown>>().notNull(),
+  motif: text("motif").notNull(),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [uniqueIndex("studio_quantity_adjustments_seq_unique").on(t.variantId, t.seq)]);
