@@ -15,13 +15,19 @@
  *
  * Profil d'outils (#166, B.2-06) : `useProfilOutils` règle seulement les boutons montrés — jamais les raccourcis, le
  * catalogue ni la palette. L'outil actif reste toujours montré.
+ *
+ * Palette d'un domaine (espace de travail, un domaine affiché à la fois) : `filtre` ne garde que les éléments du domaine
+ * actif (`dansPaletteDuDomaine`) ; `orientation="verticale"` range la palette en colonne à gauche du canevas, comme un
+ * logiciel de CAO : icônes seules (nom et raccourci en infobulle et en nom accessible), menus de famille ouverts à
+ * droite de leur bouton, flèches haut / bas d'un bouton à l'autre et flèche droite pour ouvrir un menu. La disposition
+ * suit alors la hauteur disponible au lieu de la largeur (même `disposerBarre`).
  */
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ClavierReact, type ReactNode } from "react";
 import { STUDIO_TOOLS } from "@parcours/atelier-model";
 import { Icon } from "../../../components/Icon";
 import { useProfilOutils } from "./CatalogueOutils";
 import {
-  disposerBarre, ELEMENTS_FAMILLE, familleDeOutil, FAMILLES_STUDIO, indexNavigation, placementMenu, TRACE_PLUS,
+  disposerBarre, ELEMENTS_FAMILLE, familleDeOutil, FAMILLES_STUDIO, indexNavigation, placementMenu, placementMenuLateral, TRACE_PLUS,
   type ElementBarre, type IdFamille, type MesureFamille,
 } from "./barre-compacte";
 import {
@@ -54,6 +60,12 @@ export interface BarreOutilsProps {
   projectId?: string;
   /** Largeur supposée avant la première mesure (rendu serveur, essais) ; tout en rangée par défaut. */
   largeurInitiale?: number;
+  /** Éléments montrés (palette d'un domaine) ; tous par défaut. Les raccourcis restent ceux de la table clavier. */
+  filtre?: (e: ElementBarre) => boolean;
+  /** Rangée horizontale (défaut) ou palette verticale. */
+  orientation?: "horizontale" | "verticale";
+  /** Nom accessible de la barre (« Outils de dessin » par défaut). */
+  libelle?: string;
 }
 
 type NomIcone = Parameters<typeof Icon>[0]["name"];
@@ -64,6 +76,8 @@ const ECART = 4;
 const LARGEUR_MENU = 52 + ECART;
 const LARGEUR_PLUS = 48 + ECART;
 const SEPARATEUR = 9 + ECART;
+/** Palette verticale : boutons carrés de 40 px (écart compris). */
+const HAUTEUR_VERTICALE = 40 + ECART;
 const estimer = (mode: Mode, libelle: string) => (mode === "tactile" ? Math.ceil(46 + libelle.length * 7.6) : 42) + ECART;
 
 const OUTILS = new Map(STUDIO_TOOLS.map((t) => [t.toolId as string, t]));
@@ -130,9 +144,12 @@ function useModeTactile(): Mode {
 const navigables = (racine: Element | null, attribut: string) =>
   Array.from(racine?.querySelectorAll<HTMLElement>(`[${attribut}]`) ?? []).filter((e) => !(e as HTMLButtonElement).disabled && e.getAttribute("aria-disabled") !== "true" && e.offsetParent !== null);
 
-export function BarreOutils({ outil, outilDisponible, commandeDisponible, raison, libelleCommande, basculeActive, lienCommande, surOutil, surCommande, surLien, projectId, largeurInitiale }: BarreOutilsProps) {
+export function BarreOutils({ outil, outilDisponible, commandeDisponible, raison, libelleCommande, basculeActive, lienCommande, surOutil, surCommande, surLien, projectId, largeurInitiale, filtre, orientation = "horizontale", libelle = "Outils de dessin" }: BarreOutilsProps) {
   const { visible } = useProfilOutils(projectId);
-  const mode = useModeTactile();
+  const verticale = orientation === "verticale";
+  // Palette verticale : icônes seules, quel que soit le pointeur (les noms restent dans les infobulles et les menus).
+  const modeEcran = useModeTactile();
+  const mode: Mode = verticale ? "souris" : modeEcran;
   const racine = useRef<HTMLDivElement | null>(null);
   const [largeur, setLargeur] = useState<number>(largeurInitiale ?? Number.POSITIVE_INFINITY);
   const mesures = useRef(new Map<string, number>());
@@ -144,17 +161,18 @@ export function BarreOutils({ outil, outilDisponible, commandeDisponible, raison
 
   const active = familleDeOutil(outil);
   // Profil : seuls les boutons montrés changent ; l'outil actif reste montré.
-  const elements = useMemo(() => new Map(FAMILLES_STUDIO.map((f) => [f.id, (ELEMENTS_FAMILLE.get(f.id) ?? []).filter((e) => e.type === "commande" || e.id === outil || visible(e.id))])), [visible, outil]);
+  const elements = useMemo(() => new Map(FAMILLES_STUDIO.map((f) => [f.id, (ELEMENTS_FAMILLE.get(f.id) ?? []).filter((e) => (!filtre || filtre(e)) && (e.type === "commande" || e.id === outil || visible(e.id)))])), [visible, outil, filtre]);
   const presentes = FAMILLES_STUDIO.filter((f) => (elements.get(f.id)?.length ?? 0) > 0);
 
-  const largeurDe = (k: string, libelle: string) => mesures.current.get(`${mode}:${k}`) ?? estimer(mode, libelle);
+  const sens = verticale ? "v" : mode;
+  const largeurDe = (k: string, nom: string) => mesures.current.get(`${sens}:${k}`) ?? (verticale ? HAUTEUR_VERTICALE : estimer(mode, nom));
   const libelleDe = (e: ElementBarre) => (e.type === "outil" ? OUTILS.get(e.id)?.libelleFR ?? e.id : libelleCommande?.[e.id] ?? COMMANDES.get(e.id)?.libelleFR ?? e.id);
   const familles: MesureFamille[] = presentes.map((f) => ({
     id: f.id,
-    menu: mesures.current.get(`${mode}:menu:${f.id}`) ?? LARGEUR_MENU,
+    menu: mesures.current.get(`${sens}:menu:${f.id}`) ?? (verticale ? HAUTEUR_VERTICALE : LARGEUR_MENU),
     elements: (elements.get(f.id) ?? []).map((e) => largeurDe(cle(e), libelleDe(e))),
   }));
-  const disposition = disposerBarre({ largeur: largeur - 2, familles, active, plus: mesures.current.get(`${mode}:plus`) ?? LARGEUR_PLUS, separateur: SEPARATEUR });
+  const disposition = disposerBarre({ largeur: largeur - 2, familles, active, plus: mesures.current.get(`${sens}:plus`) ?? (verticale ? HAUTEUR_VERTICALE : LARGEUR_PLUS), separateur: SEPARATEUR });
 
   // Largeur disponible suivie en continu.
   useLayoutEffect(() => {
@@ -162,22 +180,25 @@ export function BarreOutils({ outil, outilDisponible, commandeDisponible, raison
     if (!el) return;
     const lire = () => {
       const s = getComputedStyle(el);
-      setLargeur(el.clientWidth - parseFloat(s.paddingLeft || "0") - parseFloat(s.paddingRight || "0"));
+      setLargeur(verticale
+        ? el.clientHeight - parseFloat(s.paddingTop || "0") - parseFloat(s.paddingBottom || "0")
+        : el.clientWidth - parseFloat(s.paddingLeft || "0") - parseFloat(s.paddingRight || "0"));
     };
     lire();
     if (typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver(lire);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [verticale]);
 
   // Largeurs réelles des boutons de la rangée (une passe de plus si une estimation était fausse).
   useLayoutEffect(() => {
     let change = false;
     for (const el of Array.from(racine.current?.querySelectorAll<HTMLElement>("[data-studio-mesure]") ?? [])) {
-      if (!el.offsetWidth) continue;
-      const k = `${mode}:${el.dataset.studioMesure}`;
-      const w = el.offsetWidth + ECART;
+      const taille = verticale ? el.offsetHeight : el.offsetWidth;
+      if (!taille) continue;
+      const k = `${sens}:${el.dataset.studioMesure}`;
+      const w = taille + ECART;
       if (Math.abs((mesures.current.get(k) ?? -1) - w) > 0.5) { mesures.current.set(k, w); change = true; }
     }
     if (change) setVersion((v) => v + 1);
@@ -211,7 +232,7 @@ export function BarreOutils({ outil, outilDisponible, commandeDisponible, raison
     const placer = () => {
       const b = racine.current?.querySelector<HTMLElement>(`[aria-controls="${idMenu(ouvert)}"]`)?.getBoundingClientRect();
       const m = racine.current?.ownerDocument.getElementById(idMenu(ouvert));
-      if (b && m) setPlacement(placementMenu(b, m.offsetWidth, { largeur: w.innerWidth, hauteur: w.innerHeight }));
+      if (b && m) setPlacement(verticale ? placementMenuLateral(b, m.offsetWidth, m.offsetHeight, { largeur: w.innerWidth, hauteur: w.innerHeight }) : placementMenu(b, m.offsetWidth, { largeur: w.innerWidth, hauteur: w.innerHeight }));
     };
     placer();
     w.document.addEventListener("scroll", placer, { capture: true, passive: true });
@@ -252,8 +273,10 @@ export function BarreOutils({ outil, outilDisponible, commandeDisponible, raison
     if (j !== null) { e.preventDefault(); items[j]?.focus(); }
   };
 
+  // Palette verticale : flèche droite ouvre le menu (haut / bas restent la navigation de la colonne).
+  const touchesOuverture = verticale ? ["Enter", " ", "ArrowRight"] : ["Enter", " ", "ArrowDown", "ArrowUp"];
   const surClavierBouton = (f: IdFamille | "plus") => (e: ClavierReact<HTMLButtonElement>) => {
-    if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown" || e.key === "ArrowUp") {
+    if (touchesOuverture.includes(e.key)) {
       e.preventDefault();
       e.stopPropagation();
       if (ouvert === f && (e.key === "Enter" || e.key === " ")) fermer(true);
@@ -261,10 +284,11 @@ export function BarreOutils({ outil, outilDisponible, commandeDisponible, raison
     }
   };
 
-  // Flèches gauche / droite d'un bouton de la rangée à l'autre.
+  // Flèches gauche / droite (haut / bas en palette verticale) d'un bouton de la rangée à l'autre.
+  const touchesRangee = verticale ? ["ArrowUp", "ArrowDown", "Home", "End"] : ["ArrowLeft", "ArrowRight", "Home", "End"];
   const surClavierRangee = (e: ClavierReact<HTMLDivElement>) => {
     const cible = e.target as HTMLElement;
-    if (!cible.hasAttribute("data-studio-ligne") || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+    if (!cible.hasAttribute("data-studio-ligne") || !touchesRangee.includes(e.key)) return;
     const items = navigables(racine.current, "data-studio-ligne");
     const j = indexNavigation(e.key, items.indexOf(cible), items.length);
     if (j !== null) { e.preventDefault(); e.stopPropagation(); items[j]?.focus(); }
@@ -282,7 +306,7 @@ export function BarreOutils({ outil, outilDisponible, commandeDisponible, raison
   );
 
   return (
-    <div className="studio-tools" role="toolbar" aria-label="Outils de dessin" ref={racine} onKeyDown={surClavierRangee} data-studio-mode={mode}>
+    <div className={verticale ? "studio-tools studio-tools-verticale" : "studio-tools"} role="toolbar" aria-label={libelle} aria-orientation={verticale ? "vertical" : undefined} ref={racine} onKeyDown={surClavierRangee} data-studio-mode={mode} data-studio-orientation={orientation}>
       {disposition.rangee.map((d) => {
         const f = FAMILLES_STUDIO.find((x) => x.id === d.id)!;
         const liste = elements.get(f.id) ?? [];

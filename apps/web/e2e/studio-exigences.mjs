@@ -64,8 +64,9 @@ try {
   const vide = await api("get", `${racine}/${studyId}/exigences`);
   check("aucune exigence fournie par défaut", vide.status === 200 && vide.body.courante === null && vide.body.versions.length === 0, JSON.stringify(vide.body));
 
-  await page.goto(`${BASE}/studio/projets/${projet.id}/etudes/${studyId}/variantes/${variantId}`);
-  const outils = page.getByRole("toolbar", { name: "Outils de dessin" });
+  // Propriétés et exigences : domaine « BIM et coordination » (palette, plan du modèle et panneau du domaine).
+  await page.goto(`${BASE}/studio/projets/${projet.id}/etudes/${studyId}/variantes/${variantId}?domaine=bim`);
+  const outils = page.getByRole("toolbar", { name: "Outils — BIM et coordination" });
   await outils.waitFor();
   const panneau = page.locator("[data-studio-exigences]");
   await panneau.waitFor();

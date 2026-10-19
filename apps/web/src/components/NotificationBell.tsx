@@ -24,7 +24,7 @@ export const NOTIFICATION_PREFERENCES_KEY = ["preferences", "notifications"] as 
 
 function targetOf(n: NotificationItem): string {
   // Commentaire d'une variante Studio : la variante, panneau des commentaires ouvert.
-  if (n.kind === "commentaire-studio" && n.studio) return cheminVarianteStudio(n.projectId, n.studio.studyId, n.studio.variantId, null, { commentaires: true });
+  if (n.kind === "commentaire-studio" && n.studio) return cheminVarianteStudio(n.projectId, n.studio.studyId, n.studio.variantId, null, { commentaires: true, domaine: "documentation" });
   if (n.kind === "commentaire") return n.stepNumber ? "/projets/" + n.projectId + "?module=parcours&etape=" + n.stepNumber : "/projets/" + n.projectId + "?module=collaboration";
   if (n.kind === "reservation") return "/projets/" + n.projectId + "?module=collaboration";
   if (n.kind === "modification" || n.kind === "verrou") return "/projets/" + n.projectId + "?module=atelier";

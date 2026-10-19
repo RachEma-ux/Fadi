@@ -347,6 +347,8 @@ const AJOUTS = {
     "STUDIO_VUE_DOCUMENTAIRE_SCHEMA", "STUDIO_FEUILLE_COMPOSEE_SCHEMA", "STUDIO_DOSSIER_CONCEPTION_SCHEMA", "STUDIO_NON_EVALUE", "STUDIO_LIMITES_DOSSIER",
     "studioDonneesVue", "produireVueDocumentaire", "validerFeuilleComposee", "studioLigneProvenance", "composerFeuilleComposee", "studioFeuilleComposeeSvg",
     "assemblerDossierConception", "pdfDossierConception",
+    // Workflow de conception déclaré d'une étude (REF-01 §06, `workflow.ts`, extension additive).
+    "STUDIO_PHASES_WORKFLOW", "estPhaseWorkflowStudio",
   ]),
 };
 function sansAjouts(value: unknown): unknown {

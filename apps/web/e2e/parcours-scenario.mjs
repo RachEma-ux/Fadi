@@ -377,7 +377,7 @@ check("exemple : 21 / 21 étapes terminées", (await page.locator(".parcours-ste
 await page.goto(`${BASE}/accueil`);
 await page.waitForSelector(".dossier-preview-svg svg", { timeout: 30000 });
 await page.locator(".dossier-overview .dossier-preview").waitFor({ timeout: 20000 });
-const appNav = (await page.locator('.app-nav > a,.app-nav > button').allTextContents()).map((t) => t.trim()).join("|");
+const appNav = (await page.locator('.app-nav > a,.app-nav > button,.app-nav > .sidebar-studio > .sidebar-studio-tete > a').allTextContents()).map((t) => t.trim()).join("|");
 check("accueil : barre verticale Projets, Studio (après Projets, D07) et Collaboration indépendants, recherche de projet et état de plateforme", appNav === "Accueil|Projets|Studio|Collaboration" && (await page.getByRole("button", { name: "Rechercher un projet", exact: true }).count()) === 1 && (await page.getByRole("button", { name: "État de la plateforme", exact: true }).count()) === 1 && (await page.locator(".app-sidebar").isVisible()), appNav);
 check("accueil : salut dans la barre haute, Importer et Nouveau projet accessibles", /^Bonjour .+,$/.test((await page.locator(".fadi-topbar-title h1").textContent()).trim()) && (await page.locator('.workspace-entry-actions button:has-text("Importer")').count()) === 1 && (await page.locator('.workspace-entry-actions a:has-text("Nouveau projet")').count()) === 1);
 const homePreviewCaption = await page.locator(".dossier-preview figcaption").textContent();

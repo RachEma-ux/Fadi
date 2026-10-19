@@ -23,6 +23,7 @@ export * from "./studio/solides-libres.js";
 export * from "./studio/architecture/index.js";
 export * from "./studio/facade-exigences.js";
 export * from "./studio/facade-scenes.js";
+export * from "./studio/workflow.js";
 export * from "./ontologie.js";
 export * from "./modele.js";
 export * from "./geometrie.js";

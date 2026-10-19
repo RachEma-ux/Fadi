@@ -76,16 +76,26 @@ let context;
 async function atteindre(barre, selecteur) {
   const el = barre.locator(selecteur).first();
   await el.waitFor({ state: "attached" });
-  if (!(await el.isVisible())) {
+  // Le menu se place après son ouverture : on ne clique sur son bouton que s'il est fermé (un second clic le
+  // refermerait), et on recommence au plus trois fois si un rendu l'a refermé entre-temps (runner lent).
+  for (let essai = 0; essai < 3 && !(await el.isVisible()); essai++) {
     const menu = await el.evaluate((n) => n.closest("[data-studio-menu-liste]")?.id ?? null);
-    if (menu) await barre.locator(`[aria-controls="${menu}"]`).click();
-    await el.waitFor({ state: "visible" });
+    if (menu) {
+      const bouton = barre.locator(`[aria-controls="${menu}"]`);
+      if ((await bouton.getAttribute("aria-expanded")) !== "true") await bouton.click();
+    }
+    await el.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
   }
+  await el.waitFor({ state: "visible" });
   return el;
 }
 /** Bouton (ou lien) de la barre par son nom exact, qu'il soit dans la rangée ou dans un menu. */
 const element = (barre, nom) => barre.locator(`:is(button,a)[aria-label="${nom}"]`);
-const cliquerBouton = async (barre, nom) => (await atteindre(barre, `:is(button,a)[aria-label="${nom}"]`)).click();
+const cliquerBouton = async (barre, nom) => {
+  const sel = `:is(button,a)[aria-label="${nom}"]`;
+  // Un rendu peut refermer le menu entre l'ouverture et le clic : une seconde tentative le rouvre.
+  try { await (await atteindre(barre, sel)).click({ timeout: 5000 }); } catch { await (await atteindre(barre, sel)).click(); }
+};
 
 try {
   context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
@@ -132,7 +142,7 @@ try {
     for (const [nom, v] of [["X", x], ["Y", y], ["Largeur", 2], ["Hauteur", 1]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
     await proprietes.getByRole("button", { name: "Ajouter au dessin", exact: true }).click();
   }
-  const enregistrer = async () => (await atteindre(outils, ':is(button)[aria-label="Enregistrer"], :is(button)[aria-label="Réessayer la sauvegarde"]')).click();
+  const enregistrer = async () => (await atteindre(page.getByRole("toolbar", { name: "Actions de l’espace" }), ':is(button)[aria-label="Enregistrer"], :is(button)[aria-label="Réessayer la sauvegarde"]')).click();
   // Un changement d'état peut suivre une relance différée (retour du réseau, renvoi d'enveloppe) : 40 s au plus.
   const attendreEtat = (code) => page.locator(`[data-studio-hors-ligne="${code}"]`).waitFor({ timeout: 40000 });
 

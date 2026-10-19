@@ -105,7 +105,7 @@ try {
   const rectangles = page.locator('svg [role="button"][aria-label^="Rectangle "]');
   await rectangles.first().waitFor({ state: "attached" });
   check("rechargement hors ligne : corpus et brouillon servis depuis l'appareil", (await rectangles.count()) === 1 && (await murs.count()) === nbMurs && (await page.locator("[data-studio-hors-ligne]").getAttribute("data-studio-hors-ligne")) === "hors-ligne");
-  await (await atteindre(outils, ':is(button)[aria-label="Enregistrer"], :is(button)[aria-label="Réessayer la sauvegarde"]')).click();
+  await (await atteindre(page.getByRole("toolbar", { name: "Actions de l’espace" }), ':is(button)[aria-label="Enregistrer"], :is(button)[aria-label="Réessayer la sauvegarde"]')).click();
   await page.locator('[data-studio-hors-ligne="en-attente"][data-studio-en-attente="1"]').waitFor();
   check("hors ligne : enveloppe en attente, rien n'a atteint le serveur", (await revisions()).length === depart);
   await page.screenshot({ path: join(OUT, "studio-corpus-s7-en-attente.png") });

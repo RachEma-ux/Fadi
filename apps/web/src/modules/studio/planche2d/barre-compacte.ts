@@ -189,3 +189,13 @@ export function placementMenu(bouton: { left: number; bottom: number }, largeurM
   const top = Math.round(bouton.bottom + 4);
   return { left: Math.round(left), top, hauteurMax: Math.max(120, Math.floor(fenetre.hauteur - top - 8)) };
 }
+
+/**
+ * Position d'un menu de la palette verticale : à droite de son bouton (4 px), aligné sur son haut, remonté pour tenir
+ * dans la fenêtre (8 px de marge) ; hauteur bornée à la fenêtre, jamais moins de 120 px.
+ */
+export function placementMenuLateral(bouton: { top: number; right: number }, largeurMenu: number, hauteurMenu: number, fenetre: { largeur: number; hauteur: number }): { left: number; top: number; hauteurMax: number } {
+  const left = Math.max(8, Math.min(bouton.right + 4, fenetre.largeur - largeurMenu - 8));
+  const top = Math.max(8, Math.min(bouton.top, fenetre.hauteur - hauteurMenu - 8));
+  return { left: Math.round(left), top: Math.round(top), hauteurMax: Math.max(120, Math.floor(fenetre.hauteur - Math.round(top) - 8)) };
+}
