@@ -54,10 +54,12 @@ const PLACEMENT: Readonly<Record<string, IdFamille>> = Object.freeze({
   "terminer-polyligne": "courbes",
   "fermer-polyligne": "courbes",
   "studio.dessin.cote": "annotation",
+  "studio.dessin.cote-angulaire": "annotation",
+  "studio.dessin.texte": "annotation",
 });
 const DEPUIS_BARRE: Readonly<Record<BarreStudio, IdFamille>> = Object.freeze({
-  dessin: "dessin", modification: "modification", calques: "calques", volume: "volume",
-  edition: "edition", vue: "vue", accrochage: "vue", import: "echanges", export: "echanges", presentation: "presentation", catalogue: "catalogue",
+  dessin: "dessin", modification: "modification", calques: "calques", volume: "volume", "volume-libre": "volume",
+  edition: "edition", vue: "vue", accrochage: "vue", reperage: "vue", import: "echanges", export: "echanges", presentation: "presentation", catalogue: "catalogue",
 });
 
 export const familleDe = (id: string, barre: BarreStudio): IdFamille => PLACEMENT[id] ?? DEPUIS_BARRE[barre];

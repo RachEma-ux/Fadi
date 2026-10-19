@@ -107,7 +107,7 @@ describe("Volume libre : création directe dans l'espace (A.3-02)", () => {
     const outils = STUDIO_TOOLS.filter((t) => t.groupe === "volume-libre");
     expect(outils.map((t) => [t.toolId, t.raccourci, t.iconeSymbolique])).toEqual([
       ["studio.solide.boite", "B", "studio-solid-box"], ["studio.solide.prisme", "Shift+B", "studio-solid-prism"],
-      ["studio.solide.deplacer", "Shift+T", "studio-solid-move"], ["studio.solide.supprimer", "Shift+Delete", "studio-solid-delete"],
+      ["studio.solide.deplacer", "Shift+W", "studio-solid-move"], ["studio.solide.supprimer", "Shift+Delete", "studio-solid-delete"],
     ]);
     for (const t of outils) expect(STUDIO_COMMAND_TOOL_IDS).toContain(t.toolId);
     expect(STUDIO_DOCUMENT_SCHEMA.properties.solides.items.oneOf.map((s) => s.properties.type.const)).toEqual(["box", "prism"]);

@@ -72,14 +72,16 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "accrochage-sommets", libelleFR: "Accrocher aux sommets", raccourci: "Shift+S", iconeSymbolique: "studio-snap-vertex", groupe: "accrochage", ecrit: false, bascule: true },
   { id: "accrochage-grille", libelleFR: "Accrocher à la grille", raccourci: "F9", iconeSymbolique: "studio-snap-grid", groupe: "accrochage", ecrit: false, bascule: true },
   // Modes d'accrochage aux objets (moteur `accrochage/`), actifs quand « Accrocher aux sommets » l'est. Raccourcis Fadi
-  // (aucun relevé SketchUp pour ces modes), Maj + une lettre libre : H (« half », milieu), R (rayon → centre),
-  // Q (quadrant), T (inTersection), A (« à angle droit »), G (tanGente), J (« juste à côté », plus proche).
+  // (aucun relevé SketchUp pour ces modes) : Maj+H (« half », milieu), Maj+Q (quadrant), Maj+J (« juste à côté », plus
+  // proche) ; Maj+R, Maj+T, Maj+A et Maj+G appartenant à Rotation, Texte, Cote angulaire et Vue en plan (3D), les autres
+  // modes prennent une lettre seule libre, hors des lettres d'outils SketchUp (Q reste libre) : Y (centre), X (croix :
+  // intersection), N (normale : perpendiculaire), U (tangente).
   { id: "accrochage-milieu", libelleFR: "Accrocher aux milieux", raccourci: "Shift+H", iconeSymbolique: "studio-snap-midpoint", groupe: "accrochage", ecrit: false, bascule: true },
-  { id: "accrochage-centre", libelleFR: "Accrocher aux centres", raccourci: "Shift+R", iconeSymbolique: "studio-snap-center", groupe: "accrochage", ecrit: false, bascule: true },
+  { id: "accrochage-centre", libelleFR: "Accrocher aux centres", raccourci: "Y", iconeSymbolique: "studio-snap-center", groupe: "accrochage", ecrit: false, bascule: true },
   { id: "accrochage-quadrant", libelleFR: "Accrocher aux quadrants", raccourci: "Shift+Q", iconeSymbolique: "studio-snap-quadrant", groupe: "accrochage", ecrit: false, bascule: true },
-  { id: "accrochage-intersection", libelleFR: "Accrocher aux intersections", raccourci: "Shift+T", iconeSymbolique: "studio-snap-intersection", groupe: "accrochage", ecrit: false, bascule: true },
-  { id: "accrochage-perpendiculaire", libelleFR: "Accrocher en perpendiculaire", raccourci: "Shift+A", iconeSymbolique: "studio-snap-perpendicular", groupe: "accrochage", ecrit: false, bascule: true },
-  { id: "accrochage-tangente", libelleFR: "Accrocher en tangente", raccourci: "Shift+G", iconeSymbolique: "studio-snap-tangent", groupe: "accrochage", ecrit: false, bascule: true },
+  { id: "accrochage-intersection", libelleFR: "Accrocher aux intersections", raccourci: "X", iconeSymbolique: "studio-snap-intersection", groupe: "accrochage", ecrit: false, bascule: true },
+  { id: "accrochage-perpendiculaire", libelleFR: "Accrocher en perpendiculaire", raccourci: "N", iconeSymbolique: "studio-snap-perpendicular", groupe: "accrochage", ecrit: false, bascule: true },
+  { id: "accrochage-tangente", libelleFR: "Accrocher en tangente", raccourci: "U", iconeSymbolique: "studio-snap-tangent", groupe: "accrochage", ecrit: false, bascule: true },
   { id: "accrochage-proche", libelleFR: "Accrocher au plus proche", raccourci: "Shift+J", iconeSymbolique: "studio-snap-nearest", groupe: "accrochage", ecrit: false, bascule: true },
   // Repérage depuis le dernier point : orthogonal (F8, comme les logiciels de DAO ; Maj tenue l'impose le temps du
   // geste), polaire (F10) et son pas 15° / 30° / 45° / 90° (Maj+Y le fait tourner).

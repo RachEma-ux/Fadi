@@ -16,7 +16,7 @@ describe("Barre compacte — familles", () => {
   it("chaque famille garde ses outils les plus utilisés en tête ; Courbes et Annotation sortent de Dessin", () => {
     expect(ELEMENTS_FAMILLE.get("dessin")?.map((e) => e.id)).toEqual(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle"]);
     expect(ELEMENTS_FAMILLE.get("courbes")?.map((e) => e.id)).toEqual(["studio.dessin.arc", "studio.dessin.polyligne", "terminer-polyligne", "fermer-polyligne"]);
-    expect(ELEMENTS_FAMILLE.get("annotation")?.map((e) => e.id)).toEqual(["studio.dessin.cote"]);
+    expect(ELEMENTS_FAMILLE.get("annotation")?.map((e) => e.id)).toEqual(["studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte"]);
     expect(ELEMENTS_FAMILLE.get("selection")?.map((e) => e.id)).toEqual(["studio.dessin.selection", "tout-selectionner"]);
     expect(ELEMENTS_FAMILLE.get("vue")?.map((e) => e.id)).toContain("accrochage-grille");
     expect(ELEMENTS_FAMILLE.get("echanges")?.map((e) => e.id)).toEqual(["importer-dxf", "exporter-svg", "exporter-dxf", "exporter-ifc"]);
@@ -39,7 +39,10 @@ describe("Barre compacte — disposition en une rangée", () => {
       const d = disposer(1300, active, m);
       expect(largeurRangee(d, m), active).toBeLessThanOrEqual(1300);
       const a = d.rangee.find((e) => e.id === active)!;
-      expect(a.enLigne, active).toBe(ELEMENTS_FAMILLE.get(active)!.length);
+      // « Vue / Accrochage » (vue, 3D, accrochages aux objets, repérage) dépasse la place : ses premiers éléments en
+      // rangée, le reste dans son menu « ▾ » ; les autres familles actives se déplient entièrement.
+      if (active === "vue") expect(a.menu && a.enLigne > 0 && a.enLigne < ELEMENTS_FAMILLE.get(active)!.length, active).toBe(true);
+      else expect(a.enLigne, active).toBe(ELEMENTS_FAMILLE.get(active)!.length);
       expect(d.plus, active).toEqual([]);
       // L'ordre affiché ne change pas avec la famille active.
       expect(d.rangee.map((e) => e.id)).toEqual(FAMILLES_STUDIO.map((f) => f.id));

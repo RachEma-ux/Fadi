@@ -189,11 +189,11 @@ describe("Planche 2D de Studio — règle d'or", () => {
   it("accrochage et repérage : chaque mode est une bascule propre (icône, barre, raccourci), boutons visibles", () => {
     const attendus: [string, string, string, string][] = [
       ["accrochage-milieu", "Shift+H", "accrochage", "studio-snap-midpoint"],
-      ["accrochage-centre", "Shift+R", "accrochage", "studio-snap-center"],
+      ["accrochage-centre", "Y", "accrochage", "studio-snap-center"],
       ["accrochage-quadrant", "Shift+Q", "accrochage", "studio-snap-quadrant"],
-      ["accrochage-intersection", "Shift+T", "accrochage", "studio-snap-intersection"],
-      ["accrochage-perpendiculaire", "Shift+A", "accrochage", "studio-snap-perpendicular"],
-      ["accrochage-tangente", "Shift+G", "accrochage", "studio-snap-tangent"],
+      ["accrochage-intersection", "X", "accrochage", "studio-snap-intersection"],
+      ["accrochage-perpendiculaire", "N", "accrochage", "studio-snap-perpendicular"],
+      ["accrochage-tangente", "U", "accrochage", "studio-snap-tangent"],
       ["accrochage-proche", "Shift+J", "accrochage", "studio-snap-nearest"],
       ["reperage-orthogonal", "F8", "reperage", "studio-track-ortho"],
       ["reperage-polaire", "F10", "reperage", "studio-track-polar"],

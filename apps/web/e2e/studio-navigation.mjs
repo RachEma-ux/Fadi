@@ -753,13 +753,13 @@ try {
   const ifcAvantSolides = await page.request.get(`${BASE}${variantePath}/export?format=ifc`);
   const proxiesAvant = ifcAvantSolides.ok() ? proxies(await ifcAvantSolides.text()) : null;
   await page.evaluate(() => document.activeElement?.blur());
-  check("volume libre : Boîte (B), Prisme sur profil (Maj+B), Déplacer le solide (Maj+T), Supprimer le solide (Maj+Suppr) dans la barre Volume libre, icônes propres",
-    (await outils.locator('[data-studio-barre="volume-libre"] [data-studio-outil="studio.solide.boite"][aria-keyshortcuts="B"] svg path').count()) === 1
-    && (await outils.locator('[data-studio-barre="volume-libre"] [data-studio-outil="studio.solide.prisme"][aria-keyshortcuts="Shift+B"]').count()) === 1
-    && (await outils.locator('[data-studio-barre="volume-libre"] [data-studio-outil="studio.solide.deplacer"][aria-keyshortcuts="Shift+T"]').count()) === 1
-    && (await outils.locator('[data-studio-barre="volume-libre"] [data-studio-outil="studio.solide.supprimer"][aria-keyshortcuts="Shift+Delete"]').count()) === 1
-    && (await outils.locator('[data-studio-barre="vue"] [data-studio-commande="navigation-3d"][aria-keyshortcuts="Shift+G"]').count()) === 1
-    && (await outils.locator('[data-studio-barre="vue"] [data-studio-commande="coupe-3d"][aria-keyshortcuts="Shift+K"]').count()) === 1);
+  check("volume libre : Boîte (B), Prisme sur profil (Maj+B), Déplacer le solide (Maj+W), Supprimer le solide (Maj+Suppr) dans la barre Volume libre, icônes propres",
+    (await outils.locator('[data-studio-famille="volume"] [data-studio-outil="studio.solide.boite"][aria-keyshortcuts="B"] svg path').count()) === 1
+    && (await outils.locator('[data-studio-famille="volume"] [data-studio-outil="studio.solide.prisme"][aria-keyshortcuts="Shift+B"]').count()) === 1
+    && (await outils.locator('[data-studio-famille="volume"] [data-studio-outil="studio.solide.deplacer"][aria-keyshortcuts="Shift+W"]').count()) === 1
+    && (await outils.locator('[data-studio-famille="volume"] [data-studio-outil="studio.solide.supprimer"][aria-keyshortcuts="Shift+Delete"]').count()) === 1
+    && (await outils.locator('[data-studio-famille="vue"] [data-studio-commande="navigation-3d"][aria-keyshortcuts="Shift+G"]').count()) === 1
+    && (await outils.locator('[data-studio-famille="vue"] [data-studio-commande="coupe-3d"][aria-keyshortcuts="Shift+K"]').count()) === 1);
   await page.keyboard.press("b");
   const vueLibre = page.locator("[data-studio-vue3d]");
   const canevasLibre = vueLibre.locator("canvas[data-studio-vue3d-canvas]");
@@ -866,11 +866,11 @@ try {
   // clic ; la ligne modifiée → l'angle suit ; la ligne supprimée → « à résoudre » ; enregistrement, actualisation
   // identique ; export DXF (TEXT, ARC) et SVG.
   check("annotations : Cote angulaire (Maj+A) et Texte (Maj+T) dans la barre Dessin, icônes propres",
-    (await outils.locator('[data-studio-barre="dessin"] [data-studio-outil="studio.dessin.cote-angulaire"][aria-keyshortcuts="Shift+A"] svg path').count()) === 1
-    && (await outils.locator('[data-studio-barre="dessin"] [data-studio-outil="studio.dessin.texte"][aria-keyshortcuts="Shift+T"] svg path').count()) === 1);
+    (await outils.locator('[data-studio-famille="annotation"] [data-studio-outil="studio.dessin.cote-angulaire"][aria-keyshortcuts="Shift+A"] svg path').count()) === 1
+    && (await outils.locator('[data-studio-famille="annotation"] [data-studio-outil="studio.dessin.texte"][aria-keyshortcuts="Shift+T"] svg path').count()) === 1);
   const lignesAvantAnnotations = await idsDe("line");
   for (const [x, y, xf, yf] of [[40, 40, 44, 40], [40, 40, 40, 43]]) {
-    await outils.getByRole("button", { name: "Ligne", exact: true }).click();
+    await cliquerBouton(outils, "Ligne");
     for (const [nom, v] of [["X", x], ["Y", y], ["X final", xf], ["Y final", yf]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
     await proprietes.getByRole("button", { name: "Ajouter au dessin", exact: true }).click();
   }
@@ -881,7 +881,7 @@ try {
   await page.keyboard.press("Shift+S");
   await page.keyboard.press("Shift+Z");
   await page.keyboard.press("Shift+A");
-  check("annotations : Maj+A choisit l'outil Cote angulaire", (await outils.getByRole("button", { name: "Cote angulaire", exact: true }).getAttribute("aria-pressed")) === "true");
+  check("annotations : Maj+A choisit l'outil Cote angulaire", (await element(outils, "Cote angulaire").getAttribute("aria-pressed")) === "true");
   await cliquer(42.5, 40);
   await cliquer(40, 41.5);
   const angulaire = page.locator("svg [data-studio-cote-angulaire]");
@@ -890,7 +890,7 @@ try {
     && (await angulaire.locator("text").textContent()) === "90,00°" && (await angulaire.getAttribute("data-studio-cote-etat")) === "resolue");
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Shift+T");
-  check("annotations : Maj+T choisit l'outil Texte", (await outils.getByRole("button", { name: "Texte", exact: true }).getAttribute("aria-pressed")) === "true");
+  check("annotations : Maj+T choisit l'outil Texte", (await element(outils, "Texte").getAttribute("aria-pressed")) === "true");
   await proprietes.getByLabel("Texte", { exact: true }).fill("Séjour — nord");
   await proprietes.getByLabel("Hauteur du texte", { exact: true }).fill("0.5");
   await proprietes.locator('[data-studio-champ="justification"]').selectOption("center");
@@ -901,7 +901,7 @@ try {
   check("annotations : un clic pose le texte saisi, tel quel (non traduit)", (await texteAnnotation.locator("text").textContent()) === "Séjour — nord"
     && (await texteAnnotation.locator("text").getAttribute("translate")) === "no" && (await texteAnnotation.locator("text").getAttribute("text-anchor")) === "middle");
   // La ligne B tourne (son extrémité est modifiée) : la cote angulaire liée suit, l'angle passe à 45°.
-  await outils.getByRole("button", { name: "Sélection", exact: true }).click();
+  await cliquerBouton(outils, "Sélection");
   await page.locator(`[data-studio-objet="${ligneB}"]`).focus();
   await page.keyboard.press("Enter");
   await page.locator(`[data-studio-selection="${ligneB}"]`).waitFor();
@@ -1022,10 +1022,10 @@ try {
     const geometrieDe = (id) => page.locator(`[data-studio-objet="${id}"] line`).evaluate((l) => ["x1", "y1", "x2", "y2"].map((k) => Number(l.getAttribute(k))));
 
     check("accrochage : barres Accrochage et Repérage, une bascule par mode avec son icône et son raccourci",
-      (await outils.locator('[data-studio-barre="accrochage"] [data-studio-commande="accrochage-intersection"][aria-keyshortcuts="Shift+T"][aria-pressed="true"] svg path').count()) === 1
-      && (await outils.locator('[data-studio-barre="accrochage"] [data-studio-commande="accrochage-perpendiculaire"][aria-keyshortcuts="Shift+A"][aria-pressed="false"]').count()) === 1
-      && (await outils.locator('[data-studio-barre="reperage"] [data-studio-commande="reperage-polaire"][aria-keyshortcuts="F10"][aria-pressed="false"]').count()) === 1
-      && (await outils.locator('[data-studio-barre="reperage"] [data-studio-commande="reperage-orthogonal"][aria-keyshortcuts="F8"]').count()) === 1);
+      (await outils.locator('[data-studio-famille="vue"] [data-studio-commande="accrochage-intersection"][aria-keyshortcuts="X"][aria-pressed="true"] svg path').count()) === 1
+      && (await outils.locator('[data-studio-famille="vue"] [data-studio-commande="accrochage-perpendiculaire"][aria-keyshortcuts="N"][aria-pressed="false"]').count()) === 1
+      && (await outils.locator('[data-studio-famille="vue"] [data-studio-commande="reperage-polaire"][aria-keyshortcuts="F10"][aria-pressed="false"]').count()) === 1
+      && (await outils.locator('[data-studio-famille="vue"] [data-studio-commande="reperage-orthogonal"][aria-keyshortcuts="F8"]').count()) === 1);
 
     // 1. Intersection : le repère « Intersection » s'affiche près du croisement ; le premier point en est exactement.
     await page.evaluate(() => document.activeElement?.blur());
@@ -1042,8 +1042,8 @@ try {
     check("accrochage : la ligne part exactement de l'intersection (5 ; 5)", inter[0] === 5 && inter[1] === 5, inter.join(" "));
 
     // 2. Perpendiculaire depuis un point posé : pied exact sur la ligne y = x.
-    await page.keyboard.press("Shift+A");
-    check("accrochage : Maj+A active l'accrochage en perpendiculaire", (await outils.getByRole("button", { name: "Accrocher en perpendiculaire", exact: true }).getAttribute("aria-pressed")) === "true");
+    await page.keyboard.press("n");
+    check("accrochage : N active l'accrochage en perpendiculaire", (await element(outils, "Accrocher en perpendiculaire").getAttribute("aria-pressed")) === "true");
     await cliquer(12, 2);
     const depart = await page.locator("svg .studio-point-pose").first().evaluate((c) => [Number(c.getAttribute("cx")), Number(c.getAttribute("cy"))]);
     const pied = net((depart[0] + depart[1]) / 2);
@@ -1054,11 +1054,11 @@ try {
     const perp = await geometrieDe(idPerp);
     const produit = (perp[2] - perp[0]) * 6 + (perp[3] - perp[1]) * 6;
     check("accrochage : la ligne menée du point tombe au pied de la perpendiculaire", perp[2] === pied && perp[3] === pied && Math.abs(produit) < 1e-9, perp.join(" "));
-    await page.keyboard.press("Shift+A");
+    await page.keyboard.press("n");
 
     // 3. Repérage polaire 45° (F10) et longueur tapée « 3 » : extrémité exacte.
     await page.keyboard.press("F10");
-    check("repérage : F10 active le repérage polaire", (await outils.getByRole("button", { name: "Repérage polaire", exact: true }).getAttribute("aria-pressed")) === "true");
+    check("repérage : F10 active le repérage polaire", (await element(outils, "Repérage polaire").getAttribute("aria-pressed")) === "true");
     await cliquer(3, 11);
     const debutPolaire = await page.locator("svg .studio-point-pose").first().evaluate((c) => [Number(c.getAttribute("cx")), Number(c.getAttribute("cy"))]);
     await survoler(debutPolaire[0] + 2, debutPolaire[1] + 2.03);
@@ -1094,14 +1094,14 @@ try {
   await outils.waitFor();
   await page.locator("svg [data-studio-objet]").first().waitFor({ state: "attached" });
   check("transformations : Copier (D), Rotation (Maj+R), Symétrie (I), Échelle (S) dans la barre Modification, icônes propres",
-    (await outils.locator('[data-studio-barre="modification"] [data-studio-outil="studio.dessin.copier"][aria-keyshortcuts="D"] svg path').count()) === 1
-    && (await outils.locator('[data-studio-barre="modification"] [data-studio-outil="studio.dessin.rotation"][aria-keyshortcuts="Shift+R"] svg path').count()) === 1
-    && (await outils.locator('[data-studio-barre="modification"] [data-studio-outil="studio.dessin.symetrie"][aria-keyshortcuts="I"] svg path').count()) === 1
-    && (await outils.locator('[data-studio-barre="modification"] [data-studio-outil="studio.dessin.echelle"][aria-keyshortcuts="S"] svg path').count()) === 1);
+    (await outils.locator('[data-studio-famille="modification"] [data-studio-outil="studio.dessin.copier"][aria-keyshortcuts="D"] svg path').count()) === 1
+    && (await outils.locator('[data-studio-famille="modification"] [data-studio-outil="studio.dessin.rotation"][aria-keyshortcuts="Shift+R"] svg path').count()) === 1
+    && (await outils.locator('[data-studio-famille="modification"] [data-studio-outil="studio.dessin.symetrie"][aria-keyshortcuts="I"] svg path').count()) === 1
+    && (await outils.locator('[data-studio-famille="modification"] [data-studio-outil="studio.dessin.echelle"][aria-keyshortcuts="S"] svg path').count()) === 1);
   const tousIds = () => page.locator("svg [data-studio-objet]").evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-objet")));
   const idsAvantT = await tousIds();
   const saisir = async (outil, champs, bouton) => {
-    await outils.getByRole("button", { name: outil, exact: true }).click();
+    await cliquerBouton(outils, outil);
     for (const [nom, v] of champs) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
     await proprietes.getByRole("button", { name: bouton, exact: true }).click();
   };
@@ -1113,7 +1113,7 @@ try {
   check("transformations : rectangle, cercle, ligne et arc posés", formesT.length === 4, formesT.join(" "));
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Shift+Z");
-  await outils.getByRole("button", { name: "Sélection", exact: true }).click();
+  await cliquerBouton(outils, "Sélection");
   for (const [i, id] of formesT.entries()) {
     await page.locator(`[data-studio-objet="${id}"]`).focus();
     await page.keyboard.press(i === 0 ? "Enter" : "Shift+Enter");
@@ -1121,7 +1121,7 @@ try {
   check("transformations : sélection mixte de quatre objets", (await page.locator("[data-studio-selection-compte]").getAttribute("data-studio-selection-compte")) === "4");
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("d");
-  check("transformations : D choisit l'outil Copier", (await outils.getByRole("button", { name: "Copier", exact: true }).getAttribute("aria-pressed")) === "true");
+  check("transformations : D choisit l'outil Copier", (await element(outils, "Copier").getAttribute("aria-pressed")) === "true");
   // Aperçu au pointeur : point de base, survol de la destination → les copies apparaissent sans rien appliquer.
   const nObjets = (await tousIds()).length;
   await cliquer(40, 0);
@@ -1136,18 +1136,18 @@ try {
   check("transformations : Copier ×3 ajoute douze objets", (await tousIds()).length === nObjets + 12);
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Shift+R");
-  check("transformations : Maj+R choisit Rotation", (await outils.getByRole("button", { name: "Rotation", exact: true }).getAttribute("aria-pressed")) === "true");
+  check("transformations : Maj+R choisit Rotation", (await element(outils, "Rotation").getAttribute("aria-pressed")) === "true");
   for (const [nom, v] of [["Centre X", 40], ["Centre Y", 0], ["Angle (°)", 90]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
   await proprietes.getByRole("button", { name: "Tourner la sélection", exact: true }).click();
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("i");
-  check("transformations : I choisit Symétrie, « Conserver l’original » coché", (await outils.getByRole("button", { name: "Symétrie", exact: true }).getAttribute("aria-pressed")) === "true" && (await proprietes.getByLabel("Conserver l’original", { exact: true }).isChecked()));
+  check("transformations : I choisit Symétrie, « Conserver l’original » coché", (await element(outils, "Symétrie").getAttribute("aria-pressed")) === "true" && (await proprietes.getByLabel("Conserver l’original", { exact: true }).isChecked()));
   for (const [nom, v] of [["Axe : X du premier point", 40], ["Axe : Y du premier point", -5], ["Axe : X du second point", 41], ["Axe : Y du second point", -5]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
   await proprietes.getByRole("button", { name: "Symétrie de la sélection", exact: true }).click();
   check("transformations : la symétrie garde l'original et ajoute quatre objets", (await tousIds()).length === nObjets + 16);
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("s");
-  check("transformations : S choisit Échelle", (await outils.getByRole("button", { name: "Échelle", exact: true }).getAttribute("aria-pressed")) === "true");
+  check("transformations : S choisit Échelle", (await element(outils, "Échelle").getAttribute("aria-pressed")) === "true");
   for (const [nom, v] of [["Centre X", 40], ["Centre Y", 0], ["Facteur", 2]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
   await proprietes.getByRole("button", { name: "Mettre la sélection à l’échelle", exact: true }).click();
   const avantEnvoiT = envois.length;

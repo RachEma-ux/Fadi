@@ -54,9 +54,9 @@ describe("Volume libre : commandes depuis les valeurs saisies", () => {
 });
 
 describe("Volume libre : barre, raccourcis et commandes de la vue 3D (règle d'or)", () => {
-  it("barre « Volume libre » : Boîte (B), Prisme (Maj+B), Déplacer le solide (Maj+T), Supprimer le solide (Maj+Suppr)", () => {
+  it("barre « Volume libre » : Boîte (B), Prisme (Maj+B), Déplacer le solide (Maj+W), Supprimer le solide (Maj+Suppr)", () => {
     expect(outilsDeBarre("volume-libre").map((t) => [t.toolId, t.raccourci])).toEqual([
-      ["studio.solide.boite", "B"], ["studio.solide.prisme", "Shift+B"], ["studio.solide.deplacer", "Shift+T"], ["studio.solide.supprimer", "Shift+Delete"],
+      ["studio.solide.boite", "B"], ["studio.solide.prisme", "Shift+B"], ["studio.solide.deplacer", "Shift+W"], ["studio.solide.supprimer", "Shift+Delete"],
     ]);
     for (const t of STUDIO_TOOLS.filter((x) => x.groupe === "volume-libre")) {
       expect(cibleRaccourci(t.raccourci)).toEqual({ type: "outil", toolId: t.toolId });
