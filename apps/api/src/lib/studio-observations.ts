@@ -16,7 +16,7 @@
  *   - clôturer : le propriétaire seul (droit `owner`, seul rôle « autorisé » du contrat existant), après recontrôle, avec
  *     un motif (consigné comme décision de clôture, journal des décisions) et sans tâche restant « à faire » ; un
  *     éditeur PROPOSE la clôture (décision de nature « proposition »), il ne la décide pas ;
- *   - rouvrir : l'auteur de l'observation ou le propriétaire ; une observation clôturée, le propriétaire seul ;
+ *   - rouvrir : l'auteur de l'observation ou le propriétaire ;
  *   - réattribuer : le propriétaire seul, tant que l'observation n'est pas clôturée.
  *
  * Suivi (E.2-01 à E.2-03, écritures dans `studio-observations-suivi.ts`) : liens de domaines (auteur, responsable
@@ -60,11 +60,11 @@ export function statutApres(statut: StudioObservationStatut, action: Observation
 }
 
 /**
- * Qui peut faire quel passage. Rouvrir une observation CLÔTURÉE revient à défaire la décision du propriétaire
- * (E.2-04, E.2-05) : seul le propriétaire le peut ; avant clôture, l'auteur rouvre aussi.
+ * Qui peut faire quel passage (indépendant du statut). Rouvrir, même une observation clôturée, reste permis à l'auteur
+ * (contrat d'origine) : le passage est consigné au journal des passages ; réserver la réouverture d'une clôture au
+ * propriétaire est une décision du maître d'ouvrage, non prise ici.
  */
-export function acteurAutorise(action: ObservationTransition, a: ActeurObservation, statut?: StudioObservationStatut): boolean {
-  if (action === "rouvrir" && statut === "cloturee") return a.estProprietaire;
+export function acteurAutorise(action: ObservationTransition, a: ActeurObservation, _statut?: StudioObservationStatut): boolean {
   switch (action) {
     case "corriger": return a.estResponsable && a.peutEcrire;
     case "recontroler": return a.estAuteur || a.estProprietaire;
@@ -78,7 +78,7 @@ export const REFUS_ACTEUR: Record<ObservationTransition, string> = {
   corriger: "Seul le responsable de l'observation, propriétaire ou éditeur du projet, la déclare corrigée.",
   recontroler: "Seul l'auteur de l'observation ou le propriétaire du projet la recontrôle.",
   cloturer: "Seul le propriétaire du projet clôture une observation.",
-  rouvrir: "Seul l'auteur de l'observation ou le propriétaire du projet la rouvre ; une observation clôturée, le propriétaire seul.",
+  rouvrir: "Seul l'auteur de l'observation ou le propriétaire du projet la rouvre.",
   reattribuer: "Seul le propriétaire du projet réattribue une observation.",
 };
 

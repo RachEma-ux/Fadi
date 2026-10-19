@@ -42,9 +42,8 @@ describe("Observations Studio — règles pures", () => {
     expect(acteurAutorise("cloturer", { ...personne, estAuteur: true, estResponsable: true })).toBe(false);
     expect(acteurAutorise("cloturer", { ...personne, estProprietaire: true })).toBe(true);
     expect(acteurAutorise("rouvrir", { ...personne, estAuteur: true })).toBe(true);
-    // Rouvrir une observation clôturée défait la décision du propriétaire : lui seul le peut.
-    expect(acteurAutorise("rouvrir", { ...personne, estAuteur: true, peutEcrire: true }, "cloturee")).toBe(false);
-    expect(acteurAutorise("rouvrir", { ...personne, estAuteur: true }, "corrigee")).toBe(true);
+    // Contrat d'origine conservé : l'auteur rouvre aussi une observation clôturée (passage journalisé).
+    expect(acteurAutorise("rouvrir", { ...personne, estAuteur: true }, "cloturee")).toBe(true);
   });
 
   it("compare les révisions par la chaîne des parents", () => {
