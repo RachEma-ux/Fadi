@@ -4,6 +4,11 @@
  * Icon.tsx, jamais partagée), une place dans une barre appropriée — sa famille de la barre compacte, dans la rangée
  * ou dans le menu « ▾ » de la famille (`barre-compacte.ts`) — et un raccourci unique, jamais réservé par le navigateur ; la table clavier de l'éditeur est exactement celle du registre et des commandes ; le catalogue
  * « Outils » et la palette lisent le registre sans le recopier.
+ *
+ * Navigation hors règle d'or (I.4, ADR-STUDIO-NAV-01 §1) : les liens des quatre domaines et les deux boutons
+ * Planche 2D / Planche 3D sont de la navigation, pas des outils ni des commandes. Ils n'entrent ni dans le registre, ni
+ * dans `COMMANDES_EDITEUR`, ni dans la table clavier ; le choix de planche n'annonce que le raccourci de la bascule
+ * existante « Vue 3D » (Maj+D), qui a son icône, sa barre et son raccourci. Le dernier test le vérifie.
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -15,6 +20,8 @@ import { BarreOutils } from "./BarreOutils";
 import { ELEMENTS_FAMILLE, familleDe, FAMILLES_STUDIO, TRACE_PLUS } from "./barre-compacte";
 import { CATALOGUE, groupesCatalogue, rechercher } from "./catalogue";
 import { GestionnaireOutils, PaletteCommandes } from "./CatalogueOutils";
+import { NavigationDomaines, SelecteurPlanche } from "../domaines/DomainesStudio";
+import { DOMAINES_STUDIO, PLANCHES_STUDIO } from "../domaines/domaines";
 import {
   actifDansUnChamp, ariaRaccourci, BARRES_STUDIO, cibleRaccourci, combinaison, COMMANDES_EDITEUR, commandesDeBarre, libelleRaccourci, outilsDeBarre,
   RACCOURCIS_RESERVES, TABLE_CLAVIER,
@@ -282,5 +289,18 @@ describe("Catalogue « Outils » et palette (#166, Registry)", () => {
     expect(html).toContain('role="listbox"');
     for (const e of CATALOGUE) expect(html).toContain(`data-studio-palette-entree="${e.identifiant}"`);
     expect(html).toMatch(/aria-disabled="true" data-studio-palette-entree="enregistrer"/);
+  });
+});
+
+describe("navigation des domaines et choix de planche — déclarés hors règle d'or", () => {
+  it("ni outil, ni commande, ni raccourci propre : liens de domaine sans raccourci, planches annonçant seulement Maj+D (Vue 3D)", () => {
+    const nav = renderToStaticMarkup(createElement(NavigationDomaines, { actif: "dessin", adresse: (id) => `/v?domaine=${id}`, surChoix: () => {} }));
+    const planches = renderToStaticMarkup(createElement(SelecteurPlanche, { active: "2d", surChoix: () => {} }));
+    for (const html of [nav, planches]) expect(html).not.toMatch(/data-studio-(outil|commande)=/);
+    expect(nav).not.toContain("aria-keyshortcuts");
+    expect([...planches.matchAll(/aria-keyshortcuts="([^"]*)"/g)].map((m) => m[1])).toEqual([ariaRaccourci(COMMANDES_EDITEUR.find((c) => c.id === "vue-3d")!.raccourci)]);
+    // Aucun domaine ni aucune planche n'est un outil ou une commande (donc rien dans la table clavier).
+    const ids = new Set(entrees.map((e) => e.id));
+    for (const id of [...DOMAINES_STUDIO.map((d) => d.id), ...PLANCHES_STUDIO.map((p) => p.id), "planche-2d", "planche-3d"]) expect(ids.has(id), id).toBe(false);
   });
 });

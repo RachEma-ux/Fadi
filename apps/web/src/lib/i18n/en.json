@@ -10435,8 +10435,9 @@
 "Planches": "Boards",
 "Basculer de planche": "Switch board",
 "Scènes enregistrées": "Saved scenes",
-"Les scènes, l’apparence et le rendu du modèle se règlent sur la vue 3D du modèle.": "Scenes, appearance and the model render are set in the 3D view of the model.",
-"Examiner sur la vue 3D": "Examine in the 3D view",
+"Aperçu ; l’édition des scènes et du rendu se fait dans la Planche 3D.": "Preview; scenes and rendering are edited in the 3D board.",
+"Ouvrir la Planche 3D": "Open the 3D board",
+"Vue 3D · Repère local · Mètres": "3D view · Local coordinates · Metres",
 "Publications de l’étude": "Study publications",
 "Ctrl+Maj+D": "Ctrl+Shift+D"
 }

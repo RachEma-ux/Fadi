@@ -9,8 +9,9 @@
  * `variantId` (tête) ou `variantId:revisionId` ; `archives=1` sur un projet ou une étude (une seule fois, seule valeur
  * admise), qui affiche aussi les études ou les variantes archivées.
  *
- * Domaine et planche actifs (I.4-03, ROUTE-06, NAV-005 ; **proposition** : le contrat d'URL reste « À définir » par
- * le maître d'ouvrage) : sur une variante, `domaine=dessin|bim|visualisation|documentation` (une seule fois) désigne le
+ * Domaine et planche actifs (I.4-03, ROUTE-06, NAV-005 ; **proposé, non livré comme contrat** : le contrat d'URL
+ * reste « À définir », décision du maître d'ouvrage attendue ; cette lecture rétrocompatible peut être changée ou
+ * retirée par cette décision) : sur une variante, `domaine=dessin|bim|visualisation|documentation` (une seule fois) désigne le
  * domaine actif ; `planche=2d|3d` (une seule fois) la planche active, admise **seulement avec `domaine=dessin`**
  * (ADR-STUDIO-NAV-01 §1 : les planches n'existent que dans Dessin et modélisation). Paramètres facultatifs et
  * additifs : une adresse sans eux s'ouvre comme avant (Dessin et modélisation, Planche 2D) ; une valeur inconnue,
@@ -125,8 +126,11 @@ export const cheminProjetStudio = (projectId: string, options: { archives?: bool
 export const cheminEtudeStudio = (projectId: string, studyId: string, options: { archives?: boolean } = {}): string =>
   avecArchives(`${cheminProjetStudio(projectId)}/etudes/${encodeURIComponent(studyId)}`, !!options.archives);
 
+/** Domaine et planche d'une adresse de variante (I.4-03, proposition). */
+export interface OptionsDomaineVariante { domaine?: DomaineStudio | null; planche?: PlancheStudio | null }
+
 /** `planche` n'est écrite qu'avec `domaine: "dessin"` (sinon ignorée : une planche n'existe que dans ce domaine). */
-export function cheminVarianteStudio(projectId: string, studyId: string, variantId: string, revisionId: string | null = null, options: { commentaires?: boolean; domaine?: DomaineStudio | null; planche?: PlancheStudio | null } = {}): string {
+export function cheminVarianteStudio(projectId: string, studyId: string, variantId: string, revisionId: string | null = null, options: { commentaires?: boolean } & OptionsDomaineVariante = {}): string {
   const base = `${cheminEtudeStudio(projectId, studyId)}/variantes/${encodeURIComponent(variantId)}`;
   const q = new URLSearchParams();
   if (revisionId !== null) q.set("revision", revisionId);

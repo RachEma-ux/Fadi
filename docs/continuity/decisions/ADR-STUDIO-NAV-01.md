@@ -29,14 +29,26 @@ Le contrat de référence est celui d'A4, [`CONTRAT-NAV-M004.md` v0.2](https://g
 
 Paramètres : `?domaine=dessin|bim|visualisation|documentation`, et `planche=2d|3d` en `dessin` seulement. Une valeur inconnue donne l'état « URL non reconnue », sans mutation.
 
-**Contrat retenu pour la mise en œuvre d'I.4-03 — proposition, en attente de la décision du maître d'ouvrage** (la Checklist laisse ce contrat « À définir », ROUTE-06). Code : `apps/web/src/modules/studio/routes-studio.ts`, `domaines/domaines.ts` ; preuves : `routes-studio.test.ts`, `domaines/domaines.test.ts`, `apps/web/e2e/studio-domaines.mjs`.
+**I.4-03 : proposé, non livré, décision attendue du maître d'ouvrage.** La Checklist laisse ce contrat « À définir » (ROUTE-06) ; il n'est **pas** un contrat validé. Le code en porte une **proposition rétrocompatible** (une adresse antérieure n'est jamais réécrite), que la décision pourra changer ou retirer. Code : `apps/web/src/modules/studio/routes-studio.ts`, `domaines/domaines.ts` ; preuves : `routes-studio.test.ts`, `domaines/domaines.test.ts`, `apps/web/e2e/studio-domaines.mjs`. Proposition :
 
 - Les quatre domaines et leurs noms sont ceux de REF-01 §02 (« Organisation fonctionnelle ») ; les identifiants d'adresse `dessin`, `bim`, `visualisation`, `documentation` sont ceux de ce §1.
 - Paramètres de requête sur la route de variante seulement, facultatifs et additifs : `domaine` (une fois) ; `planche` (une fois), admise **uniquement avec `domaine=dessin`**. Ils se combinent avec `revision` et `commentaires`. Valeur inconnue, vide, répétée ou planche hors de `dessin` : adresse non reconnue (écran explicite, adresse conservée).
 - Rétrocompatibilité : une adresse sans `domaine` s'ouvre comme avant (Dessin et modélisation, Planche 2D) et **n'est jamais réécrite**, même quand la vue 3D est basculée par Maj+D. L'adresse ne porte domaine et planche qu'après un choix explicite dans la navigation des domaines, ou quand elle les portait déjà ; elle suit alors chaque changement.
-- Écriture par **remplacement** (aucune entrée d'historique), hors de la clé de montage de la planche : changer de domaine ou de planche ne recharge rien et n'abandonne ni geste, ni brouillon, ni sauvegarde (NAV-007) ; la garde de navigation n'intervient pas.
+- Écriture par **remplacement** (aucune entrée d'historique), hors de la clé de montage de la planche : changer de domaine ou de planche ne recharge rien et n'abandonne ni geste, ni brouillon, ni sauvegarde en cours (NAV-007). L'adresse écrite reprend l'état réel du panneau des commentaires ; l'historique des révisions et « Revenir à la version courante » reprennent domaine et planche.
+- Chaque lien de domaine a pour adresse celle de la variante avec ce domaine : seul le clic simple (sans Ctrl, Cmd, Maj ni Alt) est traité sur place ; un clic modifié l'ouvre ailleurs. Ces liens portent `data-studio-sans-garde` : la garde de navigation ne les traite pas comme une sortie de la variante.
 - Profil standard : les quatre domaines restent présents l'un sous l'autre ; le domaine choisi devient actif et reçoit le focus (son titre). Aucun paramètre ne transmet de droit.
 - Non retenu ici (choix plus engageant laissé au maître d'ouvrage) : segment de chemin (`…/variantes/:v/:domaine`), entrée d'historique par changement de domaine, masquage des domaines inactifs.
+
+**Rattachement des fonctions aux domaines (I.4-01, I.4-02).** Une seule table par nature, dans `domaines/domaines.ts`, contrôlée par `domaines.test.ts` (exhaustivité) : `FONCTIONS_STUDIO` (blocs de l'espace d'une variante), `DOMAINES_COMMANDES` (une entrée par commande de `COMMANDES_EDITEUR`), `DOMAINES_FAMILLES_OUTILS` (une entrée par famille d'outils du registre, donc pour chaque entrée du catalogue). La mise en page des sections est **dérivée** de ces tables. Lecture de REF-01 §02 :
+
+- Dessin et modélisation : les deux planches, la barre d'outils, la portée d'Annuler, la liste des éléments ; édition, vue (Vue 3D, navigation et coupe 3D), accrochage, repérage ; outils de dessin, modification, calques, volume, volume libre, architecture.
+- BIM et coordination : exigences et écarts ; propriétés déclarées.
+- Visualisation, rendu et immersion : **aperçu** des scènes enregistrées et des types de rendu ; l'édition des scènes et du rendu se fait dans la Planche 3D (outils Scènes et Apparence), que ce lot ne déplace pas.
+- Documentation, métrés et collaboration : Feuille, Feuilles et dossier, publications de l'étude, commentaires et observations, historique des révisions, métré.
+
+**Question au maître d'ouvrage — Domaine « à définir ».** REF-01 ne range dans aucun domaine les fonctions suivantes ; leur domaine n'est pas deviné (`A_DEFINIR`) et elles restent où elles sont aujourd'hui, dans la barre d'outils des planches : Importer DXF, Exporter SVG, Exporter DXF, Exporter IFC, Exporter le rendu PNG, Matrice d’échanges, ainsi que le système d'outils commun aux domaines (REF-01 §03) : Outils, Palette de commandes. Leur domaine est à fixer par décision.
+
+**Navigation, hors règle d'or.** Les liens de domaine et les deux boutons Planche 2D / Planche 3D sont de la navigation, pas des commandes : ils n'ajoutent ni outil ni raccourci (le choix de planche exécute la bascule existante « Vue 3D », Maj+D, qui a son icône, sa barre et son raccourci). Cette exemption est déclarée et contrôlée dans `planche2d/regle-or.test.ts`.
 
 **Ajouts tirés du code actuel :**
 
