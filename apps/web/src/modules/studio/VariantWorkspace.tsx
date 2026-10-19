@@ -26,7 +26,7 @@
  * (`variante/useEnregistrement.ts`), clavier (`variante/useClavierStudio.ts`), garde de navigation
  * (`variante/useGardeNavigation.ts`), panneaux (`variante/`).
  */
-import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, studioVersionProjection, type StudioCommand, type StudioDocument, type StudioLayer, type StudioPoint, type StudioWall } from "@parcours/atelier-model";
 import { api, studioExportUrl, type StudioContext } from "../../lib/api";
@@ -84,9 +84,9 @@ import { useCycleOutils } from "./chargement/useRessources";
 import { AvisFileLocale } from "./hors-ligne/AvisFileLocale";
 import { cleVariante } from "./hors-ligne/persistance";
 import { mesurerCommandes } from "./chargement/mesures-studio";
-import { cheminEtudeStudio } from "./routes-studio";
-import { DOMAINE_PAR_DEFAUT, idSectionDomaine, PLANCHE_PAR_DEFAUT, PLANCHES_STUDIO, type DomaineStudio, type PlancheStudio } from "./domaines/domaines";
-import { AccesDocumentation, ApercuVisualisation, NavigationDomaines, SectionDomaine, SelecteurPlanche } from "./domaines/DomainesStudio";
+import { cheminEtudeStudio, cheminVarianteStudio, type OptionsDomaineVariante } from "./routes-studio";
+import { commandesDuDomaine, DOMAINE_PAR_DEFAUT, DOMAINES_STUDIO, fonctionsDuDomaine, idSectionDomaine, PLANCHE_PAR_DEFAUT, type DomaineStudio, type FonctionStudio, type PlancheStudio } from "./domaines/domaines";
+import { AccesDomaine, ApercuVisualisation, idTitreDomaine, LienPublications, NavigationDomaines, SectionDomaine, SelecteurPlanche, TitreLegende, useEcranTelephone } from "./domaines/DomainesStudio";
 import "./studio.css";
 import "./planche2d/planche2d.css";
 
@@ -98,13 +98,14 @@ function versionPlan(doc: StudioDocument): string {
 
 /**
  * `commentairesOuverts` : panneau des commentaires ouvert à l'arrivée (adresse `?commentaires=ouverts`, lien de notification).
- * `domaine`, `planche` : domaine et planche actifs lus dans l'adresse (I.4-03, `routes-studio.ts`), `null` s'ils n'y
- * figurent pas ; `surAdresse` réécrit l'adresse (remplacement, sans entrée d'historique) quand ils changent.
+ * `domaine`, `planche` : domaine et planche actifs lus dans l'adresse (I.4-03, proposition, `routes-studio.ts`), `null`
+ * s'ils n'y figurent pas ; `surAdresse` réécrit l'adresse (remplacement, sans entrée d'historique) quand ils changent,
+ * avec l'état réel du panneau des commentaires.
  */
 export interface VariantWorkspaceProps {
   projectId: string; studyId: string; variantId: string; revisionId: string | null; commentairesOuverts?: boolean;
   domaine?: DomaineStudio | null; planche?: PlancheStudio | null;
-  surAdresse?: (a: { domaine: DomaineStudio; planche: PlancheStudio | null }) => void;
+  surAdresse?: (a: { domaine: DomaineStudio; planche: PlancheStudio | null; commentaires: boolean }) => void;
 }
 
 export function VariantWorkspace({ projectId, studyId, variantId, revisionId, commentairesOuverts = false, domaine = null, planche = null, surAdresse }: VariantWorkspaceProps) {
@@ -188,39 +189,49 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   useGardeNavigation(dirty);
 
   // ——— Domaines et planche actifs (I.4) ———
-  // Contrat proposé (I.4-03) : l'adresse ne porte domaine et planche qu'après un choix explicite dans la navigation des
-  // domaines, ou quand elle les portait déjà (lien reçu) ; elle suit ensuite chaque changement, par remplacement. Une
-  // adresse sans domaine (toutes les adresses antérieures) n'est jamais réécrite : son comportement est inchangé.
+  // Contrat proposé (I.4-03, non livré comme contrat : décision du maître d'ouvrage attendue) : l'adresse ne porte
+  // domaine et planche qu'après un choix explicite dans la navigation des domaines ou le choix de planche, ou quand elle
+  // les portait déjà (lien reçu) ; elle suit ensuite chaque changement (et l'état réel des commentaires), par
+  // remplacement. Une adresse sans domaine (toutes les adresses antérieures) n'est jamais réécrite.
   const plancheActive: PlancheStudio = vue3d ? "3d" : "2d";
-  const adresseSuivie = useRef(false);
+  const [adresseSuivie, setAdresseSuivie] = useState(domaine !== null);
+  const telephone = useEcranTelephone();
   useEffect(() => { if (domaine) setDomaineActif(domaine); }, [domaine]);
   useEffect(() => { if (planche) setVue3d(planche === "3d"); }, [planche]);
+  /** Domaine et planche inscrits dans l'adresse, repris par les liens vers une autre révision de la variante. */
+  const adresseDomaine: OptionsDomaineVariante = adresseSuivie ? { domaine: domaineActif, planche: domaineActif === "dessin" ? plancheActive : null } : {};
   useEffect(() => {
-    if (!surAdresse || (!domaine && !adresseSuivie.current)) return;
-    const voulu = { domaine: domaineActif, planche: domaineActif === "dessin" ? plancheActive : null };
-    const lu = { domaine: domaine ?? DOMAINE_PAR_DEFAUT, planche: domaine === "dessin" ? planche ?? PLANCHE_PAR_DEFAUT : null };
-    if (voulu.domaine !== lu.domaine || voulu.planche !== lu.planche) surAdresse(voulu);
-  }, [domaineActif, plancheActive]);
-  /** Porte le focus sur le titre du domaine (lu par les technologies d'assistance) et fait défiler jusqu'à sa section. */
+    if (!surAdresse || !adresseSuivie) return;
+    const voulu = { domaine: domaineActif, planche: domaineActif === "dessin" ? plancheActive : null, commentaires };
+    const lu = { domaine: domaine ?? DOMAINE_PAR_DEFAUT, planche: domaine === "dessin" ? planche ?? PLANCHE_PAR_DEFAUT : null, commentaires: commentairesOuverts };
+    if (voulu.domaine !== lu.domaine || voulu.planche !== lu.planche || voulu.commentaires !== lu.commentaires) surAdresse(voulu);
+  }, [adresseSuivie, domaineActif, plancheActive, commentaires]);
+  /**
+   * Porte le focus sur un élément visible du domaine — son titre, ou, quand le titre de Dessin et modélisation est
+   * masqué (téléphone), le bouton de la planche active — et fait défiler jusqu'à sa section.
+   */
   function allerAuDomaine(id: DomaineStudio) {
     const s = document.getElementById(idSectionDomaine(id));
-    document.getElementById(`${idSectionDomaine(id)}-titre`)?.focus({ preventScroll: true });
-    // Au téléphone, la section des planches n'a pas de boîte propre (`display: contents`) : on vise son premier contenu.
-    const cible = s && s.getClientRects().length ? s : s?.querySelector<HTMLElement>(":scope > :not(h2)");
-    cible?.scrollIntoView({ block: "start" });
+    const titre = document.getElementById(idTitreDomaine(id));
+    const cible = titre && titre.getClientRects().length ? titre : s?.querySelector<HTMLElement>('[data-studio-planche][aria-pressed="true"]') ?? titre;
+    cible?.focus({ preventScroll: true });
+    s?.scrollIntoView({ block: "start" });
   }
+  // Focus demandé pour après le prochain rendu (la planche choisie doit d'abord être affichée).
+  const focusApres = useRef<DomaineStudio | null>(null);
+  useEffect(() => { const d = focusApres.current; if (d) { focusApres.current = null; allerAuDomaine(d); } });
   function choisirDomaine(id: DomaineStudio) {
-    adresseSuivie.current = true;
+    setAdresseSuivie(true);
     setDomaineActif(id);
-    surAdresse?.({ domaine: id, planche: id === "dessin" ? plancheActive : null });
     allerAuDomaine(id);
   }
   function choisirPlanche(p: PlancheStudio) {
-    adresseSuivie.current = true;
+    setAdresseSuivie(true);
     setVue3d(p === "3d");
     setDomaineActif("dessin");
-    surAdresse?.({ domaine: "dessin", planche: p });
   }
+  /** Adresse d'un lien de domaine : celle de la variante (révision et commentaires compris) avec ce domaine. */
+  const adresseDuDomaine = (id: DomaineStudio) => cheminVarianteStudio(projectId, studyId, variantId, revisionId, { commentaires, domaine: id, planche: id === "dessin" ? plancheActive : null });
   // Arrivée par une adresse qui désigne un autre domaine que celui des planches : le focus y est porté une fois prêt.
   const arrivee = useRef(domaine !== null && domaine !== DOMAINE_PAR_DEFAUT);
   const pretDomaines = !loading && !!context && !!brouillon;
@@ -551,28 +562,21 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const hint = aidePlanche({ ...etatTrace, moveWithPointer, lectureSeule: !writable && !historical && context?.canWrite === false });
   const pasAffiche = pas.toLocaleString(LOCALE, { maximumFractionDigits: 3 });
   const etat = historical ? "Révision historique" : pending ? "Sauvegarde en cours…" : uncertain ? "Sauvegarde non confirmée" : commands.length ? "Brouillon non enregistré" : enr.saved ? "Enregistré sur le serveur" : "Version serveur chargée";
-  return <section className="studio-workspace" ref={shell} aria-label="Studio" data-studio-variante={variantId} data-studio-revision-vue={historical ? revisionId : undefined}>
-    <EnTeteStudio context={context} planche={PLANCHES_STUDIO.find(p => p.id === plancheActive)!.libelleFR} />
-    <AlerteStudio error={error} blocked={blocked && !enr.horsLigne.conflit} surRecharger={() => void enr.rechargerServeur()} />
-    <AvisFileLocale cle={user && !historical ? cleVariante(user.id, projectId, studyId, variantId) : null} />
-    {loading && <p role="status">Chargement de la planche…</p>}
-    {context && drawing && !historical && <AvisRevision projectId={projectId} studyId={studyId} variantId={variantId} teteAffichee={context.variant.headRevisionId} actif={!pending && !blocked && !uncertain && !enr.horsLigne.conflit} nonEnregistre={commands.length > 0}
-      surRecharger={async () => {
-        const depart = context.revision.id, brouillonDepart = brouillon;
-        const c = await api.studioContext(projectId, studyId, variantId);
-        // A.5-10 : une lecture dépassée par un enregistrement ou un rechargement survenu entre-temps n'est pas appliquée.
-        if (!alive.current) return;
-        if (!lectureApplicable(depart, affiche.current.context, affiche.current.brouillon, brouillonDepart)) throw new Error("lecture dépassée");
-        setContext(c); setBrouillon(creerBrouillon(c.revision.document)); cancelTrace(); enr.setSaved(false); setError(""); }} />}
-    {context && drawing && <><BandeauVariante projectId={projectId} studyId={studyId} variantId={variantId} context={context} historical={historical} etat={etat} commentaires={commentaires} surCommentaires={() => setCommentaires(v => !v)}
-      connexion={{ etat: enr.horsLigne, surRecharger: () => void enr.rechargerServeur(), surReporter: () => void enr.reporter() }} />
-    <NavigationDomaines actif={domaineActif} surChoix={choisirDomaine} />
-    {/* 01 · Dessin et modélisation : les deux planches (2D, 3D), leurs outils et leurs propriétés, et nulle part ailleurs (I.4-02). */}
-    <SectionDomaine id="dessin" actif={domaineActif === "dessin"} titreVisible={false}>
-    <BarreOutils outil={tool} outilDisponible={toolAvailable} commandeDisponible={commandAvailable} raison={raisonCible} libelleCommande={uncertain ? { enregistrer: "Réessayer la sauvegarde" } : undefined}
-      basculeActive={{ ...gestes.basculesActives, "accrochage-sommets": accrocheSommets, "accrochage-grille": accrocheGrille, "vue-3d": vue3d, "navigation-3d": vue3d && navigation3d === "plan", "coupe-3d": vue3d && coupe3d }} lienCommande={liens} surOutil={runTool} surCommande={runCommand} surLien={surLien} />
-    <p className="studio-undo-scope" data-studio-annuler-portee>{`Annuler et Rétablir ne portent que sur les modifications non enregistrées (${commands.length} commande(s) en attente) ; une révision enregistrée ne s’annule pas ici.`}</p>
-    <div className="studio-editor"><div className="studio-sheet" data-studio-projection-plan={!vue3d ? versionPlan(drawing) : undefined}><div className="studio-sheet-caption"><span>Dessin et modélisation</span><SelecteurPlanche active={plancheActive} surChoix={choisirPlanche} /><span data-studio-pas-grille={pas}>{`Grille ${pasAffiche} m`}</span><span>1 unité = 1 m</span></div>
+  /** Navigation des domaines : au-dessus des planches, ou sous la planche au téléphone (ordre du document = ordre visuel). */
+  const navigationDomaines = <NavigationDomaines actif={domaineActif} adresse={adresseDuDomaine} surChoix={choisirDomaine} />;
+  /**
+   * Légende de la planche : titre du domaine, choix de la planche (Planche 2D / Planche 3D), grille et échelle. Au-dessus
+   * de la planche ; au téléphone, juste sous elle (boutons de 44 px sans repousser la planche hors de la moitié haute),
+   * rendue à cet endroit du document (ordre du document = ordre visuel).
+   */
+  const legende = <div className="studio-sheet-caption"><TitreLegende id="dessin" /><SelecteurPlanche active={plancheActive} surChoix={choisirPlanche} /><span data-studio-pas-grille={pas}>{`Grille ${pasAffiche} m`}</span><span>1 unité = 1 m</span></div>;
+  /** Bloc d'une fonction de l'espace (`FONCTIONS_STUDIO`), rangé dans la section de son domaine. */
+  function bloc(f: FonctionStudio): ReactNode {
+    if (!context || !drawing) return null;
+    switch (f) {
+      case "outils": return <BarreOutils outil={tool} outilDisponible={toolAvailable} commandeDisponible={commandAvailable} raison={raisonCible} libelleCommande={uncertain ? { enregistrer: "Réessayer la sauvegarde" } : undefined}
+      basculeActive={{ ...gestes.basculesActives, "accrochage-sommets": accrocheSommets, "accrochage-grille": accrocheGrille, "vue-3d": vue3d, "navigation-3d": vue3d && navigation3d === "plan", "coupe-3d": vue3d && coupe3d }} lienCommande={liens} surOutil={runTool} surCommande={runCommand} surLien={surLien} />;
+      case "planches": return <div className="studio-editor"><div className="studio-sheet" data-studio-projection-plan={!vue3d ? versionPlan(drawing) : undefined}>{!telephone && legende}
       {vue3d && <Vue3D doc={drawing} outil={tool} modifiable={writable} navigation={navigation3d} coupe={coupe3d} selection={solide3d} layerId={actif?.id ?? STUDIO_DEFAULT_LAYER_ID}
         surSelection={setSolide3d} surCommandes={apply} selectionArchitecture={panneauArchi} surSelectionArchitecture={(id) => (id ? choisirArchitecture(id, false) : setSelectionArchi(null))}
         demande={demande3d} surDemandeTraitee={() => setDemande3d(null)} surNavigation={setNavigation3d}
@@ -585,6 +589,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       {!vue3d && trace && pointsActifs && <ChampMesures base={suite[suite.length - 1] ?? trace.point} survol={survol?.point ?? null} direction={gestes.directionCourante()} verrou={gestes.verrouAngle}
         pasPolaire={gestes.bascules.pasPolaire} surPasPolaire={gestes.poserPasPolaire} desactive={!writable}
         surSaisie={(texte) => { const r = gestes.saisir(texte); if (r.type === "erreur") return r.message; if (r.type === "point") poser({ point: r.point, accroche: null }); return null; }} />}
+      {telephone && legende}
       <p className="studio-hint">{hint}</p>
       <p className="studio-hint" data-studio-aide-vue>Molette : zoom sur le pointeur ; bouton du milieu, Espace + glisser ou deux doigts : déplacer la vue.</p>
       {toResolve > 0 && <p className="studio-alert" role="status" data-studio-cotes-a-resoudre={toResolve}>{`${toResolve} cote(s) à résoudre : un objet coté a été supprimé.`}</p>}
@@ -599,28 +604,45 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       formulaire={tool !== "studio.dessin.selection" && !OUTILS_VOLUME_LIBRE.has(tool) && !tool.startsWith("studio.architecture.") && <FormulaireValeurs tool={tool} selected={selected} desactive={!writable || formulaireInactif(tool, selectionIds, selected) || (tool === "studio.dessin.modifier" && (selected?.type === "dimension" || selected?.type === "angular-dimension") && selected.toResolve)}
         values={values} surValeur={(k, v) => setValues(x => ({ ...x, [k]: v }))} modeArc={modeArc} surModeArc={m => { setModeArc(m); cancelTrace(); }}
         sommetsTexte={sommetsTexte} surSommets={setSommetsTexte} fermee={fermee} surFermee={setFermee} surSoumettre={numeric} texte={texteSaisi} surTexte={setTexteSaisi} />}
-      calques={<PanneauCalques doc={drawing} actif={actif?.id ?? STUDIO_DEFAULT_LAYER_ID} modifiable={writable} nom={nomCalque} nomRef={nomRef} surActif={id => setCalqueActif(id)} surNom={setNomCalque} surReglage={setLayer} surRenommer={renameLayer} />} /></div>
-    <ListeElements doc={drawing} selection={selectionIds} modifiable={writable} surSelection={select} surSupprimer={() => runTool("studio.dessin.supprimer")} />
-    </SectionDomaine>
-    {/* 02 · BIM et coordination : propriétés BIM, exigences versionnées et écarts. */}
-    <SectionDomaine id="bim" actif={domaineActif === "bim"}>
-    {drawing && <PanneauExigences projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} doc={drawing} cibleId={cibleSelection(drawing, selectionArchi, selectionIds)}
-      modifiable={writable} ecriture={!historical && context.canWrite} nonEnregistre={commands.length > 0} surCommandes={apply} surErreur={setError} />}
-    </SectionDomaine>
-    {/* 03 · Visualisation, rendu et immersion : scènes et rendus du modèle (réglés sur la vue 3D). */}
-    <SectionDomaine id="visualisation" actif={domaineActif === "visualisation"}>
-      <ApercuVisualisation doc={drawing} surExaminer={() => { setVue3d(true); allerAuDomaine("dessin"); }} />
-    </SectionDomaine>
-    {/* 04 · Documentation, métrés et collaboration : feuilles, dossiers, métré, commentaires, observations, révisions, publications. */}
-    <SectionDomaine id="documentation" actif={domaineActif === "documentation"}>
-    <AccesDocumentation commandes={["feuille", "dossier"]} disponible={commandAvailable} surCommande={(id) => executer({ type: "commande", id }, true)} publications={cheminEtudeStudio(projectId, studyId)} />
-    {commentaires && <div id="studio-commentaires"><PanneauCommentaires projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} revision={context.revision.document} dessin={drawing}
+      calques={<PanneauCalques doc={drawing} actif={actif?.id ?? STUDIO_DEFAULT_LAYER_ID} modifiable={writable} nom={nomCalque} nomRef={nomRef} surActif={id => setCalqueActif(id)} surNom={setNomCalque} surReglage={setLayer} surRenommer={renameLayer} />} /></div>;
+      case "portee-annuler": return <p className="studio-undo-scope" data-studio-annuler-portee>{`Annuler et Rétablir ne portent que sur les modifications non enregistrées (${commands.length} commande(s) en attente) ; une révision enregistrée ne s’annule pas ici.`}</p>;
+      case "elements": return <ListeElements doc={drawing} selection={selectionIds} modifiable={writable} surSelection={select} surSupprimer={() => runTool("studio.dessin.supprimer")} />;
+      case "exigences": return <PanneauExigences projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} doc={drawing} cibleId={cibleSelection(drawing, selectionArchi, selectionIds)}
+      modifiable={writable} ecriture={!historical && context.canWrite} nonEnregistre={commands.length > 0} surCommandes={apply} surErreur={setError} />;
+      case "scenes-rendus": return <ApercuVisualisation doc={drawing} surOuvrir3d={() => { choisirPlanche("3d"); focusApres.current = "dessin"; }} />;
+      case "publications": return <LienPublications adresse={cheminEtudeStudio(projectId, studyId)} />;
+      case "commentaires-observations": return commentaires ? <div id="studio-commentaires"><PanneauCommentaires projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} revision={context.revision.document} dessin={drawing}
       selection={selectionIds} canWrite={!historical && context.canWrite} surSelection={ids => { setTool("studio.dessin.selection"); cancelTrace(); select(ids); }} />
       <PanneauObservations projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} revision={context.revision.document} selection={selectionIds}
-        vue={vue3d ? "3d" : "plan"} surSelection={ids => { setTool("studio.dessin.selection"); cancelTrace(); select(ids); }} /></div>}
-    <RevisionsPanel projectId={projectId} studyId={studyId} variantId={variantId} headRevisionId={context.variant.headRevisionId} shownRevisionId={context.revision.id} />
-    {drawing && <PanneauQuantites projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} doc={drawing} lectureSeule={!writable || historical} nonEnregistre={commands.length > 0} />}
-    </SectionDomaine>
+        vue={vue3d ? "3d" : "plan"} surSelection={ids => { setTool("studio.dessin.selection"); cancelTrace(); select(ids); }} /></div> : null;
+      case "revisions": return <RevisionsPanel projectId={projectId} studyId={studyId} variantId={variantId} headRevisionId={context.variant.headRevisionId} shownRevisionId={context.revision.id} adresse={adresseDomaine} />;
+      case "metre": return <PanneauQuantites projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} doc={drawing} lectureSeule={!writable || historical} nonEnregistre={commands.length > 0} />;
+    }
+  }
+  return <section className="studio-workspace" ref={shell} aria-label="Studio" data-studio-variante={variantId} data-studio-revision-vue={historical ? revisionId : undefined}>
+    <EnTeteStudio context={context} planche={plancheActive} />
+    <AlerteStudio error={error} blocked={blocked && !enr.horsLigne.conflit} surRecharger={() => void enr.rechargerServeur()} />
+    <AvisFileLocale cle={user && !historical ? cleVariante(user.id, projectId, studyId, variantId) : null} />
+    {loading && <p role="status">Chargement de la planche…</p>}
+    {context && drawing && !historical && <AvisRevision projectId={projectId} studyId={studyId} variantId={variantId} teteAffichee={context.variant.headRevisionId} actif={!pending && !blocked && !uncertain && !enr.horsLigne.conflit} nonEnregistre={commands.length > 0}
+      surRecharger={async () => {
+        const depart = context.revision.id, brouillonDepart = brouillon;
+        const c = await api.studioContext(projectId, studyId, variantId);
+        // A.5-10 : une lecture dépassée par un enregistrement ou un rechargement survenu entre-temps n'est pas appliquée.
+        if (!alive.current) return;
+        if (!lectureApplicable(depart, affiche.current.context, affiche.current.brouillon, brouillonDepart)) throw new Error("lecture dépassée");
+        setContext(c); setBrouillon(creerBrouillon(c.revision.document)); cancelTrace(); enr.setSaved(false); setError(""); }} />}
+    {context && drawing && <><BandeauVariante projectId={projectId} studyId={studyId} variantId={variantId} context={context} historical={historical} etat={etat} commentaires={commentaires} surCommentaires={() => setCommentaires(v => !v)} adresse={adresseDomaine}
+      connexion={{ etat: enr.horsLigne, surRecharger: () => void enr.rechargerServeur(), surReporter: () => void enr.reporter() }} />
+    {!telephone && navigationDomaines}
+    {/* Sections des quatre domaines (REF-01 §02), dans l'ordre de la référence ; chacune ne rend que ses blocs
+        (`FONCTIONS_STUDIO`) et les accès à ses commandes (`DOMAINES_COMMANDES`) : la mise en page est dérivée de ces
+        tables. Les commandes de Dessin et modélisation, et celles dont le domaine reste à définir, sont dans la barre
+        d'outils des planches. */}
+    {DOMAINES_STUDIO.map((d) => <SectionDomaine key={d.id} id={d.id} actif={domaineActif === d.id} titreVisible={d.id !== "dessin"}>
+      {d.id !== "dessin" && <AccesDomaine domaine={d.id} commandes={commandesDuDomaine(d.id)} disponible={commandAvailable} surCommande={(id) => executer({ type: "commande", id }, true)} />}
+      {fonctionsDuDomaine(d.id).map((f) => <Fragment key={f}>{bloc(f)}{telephone && f === "planches" && navigationDomaines}</Fragment>)}
+    </SectionDomaine>)}
     <DialoguesStudio dialogue={dialogue} surFermer={() => setDialogue(null)} disponible={entreeDisponible} raison={raisonDe} surExecuter={executerEntree} drawing={drawing} modifiable={writable}
       surImporter={(cs, r) => { if (!apply(cs)) return false; setDialogue(null); setInfo(`Import DXF ajouté au brouillon : ${r.rapport.entites.total} objet(s). Enregistrez pour l’envoyer au serveur.`); return true; }}
       revision={context.revision.document} brouillonNonEnregistre={commands.length > 0}

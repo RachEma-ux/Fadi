@@ -76,7 +76,7 @@ export function StudioShell() {
         {/* Domaine et planche (I.4-03) hors de la clé : les changer ne recharge pas la planche ; l'adresse est remplacée, sans entrée d'historique. */}
         {route.vue === "variante" && <PlancheDifferee key={`${route.projectId}/${route.studyId}/${route.variantId}/${route.revisionId ?? ""}`} projectId={route.projectId} studyId={route.studyId} variantId={route.variantId} revisionId={route.revisionId} commentairesOuverts={route.commentaires}
           domaine={route.domaine} planche={route.planche}
-          surAdresse={({ domaine, planche }) => navigate(cheminVarianteStudio(route.projectId, route.studyId, route.variantId, route.revisionId, { commentaires: route.commentaires, domaine, planche }), { replace: true })} />}
+          surAdresse={({ domaine, planche, commentaires }) => navigate(cheminVarianteStudio(route.projectId, route.studyId, route.variantId, route.revisionId, { commentaires, domaine, planche }), { replace: true })} />}
         {route.vue === "comparer" && <PageComparaison projectId={route.projectId} studyId={route.studyId} de={route.de} a={route.a} />}
         {route.vue === "inconnue" && (
           <section className="studio-welcome" role="alert" data-studio-inconnue>

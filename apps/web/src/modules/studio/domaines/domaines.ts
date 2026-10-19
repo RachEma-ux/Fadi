@@ -8,9 +8,13 @@
  * NAV-005). Les quatre domaines forment le profil standard (REF-01 §03) : une personnalisation ne change ni les
  * responsabilités, ni les droits, ni les données.
  *
- * Le rattachement des fonctions livrées de Studio à leur domaine (`FONCTIONS_STUDIO`) suit la responsabilité citée ;
- * c'est une lecture de la référence, pas une nouvelle organisation. Pur : ni React ni DOM.
+ * Le rattachement des blocs (`FONCTIONS_STUDIO`), des commandes (`DOMAINES_COMMANDES`) et des outils
+ * (`DOMAINES_FAMILLES_OUTILS`) à leur domaine suit la responsabilité citée ; c'est une lecture de la référence, pas une
+ * nouvelle organisation. Quand la référence ne fixe pas le domaine, il est « à définir » (`A_DEFINIR`), jamais deviné.
+ * La mise en page de l'espace d'une variante est dérivée de ces tables. Pur : ni React ni DOM.
  */
+import type { StudioToolGroup } from "@parcours/atelier-model";
+import { COMMANDES_EDITEUR, type CibleRaccourci, type IdCommandeEditeur } from "../planche2d/raccourcis";
 
 export type DomaineStudio = "dessin" | "bim" | "visualisation" | "documentation";
 export type PlancheStudio = "2d" | "3d";
@@ -48,33 +52,78 @@ export const estDomaineStudio = (v: string): v is DomaineStudio => DOMAINES_STUD
 export const estPlancheStudio = (v: string): v is PlancheStudio => PLANCHES_STUDIO.some((p) => p.id === v);
 export const definitionDomaine = (id: DomaineStudio): DefinitionDomaine => DOMAINES_STUDIO.find((d) => d.id === id)!;
 
+/** Domaine d'une fonction, d'une commande ou d'un outil : un des quatre domaines, ou « à définir » (REF-01 muet). */
+export const A_DEFINIR = "a-definir" as const;
+export type DomaineAttribue = DomaineStudio | typeof A_DEFINIR;
+
 /**
- * Fonctions livrées de l'espace d'une variante et leur domaine. Planches, outils et propriétés de l'objet : Dessin et
- * modélisation ; exigences, écarts et propriétés BIM (« structurer les informations et contrôler la cohérence ») :
- * BIM et coordination ; scènes, apparence et rendus (« examiner et présenter ») : Visualisation, rendu et immersion ;
- * feuilles, dossiers, métré, commentaires, observations, révisions et publications (« documents, quantités,
- * observations, revues et publications ») : Documentation, métrés et collaboration.
+ * Blocs de l'espace d'une variante et leur domaine, dans l'ordre d'affichage : **la mise en page lit cette table**
+ * (`fonctionsDuDomaine`), chaque section ne rend que les blocs de son domaine. Planches (Planche 2D, Planche 3D),
+ * barre d'outils, portée d'Annuler et liste des éléments : Dessin et modélisation (« concevoir et modifier dans
+ * Planche 2D ⇄ Planche 3D ») ; exigences et écarts (« structurer les informations et contrôler la cohérence ») : BIM et
+ * coordination ; aperçu des scènes et des rendus (« examiner et présenter ») : Visualisation, rendu et immersion ;
+ * publications, commentaires et observations, révisions, métré (« documents, quantités, observations, revues et
+ * publications ») : Documentation, métrés et collaboration.
  */
 export const FONCTIONS_STUDIO = Object.freeze({
-  "planche-2d": "dessin",
-  "planche-3d": "dessin",
   outils: "dessin",
+  planches: "dessin",
+  "portee-annuler": "dessin",
   elements: "dessin",
   exigences: "bim",
-  scenes: "visualisation",
-  rendus: "visualisation",
-  feuilles: "documentation",
-  dossiers: "documentation",
-  metre: "documentation",
-  commentaires: "documentation",
-  observations: "documentation",
-  revisions: "documentation",
+  "scenes-rendus": "visualisation",
   publications: "documentation",
+  "commentaires-observations": "documentation",
+  revisions: "documentation",
+  metre: "documentation",
 } as const satisfies Record<string, DomaineStudio>);
 
 export type FonctionStudio = keyof typeof FONCTIONS_STUDIO;
 
 export const domaineDeFonction = (f: FonctionStudio): DomaineStudio => FONCTIONS_STUDIO[f];
+/** Blocs d'un domaine, dans l'ordre de `FONCTIONS_STUDIO`. */
+export const fonctionsDuDomaine = (d: DomaineStudio): FonctionStudio[] => (Object.keys(FONCTIONS_STUDIO) as FonctionStudio[]).filter((f) => FONCTIONS_STUDIO[f] === d);
+
+/**
+ * Domaine de chaque commande de l'éditeur (`COMMANDES_EDITEUR`) ; `satisfies` impose une entrée par commande. Édition,
+ * vue (Vue 3D, navigation et coupe 3D comprises), accrochage et repérage agissent sur les planches : Dessin et
+ * modélisation. « Feuille » et « Feuilles et dossier » produisent les documents : Documentation. « Exigences et écarts » :
+ * BIM et coordination. **À définir** (REF-01 §02 ne les range dans aucun domaine ; question posée au maître d'ouvrage,
+ * ADR-STUDIO-NAV-01 §1) : imports et exports (Importer DXF, Exporter SVG / DXF / IFC, Exporter le rendu PNG), Matrice
+ * d'échanges, et le système d'outils commun aux domaines (Outils, Palette de commandes : REF-01 §03). Ces commandes
+ * restent où elles sont aujourd'hui (barre d'outils des planches).
+ */
+export const DOMAINES_COMMANDES = Object.freeze({
+  annuler: "dessin", retablir: "dessin", "annuler-trace": "dessin", enregistrer: "dessin", "tout-selectionner": "dessin",
+  "terminer-polyligne": "dessin", "fermer-polyligne": "dessin",
+  "zoom-avant": "dessin", "zoom-arriere": "dessin", cadrer: "dessin", "plein-ecran": "dessin", "vue-3d": "dessin", "navigation-3d": "dessin", "coupe-3d": "dessin",
+  "accrochage-sommets": "dessin", "accrochage-grille": "dessin", "accrochage-milieu": "dessin", "accrochage-centre": "dessin", "accrochage-quadrant": "dessin",
+  "accrochage-intersection": "dessin", "accrochage-perpendiculaire": "dessin", "accrochage-tangente": "dessin", "accrochage-proche": "dessin",
+  "reperage-orthogonal": "dessin", "reperage-polaire": "dessin", "pas-polaire": "dessin",
+  "exporter-png": A_DEFINIR, "importer-dxf": A_DEFINIR, "exporter-svg": A_DEFINIR, "exporter-dxf": A_DEFINIR, "exporter-ifc": A_DEFINIR, echanges: A_DEFINIR,
+  feuille: "documentation", dossier: "documentation",
+  outils: A_DEFINIR, palette: A_DEFINIR,
+  exigences: "bim",
+} as const satisfies Record<IdCommandeEditeur, DomaineAttribue>);
+
+/**
+ * Domaine des outils du registre, par leur famille (`StudioToolGroup`) ; `satisfies` impose une entrée par famille.
+ * Dessin, modification, calques, volume, volume libre et architecture : Dessin et modélisation. Propriétés déclarées
+ * (« structurer les informations ») : BIM et coordination. Scènes et apparence : Visualisation, rendu et immersion.
+ */
+export const DOMAINES_FAMILLES_OUTILS = Object.freeze({
+  dessin: "dessin", modification: "dessin", calques: "dessin", volume: "dessin", "volume-libre": "dessin", architecture: "dessin",
+  proprietes: "bim", visualisation: "visualisation",
+} as const satisfies Record<StudioToolGroup, DomaineAttribue>);
+
+/** Domaine d'une entrée du catalogue (outil du registre ou commande de l'éditeur). */
+export function domaineEntree(e: { readonly cible: CibleRaccourci; readonly outil: { readonly groupe: StudioToolGroup } | null }): DomaineAttribue {
+  if (e.cible.type === "commande") return DOMAINES_COMMANDES[e.cible.id];
+  return DOMAINES_FAMILLES_OUTILS[e.outil!.groupe];
+}
+
+/** Commandes d'un domaine, dans l'ordre de `COMMANDES_EDITEUR` (accès rendus dans la section du domaine). */
+export const commandesDuDomaine = (d: DomaineStudio): IdCommandeEditeur[] => COMMANDES_EDITEUR.filter((c) => DOMAINES_COMMANDES[c.id] === d).map((c) => c.id);
 
 /** Identifiant DOM de la section d'un domaine (cible des liens de la navigation des domaines). */
 export const idSectionDomaine = (id: DomaineStudio): string => `studio-domaine-${id}`;
