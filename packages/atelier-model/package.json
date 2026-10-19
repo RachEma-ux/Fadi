@@ -4,10 +4,12 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./studio-corpus": "./src/studio/corpus/index.ts"
   },
   "scripts": {
     "test": "vitest run",
+    "test:corpus-lourd": "STUDIO_CORPUS_LOURD=1 vitest run src/studio/corpus",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -386,6 +386,16 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-hors-ligne node apps/web/e2e/studio-hors-ligne.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du corpus S6 — étude à variantes et révisions créée par l'API, têtes, dossier et contrôles conformes à l'oracle (apps/web/e2e/studio-corpus-s6.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-corpus-s6.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du corpus S7 — session hors réseau puis reconnectée sur le corpus de départ, une révision, corpus intact (apps/web/e2e/studio-corpus-s7.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-corpus-s7 node apps/web/e2e/studio-corpus-s7.mjs 2>&1 | tee -a e2e.log
       - name: Recette du contrat de commandes Studio — deux comptes, aperçu annulé, conflit signalé et report revalidé, chevauchement confirmé, annulation concurrente, coupure rejouée, refus atomique (apps/web/e2e/studio-conflits.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |

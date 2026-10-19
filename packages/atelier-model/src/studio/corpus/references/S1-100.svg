@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2.0482 -21.4352 35.9524 24.2424" data-schema="studio-document/1" data-document="s1-100-f1" data-units="m" data-frame="local-2d">
+<g data-layer="default" data-name="0" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
+</g>
+<g data-layer="contours" data-name="Contours (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
+<rect data-id="s1-0-rect" x="0.314" y="-1.077" width="2" height="1" vector-effect="non-scaling-stroke"/>
+<line data-id="s1-0-ligne" x1="0.314" y1="-1.577" x2="0.914" y2="-2.377" vector-effect="non-scaling-stroke"/>
+<rect data-id="s1-1-rect" x="12.426" y="-1.594" width="2.5" height="1.5" vector-effect="non-scaling-stroke"/>
+<line data-id="s1-1-ligne" x1="12.426" y1="-2.094" x2="13.626" y2="-3.694" vector-effect="non-scaling-stroke"/>
+<rect data-id="s1-2-rect" x="24.245" y="-2.456" width="3" height="2" vector-effect="non-scaling-stroke"/>
+<line data-id="s1-2-ligne" x1="24.245" y1="-2.956" x2="26.045" y2="-5.356" vector-effect="non-scaling-stroke"/>
+<rect data-id="s1-3-rect" x="0.236" y="-9.316" width="3.5" height="1" vector-effect="non-scaling-stroke"/>
+<line data-id="s1-3-ligne" x1="0.236" y1="-9.816" x2="0.836" y2="-10.616" vector-effect="non-scaling-stroke"/>
+<rect data-id="s1-4-rect" x="12.197" y="-9.681" width="4" height="1.5" vector-effect="non-scaling-stroke"/>
+<line data-id="s1-4-ligne" x1="12.197" y1="-10.181" x2="13.397" y2="-11.781" vector-effect="non-scaling-stroke"/>
+<rect data-id="s1-5-rect" x="24.287" y="-10.247" width="2" height="2" vector-effect="non-scaling-stroke"/>
+<line data-id="s1-5-ligne" x1="24.287" y1="-10.747" x2="26.087" y2="-13.147" vector-effect="non-scaling-stroke"/>
+<rect data-id="s1-6-rect" x="0.45" y="-17.497" width="2.5" height="1" vector-effect="non-scaling-stroke"/>
+<line data-id="s1-6-ligne" x1="0.45" y1="-17.997" x2="1.05" y2="-18.797" vector-effect="non-scaling-stroke"/>
+<rect data-id="s1-7-rect" x="12.128" y="-17.521" width="3" height="1.5" vector-effect="non-scaling-stroke"/>
+<line data-id="s1-7-ligne" x1="12.128" y1="-18.021" x2="13.328" y2="-19.621" vector-effect="non-scaling-stroke"/>
+<rect data-id="s1-8-rect" x="24.27" y="-18.446" width="3.5" height="2" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-layer="courbes" data-name="Courbes (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
+<circle data-id="s1-0-cercle" cx="1.314" cy="-0.577" r="0.25" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-0-arc" data-type="arc" d="M 5.314 -1.077 A 0.5 0.5 0 0 0 4.814 -1.577" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-0-renfle" data-type="polyline" d="M 6.314 -0.577 A 0.25 0.25 0 0 0 6.814 -0.577 A 0.25 0.25 0 0 0 6.314 -0.577 Z" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-0-poly" data-type="polyline" d="M 0.314 0.923 L 1.314 0.923 A 0.25 0.25 0 0 0 1.814 0.923" vector-effect="non-scaling-stroke"/>
+<circle data-id="s1-1-cercle" cx="13.676" cy="-0.844" r="0.375" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-1-arc" data-type="arc" d="M 18.176 -1.094 A 0.75 0.75 0 0 0 16.676 -1.094" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-1-renfle" data-type="polyline" d="M 18.926 -0.594 A 0.5 0.5 0 0 0 19.926 -0.594 A 0.5 0.5 0 0 0 18.926 -0.594 Z" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-1-poly" data-type="polyline" d="M 12.426 0.906 L 13.676 0.906 A 0.25 0.25 0 0 0 14.176 0.906" vector-effect="non-scaling-stroke"/>
+<circle data-id="s1-2-cercle" cx="25.745" cy="-1.456" r="0.5" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-2-arc" data-type="arc" d="M 30.745 -1.456 A 1 1 0 1 0 29.745 -0.456" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-2-renfle" data-type="polyline" d="M 31.245 -0.956 A 0.25 0.25 0 0 0 31.745 -0.956 A 0.25 0.25 0 0 0 31.245 -0.956 Z" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-2-poly" data-type="polyline" d="M 24.245 0.544 L 25.745 0.544 A 0.25 0.25 0 0 0 26.245 0.544" vector-effect="non-scaling-stroke"/>
+<circle data-id="s1-3-cercle" cx="1.986" cy="-8.816" r="0.625" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-3-arc" data-type="arc" d="M 6.736 -9.316 A 0.5 0.5 0 0 0 6.236 -9.816" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-3-renfle" data-type="polyline" d="M 7.736 -8.816 A 0.5 0.5 0 0 0 8.736 -8.816 A 0.5 0.5 0 0 0 7.736 -8.816 Z" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-3-poly" data-type="polyline" d="M 0.236 -7.316 L 1.986 -7.316 A 0.25 0.25 0 0 0 2.486 -7.316" vector-effect="non-scaling-stroke"/>
+<circle data-id="s1-4-cercle" cx="14.197" cy="-8.931" r="0.25" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-4-arc" data-type="arc" d="M 19.447 -9.181 A 0.75 0.75 0 0 0 17.947 -9.181" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-4-renfle" data-type="polyline" d="M 20.197 -8.681 A 0.25 0.25 0 0 0 20.697 -8.681 A 0.25 0.25 0 0 0 20.197 -8.681 Z" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-4-poly" data-type="polyline" d="M 12.197 -7.181 L 13.197 -7.181 A 0.25 0.25 0 0 0 13.697 -7.181" vector-effect="non-scaling-stroke"/>
+<circle data-id="s1-5-cercle" cx="25.287" cy="-9.247" r="0.375" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-5-arc" data-type="arc" d="M 29.787 -9.247 A 1 1 0 1 0 28.787 -8.247" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-5-renfle" data-type="polyline" d="M 30.287 -8.747 A 0.5 0.5 0 0 0 31.287 -8.747 A 0.5 0.5 0 0 0 30.287 -8.747 Z" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-5-poly" data-type="polyline" d="M 24.287 -7.247 L 25.537 -7.247 A 0.25 0.25 0 0 0 26.037 -7.247" vector-effect="non-scaling-stroke"/>
+<circle data-id="s1-6-cercle" cx="1.7" cy="-16.997" r="0.5" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-6-arc" data-type="arc" d="M 5.95 -17.497 A 0.5 0.5 0 0 0 5.45 -17.997" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-6-renfle" data-type="polyline" d="M 6.95 -16.997 A 0.25 0.25 0 0 0 7.45 -16.997 A 0.25 0.25 0 0 0 6.95 -16.997 Z" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-6-poly" data-type="polyline" d="M 0.45 -15.497 L 1.95 -15.497 A 0.25 0.25 0 0 0 2.45 -15.497" vector-effect="non-scaling-stroke"/>
+<circle data-id="s1-7-cercle" cx="13.628" cy="-16.771" r="0.625" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-7-arc" data-type="arc" d="M 18.378 -17.021 A 0.75 0.75 0 0 0 16.878 -17.021" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-7-renfle" data-type="polyline" d="M 19.128 -16.521 A 0.5 0.5 0 0 0 20.128 -16.521 A 0.5 0.5 0 0 0 19.128 -16.521 Z" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-7-poly" data-type="polyline" d="M 12.128 -15.021 L 13.878 -15.021 A 0.25 0.25 0 0 0 14.378 -15.021" vector-effect="non-scaling-stroke"/>
+<circle data-id="s1-8-cercle" cx="26.02" cy="-17.446" r="0.25" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-8-arc" data-type="arc" d="M 31.27 -17.446 A 1 1 0 1 0 30.27 -16.446" vector-effect="non-scaling-stroke"/>
+<path data-id="s1-8-renfle" data-type="polyline" d="M 31.77 -16.946 A 0.25 0.25 0 0 0 32.27 -16.946 A 0.25 0.25 0 0 0 31.77 -16.946 Z" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-layer="cotes" data-name="Cotes (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
+<g data-dimension="s1-0-cote-l" data-status="resolved" data-value="2">
+<line x1="0.314" y1="0.323" x2="2.314" y2="0.323" vector-effect="non-scaling-stroke"/>
+<line x1="0.314" y1="-0.077" x2="0.314" y2="0.323" vector-effect="non-scaling-stroke"/>
+<line x1="2.314" y1="-0.077" x2="2.314" y2="0.323" vector-effect="non-scaling-stroke"/>
+<text x="1.314" y="0.248" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none">2,00 m</text>
+</g>
+<g data-dimension="s1-0-cote-h" data-status="resolved" data-value="1">
+<line x1="1.914" y1="-0.077" x2="1.914" y2="-1.077" vector-effect="non-scaling-stroke"/>
+<line x1="2.314" y1="-0.077" x2="1.914" y2="-0.077" vector-effect="non-scaling-stroke"/>
+<line x1="2.314" y1="-1.077" x2="1.914" y2="-1.077" vector-effect="non-scaling-stroke"/>
+<text x="1.839" y="-0.577" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 1.839 -0.577)">1,00 m</text>
+</g>
+<g data-dimension="s1-0-cote-libre" data-status="resolved" data-value="1">
+<line x1="0.074" y1="-1.757" x2="0.674" y2="-2.557" vector-effect="non-scaling-stroke"/>
+<line x1="0.314" y1="-1.577" x2="0.074" y2="-1.757" vector-effect="non-scaling-stroke"/>
+<line x1="0.914" y1="-2.377" x2="0.674" y2="-2.557" vector-effect="non-scaling-stroke"/>
+<text x="0.314" y="-2.202" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-53.130102 0.314 -2.202)">1,00 m</text>
+</g>
+<g data-dimension="s1-1-cote-l" data-status="resolved" data-value="2.5">
+<line x1="12.426" y1="0.306" x2="14.926" y2="0.306" vector-effect="non-scaling-stroke"/>
+<line x1="12.426" y1="-0.094" x2="12.426" y2="0.306" vector-effect="non-scaling-stroke"/>
+<line x1="14.926" y1="-0.094" x2="14.926" y2="0.306" vector-effect="non-scaling-stroke"/>
+<text x="13.676" y="0.231" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none">2,50 m</text>
+</g>
+<g data-dimension="s1-1-cote-h" data-status="resolved" data-value="1.5">
+<line x1="14.526" y1="-0.094" x2="14.526" y2="-1.594" vector-effect="non-scaling-stroke"/>
+<line x1="14.926" y1="-0.094" x2="14.526" y2="-0.094" vector-effect="non-scaling-stroke"/>
+<line x1="14.926" y1="-1.594" x2="14.526" y2="-1.594" vector-effect="non-scaling-stroke"/>
+<text x="14.451" y="-0.844" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 14.451 -0.844)">1,50 m</text>
+</g>
+<g data-dimension="s1-1-cote-libre" data-status="resolved" data-value="2">
+<line x1="12.186" y1="-2.274" x2="13.386" y2="-3.874" vector-effect="non-scaling-stroke"/>
+<line x1="12.426" y1="-2.094" x2="12.186" y2="-2.274" vector-effect="non-scaling-stroke"/>
+<line x1="13.626" y1="-3.694" x2="13.386" y2="-3.874" vector-effect="non-scaling-stroke"/>
+<text x="12.726" y="-3.119" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-53.130102 12.726 -3.119)">2,00 m</text>
+</g>
+<g data-dimension="s1-2-cote-l" data-status="resolved" data-value="3">
+<line x1="24.245" y1="-0.056" x2="27.245" y2="-0.056" vector-effect="non-scaling-stroke"/>
+<line x1="24.245" y1="-0.456" x2="24.245" y2="-0.056" vector-effect="non-scaling-stroke"/>
+<line x1="27.245" y1="-0.456" x2="27.245" y2="-0.056" vector-effect="non-scaling-stroke"/>
+<text x="25.745" y="-0.131" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none">3,00 m</text>
+</g>
+<g data-dimension="s1-2-cote-h" data-status="resolved" data-value="2">
+<line x1="26.845" y1="-0.456" x2="26.845" y2="-2.456" vector-effect="non-scaling-stroke"/>
+<line x1="27.245" y1="-0.456" x2="26.845" y2="-0.456" vector-effect="non-scaling-stroke"/>
+<line x1="27.245" y1="-2.456" x2="26.845" y2="-2.456" vector-effect="non-scaling-stroke"/>
+<text x="26.77" y="-1.456" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 26.77 -1.456)">2,00 m</text>
+</g>
+<g data-dimension="s1-2-cote-libre" data-status="resolved" data-value="3">
+<line x1="24.005" y1="-3.136" x2="25.805" y2="-5.536" vector-effect="non-scaling-stroke"/>
+<line x1="24.245" y1="-2.956" x2="24.005" y2="-3.136" vector-effect="non-scaling-stroke"/>
+<line x1="26.045" y1="-5.356" x2="25.805" y2="-5.536" vector-effect="non-scaling-stroke"/>
+<text x="24.845" y="-4.381" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-53.130102 24.845 -4.381)">3,00 m</text>
+</g>
+<g data-dimension="s1-3-cote-l" data-status="resolved" data-value="3.5">
+<line x1="0.236" y1="-7.916" x2="3.736" y2="-7.916" vector-effect="non-scaling-stroke"/>
+<line x1="0.236" y1="-8.316" x2="0.236" y2="-7.916" vector-effect="non-scaling-stroke"/>
+<line x1="3.736" y1="-8.316" x2="3.736" y2="-7.916" vector-effect="non-scaling-stroke"/>
+<text x="1.986" y="-7.991" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none">3,50 m</text>
+</g>
+<g data-dimension="s1-3-cote-h" data-status="resolved" data-value="1">
+<line x1="3.336" y1="-8.316" x2="3.336" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="3.736" y1="-8.316" x2="3.336" y2="-8.316" vector-effect="non-scaling-stroke"/>
+<line x1="3.736" y1="-9.316" x2="3.336" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<text x="3.261" y="-8.816" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 3.261 -8.816)">1,00 m</text>
+</g>
+<g data-dimension="s1-3-cote-libre" data-status="resolved" data-value="1">
+<line x1="-0.004" y1="-9.996" x2="0.596" y2="-10.796" vector-effect="non-scaling-stroke"/>
+<line x1="0.236" y1="-9.816" x2="-0.004" y2="-9.996" vector-effect="non-scaling-stroke"/>
+<line x1="0.836" y1="-10.616" x2="0.596" y2="-10.796" vector-effect="non-scaling-stroke"/>
+<text x="0.236" y="-10.441" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-53.130102 0.236 -10.441)">1,00 m</text>
+</g>
+<g data-dimension="s1-4-cote-l" data-status="resolved" data-value="4">
+<line x1="12.197" y1="-7.781" x2="16.197" y2="-7.781" vector-effect="non-scaling-stroke"/>
+<line x1="12.197" y1="-8.181" x2="12.197" y2="-7.781" vector-effect="non-scaling-stroke"/>
+<line x1="16.197" y1="-8.181" x2="16.197" y2="-7.781" vector-effect="non-scaling-stroke"/>
+<text x="14.197" y="-7.856" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none">4,00 m</text>
+</g>
+<g data-dimension="s1-4-cote-h" data-status="resolved" data-value="1.5">
+<line x1="15.797" y1="-8.181" x2="15.797" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="16.197" y1="-8.181" x2="15.797" y2="-8.181" vector-effect="non-scaling-stroke"/>
+<line x1="16.197" y1="-9.681" x2="15.797" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<text x="15.722" y="-8.931" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 15.722 -8.931)">1,50 m</text>
+</g>
+<g data-dimension="s1-4-cote-libre" data-status="resolved" data-value="2">
+<line x1="11.957" y1="-10.361" x2="13.157" y2="-11.961" vector-effect="non-scaling-stroke"/>
+<line x1="12.197" y1="-10.181" x2="11.957" y2="-10.361" vector-effect="non-scaling-stroke"/>
+<line x1="13.397" y1="-11.781" x2="13.157" y2="-11.961" vector-effect="non-scaling-stroke"/>
+<text x="12.497" y="-11.206" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-53.130102 12.497 -11.206)">2,00 m</text>
+</g>
+<g data-dimension="s1-5-cote-l" data-status="resolved" data-value="2">
+<line x1="24.287" y1="-7.847" x2="26.287" y2="-7.847" vector-effect="non-scaling-stroke"/>
+<line x1="24.287" y1="-8.247" x2="24.287" y2="-7.847" vector-effect="non-scaling-stroke"/>
+<line x1="26.287" y1="-8.247" x2="26.287" y2="-7.847" vector-effect="non-scaling-stroke"/>
+<text x="25.287" y="-7.922" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none">2,00 m</text>
+</g>
+<g data-dimension="s1-5-cote-h" data-status="resolved" data-value="2">
+<line x1="25.887" y1="-8.247" x2="25.887" y2="-10.247" vector-effect="non-scaling-stroke"/>
+<line x1="26.287" y1="-8.247" x2="25.887" y2="-8.247" vector-effect="non-scaling-stroke"/>
+<line x1="26.287" y1="-10.247" x2="25.887" y2="-10.247" vector-effect="non-scaling-stroke"/>
+<text x="25.812" y="-9.247" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 25.812 -9.247)">2,00 m</text>
+</g>
+<g data-dimension="s1-5-cote-libre" data-status="resolved" data-value="3">
+<line x1="24.047" y1="-10.927" x2="25.847" y2="-13.327" vector-effect="non-scaling-stroke"/>
+<line x1="24.287" y1="-10.747" x2="24.047" y2="-10.927" vector-effect="non-scaling-stroke"/>
+<line x1="26.087" y1="-13.147" x2="25.847" y2="-13.327" vector-effect="non-scaling-stroke"/>
+<text x="24.887" y="-12.172" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-53.130102 24.887 -12.172)">3,00 m</text>
+</g>
+<g data-dimension="s1-6-cote-l" data-status="resolved" data-value="2.5">
+<line x1="0.45" y1="-16.097" x2="2.95" y2="-16.097" vector-effect="non-scaling-stroke"/>
+<line x1="0.45" y1="-16.497" x2="0.45" y2="-16.097" vector-effect="non-scaling-stroke"/>
+<line x1="2.95" y1="-16.497" x2="2.95" y2="-16.097" vector-effect="non-scaling-stroke"/>
+<text x="1.7" y="-16.172" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none">2,50 m</text>
+</g>
+<g data-dimension="s1-6-cote-h" data-status="resolved" data-value="1">
+<line x1="2.55" y1="-16.497" x2="2.55" y2="-17.497" vector-effect="non-scaling-stroke"/>
+<line x1="2.95" y1="-16.497" x2="2.55" y2="-16.497" vector-effect="non-scaling-stroke"/>
+<line x1="2.95" y1="-17.497" x2="2.55" y2="-17.497" vector-effect="non-scaling-stroke"/>
+<text x="2.475" y="-16.997" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 2.475 -16.997)">1,00 m</text>
+</g>
+<g data-dimension="s1-6-cote-libre" data-status="resolved" data-value="1">
+<line x1="0.21" y1="-18.177" x2="0.81" y2="-18.977" vector-effect="non-scaling-stroke"/>
+<line x1="0.45" y1="-17.997" x2="0.21" y2="-18.177" vector-effect="non-scaling-stroke"/>
+<line x1="1.05" y1="-18.797" x2="0.81" y2="-18.977" vector-effect="non-scaling-stroke"/>
+<text x="0.45" y="-18.622" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-53.130102 0.45 -18.622)">1,00 m</text>
+</g>
+<g data-dimension="s1-7-cote-l" data-status="resolved" data-value="3">
+<line x1="12.128" y1="-15.621" x2="15.128" y2="-15.621" vector-effect="non-scaling-stroke"/>
+<line x1="12.128" y1="-16.021" x2="12.128" y2="-15.621" vector-effect="non-scaling-stroke"/>
+<line x1="15.128" y1="-16.021" x2="15.128" y2="-15.621" vector-effect="non-scaling-stroke"/>
+<text x="13.628" y="-15.696" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none">3,00 m</text>
+</g>
+<g data-dimension="s1-7-cote-h" data-status="resolved" data-value="1.5">
+<line x1="14.728" y1="-16.021" x2="14.728" y2="-17.521" vector-effect="non-scaling-stroke"/>
+<line x1="15.128" y1="-16.021" x2="14.728" y2="-16.021" vector-effect="non-scaling-stroke"/>
+<line x1="15.128" y1="-17.521" x2="14.728" y2="-17.521" vector-effect="non-scaling-stroke"/>
+<text x="14.653" y="-16.771" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 14.653 -16.771)">1,50 m</text>
+</g>
+<g data-dimension="s1-7-cote-libre" data-status="resolved" data-value="2">
+<line x1="11.888" y1="-18.201" x2="13.088" y2="-19.801" vector-effect="non-scaling-stroke"/>
+<line x1="12.128" y1="-18.021" x2="11.888" y2="-18.201" vector-effect="non-scaling-stroke"/>
+<line x1="13.328" y1="-19.621" x2="13.088" y2="-19.801" vector-effect="non-scaling-stroke"/>
+<text x="12.428" y="-19.046" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-53.130102 12.428 -19.046)">2,00 m</text>
+</g>
+<g data-angular-dimension="s1-0-angle" data-status="resolved" data-value="90">
+<path d="M 0.814 -0.077 A 0.5 0.5 0 0 0 0.314 -0.577" vector-effect="non-scaling-stroke"/>
+<text x="0.808975" y="-0.571975" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(45 0.808975 -0.571975)">90,00°</text>
+</g>
+<g data-angular-dimension="s1-1-angle" data-status="resolved" data-value="90">
+<path d="M 12.926 -0.094 A 0.5 0.5 0 0 0 12.426 -0.594" vector-effect="non-scaling-stroke"/>
+<text x="12.920975" y="-0.588975" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(45 12.920975 -0.588975)">90,00°</text>
+</g>
+<g data-angular-dimension="s1-2-angle" data-status="resolved" data-value="90">
+<path d="M 24.745 -0.456 A 0.5 0.5 0 0 0 24.245 -0.956" vector-effect="non-scaling-stroke"/>
+<text x="24.739975" y="-0.950975" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(45 24.739975 -0.950975)">90,00°</text>
+</g>
+<g data-angular-dimension="s1-3-angle" data-status="resolved" data-value="90">
+<path d="M 0.736 -8.316 A 0.5 0.5 0 0 0 0.236 -8.816" vector-effect="non-scaling-stroke"/>
+<text x="0.730975" y="-8.810975" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(45 0.730975 -8.810975)">90,00°</text>
+</g>
+<g data-angular-dimension="s1-4-angle" data-status="resolved" data-value="90">
+<path d="M 12.697 -8.181 A 0.5 0.5 0 0 0 12.197 -8.681" vector-effect="non-scaling-stroke"/>
+<text x="12.691975" y="-8.675975" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(45 12.691975 -8.675975)">90,00°</text>
+</g>
+<g data-angular-dimension="s1-5-angle" data-status="resolved" data-value="90">
+<path d="M 24.787 -8.247 A 0.5 0.5 0 0 0 24.287 -8.747" vector-effect="non-scaling-stroke"/>
+<text x="24.781975" y="-8.741975" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(45 24.781975 -8.741975)">90,00°</text>
+</g>
+<g data-angular-dimension="s1-6-angle" data-status="resolved" data-value="90">
+<path d="M 0.95 -16.497 A 0.5 0.5 0 0 0 0.45 -16.997" vector-effect="non-scaling-stroke"/>
+<text x="0.944975" y="-16.991975" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(45 0.944975 -16.991975)">90,00°</text>
+</g>
+<g data-angular-dimension="s1-7-angle" data-status="resolved" data-value="90">
+<path d="M 12.628 -16.021 A 0.5 0.5 0 0 0 12.128 -16.521" vector-effect="non-scaling-stroke"/>
+<text x="12.622975" y="-16.515975" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(45 12.622975 -16.515975)">90,00°</text>
+</g>
+</g>
+<g data-layer="textes" data-name="Textes (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
+<text data-text="s1-0-titre" data-justification="left" x="0.314" y="-3.077" font-size="0.2" font-family="sans-serif" text-anchor="start" fill="#000" stroke="none">Détail synthétique S1 n° 0</text>
+<text data-text="s1-0-repere" data-justification="center" x="-0.186" y="-0.077" font-size="0.15" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 -0.186 -0.077)">Repère synthétique 0</text>
+<text data-text="s1-1-titre" data-justification="left" x="12.426" y="-3.594" font-size="0.2" font-family="sans-serif" text-anchor="start" fill="#000" stroke="none">Détail synthétique S1 n° 1</text>
+<text data-text="s1-1-repere" data-justification="center" x="11.926" y="-0.094" font-size="0.15" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 11.926 -0.094)">Repère synthétique 1</text>
+<text data-text="s1-2-titre" data-justification="left" x="24.245" y="-4.456" font-size="0.2" font-family="sans-serif" text-anchor="start" fill="#000" stroke="none">Détail synthétique S1 n° 2</text>
+<text data-text="s1-2-repere" data-justification="center" x="23.745" y="-0.456" font-size="0.15" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 23.745 -0.456)">Repère synthétique 2</text>
+<text data-text="s1-3-titre" data-justification="left" x="0.236" y="-11.316" font-size="0.2" font-family="sans-serif" text-anchor="start" fill="#000" stroke="none">Détail synthétique S1 n° 3</text>
+<text data-text="s1-3-repere" data-justification="center" x="-0.264" y="-8.316" font-size="0.15" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 -0.264 -8.316)">Repère synthétique 3</text>
+<text data-text="s1-4-titre" data-justification="left" x="12.197" y="-11.681" font-size="0.2" font-family="sans-serif" text-anchor="start" fill="#000" stroke="none">Détail synthétique S1 n° 4</text>
+<text data-text="s1-4-repere" data-justification="center" x="11.697" y="-8.181" font-size="0.15" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 11.697 -8.181)">Repère synthétique 4</text>
+<text data-text="s1-5-titre" data-justification="left" x="24.287" y="-12.247" font-size="0.2" font-family="sans-serif" text-anchor="start" fill="#000" stroke="none">Détail synthétique S1 n° 5</text>
+<text data-text="s1-5-repere" data-justification="center" x="23.787" y="-8.247" font-size="0.15" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 23.787 -8.247)">Repère synthétique 5</text>
+<text data-text="s1-6-titre" data-justification="left" x="0.45" y="-19.497" font-size="0.2" font-family="sans-serif" text-anchor="start" fill="#000" stroke="none">Détail synthétique S1 n° 6</text>
+<text data-text="s1-6-repere" data-justification="center" x="-0.05" y="-16.497" font-size="0.15" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 -0.05 -16.497)">Repère synthétique 6</text>
+<text data-text="s1-7-titre" data-justification="left" x="12.128" y="-19.521" font-size="0.2" font-family="sans-serif" text-anchor="start" fill="#000" stroke="none">Détail synthétique S1 n° 7</text>
+<text data-text="s1-7-repere" data-justification="center" x="11.628" y="-16.021" font-size="0.15" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 11.628 -16.021)">Repère synthétique 7</text>
+</g>
+</svg>
