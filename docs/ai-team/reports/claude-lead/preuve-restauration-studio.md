@@ -285,6 +285,25 @@ Contrôles ajoutés à la recette :
   - versions du jeu toujours immuables ;
   - réserve visible dans le navigateur.
 
+**Correctif de recette (branche `teamr12-v5fix`, depuis `lead-vague5` `c38c9ad`).** Sur la branche intégrée, le
+contrôle « empreintes des documents de la publication et du paquet » échouait. Ce n'était pas une incohérence de
+données, et le commit E4b `453fcf0` (cache de régénération) n'y était pour rien : il ne change aucune empreinte
+stockée.
+
+- **Cause :** la recette lisait `studio_publications[0]`. Or l'archive range les lignes par identifiant, qui est
+  aléatoire, et depuis la section 6 le projet porte trois dossiers. Le dossier comparé n'était donc le bon qu'une fois
+  sur trois. Lors de la relance, le dossier d'origine était en deuxième position.
+- **Correction :** chaque dossier est maintenant retrouvé par son identifiant, et le contrôle est renforcé. Il compare,
+  pour les trois dossiers, l'empreinte du document, du manifeste et du paquet aux valeurs rendues par l'API.
+
+Relance sur des bases neuves migrées deux fois :
+
+| Recette | Résultat |
+|---|---|
+| `studio-restauration.mjs` | 75/75, comparaison sans anomalie |
+| `studio-publication.mjs` | 128/128 |
+| `verify-restore.sh` | 3 projets, 0 anomalie |
+
 **Limite de la section 6 :**
 
 - Dans une archive signée, `origine.acceptation.par` et les comptes cités dans les résultats de contrôle sont des

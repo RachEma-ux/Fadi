@@ -205,7 +205,18 @@ check('sauvegarde : section Studio présente (schéma, version, manifeste)', arc
 check('sauvegarde : effectifs du manifeste (1 étude, 2 variantes, 7 révisions, 2 commentaires, 1 observation, 2 passages, 2 liens, 3 publications, 11 évènements, au moins 4 volumes, 1 jeu d\x27exigences, 1 contrôle, 1 membre, 1 préférence)',
   counts.studio_studies === 1 && counts.studio_variants === 2 && counts.studio_revisions === 7 && counts.studio_comments === 2 && counts.studio_observations === 1 && counts.studio_observation_events === 2
   && counts.studio_study_steps === 2 && counts.studio_requirement_sets === 1 && counts.studio_requirement_checks === 1 && counts.studio_publications === 3 && counts.studio_publication_events === 11 && counts.volumes >= 4 && counts.project_members === 1 && counts.studio_tool_preferences === 1, JSON.stringify(counts));
-check('sauvegarde : empreintes des documents de la publication et du paquet conformes', st?.tables.studio_publications[0]?.document_hash === pub.body.documentHash && st?.tables.studio_publications[0]?.package_hash === diffused.body.diffusion.packageHash);
+// Chaque dossier est retrouvé par son identifiant : les lignes de l'archive sont triées par identifiant (aléatoire), la
+// position d'un dossier parmi les trois n'a aucun sens.
+{
+  const rowOf = (id) => st?.tables.studio_publications.find((p) => p.id === id);
+  const expected = [
+    { id: pub.body.id, documentHash: pub.body.documentHash, manifestHash: pub.body.manifestHash, packageHash: diffused.body.diffusion.packageHash },
+    { id: pubR.body.id, documentHash: pubR.body.documentHash, manifestHash: pubR.body.manifestHash, packageHash: diffR.body.diffusion.packageHash },
+    { id: pubU.body.id, documentHash: updU.body.documentHash, manifestHash: updU.body.manifestHash, packageHash: null },
+  ];
+  const got = expected.map((e) => { const r = rowOf(e.id); return { id: e.id, documentHash: r?.document_hash, manifestHash: r?.manifest_hash, packageHash: r?.package_hash ?? null }; });
+  check('sauvegarde : empreintes du document, du manifeste et du paquet de chacun des trois dossiers conformes', st?.tables.studio_publications.length === 3 && JSON.stringify(got) === JSON.stringify(expected), short({ expected, got }));
+}
 
 check('sauvegarde : archive signée (HMAC-SHA256, clé de l\'environnement désignée par son identifiant, clé absente du fichier)', st?.signature?.algorithm === 'HMAC-SHA256' && /^env-[0-9a-f]{16}$/.test(st.signature.keyId ?? '') && /^[0-9a-f]{64}$/.test(st.signature.value ?? '') && !archiveText.includes(SIGNING_KEY), short(st?.signature));
 
