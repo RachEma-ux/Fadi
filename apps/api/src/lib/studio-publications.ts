@@ -1,96 +1,80 @@
 /**
- * Publications Studio (E.4-01 à E.4-06, E.3-06) — une publication porte sur UNE révision d'une variante, identifiée par
- * son identifiant et l'empreinte SHA-256 de son document (JSON canonique, clés triées). Le serveur fait seul autorité.
+ * Publications Studio (E.4-01 à E.4-06, E.3-06) — un dossier de publication porte sur UNE révision d'une variante
+ * principale, éventuellement coordonnée avec d'autres variantes de la même étude ; le serveur fait seul autorité.
+ * Règles pures (dimensions de statut, droits, manifeste, concordance de l'approbation) : `studio-publication-statuts.ts`.
  *
- * Trois dimensions distinctes (E.4-01) :
- *   - statut de travail : `travail` → `soumis` → `approuve` | `refuse` ;
- *   - diffusion : `approuve` → `diffuse` → `retire` (le retrait vaut pour tout statut non retiré ; jamais de suppression) ;
- *   - actualité (calculée, jamais stockée) : `a-jour` si la tête de la variante est encore la révision publiée,
- *     `perimee` sinon ; une diffusion plus récente de la même variante la marque `remplaceePar`.
+ * Trois dimensions distinctes (E.4-01) : travail (`brouillon` → `en-revue` → `approuve` | `refuse`), diffusion
+ * (`non-diffuse` → `diffuse` → `retire` | `remplace`) et actualité (`a-jour` | `perimee`, calculée à chaque lecture en
+ * comparant le manifeste figé aux têtes des variantes sources et aux métadonnées gelées). Le statut combiné historique
+ * `status` reste tenu pour le module Documents et le refus de suppression d'un projet.
  *
- * Droits (E.4-02), repris des rôles de projet existants (`owned-project.ts`, besoin → rôles) :
- *   - revue (lire le dossier, son journal, ses fichiers ; commenter la variante) : `read` / `comment` → propriétaire,
- *     éditeur, lecteur ;
- *   - préparer et soumettre (créer une publication, `soumettre`) : `write` → propriétaire, éditeur ;
- *   - approuver / refuser : `owner` → propriétaire seul ;
- *   - diffuser (publication) : `write` → propriétaire, éditeur, et seulement une publication approuvée ;
- *   - retirer : `owner` → propriétaire seul.
- * Une publication ne modifie pas le modèle : besoin `write` (et non `modify`), comme les publications de l'Atelier ;
- * la réservation d'édition d'un autre compte bloque les écritures (423), jamais la lecture.
+ * Droits (E.4-02), correspondance prudente avec les rôles de projet (`owned-project.ts`) :
+ *   - lecture (dossier, manifeste, journal, fichiers, vérification) : `read` → propriétaire, éditeur, lecteur ;
+ *   - revue (préparer, soumettre, actualiser) : `write` → propriétaire, éditeur ;
+ *   - approbation (approuver, refuser) : `owner` → propriétaire seul ;
+ *   - publication (diffuser, retirer ; remplacement d'une diffusion antérieure) : `owner` → propriétaire seul.
+ * Toute transition est aussi une écriture : la réservation d'édition d'un autre compte la bloque (423), jamais la lecture.
  *
- * Approbation liée à l'ensemble examiné (E.4-04) : `approuver` exige `revisionId` et `documentHash` ; tous deux doivent
- * être ceux de la publication, recalculés depuis la révision immuable, sinon 409 `revision_mismatch`.
- * Approbation périmée (E.4-05) : `diffuser` est refusé (409 `stale_approval`, avec la révision approuvée et la tête)
- * dès que la tête de la variante n'est plus la révision approuvée ; le nouveau contrôle prévu est une nouvelle
- * publication de la nouvelle tête, soumise puis approuvée à son tour.
- * Retrait et remplacement (E.4-06) : chaque transition est journalisée (auteur, date, commentaire, révision, empreinte,
- * tête à l'instant) ; le journal est append-only (UPDATE refusée par déclencheur) et un paquet retiré reste lisible.
+ * Manifeste figé multi-sources (E.4-03) : construit à la préparation et à chaque actualisation — sources (révision et
+ * empreinte du document de chaque variante), métadonnées gelées, empreintes des documents du paquet (SVG, DXF, IFC,
+ * feuille PDF calculés par les exporteurs purs de `@parcours/atelier-model`). Approbation (E.4-04) : `approuver` exige
+ * `manifestHash`, l'empreinte du manifeste examiné (révision et empreinte du document vérifiées si fournies), sinon 409
+ * `revision_mismatch`. Diffusion (E.4-05) : le serveur recalcule le manifeste courant depuis les têtes et les noms
+ * actuels ; s'il diffère du manifeste approuvé, 409 `manifest_mismatch` (rien n'est écrit) et une nouvelle approbation
+ * est requise (actualiser → soumettre → approuver). Les fichiers diffusés sont ceux du manifeste approuvé, rangés dans
+ * `volumes` (identifiant = SHA-256). Retrait et remplacement (E.4-06) : journalisés (auteur, date, motif, dossier
+ * remplaçant) dans un journal append-only ; rien n'est supprimé, un paquet retiré ou remplacé reste lisible.
  *
- * Paquet figé (E.4-03, pour une variante) : à la diffusion, le serveur appelle les exporteurs purs de
- * `@parcours/atelier-model` (SVG, DXF, IFC, feuille PDF A3 paysage ajustée) sur le document de la révision approuvée,
- * avec des métadonnées gelées (noms, date de la révision) ; chaque fichier est rangé dans `volumes` (identifiant =
- * SHA-256) et le manifeste porte une empreinte globale. `verifierPaquet` recalcule les exports à partir des mêmes
- * entrées et compare les empreintes (déterminisme). Les documents produits ne sont pas traduits.
- *
- * Catalogue des Documents (E.3-06) : aucun point d'extension générique n'existe dans `lib/documents.ts` (groupes
- * figés) ; `listProjectStudioPackages` sert `GET /projects/:p/studio/publications`, que le module Documents peut lire
- * pour ajouter un groupe « Studio » (point d'intégration : `documentCatalogue`, hors du périmètre de ce lot).
+ * Catalogue des Documents (E.3-06) : `listProjectStudioPackages` sert `GET /projects/:p/studio/publications`, lu par
+ * `lib/documents.ts` (groupe « Studio — paquets diffusés »).
  */
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
-import { createHash } from "node:crypto";
+import { and, asc, desc, eq, inArray, isNull, ne, or } from "drizzle-orm";
 import { z } from "zod";
 import { composerFeuilleStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, studioSheetPdf, validateStudioDocument, type StudioDocument } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import {
   studioPublicationEvents, studioPublications, studioRevisions, studioStudies, studioVariants, users, volumes,
-  type StudioPackageFile, type StudioPackageFormat, type StudioPublicationAction, type StudioPublicationPackage, type StudioPublicationStatus,
+  type StudioPackageFile, type StudioPackageFormat, type StudioPublicationAction, type StudioPublicationDiffusionStatus, type StudioPublicationManifest,
+  type StudioPublicationPackage, type StudioPublicationStatus, type StudioPublicationWorkStatus,
 } from "../db/schema.js";
 import type { Tx } from "./atelier-validation.js";
 import { newId } from "./ids.js";
-import { loadProjectAccess, projectAccessRefusal, type AccessibleProject, type ProjectNeed } from "./owned-project.js";
+import { loadProjectAccess, projectAccessRefusal, type AccessibleProject } from "./owned-project.js";
 import type { Querier } from "./step-rows.js";
 import { assertAccess, lockedAccess, notFound, StudioRequestError, studioArchivedRefusal, studioFileSegment, studioIdentifierSchema, studyOf } from "./studio-commands.js";
+import {
+  actualiteDe, besoinTransition, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition,
+  dimensionsDe, ecartsManifeste, empreinteManifeste, sha256, statutCombine, STUDIO_PUBLICATION_ACTIONS,
+  type Actualite, type Dimensions, type EcartManifeste, type ManifesteMeta, type ManifesteSource, type StudioPublicationTransition,
+} from "./studio-publication-statuts.js";
 
-export const STUDIO_PUBLICATION_ACTIONS = ["soumettre", "approuver", "refuser", "diffuser", "retirer"] as const;
-export type StudioPublicationTransition = (typeof STUDIO_PUBLICATION_ACTIONS)[number];
+export { canonicalJson, STUDIO_PUBLICATION_ACTIONS, type StudioPublicationTransition };
 export const STUDIO_PACKAGE_FORMATS: readonly StudioPackageFormat[] = ["svg", "dxf", "ifc", "pdf"];
 const MIME: Readonly<Record<StudioPackageFormat, string>> = Object.freeze({
   svg: "image/svg+xml; charset=utf-8", dxf: "application/dxf", ifc: "application/x-step", pdf: "application/pdf",
 });
-
-/** Transitions admises : statut de départ, statut d'arrivée, besoin de droit. */
-const TRANSITIONS: Readonly<Record<StudioPublicationTransition, { from: readonly StudioPublicationStatus[]; to: StudioPublicationStatus; need: ProjectNeed; comment: "facultatif" | "requis" }>> = Object.freeze({
-  soumettre: { from: ["travail"], to: "soumis", need: "write", comment: "facultatif" },
-  approuver: { from: ["soumis"], to: "approuve", need: "owner", comment: "facultatif" },
-  refuser: { from: ["soumis"], to: "refuse", need: "owner", comment: "requis" },
-  diffuser: { from: ["approuve"], to: "diffuse", need: "write", comment: "facultatif" },
-  retirer: { from: ["travail", "soumis", "approuve", "refuse", "diffuse"], to: "retire", need: "owner", comment: "requis" },
-});
+/** Au plus dix variantes coordonnées par dossier. */
+export const STUDIO_MAX_COORDINATED = 10;
 
 const comment = z.string().trim().min(1).max(2000);
+const hash = z.string().regex(/^[0-9a-f]{64}$/);
 export const studioPublicationCreateSchema = z.object({
   title: z.string().trim().min(1).max(200).optional(),
   revisionId: studioIdentifierSchema.optional(),
+  /** Autres variantes de la même étude coordonnées dans le manifeste (révision courante de chacune). */
+  coordinatedVariantIds: z.array(studioIdentifierSchema).max(STUDIO_MAX_COORDINATED).optional(),
   comment: comment.optional(),
   requestId: studioIdentifierSchema.optional(),
 }).strict();
 export const studioPublicationTransitionSchema = z.object({
   comment: comment.optional(),
+  manifestHash: hash.optional(),
   revisionId: studioIdentifierSchema.optional(),
-  documentHash: z.string().regex(/^[0-9a-f]{64}$/).optional(),
+  documentHash: hash.optional(),
 }).strict();
 export type StudioPublicationCreateInput = z.infer<typeof studioPublicationCreateSchema>;
 export type StudioPublicationTransitionInput = z.infer<typeof studioPublicationTransitionSchema>;
 
-/** JSON canonique (clés triées, ordre des tableaux conservé) : jsonb ne garde pas l'ordre des clés. */
-export function canonicalJson(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
-  if (value !== null && typeof value === "object") {
-    return `{${Object.keys(value).sort().filter((k) => (value as Record<string, unknown>)[k] !== undefined).map((k) => `${JSON.stringify(k)}:${canonicalJson((value as Record<string, unknown>)[k])}`).join(",")}}`;
-  }
-  return JSON.stringify(value) ?? "null";
-}
-const sha256 = (data: string | Uint8Array): string => createHash("sha256").update(data).digest("hex");
 /** Empreinte du document d'une révision : SHA-256 du JSON canonique du document tel qu'il est stocké (jamais de sa forme validée). */
 export const studioDocumentHash = (doc: StudioDocument): string => sha256(canonicalJson(doc));
 
@@ -109,29 +93,41 @@ export function studioPackageFiles(doc: StudioDocument, revisionId: string, meta
   };
   return STUDIO_PACKAGE_FORMATS.map((format) => ({ format, fileName: `${base}${format === "pdf" ? "-feuille" : ""}.${format}`, mime: MIME[format], body: bodies[format] }));
 }
-/** Empreinte globale d'un paquet : SHA-256 du manifeste canonique. */
+/** Empreinte globale d'un paquet : SHA-256 du manifeste canonique du paquet. */
 export const studioPackageHash = (pkg: StudioPublicationPackage): string => sha256(canonicalJson(pkg));
 
+type Who = { id: string; email: string };
 export interface StudioPublicationEventView {
   id: string; action: StudioPublicationAction; fromStatus: StudioPublicationStatus | null; toStatus: StudioPublicationStatus;
-  author: { id: string; email: string }; comment: string | null; revisionId: string; documentHash: string; headRevisionId: string; createdAt: string;
+  workStatus: StudioPublicationWorkStatus | null; diffusionStatus: StudioPublicationDiffusionStatus | null;
+  author: Who; comment: string | null; revisionId: string; documentHash: string; manifestHash: string | null; headRevisionId: string;
+  relatedPublicationId: string | null; createdAt: string;
 }
 export interface StudioPublicationView {
   id: string; projectId: string; studyId: string; variantId: string; variantName: string; title: string;
-  revisionId: string; documentHash: string; status: StudioPublicationStatus;
-  createdBy: { id: string; email: string }; createdAt: string; updatedAt: string;
-  approval: { revisionId: string; documentHash: string; by: { id: string; email: string } | null; at: string | null } | null;
-  diffusion: { by: { id: string; email: string } | null; at: string | null; packageHash: string; files: StudioPackageFile[] } | null;
-  /** Actualité des contenus dérivés : la tête de la variante est-elle encore la révision publiée ? */
-  headRevisionId: string; freshness: "a-jour" | "perimee";
-  /** Diffusion plus récente de la même variante (remplacement), sinon null. */
+  revisionId: string; documentHash: string;
+  /** Statut combiné historique (lecteurs existants). */
+  status: StudioPublicationStatus;
+  /** Dimensions distinctes (E.4-01). */
+  workStatus: StudioPublicationWorkStatus; diffusionStatus: StudioPublicationDiffusionStatus;
+  /** Manifeste figé (null : dossier antérieur au lot E.4, à actualiser). */
+  manifest: StudioPublicationManifest | null; manifestHash: string | null; manifestBuiltAt: string | null;
+  createdBy: Who; createdAt: string; updatedAt: string;
+  approval: { revisionId: string; documentHash: string; manifestHash: string | null; by: Who | null; at: string | null } | null;
+  diffusion: { by: Who | null; at: string | null; packageHash: string; manifestHash: string | null; files: StudioPackageFile[] } | null;
+  /** Actualité des contenus dérivés et écarts constatés (source déplacée, métadonnée renommée). */
+  headRevisionId: string; freshness: Actualite; drift: EcartManifeste[];
+  /** Diffusion plus récente qui remplace celle-ci, sinon null. */
   replacedBy: string | null;
+  replacement: { publicationId: string; by: Who | null; at: string | null } | null;
+  withdrawal: { by: Who; at: string; comment: string | null } | null;
   /** Indications d'interface ; le serveur revérifie chaque transition. */
   allowed: StudioPublicationTransition[];
   events?: StudioPublicationEventView[];
 }
 
 type PublicationRow = typeof studioPublications.$inferSelect;
+type VariantState = { id: string; studyId: string; name: string; headRevisionId: string; archivedAt: Date | null; studyName: string; studyArchivedAt: Date | null };
 
 async function emails(q: Querier, ids: (string | null)[]): Promise<Map<string, string>> {
   const wanted = [...new Set(ids.filter((x): x is string => !!x))];
@@ -140,53 +136,87 @@ async function emails(q: Querier, ids: (string | null)[]): Promise<Map<string, s
   return new Map(rows.map((r) => [r.id, r.email]));
 }
 
-function allowedFor(access: AccessibleProject, actorId: string, row: PublicationRow, archived: boolean): StudioPublicationTransition[] {
-  return STUDIO_PUBLICATION_ACTIONS.filter((action) => {
-    const t = TRANSITIONS[action];
-    if (!t.from.includes(row.status)) return false;
-    if (archived && action !== "retirer") return false;
-    return projectAccessRefusal(access, actorId, t.need) === null;
+async function variantStates(q: Querier, ids: string[]): Promise<Map<string, VariantState>> {
+  if (!ids.length) return new Map();
+  const rows = await q.select({
+    id: studioVariants.id, studyId: studioVariants.studyId, name: studioVariants.name, headRevisionId: studioVariants.headRevisionId, archivedAt: studioVariants.archivedAt,
+    studyName: studioStudies.name, studyArchivedAt: studioStudies.archivedAt,
+  }).from(studioVariants).innerJoin(studioStudies, eq(studioStudies.id, studioVariants.studyId)).where(inArray(studioVariants.id, [...new Set(ids)]));
+  return new Map(rows.map((r) => [r.id, r]));
+}
+
+const sourceIds = (row: PublicationRow): string[] => [row.variantId, ...(row.manifest?.sources.map((s) => s.variantId) ?? [])];
+
+/** Écarts et actualité d'un dossier d'après l'état courant de ses sources (dossier antérieur : tête de la variante seule). */
+function driftOf(access: AccessibleProject, row: PublicationRow, states: Map<string, VariantState>): EcartManifeste[] {
+  const primary = states.get(row.variantId);
+  if (!row.manifest) {
+    const head = primary?.headRevisionId ?? null;
+    return head === row.revisionId ? [] : [{ type: "source", role: "principale", variantId: row.variantId, revisionFigee: row.revisionId, revisionCourante: head }];
+  }
+  const courantes = row.manifest.sources.map((s) => ({ variantId: s.variantId, headRevisionId: states.get(s.variantId)?.headRevisionId ?? null }));
+  return ecartsManifeste(row.manifest, courantes, {
+    projectCode: access.code, projectName: access.name, studyName: primary?.studyName ?? "", variantName: primary?.name ?? "",
   });
 }
 
-/** Vues des publications : variantes (nom, tête, archive), remplacement et droits calculés en une passe. */
+function allowedFor(access: AccessibleProject, actorId: string, dims: Dimensions, row: PublicationRow, freshness: Actualite, archived: boolean): StudioPublicationTransition[] {
+  return STUDIO_PUBLICATION_ACTIONS.filter((action) => {
+    if (!controlerTransition(action, { ...dims, manifeste: row.manifest !== null, actualite: freshness }, "-").ok) return false;
+    if (action === "diffuser" && (freshness === "perimee" || !row.approvedManifestHash)) return false;
+    if (archived && action !== "retirer") return false;
+    return projectAccessRefusal(access, actorId, besoinTransition(action)) === null;
+  });
+}
+
+/** Vues des dossiers : variantes sources, actualité, remplacement, retrait et droits calculés en une passe. */
 async function views(q: Querier, access: AccessibleProject, actorId: string, rows: PublicationRow[], withEvents = false): Promise<StudioPublicationView[]> {
   if (!rows.length) return [];
+  const states = await variantStates(q, rows.flatMap(sourceIds));
   const variantIds = [...new Set(rows.map((r) => r.variantId))];
-  const variants = await q.select({ id: studioVariants.id, name: studioVariants.name, headRevisionId: studioVariants.headRevisionId, archivedAt: studioVariants.archivedAt, studyArchivedAt: studioStudies.archivedAt })
-    .from(studioVariants).innerJoin(studioStudies, eq(studioStudies.id, studioVariants.studyId)).where(inArray(studioVariants.id, variantIds));
-  const byVariant = new Map(variants.map((v) => [v.id, v]));
-  // Remplacement : diffusions (même retirées ensuite) de chaque variante, par date de diffusion.
-  const diffused = await q.select({ id: studioPublications.id, variantId: studioPublications.variantId, diffusedAt: studioPublications.diffusedAt, status: studioPublications.status })
-    .from(studioPublications).where(inArray(studioPublications.variantId, variantIds));
-  const eventsRows = withEvents
-    ? await q.select().from(studioPublicationEvents).where(inArray(studioPublicationEvents.publicationId, rows.map((r) => r.id))).orderBy(asc(studioPublicationEvents.createdAt), asc(studioPublicationEvents.id))
+  // Remplacement d'un dossier antérieur au lot E.4 (sans colonne de remplacement) : diffusion plus récente de la même variante.
+  const legacy = rows.some((r) => r.diffusionStatus === null && r.diffusedAt);
+  const diffused = legacy
+    ? await q.select({ id: studioPublications.id, variantId: studioPublications.variantId, diffusedAt: studioPublications.diffusedAt, status: studioPublications.status })
+      .from(studioPublications).where(inArray(studioPublications.variantId, variantIds))
     : [];
-  const mails = await emails(q, [...rows.flatMap((r) => [r.createdBy, r.approvedBy, r.diffusedBy]), ...eventsRows.map((e) => e.authorId)]);
+  const eventsRows = await q.select().from(studioPublicationEvents).where(inArray(studioPublicationEvents.publicationId, rows.map((r) => r.id)))
+    .orderBy(asc(studioPublicationEvents.createdAt), asc(studioPublicationEvents.id));
+  const mails = await emails(q, [...rows.flatMap((r) => [r.createdBy, r.approvedBy, r.diffusedBy, r.replacedBy]), ...eventsRows.map((e) => e.authorId)]);
   const who = (id: string | null) => (id ? { id, email: mails.get(id) ?? "" } : null);
   return rows.map((row) => {
-    const variant = byVariant.get(row.variantId);
-    const later = row.diffusedAt
+    const variant = states.get(row.variantId);
+    const dims = dimensionsDe(row);
+    const drift = driftOf(access, row, states);
+    const freshness = actualiteDe(drift);
+    const later = row.replacedByPublicationId === null && row.diffusionStatus === null && row.diffusedAt
       ? diffused.filter((d) => d.variantId === row.variantId && d.id !== row.id && d.diffusedAt && d.status === "diffuse" && d.diffusedAt.getTime() > row.diffusedAt!.getTime())
         .sort((a, b) => a.diffusedAt!.getTime() - b.diffusedAt!.getTime())[0]
       : undefined;
-    const head = variant?.headRevisionId ?? row.revisionId;
+    const replacedBy = row.replacedByPublicationId ?? later?.id ?? null;
+    const own = eventsRows.filter((e) => e.publicationId === row.id);
+    const retrait = dims.diffusion === "retire" ? own.filter((e) => e.action === "retirer").at(-1) : undefined;
     const view: StudioPublicationView = {
       id: row.id, projectId: row.projectId, studyId: row.studyId, variantId: row.variantId, variantName: variant?.name ?? "", title: row.title,
       revisionId: row.revisionId, documentHash: row.documentHash, status: row.status,
+      workStatus: dims.travail, diffusionStatus: dims.diffusion,
+      manifest: row.manifest, manifestHash: row.manifestHash, manifestBuiltAt: row.manifestBuiltAt?.toISOString() ?? null,
       createdBy: who(row.createdBy)!, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(),
       approval: row.approvedRevisionId && row.approvedDocumentHash
-        ? { revisionId: row.approvedRevisionId, documentHash: row.approvedDocumentHash, by: who(row.approvedBy), at: row.approvedAt?.toISOString() ?? null } : null,
+        ? { revisionId: row.approvedRevisionId, documentHash: row.approvedDocumentHash, manifestHash: row.approvedManifestHash, by: who(row.approvedBy), at: row.approvedAt?.toISOString() ?? null } : null,
       diffusion: row.package && row.packageHash
-        ? { by: who(row.diffusedBy), at: row.diffusedAt?.toISOString() ?? null, packageHash: row.packageHash, files: row.package.files } : null,
-      headRevisionId: head, freshness: head === row.revisionId ? "a-jour" : "perimee",
-      replacedBy: later?.id ?? null,
-      allowed: allowedFor(access, actorId, row, variant ? variant.archivedAt !== null || variant.studyArchivedAt !== null : true),
+        ? { by: who(row.diffusedBy), at: row.diffusedAt?.toISOString() ?? null, packageHash: row.packageHash, manifestHash: row.package.manifestHash ?? null, files: row.package.files } : null,
+      headRevisionId: variant?.headRevisionId ?? row.revisionId, freshness, drift,
+      replacedBy,
+      replacement: replacedBy ? { publicationId: replacedBy, by: who(row.replacedBy), at: row.replacedAt?.toISOString() ?? null } : null,
+      withdrawal: retrait ? { by: who(retrait.authorId)!, at: retrait.createdAt.toISOString(), comment: retrait.comment } : null,
+      allowed: allowedFor(access, actorId, dims, row, freshness, variant ? variant.archivedAt !== null || variant.studyArchivedAt !== null : true),
     };
     if (withEvents) {
-      view.events = eventsRows.filter((e) => e.publicationId === row.id).map((e) => ({
-        id: e.id, action: e.action, fromStatus: e.fromStatus, toStatus: e.toStatus, author: who(e.authorId)!, comment: e.comment,
-        revisionId: e.revisionId, documentHash: e.documentHash, headRevisionId: e.headRevisionId, createdAt: e.createdAt.toISOString(),
+      view.events = own.map((e) => ({
+        id: e.id, action: e.action, fromStatus: e.fromStatus, toStatus: e.toStatus, workStatus: e.workStatus, diffusionStatus: e.diffusionStatus,
+        author: who(e.authorId)!, comment: e.comment, revisionId: e.revisionId, documentHash: e.documentHash, manifestHash: e.manifestHash,
+        headRevisionId: e.headRevisionId, relatedPublicationId: e.relatedPublicationId, createdAt: e.createdAt.toISOString(),
       }));
     }
     return view;
@@ -205,10 +235,43 @@ async function revisionOf(q: Querier, variantId: string, revisionId: string) {
   return revision ?? notFound();
 }
 
-async function journal(tx: Tx, row: Pick<PublicationRow, "id" | "revisionId" | "documentHash">, action: StudioPublicationAction, from: StudioPublicationStatus | null, to: StudioPublicationStatus, authorId: string, text: string | undefined, headRevisionId: string, at: Date) {
+type Study = Awaited<ReturnType<typeof studyOf>>;
+type Variant = Awaited<ReturnType<typeof variantOf>>;
+type Revision = Awaited<ReturnType<typeof revisionOf>>;
+interface Dossier {
+  manifest: StudioPublicationManifest; manifestHash: string; documentHash: string;
+  meta: StudioPublicationPackage["meta"]; files: ReturnType<typeof studioPackageFiles>;
+}
+
+/**
+ * Dossier calculé depuis l'état présent : révision principale donnée, tête courante de chaque variante coordonnée,
+ * noms actuels gelés dans les métadonnées, documents exportés de façon déterministe.
+ */
+async function construireDossier(q: Querier, access: AccessibleProject, study: Study, variant: Variant, revision: Revision, coordinated: readonly string[]): Promise<Dossier> {
+  const documentHash = studioDocumentHash(revision.document);
+  const sources: ManifesteSource[] = [{ role: "principale", variantId: variant.id, revisionId: revision.id, documentHash }];
+  for (const id of coordinated) {
+    const other = await variantOf(q, study.id, id);
+    const head = await revisionOf(q, other.id, other.headRevisionId);
+    sources.push({ role: "coordonnee", variantId: other.id, revisionId: head.id, documentHash: studioDocumentHash(head.document) });
+  }
+  const meta: ManifesteMeta = { projectCode: access.code, projectName: access.name, studyName: study.name, variantName: variant.name, revisionCreatedAt: revision.createdAt.toISOString() };
+  const files = studioPackageFiles(validateStudioDocument(revision.document), revision.id, meta, `${study.id}|${variant.id}`);
+  const manifest = construireManifeste(sources, meta, files.map((f) => ({ format: f.format, fileName: f.fileName, mime: f.mime, size: f.body.byteLength, sha256: sha256(f.body) })));
+  return { manifest, manifestHash: empreinteManifeste(manifest), documentHash, meta, files };
+}
+const coordinatedOf = (manifest: StudioPublicationManifest | null): string[] => manifest?.sources.filter((s) => s.role === "coordonnee").map((s) => s.variantId) ?? [];
+
+interface JournalEntry {
+  action: StudioPublicationAction; from: StudioPublicationStatus | null; to: StudioPublicationStatus; dims: Dimensions;
+  authorId: string; comment: string | undefined | null; headRevisionId: string; at: Date; related?: string | null;
+}
+async function journal(tx: Tx, row: Pick<PublicationRow, "id" | "revisionId" | "documentHash" | "manifestHash">, e: JournalEntry) {
   await tx.insert(studioPublicationEvents).values({
-    id: newId("studio_publication_event"), publicationId: row.id, action, fromStatus: from, toStatus: to, authorId, comment: text ?? null,
-    revisionId: row.revisionId, documentHash: row.documentHash, headRevisionId, createdAt: at,
+    id: newId("studio_publication_event"), publicationId: row.id, action: e.action, fromStatus: e.from, toStatus: e.to,
+    workStatus: e.dims.travail, diffusionStatus: e.dims.diffusion, authorId: e.authorId, comment: e.comment ?? null,
+    revisionId: row.revisionId, documentHash: row.documentHash, manifestHash: row.manifestHash, headRevisionId: e.headRevisionId,
+    relatedPublicationId: e.related ?? null, createdAt: e.at,
   });
 }
 
@@ -230,7 +293,7 @@ export async function listStudyPublications(projectId: string, studyId: string, 
   return { publications: await views(db, access, actorId, rows) };
 }
 
-/** Paquets diffusés du projet (diffusés puis retirés compris, marqués) : liste servie au module Documents (E.3-06). */
+/** Paquets diffusés du projet (diffusés puis retirés ou remplacés compris, marqués) : liste servie au module Documents (E.3-06). */
 export async function listProjectStudioPackages(projectId: string, actorId: string) {
   const access = assertAccess(await loadProjectAccess(projectId, actorId), actorId, "read");
   const rows = await db.select().from(studioPublications)
@@ -251,93 +314,129 @@ export async function readStudioPublication(projectId: string, studyId: string, 
   return (await views(db, access, actorId, [row], true))[0]!;
 }
 
-/** Nouvelle publication (statut `travail`) d'une révision de la variante (tête par défaut) ; droit `write`. */
+/** Nouveau dossier (travail `brouillon`, diffusion `non-diffuse`) d'une révision de la variante (tête par défaut), manifeste figé ; droit `write`. */
 export async function createStudioPublication(projectId: string, studyId: string, variantId: string, actorId: string, input: StudioPublicationCreateInput): Promise<StudioPublicationView & { replayed: boolean }> {
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
     const variant = await variantOf(tx, study.id, variantId);
     assertAccess(access, actorId, "write");
+    const coordinated = [...new Set(input.coordinatedVariantIds ?? [])];
+    if (coordinated.includes(variant.id)) {
+      throw new StudioRequestError(400, { error: "invalid_input", code: "coordinated_variant_invalid", message: "Une variante coordonnée doit être distincte de la variante publiée." });
+    }
     const revision = await revisionOf(tx, variant.id, input.revisionId ?? variant.headRevisionId);
-    const documentHash = studioDocumentHash(revision.document);
     const title = input.title ?? `${study.name} — ${variant.name}`;
     if (input.requestId !== undefined) {
       const [previous] = await tx.select().from(studioPublications).where(and(eq(studioPublications.variantId, variant.id), eq(studioPublications.requestId, input.requestId))).limit(1);
       if (previous) {
-        if (previous.createdBy !== actorId || (input.revisionId !== undefined && previous.revisionId !== input.revisionId) || (input.title !== undefined && previous.title !== input.title)) {
+        const same = (a: string[], b: string[]) => a.length === b.length && [...a].sort().every((x, i) => x === [...b].sort()[i]);
+        if (previous.createdBy !== actorId || (input.revisionId !== undefined && previous.revisionId !== input.revisionId) || (input.title !== undefined && previous.title !== input.title)
+          || (input.coordinatedVariantIds !== undefined && !same(coordinated, coordinatedOf(previous.manifest)))) {
           throw new StudioRequestError(409, { error: "request_conflict", message: "Cet identifiant de requête est déjà utilisé pour un autre contenu ou auteur." });
         }
         return { ...(await views(tx, access, actorId, [previous], true))[0]!, replayed: true };
       }
     }
     if (study.archivedAt !== null || variant.archivedAt !== null) return studioArchivedRefusal();
+    for (const id of coordinated) {
+      const other = await variantOf(tx, study.id, id).catch(() => {
+        throw new StudioRequestError(400, { error: "invalid_input", code: "coordinated_variant_invalid", variantId: id, message: "Variante coordonnée inconnue dans cette étude." });
+      });
+      if (other.archivedAt !== null) return studioArchivedRefusal();
+    }
+    const dossier = await construireDossier(tx, access, study, variant, revision, coordinated);
     const now = new Date();
+    const dims: Dimensions = { travail: "brouillon", diffusion: "non-diffuse" };
     const row = {
-      id: newId("studio_publication"), projectId, studyId: study.id, variantId: variant.id, revisionId: revision.id, documentHash, title,
-      status: "travail" as const, requestId: input.requestId ?? null, createdBy: actorId, createdAt: now, updatedAt: now,
+      id: newId("studio_publication"), projectId, studyId: study.id, variantId: variant.id, revisionId: revision.id, documentHash: dossier.documentHash, title,
+      status: statutCombine(dims), workStatus: dims.travail, diffusionStatus: dims.diffusion,
+      manifest: dossier.manifest, manifestHash: dossier.manifestHash, manifestBuiltAt: now,
+      requestId: input.requestId ?? null, createdBy: actorId, createdAt: now, updatedAt: now,
     };
     await tx.insert(studioPublications).values(row);
-    await journal(tx, row, "creer", null, "travail", actorId, input.comment, variant.headRevisionId, now);
+    await journal(tx, row, { action: "creer", from: null, to: row.status, dims, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now });
     const [stored] = await tx.select().from(studioPublications).where(eq(studioPublications.id, row.id)).limit(1);
     return { ...(await views(tx, access, actorId, [stored!], true))[0]!, replayed: false };
   });
 }
 
-/** Transition d'une publication : statut de départ, droit, commentaire, liaison à la révision examinée, tête. */
+/** Transition d'un dossier : dimensions de départ, droit, commentaire, manifeste examiné ou courant, journal. */
 export async function transitionStudioPublication(projectId: string, studyId: string, publicationId: string, actorId: string, action: StudioPublicationTransition, input: StudioPublicationTransitionInput): Promise<StudioPublicationView> {
-  const rule = TRANSITIONS[action];
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
     const [row] = await tx.select().from(studioPublications)
       .where(and(eq(studioPublications.id, publicationId), eq(studioPublications.studyId, study.id), eq(studioPublications.projectId, projectId))).for("update");
     if (!row) return notFound();
-    assertAccess(access, actorId, rule.need);
+    assertAccess(access, actorId, besoinTransition(action));
     // Toute transition est une écriture : la réservation d'édition d'un autre compte la bloque (423), propriétaire compris.
     assertAccess(access, actorId, "write");
     const variant = await variantOf(tx, study.id, row.variantId);
-    if (!rule.from.includes(row.status)) {
-      throw new StudioRequestError(409, { error: "invalid_transition", status: row.status, action, message: `Transition « ${action} » impossible depuis le statut « ${row.status} ».` });
-    }
+    const dims = dimensionsDe(row);
+    const freshness = actualiteDe(driftOf(access, row, await variantStates(tx, sourceIds(row))));
+    const verdict = controlerTransition(action, { ...dims, manifeste: row.manifest !== null, actualite: freshness }, input.comment);
+    if (!verdict.ok) throw new StudioRequestError(verdict.refus.status, verdict.refus.body);
     if (action !== "retirer" && (study.archivedAt !== null || variant.archivedAt !== null)) return studioArchivedRefusal();
-    if (rule.comment === "requis" && !input.comment) {
-      throw new StudioRequestError(400, { error: "invalid_input", code: "comment_required", message: "Un commentaire est requis pour cette transition." });
-    }
     // Empreinte recalculée depuis la révision immuable : jamais crue sur parole.
     const revision = await revisionOf(tx, variant.id, row.revisionId);
     const actualHash = studioDocumentHash(revision.document);
     if (actualHash !== row.documentHash) throw new Error("studio_publication_hash_drift");
     const now = new Date();
-    const patch: Partial<typeof studioPublications.$inferInsert> = { status: rule.to, updatedAt: now };
+    const vers = verdict.vers;
+    const patch: Partial<typeof studioPublications.$inferInsert> = { status: statutCombine(vers), workStatus: vers.travail, diffusionStatus: vers.diffusion, updatedAt: now };
+    let after: Pick<PublicationRow, "id" | "revisionId" | "documentHash" | "manifestHash"> = row;
     if (action === "approuver") {
-      if (!input.revisionId || !input.documentHash) {
-        throw new StudioRequestError(400, { error: "invalid_input", code: "examined_set_required", message: "L'approbation porte sur la révision et l'empreinte examinées : revisionId et documentHash sont requis." });
-      }
-      if (input.revisionId !== row.revisionId || input.documentHash !== actualHash) {
-        throw new StudioRequestError(409, { error: "revision_mismatch", publicationRevisionId: row.revisionId, publicationDocumentHash: actualHash, examinedRevisionId: input.revisionId, examinedDocumentHash: input.documentHash, message: "L'ensemble examiné n'est pas celui de la publication." });
-      }
-      Object.assign(patch, { approvedRevisionId: row.revisionId, approvedDocumentHash: actualHash, approvedBy: actorId, approvedAt: now });
+      const refus = controlerEnsembleExamine(input, { manifestHash: row.manifestHash!, revisionId: row.revisionId, documentHash: actualHash });
+      if (refus) throw new StudioRequestError(refus.status, refus.body);
+      Object.assign(patch, { approvedRevisionId: row.revisionId, approvedDocumentHash: actualHash, approvedManifestHash: row.manifestHash, approvedBy: actorId, approvedAt: now });
+    }
+    if (action === "actualiser") {
+      // Nouveau manifeste depuis les têtes courantes ; l'approbation précédente ne vaut plus (elle reste au journal).
+      const head = await revisionOf(tx, variant.id, variant.headRevisionId);
+      const dossier = await construireDossier(tx, access, study, variant, head, coordinatedOf(row.manifest));
+      Object.assign(patch, {
+        revisionId: head.id, documentHash: dossier.documentHash, manifest: dossier.manifest, manifestHash: dossier.manifestHash, manifestBuiltAt: now,
+        approvedRevisionId: null, approvedDocumentHash: null, approvedManifestHash: null, approvedBy: null, approvedAt: null,
+      });
+      after = { id: row.id, revisionId: head.id, documentHash: dossier.documentHash, manifestHash: dossier.manifestHash };
     }
     if (action === "diffuser") {
-      if (!row.approvedRevisionId || row.approvedDocumentHash !== actualHash) throw new Error("studio_publication_without_approval");
-      if (variant.headRevisionId !== row.approvedRevisionId) {
-        throw new StudioRequestError(409, {
-          error: "stale_approval", approvedRevisionId: row.approvedRevisionId, headRevisionId: variant.headRevisionId,
-          message: "La variante a changé depuis l'approbation : publiez la nouvelle révision, soumise et approuvée à son tour.",
+      // Manifeste courant recalculé depuis les têtes et les noms actuels, comparé au manifeste approuvé (E.4-05).
+      const head = await revisionOf(tx, variant.id, variant.headRevisionId);
+      const current = await construireDossier(tx, access, study, variant, head, coordinatedOf(row.manifest));
+      const refus = controlerApprobation(row.approvedManifestHash, row.manifestHash, current.manifestHash);
+      if (refus) {
+        throw new StudioRequestError(refus.status, {
+          ...refus.body, approvedRevisionId: row.approvedRevisionId, headRevisionId: variant.headRevisionId,
+          drift: row.manifest ? ecartsManifeste(row.manifest, current.manifest.sources.map((s) => ({ variantId: s.variantId, headRevisionId: s.revisionId })), current.meta) : [],
         });
       }
-      const meta = { projectCode: access.code, projectName: access.name, studyName: study.name, variantName: variant.name, revisionCreatedAt: revision.createdAt.toISOString() };
       const files: StudioPackageFile[] = [];
-      for (const file of studioPackageFiles(validateStudioDocument(revision.document), row.revisionId, meta, `${row.studyId}|${row.variantId}`)) {
+      for (const file of current.files) {
         const id = sha256(file.body);
         await tx.insert(volumes).values({ id, mime: file.mime, size: file.body.byteLength, content: file.body, createdAt: now }).onConflictDoNothing();
         files.push({ format: file.format, fileName: file.fileName, mime: file.mime, size: file.body.byteLength, sha256: id });
       }
-      const pkg: StudioPublicationPackage = { schema: "studio-publication-package/1", revisionId: row.revisionId, documentHash: actualHash, meta, files };
+      const pkg: StudioPublicationPackage = { schema: "studio-publication-package/1", revisionId: row.revisionId, documentHash: actualHash, meta: current.meta, files, manifestHash: current.manifestHash };
       Object.assign(patch, { package: pkg, packageHash: studioPackageHash(pkg), diffusedBy: actorId, diffusedAt: now });
+      // Remplacement (E.4-06) : les diffusions encore en vigueur de la même variante sont marquées remplacées et journalisées.
+      const previous = await tx.select().from(studioPublications).where(and(
+        eq(studioPublications.variantId, row.variantId), ne(studioPublications.id, row.id),
+        or(eq(studioPublications.diffusionStatus, "diffuse"), and(isNull(studioPublications.diffusionStatus), eq(studioPublications.status, "diffuse"), isNull(studioPublications.replacedAt))),
+      )).for("update");
+      for (const old of previous) {
+        const oldDims = dimensionsDe(old);
+        const replaced: Dimensions = { travail: oldDims.travail, diffusion: "remplace" };
+        await tx.update(studioPublications).set({
+          status: statutCombine(replaced), workStatus: replaced.travail, diffusionStatus: replaced.diffusion,
+          replacedByPublicationId: row.id, replacedBy: actorId, replacedAt: now, updatedAt: now,
+        }).where(eq(studioPublications.id, old.id));
+        await journal(tx, old, { action: "remplacer", from: old.status, to: statutCombine(replaced), dims: replaced, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now, related: row.id });
+      }
     }
     await tx.update(studioPublications).set(patch).where(eq(studioPublications.id, row.id));
-    await journal(tx, row, action, row.status, rule.to, actorId, input.comment, variant.headRevisionId, now);
+    await journal(tx, after, { action, from: row.status, to: statutCombine(vers), dims: vers, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now });
     const [stored] = await tx.select().from(studioPublications).where(eq(studioPublications.id, row.id)).limit(1);
     return (await views(tx, access, actorId, [stored!], true))[0]!;
   });
@@ -353,14 +452,14 @@ async function packageOf(projectId: string, studyId: string, publicationId: stri
   return { row, pkg: row.package };
 }
 
-/** Fichier figé d'un paquet (diffusé ou retiré : l'historique reste lisible) ; contenu vérifié contre son empreinte. */
+/** Fichier figé d'un paquet (diffusé, remplacé ou retiré : l'historique reste lisible) ; contenu vérifié contre son empreinte. */
 export async function readStudioPackageFile(projectId: string, studyId: string, publicationId: string, actorId: string, format: string) {
   const { row, pkg } = await packageOf(projectId, studyId, publicationId, actorId);
   const file = pkg.files.find((f) => f.format === format);
   if (!file) return notFound();
   const [volume] = await db.select().from(volumes).where(eq(volumes.id, file.sha256)).limit(1);
   if (!volume || sha256(volume.content) !== file.sha256) throw new Error("studio_package_volume_corrupt");
-  return { file, content: volume.content, status: row.status, packageHash: row.packageHash! };
+  return { file, content: volume.content, status: row.status, diffusionStatus: dimensionsDe(row).diffusion, packageHash: row.packageHash! };
 }
 
 /** Recalcule les exports depuis la révision et les métadonnées gelées : mêmes empreintes = paquet reproductible. */
@@ -370,12 +469,15 @@ export async function verifierPaquet(projectId: string, studyId: string, publica
   const recomputed = studioPackageFiles(validateStudioDocument(revision.document), pkg.revisionId, pkg.meta, `${row.studyId}|${row.variantId}`);
   const files = pkg.files.map((f) => {
     const again = recomputed.find((r) => r.format === f.format);
-    const hash = again ? sha256(again.body) : null;
-    return { format: f.format, stored: f.sha256, recomputed: hash, identical: hash === f.sha256 };
+    const h = again ? sha256(again.body) : null;
+    return { format: f.format, stored: f.sha256, recomputed: h, identical: h === f.sha256 };
   });
+  // Le paquet reprend les empreintes de documents du manifeste approuvé (lot E.4 ; sans objet pour un paquet antérieur).
+  const manifestDocuments = row.manifest && pkg.manifestHash === row.approvedManifestHash
+    ? pkg.files.every((f) => row.manifest!.documents.some((d) => d.format === f.format && d.sha256 === f.sha256)) : null;
   return {
     publicationId: row.id, packageHash: row.packageHash!, packageHashRecomputed: studioPackageHash(pkg),
-    documentHash: studioDocumentHash(revision.document), files,
-    identical: files.every((f) => f.identical) && studioPackageHash(pkg) === row.packageHash,
+    documentHash: studioDocumentHash(revision.document), manifestHash: pkg.manifestHash ?? null, manifestDocuments, files,
+    identical: files.every((f) => f.identical) && studioPackageHash(pkg) === row.packageHash && manifestDocuments !== false,
   };
 }

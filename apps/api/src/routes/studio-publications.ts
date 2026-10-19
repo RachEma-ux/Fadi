@@ -5,7 +5,8 @@
  *   GET  /studies/:studyId/publications                              publications de l'étude (tous statuts)
  *   POST /studies/:studyId/variants/:variantId/publications          nouvelle publication `travail` (201 ; rejeu par requestId)
  *   GET  /studies/:studyId/publications/:publicationId               détail et journal
- *   POST /studies/:studyId/publications/:publicationId/:action       soumettre | approuver | refuser | diffuser | retirer
+ *   POST /studies/:studyId/publications/:publicationId/:action       soumettre | actualiser | approuver | refuser | diffuser | retirer
+ *        (droits distincts : revue = propriétaire et éditeur ; approbation et publication = propriétaire ; lecteur = lecture)
  *   GET  /studies/:studyId/publications/:publicationId/files/:format fichier figé (svg | dxf | ifc | pdf)
  *   GET  /studies/:studyId/publications/:publicationId/verification  recalcul déterministe des empreintes du paquet
  */
@@ -61,6 +62,7 @@ studioPublicationsRouter.get(`${base}/files/:format`, endpoint(async (req, res) 
   res.setHeader("X-Content-SHA256", out.file.sha256);
   res.setHeader("X-Studio-Package", out.packageHash);
   res.setHeader("X-Studio-Publication-Status", out.status);
+  res.setHeader("X-Studio-Diffusion-Status", out.diffusionStatus);
   res.setHeader("Cache-Control", "private, no-store");
   res.setHeader("X-Content-Type-Options", "nosniff");
   if (out.file.format === "svg") res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
