@@ -603,6 +603,19 @@ jobs:
         env:
           PGPASSWORD: fadi_ci_password
         run: sh scripts/verify-restore.sh localhost fadi fadi_e2e fadi_restore_check
+      # R.1-02 / R.2-01 : section Studio de l'archive JSON restaurée dans une base neuve (seconde API lancée et arrêtée
+      # par la recette), documents identiques octet pour octet, droits, immuabilité, réouverture, comparaison 0 anomalie.
+      - name: Recette de restauration Studio — archive JSON vers une base neuve, comparaison avant / après (apps/web/e2e/studio-restauration.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        env:
+          PGPASSWORD: fadi_ci_password
+        run: |
+          set -o pipefail
+          node --test scripts/validation/studio-compare-lib.test.mjs
+          psql -h localhost -U fadi -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS fadi_studio_restore;" -c "CREATE DATABASE fadi_studio_restore;"
+          psql -h localhost -U fadi -d fadi_studio_restore -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+          DATABASE_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_studio_restore npm run db:migrate
+          DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_studio_restore RESTORE_PORT=3002 OUT=atelier-captures/studio-restauration node apps/web/e2e/studio-restauration.mjs 2>&1 | tee -a e2e.log
       - name: Résumé de l'échec (annotations lisibles depuis l'API)
         if: failure()
         run: |

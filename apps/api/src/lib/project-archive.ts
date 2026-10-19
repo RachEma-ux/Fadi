@@ -36,6 +36,7 @@ import { newId } from "./ids.js";
 import { computationFor, loadStepContext, type StepContextProject } from "./step-context.js";
 import { loadStepRows, upsertStep, type Querier, type Tx } from "./step-rows.js";
 import type { SiteContextDeclaration } from "@parcours/domain-model";
+import { exportStudioArchive, importStudioArchive } from "./studio-archive.js";
 
 /** Modèle typé d'archive refusé par la revalidation : la transaction est annulée, rien n'est créé. */
 export class ArchiveModeleError extends Error {
@@ -83,7 +84,7 @@ export function manifestePaquet(project: ProjectRow, etat: ModeleAtelier | null)
   };
 }
 
-/** `backup()` : le projet, ses étapes, son programme, ses parcelles, son modèle typé et ses pièces jointes (20 Mo cumulés) en un seul JSON. */
+/** `backup()` : le projet, ses étapes, son programme, ses parcelles, son modèle typé, ses pièces jointes (20 Mo cumulés) et sa section Studio (études, révisions, commentaires, observations, liens d'étapes, publications et paquets, droits, préférences d'outils) en un seul JSON. */
 export async function exportProjectArchive(q: Querier, project: ProjectRow, now: string): Promise<ProjectArchive> {
   const rows = await loadStepRows(q, project.id);
   const [rep] = await q.select().from(programmeRepartitions).where(eq(programmeRepartitions.projectId, project.id)).limit(1);
@@ -93,6 +94,8 @@ export async function exportProjectArchive(q: Querier, project: ProjectRow, now:
   const parcelRows = await q.select().from(parcels).where(eq(parcels.projectId, project.id)).orderBy(asc(parcels.number));
   const charge = await chargerModele(q, project.id);
   const files = await q.select().from(stepFiles).where(eq(stepFiles.projectId, project.id)).orderBy(asc(stepFiles.addedAt));
+  // Studio, droits et fichiers figés des paquets (R.1-02) : lignes telles quelles et manifeste ; absent sans donnée Studio.
+  const studio = await exportStudioArchive(q, project);
   const warnings: string[] = [];
   const stageAttachments: ArchiveAttachment[] = [];
   let bytes = 0;
@@ -137,6 +140,7 @@ export async function exportProjectArchive(q: Querier, project: ProjectRow, now:
     manifeste: manifestePaquet(project, (charge?.etat as ModeleAtelier | undefined) ?? null),
     stageAttachments,
     planning: planning ? { revision: planning.revision, baselineVersion: planning.baselineVersion, steps: planning.steps, baselines: planningBaselines.map((b) => ({ version: b.version, steps: b.steps, sourceRevision: b.sourceRevision, createdAt: b.createdAt.toISOString(), createdBy: b.createdBy })) } : null,
+    ...(studio ? { studio: studio as unknown as Record<string, unknown> } : {}),
     warnings,
   };
 }
@@ -251,6 +255,10 @@ export async function importProjectArchive(tx: Tx, ownerId: string, archive: Pro
     const content = Buffer.from(decoded.base64, "base64");
     await tx.insert(stepFiles).values({ id: randomUUID(), projectId: id, stepNumber: f.stepNumber, name: f.name, type: f.type || decoded.type, size: content.length, content, addedAt: f.addedAt ? new Date(f.addedAt) : new Date(now) });
   }
+
+  // Studio (R.1-02) : lignes réinsérées telles quelles (révisions immuables, empreintes conservées), après les étapes
+  // (liens d'étapes du Parcours) ; une section altérée annule tout l'import (StudioArchiveError).
+  if (archive.studio) warnings.push(...(await importStudioArchive(tx, id, ownerId, archive.studio)));
 
   await stampStepFingerprints(tx, { id, name: project.name, siteObservations: project.siteObservations, harmony: project.harmony });
   return { project, warnings };
