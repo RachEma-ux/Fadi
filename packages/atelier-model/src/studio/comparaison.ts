@@ -10,7 +10,7 @@ import { STUDIO_DEFAULT_LAYER_ID, type StudioDimension, type StudioDocument, typ
  */
 
 export type StudioEtatDifference = "ajoute" | "supprime" | "modifie" | "identique";
-/** Propriétés comparées d'un objet (ligne, rectangle). */
+/** Propriétés comparées d'un objet (ligne, rectangle, cercle, arc, polyligne). */
 export type StudioProprieteObjet = "geometrie" | "calque" | "extrusion";
 /** Propriétés comparées d'un calque. */
 export type StudioProprieteCalque = "nom" | "visible" | "verrouille";
@@ -73,12 +73,27 @@ const sameExtrusion = (a: StudioShape["extrusion"], b: StudioShape["extrusion"])
 
 /** Points de la géométrie, dans un ordre fixe par type ; les grandeurs non ponctuelles sont comparées à part. */
 function geometryPoints(o: StudioShape): StudioPoint[] {
-  return o.type === "line" ? [o.start, o.end] : [o.origin];
+  switch (o.type) {
+    case "line": return [o.start, o.end];
+    case "rectangle": return [o.origin];
+    case "circle": case "arc": return [o.center];
+    case "polyline": return o.points;
+  }
+}
+const sameNumbers = (a: readonly number[] | undefined, b: readonly number[] | undefined): boolean =>
+  (a ?? []).length === (b ?? []).length && (a ?? []).every((v, i) => v === b![i]);
+/** Grandeurs non ponctuelles égales (dimensions, rayon, angles, fermeture, renflements, nombre de sommets). */
+function sameShapeForm(a: StudioShape, b: StudioShape): boolean {
+  if (a.type === "rectangle" && b.type === "rectangle") return a.width === b.width && a.height === b.height;
+  if (a.type === "circle" && b.type === "circle") return a.radius === b.radius;
+  if (a.type === "arc" && b.type === "arc") return a.radius === b.radius && a.startAngle === b.startAngle && a.endAngle === b.endAngle;
+  if (a.type === "polyline" && b.type === "polyline") return a.points.length === b.points.length && a.closed === b.closed && sameNumbers(a.bulges, b.bulges);
+  return a.type === b.type;
 }
 function sameShapeGeometry(a: StudioShape, b: StudioShape): boolean {
-  if (a.type === "line" && b.type === "line") return samePoint(a.start, b.start) && samePoint(a.end, b.end);
-  if (a.type === "rectangle" && b.type === "rectangle") return samePoint(a.origin, b.origin) && a.width === b.width && a.height === b.height;
-  return false;
+  if (a.type !== b.type || !sameShapeForm(a, b)) return false;
+  const pa = geometryPoints(a), pb = geometryPoints(b);
+  return pa.length === pb.length && pa.every((p, i) => samePoint(p, pb[i]!));
 }
 /** Translation commune à tous les points, sinon `null`. */
 function translation(from: readonly StudioPoint[], to: readonly StudioPoint[]): StudioDeplacement | null {
@@ -90,7 +105,7 @@ function translation(from: readonly StudioPoint[], to: readonly StudioPoint[]): 
   return { dx: nano(dx), dy: nano(dy) };
 }
 function shapeTranslation(a: StudioShape, b: StudioShape): StudioDeplacement | null {
-  if (a.type === "rectangle" && b.type === "rectangle" && (a.width !== b.width || a.height !== b.height)) return null;
+  if (!sameShapeForm(a, b)) return null;
   return translation(geometryPoints(a), geometryPoints(b));
 }
 

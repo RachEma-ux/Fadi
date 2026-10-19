@@ -1,0 +1,120 @@
+import { StudioValidationError } from "../noyau/validation.js";
+import type { StudioPoint, StudioShape } from "../noyau/types.js";
+
+/**
+ * Écriture STEP (ISO 10303-21) de l'export IFC Studio : chaînes, réels, GlobalId déterministes, numérotation des
+ * entités, et contexte d'écriture partagé par les écrivains par type d'objet (`objets/`).
+ */
+
+/** Chaîne STEP : apostrophes et barres obliques inverses doublées, hors ASCII imprimable en `\X2\…\X0\`. */
+export function studioStepString(t: string): string {
+  let out = "";
+  let ext = "";
+  const flush = () => {
+    if (ext) {
+      out += `\\X2\\${ext}\\X0\\`;
+      ext = "";
+    }
+  };
+  for (let i = 0; i < t.length; i++) {
+    const c = t.charCodeAt(i);
+    if (c >= 0x20 && c <= 0x7e) {
+      flush();
+      out += c === 0x27 ? "''" : c === 0x5c ? "\\\\" : t[i];
+    } else if (c >= 0x20 || c === 0x09) ext += c.toString(16).toUpperCase().padStart(4, "0");
+    // Les autres contrôles (fins de ligne comprises) sont retirés.
+  }
+  flush();
+  return `'${out}'`;
+}
+
+/** Réel STEP : toujours un point décimal ; arrondi au nanomètre. */
+export function studioStepReal(v: number): string {
+  if (!Number.isFinite(v)) throw new StudioValidationError("ifc", "nombre fini attendu");
+  const r = Math.round(v * 1e9) / 1e9;
+  if (r === 0) return "0.";
+  if (Number.isInteger(r) && Math.abs(r) < 1e21) return `${r}.`;
+  const s = String(r);
+  if (s.includes("e")) {
+    const [m, e] = s.split("e");
+    return `${m!.includes(".") ? m : `${m}.`}E${e}`;
+  }
+  return s;
+}
+
+/** FNV-1a 64 bits (deux moitiés de 32 bits), en hexadécimal sur 16 caractères. */
+function fnv(text: string): string {
+  let h1 = 0x811c9dc5;
+  let h2 = 0xcbf29ce4;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;
+    h2 = Math.imul(h2 ^ ((c * 31 + (h1 & 0xff)) & 0xffff), 0x01000193) >>> 0;
+  }
+  return h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0");
+}
+
+const GUID_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$";
+
+/** GlobalId IFC déterministe (22 caractères base 64 IFC, premier caractère 0–3 : 128 bits). */
+export function studioIfcGuid(key: string): string {
+  let n = BigInt(`0x${[0, 1].map((k) => fnv(`${k}:${key}`)).join("")}`);
+  let out = "";
+  for (let i = 0; i < 22; i++) {
+    out = GUID_CHARS[Number(n & 63n)]! + out;
+    n >>= 6n;
+  }
+  return GUID_CHARS[GUID_CHARS.indexOf(out[0]!) & 3]! + out.slice(1);
+}
+
+export class Step {
+  readonly lines: string[] = [];
+  add(entity: string): number {
+    this.lines.push(`#${this.lines.length + 1}=${entity};`);
+    return this.lines.length;
+  }
+}
+export const ref = (n: number) => `#${n}`;
+export const refs = (ns: readonly number[]) => `(${ns.map(ref).join(",")})`;
+export const bool = (b: boolean) => (b ? ".T." : ".F.");
+
+/** Effectifs de l'export : ce qui devient 3D et ce qui ne l'est pas. */
+export interface StudioIfcSummary {
+  walls: number;
+  surfaces: number;
+  prisms: number;
+  nonExtruded: number;
+  dimensions: number;
+  /** Objets exportés dont le calque est masqué (exportés calque éteint). */
+  onHiddenLayers: number;
+}
+
+/** Élément IFC produit pour un objet extrudé : l'élément, l'item de représentation (calques) et le calque Studio. */
+export interface IfcConstruit {
+  element: number;
+  item: number;
+  layerId: string;
+}
+
+/**
+ * Contexte d'écriture d'un fichier IFC : entités déjà posées (contextes, axe z) et fabriques d'entités. L'ordre des
+ * appels détermine la numérotation des entités : un écrivain par type doit l'appeler dans un ordre fixe.
+ */
+export interface IfcContexte {
+  readonly s: Step;
+  readonly zAxis: number;
+  readonly body: number;
+  readonly axis: number;
+  readonly summary: StudioIfcSummary;
+  gid(id: string): string;
+  pt2(x: number, y: number): number;
+  shape(reps: number[]): number;
+  placed(x: number, y: number, z: number, ux?: number, uy?: number): number;
+  rectangleSolid(cx: number, cy: number, xDim: number, yDim: number, depth: number): number;
+  /** Profil fermé discrétisé (coordonnées absolues du plan, sens trigonométrique), extrudé depuis la cote de base. */
+  arbitrarySolid(ring: StudioPoint[], depth: number): number;
+  proxy(o: StudioShape, description: string, item: number, representation: "SweptSolid" | "Tessellation", placement: number): number;
+  /** Surface verticale ouverte le long d'un tracé discrétisé (coordonnées absolues, z de 0 à h au-dessus de la base). */
+  stripItem(path: StudioPoint[], h: number): number;
+  layerOf(o: StudioShape): string;
+}

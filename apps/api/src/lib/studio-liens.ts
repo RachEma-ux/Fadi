@@ -11,7 +11,7 @@ import { PARCOURS_STEPS } from "../data/parcours.js";
 import { db } from "../db/client.js";
 import { projectMembers, projectSteps, studioStudies, studioStudySteps } from "../db/schema.js";
 import { loadProjectAccess, projectAccessRefusal, type ProjectNeed } from "./owned-project.js";
-import { StudioRequestError } from "./studio-commands.js";
+import { StudioRequestError, studioArchivedRefusal } from "./studio-commands.js";
 import { lockProject, type Querier } from "./step-rows.js";
 
 export const studioStudyStepsSchema = z.object({
@@ -37,8 +37,8 @@ async function access(q: Querier, projectId: string, actorId: string, need: Proj
   return loaded!;
 }
 
-async function studyIn(q: Querier, projectId: string, studyId: string): Promise<{ id: string }> {
-  const [study] = await q.select({ id: studioStudies.id }).from(studioStudies)
+async function studyIn(q: Querier, projectId: string, studyId: string): Promise<{ id: string; archivedAt: Date | null }> {
+  const [study] = await q.select({ id: studioStudies.id, archivedAt: studioStudies.archivedAt }).from(studioStudies)
     .where(and(eq(studioStudies.id, studyId), eq(studioStudies.projectId, projectId))).limit(1);
   return study ?? notFound();
 }
@@ -70,6 +70,7 @@ export async function setStudioStudySteps(projectId: string, studyId: string, ac
       .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, actorId))).for("share");
     await access(tx, projectId, actorId, "modify");
     const study = await studyIn(tx, projectId, studyId);
+    if (study.archivedAt !== null) studioArchivedRefusal();
     const known = new Set((await projectStepOptions(tx, projectId)).map((s) => s.number));
     const unknown = steps.filter((n) => !known.has(n));
     if (unknown.length) {

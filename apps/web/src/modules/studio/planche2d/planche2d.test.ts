@@ -54,10 +54,11 @@ describe("accrochage et cotes associatives", () => {
   const doc = applyStudioCommands(base(), [ligne("l1", 0, 0, 4, 0), { toolId: "studio.dessin.rectangle", params: { id: "r1", type: "rectangle", origin: { x: 5, y: 5 }, width: 2, height: 1 } }]);
   const sommets = pointsAccroche(doc.objects, () => true);
 
-  it("sommets nommés : extrémités de ligne et quatre coins de rectangle", () => {
-    expect(sommets).toHaveLength(6);
+  it("sommets nommés : extrémités et milieu de ligne, quatre coins de rectangle", () => {
+    expect(sommets).toHaveLength(7);
     expect(accrocher(sommets, { x: 3.95, y: 0.04 }, 0.1)).toMatchObject({ objectId: "l1", anchor: "end", point: { x: 4, y: 0 } });
-    expect(accrocher(sommets, { x: 2, y: 0 }, 0.1)).toBeNull();
+    expect(accrocher(sommets, { x: 2, y: 0.05 }, 0.1)).toMatchObject({ objectId: "l1", anchor: "mid", point: { x: 2, y: 0 } });
+    expect(accrocher(sommets, { x: 1, y: 0 }, 0.1)).toBeNull();
     expect(accrocher(sommets, { x: 7.02, y: 6 }, 0.1)).toMatchObject({ objectId: "r1", anchor: "corner-opposite" });
     expect(sommetExact(sommets, { x: 0, y: 0 })).toMatchObject({ anchor: "start" });
     expect(pointsAccroche(doc.objects, (l) => l !== undefined)).toEqual([]);

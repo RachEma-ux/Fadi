@@ -4,7 +4,7 @@
  * ne modifie le document. Pur : ni React ni DOM.
  */
 import {
-  STUDIO_LINE_ANCHORS, STUDIO_RECTANGLE_ANCHORS, studioAnchorPoint, type StudioAnchor, type StudioDimension, type StudioDimensionLink,
+  studioAnchorPoint, studioShapeAnchors, studioShapeBoundPoints, type StudioAnchor, type StudioDimension, type StudioDimensionLink,
   type StudioDocument, type StudioPoint, type StudioShape,
 } from "@parcours/atelier-model";
 
@@ -24,8 +24,7 @@ export function emprise(doc: StudioDocument, visible: (layerId: string | undefin
   const points: StudioPoint[] = [];
   for (const o of doc.objects) {
     if (!visible(o.layerId)) continue;
-    if (o.type === "line") points.push(o.start, o.end);
-    else points.push(o.origin, { x: o.origin.x + o.width, y: o.origin.y + o.height });
+    points.push(...studioShapeBoundPoints(o));
   }
   for (const d of doc.dimensions ?? []) {
     if (!visible(d.layerId)) continue;
@@ -56,12 +55,16 @@ export function cadrer(e: Emprise | null, marge = 0.1): Cadre {
 
 export interface PointAccroche { point: StudioPoint; objectId: string; anchor: StudioAnchor }
 
-/** Sommets nommés des objets affichés : extrémités de ligne, coins de rectangle. */
+/**
+ * Points d'accrochage nommés des objets affichés (registre du modèle, `studioShapeAnchors`) : extrémités et milieu de
+ * ligne, coins de rectangle, centre et quadrants de cercle, extrémités, milieu et centre d'arc, sommets et milieux des
+ * segments de polyligne. Chacun peut lier une cote.
+ */
 export function pointsAccroche(objects: readonly StudioShape[], visible: (layerId: string | undefined) => boolean): PointAccroche[] {
   const out: PointAccroche[] = [];
   for (const o of objects) {
     if (!visible(o.layerId)) continue;
-    for (const anchor of o.type === "line" ? STUDIO_LINE_ANCHORS : STUDIO_RECTANGLE_ANCHORS) {
+    for (const anchor of studioShapeAnchors(o)) {
       const point = studioAnchorPoint(o, anchor);
       if (point) out.push({ point, objectId: o.id, anchor });
     }
@@ -124,6 +127,16 @@ export function traceCote(d: Pick<StudioDimension, "start" | "end" | "offset">):
  */
 export const valeurCote = (d: Pick<StudioDimension, "start" | "end" | "toResolve">): number | null =>
   d.toResolve ? null : Math.hypot(d.end.x - d.start.x, d.end.y - d.start.y);
+
+/** Sommets saisis « x y; x y; … » (point ou virgule décimale, `;` ou fin de ligne entre sommets) ; null si illisible. */
+export function lireSommets(texte: string): StudioPoint[] | null {
+  const morceaux = texte.split(/[;\n]+/).map((t) => t.trim()).filter(Boolean);
+  const points = morceaux.map((m) => m.split(/\s+/).map((v) => (/^[+-]?(\d+([.,]\d*)?|[.,]\d+)$/.test(v) ? Number(v.replace(",", ".")) : Number.NaN)));
+  if (!points.length || points.some((p) => p.length !== 2 || !p.every(Number.isFinite))) return null;
+  return points.map(([x, y]) => ({ x: x!, y: y! }));
+}
+/** Écriture inverse de `lireSommets` (point décimal). */
+export const ecrireSommets = (points: readonly StudioPoint[]): string => points.map((p) => `${p.x} ${p.y}`).join("; ");
 
 /** Valeur en mètres au format de la langue (fr-FR : « 4,00 m »), deux à trois décimales. */
 export function formaterMetres(v: number, locale: string): string {

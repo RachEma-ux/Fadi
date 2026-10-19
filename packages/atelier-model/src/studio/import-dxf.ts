@@ -1,4 +1,5 @@
-import { STUDIO_DEFAULT_LAYER_ID, STUDIO_LIMITS, StudioValidationError, validateStudioDocument, type StudioCommand, type StudioDocument, type StudioLayer, type StudioPoint } from "./document-2d.js";
+import { studioAngleNormal, studioShapeBoundPoints } from "./courbes.js";
+import { STUDIO_BULGE_MAX, STUDIO_DEFAULT_LAYER_ID, STUDIO_LIMITS, StudioValidationError, validateStudioDocument, type StudioCommand, type StudioDocument, type StudioLayer, type StudioPoint, type StudioShape } from "./document-2d.js";
 
 /**
  * Import DXF ASCII vers Studio (`studio-document/1`) : du texte DXF à une liste de `StudioCommand` à appliquer au
@@ -11,9 +12,11 @@ import { STUDIO_DEFAULT_LAYER_ID, STUDIO_LIMITS, StudioValidationError, validate
  * `options.unite` (jamais devinée, ni par `$MEASUREMENT` ni par l'étendue du dessin). Repère : les coordonnées X, Y du
  * fichier deviennent celles du repère `local-2d` du document, sans translation ni rotation ; Z est ignoré (compté).
  *
- * Entités prises : LINE → ligne ; LWPOLYLINE / POLYLINE 2D fermée de 4 sommets parallèle aux axes → rectangle, sinon
- * chaque segment droit → ligne. Tout le reste (ARC, CIRCLE, TEXT, INSERT, SPLINE, HATCH, DIMENSION…, segments courbes,
- * polylignes 3D ou lissées, entités hors du plan XY ou de l'espace papier, segments de longueur nulle) est **compté par
+ * Entités prises : LINE → ligne ; CIRCLE → cercle ; ARC → arc (cercle si ses angles se confondent, 0° → 360°) (angles du fichier en degrés, sens trigonométrique, ramenés
+ * en radians dans [0 ; 2π[) ; LWPOLYLINE / POLYLINE 2D à segments courbes (renflement 42 non nul) → polyligne avec ses
+ * renflements ; LWPOLYLINE / POLYLINE 2D droite fermée de 4 sommets parallèle aux axes → rectangle, sinon chaque segment
+ * droit → ligne (comme avant les courbes : un import déjà fait se rejoue à l'identique). Tout le reste (TEXT, INSERT,
+ * SPLINE, HATCH, DIMENSION, ELLIPSE…, cercles ou arcs sans rayon ou sans angle, polylignes 3D ou lissées, entités hors du plan XY ou de l'espace papier, segments de longueur nulle) est **compté par
  * type** dans `nonPris`, jamais écarté en silence. Calques : table LAYER et noms portés par les entités ; « 0 » → calque
  * implicite ; un calque du document de même nom est repris, sinon il est créé (visibilité et verrouillage du fichier).
  */
@@ -75,7 +78,7 @@ export interface StudioDxfRapport {
   unite: { code: number | null; valeur: StudioDxfUnite | null; origine: "fichier" | "choix" | "inconnue" };
   /** Mètres par unité du fichier ; `null` tant que l'unité est inconnue. */
   facteur: number | null;
-  entites: { lignes: number; rectangles: number; segments: number; total: number };
+  entites: { lignes: number; rectangles: number; segments: number; cercles: number; arcs: number; polylignes: number; total: number };
   /** Entités ou parties d'entités non importées, comptées par type (ordre alphabétique). */
   nonPris: { type: string; nombre: number }[];
   calques: StudioDxfCalque[];
@@ -274,7 +277,21 @@ interface Segment {
 /** `source` : type DXF de l'entité d'origine (pour compter un refus après conversion). */
 type Forme =
   | { type: "ligne"; source: string; calque: string; a: StudioPoint; b: StudioPoint; segment: boolean }
-  | { type: "rectangle"; source: string; calque: string; min: StudioPoint; max: StudioPoint };
+  | { type: "rectangle"; source: string; calque: string; min: StudioPoint; max: StudioPoint }
+  | { type: "cercle"; source: string; calque: string; c: StudioPoint; r: number }
+  | { type: "arc"; source: string; calque: string; c: StudioPoint; r: number; a0: number; a1: number }
+  | { type: "polyligne"; source: string; calque: string; pts: StudioPoint[]; ferme: boolean; bulges: number[] };
+
+/** Points qui bornent une forme lue (unités du fichier). */
+function pointsForme(f: Forme): StudioPoint[] {
+  switch (f.type) {
+    case "ligne": return [f.a, f.b];
+    case "rectangle": return [f.min, f.max];
+    case "cercle": return [{ x: f.c.x - f.r, y: f.c.y - f.r }, { x: f.c.x + f.r, y: f.c.y + f.r }];
+    case "arc": return studioShapeBoundPoints({ id: "-", type: "arc", center: f.c, radius: f.r, startAngle: f.a0, endAngle: f.a1 });
+    case "polyligne": return studioShapeBoundPoints({ id: "-", type: "polyline", points: f.pts, closed: f.ferme, bulges: f.bulges });
+  }
+}
 
 /** Rectangle parallèle aux axes : 4 sommets distincts, chaque côté horizontal ou vertical, coins exacts. */
 function rectangle(pts: StudioPoint[]): { min: StudioPoint; max: StudioPoint } | null {
@@ -306,7 +323,7 @@ function lire(ents: Entite[]): Lecture {
   const compter = (type: string, n = 1) => nonPris.set(type, (nonPris.get(type) ?? 0) + n);
   const calqueDe = (e: Entite | Paire[]) => nomCalque(champ(e, 8)?.valeur ?? "") || "0";
   for (const e of ents) {
-    if (e.type !== "LINE" && e.type !== "LWPOLYLINE" && e.type !== "POLYLINE") {
+    if (e.type !== "LINE" && e.type !== "LWPOLYLINE" && e.type !== "POLYLINE" && e.type !== "CIRCLE" && e.type !== "ARC") {
       compter(e.type || "(sans type)");
       continue;
     }
@@ -321,18 +338,49 @@ function lire(ents: Entite[]): Lecture {
     const calque = calqueDe(e);
     let z = false;
     const avant = formes.length;
-    const poser = (pts: StudioPoint[], ferme: boolean, courbes: boolean[]) => {
-      const r = ferme && !courbes.some(Boolean) ? rectangle(pts) : null;
+    const poser = (pts: StudioPoint[], ferme: boolean, renflements: number[]) => {
+      const n = pts.length;
+      const nbSegments = ferme ? n : n - 1;
+      if (renflements.slice(0, nbSegments).some((b) => b !== 0)) {
+        // Polyligne à segments courbes : sommets consécutifs confondus retirés (segment nul compté), renflements gardés.
+        if (renflements.slice(0, nbSegments).some((b) => Math.abs(b) > STUDIO_BULGE_MAX)) {
+          compter(`${e.type} (renflement hors limites)`);
+          return;
+        }
+        const sommets: StudioPoint[] = [], bulges: number[] = [];
+        let fermeture = renflements[n - 1] ?? 0;
+        for (let i = 0; i < n; i++) {
+          const p = pts[i]!, precedent = sommets[sommets.length - 1];
+          if (precedent && precedent.x === p.x && precedent.y === p.y) {
+            compter(`${e.type} (segment de longueur nulle)`);
+            continue;
+          }
+          if (sommets.length) bulges.push(renflements[i - 1] ?? 0);
+          sommets.push(p);
+        }
+        if (ferme && sommets.length > 1 && sommets[0]!.x === sommets[sommets.length - 1]!.x && sommets[0]!.y === sommets[sommets.length - 1]!.y) {
+          compter(`${e.type} (segment de longueur nulle)`);
+          // Dernier sommet répétant le premier : le segment qui y menait devient le segment de fermeture, renflement compris.
+          sommets.pop();
+          fermeture = bulges.pop() ?? 0;
+        }
+        if (ferme) bulges.push(fermeture);
+        if (sommets.length < 2 || (ferme && sommets.length < 3 && bulges.every((b) => b === 0))) {
+          compter(`${e.type} (moins de deux sommets distincts)`);
+          return;
+        }
+        formes.push({ type: "polyligne", source: e.type, calque, pts: sommets, ferme, bulges });
+        return;
+      }
+      const r = ferme ? rectangle(pts) : null;
       if (r) {
         formes.push({ type: "rectangle", source: e.type, calque, ...r });
         return;
       }
       const segs: Segment[] = [];
-      const n = pts.length;
-      for (let i = 0; i < (ferme ? n : n - 1); i++) {
+      for (let i = 0; i < nbSegments; i++) {
         const a = pts[i]!, b = pts[(i + 1) % n]!;
-        if (courbes[i]) compter(`${e.type} (segment courbe)`);
-        else if (a.x === b.x && a.y === b.y) compter(`${e.type} (segment de longueur nulle)`);
+        if (a.x === b.x && a.y === b.y) compter(`${e.type} (segment de longueur nulle)`);
         else segs.push({ a, b });
       }
       for (const s of segs) formes.push({ type: "ligne", source: e.type, calque, a: s.a, b: s.b, segment: true });
@@ -345,7 +393,30 @@ function lire(ents: Entite[]): Lecture {
     const nonNul = (src: Entite | Paire[], ...codes: number[]) => codes.some((c) => valeur(src, c, 0) !== 0);
     // Largeurs (40, 41, 43) et épaisseur (39) ne sont pas représentables : la géométrie est prise, l'attribut compté.
     let largeur = false;
-    if (e.type === "LINE") {
+    if (e.type === "CIRCLE" || e.type === "ARC") {
+      const x = coord(e, 10), y = coord(e, 20), r = coord(e, 40);
+      if (x === null || y === null || r === null) {
+        compter(`${e.type} (coordonnées ou rayon manquants)`);
+        continue;
+      }
+      if (!(r > 0)) {
+        compter(`${e.type} (rayon nul ou négatif)`);
+        continue;
+      }
+      z = valeur(e, 30, 0) !== 0;
+      if (e.type === "CIRCLE") formes.push({ type: "cercle", source: e.type, calque, c: { x, y }, r });
+      else {
+        const d0 = coord(e, 50), d1 = coord(e, 51);
+        if (d0 === null || d1 === null) {
+          compter("ARC (angles manquants)");
+          continue;
+        }
+        const a0 = studioAngleNormal((d0 * Math.PI) / 180), a1 = studioAngleNormal((d1 * Math.PI) / 180);
+        // Angles égaux une fois ramenés dans [0 ; 360°[ (0° → 360°) : en DXF, un arc d'un tour complet, soit un cercle.
+        if (a0 === a1) formes.push({ type: "cercle", source: e.type, calque, c: { x, y }, r });
+        else formes.push({ type: "arc", source: e.type, calque, c: { x, y }, r, a0, a1 });
+      }
+    } else if (e.type === "LINE") {
       const x1 = coord(e, 10), y1 = coord(e, 20), x2 = coord(e, 11), y2 = coord(e, 21);
       if (x1 === null || y1 === null || x2 === null || y2 === null) {
         compter("LINE (coordonnées manquantes)");
@@ -355,7 +426,7 @@ function lire(ents: Entite[]): Lecture {
       if (x1 === x2 && y1 === y2) compter("LINE (longueur nulle)");
       else formes.push({ type: "ligne", source: e.type, calque, a: { x: x1, y: y1 }, b: { x: x2, y: y2 }, segment: false });
     } else if (e.type === "LWPOLYLINE") {
-      const pts: StudioPoint[] = [], courbes: boolean[] = [];
+      const pts: StudioPoint[] = [], courbes: number[] = [];
       let x: number | null = null, incomplet = false;
       for (const p of e.champs) {
         if (p.code === 10) {
@@ -367,9 +438,9 @@ function lire(ents: Entite[]): Lecture {
             continue;
           }
           pts.push({ x, y: nombre(p) });
-          courbes.push(false);
+          courbes.push(0);
           x = null;
-        } else if (p.code === 42 && pts.length) courbes[pts.length - 1] = nombre(p) !== 0;
+        } else if (p.code === 42 && pts.length) courbes[pts.length - 1] = nombre(p);
         else if ((p.code === 40 || p.code === 41 || p.code === 43) && nombre(p) !== 0) largeur = true;
       }
       if (incomplet || x !== null) {
@@ -390,7 +461,7 @@ function lire(ents: Entite[]): Lecture {
         compter("POLYLINE (lissée)");
         continue;
       }
-      const pts: StudioPoint[] = [], courbes: boolean[] = [];
+      const pts: StudioPoint[] = [], courbes: number[] = [];
       let incomplet = false;
       largeur = nonNul(e, 40, 41);
       for (const v of e.sommets ?? []) {
@@ -400,7 +471,7 @@ function lire(ents: Entite[]): Lecture {
           break;
         }
         pts.push({ x, y });
-        courbes.push(valeur(v, 42, 0) !== 0);
+        courbes.push(valeur(v, 42, 0));
         if (valeur(v, 30, 0) !== 0) z = true;
         if (nonNul(v, 40, 41)) largeur = true;
       }
@@ -542,19 +613,23 @@ export function lireDxfStudio(texte: string, options: StudioDxfOptions = {}): St
   }
 
   const lignes = retenues.filter(({ forme }) => forme.type === "ligne");
+  const nombreDe = (t: Forme["type"]) => retenues.filter(({ forme }) => forme.type === t).length;
   const rapport: StudioDxfRapport = {
     unite: { code: s.insunits, valeur: unite, origine },
     facteur: unite ? STUDIO_DXF_UNITES[unite].mul / STUDIO_DXF_UNITES[unite].div : null,
     entites: {
       lignes: lignes.filter(({ forme }) => forme.type === "ligne" && !forme.segment).length,
-      rectangles: retenues.length - lignes.length,
+      rectangles: nombreDe("rectangle"),
       segments: lignes.filter(({ forme }) => forme.type === "ligne" && forme.segment).length,
+      cercles: nombreDe("cercle"),
+      arcs: nombreDe("arc"),
+      polylignes: nombreDe("polyligne"),
       total: retenues.length,
     },
     nonPris: [...nonPris].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([type, nombre]) => ({ type, nombre })),
     calques,
     bornes: null,
-    bornesFichier: bornesDe(retenues.flatMap(({ forme: f }) => (f.type === "ligne" ? [f.a, f.b] : [f.min, f.max]))),
+    bornesFichier: bornesDe(retenues.flatMap(({ forme: f }) => pointsForme(f))),
     zIgnores: lecture.zIgnores,
   };
   if (!conv) return { statut: "unite-inconnue", commandes: [], rapport };
@@ -568,21 +643,23 @@ export function lireDxfStudio(texte: string, options: StudioDxfOptions = {}): St
   for (const { forme, geo } of retenues) {
     const layerId = cible.get(cleCalque(forme.calque));
     const calque = layerId === undefined ? {} : { layerId };
-    if (geo!.type === "line") {
-      commandes.push({ toolId: "studio.dessin.ligne", params: { id: idObjet(), type: "line", ...calque, start: geo!.start, end: geo!.end } });
-      pts.push(geo!.start, geo!.end);
-    } else {
-      const { origin, width, height } = geo!;
-      commandes.push({ toolId: "studio.dessin.rectangle", params: { id: idObjet(), type: "rectangle", ...calque, origin, width, height } });
-      pts.push(origin, { x: origin.x + width, y: origin.y + height });
-    }
+    const g = geo!;
+    const s = { id: idObjet(), ...g, ...calque } as StudioShape;
+    const toolId = ({ line: "studio.dessin.ligne", rectangle: "studio.dessin.rectangle", circle: "studio.dessin.cercle", arc: "studio.dessin.arc", polyline: "studio.dessin.polyligne" } as const)[g.type];
+    commandes.push({ toolId, params: s } as StudioCommand);
+    pts.push(...studioShapeBoundPoints(s));
   }
   for (const l of verrouiller) commandes.push({ toolId: "studio.calque.modifier", params: l });
   rapport.bornes = bornesDe(pts);
   return { statut: "pret", commandes, rapport };
 }
 
-type Geometrie = { type: "line"; start: StudioPoint; end: StudioPoint } | { type: "rectangle"; origin: StudioPoint; width: number; height: number };
+type Geometrie =
+  | { type: "line"; start: StudioPoint; end: StudioPoint }
+  | { type: "rectangle"; origin: StudioPoint; width: number; height: number }
+  | { type: "circle"; center: StudioPoint; radius: number }
+  | { type: "arc"; center: StudioPoint; radius: number; startAngle: number; endAngle: number }
+  | { type: "polyline"; points: StudioPoint[]; closed: boolean; bulges: number[] };
 
 function convertir(f: Forme, conv: (v: number) => number): Geometrie | "hors-limites" | "nulle" {
   const point = (p: StudioPoint): StudioPoint => ({ x: conv(p.x), y: conv(p.y) });
@@ -592,6 +669,22 @@ function convertir(f: Forme, conv: (v: number) => number): Geometrie | "hors-lim
     if (dehors(start, end)) return "hors-limites";
     // Deux points distincts dans le fichier peuvent se confondre une fois arrondis au nanomètre.
     return start.x === end.x && start.y === end.y ? "nulle" : { type: "line", start, end };
+  }
+  if (f.type === "cercle" || f.type === "arc") {
+    const center = point(f.c), radius = conv(f.r);
+    if (dehors(center, { x: center.x + radius, y: center.y + radius }, { x: center.x - radius, y: center.y - radius })) return "hors-limites";
+    if (!(radius > 0)) return "nulle";
+    return f.type === "cercle" ? { type: "circle", center, radius } : { type: "arc", center, radius, startAngle: f.a0, endAngle: f.a1 };
+  }
+  if (f.type === "polyligne") {
+    const points = f.pts.map(point);
+    if (dehors(...points)) return "hors-limites";
+    const n = points.length;
+    for (let i = 0; i < (f.ferme ? n : n - 1); i++) {
+      const a = points[i]!, b = points[(i + 1) % n]!;
+      if (a.x === b.x && a.y === b.y) return "nulle";
+    }
+    return { type: "polyline", points, closed: f.ferme, bulges: [...f.bulges] };
   }
   const origin = point(f.min), max = point(f.max);
   if (dehors(origin, max)) return "hors-limites";

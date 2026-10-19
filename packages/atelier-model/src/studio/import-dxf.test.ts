@@ -26,8 +26,9 @@ describe("lireDxfStudio — DXF en millimètres", () => {
     expect(r.statut).toBe("pret");
     expect(r.rapport.unite).toEqual({ code: 4, valeur: "mm", origine: "fichier" });
     expect(r.rapport.facteur).toBe(0.001);
-    expect(r.rapport.entites).toEqual({ lignes: 2, rectangles: 1, segments: 0, total: 3 });
-    expect(r.rapport.nonPris).toEqual([{ type: "CIRCLE", nombre: 1 }]);
+    expect(r.rapport.entites).toEqual({ lignes: 2, rectangles: 1, segments: 0, cercles: 1, arcs: 0, polylignes: 0, total: 4 });
+    // Les cercles sont pris depuis les courbes (ils étaient comptés non pris avant).
+    expect(r.rapport.nonPris).toEqual([]);
     expect(r.rapport.bornes).toEqual({ min: { x: 0, y: 0 }, max: { x: 4, y: 3 } });
     expect(r.rapport.bornesFichier).toEqual({ min: { x: 0, y: 0 }, max: { x: 4000, y: 3000 } });
     const doc = appliquer(r);
@@ -35,10 +36,11 @@ describe("lireDxfStudio — DXF en millimètres", () => {
       { type: "line", start: { x: 0, y: 0 }, end: { x: 4, y: 0 } },
       { type: "line", layerId: "dxf-calque-1", start: { x: 0, y: 0 }, end: { x: 0, y: 3 } },
       { type: "rectangle", origin: { x: 1, y: 1 }, width: 2, height: 1.5 },
+      { type: "circle", center: { x: 0.5, y: 0.5 }, radius: 0.25 },
     ]);
     expect(doc.layers).toEqual([{ id: "dxf-calque-1", name: "MURS", visible: true, locked: false }]);
     expect(r.rapport.calques).toEqual([
-      { nom: "0", cible: "implicite", objets: 2 },
+      { nom: "0", cible: "implicite", objets: 3 },
       { nom: "MURS", cible: "cree", id: "dxf-calque-1", objets: 1 },
     ]);
   });
@@ -98,12 +100,12 @@ describe("lireDxfStudio — unité inconnue", () => {
 });
 
 describe("lireDxfStudio — entités non prises, jamais écartées en silence", () => {
-  it("ARC, CIRCLE, TEXT, MTEXT, INSERT, SPLINE, HATCH, DIMENSION, POINT… comptés par type", () => {
+  it("TEXT, MTEXT, INSERT, SPLINE, HATCH, DIMENSION, POINT… comptés par type ; ARC et CIRCLE sans rayon aussi", () => {
     const autres = ["ARC", "CIRCLE", "CIRCLE", "TEXT", "MTEXT", "INSERT", "SPLINE", "HATCH", "DIMENSION", "POINT", "ELLIPSE", "SOLID", "3DFACE"];
     const r = lireDxfStudio(dxf({ insunits: 6, entites: [ligne(0, 0, 1, 0), ...autres.map((t) => `0\r\n${t}\r\n8\r\n0\r\n10\r\n0\r\n20\r\n0`)] }));
     expect(r.rapport.entites.total).toBe(1);
     expect(r.rapport.nonPris).toEqual([
-      { type: "3DFACE", nombre: 1 }, { type: "ARC", nombre: 1 }, { type: "CIRCLE", nombre: 2 }, { type: "DIMENSION", nombre: 1 },
+      { type: "3DFACE", nombre: 1 }, { type: "ARC (coordonnées ou rayon manquants)", nombre: 1 }, { type: "CIRCLE (coordonnées ou rayon manquants)", nombre: 2 }, { type: "DIMENSION", nombre: 1 },
       { type: "ELLIPSE", nombre: 1 }, { type: "HATCH", nombre: 1 }, { type: "INSERT", nombre: 1 }, { type: "MTEXT", nombre: 1 },
       { type: "POINT", nombre: 1 }, { type: "SOLID", nombre: 1 }, { type: "SPLINE", nombre: 1 }, { type: "TEXT", nombre: 1 },
     ]);
@@ -122,12 +124,12 @@ describe("lireDxfStudio — entités non prises, jamais écartées en silence", 
         lwpolyligne([[0, 0], [0, 0], [1, 0]]),
       ],
     }));
-    expect(r.rapport.entites).toEqual({ lignes: 0, rectangles: 0, segments: 2, total: 2 });
+    // La polyligne à segment courbe est prise en polyligne (renflements gardés), plus comptée.
+    expect(r.rapport.entites).toEqual({ lignes: 0, rectangles: 0, segments: 1, cercles: 0, arcs: 0, polylignes: 1, total: 2 });
     expect(r.rapport.nonPris).toEqual([
       { type: "LINE (espace papier)", nombre: 1 },
       { type: "LINE (hors plan XY)", nombre: 1 },
       { type: "LINE (longueur nulle)", nombre: 1 },
-      { type: "LWPOLYLINE (segment courbe)", nombre: 1 },
       { type: "LWPOLYLINE (segment de longueur nulle)", nombre: 1 },
       { type: "POLYLINE (3D)", nombre: 1 },
       { type: "POLYLINE (lissée)", nombre: 1 },
@@ -160,13 +162,13 @@ describe("lireDxfStudio — polylignes", () => {
 
   it("fermée non rectangulaire → un segment par côté ; ouverte → n − 1 segments ; papillon et losange non pris pour des rectangles", () => {
     const losange = lireDxfStudio(dxf({ insunits: 6, entites: [lwpolyligne([[1, 0], [2, 1], [1, 2], [0, 1]], { ferme: true })] }));
-    expect(losange.rapport.entites).toEqual({ lignes: 0, rectangles: 0, segments: 4, total: 4 });
+    expect(losange.rapport.entites).toEqual({ lignes: 0, rectangles: 0, segments: 4, cercles: 0, arcs: 0, polylignes: 0, total: 4 });
     const papillon = lireDxfStudio(dxf({ insunits: 6, entites: [lwpolyligne([[0, 0], [1, 1], [1, 0], [0, 1]], { ferme: true })] }));
     expect(papillon.rapport.entites.rectangles).toBe(0);
     const croise = lireDxfStudio(dxf({ insunits: 6, entites: [lwpolyligne([[0, 0], [1, 0], [0, 1], [1, 1]], { ferme: true })] }));
     expect(croise.rapport.entites.rectangles).toBe(0);
     const ouverte = lireDxfStudio(dxf({ insunits: 6, entites: [lwpolyligne([[0, 0], [1, 0], [1, 1], [0, 1]])] }));
-    expect(ouverte.rapport.entites).toEqual({ lignes: 0, rectangles: 0, segments: 3, total: 3 });
+    expect(ouverte.rapport.entites).toEqual({ lignes: 0, rectangles: 0, segments: 3, cercles: 0, arcs: 0, polylignes: 0, total: 3 });
     expect(appliquer(ouverte).objects).toHaveLength(3);
   });
 });
@@ -372,7 +374,7 @@ describe("lireDxfStudio — corrections de revue (#193)", () => {
     const r = lireDxfStudio(dxf({ insunits: 7, entites: [ligne(0, 0, 2e6, 0), lwpolyligne([[0, 0], [1, 0], [1, 1], [0, 1]], { ferme: true }), ligne(-1e6, 0, 0, 1)] }));
     expect(STUDIO_DXF_LIMITES.coordonnee).toBe(1e9);
     expect(r.rapport.nonPris).toEqual([{ type: "LINE (coordonnée au-delà de 10⁹ m)", nombre: 1 }]);
-    expect(r.rapport.entites).toEqual({ lignes: 1, rectangles: 1, segments: 0, total: 2 });
+    expect(r.rapport.entites).toEqual({ lignes: 1, rectangles: 1, segments: 0, cercles: 0, arcs: 0, polylignes: 0, total: 2 });
     expect(appliquer(r).objects.map(sansId)).toEqual([
       { type: "rectangle", origin: { x: 0, y: 0 }, width: 1000, height: 1000 },
       { type: "line", start: { x: -1e9, y: 0 }, end: { x: 0, y: 1000 } },

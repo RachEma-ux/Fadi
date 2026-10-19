@@ -7,7 +7,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { applyStudioCommands, lireDxfStudio, newStudioDocument, STUDIO_CONTRACT, StudioValidationError, type StudioCommand } from "@parcours/atelier-model";
 import dico from "../../../lib/i18n/en.json";
-import { DialogueImportDxf, Rapport } from "./DialogueImportDxf";
+import { DialogueImportDxf, ETAPES_LECTURE, Rapport } from "./DialogueImportDxf";
+import { MESSAGE_REPLI, messageHote } from "../workers/client-studio";
+import { ErreurHote } from "../workers/hote-worker";
 import { accuserLot, commandesNonEnvoyees, decouperCommandes, ENVELOPPE_MAX_COMMANDES, ENVELOPPE_MAX_OCTETS, enveloppeSuivante, envoiPartiel, envoiTermine, planEnvoi } from "./envoi";
 import { CIBLES_CALQUE, lireDxf, messageImport, typeNonPris, UNITES_PROPOSEES } from "./import-dxf-ui";
 
@@ -100,17 +102,18 @@ describe("Enregistrement en plusieurs enveloppes", () => {
 describe("Boîte « Importer DXF »", () => {
   const doc = newStudioDocument("d");
 
-  it("rapport d'un DXF en millimètres : unité du fichier, 3 objets, 1 non pris (CIRCLE)", () => {
+  it("rapport d'un DXF en millimètres : unité du fichier, 4 objets dont 1 cercle, rien de non pris", () => {
     const lecture = lireDxf(petitDxf(4), doc, null);
     if (!("resultat" in lecture)) throw new Error("lecture attendue");
     const html = renderToStaticMarkup(createElement(Rapport, { nom: "plan.dxf", resultat: lecture.resultat, unite: null, surUnite: () => {} }));
     expect(html).toContain('data-studio-import-statut="pret"');
-    expect(html).toContain('data-studio-import-objets="3"');
-    expect(html).toContain('data-studio-import-non-pris="1"');
+    expect(html).toContain('data-studio-import-objets="4"');
+    expect(html).toContain('data-studio-import-non-pris="0"');
     expect(html).toContain('data-studio-import-unite="mm"');
-    expect(html).toMatch(/data-studio-import-non-pris-type="CIRCLE" data-studio-import-non-pris-nombre="1"/);
+    expect(html).not.toContain("data-studio-import-non-pris-type");
+    expect(html).toContain("Courbes : 1 cercle(s), 0 arc(s), 0 polyligne(s).");
     expect(html).toContain("Unité du fichier ($INSUNITS = 4) : mm · 1 unité = 0,001 m");
-    expect(html).toContain("3 objet(s) à ajouter : 2 ligne(s), 1 rectangle(s), 0 segment(s) de polyligne.");
+    expect(html).toContain("4 objet(s) à ajouter : 2 ligne(s), 1 rectangle(s), 0 segment(s) de polyligne.");
     expect(html).not.toContain("data-studio-import-choix-unite");
     expect(html).toContain('<span translate="no">plan.dxf</span>');
   });
@@ -124,7 +127,7 @@ describe("Boîte « Importer DXF »", () => {
     expect(html).toMatch(/<select[^>]*data-studio-import-choix-unite[^>]*><option value="" selected="">Choisir…<\/option>/);
     for (const u of UNITES_PROPOSEES) expect(html).toContain(`<option value="${u.valeur}">${u.libelle}</option>`);
     const choisie = lireDxf(petitDxf(), doc, "mm");
-    expect("resultat" in choisie && choisie.resultat.statut === "pret" && choisie.resultat.commandes.length === 4).toBe(true);
+    expect("resultat" in choisie && choisie.resultat.statut === "pret" && choisie.resultat.commandes.length === 5).toBe(true);
   });
 
   it("la boîte : bouton « Ajouter au brouillon » désactivé sans fichier ; lecture seule annoncée", () => {
@@ -169,5 +172,23 @@ describe("Boîte « Importer DXF »", () => {
       "espace papier", "hors plan XY", "longueur nulle", "segment courbe", "segment de longueur nulle", "maillage", "lissée", "moins de deux sommets",
     ];
     for (const t of textes) expect(en[t], t).toBeTruthy();
+  });
+
+  it("lecture hors du fil principal : étapes, annulation et échecs du calcul ont leur traduction anglaise", () => {
+    const en = dico as Record<string, string>;
+    const echecs = (["delai", "indisponible", "interrompu", "illisible", "calcul"] as const).map((code) => messageHote(new ErreurHote(code, "x"))!);
+    expect(messageHote(new ErreurHote("annulee", "x"))).toBeNull();
+    expect(messageHote(new ErreurHote("remplacee", "x"))).toBeNull();
+    const textes = [...Object.values(ETAPES_LECTURE), ...echecs, MESSAGE_REPLI, "Lecture du DXF en cours", "Annuler la lecture",
+      "Lecture annulée : rien n’est ajouté. Choisissez de nouveau un fichier.", "Composition de la feuille…"];
+    for (const t of textes) expect(en[t], t).toBeTruthy();
+  });
+
+  it("rapport pendant une relecture (autre unité) : marqué en cours, pas à jour", () => {
+    const lecture = lireDxf(petitDxf(), newStudioDocument("d"), "mm");
+    if (!("resultat" in lecture)) throw new Error("lecture attendue");
+    const html = renderToStaticMarkup(createElement(Rapport, { nom: "x.dxf", resultat: lecture.resultat, unite: "mm", surUnite: () => {}, enCours: true }));
+    expect(html).toContain('aria-busy="true"');
+    expect(html).toContain('data-studio-import-a-jour="non"');
   });
 });

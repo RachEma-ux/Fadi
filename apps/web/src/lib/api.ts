@@ -156,6 +156,20 @@ export interface NotificationItem {
 export interface NotificationsView {
   seenAt: string | null;
   items: NotificationItem[];
+  /** Notifications retirées par vos préférences (types masqués, projets en sourdine). */
+  masquees?: number;
+}
+
+export type NotificationKind = NotificationItem["kind"];
+
+/** Préférences de notification du compte (serveur) : types masqués et projets mis en sourdine. */
+export interface NotificationPreferencesView {
+  typesMasques: NotificationKind[];
+  projetsMuets: string[];
+  /** Tous les types calculés par le serveur, dans l'ordre d'affichage. */
+  types: NotificationKind[];
+  /** Code et nom des projets muets encore accessibles. */
+  projets: { id: string; code: string; name: string }[];
 }
 
 export interface EditingLock {
@@ -724,17 +738,28 @@ export interface StudioContext {
   variant: { id: string; name: string; studyId: string; headRevisionId: string };
   revision: { id: string; parentRevisionId: string | null; document: StudioDocument };
   canWrite: boolean;
+  /** Lecture d'une variante : étude ou variante archivée (alors `canWrite` faux). */
+  archived?: boolean;
+  /** Variante dérivée : variante et révision sources (création et lecture), null sinon. */
+  derivedFrom?: StudioProvenance | null;
 }
+/** Provenance d'une variante dérivée (même étude). */
+export interface StudioProvenance { variantId: string; revisionId: string }
 /** Étude de Studio telle que la liste du projet la renvoie. */
-export interface StudioStudySummary { id: string; name: string; initialVariantId: string; createdAt: string }
+export interface StudioStudySummary { id: string; name: string; initialVariantId: string; createdAt: string; updatedAt: string | null; archived: boolean }
 /** Variante d'une étude : sa tête de révision est tenue par le serveur. */
-export interface StudioVariantSummary { id: string; name: string; headRevisionId: string }
+export interface StudioVariantSummary { id: string; name: string; headRevisionId: string; archived: boolean; derivedFrom: StudioProvenance | null }
 /** Étude ouverte : ses variantes et le droit d'écriture relu par le serveur (qui reste seul juge). */
 export interface StudioStudyDetail {
-  study: { id: string; name: string; projectId: string; initialVariantId: string; createdAt: string };
+  study: { id: string; name: string; projectId: string; initialVariantId: string; createdAt: string; updatedAt: string | null; archived: boolean };
   variants: StudioVariantSummary[];
+  /** Écriture dans l'étude : droit de modification et étude active. */
   canWrite: boolean;
+  /** Droit de modification seul (désarchiver une étude archivée). */
+  canManage: boolean;
 }
+/** Source d'une dérivation : variante de l'étude et révision (tête si absente). */
+export interface StudioDerivation { fromVariantId: string; fromRevisionId?: string }
 /** Entête d'une révision (historique append-only, de la plus récente à la plus ancienne). */
 export interface StudioRevisionSummary { id: string; parentRevisionId: string | null; source: string; authorId: string; createdAt: string }
 /** Comparaison de deux révisions d'une étude : côtés résolus (tête explicite) et différence pure du modèle. */
@@ -746,6 +771,7 @@ export interface StudioComparison {
 const studioRoot = (p: string) => `/projects/${encodeURIComponent(p)}/studio/studies`;
 const studioStudyPath = (p: string, s: string) => `${studioRoot(p)}/${encodeURIComponent(s)}`;
 const studioVariantPath = (p: string, s: string, v: string) => `${studioStudyPath(p, s)}/variants/${encodeURIComponent(v)}`;
+const studioArchives = (archives?: boolean) => (archives ? "?archives=1" : "");
 /**
  * Adresse d'export d'une variante (pièce jointe SVG, DXF ou IFC produite par le serveur, même origine : le cookie de session
  * suit le lien). Sans `revisionId`, le serveur exporte la tête ; avec, la révision historique affichée.
@@ -768,21 +794,99 @@ export interface StudioComment {
   createdAt: string;
   deletedAt: string | null;
   mine: boolean;
+  /** Observation issue de ce commentaire (même identifiant), null sinon (absent d'un serveur plus ancien). */
+  observation?: StudioObservation | null;
 }
 export interface StudioCommentInput { body: string; revisionId?: string; objectIds?: string[]; parentId?: string; requestId?: string }
+/** Observation Studio (E.2) : statut, responsable, échéance et journal, relus du serveur qui fait autorité. */
+export type StudioObservationStatut = "ouverte" | "corrigee" | "recontrolee" | "cloturee" | "rouverte";
+export type StudioObservationTransition = "corriger" | "recontroler" | "cloturer" | "rouvrir" | "reattribuer";
+export interface StudioObservationEvent {
+  seq: number;
+  action: "ouvrir" | StudioObservationTransition;
+  fromStatut: StudioObservationStatut | null;
+  toStatut: StudioObservationStatut;
+  actorId: string;
+  actorEmail: string;
+  revisionId: string | null;
+  /** Responsable désigné par ce passage (ouverture, réattribution), null sinon. */
+  responsableId?: string | null;
+  note: string | null;
+  at: string;
+}
+export interface StudioObservation {
+  id: string;
+  authorId: string;
+  responsableId: string;
+  responsableEmail: string;
+  echeance: string | null;
+  statut: StudioObservationStatut;
+  correctionRevisionId: string | null;
+  recontroleRevisionId: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  journal: StudioObservationEvent[];
+  /** L'utilisateur courant est le responsable. */
+  assignedToMe: boolean;
+  /** Passages permis maintenant à l'utilisateur courant (rôle, statut, archive). */
+  possibles: StudioObservationTransition[];
+}
+/** Propriétaire et membres du projet ; `assignable` = peut être responsable d'une observation. */
+export interface StudioParticipant { id: string; email: string; role: ProjectRole; assignable: boolean }
+export interface StudioCommentsView { comments: StudioComment[]; participants?: StudioParticipant[]; archived?: boolean; me?: { id: string; role: ProjectRole } }
+export interface StudioObservationInput { responsableId: string; echeance?: string | null; note?: string; requestId?: string }
+export interface StudioObservationTransitionInput { action: StudioObservationTransition; revisionId?: string; responsableId?: string; note?: string; requestId?: string }
 /** Étapes du Parcours rattachées à une étude Studio (`available` : étapes du projet, libellés des définitions). */
 export interface StudioStudySteps {
   steps: { number: number; createdAt: string }[];
   available: { number: number; title: string; phase: string }[];
   canWrite: boolean;
 }
+/** Publication Studio d'une révision de variante (statuts, approbation liée, paquet figé ; le serveur fait autorité). */
+export type StudioPublicationStatus = "travail" | "soumis" | "approuve" | "refuse" | "diffuse" | "retire";
+export type StudioPublicationTransition = "soumettre" | "approuver" | "refuser" | "diffuser" | "retirer";
+export interface StudioPackageFile { format: "svg" | "dxf" | "ifc" | "pdf"; fileName: string; mime: string; size: number; sha256: string }
+export interface StudioPublicationEvent {
+  id: string; action: "creer" | StudioPublicationTransition; fromStatus: StudioPublicationStatus | null; toStatus: StudioPublicationStatus;
+  author: { id: string; email: string }; comment: string | null; revisionId: string; documentHash: string; headRevisionId: string; createdAt: string;
+}
+export interface StudioPublication {
+  id: string; projectId: string; studyId: string; variantId: string; variantName: string; title: string;
+  revisionId: string; documentHash: string; status: StudioPublicationStatus;
+  createdBy: { id: string; email: string }; createdAt: string; updatedAt: string;
+  approval: { revisionId: string; documentHash: string; by: { id: string; email: string } | null; at: string | null } | null;
+  diffusion: { by: { id: string; email: string } | null; at: string | null; packageHash: string; files: StudioPackageFile[] } | null;
+  headRevisionId: string; freshness: "a-jour" | "perimee"; replacedBy: string | null;
+  allowed: StudioPublicationTransition[];
+  events?: StudioPublicationEvent[];
+}
+export interface StudioPublicationTransitionInput { comment?: string; revisionId?: string; documentHash?: string }
+const studioPublicationPath = (p: string, s: string, id: string) => `${studioStudyPath(p, s)}/publications/${encodeURIComponent(id)}`;
+/** Fichier figé d'un paquet diffusé (téléchargement direct). */
+export function studioPackageFileUrl(p: string, s: string, id: string, format: StudioPackageFile["format"]): string {
+  return `${studioPublicationPath(p, s, id)}/files/${format}`;
+}
+/** Préférences d'outils Studio du compte : visibilité dans les barres seulement, jamais un droit (B.2-06). */
+export interface StudioToolPreferencesInput { profil: string; favoris: string[]; personnel: string[] }
+export interface StudioToolPreferences extends StudioToolPreferencesInput {
+  /** Outils enregistrés puis retirés du registre (écartés à la lecture). */
+  retires: string[];
+  updatedAt: string | null;
+}
 export const api = {
-  studioStudies: (p: string) => request<{ studies: StudioStudySummary[] }>(studioRoot(p)),
+  /** Études du projet ; `archives` : archivées comprises. */
+  studioStudies: (p: string, archives?: boolean) => request<{ studies: StudioStudySummary[] }>(`${studioRoot(p)}${studioArchives(archives)}`),
   createStudioStudy: (p: string, name: string, requestId?: string) => request<StudioContext>(studioRoot(p), { method: "POST", body: JSON.stringify(requestId ? { name, requestId } : { name }) }),
-  studioStudy: (p: string, s: string) => request<StudioStudyDetail>(studioStudyPath(p, s)),
-  studioVariants: (p: string, s: string) => request<{ variants: StudioVariantSummary[] }>(`${studioStudyPath(p, s)}/variants`),
-  /** Nouvelle variante : document vide, révision initiale et tête créées par le serveur. */
-  createStudioVariant: (p: string, s: string, name: string, requestId?: string) => request<StudioContext>(`${studioStudyPath(p, s)}/variants`, { method: "POST", body: JSON.stringify(requestId ? { name, requestId } : { name }) }),
+  studioStudy: (p: string, s: string, archives?: boolean) => request<StudioStudyDetail>(`${studioStudyPath(p, s)}${studioArchives(archives)}`),
+  studioVariants: (p: string, s: string, archives?: boolean) => request<{ variants: StudioVariantSummary[] }>(`${studioStudyPath(p, s)}/variants${studioArchives(archives)}`),
+  /** Nouvelle variante : document vide, ou copie d'une révision d'une variante de l'étude (`from`, dérivation). */
+  createStudioVariant: (p: string, s: string, name: string, requestId?: string, from?: StudioDerivation) => request<StudioContext>(`${studioStudyPath(p, s)}/variants`, { method: "POST", body: JSON.stringify({ name, ...(requestId ? { requestId } : {}), ...(from ?? {}) }) }),
+  renameStudioStudy: (p: string, s: string, name: string) => request<StudioStudyDetail>(studioStudyPath(p, s), { method: "PATCH", body: JSON.stringify({ name }) }),
+  /** Archive (sans suppression) ou désarchive une étude. */
+  setStudioStudyArchived: (p: string, s: string, archived: boolean) => request<StudioStudyDetail>(`${studioStudyPath(p, s)}/${archived ? "archive" : "unarchive"}`, { method: "POST" }),
+  renameStudioVariant: (p: string, s: string, v: string, name: string) => request<{ variant: StudioVariantSummary; studyArchived: boolean }>(studioVariantPath(p, s, v), { method: "PATCH", body: JSON.stringify({ name }) }),
+  setStudioVariantArchived: (p: string, s: string, v: string, archived: boolean) => request<{ variant: StudioVariantSummary; studyArchived: boolean }>(`${studioVariantPath(p, s, v)}/${archived ? "archive" : "unarchive"}`, { method: "POST" }),
   studioContext: (p: string, s: string, v: string) => request<StudioContext>(studioVariantPath(p, s, v)),
   studioRevisions: (p: string, s: string, v: string) => request<{ revisions: StudioRevisionSummary[] }>(`${studioVariantPath(p, s, v)}/revisions`),
   /** Révision historique : toujours en lecture seule (`canWrite` faux côté serveur). */
@@ -790,7 +894,11 @@ export const api = {
   /** Comparaison lecture seule de deux côtés de la même étude (`variantId` ou `variantId:revisionId`), calculée par le serveur. */
   studioCompare: (p: string, s: string, from: string, to: string) => request<StudioComparison>(`${studioStudyPath(p, s)}/compare?${new URLSearchParams({ from, to })}`),
   /** Fils de commentaires de la variante, dans l'ordre des fils (origine puis réponses). */
-  studioComments: (p: string, s: string, v: string) => request<{ comments: StudioComment[] }>(`${studioVariantPath(p, s, v)}/comments`),
+  studioComments: (p: string, s: string, v: string) => request<StudioCommentsView>(`${studioVariantPath(p, s, v)}/comments`),
+  /** Promotion d'un commentaire d'origine en observation (auteur ou propriétaire). */
+  createStudioObservation: (p: string, s: string, v: string, commentId: string, input: StudioObservationInput) => request<StudioObservation & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/comments/${encodeURIComponent(commentId)}/observation`, { method: "POST", body: JSON.stringify(input) }),
+  /** Passage d'une observation (corriger, recontroler, cloturer, rouvrir), journalisé par le serveur. */
+  transitionStudioObservation: (p: string, s: string, v: string, commentId: string, input: StudioObservationTransitionInput) => request<StudioObservation & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/comments/${encodeURIComponent(commentId)}/observation/transitions`, { method: "POST", body: JSON.stringify(input) }),
   /** Nouveau commentaire ou réponse ; `requestId` : un renvoi rend le même commentaire, sans doublon. */
   createStudioComment: (p: string, s: string, v: string, input: StudioCommentInput) => request<StudioComment & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/comments`, { method: "POST", body: JSON.stringify(input) }),
   deleteStudioComment: (p: string, s: string, v: string, id: string) => request<void>(`${studioVariantPath(p, s, v)}/comments/${encodeURIComponent(id)}`, { method: "DELETE" }),
@@ -801,6 +909,20 @@ export const api = {
   setStudioStudySteps: (p: string, s: string, steps: number[]) => request<StudioStudySteps>(`${studioStudyPath(p, s)}/steps`, { method: "PUT", body: JSON.stringify({ steps }) }),
   /** Études Studio rattachées à une étape du Parcours. */
   studioStudiesOfStep: (p: string, step: number) => request<{ studies: { id: string; name: string }[] }>(`/projects/${encodeURIComponent(p)}/studio/steps/${step}/studies`),
+  /** Publications d'une étude (tous statuts, plus récentes d'abord). */
+  studioPublications: (p: string, s: string) => request<{ publications: StudioPublication[] }>(`${studioStudyPath(p, s)}/publications`),
+  /** Détail d'une publication avec son journal. */
+  studioPublication: (p: string, s: string, id: string) => request<StudioPublication>(studioPublicationPath(p, s, id)),
+  /** Nouvelle publication `travail` d'une révision (tête par défaut) ; `requestId` : renvoi sans doublon. */
+  createStudioPublication: (p: string, s: string, v: string, input: { title?: string; revisionId?: string; comment?: string; requestId?: string }) => request<StudioPublication & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/publications`, { method: "POST", body: JSON.stringify(input) }),
+  /** Transition (soumettre, approuver, refuser, diffuser, retirer) ; l'approbation porte revisionId + documentHash examinés. */
+  transitionStudioPublication: (p: string, s: string, id: string, action: StudioPublicationTransition, input: StudioPublicationTransitionInput) => request<StudioPublication>(`${studioPublicationPath(p, s, id)}/${action}`, { method: "POST", body: JSON.stringify(input) }),
+  /** Paquets diffusés du projet (pour le module Documents). */
+  studioPackages: (p: string) => request<{ packages: (StudioPublication & { studyName: string })[] }>(`/projects/${encodeURIComponent(p)}/studio/publications`),
+  /** Préférences d'outils Studio du compte (profil des barres, favoris, liste personnelle) ; le projet doit être lisible. */
+  studioToolPreferences: (p: string) => request<StudioToolPreferences>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils`),
+  /** Remplace les préférences d'outils du compte ; un outil hors registre → 400 `unknown_tool`. */
+  setStudioToolPreferences: (p: string, prefs: StudioToolPreferencesInput) => request<StudioToolPreferences>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils`, { method: "PUT", body: JSON.stringify(prefs) }),
   register: (email: string, password: string) =>
     request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
   login: (email: string, password: string) =>
@@ -813,6 +935,12 @@ export const api = {
   /** Notifications dans l'application (accès reçus, commentaires des autres, réservations d'édition), relues des données datées. */
   listNotifications: () => request<NotificationsView>("/notifications"),
   markNotificationsSeen: () => request<{ seenAt: string }>("/notifications/seen", { method: "POST" }),
+  /** Préférences de notification (types masqués, projets en sourdine), appliquées par le serveur à `/notifications`. */
+  lirePreferencesNotification: () => request<NotificationPreferencesView>("/preferences/notifications"),
+  enregistrerTypesMasques: (typesMasques: NotificationKind[]) =>
+    request<NotificationPreferencesView>("/preferences/notifications", { method: "PUT", body: JSON.stringify({ typesMasques }) }),
+  mettreProjetEnSourdine: (projectId: string, muet: boolean) =>
+    request<NotificationPreferencesView>(`/preferences/notifications/projets/${encodeURIComponent(projectId)}`, { method: "PUT", body: JSON.stringify({ muet }) }),
   /** Ensembles d'affichage personnels de l'Atelier, synchronisés entre les appareils du compte (D-118). */
   lireEnsemblesPersonnels: () => request<EnsemblesPersonnels>("/preferences/atelier-ensembles"),
   enregistrerEnsemblesPersonnels: (ensembles: EnsemblesPersonnels["ensembles"], base: string | null) =>

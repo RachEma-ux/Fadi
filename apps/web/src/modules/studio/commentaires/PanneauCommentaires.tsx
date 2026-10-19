@@ -4,6 +4,8 @@
  * supprime son commentaire (suppression douce : le fil reste lisible). Un commentaire peut citer les objets
  * sélectionnés qui existent dans la révision affichée ; cliquer un commentaire ancré sélectionne ces objets.
  * Un envoi non confirmé se rejoue avec le même `requestId` : jamais de doublon.
+ * Observations (E.2) : un commentaire d'origine peut devenir une observation suivie (responsable, échéance, statut,
+ * journal) ; filtres « Mes observations », « Ouvertes », « À recontrôler » (`observations.ts`, `Observation.tsx`).
  */
 import { useRef, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +13,8 @@ import type { StudioDocument } from "@parcours/atelier-model";
 import { api, ApiError, type StudioComment } from "../../../lib/api";
 import { LOCALE } from "../../../lib/i18n";
 import { ancrageSelection, objetsPresents, regrouperFils } from "./fils";
+import { ObservationCommentaire, type ContexteObservation } from "./Observation";
+import { compterFiltres, FILTRE_LIBELLE, FILTRES, filtrerFils, type FiltreObservations } from "./observations";
 import "./commentaires.css";
 
 export interface PanneauCommentairesProps {
@@ -42,8 +46,17 @@ export function PanneauCommentaires(props: PanneauCommentairesProps) {
   const client = useQueryClient();
   const comments = useQuery({ queryKey: cle, queryFn: () => api.studioComments(projectId, studyId, variantId), retry: (n, e) => !refused(e) && n < 1 });
   const [info, setInfo] = useState("");
-  const fils = comments.data ? regrouperFils(comments.data.comments) : [];
+  const [filtre, setFiltre] = useState<FiltreObservations>("tous");
+  const tousFils = comments.data ? regrouperFils(comments.data.comments) : [];
+  const fils = filtrerFils(tousFils, filtre);
+  const comptes = compterFiltres(tousFils);
   const relire = () => client.invalidateQueries({ queryKey: cle });
+  const archived = comments.data?.archived === true;
+  const me = comments.data?.me;
+  const contexte = (c: StudioComment): ContexteObservation => ({
+    projectId, studyId, variantId, revisionId: props.revisionId, participants: comments.data?.participants ?? [], surModifie: relire,
+    peutPromouvoir: !archived && (c.mine || me?.role === "proprietaire"),
+  });
 
   function choisir(c: StudioComment) {
     if (!c.objectIds.length) return;
@@ -60,9 +73,15 @@ export function PanneauCommentaires(props: PanneauCommentairesProps) {
     {info && <p className="studio-info" role="status">{info}</p>}
     {comments.isPending && <p role="status">Chargement des commentaires…</p>}
     {comments.isError && <p role="alert">Commentaires indisponibles. <button type="button" onClick={() => void comments.refetch()}>Réessayer</button></p>}
-    {comments.data && fils.length === 0 && <p data-studio-aucun-commentaire>Aucun commentaire sur cette variante.</p>}
+    {archived && <p role="status" data-studio-observations-archive>Variante archivée : commentaires et observations en lecture seule.</p>}
+    {tousFils.length > 0 && <div className="studio-commentaires-filtres" role="group" aria-label="Filtrer les observations" data-studio-filtres-observations>
+      {FILTRES.map((f) => <button key={f} type="button" aria-pressed={filtre === f} onClick={() => setFiltre(f)} data-studio-filtre={f}>{`${FILTRE_LIBELLE[f]} (${comptes[f]})`}</button>)}
+    </div>}
+    {comments.data && tousFils.length === 0 && <p data-studio-aucun-commentaire>Aucun commentaire sur cette variante.</p>}
+    {tousFils.length > 0 && fils.length === 0 && <p data-studio-aucune-observation>Aucune observation pour ce filtre.</p>}
     {fils.length > 0 && <ol className="studio-commentaires-fils">{fils.map((f) => <li key={f.origine.id} data-studio-fil={f.origine.id}>
       <Commentaire {...props} c={f.origine} surChoisir={choisir} surModifie={relire} />
+      <ObservationCommentaire c={f.origine} ctx={contexte(f.origine)} />
       {f.reponses.length > 0 && <ol className="studio-commentaires-reponses">{f.reponses.map((r) => <li key={r.id}><Commentaire {...props} c={r} surChoisir={choisir} surModifie={relire} /></li>)}</ol>}
     </li>)}</ol>}
   </section>;
@@ -127,7 +146,7 @@ function Commentaire(props: PanneauCommentairesProps & { c: StudioComment; surCh
     <div className="studio-commentaires-actions">
       {c.objectIds.length > 0 && <button type="button" onClick={() => props.surChoisir(c)} data-studio-commentaire-objets={c.objectIds.join(" ")}>{`Sélectionner les objets cités (${c.objectIds.length})`}</button>}
       {!c.parentId && <button type="button" aria-expanded={repondre} onClick={() => setRepondre((v) => !v)}>Répondre</button>}
-      {c.mine && !c.deletedAt && <button type="button" disabled={suppression} onClick={() => void supprimer()} data-studio-supprimer-commentaire>Supprimer</button>}
+      {c.mine && !c.deletedAt && !c.observation && <button type="button" disabled={suppression} onClick={() => void supprimer()} data-studio-supprimer-commentaire>Supprimer</button>}
     </div>
     {error && <p role="alert">{error}</p>}
     {repondre && <NouveauCommentaire {...props} parentId={c.id} surEnvoye={props.surModifie} surFermer={() => setRepondre(false)} />}

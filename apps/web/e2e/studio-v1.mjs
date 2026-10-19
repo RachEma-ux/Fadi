@@ -258,7 +258,15 @@ async function exerciseStudioUI(page, projectId) {
   await tool('Ligne').click();
   const board = page.getByRole('group', { name: 'Planche de dessin 2D', exact: true });
   for (const world of [{ x: 1, y: 1 }, { x: 5, y: 1 }]) {
-    const screen = await board.evaluate((svg, point) => { const p = new DOMPoint(point.x, point.y).matrixTransform(svg.getScreenCTM()); return { x: p.x, y: p.y }; }, world);
+    // The registry toolbar can push the board below the fold: bring the target point into the viewport first
+    // (a real pointer click outside the viewport reaches nothing), as studio-navigation.mjs does.
+    const screen = await board.evaluate((svg, point) => {
+      const toScreen = () => new DOMPoint(point.x, point.y).matrixTransform(svg.getScreenCTM());
+      const s = toScreen();
+      if (s.y < 40 || s.y > window.innerHeight - 40) window.scrollBy(0, s.y - window.innerHeight / 2);
+      const p = toScreen();
+      return { x: p.x, y: p.y };
+    }, world);
     await page.mouse.click(screen.x, screen.y);
   }
   const drawn = page.locator('svg [role="button"][aria-label^="Ligne "] line');

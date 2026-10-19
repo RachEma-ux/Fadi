@@ -1,4 +1,11 @@
-import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument, type StudioDimension, type StudioDocument, type StudioItem, type StudioPoint } from "./document-2d.js";
+import { studioShapeBoundPoints } from "./courbes.js";
+import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument, type StudioDocument, type StudioItem, type StudioPoint } from "./document-2d.js";
+import { DxfWriter } from "./exporteurs/dxf.js";
+import { dxfText, nb, xml } from "./exporteurs/texte.js";
+import { coteDxf, coteSvg, dessinerCote } from "./objets/cote.js";
+import { typeObjet } from "./objets/index.js";
+
+export { formatStudioLength, STUDIO_EXPORT_TO_RESOLVE } from "./objets/cote.js";
 
 /**
  * Exports de fichier d'un document Studio (`studio-document/1`) : SVG et DXF R12 ASCII. Purs et déterministes : même
@@ -6,6 +13,8 @@ import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument,
  * converties (le SVG ne fait que retourner l'axe y, l'écran descendant). Un document produit n'est pas traduit : les
  * seuls textes sont la valeur mesurée des cotes (formatée selon `locale`) et la mention « à résoudre ».
  * Autonome : n'emprunte rien à l'Atelier ; reprend seulement les conventions DXF du dépôt (AC1009, CRLF, $INSUNITS).
+ * L'écriture de chaque objet est celle de son type (`objets/<type>.ts`, `svg` et `dxf`) ; ce module compose le fichier
+ * (en-tête, calques, bornes, ordre) et les cotes (`objets/cote.ts`).
  */
 
 export interface StudioExportOptions {
@@ -17,15 +26,8 @@ export interface StudioExportOptions {
   margin?: number;
 }
 
-/** Mention des cotes dont un lien est rompu : leur valeur n'est pas évaluée. */
-export const STUDIO_EXPORT_TO_RESOLVE = "à résoudre" as const;
 const DEFAULT_TEXT_HEIGHT = 0.25;
 const DXF_LAYER_NAME_MAX = 31;
-
-const nb = (v: number): string => {
-  const r = Math.round(v * 1e6) / 1e6;
-  return Math.abs(r) < 1e-12 ? "0" : String(r);
-};
 
 function options(input: StudioExportOptions | undefined): { locale: string; textHeight: number; margin: number | undefined } {
   const locale = input?.locale ?? "fr-FR";
@@ -42,11 +44,6 @@ function options(input: StudioExportOptions | undefined): { locale: string; text
   const margin = input?.margin;
   if (margin !== undefined && (!Number.isFinite(margin) || margin < 0)) throw new StudioValidationError("export.margin", "marge positive ou nulle attendue");
   return { locale: canonical, textHeight, margin };
-}
-
-/** Longueur formatée (mètres, 2 à 3 décimales, sans séparateur de milliers pour rester lisible dans tout lecteur). */
-export function formatStudioLength(value: number, locale = "fr-FR"): string {
-  return `${new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 3, useGrouping: false }).format(value)} m`;
 }
 
 // ——— Calques ———
@@ -99,55 +96,14 @@ export function studioDxfLayerNames(doc: StudioDocument): Record<string, string>
   return Object.fromEntries(exportLayers(validateStudioDocument(doc)).map((l) => [l.id, l.dxfName]));
 }
 
-// ——— Géométrie dérivée des cotes ———
-
-interface DimensionDrawing {
-  dimension: StudioDimension;
-  value: number | null;
-  label: string;
-  a: StudioPoint;
-  b: StudioPoint;
-  extensions: [StudioPoint, StudioPoint][];
-  text: StudioPoint;
-  /** Angle du texte en degrés, sens trigonométrique, ramené dans ]-90 ; 90] pour rester lisible. */
-  angle: number;
-}
-
-function drawDimension(d: StudioDimension, locale: string, textHeight: number): DimensionDrawing {
-  const dx = d.end.x - d.start.x, dy = d.end.y - d.start.y;
-  // Même formule que `measureStudioDimension` (contrôlé par test), sans revalider le document à chaque cote.
-  const length = Math.hypot(dx, dy);
-  const value = d.toResolve ? null : length;
-  const n = { x: -dy / length, y: dx / length };
-  const a = { x: d.start.x + n.x * d.offset, y: d.start.y + n.y * d.offset };
-  const b = { x: d.end.x + n.x * d.offset, y: d.end.y + n.y * d.offset };
-  const extensions: [StudioPoint, StudioPoint][] = d.offset === 0 ? [] : [[{ ...d.start }, a], [{ ...d.end }, b]];
-  let angle = (Math.atan2(dy, dx) * 180) / Math.PI;
-  let side = 1;
-  if (angle > 90 || angle <= -90) {
-    angle += angle > 90 ? -180 : 180;
-    side = -1;
-  }
-  const lift = textHeight * 0.3 * side;
-  const text = { x: (a.x + b.x) / 2 + n.x * lift, y: (a.y + b.y) / 2 + n.y * lift };
-  const label = value === null ? STUDIO_EXPORT_TO_RESOLVE : formatStudioLength(value, locale);
-  return { dimension: d, value, label, a, b, extensions, text, angle };
-}
-
 function itemPoints(o: StudioItem): StudioPoint[] {
-  if (o.type === "line") return [o.start, o.end];
-  if (o.type === "rectangle") return [o.origin, { x: o.origin.x + o.width, y: o.origin.y + o.height }];
-  return [];
+  return o.type === "dimension" ? [] : studioShapeBoundPoints(o);
 }
 
 // ——— SVG ———
 
-const xml = (s: string): string =>
-  // Caractères de contrôle interdits en XML 1.0 retirés, puis échappement des cinq entités.
-  s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
-
 /**
- * SVG du document : unité utilisateur = 1 m, `viewBox` = bornes des éléments visibles (tous s'il n'y en a aucun) plus
+ * SVG du document (lignes `<line>`, rectangles `<rect>`, cercles `<circle>`, arcs et polylignes `<path>` à arcs exacts) : unité utilisateur = 1 m, `viewBox` = bornes des éléments visibles (tous s'il n'y en a aucun) plus
  * la marge ; y retourné (y SVG = −y local). Un `<g data-layer>` par calque, dans l'ordre ; un calque masqué garde son
  * contenu sous `display="none"`. Chaque cote est un `<g data-dimension>` (ligne, lignes d'attache, texte de la valeur
  * mesurée) ; une cote à résoudre porte `data-status="to-resolve"` et la mention « à résoudre ».
@@ -157,7 +113,7 @@ export function exportStudioSvg(input: StudioDocument, exportOptions?: StudioExp
   const opts = options(exportOptions);
   const layers = exportLayers(doc);
   const visible = new Set(layers.filter((l) => l.visible).map((l) => l.id));
-  const dims = (doc.dimensions ?? []).map((d) => drawDimension(d, opts.locale, opts.textHeight));
+  const dims = (doc.dimensions ?? []).map((d) => dessinerCote(d, opts.locale, opts.textHeight));
 
   const all: StudioPoint[] = [], shown: StudioPoint[] = [];
   const add = (layer: string, pts: StudioPoint[]) => {
@@ -183,23 +139,15 @@ export function exportStudioSvg(input: StudioDocument, exportOptions?: StudioExp
     '<?xml version="1.0" encoding="UTF-8"?>',
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" data-schema="studio-document/1" data-document="${xml(doc.id)}" data-units="m" data-frame="local-2d">`,
   ];
-  const Y = (y: number) => nb(-y);
   for (const layer of layers) {
     lines.push(`<g data-layer="${xml(layer.id)}" data-name="${xml(layer.name)}"${layer.visible ? "" : ' display="none"'} fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">`);
     for (const o of doc.objects) {
       if (layerKey(o) !== layer.id) continue;
-      if (o.type === "line") lines.push(`<line data-id="${xml(o.id)}" x1="${nb(o.start.x)}" y1="${Y(o.start.y)}" x2="${nb(o.end.x)}" y2="${Y(o.end.y)}" vector-effect="non-scaling-stroke"/>`);
-      else lines.push(`<rect data-id="${xml(o.id)}" x="${nb(o.origin.x)}" y="${Y(o.origin.y + o.height)}" width="${nb(o.width)}" height="${nb(o.height)}" vector-effect="non-scaling-stroke"/>`);
+      lines.push(typeObjet(o).svg(o));
     }
     for (const g of dims) {
       if (layerKey(g.dimension) !== layer.id) continue;
-      const status = g.value === null ? "to-resolve" : "resolved";
-      lines.push(`<g data-dimension="${xml(g.dimension.id)}" data-status="${status}"${g.value === null ? "" : ` data-value="${nb(g.value)}"`}>`);
-      lines.push(`<line x1="${nb(g.a.x)}" y1="${Y(g.a.y)}" x2="${nb(g.b.x)}" y2="${Y(g.b.y)}" vector-effect="non-scaling-stroke"/>`);
-      for (const [p, q] of g.extensions) lines.push(`<line x1="${nb(p.x)}" y1="${Y(p.y)}" x2="${nb(q.x)}" y2="${Y(q.y)}" vector-effect="non-scaling-stroke"/>`);
-      const rotate = g.angle === 0 ? "" : ` transform="rotate(${nb(-g.angle)} ${nb(g.text.x)} ${Y(g.text.y)})"`;
-      lines.push(`<text x="${nb(g.text.x)}" y="${Y(g.text.y)}" font-size="${nb(opts.textHeight)}" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none"${rotate}>${xml(g.label)}</text>`);
-      lines.push("</g>");
+      lines.push(...coteSvg(g, opts.textHeight));
     }
     lines.push("</g>");
   }
@@ -209,63 +157,12 @@ export function exportStudioSvg(input: StudioDocument, exportOptions?: StudioExp
 
 // ——— DXF R12 ———
 
-/** Chaîne DXF en ASCII strict : fins de ligne et contrôles retirés, hors ASCII en `\U+XXXX`, 250 caractères au plus. */
-function dxfText(s: string): string {
-  let out = "";
-  for (const ch of s.replace(/[\r\n]+/g, " ").replace(/[\u0000-\u001F\u007F]/g, "")) {
-    const code = ch.codePointAt(0)!;
-    out += code < 0x80 ? ch : code <= 0xffff ? `\\U+${code.toString(16).toUpperCase().padStart(4, "0")}` : "?";
-  }
-  return out.slice(0, 250);
-}
-
-class DxfWriter {
-  readonly out: string[] = [];
-  pair(code: number, value: string | number): void {
-    this.out.push(String(code), typeof value === "number" ? nb(value) : value);
-  }
-  point(base: number, p: StudioPoint): void {
-    this.pair(base, p.x);
-    this.pair(base + 10, p.y);
-    this.pair(base + 20, 0);
-  }
-  line(layer: string, a: StudioPoint, b: StudioPoint): void {
-    this.pair(0, "LINE");
-    this.pair(8, layer);
-    this.point(10, a);
-    this.point(11, b);
-  }
-  closedPolyline(layer: string, pts: readonly StudioPoint[]): void {
-    this.pair(0, "POLYLINE");
-    this.pair(8, layer);
-    this.pair(66, 1);
-    this.point(10, { x: 0, y: 0 });
-    this.pair(70, 1);
-    for (const p of pts) {
-      this.pair(0, "VERTEX");
-      this.pair(8, layer);
-      this.point(10, p);
-    }
-    this.pair(0, "SEQEND");
-    this.pair(8, layer);
-  }
-  text(layer: string, p: StudioPoint, height: number, value: string, angle: number): void {
-    this.pair(0, "TEXT");
-    this.pair(8, layer);
-    this.point(10, p);
-    this.pair(40, height);
-    this.pair(1, dxfText(value));
-    if (angle) this.pair(50, angle);
-    this.pair(72, 1); // centré
-    this.point(11, p);
-  }
-}
-
 /**
  * DXF R12 ASCII (AC1009, CRLF), mètres ($INSUNITS = 6), repère local-2d. Table LAYER : « 0 » (calque implicite) puis
  * les calques du document (nom ASCII dérivé, `studioDxfLayerNames`) ; un calque masqué a une couleur négative (éteint),
  * un calque verrouillé le drapeau 4. Lignes → LINE ; rectangles → POLYLINE fermée de 4 sommets (R12 n'a pas de
- * LWPOLYLINE) ; cotes → LINE (cote et attaches) + TEXT de la valeur mesurée ou « à résoudre », sur leur calque.
+ * LWPOLYLINE) ; cercles → CIRCLE ; arcs → ARC (degrés, sens trigonométrique) ; polylignes → POLYLINE (70 = 1 si
+ * fermée) dont chaque VERTEX porte le renflement de son segment (code 42, omis s'il est nul) ; cotes → LINE (cote et attaches) + TEXT de la valeur mesurée ou « à résoudre », sur leur calque.
  */
 export function exportStudioDxf(input: StudioDocument, exportOptions?: Omit<StudioExportOptions, "margin">): string {
   const doc = validateStudioDocument(input);
@@ -309,21 +206,8 @@ export function exportStudioDxf(input: StudioDocument, exportOptions?: Omit<Stud
   w.pair(0, "ENDSEC");
   w.pair(0, "SECTION");
   w.pair(2, "ENTITIES");
-  for (const o of doc.objects) {
-    const layer = nameOf.get(layerKey(o))!;
-    if (o.type === "line") w.line(layer, o.start, o.end);
-    else {
-      const { x, y } = o.origin;
-      w.closedPolyline(layer, [{ x, y }, { x: x + o.width, y }, { x: x + o.width, y: y + o.height }, { x, y: y + o.height }]);
-    }
-  }
-  for (const d of doc.dimensions ?? []) {
-    const g = drawDimension(d, opts.locale, opts.textHeight);
-    const layer = nameOf.get(layerKey(d))!;
-    w.line(layer, g.a, g.b);
-    for (const [p, q] of g.extensions) w.line(layer, p, q);
-    w.text(layer, g.text, opts.textHeight, g.label, g.angle);
-  }
+  for (const o of doc.objects) typeObjet(o).dxf(o, nameOf.get(layerKey(o))!, w);
+  for (const d of doc.dimensions ?? []) coteDxf(dessinerCote(d, opts.locale, opts.textHeight), nameOf.get(layerKey(d))!, opts.textHeight, w);
   w.pair(0, "ENDSEC");
   w.pair(0, "EOF");
   return w.out.join("\r\n") + "\r\n";

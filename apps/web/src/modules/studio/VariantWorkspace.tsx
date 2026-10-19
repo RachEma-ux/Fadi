@@ -15,130 +15,103 @@
  * prérempli par les données réelles), l'imprime à sa taille réelle ou la télécharge en SVG / PDF ; lecture seule admise.
  * Import : « Importer DXF » (Maj+U) ajoute au brouillon, en un lot annulable, les commandes lues par `lireDxfStudio` ;
  * l'enregistrement découpe les commandes en attente en enveloppes de 500 commandes au plus (`import/envoi.ts`).
+ * Courbes : Cercle (C : centre puis un point du cercle), Arc (A : trois points, ou centre, début et fin selon le mode
+ * choisi dans le panneau), Polyligne (P : sommets successifs ; Entrée la termine, Maj+Entrée ou un clic sur le premier
+ * sommet la ferme) ; Décaler (O) crée, pour chaque objet sélectionné, son décalé à la distance saisie (`studio.dessin.decaler`).
+ * Les constructions par points sont pures (`studioArcFromThreePoints`, `studioArcFromCenter`) ; l'aperçu n'est jamais
+ * une donnée du document.
+ *
+ * Composition : outils au pointeur (`planche2d/outils/`, un module par famille, table `OUTILS_PLANCHE`), gestes et vue
+ * (`planche2d/outils/gestes.ts`), saisie numérique (`planche2d/outils/formulaire.ts`), enregistrement
+ * (`variante/useEnregistrement.ts`), clavier (`variante/useClavierStudio.ts`), garde de navigation
+ * (`variante/useGardeNavigation.ts`), panneaux (`variante/`).
  */
-import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type PointerEvent } from "react";
-import { Link } from "react-router-dom";
-import type { ReactNode } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { applyStudioCommands, STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, type StudioCommand, type StudioDimension, type StudioLayer, type StudioPoint, type StudioShape } from "@parcours/atelier-model";
-import { Icon } from "../../components/Icon";
-import { api, ApiError, studioExportUrl, type StudioContext } from "../../lib/api";
+import { api, studioExportUrl, type StudioContext } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
-import { LANGUE, LOCALE } from "../../lib/i18n";
-import { cheminComparaisonStudio, cheminProjetStudio, cheminVarianteStudio } from "./routes-studio";
+import { LOCALE } from "../../lib/i18n";
 import { StudioRefus } from "./studio-ecrans";
 import { BarreOutils } from "./planche2d/BarreOutils";
-import {
-  annulerBrouillon, appliquerBrouillon, commandesEnAttente, creerBrouillon, documentBrouillon, messageRefus,
-  peutAnnuler, peutRetablir, retablirBrouillon, type Brouillon,
-} from "./planche2d/brouillon";
+import { annulerBrouillon, appliquerBrouillon, commandesEnAttente, creerBrouillon, documentBrouillon, messageRefus, peutAnnuler, peutRetablir, retablirBrouillon, type Brouillon } from "./planche2d/brouillon";
+import { commandeDisponible, outilDisponible } from "./variante/disponibilite";
 import { commandeReglage, estVisible, layerIdPour, listeCalques, prochainNomCalque } from "./planche2d/calques";
 import type { EntreeCatalogue } from "./planche2d/catalogue";
-import { GestionnaireOutils, PaletteCommandes } from "./planche2d/CatalogueOutils";
-import { Dessin2D, type PointPose, type RectangleSelection } from "./planche2d/Dessin2D";
-import {
-  accrocher, auCentimetre, CADRE_INITIAL, cadrer, emprise, formaterMetres, nouvelleCote, pointsAccroche, sommetExact, valeurCote, type Cadre,
-} from "./planche2d/geometrie-2d";
+import { Dessin2D, type PointPose } from "./planche2d/Dessin2D";
+import { cadrer, emprise } from "./planche2d/geometrie-2d";
 import { PanneauCalques } from "./planche2d/PanneauCalques";
-import {
-  actifDansUnChamp, cibleRaccourci, combinaison, COMMANDES_EDITEUR, OUTILS_MODES, OUTILS_TRACE,
-  type CibleRaccourci, type CommandeEditeur, type IdCommandeEditeur, type StudioToolEntry, type StudioToolId,
-} from "./planche2d/raccourcis";
-import { ajouter, basculer, commandesDeplacement, modeRectangle, selectionParRectangle, selectionValide, toutSelectionnable } from "./planche2d/selection";
-import { ecranVersPlanche, facteurMolette, glisserVue, LARGEUR_VUE, pasGrille, pincer, surGrille, zoomer, zoomerAuCentre, type Rect } from "./planche2d/vue";
+import { COMMANDES_EDITEUR, OUTILS_MODES, OUTILS_TRACE, type CibleRaccourci, type CommandeEditeur, type IdCommandeEditeur, type StudioToolEntry, type StudioToolId } from "./planche2d/raccourcis";
+import { basculer, commandesDeplacement, selectionValide, toutSelectionnable } from "./planche2d/selection";
+import { zoomerAuCentre } from "./planche2d/vue";
+import { aidePlanche, apercuPlanche, outilPlanche } from "./planche2d/outils";
+import { formulaireInactif, SOMMETS_INITIAUX, soumettre, VALEURS_INITIALES, valeursObjet, type Valeurs } from "./planche2d/outils/formulaire";
+import { useGestesPlanche } from "./planche2d/outils/gestes";
+import { commandePolyligne } from "./planche2d/outils/courbes";
+import type { ContexteCreation, ModeArc } from "./planche2d/outils/type";
 import { commandesAplatir, commandesExtrusion, formesSelectionnees, valeursDe, VALEURS_VIDES, type ValeursExtrusion } from "./vue3d/extrusion";
-import { FormulaireExtrusion } from "./vue3d/FormulaireExtrusion";
 import { cartoucheInitial } from "./feuille/feuille-ui";
-import { PanneauFeuille } from "./feuille/PanneauFeuille";
 import { PanneauCommentaires } from "./commentaires/PanneauCommentaires";
-import { DialogueImportDxf } from "./import/DialogueImportDxf";
-import { accuserLot, commandesNonEnvoyees, enveloppeSuivante, envoiPartiel, planEnvoi, type PlanEnvoi } from "./import/envoi";
+import { PanneauQuantites } from "./quantites/PanneauQuantites";
+import { AlerteStudio, BandeauVariante, EnTeteStudio } from "./variante/BandeauVariante";
+import { DialoguesStudio, type DialogueStudio } from "./variante/DialoguesStudio";
+import { refused } from "./variante/etat-variante";
+import { FormulaireValeurs } from "./variante/FormulaireValeurs";
+import { PanneauProprietes } from "./variante/PanneauProprietes";
+import { RevisionsPanel } from "./variante/PanneauRevisions";
+import { useClavierStudio } from "./variante/useClavierStudio";
+import { useEnregistrement } from "./variante/useEnregistrement";
+import { useGardeNavigation } from "./variante/useGardeNavigation";
+import { Vue3D } from "./variante/Vue3D";
 import "./studio.css";
 import "./planche2d/planche2d.css";
-
-/** Vue 3D (three.js) chargée à la demande : le code 3D n'alourdit pas l'éditeur 2D. */
-const chargerVue3D = () => import("./vue3d/Vue3DStudio").then((m) => ({ default: m.Vue3DStudio }));
-let Vue3DStudio = lazy(chargerVue3D);
-
-/** Un échec de la vue 3D (chargement, rendu) reste local : le brouillon 2D non enregistré est conservé. */
-class LimiteVue3D extends Component<{ children: ReactNode }, { erreur: boolean }> {
-  state = { erreur: false };
-  static getDerivedStateFromError() { return { erreur: true }; }
-  // Refermer puis rouvrir la vue 3D relance un chargement neuf (React.lazy garderait l’échec).
-  componentDidCatch() { Vue3DStudio = lazy(chargerVue3D); }
-  render() { return this.state.erreur ? <p role="alert">Vue 3D indisponible. Le dessin et ses modifications non enregistrées sont conservés ; refermez puis rouvrez la vue 3D pour réessayer.</p> : this.props.children; }
-}
-
-const warning = () => LANGUE === "en" ? "Unsaved or unconfirmed changes. Leave this study?" : "Modifications non enregistrées ou non confirmées. Quitter cette étude ?";
-const refused = (e: unknown) => e instanceof ApiError && [401, 403, 404].includes(e.status);
-/** Tolérance d'accrochage, en pixels d'écran. */
-const ACCROCHE_PX = 12;
-/** Au-delà de ce déplacement du pointeur (pixels), un appui devient un geste (rectangle, glisser) et non un clic. */
-const SEUIL_GESTE_PX = 4;
-/** Écart arrondi au micromètre : le pointeur et les sommets ne produisent pas de bruit flottant dans les commandes. */
-const ecart = (a: number, b: number) => Math.round((b - a) * 1e6) / 1e6;
-
-type Valeurs = { x: number; y: number; a: number; b: number; dx: number; dy: number; offset: number };
-type Ecran = { x: number; y: number };
-type Geste =
-  | { type: "vue"; cadre0: Cadre; rect0: Rect; depart: Map<number, StudioPoint> }
-  | { type: "rectangle"; id: number; debut: StudioPoint; ecran: Ecran; ajouter: boolean; actif: boolean }
-  | { type: "glisser"; id: number; base: PointPose; ids: string[]; ecran: Ecran; actif: boolean };
-
-/** Zone de contenu du `<svg>` à l'écran (sans sa bordure). */
-function rectContenu(svg: SVGSVGElement): Rect {
-  const b = svg.getBoundingClientRect();
-  return { left: b.left + svg.clientLeft, top: b.top + svg.clientTop, width: svg.clientWidth || b.width, height: svg.clientHeight || b.height };
-}
 
 /** `commentairesOuverts` : panneau des commentaires ouvert à l'arrivée (adresse `?commentaires=ouverts`, lien de notification). */
 export interface VariantWorkspaceProps { projectId: string; studyId: string; variantId: string; revisionId: string | null; commentairesOuverts?: boolean }
 
 export function VariantWorkspace({ projectId, studyId, variantId, revisionId, commentairesOuverts = false }: VariantWorkspaceProps) {
-  const client = useQueryClient();
   const [context, setContext] = useState<StudioContext | null>(null);
   const [brouillon, setBrouillon] = useState<Brouillon | null>(null);
   const [tool, setTool] = useState<StudioToolId>("studio.dessin.selection");
   const [selection, setSelection] = useState<string[]>([]);
   const [trace, setTrace] = useState<PointPose | null>(null);
-  const [survol, setSurvol] = useState<PointPose | null>(null);
-  const [cadre, setCadre] = useState<Cadre>(CADRE_INITIAL);
+  // Points posés après le premier : passage ou début d'un arc, sommets suivants d'une polyligne.
+  const [suite, setSuite] = useState<StudioPoint[]>([]);
+  const [modeArc, setModeArc] = useState<ModeArc>("trois-points");
+  const [sommetsTexte, setSommetsTexte] = useState(SOMMETS_INITIAUX);
+  const [fermee, setFermee] = useState(false);
   const [accrocheSommets, setAccrocheSommets] = useState(true);
   const [accrocheGrille, setAccrocheGrille] = useState(false);
-  const [rectangle, setRectangle] = useState<RectangleSelection | null>(null);
-  const [apercu, setApercu] = useState<{ ids: string[]; dx: number; dy: number } | null>(null);
-  const [dialogue, setDialogue] = useState<"outils" | "palette" | "feuille" | "import-dxf" | null>(null);
+  const [dialogue, setDialogue] = useState<DialogueStudio>(null);
   const { user } = useAuth();
   const [calqueActif, setCalqueActif] = useState<string>(STUDIO_DEFAULT_LAYER_ID);
   const [nomCalque, setNomCalque] = useState("");
-  const [pending, setPending] = useState(false);
-  const [uncertain, setUncertain] = useState(false);
-  const [blocked, setBlocked] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loadError, setLoadError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
-  const [values, setValues] = useState<Valeurs>({ x: 0, y: 0, a: 4, b: 3, dx: 1, dy: 0, offset: 0.5 });
+  const [values, setValues] = useState<Valeurs>(VALEURS_INITIALES);
   const [extrusion, setExtrusion] = useState<ValeursExtrusion>(VALEURS_VIDES);
   const [vue3d, setVue3d] = useState(false);
   const [commentaires, setCommentaires] = useState(commentairesOuverts);
-  const envelope = useRef<PlanEnvoi | null>(null);
-  // Contexte rendu par le dernier lot confirmé : base du brouillon si un lot suivant est refusé.
-  const dernierAccuse = useRef<StudioContext | null>(null);
-  const alive = useRef(true), dirty = useRef(false), saving = useRef(false);
-  const clavier = useRef<(e: KeyboardEvent) => void>(() => {});
-  const relacher = useRef<(e: KeyboardEvent) => void>(() => {});
-  const molette = useRef<(e: WheelEvent) => void>(() => {});
-  const sheet = useRef<SVGSVGElement | null>(null), shell = useRef<HTMLElement>(null), nomRef = useRef<HTMLInputElement>(null);
-  const cadreRef = useRef<Cadre>(CADRE_INITIAL);
-  const geste = useRef<Geste | null>(null);
-  const pointeurs = useRef(new Map<number, Ecran>());
-  const clicSupprime = useRef(false);
-  const espace = useRef({ tenu: false, panoramique: false });
+  const alive = useRef(true), dirty = useRef(false);
+  const shell = useRef<HTMLElement>(null), nomRef = useRef<HTMLInputElement>(null);
   const historical = revisionId !== null;
   const drawing = brouillon ? documentBrouillon(brouillon) : null;
   const commands = brouillon ? commandesEnAttente(brouillon) : [];
+  const enr = useEnregistrement({
+    projectId, studyId, variantId, historical, context, brouillon, alive, setError, setInfo,
+    surVersionServeur: (current) => {
+      setContext(current); setBrouillon(creerBrouillon(current.revision.document)); cancelTrace();
+      const doc = current.revision.document;
+      const restants = selectionIds.filter(id => doc.objects.some(o => o.id === id) || doc.dimensions?.some(d => d.id === id));
+      setSelection(restants);
+      const seul = restants.length === 1 ? doc.objects.find(o => o.id === restants[0]) ?? doc.dimensions?.find(d => d.id === restants[0]) : undefined;
+      if (seul) properties(seul);
+    },
+    surRebase: (accuse, rebase) => { setContext(accuse); setBrouillon(rebase); cancelTrace(); },
+  });
+  const { pending, uncertain, blocked } = enr;
   dirty.current = commands.length > 0 || !!trace || pending || uncertain;
   const writable = !historical && !!context?.canWrite && !pending && !uncertain && !blocked;
   // Données réelles du cartouche de la feuille (mêmes clés que le fil d'Ariane et l'historique : cache partagé).
@@ -153,30 +126,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     void read.then(c => { if (active) { setContext(c); setBrouillon(creerBrouillon(c.revision.document)); } }).catch((e: unknown) => { if (active) { setLoadError(e); setError(refused(e) ? "" : "Étude indisponible ou accès refusé."); } }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; alive.current = false; };
   }, [projectId, studyId, variantId, revisionId]);
-  useEffect(() => {
-    const unload = (e: BeforeUnloadEvent) => { if (dirty.current) { e.preventDefault(); e.returnValue = ""; } };
-    // Un lien de téléchargement (export) ne quitte pas l'étude : aucune confirmation.
-    const click = (e: globalThis.MouseEvent) => { const link = (e.target as Element).closest?.("a[href]"); if (dirty.current && link && !link.hasAttribute("download") && !link.getAttribute("href")?.startsWith("#") && !window.confirm(warning())) { e.preventDefault(); e.stopPropagation(); } };
-    let currentIndex = Number(history.state?.idx ?? 0), restoring = false;
-    const back = (e: PopStateEvent) => {
-      const target = Number(e.state?.idx ?? currentIndex);
-      if (restoring) { restoring = false; e.stopImmediatePropagation(); return; }
-      if (dirty.current && !window.confirm(warning())) { e.stopImmediatePropagation(); restoring = true; history.go(currentIndex - target || 1); }
-      else currentIndex = target;
-    };
-    const keys = (e: KeyboardEvent) => clavier.current(e);
-    const keysUp = (e: KeyboardEvent) => relacher.current(e);
-    const blur = () => { espace.current = { tenu: false, panoramique: false }; };
-    window.addEventListener("popstate", back, true); window.addEventListener("beforeunload", unload); document.addEventListener("click", click, true); window.addEventListener("keydown", keys); window.addEventListener("keyup", keysUp); window.addEventListener("blur", blur);
-    return () => { window.removeEventListener("popstate", back, true); window.removeEventListener("beforeunload", unload); document.removeEventListener("click", click, true); window.removeEventListener("keydown", keys); window.removeEventListener("keyup", keysUp); window.removeEventListener("blur", blur); };
-  }, []);
-  // La molette doit empêcher le défilement de la page : écouteur natif non passif.
-  const ecouteMolette = useRef((e: WheelEvent) => molette.current(e)).current;
-  const refPlanche = useCallback((el: SVGSVGElement | null) => {
-    sheet.current?.removeEventListener("wheel", ecouteMolette);
-    sheet.current = el;
-    el?.addEventListener("wheel", ecouteMolette, { passive: false });
-  }, [ecouteMolette]);
+  useGardeNavigation(dirty);
 
   // ——— Sélection et calques (lectures dérivées du brouillon) ———
   const selectionIds = drawing ? selectionValide(drawing, selection) : [];
@@ -187,20 +137,31 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const actif = calques.find(c => c.id === calqueActif) ?? calques[0];
   // Le champ de renommage reprend le nom du calque actif quand celui-ci change (choix, création, annulation).
   useEffect(() => { if (actif) setNomCalque(actif.name); }, [actif?.id, actif?.name]);
+
+  // ——— Planche : outil au pointeur, gestes et vue ———
+  const moveWithPointer = tool === "studio.dessin.deplacer" && selectionIds.length > 0;
+  const pointsActifs = OUTILS_TRACE.has(tool) || moveWithPointer;
+  const outil = outilPlanche(tool);
+  const gestes = useGestesPlanche({
+    drawing, outil: tool, writable, selectionIds, selectionSet, accrocheSommets, accrocheGrille, pointsActifs,
+    exclureAuSurvol: outil?.horsSelection && trace ? selectionSet : undefined, select, moveSelection,
+  });
+  const { cadre, pas, survol, poserCadre, cadreRef } = gestes;
   // Aperçu du glisser : le document tel que le relâchement le donnerait (les cotes liées suivent).
   const apercuDoc = useMemo(() => {
-    if (!drawing || !apercu) return null;
-    const { commandes } = commandesDeplacement(drawing, apercu.ids, apercu.dx, apercu.dy);
+    if (!drawing || !gestes.apercu) return null;
+    const { commandes } = commandesDeplacement(drawing, gestes.apercu.ids, gestes.apercu.dx, gestes.apercu.dy);
     if (!commandes.length) return null;
     try { return applyStudioCommands(drawing, commandes); } catch { return null; }
-  }, [drawing, apercu]);
+  }, [drawing, gestes.apercu]);
 
   function properties(o: StudioShape | StudioDimension) {
     // Les valeurs d'extrusion affichées sont celles que l'utilisateur a saisies pour cet objet, jamais une proposition.
     const saisies = o.type === "dimension" ? null : valeursDe(o);
     setExtrusion(saisies ?? VALEURS_VIDES);
-    if (o.type === "rectangle") setValues(v => ({ ...v, x: o.origin.x, y: o.origin.y, a: o.width, b: o.height }));
-    else setValues(v => ({ ...v, x: o.start.x, y: o.start.y, a: o.end.x, b: o.end.y, ...(o.type === "dimension" ? { offset: o.offset } : {}) }));
+    const r = valeursObjet(o);
+    if (r.maj) setValues(r.maj);
+    if (r.sommets) { setSommetsTexte(r.sommets.texte); setFermee(r.sommets.fermee); }
   }
   function select(ids: string[]) {
     setSelection(ids);
@@ -223,20 +184,28 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       const seul = selectionIds.length === 1 ? selectionIds[0] : undefined;
       const updated = seul ? doc.objects.find(o => o.id === seul) ?? doc.dimensions?.find(d => d.id === seul) : undefined;
       if (updated) properties(updated);
-      setSaved(false); setError(""); setInfo("");
+      enr.setSaved(false); setError(""); setInfo("");
       return true;
     } catch (e) { setError(messageRefus(e)); return false; }
   }
   const layerId = () => layerIdPour(actif?.id ?? STUDIO_DEFAULT_LAYER_ID);
-  function addShape(start: StudioPoint, end: StudioPoint) {
-    if (tool === "studio.dessin.rectangle") {
-      const shape: StudioShape = { id: crypto.randomUUID(), type: "rectangle", ...(layerId() ? { layerId: layerId() } : {}), origin: { x: Math.min(start.x, end.x), y: Math.min(start.y, end.y) }, width: Math.abs(ecart(start.x, end.x)), height: Math.abs(ecart(start.y, end.y)) };
-      return apply([{ toolId: "studio.dessin.rectangle", params: shape }]);
-    }
-    return apply([{ toolId: "studio.dessin.ligne", params: { id: crypto.randomUUID(), type: "line", ...(layerId() ? { layerId: layerId() } : {}), start, end } }]);
+  const creation = (): ContexteCreation => ({ nouvelId: () => crypto.randomUUID(), layerId: layerId(), decalageCote: values.offset });
+  /** Termine la polyligne en cours (ouverte, ou fermée sur son premier sommet). */
+  function finishPolyline(closed: boolean) {
+    if (tool !== "studio.dessin.polyligne" || !trace) return;
+    const points = [trace.point, ...suite];
+    if (points.length < (closed ? 3 : 2)) { setError(closed ? "Une polyligne fermée a trois sommets au moins." : "Une polyligne a deux sommets au moins."); return; }
+    const r = commandePolyligne(creation(), points, closed);
+    if (r.type === "commandes" && apply(r.commandes)) cancelTrace();
   }
-  function addDimension(debut: PointPose, fin: PointPose) {
-    return apply([{ toolId: "studio.dessin.cote", params: nouvelleCote(crypto.randomUUID(), debut, fin, Number.isFinite(values.offset) ? values.offset : 0.5, layerId()) }]);
+  /** Décalage de chaque objet sélectionné (les cotes ne se décalent pas) ; les nouveaux objets deviennent la sélection. */
+  function offsetSelection(distance: number) {
+    if (!drawing) return;
+    const formes = formesSelectionnees(drawing, selectionIds);
+    if (!formes.length) { setInfo("Sélectionnez d’abord l’objet à décaler."); return; }
+    if (!(Number.isFinite(distance) && distance !== 0)) { setError("Saisissez une distance non nulle, en mètres."); return; }
+    const nouveaux = formes.map(() => crypto.randomUUID());
+    if (apply(formes.map((o, i) => ({ toolId: "studio.dessin.decaler", params: { id: o.id, newId: nouveaux[i]!, distance } })))) setSelection(nouveaux);
   }
   /** Déplacement de toute la sélection : une commande par objet, un seul pas d'historique. */
   function moveSelection(ids: readonly string[], dx: number, dy: number): boolean {
@@ -247,174 +216,33 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     if (ok && cotesLiees.length) setInfo("Les cotes liées suivent leurs objets : elles ne se déplacent pas seules.");
     return ok;
   }
-
-  // ——— Vue : zoom et panoramique (jamais une commande) ———
-  function poserCadre(c: Cadre) { cadreRef.current = c; setCadre(c); }
-  molette.current = (e: WheelEvent) => {
-    const svg = sheet.current; if (!svg) return;
-    e.preventDefault();
-    const c = cadreRef.current;
-    poserCadre(zoomer(c, ecranVersPlanche(c, rectContenu(svg), { x: e.clientX, y: e.clientY }), facteurMolette(e.deltaY, e.deltaMode)));
-  };
-  function demarrerVue(svg: SVGSVGElement) {
-    const cadre0 = cadreRef.current, rect0 = rectContenu(svg);
-    geste.current = { type: "vue", cadre0, rect0, depart: new Map([...pointeurs.current].map(([id, s]) => [id, ecranVersPlanche(cadre0, rect0, s)])) };
-  }
-  function annulerGeste() { geste.current = null; setRectangle(null); setApercu(null); setSurvol(null); }
-
-  // ——— Planche : pointeur, accrochage ———
-  const moveWithPointer = tool === "studio.dessin.deplacer" && selectionIds.length > 0;
-  const pointsActifs = OUTILS_TRACE.has(tool) || moveWithPointer;
-  const pas = pasGrille(cadre);
-  function brut(e: { clientX: number; clientY: number }): StudioPoint | null {
-    const matrix = sheet.current?.getScreenCTM(); if (!matrix) return null;
-    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix.inverse());
-    return { x: p.x, y: p.y };
-  }
-  /** Point posé : sommet accroché (hors `exclure`), sinon nœud de grille, sinon arrondi au centimètre. */
-  function pose(e: { clientX: number; clientY: number }, exclure?: ReadonlySet<string>): PointPose | null {
-    const matrix = sheet.current?.getScreenCTM(); if (!matrix || !drawing) return null;
-    const raw = new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix.inverse());
-    const tolerance = ACCROCHE_PX / Math.max(Math.abs(matrix.a), 1e-9);
-    const visible = (l: string | undefined) => estVisible(drawing, l);
-    const sources = exclure ? drawing.objects.filter(o => !exclure.has(o.id)) : drawing.objects;
-    const accroche = accrocheSommets ? accrocher(pointsAccroche(sources, visible), raw, tolerance) : null;
-    return { point: accroche ? { ...accroche.point } : accrocheGrille ? surGrille(raw, pas) : auCentimetre(raw), accroche };
-  }
+  /** Clic sur la planche : le premier pose le point de départ, les suivants sont interprétés par l'outil actif. */
   function board(e: MouseEvent<SVGSVGElement>) {
     if (!pointsActifs) { if (tool === "studio.dessin.selection" && !e.shiftKey) select([]); return; }
-    if (!writable) return;
-    const p = pose(e, tool === "studio.dessin.deplacer" && trace ? selectionSet : undefined); if (!p) return;
-    if (!trace) { setTrace(p); return; }
-    const a = trace.point, b = p.point;
-    if (tool === "studio.dessin.deplacer") {
-      if (moveSelection(selectionIds, ecart(a.x, b.x), ecart(a.y, b.y))) { setTrace(null); setSurvol(null); }
-      return;
+    if (!writable || !outil) return;
+    const p = gestes.pose(e, outil.horsSelection && trace ? selectionSet : undefined); if (!p) return;
+    if (!trace) { setTrace(p); setSuite([]); return; }
+    const action = outil.clic({ outil: tool, trace, suite, modeArc }, p, { ...creation(), tolerance: gestes.tolerance() });
+    switch (action.type) {
+      case "deplacer": if (moveSelection(selectionIds, action.dx, action.dy)) { setTrace(null); gestes.setSurvol(null); } return;
+      case "sommet": setSuite(action.suite); setError(""); return;
+      case "terminer-polyligne": return finishPolyline(action.fermee);
+      case "erreur": setError(action.message); return;
+      case "commandes": if (apply(action.commandes)) { if (action.apres === "annuler-trace") cancelTrace(); else setTrace(null); } return;
     }
-    if (a.x === b.x && a.y === b.y) { setError("Les deux points doivent être distincts."); return; }
-    if (tool === "studio.dessin.rectangle" && (a.x === b.x || a.y === b.y)) { setError("La largeur et la hauteur doivent être strictement positives."); return; }
-    const ok = tool === "studio.dessin.cote" ? addDimension(trace, p) : addShape(a, b);
-    if (ok) setTrace(null);
   }
-  function hover(e: PointerEvent<SVGSVGElement>) {
-    if (!pointsActifs) { if (survol) setSurvol(null); return; }
-    setSurvol(pose(e, tool === "studio.dessin.deplacer" && trace ? selectionSet : undefined));
-  }
-  function pointerDown(e: PointerEvent<SVGSVGElement>) {
-    clicSupprime.current = false;
-    const svg = e.currentTarget;
-    pointeurs.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    // Deux doigts : panoramique et zoom ; le geste d'un doigt en cours est abandonné.
-    if (e.pointerType === "touch" && pointeurs.current.size >= 2) { annulerGeste(); demarrerVue(svg); e.preventDefault(); return; }
-    if (e.button === 1 || (e.button === 0 && espace.current.tenu)) {
-      if (e.button === 0) espace.current.panoramique = true;
-      demarrerVue(svg); svg.setPointerCapture?.(e.pointerId); e.preventDefault(); return;
-    }
-    if (e.button !== 0 || tool !== "studio.dessin.selection" || !drawing) return;
-    const cible = (e.target as Element).closest?.("[data-studio-objet]");
-    const id = cible?.getAttribute("data-studio-objet");
-    const ecran = { x: e.clientX, y: e.clientY };
-    if (id && cible?.hasAttribute("data-studio-selectionnable")) {
-      // Maj + clic bascule l'objet ; en lecture seule, un objet se sélectionne mais ne se déplace pas.
-      if (e.shiftKey || !writable) return;
-      const base = pose(e); if (!base) return;
-      geste.current = { type: "glisser", id: e.pointerId, base, ids: selectionSet.has(id) ? selectionIds : [id], ecran, actif: false };
-      return;
-    }
-    const debut = brut(e); if (!debut) return;
-    geste.current = { type: "rectangle", id: e.pointerId, debut, ecran, ajouter: e.shiftKey, actif: false };
-  }
-  function pointerMove(e: PointerEvent<SVGSVGElement>) {
-    // Bouton relâché hors de la planche avant le seuil : le geste en attente et son pointeur sont oubliés (jamais de cadre fantôme).
-    if (e.pointerType !== "touch" && e.buttons === 0) {
-      pointeurs.current.delete(e.pointerId);
-      if (geste.current && "id" in geste.current && geste.current.id === e.pointerId && !("actif" in geste.current && geste.current.actif)) geste.current = null;
-      return;
-    }
-    if (pointeurs.current.has(e.pointerId)) pointeurs.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    const g = geste.current;
-    if (g?.type === "vue") {
-      const ids = [...g.depart.keys()].filter(id => pointeurs.current.has(id));
-      const lire = (id: number) => ecranVersPlanche(g.cadre0, g.rect0, pointeurs.current.get(id)!);
-      if (ids.length >= 2) poserCadre(pincer(g.cadre0, [g.depart.get(ids[0]!)!, g.depart.get(ids[1]!)!], [lire(ids[0]!), lire(ids[1]!)]));
-      else if (ids.length === 1) poserCadre(glisserVue(g.cadre0, g.depart.get(ids[0]!)!, lire(ids[0]!)));
-      return;
-    }
-    if (g && e.pointerId === g.id) {
-      if (!g.actif && Math.hypot(e.clientX - g.ecran.x, e.clientY - g.ecran.y) > SEUIL_GESTE_PX) {
-        g.actif = true;
-        e.currentTarget.setPointerCapture?.(e.pointerId);
-        if (g.type === "glisser") select(g.ids);
-      }
-      if (!g.actif) return;
-      if (g.type === "rectangle") { const fin = brut(e); if (fin) setRectangle({ debut: g.debut, fin, mode: modeRectangle(g.debut, fin) }); }
-      else {
-        const dest = pose(e, new Set(g.ids)); if (!dest) return;
-        setApercu({ ids: g.ids, dx: ecart(g.base.point.x, dest.point.x), dy: ecart(g.base.point.y, dest.point.y) });
-        setSurvol(dest);
-      }
-      return;
-    }
-    hover(e);
-  }
-  function pointerUp(e: PointerEvent<SVGSVGElement>) {
-    pointeurs.current.delete(e.pointerId);
-    const g = geste.current;
-    if (!g) return;
-    if (g.type === "vue") {
-      // Un panoramique n'est jamais un clic ; un doigt restant reprend le panoramique.
-      clicSupprime.current = true;
-      if (e.type !== "pointercancel" && e.pointerType === "touch" && pointeurs.current.size > 0) demarrerVue(e.currentTarget);
-      else geste.current = null;
-      return;
-    }
-    if (e.pointerId !== g.id) return;
-    geste.current = null;
-    if (!g.actif) return;
-    clicSupprime.current = true;
-    if (e.type === "pointercancel" || !drawing) { annulerGeste(); return; }
-    if (g.type === "rectangle") {
-      const fin = brut(e) ?? g.debut;
-      const ids = selectionParRectangle(drawing, g.debut, fin);
-      select(g.ajouter ? ajouter(selectionIds, ids) : ids);
-      setRectangle(null);
-      return;
-    }
-    const dest = pose(e, new Set(g.ids));
-    setApercu(null); setSurvol(null);
-    if (dest) moveSelection(g.ids, ecart(g.base.point.x, dest.point.x), ecart(g.base.point.y, dest.point.y));
-  }
-  function clickCapture(e: MouseEvent<SVGSVGElement>) {
-    if (!clicSupprime.current) return;
-    clicSupprime.current = false;
-    e.stopPropagation(); e.preventDefault();
-  }
-
-  // ——— Formulaire numérique ———
+  /** Saisie numérique : mêmes commandes que le pointeur. */
   function numeric(e: FormEvent) {
     e.preventDefault();
-    const dim = selected?.type === "dimension" ? selected : null;
-    const entered = tool === "studio.dessin.deplacer" ? [values.dx, values.dy] : tool === "studio.dessin.modifier" && dim ? [values.offset] : tool === "studio.dessin.cote" ? [values.x, values.y, values.a, values.b, values.offset] : [values.x, values.y, values.a, values.b];
-    if (!entered.every(Number.isFinite)) { setError("Saisissez des nombres finis dans tous les champs."); return; }
-    const rectangleSaisi = tool === "studio.dessin.rectangle" || tool === "studio.dessin.modifier" && selected?.type === "rectangle";
-    if (rectangleSaisi && (values.a <= 0 || values.b <= 0)) { setError("La largeur et la hauteur doivent être strictement positives."); return; }
-    if (tool === "studio.dessin.deplacer" && selectionIds.length) { moveSelection(selectionIds, values.dx, values.dy); return; }
-    if (tool === "studio.dessin.modifier" && selected) {
-      if (selected.type === "dimension") { apply([{ toolId: "studio.dessin.modifier", params: { ...selected, offset: values.offset } }]); return; }
-      apply([{ toolId: "studio.dessin.modifier", params: selected.type === "line" ? { ...selected, start: { x: values.x, y: values.y }, end: { x: values.a, y: values.b } } : { ...selected, origin: { x: values.x, y: values.y }, width: values.a, height: values.b } }]);
-      return;
-    }
-    if (tool === "studio.dessin.cote" && drawing) {
-      const sommets = pointsAccroche(drawing.objects, l => estVisible(drawing, l));
-      const debut = { x: values.x, y: values.y }, fin = { x: values.a, y: values.b };
-      addDimension({ point: debut, accroche: sommetExact(sommets, debut) }, { point: fin, accroche: sommetExact(sommets, fin) });
-      return;
-    }
-    addShape({ x: values.x, y: values.y }, tool === "studio.dessin.rectangle" ? { x: values.x + values.a, y: values.y + values.b } : { x: values.a, y: values.b });
+    const a = soumettre({ tool, values, sommetsTexte, fermee, selected, selectionIds, drawing, creation: creation() });
+    if (a.type === "erreur") setError(a.message);
+    else if (a.type === "deplacer") moveSelection(selectionIds, a.dx, a.dy);
+    else if (a.type === "decaler") offsetSelection(a.distance);
+    else if (a.type === "commandes") apply(a.commandes);
   }
 
   // ——— Outils et commandes ———
-  function cancelTrace() { setTrace(null); setSurvol(null); }
+  function cancelTrace() { setTrace(null); setSuite([]); gestes.setSurvol(null); }
   function runTool(toolId: StudioToolId) {
     if (OUTILS_MODES.has(toolId)) { setTool(toolId); cancelTrace(); setInfo(""); return; }
     if (!writable || !drawing) return;
@@ -473,13 +301,15 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       case "annuler": return undo();
       case "retablir": return redo();
       case "annuler-trace":
-        if (geste.current) annulerGeste();
+        if (gestes.enGeste()) gestes.annulerGeste();
         else if (trace) cancelTrace();
         else if (selectionIds.length) select([]);
         else setTool("studio.dessin.selection");
         return;
-      case "enregistrer": if (canSave) void save(); return;
+      case "enregistrer": if (canSave) void enr.save(); return;
       case "tout-selectionner": if (drawing) select(toutSelectionnable(drawing)); return;
+      case "terminer-polyligne": return finishPolyline(false);
+      case "fermer-polyligne": return finishPolyline(true);
       case "zoom-avant": return poserCadre(zoomerAuCentre(cadreRef.current, true));
       case "zoom-arriere": return poserCadre(zoomerAuCentre(cadreRef.current, false));
       case "cadrer": if (drawing) poserCadre(cadrer(emprise(drawing, l => estVisible(drawing, l)))); return;
@@ -501,26 +331,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     if ((id === "exporter-svg" || id === "exporter-dxf" || id === "exporter-ifc") && commands.length) setInfo("L’export porte sur la révision enregistrée affichée, pas sur les modifications non enregistrées.");
   }
   const formesChoisies = drawing ? formesSelectionnees(drawing, selectionIds) : [];
-  const toolAvailable = (t: StudioToolEntry) => {
-    if (t.nature === "lecture" || OUTILS_MODES.has(t.toolId)) return t.nature === "lecture" || writable;
-    if (!writable) return false;
-    if (t.toolId === "studio.dessin.supprimer" || t.toolId === "studio.objet.calque") return selectionIds.length > 0;
-    if (t.toolId === "studio.objet.extruder") return formesChoisies.length > 0;
-    if (t.toolId === "studio.objet.aplatir") return formesChoisies.some(o => o.extrusion);
-    return true;
-  };
-  const commandAvailable = (c: CommandeEditeur) => {
-    switch (c.id) {
-      case "annuler": return writable && !!brouillon && peutAnnuler(brouillon);
-      case "retablir": return writable && !!brouillon && peutRetablir(brouillon);
-      case "annuler-trace": return !!trace || selectionIds.length > 0 || tool !== "studio.dessin.selection";
-      case "enregistrer": return canSave;
-      case "tout-selectionner": return !!drawing && toutSelectionnable(drawing).length > 0;
-      case "zoom-avant": return cadre.w > LARGEUR_VUE.min;
-      case "zoom-arriere": return cadre.w < LARGEUR_VUE.max;
-      default: return c.ecrit ? writable : true;
-    }
-  };
+  const toolAvailable = (t: StudioToolEntry) => outilDisponible(t, { writable, selectionIds, formesChoisies });
+  const commandAvailable = (c: CommandeEditeur) => commandeDisponible(c, { writable, brouillon, drawing, trace, suite, selectionIds, tool, canSave, largeurVue: cadre.w });
   /** Lance un outil ou une commande (raccourci, palette, gestionnaire) ; `verifier` : refuse une commande indisponible. */
   function executer(cible: CibleRaccourci, verifier: boolean) {
     if (cible.type === "outil") {
@@ -536,172 +348,49 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     setDialogue(null);
     executer(e.cible, true);
   }
-  clavier.current = (e: KeyboardEvent) => {
-    const c = combinaison(e);
-    // Une boîte de dialogue ouverte (Outils, palette) garde le clavier pour elle ; Ctrl+S / Ctrl+K n'atteignent pas le navigateur.
-    if (dialogue) { if (c === "Ctrl+S" || c === "Ctrl+K") e.preventDefault(); return; }
-    const field = (e.target as Element | null)?.closest?.("input,textarea,select,[contenteditable=true]");
-    if (field && !actifDansUnChamp(c)) return;
-    const cible = cibleRaccourci(c);
-    if (!cible || !context || !drawing) return;
-    e.preventDefault();
-    // Espace : tenue, elle sert au panoramique (Espace + glisser) ; relâchée sans glisser, elle choisit la Sélection.
-    if (cible.type === "outil" && cible.toolId === "studio.dessin.selection") { if (!e.repeat && !espace.current.tenu) espace.current = { tenu: true, panoramique: false }; return; }
-    executer(cible, false);
-  };
-  relacher.current = (e: KeyboardEvent) => {
-    if (e.key !== " " || !espace.current.tenu) return;
-    const panoramique = espace.current.panoramique;
-    espace.current = { tenu: false, panoramique: false };
-    if (!panoramique && !dialogue && context && drawing) executer({ type: "outil", toolId: "studio.dessin.selection" }, false);
-  };
-
-  async function save() {
-    if (!context || !brouillon || historical || saving.current) return;
-    saving.current = true;
-    // Un nouvel essai après une erreur réseau rejoue le même lot (même requestId) : jamais de double effet. Au-delà de
-    // 500 commandes, les lots partent dans l'ordre, chacun sur la révision produite par le précédent.
-    if (!envelope.current) { envelope.current = planEnvoi(commandesEnAttente(brouillon), context.revision.id, () => crypto.randomUUID()); dernierAccuse.current = null; }
-    setPending(true); setError(""); setInfo("");
-    try {
-      for (let lot = enveloppeSuivante(envelope.current); lot; lot = enveloppeSuivante(envelope.current)) {
-        const accuse = await api.studioCommands(projectId, studyId, variantId, lot);
-        envelope.current = accuserLot(envelope.current, accuse.revision.id);
-        dernierAccuse.current = accuse;
-        if (!alive.current) return;
-      }
-      // L'historique et la tête ont changé côté serveur : les listes affichées sont relues.
-      void client.invalidateQueries({ queryKey: ["studio-revisions", projectId, studyId, variantId] });
-      void client.invalidateQueries({ queryKey: ["studio-study", projectId, studyId] });
-      // A replay acknowledges its original revision, which may no longer be the head.
-      let current: StudioContext;
-      try { current = await api.studioContext(projectId, studyId, variantId); }
-      catch {
-        if (alive.current) { setUncertain(true); setError("Sauvegarde reçue, mais version courante indisponible. Réessayez la même sauvegarde."); }
-        return;
-      }
-      if (!alive.current) return;
-      setContext(current); setBrouillon(creerBrouillon(current.revision.document)); cancelTrace();
-      const doc = current.revision.document;
-      const restants = selectionIds.filter(id => doc.objects.some(o => o.id === id) || doc.dimensions?.some(d => d.id === id));
-      setSelection(restants);
-      const seul = restants.length === 1 ? doc.objects.find(o => o.id === restants[0]) ?? doc.dimensions?.find(d => d.id === restants[0]) : undefined;
-      if (seul) properties(seul);
-      setUncertain(false); envelope.current = null; setSaved(true);
-    }
-    catch (e) {
-      if (!alive.current) return;
-      if (e instanceof ApiError && e.status < 500 && e.status !== 408) {
-        const plan = envelope.current, accuse = dernierAccuse.current;
-        setUncertain(false); envelope.current = null; dernierAccuse.current = null;
-        if (plan && accuse && envoiPartiel(plan)) {
-          // Les premiers lots sont enregistrés : le brouillon repart de la dernière révision confirmée, avec les seules
-          // commandes non envoyées en attente (un pas annulable). Rien n'est envoyé de nouveau sans « Enregistrer ».
-          const reste = commandesNonEnvoyees(plan);
-          let rebase = creerBrouillon(accuse.revision.document);
-          try { rebase = appliquerBrouillon(rebase, reste); } catch { /* impossible en pratique : mêmes commandes, même ordre */ }
-          setContext(accuse); setBrouillon(rebase); cancelTrace();
-          void client.invalidateQueries({ queryKey: ["studio-revisions", projectId, studyId, variantId] });
-          void client.invalidateQueries({ queryKey: ["studio-study", projectId, studyId] });
-          const conflit = e.status === 409;
-          setBlocked(conflit || e.status === 403 || e.status === 401);
-          setError(conflit
-            ? `Enregistrement partiel : ${plan.envoyes} lot(s) sur ${plan.lots.length} enregistré(s), puis une autre révision est devenue la version courante. Les ${reste.length} commande(s) non envoyée(s) restent dans ce brouillon, sur votre dernière révision enregistrée ; recharger la version serveur les perdra.`
-            : `Enregistrement partiel : ${plan.envoyes} lot(s) sur ${plan.lots.length} enregistré(s), la suite est refusée. Les ${reste.length} commande(s) non envoyée(s) restent en attente dans le brouillon, sur la dernière révision enregistrée.`);
-          return;
-        }
-        setBlocked(e.status === 409 || e.status === 403 || e.status === 401);
-        setError(e.status === 409
-          ? (e.code === "stale_revision" ? "Conflit de révision : une autre révision est devenue la version courante. Votre brouillon est conservé et n’a rien écrasé." : "Conflit de révision. Le brouillon est conservé.")
-          : "Enregistrement refusé. Le brouillon reste non enregistré.");
-      } else { setUncertain(true); setError("Confirmation serveur indisponible. Réessayez la même sauvegarde avant de continuer."); }
-    }
-    finally { saving.current = false; if (alive.current) setPending(false); }
-  }
+  useClavierStudio({ dialogue: !!dialogue, pret: !!context && !!drawing, commandeDisponible: commandAvailable, executer, espace: gestes.espace });
 
   if (!loading && refused(loadError)) return <StudioRefus quoi={historical ? "revision" : "variante"} />;
   const toolEntry = STUDIO_TOOLS.find(t => t.toolId === tool);
   const toResolve = drawing?.dimensions?.filter(d => d.toResolve).length ?? 0;
-  const form = tool !== "studio.dessin.selection";
-  const formDisabled = tool === "studio.dessin.deplacer" ? selectionIds.length === 0 : tool === "studio.dessin.modifier" ? !selected : false;
-  const fields: (keyof Valeurs)[] = tool === "studio.dessin.deplacer" ? ["dx", "dy"] : tool === "studio.dessin.modifier" && selected?.type === "dimension" ? ["offset"] : tool === "studio.dessin.cote" ? ["x", "y", "a", "b", "offset"] : ["x", "y", "a", "b"];
-  const sized = selected?.type === "rectangle" && tool === "studio.dessin.modifier" || tool === "studio.dessin.rectangle";
-  const label = (k: keyof Valeurs) => ({ x: "X", y: "Y", a: sized ? "Largeur" : "X final", b: sized ? "Hauteur" : "Y final", dx: "Déplacement X", dy: "Déplacement Y", offset: "Décalage" })[k];
-  const hint = !writable && !historical && context?.canWrite === false ? "Lecture seule : la planche se consulte sans modification."
-    : trace ? (tool === "studio.dessin.deplacer" ? "Point de base placé. Cliquez la destination. Échap pour annuler." : "Premier point placé. Cliquez le second point. Échap pour annuler.")
-    : tool === "studio.dessin.selection" ? "Cliquez un objet, Maj + clic pour l’ajouter ou le retirer ; glissez vers la droite pour une fenêtre, vers la gauche pour une capture ; glissez la sélection pour la déplacer."
-    : tool === "studio.dessin.cote" ? "Cote : cliquez deux points ; près d’un sommet, le point s’y accroche et la cote suit l’objet."
-    : moveWithPointer ? "Cliquez un point de base puis sa destination, ou saisissez le déplacement."
-    : "Deux clics pour dessiner, ou utilisez les valeurs numériques.";
+  const etatTrace = { outil: tool, trace, suite, modeArc };
+  const apercuForme = apercuPlanche(etatTrace, survol?.point);
+  const hint = aidePlanche({ ...etatTrace, moveWithPointer, lectureSeule: !writable && !historical && context?.canWrite === false });
   const pasAffiche = pas.toLocaleString(LOCALE, { maximumFractionDigits: 3 });
+  const etat = historical ? "Révision historique" : pending ? "Sauvegarde en cours…" : uncertain ? "Sauvegarde non confirmée" : commands.length ? "Brouillon non enregistré" : enr.saved ? "Enregistré sur le serveur" : "Version serveur chargée";
   return <section className="studio-workspace" ref={shell} aria-label="Studio" data-studio-variante={variantId} data-studio-revision-vue={historical ? revisionId : undefined}>
-    <header className="studio-heading"><div><p className="studio-eyebrow">FADI / STUDIO</p><h1>{context ? <span translate="no">{context.study.name}</span> : "Votre espace de dessin"}</h1><p>Dessin 2D · Repère local · Mètres</p></div><span className="studio-badge">Planche 2D</span></header>
-    {error && <div className="studio-alert" role="alert" data-studio-erreur-planche>{error}{blocked && <button onClick={() => { if (window.confirm(warning())) window.location.reload(); }}>Recharger la version serveur</button>}</div>}
+    <EnTeteStudio context={context} />
+    <AlerteStudio error={error} blocked={blocked} />
     {loading && <p role="status">Chargement de la planche…</p>}
-    {context && drawing && <>{historical && <div className="studio-alert studio-history-banner" data-studio-lecture-seule-revision><span>Révision historique en lecture seule. Aucune modification n’est possible ici.</span><Link to={cheminVarianteStudio(projectId, studyId, variantId)}>Revenir à la version courante</Link></div>}<div className="studio-context"><Link to={cheminProjetStudio(projectId)}>Études</Link><span translate="no">{context.variant.name}</span><span>Révision <span translate="no" title={context.revision.id}>{context.revision.id.slice(-8)}</span></span><span role="status" data-studio-etat>{historical ? "Révision historique" : pending ? "Sauvegarde en cours…" : uncertain ? "Sauvegarde non confirmée" : commands.length ? "Brouillon non enregistré" : saved ? "Enregistré sur le serveur" : "Version serveur chargée"}</span><button type="button" aria-pressed={commentaires} onClick={() => setCommentaires(v => !v)} data-studio-basculer-commentaires>Commentaires</button></div>{!context.canWrite && <p role="status" data-studio-lecture-seule>Lecture seule</p>}
+    {context && drawing && <><BandeauVariante projectId={projectId} studyId={studyId} variantId={variantId} context={context} historical={historical} etat={etat} commentaires={commentaires} surCommentaires={() => setCommentaires(v => !v)} />
     <BarreOutils outil={tool} outilDisponible={toolAvailable} commandeDisponible={commandAvailable} libelleCommande={uncertain ? { enregistrer: "Réessayer la sauvegarde" } : undefined}
       basculeActive={{ "accrochage-sommets": accrocheSommets, "accrochage-grille": accrocheGrille, "vue-3d": vue3d }} lienCommande={liens} surOutil={runTool} surCommande={runCommand} surLien={surLien} />
     <p className="studio-undo-scope" data-studio-annuler-portee>{`Annuler et Rétablir ne portent que sur les modifications non enregistrées (${commands.length} commande(s) en attente) ; une révision enregistrée ne s’annule pas ici.`}</p>
     <div className="studio-editor"><div className="studio-sheet"><div className="studio-sheet-caption"><span>Dessin et modélisation</span><span data-studio-pas-grille={pas}>{`Grille ${pasAffiche} m`}</span><span>1 unité = 1 m</span></div>
-      {vue3d && <LimiteVue3D><Suspense fallback={<p role="status">Chargement de la vue 3D…</p>}><Vue3DStudio doc={drawing} /></Suspense></LimiteVue3D>}
-      {!vue3d && <Dessin2D svgRef={refPlanche} doc={apercuDoc ?? drawing} cadre={cadre} pas={pas} outil={tool} selection={selectionSet} trace={trace} survol={survol} rectangle={rectangle} glissement={!!apercu}
+      {vue3d && <Vue3D doc={drawing} />}
+      {!vue3d && <Dessin2D svgRef={gestes.refPlanche} doc={apercuDoc ?? drawing} cadre={cadre} pas={pas} outil={tool} selection={selectionSet} trace={trace} survol={survol} rectangle={gestes.rectangle} glissement={!!gestes.apercu}
+        apercuForme={apercuForme} sommetsPoses={suite}
         clicsVersPlanche={o => OUTILS_TRACE.has(tool) || (tool === "studio.dessin.deplacer" && (!!trace || selectionSet.has(o.id)))}
-        surPlanche={board} surSurvol={pointerMove} surPointeurBas={pointerDown} surPointeurHaut={pointerUp} surClicCapture={clickCapture} surSelection={(id, plus) => select(plus ? basculer(selectionIds, id) : [id])} />}
+        surPlanche={board} surSurvol={gestes.pointerMove} surPointeurBas={gestes.pointerDown} surPointeurHaut={gestes.pointerUp} surClicCapture={gestes.clickCapture} surSelection={(id, plus) => select(plus ? basculer(selectionIds, id) : [id])} />}
       <p className="studio-hint">{hint}</p>
       <p className="studio-hint" data-studio-aide-vue>Molette : zoom sur le pointeur ; bouton du milieu, Espace + glisser ou deux doigts : déplacer la vue.</p>
       {toResolve > 0 && <p className="studio-alert" role="status" data-studio-cotes-a-resoudre={toResolve}>{`${toResolve} cote(s) à résoudre : un objet coté a été supprimé.`}</p>}
       {info && <p className="studio-info" role="status">{info}</p>}
       {actif && !actif.visible && OUTILS_TRACE.has(tool) && <p className="studio-info">Le calque actif est masqué : ce que vous dessinez n’apparaîtra pas.</p>}
     </div>
-    <aside className="studio-properties" aria-label="Propriétés du dessin"><h2>{toolEntry?.libelleFR}</h2><p>{`${drawing.objects.length} objets · ${drawing.dimensions?.length ?? 0} cotes`}</p>
-      {selectionIds.length > 0 && <div className="studio-selection" data-studio-selection={selected?.id} data-studio-selection-compte={selectionIds.length}>
-        {selected ? <p>Objet sélectionné : <span translate="no">{selected.id.slice(0, 8)}</span></p> : <p>{`${selectionIds.length} objets sélectionnés`}</p>}
-        {selected?.type === "dimension" && (selected.toResolve
-          ? <p data-studio-cote-statut="a-resoudre">À résoudre : un objet coté a été supprimé.</p>
-          : <p data-studio-cote-statut={selected.links.start || selected.links.end ? "liee" : "libre"}>Valeur mesurée : <span translate="no">{formaterMetres(valeurCote(selected) ?? 0, LOCALE)}</span> · {selected.links.start || selected.links.end ? "Associée : suit l’objet coté." : "Libre."}</p>)}
-        <button type="button" disabled={!writable} onClick={() => runTool("studio.dessin.supprimer")} data-studio-supprimer-selection><Icon name="studio-delete" size={18} /> Supprimer la sélection</button>
-      </div>}
-      {formesChoisies.length > 0 && <FormulaireExtrusion valeurs={extrusion} modifiable={writable} formes={formesChoisies.length} extrudes={formesChoisies.filter(o => o.extrusion).length}
-        surValeurs={setExtrusion} surExtruder={extrude} surAplatir={() => runTool("studio.objet.aplatir")} />}
-      {form && <form onSubmit={numeric}><fieldset disabled={!writable || formDisabled || (tool === "studio.dessin.modifier" && selected?.type === "dimension" && selected.toResolve)}><legend>Valeurs en mètres</legend>{fields.map(k => <label key={k}>{label(k)}<input type="number" step="any" required value={Number.isFinite(values[k]) ? values[k] : ""} onChange={e => setValues(v => ({ ...v, [k]: e.target.valueAsNumber }))} /></label>)}<button type="submit">{tool === "studio.dessin.deplacer" ? "Déplacer la sélection" : tool === "studio.dessin.modifier" ? "Modifier la sélection" : "Ajouter au dessin"}</button></fieldset></form>}
-      <PanneauCalques doc={drawing} actif={actif?.id ?? STUDIO_DEFAULT_LAYER_ID} modifiable={writable} nom={nomCalque} nomRef={nomRef} surActif={id => setCalqueActif(id)} surNom={setNomCalque} surReglage={setLayer} surRenommer={renameLayer} />
-      <div className="studio-note"><strong>Une planche autonome</strong><p>Les tracés restent en brouillon jusqu’à la confirmation du serveur. Aucun modèle 3D n’est nécessaire.</p></div></aside></div>
+    <PanneauProprietes titre={toolEntry?.libelleFR} drawing={drawing} selectionIds={selectionIds} selected={selected} writable={writable} formesChoisies={formesChoisies} extrusion={extrusion}
+      surExtrusion={setExtrusion} surExtruder={extrude} surAplatir={() => runTool("studio.objet.aplatir")} surSupprimer={() => runTool("studio.dessin.supprimer")}
+      formulaire={tool !== "studio.dessin.selection" && <FormulaireValeurs tool={tool} selected={selected} desactive={!writable || formulaireInactif(tool, selectionIds, selected) || (tool === "studio.dessin.modifier" && selected?.type === "dimension" && selected.toResolve)}
+        values={values} surValeur={(k, v) => setValues(x => ({ ...x, [k]: v }))} modeArc={modeArc} surModeArc={m => { setModeArc(m); cancelTrace(); }}
+        sommetsTexte={sommetsTexte} surSommets={setSommetsTexte} fermee={fermee} surFermee={setFermee} surSoumettre={numeric} />}
+      calques={<PanneauCalques doc={drawing} actif={actif?.id ?? STUDIO_DEFAULT_LAYER_ID} modifiable={writable} nom={nomCalque} nomRef={nomRef} surActif={id => setCalqueActif(id)} surNom={setNomCalque} surReglage={setLayer} surRenommer={renameLayer} />} /></div>
     {commentaires && <div id="studio-commentaires"><PanneauCommentaires projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} revision={context.revision.document} dessin={drawing}
       selection={selectionIds} canWrite={!historical && context.canWrite} surSelection={ids => { setTool("studio.dessin.selection"); cancelTrace(); select(ids); }} /></div>}
     <RevisionsPanel projectId={projectId} studyId={studyId} variantId={variantId} headRevisionId={context.variant.headRevisionId} shownRevisionId={context.revision.id} />
-    {dialogue === "outils" && <GestionnaireOutils disponible={entreeDisponible} surExecuter={executerEntree} surFermer={() => setDialogue(null)} />}
-    {dialogue === "palette" && <PaletteCommandes disponible={entreeDisponible} surExecuter={executerEntree} surFermer={() => setDialogue(null)} />}
-    {dialogue === "import-dxf" && <DialogueImportDxf doc={drawing} modifiable={writable} surFermer={() => setDialogue(null)}
-      surAjouter={(cs, r) => { if (!apply(cs)) return false; setDialogue(null); setInfo(`Import DXF ajouté au brouillon : ${r.rapport.entites.total} objet(s). Enregistrez pour l’envoyer au serveur.`); return true; }} />}
-    {dialogue === "feuille" && <PanneauFeuille doc={context.revision.document} brouillonNonEnregistre={commands.length > 0} surFermer={() => setDialogue(null)}
-      cartouche={cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })} />}</>}
-  </section>;
-}
-
-const SOURCES: Record<string, string> = { "study-initialization": "Création de l’étude", "variant-initialization": "Création de la variante", "authenticated-session": "Enregistrement" };
-
-/** Historique de la variante, de la plus récente à la plus ancienne ; chaque révision s'ouvre en lecture seule. */
-function RevisionsPanel({ projectId, studyId, variantId, headRevisionId, shownRevisionId }: { projectId: string; studyId: string; variantId: string; headRevisionId: string; shownRevisionId: string }) {
-  const { user } = useAuth();
-  const revisions = useQuery({ queryKey: ["studio-revisions", projectId, studyId, variantId], queryFn: () => api.studioRevisions(projectId, studyId, variantId), retry: (n, e) => !refused(e) && n < 1 });
-  const date = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(LOCALE, { dateStyle: "medium", timeStyle: "short" }); };
-  return <section className="studio-revisions" aria-labelledby="studio-revisions-titre" data-studio-revisions>
-    <h2 id="studio-revisions-titre">Historique des révisions</h2>
-    <p className="studio-revisions-sub">De la plus récente à la plus ancienne. Une révision passée s’ouvre en lecture seule.</p>
-    {revisions.isPending && <p role="status">Chargement de l’historique…</p>}
-    {revisions.isError && <p role="alert">Historique indisponible. <button type="button" onClick={() => void revisions.refetch()}>Réessayer</button></p>}
-    {revisions.data?.revisions.length === 0 && <p>Aucune révision.</p>}
-    {!!revisions.data?.revisions.length && <ol className="studio-revisions-list">{revisions.data.revisions.map(r => {
-      const head = r.id === headRevisionId, shown = r.id === shownRevisionId;
-      return <li key={r.id} data-studio-revision={r.id} data-studio-revision-tete={head || undefined} aria-current={shown ? "true" : undefined}>
-        <Link to={cheminVarianteStudio(projectId, studyId, variantId, head ? null : r.id)}><span>Révision</span> <span translate="no" title={r.id}>{r.id.slice(-8)}</span></Link>
-        <span translate="no">{date(r.createdAt)}</span>
-        {SOURCES[r.source] ? <span>{SOURCES[r.source]}</span> : <span translate="no">{r.source}</span>}
-        <span>{user && r.authorId === user.id ? "par vous" : "par un autre membre"}</span>
-        {head && <strong className="studio-revision-tag">Version courante</strong>}
-        {shown && !head && <strong className="studio-revision-tag">Affichée</strong>}
-        {!head && <Link to={cheminComparaisonStudio(projectId, studyId, { variantId, revisionId: r.id }, { variantId, revisionId: null })} data-studio-comparer-tete>Comparer avec la tête</Link>}
-      </li>;
-    })}</ol>}
+    {drawing && <PanneauQuantites doc={drawing} lectureSeule={!writable} />}
+    <DialoguesStudio dialogue={dialogue} surFermer={() => setDialogue(null)} disponible={entreeDisponible} surExecuter={executerEntree} drawing={drawing} modifiable={writable}
+      surImporter={(cs, r) => { if (!apply(cs)) return false; setDialogue(null); setInfo(`Import DXF ajouté au brouillon : ${r.rapport.entites.total} objet(s). Enregistrez pour l’envoyer au serveur.`); return true; }}
+      revision={context.revision.document} brouillonNonEnregistre={commands.length > 0}
+      cartouche={() => cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })} /></>}
   </section>;
 }

@@ -1,4 +1,9 @@
-import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument, type StudioDocument, type StudioLine, type StudioRectangle, type StudioShape } from "./document-2d.js";
+import { studioSignedArea } from "./courbes.js";
+import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument, type StudioDocument, type StudioExtrusion, type StudioPoint, type StudioShape } from "./document-2d.js";
+import { bool, ref, refs, Step, studioIfcGuid, studioStepReal, studioStepString, type IfcConstruit, type IfcContexte, type StudioIfcSummary } from "./exporteurs/ifc-step.js";
+import { typeObjet } from "./objets/index.js";
+
+export { studioIfcGuid, studioStepReal, studioStepString, type StudioIfcSummary } from "./exporteurs/ifc-step.js";
 
 /**
  * Export IFC 4.3 (IFC4X3_ADD2, fichier STEP ISO 10303-21) d'un document Studio (`studio-document/1`). Écriture directe,
@@ -16,11 +21,19 @@ import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument,
  *   sur la ligne, placé et orienté le long de la ligne, à la cote `base`, sur la hauteur `height`) ;
  *   ligne sans épaisseur → `IfcBuildingElementProxy` portant une surface verticale (`IfcTriangulatedFaceSet` ouvert) ;
  *   rectangle → `IfcBuildingElementProxy` prisme (ni dalle ni poteau ne sont devinés) ;
+ *   cercle → `IfcBuildingElementProxy` prisme d'un `IfcCircleProfileDef` (exact) ;
+ *   polyligne fermée → `IfcBuildingElementProxy` prisme d'un `IfcArbitraryClosedProfileDef` sur son contour discrétisé
+ *   (arcs en `STUDIO_SEGMENTS_PAR_TOUR` segments par tour, déterministe) ;
+ *   arc avec épaisseur → `IfcWall` (profil de couronne discrétisé, centré sur l'arc) ; arc sans épaisseur et polyligne
+ *   ouverte → `IfcBuildingElementProxy` surface verticale (`IfcTriangulatedFaceSet` ouvert le long du tracé discrétisé) ;
  *   les types prédéfinis restent `.NOTDEFINED.` ;
  * - objets non extrudés et cotes : non exportés en 3D, comptés dans le jeu de propriétés `Fadi_StudioExport` du projet ;
  * - calques : `IfcPresentationLayerWithStyle` (nom du calque, identifiant Studio, visibilité `LayerOn`, verrou
  *   `LayerBlocked`) sur les éléments de représentation ; les objets des calques masqués sont exportés, calque éteint ;
  * - identités : GlobalId dérivé de la clé du document et de l'identifiant Studio ; l'identifiant est aussi le `Tag`.
+ *
+ * L'élément de chaque objet extrudé est écrit par son type (`objets/<type>.ts`, `ifc`) avec le contexte `IfcContexte` ;
+ * ce module écrit l'en-tête, la structure spatiale, les jeux de propriétés et les calques.
  */
 
 export const STUDIO_IFC_SCHEMA = "IFC4X3_ADD2" as const;
@@ -38,103 +51,12 @@ export interface StudioIfcMeta {
   key?: string;
 }
 
-/** Effectifs de l'export : ce qui devient 3D et ce qui ne l'est pas. */
-export interface StudioIfcSummary {
-  walls: number;
-  surfaces: number;
-  prisms: number;
-  nonExtruded: number;
-  dimensions: number;
-  /** Objets exportés dont le calque est masqué (exportés calque éteint). */
-  onHiddenLayers: number;
-}
-
-// ——— STEP ———
-
-/** Chaîne STEP : apostrophes et barres obliques inverses doublées, hors ASCII imprimable en `\X2\…\X0\`. */
-export function studioStepString(t: string): string {
-  let out = "";
-  let ext = "";
-  const flush = () => {
-    if (ext) {
-      out += `\\X2\\${ext}\\X0\\`;
-      ext = "";
-    }
-  };
-  for (let i = 0; i < t.length; i++) {
-    const c = t.charCodeAt(i);
-    if (c >= 0x20 && c <= 0x7e) {
-      flush();
-      out += c === 0x27 ? "''" : c === 0x5c ? "\\\\" : t[i];
-    } else if (c >= 0x20 || c === 0x09) ext += c.toString(16).toUpperCase().padStart(4, "0");
-    // Les autres contrôles (fins de ligne comprises) sont retirés.
-  }
-  flush();
-  return `'${out}'`;
-}
-
-/** Réel STEP : toujours un point décimal ; arrondi au nanomètre. */
-export function studioStepReal(v: number): string {
-  if (!Number.isFinite(v)) throw new StudioValidationError("ifc", "nombre fini attendu");
-  const r = Math.round(v * 1e9) / 1e9;
-  if (r === 0) return "0.";
-  if (Number.isInteger(r) && Math.abs(r) < 1e21) return `${r}.`;
-  const s = String(r);
-  if (s.includes("e")) {
-    const [m, e] = s.split("e");
-    return `${m!.includes(".") ? m : `${m}.`}E${e}`;
-  }
-  return s;
-}
-
-/** FNV-1a 64 bits (deux moitiés de 32 bits), en hexadécimal sur 16 caractères. */
-function fnv(text: string): string {
-  let h1 = 0x811c9dc5;
-  let h2 = 0xcbf29ce4;
-  for (let i = 0; i < text.length; i++) {
-    const c = text.charCodeAt(i);
-    h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;
-    h2 = Math.imul(h2 ^ ((c * 31 + (h1 & 0xff)) & 0xffff), 0x01000193) >>> 0;
-  }
-  return h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0");
-}
-
-const GUID_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$";
-
-/** GlobalId IFC déterministe (22 caractères base 64 IFC, premier caractère 0–3 : 128 bits). */
-export function studioIfcGuid(key: string): string {
-  let n = BigInt(`0x${[0, 1].map((k) => fnv(`${k}:${key}`)).join("")}`);
-  let out = "";
-  for (let i = 0; i < 22; i++) {
-    out = GUID_CHARS[Number(n & 63n)]! + out;
-    n >>= 6n;
-  }
-  return GUID_CHARS[GUID_CHARS.indexOf(out[0]!) & 3]! + out.slice(1);
-}
-
-class Step {
-  readonly lines: string[] = [];
-  add(entity: string): number {
-    this.lines.push(`#${this.lines.length + 1}=${entity};`);
-    return this.lines.length;
-  }
-}
-const ref = (n: number) => `#${n}`;
-const refs = (ns: readonly number[]) => `(${ns.map(ref).join(",")})`;
-const bool = (b: boolean) => (b ? ".T." : ".F.");
-
 function metaText(value: unknown, path: string): string {
   if (typeof value !== "string" || !value.trim()) throw new StudioValidationError(path, "texte non vide attendu");
   return value;
 }
 
 // ——— Export ———
-
-interface Built {
-  element: number;
-  item: number;
-  layerId: string;
-}
 
 /** Fichier IFC4X3_ADD2 du document (validé d'abord). */
 export function exportStudioIfc(input: StudioDocument, meta: StudioIfcMeta): string {
@@ -202,61 +124,39 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
   const layers = doc.layers ?? [];
   const layerOf = (o: StudioShape) => o.layerId ?? STUDIO_DEFAULT_LAYER_ID;
   const hiddenLayers = new Set(layers.filter((l) => !l.visible).map((l) => l.id));
-  const built: Built[] = [];
+  const built: IfcConstruit[] = [];
   const summary: StudioIfcSummary = { walls: 0, surfaces: 0, prisms: 0, nonExtruded: 0, dimensions: doc.dimensions?.length ?? 0, onHiddenLayers: 0 };
 
-  const wall = (o: StudioLine & { extrusion: NonNullable<StudioLine["extrusion"]> }, thickness: number): Built => {
-    const dx = o.end.x - o.start.x, dy = o.end.y - o.start.y;
-    const l = Math.hypot(dx, dy);
-    const placement = placed(o.start.x, o.start.y, o.extrusion.base, dx / l, dy / l);
-    const item = rectangleSolid(l / 2, 0, l, thickness, o.extrusion.height);
-    const axisCurve = s.add(`IFCPOLYLINE(${refs([pt2(0, 0), pt2(l, 0)])})`);
-    // Corps d'abord : les lecteurs qui ne prennent qu'une représentation construisent le volume.
-    const reps = [
-      s.add(`IFCSHAPEREPRESENTATION(${ref(body)},'Body','SweptSolid',${refs([item])})`),
-      s.add(`IFCSHAPEREPRESENTATION(${ref(axis)},'Axis','Curve2D',${refs([axisCurve])})`),
-    ];
-    const element = s.add(`IFCWALL(${gid(o.id)},$,${studioStepString(o.id)},$,$,${ref(placement)},${ref(shape(reps))},${studioStepString(o.id)},.NOTDEFINED.)`);
-    summary.walls++;
-    return { element, item, layerId: layerOf(o) };
+  /** Profil fermé discrétisé (coordonnées absolues du plan, sens trigonométrique), extrudé depuis la cote de base. */
+  const arbitrarySolid = (ring: StudioPoint[], depth: number) => {
+    const r = studioSignedArea(ring) < 0 ? [...ring].reverse() : ring;
+    const curve = s.add(`IFCPOLYLINE(${refs([...r, r[0]!].map((p) => pt2(p.x, p.y)))})`);
+    const profile = s.add(`IFCARBITRARYCLOSEDPROFILEDEF(.AREA.,$,${ref(curve)})`);
+    return s.add(`IFCEXTRUDEDAREASOLID(${ref(profile)},$,${ref(zAxis)},${studioStepReal(depth)})`);
   };
-  const surface = (o: StudioLine & { extrusion: NonNullable<StudioLine["extrusion"]> }): Built => {
-    const dx = o.end.x - o.start.x, dy = o.end.y - o.start.y;
-    const l = Math.hypot(dx, dy), h = o.extrusion.height;
-    const placement = placed(o.start.x, o.start.y, o.extrusion.base, dx / l, dy / l);
-    // Surface verticale dans le plan local xz : (0,0,0) (l,0,0) (l,0,h) (0,0,h), deux triangles, ouverte.
-    const coords = [[0, 0, 0], [l, 0, 0], [l, 0, h], [0, 0, h]].map((p) => `(${p.map(studioStepReal).join(",")})`).join(",");
+  const proxy = (o: StudioShape, description: string, item: number, representation: "SweptSolid" | "Tessellation", placement: number) => {
+    const rep = s.add(`IFCSHAPEREPRESENTATION(${ref(body)},'Body','${representation}',${refs([item])})`);
+    return s.add(`IFCBUILDINGELEMENTPROXY(${gid(o.id)},$,${studioStepString(o.id)},${studioStepString(description)},$,${ref(placement)},${ref(shape([rep]))},${studioStepString(o.id)},.NOTDEFINED.)`);
+  };
+  /** Surface verticale ouverte le long d'un tracé discrétisé (coordonnées absolues, z de 0 à h au-dessus de la base). */
+  const stripItem = (path: StudioPoint[], h: number) => {
+    const n = path.length;
+    const coords = [...path.map((p) => [p.x, p.y, 0]), ...path.map((p) => [p.x, p.y, h])].map((p) => `(${p.map(studioStepReal).join(",")})`).join(",");
     const list = s.add(`IFCCARTESIANPOINTLIST3D((${coords}),$)`);
-    const item = s.add(`IFCTRIANGULATEDFACESET(${ref(list)},$,.F.,((1,2,3),(1,3,4)),$)`);
-    const rep = s.add(`IFCSHAPEREPRESENTATION(${ref(body)},'Body','Tessellation',${refs([item])})`);
-    const element = s.add(`IFCBUILDINGELEMENTPROXY(${gid(o.id)},$,${studioStepString(o.id)},${studioStepString("Surface verticale (ligne extrudée sans épaisseur)")},$,${ref(placement)},${ref(shape([rep]))},${studioStepString(o.id)},.NOTDEFINED.)`);
-    summary.surfaces++;
-    return { element, item, layerId: layerOf(o) };
+    const faces: string[] = [];
+    for (let i = 1; i < n; i++) faces.push(`(${i},${i + 1},${n + i + 1})`, `(${i},${n + i + 1},${n + i})`);
+    return s.add(`IFCTRIANGULATEDFACESET(${ref(list)},$,.F.,(${faces.join(",")}),$)`);
   };
-  const prism = (o: StudioRectangle & { extrusion: NonNullable<StudioRectangle["extrusion"]> }): Built => {
-    const placement = placed(o.origin.x, o.origin.y, o.extrusion.base);
-    const item = rectangleSolid(o.width / 2, o.height / 2, o.width, o.height, o.extrusion.height);
-    const rep = s.add(`IFCSHAPEREPRESENTATION(${ref(body)},'Body','SweptSolid',${refs([item])})`);
-    const element = s.add(`IFCBUILDINGELEMENTPROXY(${gid(o.id)},$,${studioStepString(o.id)},${studioStepString("Prisme (rectangle extrudé)")},$,${ref(placement)},${ref(shape([rep]))},${studioStepString(o.id)},.NOTDEFINED.)`);
-    summary.prisms++;
-    return { element, item, layerId: layerOf(o) };
-  };
+  const contexte: IfcContexte = { s, zAxis, body, axis, summary, gid, pt2, shape, placed, rectangleSolid, arbitrarySolid, proxy, stripItem, layerOf };
 
   for (const o of doc.objects) {
     if (!o.extrusion) { summary.nonExtruded++; continue; }
-    let b: Built;
-    if (o.type === "line") {
-      const e = o.extrusion;
-      b = e.thickness !== undefined ? wall({ ...o, extrusion: e }, e.thickness) : surface({ ...o, extrusion: e });
-      pset(`object|${o.id}`, "Fadi_StudioExtrusion", b.element, [
-        prop("StudioId", label(o.id)), prop("Base", length(e.base)), prop("Height", length(e.height)),
-        ...(e.thickness !== undefined ? [prop("Thickness", length(e.thickness))] : []),
-      ]);
-    } else {
-      const e = o.extrusion;
-      b = prism({ ...o, extrusion: e });
-      pset(`object|${o.id}`, "Fadi_StudioExtrusion", b.element, [prop("StudioId", label(o.id)), prop("Base", length(e.base)), prop("Height", length(e.height))]);
-    }
+    const e: StudioExtrusion = o.extrusion;
+    const b = typeObjet(o).ifc(o, e, contexte);
+    pset(`object|${o.id}`, "Fadi_StudioExtrusion", b.element, [
+      prop("StudioId", label(o.id)), prop("Base", length(e.base)), prop("Height", length(e.height)),
+      ...(e.thickness !== undefined ? [prop("Thickness", length(e.thickness))] : []),
+    ]);
     if (hiddenLayers.has(b.layerId)) summary.onHiddenLayers++;
     built.push(b);
   }

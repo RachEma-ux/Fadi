@@ -14,12 +14,12 @@ describe("adresses de Studio", () => {
 
   it("projet : identifiant opaque, aller-retour exact", () => {
     const id = "3f2b6c1e-9a4d-4c55-8e0f-0a1b2c3d4e5f";
-    expect(lireRouteStudio(cheminProjetStudio(id))).toEqual({ vue: "projet", projectId: id });
-    expect(lireRouteStudio(`/studio/projets/${id}/`)).toEqual({ vue: "projet", projectId: id });
+    expect(lireRouteStudio(cheminProjetStudio(id))).toEqual({ vue: "projet", projectId: id, archives: false });
+    expect(lireRouteStudio(`/studio/projets/${id}/`)).toEqual({ vue: "projet", projectId: id, archives: false });
   });
 
   it("étude : projet et étude opaques, aller-retour exact", () => {
-    expect(lireRouteStudio(cheminEtudeStudio("p_1", "studio_study_2"))).toEqual({ vue: "etude", projectId: "p_1", studyId: "studio_study_2" });
+    expect(lireRouteStudio(cheminEtudeStudio("p_1", "studio_study_2"))).toEqual({ vue: "etude", projectId: "p_1", studyId: "studio_study_2", archives: false });
     expect(lireRouteStudio("/studio/projets/p_1/etudes").vue).toBe("inconnue");
     expect(lireRouteStudio("/studio/projets/p_1/etudes/s_2/x").vue).toBe("inconnue");
     expect(lireRouteStudio("/studio/projets/p_1/autre/s_2").vue).toBe("inconnue");
@@ -67,6 +67,28 @@ describe("adresses de Studio", () => {
     }
     expect(lireRouteStudio(`${chemin}/x`).vue).toBe("inconnue");
     expect(lireRouteStudio("/studio/projets/p_1/etudes/s_2/comparaison").vue).toBe("inconnue");
+  });
+
+  it("archives=1 sur un projet ou une étude affiche les archives, aller-retour exact", () => {
+    expect(cheminProjetStudio("p_1", { archives: true })).toBe("/studio/projets/p_1?archives=1");
+    expect(lire(cheminProjetStudio("p_1", { archives: true }))).toEqual({ vue: "projet", projectId: "p_1", archives: true });
+    expect(cheminEtudeStudio("p_1", "s_2", { archives: true })).toBe("/studio/projets/p_1/etudes/s_2?archives=1");
+    expect(lire(cheminEtudeStudio("p_1", "s_2", { archives: true }))).toEqual({ vue: "etude", projectId: "p_1", studyId: "s_2", archives: true });
+    expect(cheminProjetStudio("p_1", { archives: false })).not.toContain("?");
+    expect(cheminEtudeStudio("p_1", "s_2", { archives: false })).not.toContain("?");
+    // Les chemins dérivés de l'étude ne portent jamais le paramètre des archives.
+    expect(cheminVarianteStudio("p_1", "s_2", "v_3")).toBe("/studio/projets/p_1/etudes/s_2/variantes/v_3");
+  });
+
+  it("archives : valeur autre que 1, répétée, vide, ou ailleurs que sur un projet ou une étude → adresse non reconnue", () => {
+    for (const chemin of ["/studio/projets/p_1", "/studio/projets/p_1/etudes/s_2"]) {
+      for (const q of ["?archives=", "?archives=0", "?archives=oui", "?archives=1&archives=1", "?archives=1&x=1", "?archive=1"]) {
+        expect(lireRouteStudio(chemin, q).vue).toBe("inconnue");
+      }
+    }
+    expect(lireRouteStudio("/studio", "?archives=1").vue).toBe("inconnue");
+    expect(lireRouteStudio("/studio/projets/p_1/etudes/s_2/variantes/v_3", "?archives=1").vue).toBe("inconnue");
+    expect(lireRouteStudio("/studio/projets/p_1/etudes/s_2/comparer", "?archives=1").vue).toBe("inconnue");
   });
 
   it("paramètre sur l'accueil, un projet ou une étude → adresse non reconnue", () => {
