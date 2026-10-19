@@ -138,7 +138,12 @@ describe("Studio : export IFC4X3_ADD2", () => {
   });
 
   it("chaînes et réels STEP", () => {
-    expect(studioStepString("l'a\\b\né")).toBe("'l''a\\\\b\\X2\\00E9\\X0\\'");
+    // Fins de ligne encodées (LF, CR), jamais retirées ; autres contrôles retirés.
+    expect(studioStepString("l'a\\b\né")).toBe("'l''a\\\\b\\X2\\000A00E9\\X0\\'");
+    expect(studioStepString("a\r\nb\u0001c")).toBe("'a\\X2\\000D000A\\X0\\bc'");
+    // Au-delà de U+FFFF : un point de code en \X4\, jamais une paire de substitution.
+    expect(studioStepString("é😀x𝄞")).toBe("'\\X2\\00E9\\X0\\\\X4\\0001F600\\X0\\x\\X4\\0001D11E\\X0\\'");
+    expect(studioStepString("😀😀")).toBe("'\\X4\\0001F600\\X0\\\\X4\\0001F600\\X0\\'");
     expect(studioStepReal(2)).toBe("2.");
     expect(studioStepReal(-0)).toBe("0.");
     expect(studioStepReal(0.1 + 0.2)).toBe("0.3");

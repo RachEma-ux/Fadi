@@ -9758,6 +9758,7 @@
 "Sélectionnez d’abord un mur, une ouverture ou un objet extrudé.": "First select a wall, an opening or an extruded object.",
 "Saisissez le nom de la propriété.": "Enter the property name.",
 "Saisissez une valeur numérique, ou choisissez « Non évaluée ».": "Enter a numeric value, or choose “Not evaluated”.",
+"Nombre hors des valeurs représentables : saisissez un nombre fini.": "Number outside the representable values: enter a finite number.",
 "Saisissez l’unité de la valeur numérique : aucune unité n’est proposée.": "Enter the unit of the numeric value: no unit is suggested.",
 "Saisissez la valeur, ou choisissez « Non évaluée ».": "Enter the value, or choose “Not evaluated”.",
 "Sélectionnez d’abord l’objet qui porte la propriété.": "First select the object that carries the property.",

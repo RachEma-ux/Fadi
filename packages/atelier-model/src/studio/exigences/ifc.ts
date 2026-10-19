@@ -1,4 +1,4 @@
-import { refs, studioStepReal, studioStepString, type Step } from "../exporteurs/ifc-step.js";
+import { refs, studioStepRealDeclare, studioStepString, type Step } from "../exporteurs/ifc-step.js";
 import { StudioValidationError } from "../noyau/validation.js";
 import type { StudioPropriete } from "./proprietes.js";
 
@@ -15,6 +15,9 @@ import type { StudioPropriete } from "./proprietes.js";
  *   nombre en `m` → `IfcLengthMeasure`, en `m2` / `m²` → `IfcAreaMeasure`, en `m3` / `m³` → `IfcVolumeMeasure` (unités SI
  *   du projet IFC) ; nombre d'une autre unité → `IfcReal`, l'unité déclarée écrite dans la description ;
  *   texte → `IfcLabel` (255 caractères au plus, borne du type), au-delà `IfcText` ;
+ * - nombre écrit sans arrondi (`studioStepRealDeclare`, aller-retour exact) : la valeur déclarée n'est jamais modifiée ;
+ * - GlobalId des jeux et des relations : clé séparée par `\0`, caractère qu'un identifiant Studio ne peut pas contenir
+ *   (`identifier`) ; aucun identifiant d'objet ne peut donc reproduire la clé du jeu d'un autre objet ;
  * - la source déclarée (et l'unité d'un `IfcReal` ou d'un texte) est écrite dans la description (`Specification`).
  * Le modèle des propriétés n'accepte que des nombres et des textes : aucun `IfcBoolean` n'est écrit.
  */
@@ -35,9 +38,9 @@ export function studioIfcValeurPropriete(p: StudioPropriete): { valeur: string; 
   let valeur: string;
   if (typeof p.valeur === "number") {
     const mesure = p.unite !== undefined && Object.hasOwn(MESURES, p.unite) ? MESURES[p.unite] : undefined;
-    if (mesure) valeur = `${mesure}(${studioStepReal(p.valeur)})`;
+    if (mesure) valeur = `${mesure}(${studioStepRealDeclare(p.valeur)})`;
     else {
-      valeur = `IFCREAL(${studioStepReal(p.valeur)})`;
+      valeur = `IFCREAL(${studioStepRealDeclare(p.valeur)})`;
       if (p.unite !== undefined) description.push(`Unité déclarée : ${p.unite}`);
     }
   } else {
@@ -74,8 +77,8 @@ export function studioIfcProprietes(
     exportees++;
   }
   for (const [cibleId, props] of parCible) {
-    const set = s.add(`IFCPROPERTYSET(${gid(`pset|declared|${cibleId}`)},$,${studioStepString(STUDIO_IFC_PSET_PROPRIETES)},$,${refs(props)})`);
-    s.add(`IFCRELDEFINESBYPROPERTIES(${gid(`rel-pset|declared|${cibleId}`)},$,$,$,(#${entites.get(cibleId)}),#${set})`);
+    const set = s.add(`IFCPROPERTYSET(${gid(`pset\0declared\0${cibleId}`)},$,${studioStepString(STUDIO_IFC_PSET_PROPRIETES)},$,${refs(props)})`);
+    s.add(`IFCRELDEFINESBYPROPERTIES(${gid(`rel-pset\0declared\0${cibleId}`)},$,$,$,(#${entites.get(cibleId)}),#${set})`);
   }
   return { exportees, nonEvaluees };
 }
