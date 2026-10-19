@@ -75,6 +75,8 @@ try {
     await p.locator("[data-studio-barre-etat]").waitFor();
   };
   const actif = () => page.locator("[data-studio-domaines] a[aria-current=page]").getAttribute("data-studio-domaine-lien");
+  /** L'adresse change avant le rendu : attend (10 s au plus) que la condition devienne vraie, puis rend sa valeur. */
+  const attendreVrai = async (f, ms = 10_000) => { const fin = Date.now() + ms; let v = await f(); while (!v && Date.now() < fin) { await page.waitForTimeout(100); v = await f(); } return v; };
   const regionsVisibles = () => page.evaluate(() => [...document.querySelectorAll("[data-studio-domaine]")].filter((s) => s.getClientRects().length > 0).map((s) => s.getAttribute("data-studio-domaine")));
   const enDomaine = (sel, id) => page.evaluate(([s, d]) => { const els = [...document.querySelectorAll(s)]; return els.length > 0 && els.every((e) => e.closest("[data-studio-domaine]")?.getAttribute("data-studio-domaine") === d); }, [sel, id]);
   const enAttente = () => page.locator("[data-studio-annuler-portee]").getAttribute("data-studio-en-attente-nombre");
@@ -191,7 +193,7 @@ try {
   await page.locator("[data-studio-vue3d]").waitFor();
   check("I.4-02/03 : Planche 3D choisie dans Dessin et modélisation, inscrite dans l'adresse", (await actif()) === "dessin"
     && (await page.locator('[data-studio-planche="3d"]').getAttribute("aria-pressed")) === "true" && (await page.locator("[data-studio-planche-active]").textContent()) === "Planche 3D");
-  check("M-4 : le sous-titre de la planche suit la planche active (« Vue 3D »)", (await page.locator("[data-studio-sous-titre]").textContent()) === "Vue 3D · Repère local · Mètres");
+  check("M-4 : le sous-titre de la planche suit la planche active (« Vue 3D »)", await attendreVrai(async () => (await page.locator("[data-studio-sous-titre]").textContent()) === "Vue 3D · Repère local · Mètres"));
   await page.reload();
   await page.locator("[data-studio-vue3d]").waitFor();
   check("I.4-03 : l'actualisation restitue la Planche 3D", (await page.locator('[data-studio-planche="3d"]').getAttribute("aria-pressed")) === "true");
@@ -215,7 +217,7 @@ try {
   // Planche 2D, valeur par défaut de la route ; le retour arrière restitue la Planche 3D.
   await page.evaluate((u) => { history.pushState(history.state, "", u); dispatchEvent(new PopStateEvent("popstate", { state: history.state })); }, `${base}?domaine=dessin`);
   await page.waitForFunction(() => document.querySelector('[data-studio-planche="2d"]')?.getAttribute("aria-pressed") === "true");
-  check("I.4-03 : paramètre `planche` retiré par l'adresse → Planche 2D (défaut de la route)", (await page.locator("[data-studio-vue3d]").count()) === 0);
+  check("I.4-03 : paramètre `planche` retiré par l'adresse → Planche 2D (défaut de la route)", await attendreVrai(async () => (await page.locator("[data-studio-vue3d]").count()) === 0));
   await page.goBack();
   await page.waitForURL(`${base}?domaine=dessin&planche=3d`);
   await page.waitForSelector('[data-studio-domaine-affiche="dessin"]');
@@ -237,7 +239,7 @@ try {
   await page.waitForURL(`${base}?domaine=documentation`);
   await page.waitForSelector('[data-studio-domaine-affiche="documentation"]');
   await page.waitForSelector("#studio-commentaires", { state: "detached", timeout: 10_000 }).catch(() => {});
-  check("M-2 : panneau refermé, l'adresse ne le dit plus ouvert", (await page.locator("#studio-commentaires").count()) === 0);
+  check("M-2 : panneau refermé, l'adresse ne le dit plus ouvert", await attendreVrai(async () => (await page.locator("#studio-commentaires").count()) === 0));
   await page.goto(`${base}?commentaires=ouverts`);
   await pret();
   check("lien de notification (`?commentaires=ouverts`, adresse antérieure) : Documentation affiché, commentaires ouverts, adresse inchangée", (await actif()) === "documentation" && await visible("#studio-commentaires") && page.url() === `${base}?commentaires=ouverts`);
@@ -258,7 +260,7 @@ try {
   await page.waitForURL(`${base}?domaine=documentation`);
   await page.waitForSelector('[data-studio-domaine-affiche="documentation"]');
   await pret();
-  check("M-1 : revenue à la version courante, le domaine reste affiché", (await actif()) === "documentation" && (await page.locator("[data-studio-lecture-seule-revision]").count()) === 0);
+  check("M-1 : revenue à la version courante, le domaine reste affiché", await attendreVrai(async () => (await actif()) === "documentation" && (await page.locator("[data-studio-lecture-seule-revision]").count()) === 0));
   for (const q of ["?domaine=x", "?domaine=dessin&planche=4d", "?domaine=documentation&planche=3d", "?domaine=bim&planche=double", "?planche=2d", "?planche=double", "?domaine=bim&domaine=bim"]) {
     await page.goto(`${base}${q}`);
     await page.locator("[data-studio-inconnue]").waitFor();
