@@ -1,6 +1,6 @@
 import { STUDIO_DEFAULT_LAYER_ID } from "../noyau/limites.js";
-import { validateStudioDocument } from "../noyau/document.js";
-import type { StudioDocument } from "../noyau/types.js";
+import { validateStudioDocument } from "../composition/document.js";
+import type { StudioDocument } from "../composition/types.js";
 import { identifier } from "../noyau/validation.js";
 import { studioMesh3d, type StudioMesh3d } from "../mesh-3d.js";
 import type { StudioPoint3 } from "../exporteurs/maillage.js";

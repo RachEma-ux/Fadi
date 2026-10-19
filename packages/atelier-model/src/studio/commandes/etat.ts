@@ -1,10 +1,10 @@
 import { controlerLiens, validerCote, type StudioDimension } from "../objets/cote.js";
 import { studioAnchorPoint } from "../objets/index.js";
-import { studioLayerState, type StudioLayerState } from "./calques.js";
-import { sortie } from "./document.js";
+import { etatCalque, type StudioLayerState } from "../noyau/calques.js";
 import type { StudioSolid } from "../objets-3d/solides.js";
-import type { StudioAnnotation, StudioLayer, StudioShape } from "./types.js";
-import { fail, same } from "./validation.js";
+import type { StudioLayer } from "../noyau/types.js";
+import { fail, same } from "../noyau/validation.js";
+import type { StudioAnnotation, StudioShape } from "../objets/formes.js";
 import type { StudioArchitectureItem } from "../architecture/types.js";
 import type { StudioElementVisualisation } from "../scenes/scenes.js";
 
@@ -30,7 +30,7 @@ export interface Etat {
 export type Gestionnaire = (state: Etat, params: unknown, path: string) => void;
 
 export function calqueEtat(state: Etat, layerId: string | undefined, path: string): StudioLayerState {
-  const found = studioLayerState(sortie(state.id, [], state.layers, []), layerId);
+  const found = etatCalque(state.layers, layerId);
   if (!found) fail(path, "calque inconnu");
   return found;
 }

@@ -9,10 +9,10 @@ import { definirPropriete, elaguerProprietes, retirerPropriete, type StudioPropr
 import { studioExtrudedRingVertices } from "../objets/polyligne.js";
 import { creerScene, definirApparence, modifierScene, retirerApparences, retirerApparencesOrphelines, supprimerScenes } from "../scenes/commandes.js";
 import { sortie, validateStudioDocument } from "./document.js";
-import { STUDIO_LIMITS } from "./limites.js";
-import type { Etat, Gestionnaire } from "./etat.js";
+import type { Etat, Gestionnaire } from "../commandes/etat.js";
+import { STUDIO_LIMITS } from "../noyau/limites.js";
+import { array, fail, record } from "../noyau/validation.js";
 import type { StudioCommand, StudioCommandToolId, StudioDocument } from "./types.js";
-import { array, fail, record } from "./validation.js";
 
 /**
  * Aiguillage des commandes : un gestionnaire par identifiant d'outil de mutation, composé des familles (`commandes/`).

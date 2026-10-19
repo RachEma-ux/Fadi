@@ -2,7 +2,8 @@ import type { DxfWriter } from "../exporteurs/dxf.js";
 import { nb, svgY, xml } from "../exporteurs/texte.js";
 import { STUDIO_FIXED_ANCHORS, STUDIO_INDEXED_ANCHOR, type StudioAnchor } from "../noyau/ancres.js";
 import { boolean, discriminator, fail, finite, identifier, layerRef, point, record, same } from "../noyau/validation.js";
-import type { StudioPoint, StudioShape } from "../noyau/types.js";
+import type { StudioPoint } from "../noyau/types.js";
+import type { StudioShape } from "./formes.js";
 import { id, layerId, number, point as pointSchema } from "../registre/schemas-base.js";
 import { studioAnchorPoint } from "./index.js";
 

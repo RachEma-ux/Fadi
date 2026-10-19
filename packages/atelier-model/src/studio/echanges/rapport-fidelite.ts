@@ -1,7 +1,8 @@
 import { studioDxfLayerNames } from "../export.js";
 import { STUDIO_DEFAULT_LAYER_ID } from "../noyau/limites.js";
-import { validateStudioDocument } from "../noyau/document.js";
-import type { StudioAnnotation, StudioDocument, StudioShape } from "../noyau/types.js";
+import { validateStudioDocument } from "../composition/document.js";
+import type { StudioDocument } from "../composition/types.js";
+import type { StudioAnnotation, StudioShape } from "../objets/formes.js";
 import type { StudioDimension } from "../objets/cote.js";
 import type { StudioSolid } from "../objets-3d/solides.js";
 import type { StudioArchitectureItem } from "../architecture/types.js";

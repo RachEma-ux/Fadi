@@ -1,7 +1,7 @@
 import { validerCalque } from "../noyau/calques.js";
-import { calqueEtat, editable, type Gestionnaire } from "../noyau/etat.js";
+import { calqueEtat, editable, type Gestionnaire } from "./etat.js";
 import { STUDIO_DEFAULT_LAYER_ID, STUDIO_LIMITS } from "../noyau/limites.js";
-import type { StudioItem } from "../noyau/types.js";
+import type { StudioItem } from "../objets/formes.js";
 import { fail, identifier, idList, record } from "../noyau/validation.js";
 
 /** Commandes de calques : créer, régler (nom, visibilité, verrou), placer des objets sur un calque. */

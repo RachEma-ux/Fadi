@@ -1,5 +1,5 @@
-import type { StudioDocument } from "../noyau/types.js";
-import { validateStudioDocument } from "../noyau/document.js";
+import type { StudioDocument } from "../composition/types.js";
+import { validateStudioDocument } from "../composition/document.js";
 import { quantitesStudio, type QuantitesStudio } from "../quantites.js";
 import { exigenceUtilisable, UNITE_NOMBRE, type ComparaisonExigence, type ExigenceStudio, type JeuExigences, type MetriqueExigence } from "./exigences.js";
 

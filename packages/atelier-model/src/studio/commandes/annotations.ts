@@ -1,7 +1,8 @@
 import { controlerLiensAngulaires, studioAngularFromSegments, studioStraightSegment, translaterCoteAngulaire, validerCoteAngulaire, type StudioAngularDimension } from "../objets/cote-angulaire.js";
 import { translaterTexte, validerTexte } from "../objets/texte.js";
-import { editable, shapeMap, type Etat } from "../noyau/etat.js";
-import type { StudioAnnotation, StudioPoint } from "../noyau/types.js";
+import { editable, shapeMap, type Etat } from "./etat.js";
+import type { StudioPoint } from "../noyau/types.js";
+import type { StudioAnnotation } from "../objets/formes.js";
 import { fail, same } from "../noyau/validation.js";
 
 /**

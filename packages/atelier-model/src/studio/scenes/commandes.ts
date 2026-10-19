@@ -1,4 +1,4 @@
-import type { Etat, Gestionnaire } from "../noyau/etat.js";
+import type { Etat, Gestionnaire } from "../commandes/etat.js";
 import { fail, idList, record } from "../noyau/validation.js";
 import { validerElementVisualisation, type StudioApparence, type StudioElementVisualisation, type StudioScene } from "./scenes.js";
 

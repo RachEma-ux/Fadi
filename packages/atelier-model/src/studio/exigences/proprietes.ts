@@ -1,7 +1,7 @@
 import type { StudioArchitectureItem } from "../architecture/types.js";
-import type { Etat, Gestionnaire } from "../noyau/etat.js";
-import { editable } from "../noyau/etat.js";
-import type { StudioShape } from "../noyau/types.js";
+import type { Etat, Gestionnaire } from "../commandes/etat.js";
+import { editable } from "../commandes/etat.js";
+import type { StudioShape } from "../objets/formes.js";
 import { array, fail, identifier, record } from "../noyau/validation.js";
 import { STUDIO_LIMITES_PROPRIETES } from "./limites.js";
 

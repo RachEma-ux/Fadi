@@ -49,6 +49,7 @@ const couches = {
   [`${ST}/exporteurs/texte.ts`]: 'export const nb = 1;\n',
   [`${ST}/architecture/types.ts`]: 'export type Mur = { m: 1 };\n',
   [`${ST}/echanges/rapport.ts`]: 'export const rapport = 1;\n',
+  [`${ST}/composition/document.ts`]: 'export const valider = 1;\n',
 };
 
 test('le dépôt réel est conforme à la table (CLI)', () => {
@@ -78,8 +79,15 @@ test('témoin : couches Studio sans import montant, fichiers de la racine de stu
     [`${ST}/commandes/modif.ts`]: 'import { ligne } from "../objets/ligne.js";\nimport { solide } from "../objets-3d/solides.js";\nexport const m = [ligne, solide];\n',
     [`${ST}/echanges/x.ts`]: 'import { OUTILS } from "../registre/dessin.js";\nexport const x = OUTILS;\n',
     [`${ST}/registry.ts`]: 'import { OUTILS } from "./registre/dessin.js";\nimport { dessiner } from "./commandes/dessin.js";\nimport { rapport } from "./echanges/rapport.js";\nexport const r = [OUTILS, dessiner, rapport];\n',
+    [`${ST}/composition/document.ts`]: 'import { ligne } from "../objets/ligne.js";\nimport { solide } from "../objets-3d/solides.js";\nimport type { Mur } from "../architecture/types.js";\nimport { dessiner } from "../commandes/dessin.js";\nimport { fail } from "../noyau/validation.js";\nexport type M = Mur;\nexport const d = [ligne, solide, dessiner, fail];\n',
   });
   assert.deepEqual(erreurs, []);
+});
+
+test('le noyau n\'a plus aucune exception : le socle n\'importe aucune couche supérieure', () => {
+  assert.deepEqual(TABLE.studioModele.exceptions.filter((e) => e.fichier.startsWith('noyau/')), []);
+  const noyau = TABLE.studioModele.regles.find((r) => r.de === 'noyau');
+  for (const c of ['composition', 'exigences', 'scenes']) assert.ok(noyau.interdits.includes(c), c);
 });
 
 for (const [cas, fichier, spec, interdit] of [
@@ -94,6 +102,11 @@ for (const [cas, fichier, spec, interdit] of [
   ['registre → commandes', 'registre/modif.ts', '../commandes/dessin.js', 'registre → commandes'],
   ['commandes → registre', 'commandes/calques.ts', '../registre/dessin.js', 'commandes → registre'],
   ['objets → echanges (feuille)', 'objets/arc.ts', '../echanges/rapport.js', 'objets → echanges'],
+  ['noyau → composition', 'noyau/types.ts', '../composition/document.js', 'noyau → composition'],
+  ['objets → composition', 'objets/arc.ts', '../composition/document.js', 'objets → composition'],
+  ['commandes → composition', 'commandes/calques.ts', '../composition/document.js', 'commandes → composition'],
+  ['composition → registre', 'composition/document.ts', '../registre/dessin.js', 'composition → registre'],
+  ['composition → exporteurs', 'composition/commandes.ts', '../exporteurs/texte.js', 'composition → exporteurs'],
 ]) {
   test(`refusé : couche ${cas}`, (t) => {
     const erreurs = controler(t, { ...couches, [`${ST}/${fichier}`]: `import { x } from "${spec}";\nexport const y = x;\n` });
