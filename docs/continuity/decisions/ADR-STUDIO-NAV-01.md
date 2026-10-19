@@ -29,6 +29,15 @@ Le contrat de référence est celui d'A4, [`CONTRAT-NAV-M004.md` v0.2](https://g
 
 Paramètres : `?domaine=dessin|bim|visualisation|documentation`, et `planche=2d|3d` en `dessin` seulement. Une valeur inconnue donne l'état « URL non reconnue », sans mutation.
 
+**Contrat retenu pour la mise en œuvre d'I.4-03 — proposition, en attente de la décision du maître d'ouvrage** (la Checklist laisse ce contrat « À définir », ROUTE-06). Code : `apps/web/src/modules/studio/routes-studio.ts`, `domaines/domaines.ts` ; preuves : `routes-studio.test.ts`, `domaines/domaines.test.ts`, `apps/web/e2e/studio-domaines.mjs`.
+
+- Les quatre domaines et leurs noms sont ceux de REF-01 §02 (« Organisation fonctionnelle ») ; les identifiants d'adresse `dessin`, `bim`, `visualisation`, `documentation` sont ceux de ce §1.
+- Paramètres de requête sur la route de variante seulement, facultatifs et additifs : `domaine` (une fois) ; `planche` (une fois), admise **uniquement avec `domaine=dessin`**. Ils se combinent avec `revision` et `commentaires`. Valeur inconnue, vide, répétée ou planche hors de `dessin` : adresse non reconnue (écran explicite, adresse conservée).
+- Rétrocompatibilité : une adresse sans `domaine` s'ouvre comme avant (Dessin et modélisation, Planche 2D) et **n'est jamais réécrite**, même quand la vue 3D est basculée par Maj+D. L'adresse ne porte domaine et planche qu'après un choix explicite dans la navigation des domaines, ou quand elle les portait déjà ; elle suit alors chaque changement.
+- Écriture par **remplacement** (aucune entrée d'historique), hors de la clé de montage de la planche : changer de domaine ou de planche ne recharge rien et n'abandonne ni geste, ni brouillon, ni sauvegarde (NAV-007) ; la garde de navigation n'intervient pas.
+- Profil standard : les quatre domaines restent présents l'un sous l'autre ; le domaine choisi devient actif et reçoit le focus (son titre). Aucun paramètre ne transmet de droit.
+- Non retenu ici (choix plus engageant laissé au maître d'ouvrage) : segment de chemin (`…/variantes/:v/:domaine`), entrée d'historique par changement de domaine, masquage des domaines inactifs.
+
 **Ajouts tirés du code actuel :**
 
 - **R-A.** Placer les routes sous `/studio`, et non sous `/projets`. Avec la règle `startsWith("/projets")` d'`AppShell` ([#L90](https://github.com/RachEma-ux/Fadi/blob/817bd36e7d4b1ab60ab9c00309509c7cdfed0798/apps/web/src/routes/AppShell.tsx#L90)), l'entrée Projets ne s'allume ainsi pas à tort (NAV-006).

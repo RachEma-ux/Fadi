@@ -11,8 +11,9 @@ import { etatHorsLigne, type EntreeEtatHorsLigne } from "../hors-ligne/etat";
 import { warning } from "./etat-variante";
 import "../hors-ligne/hors-ligne.css";
 
-export function EnTeteStudio({ context }: { context: StudioContext | null }) {
-  return <header className="studio-heading"><div><p className="studio-eyebrow">FADI / STUDIO</p><h1>{context ? <span translate="no">{context.study.name}</span> : "Votre espace de dessin"}</h1><p>Dessin 2D · Repère local · Mètres</p></div><span className="studio-badge">Planche 2D</span></header>;
+/** Le badge nomme la planche active (I.4-02 : Planche 2D ou Planche 3D). */
+export function EnTeteStudio({ context, planche = "Planche 2D" }: { context: StudioContext | null; planche?: string }) {
+  return <header className="studio-heading"><div><p className="studio-eyebrow">FADI / STUDIO</p><h1>{context ? <span translate="no">{context.study.name}</span> : "Votre espace de dessin"}</h1><p>Dessin 2D · Repère local · Mètres</p></div><span className="studio-badge" data-studio-planche-active>{planche}</span></header>;
 }
 
 /** `surRecharger` : abandon confirmé du brouillon (conservé hors ligne compris) puis relecture de la version serveur. */

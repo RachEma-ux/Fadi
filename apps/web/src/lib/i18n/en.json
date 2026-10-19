@@ -10422,5 +10422,21 @@
 "Fond de plan": "Background plan",
 "Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ni déclaré conforme. Aucun lecteur PDF.": "No Studio contract, proof or decision: format deferred, listed in the delivery scope without being delivered or declared compliant. No PDF reader.",
 "Relevé": "Survey",
-"Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ni déclaré conforme. La lecture LAS / XYZ / PTS de l’Atelier (P2-7) n’est pas un échange Studio.": "No Studio contract, proof or decision: format deferred, listed in the delivery scope without being delivered or declared compliant. The Atelier’s LAS / XYZ / PTS reading (P2-7) is not a Studio exchange."
+"Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ni déclaré conforme. La lecture LAS / XYZ / PTS de l’Atelier (P2-7) n’est pas un échange Studio.": "No Studio contract, proof or decision: format deferred, listed in the delivery scope without being delivered or declared compliant. The Atelier’s LAS / XYZ / PTS reading (P2-7) is not a Studio exchange.",
+"Domaines du Studio": "Studio domains",
+"BIM et coordination": "BIM and coordination",
+"Visualisation, rendu et immersion": "Visualisation, rendering and immersion",
+"Documentation, métrés et collaboration": "Documentation, quantity take-offs and collaboration",
+"Concevoir et modifier dans Planche 2D ⇄ Planche 3D.": "Design and modify in the 2D board ⇄ 3D board.",
+"Structurer les informations et contrôler la cohérence des modèles.": "Structure information and check the consistency of models.",
+"Examiner et présenter les solutions architecturales.": "Examine and present architectural solutions.",
+"Produire les documents, quantités, observations, revues et publications.": "Produce documents, quantities, observations, reviews and publications.",
+"Planche 3D": "3D board",
+"Planches": "Boards",
+"Basculer de planche": "Switch board",
+"Scènes enregistrées": "Saved scenes",
+"Les scènes, l’apparence et le rendu du modèle se règlent sur la vue 3D du modèle.": "Scenes, appearance and the model render are set in the 3D view of the model.",
+"Examiner sur la vue 3D": "Examine in the 3D view",
+"Publications de l’étude": "Study publications",
+"Ctrl+Maj+D": "Ctrl+Shift+D"
 }

@@ -8,7 +8,16 @@
  * `a` sur la comparaison d'une étude (`…/etudes/:s/comparer`), chacun au plus une fois, de la forme
  * `variantId` (tête) ou `variantId:revisionId` ; `archives=1` sur un projet ou une étude (une seule fois, seule valeur
  * admise), qui affiche aussi les études ou les variantes archivées.
+ *
+ * Domaine et planche actifs (I.4-03, ROUTE-06, NAV-005 ; **proposition** : le contrat d'URL reste « À définir » par
+ * le maître d'ouvrage) : sur une variante, `domaine=dessin|bim|visualisation|documentation` (une seule fois) désigne le
+ * domaine actif ; `planche=2d|3d` (une seule fois) la planche active, admise **seulement avec `domaine=dessin`**
+ * (ADR-STUDIO-NAV-01 §1 : les planches n'existent que dans Dessin et modélisation). Paramètres facultatifs et
+ * additifs : une adresse sans eux s'ouvre comme avant (Dessin et modélisation, Planche 2D) ; une valeur inconnue,
+ * répétée ou une planche hors de `dessin` donne l'adresse non reconnue. Ils se combinent avec `revision` et
+ * `commentaires` ; le contexte projet → étude → variante reste dans le chemin. Ils ne transmettent aucun droit.
  */
+import { estDomaineStudio, estPlancheStudio, type DomaineStudio, type PlancheStudio } from "./domaines/domaines";
 
 export const RACINE_STUDIO = "/studio";
 
@@ -20,7 +29,7 @@ export type RouteStudio =
   | { vue: "projet"; projectId: string; archives: boolean }
   | { vue: "etude"; projectId: string; studyId: string; archives: boolean }
   | { vue: "comparer"; projectId: string; studyId: string; de: CoteComparaisonStudio | null; a: CoteComparaisonStudio | null }
-  | { vue: "variante"; projectId: string; studyId: string; variantId: string; revisionId: string | null; commentaires: boolean }
+  | { vue: "variante"; projectId: string; studyId: string; variantId: string; revisionId: string | null; commentaires: boolean; domaine: DomaineStudio | null; planche: PlancheStudio | null }
   | { vue: "inconnue"; chemin: string };
 
 /** Identifiant opaque admis dans un segment ou un paramètre : jamais interprété comme un nom de fichier. */
@@ -72,14 +81,19 @@ export function lireRouteStudio(pathname: string, search = ""): RouteStudio {
     return { vue: "comparer", projectId, studyId, de, a };
   }
   if (ids.length !== 6 || variantes !== "variantes" || !ID.test(variantId)) return inconnue;
-  if (cles.some((k) => k !== "revision" && k !== "commentaires")) return inconnue;
+  if (cles.some((k) => k !== "revision" && k !== "commentaires" && k !== "domaine" && k !== "planche")) return inconnue;
   const revisions = params.getAll("revision");
   if (revisions.length > 1) return inconnue;
   const revisionId = revisions[0] ?? null;
   if (revisionId !== null && !ID.test(revisionId)) return inconnue;
   const commentaires = params.getAll("commentaires");
   if (commentaires.length > 1 || (commentaires.length === 1 && commentaires[0] !== COMMENTAIRES_OUVERTS)) return inconnue;
-  return { vue: "variante", projectId, studyId, variantId, revisionId, commentaires: commentaires.length === 1 };
+  const domaines = params.getAll("domaine"), planches = params.getAll("planche");
+  if (domaines.length > 1 || planches.length > 1) return inconnue;
+  const domaine = domaines[0] ?? null, planche = planches[0] ?? null;
+  if (domaine !== null && !estDomaineStudio(domaine)) return inconnue;
+  if (planche !== null && (!estPlancheStudio(planche) || domaine !== "dessin")) return inconnue;
+  return { vue: "variante", projectId, studyId, variantId, revisionId, commentaires: commentaires.length === 1, domaine, planche };
 }
 
 /** Valeur d'un côté (`undefined` = mal formé ou répété ; `null` = absent). */
@@ -111,11 +125,14 @@ export const cheminProjetStudio = (projectId: string, options: { archives?: bool
 export const cheminEtudeStudio = (projectId: string, studyId: string, options: { archives?: boolean } = {}): string =>
   avecArchives(`${cheminProjetStudio(projectId)}/etudes/${encodeURIComponent(studyId)}`, !!options.archives);
 
-export function cheminVarianteStudio(projectId: string, studyId: string, variantId: string, revisionId: string | null = null, options: { commentaires?: boolean } = {}): string {
+/** `planche` n'est écrite qu'avec `domaine: "dessin"` (sinon ignorée : une planche n'existe que dans ce domaine). */
+export function cheminVarianteStudio(projectId: string, studyId: string, variantId: string, revisionId: string | null = null, options: { commentaires?: boolean; domaine?: DomaineStudio | null; planche?: PlancheStudio | null } = {}): string {
   const base = `${cheminEtudeStudio(projectId, studyId)}/variantes/${encodeURIComponent(variantId)}`;
   const q = new URLSearchParams();
   if (revisionId !== null) q.set("revision", revisionId);
   if (options.commentaires) q.set("commentaires", COMMENTAIRES_OUVERTS);
+  if (options.domaine) q.set("domaine", options.domaine);
+  if (options.domaine === "dessin" && options.planche) q.set("planche", options.planche);
   const s = q.toString();
   return s ? `${base}?${s}` : base;
 }

@@ -207,9 +207,13 @@ try {
   await page.goto(`${base}?revision=${encodeURIComponent(ancienne)}&revision=${encodeURIComponent(ancienne)}`);
   await page.locator("[data-studio-inconnue]").waitFor();
   check("révision répétée : adresse non reconnue", true);
-  await page.goto(`${base}?domaine=bim`);
-  await page.locator("[data-studio-inconnue]").waitFor();
-  check("paramètre non livré (domaine) : adresse non reconnue, aucun choix factice", true);
+  // Domaine et planche (I.4-03, contrat proposé) : valeur inconnue ou planche hors de « dessin » → adresse non
+  // reconnue, aucun choix factice ; les valeurs admises sont éprouvées par studio-domaines.mjs.
+  for (const q of ["?domaine=inconnu", "?planche=3d", "?domaine=bim&planche=3d"]) {
+    await page.goto(`${base}${q}`);
+    await page.locator("[data-studio-inconnue]").waitFor();
+    check(`paramètre de domaine non admis (${q}) : adresse non reconnue, conservée`, page.url().endsWith(q));
+  }
 
   // Refus croisés et lecteur.
   await page.goto(`${BASE}/studio/projets/${pA2.id}/etudes/${studyId}`);
