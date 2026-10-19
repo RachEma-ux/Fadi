@@ -10,7 +10,7 @@ import { STUDIO_LIMITES_EXIGENCES, STUDIO_LIMITES_PROPRIETES } from "./limites.j
  * Une exigence vise une **métrique** du métré (`quantitesStudio`) ou une propriété déclarée, avec une comparaison, une
  * valeur, une unité (celle de la métrique, jamais convertie) et une **source déclarée** (texte saisi : document,
  * article, programme…). Fadi ne fournit **aucune** exigence par défaut et aucune donnée réglementaire : un jeu vide
- * est l'état initial. Une exigence n'est jamais réécrite par un contrôle (`ecarts.ts`).
+ * est l'état initial. Une exigence n'est jamais réécrite par un contrôle (`composition/ecarts.ts`).
  *
  * Référence partenaire (E.1-04) : une exigence reprise d'une référence partenaire porte `origine.reference` ; elle
  * n'est utilisée par un contrôle qu'après une **acceptation explicite** (qui, quand), posée par le serveur

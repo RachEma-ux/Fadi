@@ -114,11 +114,26 @@ export function checkModuleDependencies(root = DEFAULT_ROOT, { frontieres = lire
     const depuis = path.relative(path.join(root, API_STUDIO.racine), file).split(path.sep).join('/');
     return !depuis.startsWith('..') && API_STUDIO.de.some((p) => depuis.startsWith(p));
   };
-  function couchesStudio(file, target, spec, typeOnly) {
+  // Graphe des dossiers du modèle Studio (hors tests, hors fichiers de la racine de studio/, qui sont des façades) :
+  // un nœud par dossier de premier niveau, sauf les primitives déclarées distinctes (`cycles.noeudsDistincts`, par
+  // exemple registre/schemas-base), qui forment leur propre nœud. Tout cycle entre dossiers est refusé.
+  const grapheStudio = new Map();
+  const noeudStudio = (rel) => {
+    const distinct = (STUDIO?.cycles?.noeudsDistincts ?? []).find((n) => sous(rel, n));
+    if (distinct) return distinct;
+    const i = rel.indexOf('/');
+    return i < 0 ? null : rel.slice(0, i);
+  };
+  function couchesStudio(file, target, spec, typeOnly, test) {
     const base = path.join(root, STUDIO.racine);
     if (!inside(base, file) || !inside(base, target)) return;
     const depuis = path.relative(base, file).split(path.sep).join('/');
     const cible = path.relative(base, target).split(path.sep).join('/');
+    const [na, nb] = [noeudStudio(depuis), noeudStudio(cible)];
+    if (!test && na && nb && na !== nb) {
+      if (!grapheStudio.has(na)) grapheStudio.set(na, new Map());
+      if (!grapheStudio.get(na).has(nb)) grapheStudio.get(na).set(nb, `${depuis} → ${spec}`);
+    }
     for (const regle of STUDIO.regles.filter((r) => sous(depuis, r.de))) {
       const interdit = regle.interdits.find((x) => sous(cible, x));
       if (!interdit || (regle.sauf ?? []).some((x) => sous(cible, x))) continue;
@@ -151,7 +166,7 @@ export function checkModuleDependencies(root = DEFAULT_ROOT, { frontieres = lire
         if (viseApi) fail(file, 'API_STUDIO_BOUNDARY', `${viseApi} (${spec}) — ${API_STUDIO.motif}`);
         if (unit.kind === 'packages' && !unit.allowed.has(peer.name)) fail(file, 'UNDECLARED_PACKAGE', `${peer.name} (${spec})`);
       }
-      if (STUDIO && peer === unit) couchesStudio(file, target, spec, typeOnly);
+      if (STUDIO && peer === unit) couchesStudio(file, target, spec, typeOnly, test);
       const a = ontology(file), b = ontology(target);
       if (a && b && a !== b) fail(file, 'ONTOLOGY_BOUNDARY', `${a} -> ${b} (${spec})`);
       const webSrc = path.join(root, 'apps', 'web', 'src');
@@ -232,6 +247,27 @@ export function checkModuleDependencies(root = DEFAULT_ROOT, { frontieres = lire
     (STUDIO.exceptions ?? []).forEach((e, i) => {
       if (!exceptionsUtilisees.has(i)) fail(path.join(root, STUDIO.racine, e.fichier), 'EXCEPTION_PERIMEE', `exception ${e.fichier} → ${e.cible} (${e.nature}) sans import correspondant : la retirer de scripts/frontieres.json`);
     });
+    // Cycles entre dossiers Studio : chaque cycle est signalé une fois, avec un import témoin par arête.
+    const fini = new Set(), enCours = [], vus = new Set();
+    const parcourir = (n) => {
+      if (fini.has(n)) return;
+      const k = enCours.indexOf(n);
+      if (k >= 0) {
+        const boucle = [...enCours.slice(k), n];
+        const cle = [...boucle.slice(0, -1)].sort().join(',');
+        if (!vus.has(cle)) {
+          vus.add(cle);
+          const temoins = boucle.slice(0, -1).map((x, i) => grapheStudio.get(x).get(boucle[i + 1]));
+          fail(path.join(root, STUDIO.racine), 'STUDIO_LAYER_CYCLE', `cycle entre dossiers ${boucle.join(' → ')} (${temoins.join(' ; ')})`);
+        }
+        return;
+      }
+      enCours.push(n);
+      for (const m of [...(grapheStudio.get(n)?.keys() ?? [])].sort()) parcourir(m);
+      enCours.pop();
+      fini.add(n);
+    };
+    for (const n of [...grapheStudio.keys()].sort()) parcourir(n);
   }
   if (PUR?.libDom) {
     const permis = new Set((PUR.libDom.exceptions ?? []).map((e) => e.paquet));

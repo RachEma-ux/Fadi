@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { applyStudioCommands, newStudioDocument, validateStudioDocument, type StudioCommand, type StudioDocument } from "../document-2d.js";
 import { STUDIO_COMMAND_TOOL_IDS, STUDIO_DOCUMENT_SCHEMA, STUDIO_TOOLS } from "../registry.js";
-import { studioRapportFidelite } from "../echanges/rapport-fidelite.js";
+import { studioRapportFidelite } from "../../index.js";
 import {
   accepterExigence, controlerExigences, exigenceUtilisable, mesurerMetrique, preparerVersion, proprietesDe, validerExigence, validerExigences,
   valeurPropriete, type ExigenceStudio,
-} from "./index.js";
+} from "../facade-exigences.js";
 import { quantitesStudio } from "../quantites.js";
 import { exportStudioIfc, studioIfcSummary } from "../ifc.js";
 

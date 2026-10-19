@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { applyStudioCommands, newStudioDocument, validateStudioDocument, type StudioCommand, type StudioDocument } from "../document-2d.js";
-import { studioRapportFidelite, STUDIO_FORMATS_ECHANGE } from "../echanges/rapport-fidelite.js";
+import { studioRapportFidelite, STUDIO_FORMATS_ECHANGE } from "../../index.js";
 import { exportStudioDxf, exportStudioSvg } from "../export.js";
 import { exportStudioIfc, studioIfcSummary } from "../ifc.js";
 import { studioMesh3d } from "../mesh-3d.js";
 import { quantitesStudio } from "../quantites.js";
 import { STUDIO_COMMAND_TOOL_IDS, STUDIO_DOCUMENT_SCHEMA, STUDIO_TOOLS } from "../registry.js";
-import { studioApparenceResolue, studioMeshScene, studioRappelerScene, studioScenes } from "./affichage.js";
+import { studioApparenceResolue, studioMeshScene, studioRappelerScene, studioScenes } from "../facade-scenes.js";
 import { studioNomFichierRendu, studioProvenanceRendu } from "./provenance.js";
 import type { StudioApparence, StudioScene } from "./scenes.js";
 
