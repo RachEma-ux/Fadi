@@ -14,8 +14,10 @@ const points = (pts: readonly StudioPoint[]) => pts.map((p) => `${p.x},${p.y}`).
 
 export interface PropsArchitecture2D {
   doc: StudioDocument;
-  selection: string | null;
-  surSelection: (id: string) => void;
+  /** Murs et ouvertures choisis (sélection de la planche et objet du panneau Architecture). */
+  selection: ReadonlySet<string>;
+  /** `ajouter` : Maj tenue (bascule du mur dans la sélection). */
+  surSelection: (id: string, ajouter: boolean) => void;
   /** Les clics vont à la planche (outil Ouverture : désigner le mur). */
   versPlanche: boolean;
 }
@@ -26,11 +28,11 @@ export function Architecture2D({ doc, selection, surSelection, versPlanche }: Pr
   const element = (id: string, layerId: string | undefined, nom: string, type: "wall" | "opening", contenu: ReactNode) => {
     const selectionnable = estSelectionnable(doc, layerId);
     return (
-      <g key={id} role="button" tabIndex={selectionnable ? 0 : -1} aria-label={`${nom} ${id}`} aria-pressed={selection === id} aria-disabled={!selectionnable || undefined}
-        className={`studio-architecture studio-architecture-${type}${selection === id ? " selected" : ""}${selectionnable ? "" : " verrouille"}`}
+      <g key={id} role="button" tabIndex={selectionnable ? 0 : -1} aria-label={`${nom} ${id}`} aria-pressed={selection.has(id)} aria-disabled={!selectionnable || undefined}
+        className={`studio-architecture studio-architecture-${type}${selection.has(id) ? " selected" : ""}${selectionnable ? "" : " verrouille"}`}
         data-studio-architecture={id} data-studio-type={type} data-studio-calque={layerId ?? "default"}
-        onKeyDown={(e) => { if (selectionnable && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); surSelection(id); } }}
-        onClick={(e) => { if (versPlanche) return; e.stopPropagation(); if (selectionnable) surSelection(id); }}>
+        onKeyDown={(e) => { if (selectionnable && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); surSelection(id, e.shiftKey); } }}
+        onClick={(e) => { if (versPlanche) return; e.stopPropagation(); if (selectionnable) surSelection(id, e.shiftKey); }}>
         {contenu}
       </g>
     );

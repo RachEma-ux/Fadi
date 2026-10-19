@@ -320,7 +320,7 @@ const AJOUTS = {
     "STUDIO_STATUTS_FIDELITE", "studioRapportFidelite",
     // Visualisation (lot E.5, `scenes/`).
     "SCHEMA_APPARENCE", "SCHEMA_ELEMENT_VISUALISATION", "SCHEMA_SCENE", "STUDIO_FINITIONS_AFFICHAGE", "STUDIO_FRAME_SCENES", "STUDIO_LIMITES_SCENES",
-    "STUDIO_MODES_AFFICHAGE", "STUDIO_PROJECTIONS_SCENE", "validerElementVisualisation", "studioApparenceResolue", "studioApparences", "studioMeshScene",
+    "STUDIO_MODES_AFFICHAGE", "STUDIO_PROJECTIONS_SCENE", "validerElementVisualisation", "studioApparenceResolue", "studioApparences", "studioDocumentToutVisible", "studioFiltrerMaillageScene", "studioMeshScene",
     "studioRappelerScene", "studioScenes", "STUDIO_NATURE_RENDU", "STUDIO_RENDU_SCHEMA", "studioNomFichierRendu", "studioProvenanceRendu",
   ]),
 };

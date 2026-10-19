@@ -532,6 +532,8 @@ try {
   const canevas = vue3d.locator("canvas[data-studio-vue3d-canvas]");
   await canevas.waitFor({ timeout: 20000 });
   check("Vue 3D (Maj+D) : bascule enfoncée, planche 2D remplacée", (await outils.locator('[data-studio-commande="vue-3d"]').getAttribute("aria-pressed")) === "true" && (await planche.count()) === 0);
+  // Maillage calculé en tâche de fond : attendre celui de la révision affichée.
+  await page.locator('[data-studio-vue3d][data-studio-maillage="done"]').waitFor();
   await page.waitForTimeout(300);
   const couleurs = await canevas.evaluate((c) => {
     const t = document.createElement("canvas"); t.width = c.width; t.height = c.height;
@@ -557,6 +559,7 @@ try {
   check("volume : après actualisation, les valeurs saisies sont relues", (await formExtrusion.getByLabel("Hauteur (m)").inputValue()) === "2.5" && (await formExtrusion.getByLabel("Épaisseur (m, lignes, facultative)").inputValue()) === "0.2" && (await page.locator("[data-studio-extrusion-etat]").getAttribute("data-studio-extrusion-etat")) === "extrude");
   await (await atteindre(outils, '[data-studio-commande="vue-3d"]')).click();
   await vue3d.locator("canvas[data-studio-vue3d-canvas]").waitFor();
+  await page.locator('[data-studio-vue3d][data-studio-maillage="done"]').waitFor();
   check("Vue 3D : relue après actualisation, le volume est rendu", (await vue3d.getAttribute("data-studio-volumes")) === "1");
   await (await atteindre(outils, '[data-studio-commande="vue-3d"]')).click();
   await planche.waitFor();
@@ -848,6 +851,63 @@ try {
   await page.locator('[data-studio-vue3d][data-studio-solides-libres="2"]').waitFor();
   check("volume libre : l'actualisation restitue les mêmes solides", JSON.stringify((await a.api("get", variantePath)).revision) === JSON.stringify(solidesRelus.revision)
     && (await vueLibre.locator("[data-studio-solide]").count()) === 2);
+
+  // D.2-03 (tâches de fond) : rafale de déplacements de la boîte sans laisser la main à la boucle d'événements entre
+  // deux (aucune réponse du Worker ne peut s'intercaler) : chaque maillage remplacé est annulé, son résultat éventuel
+  // périmé ; le maillage affiché est celui de la dernière révision, jamais un plus ancien par-dessus. D.3-02 : les
+  // compteurs GPU du rendu reviennent à leur ligne de base (reconstructions, fermeture / réouverture de la vue 3D).
+  const maillagePret = () => page.waitForFunction(() => {
+    const v = document.querySelector("[data-studio-vue3d]");
+    return v?.getAttribute("data-studio-maillage") === "done" && v.getAttribute("data-studio-maillage-revision") === v.getAttribute("data-studio-revision-courante");
+  });
+  await maillagePret();
+  const gpuBase = await canevasLibre.getAttribute("data-studio-gpu-geometries");
+  const porteeAvantRafale = await portee();
+  await vueLibre.locator(`[data-studio-solide="${idBoite}"]`).click();
+  await vueLibre.locator(`[data-studio-solide-choisi="${idBoite}"]`).waitFor();
+  const RAFALE = 6;
+  const debutJournal = await page.evaluate(() => globalThis.__fadiTaches?.journal.length ?? 0);
+  await page.evaluate(async (n) => {
+    const form = document.querySelector("[data-studio-solide-choisi]");
+    const valeur = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+    const micro = async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); };
+    for (let k = 0; k < n; k++) {
+      for (const [nom, v] of [["solide-dx", "0.1"], ["solide-dy", "0"], ["solide-dz", "0"]]) {
+        const el = form.querySelector(`[name="${nom}"]`);
+        valeur.call(el, v);
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+      await micro();
+      form.querySelector("[data-studio-deplacer-solide]").click();
+      await micro();
+    }
+  }, RAFALE);
+  await maillagePret();
+  const journalMaillage = (await page.evaluate((d) => globalThis.__fadiTaches.journal.slice(d), debutJournal)).filter((e) => e.cle === "studio.maillage-3d");
+  const remis = journalMaillage.filter((e) => e.etat === "done").map((e) => Number(e.revision));
+  const remplaces = journalMaillage.filter((e) => e.etat === "cancelled" || e.etat === "stale");
+  const revisionCourante = Number(await vueLibre.getAttribute("data-studio-revision-courante"));
+  const perimesRemis = journalMaillage.filter((e) => e.etat === "stale").filter((s) => journalMaillage.some((e) => e.id === s.id && e.etat === "done"));
+  check("tâches : maillages remplacés pendant la rafale annulés, aucun résultat périmé remis ; le dernier maillage affiché est celui de la dernière révision",
+    remplaces.length > 0 && perimesRemis.length === 0 && remis.length > 0 && remis.every((r, i) => i === 0 || r > remis[i - 1]) && remis.at(-1) === revisionCourante
+    && Number(await vueLibre.getAttribute("data-studio-maillage-revision")) === revisionCourante && (await portee()).includes(`(${RAFALE} commande(s)`)
+    && (await vueLibre.locator(`[data-studio-solide-choisi="${idBoite}"]`).textContent()).includes("origine (1,6 ; 1 ; 0) m"),
+    JSON.stringify({ remis, remplaces: remplaces.map((e) => `${e.revision}:${e.etat}`), revisionCourante, portee: await portee() }));
+  check("tâches : compteurs GPU revenus à leur ligne de base après les reconstructions", (await canevasLibre.getAttribute("data-studio-gpu-geometries")) === gpuBase && Number(gpuBase) > 0, `${gpuBase} → ${await canevasLibre.getAttribute("data-studio-gpu-geometries")}`);
+  await page.evaluate(() => document.activeElement?.blur());
+  for (let k = 0; k < RAFALE; k++) await page.keyboard.press("Control+z");
+  await page.waitForFunction((t) => (document.querySelector("[data-studio-annuler-portee]")?.textContent ?? "") === t, porteeAvantRafale);
+  await maillagePret();
+  for (let cycle = 0; cycle < 3; cycle++) {
+    await page.keyboard.press("Shift+D");
+    await page.locator("[data-studio-vue3d]").waitFor({ state: "detached" });
+    await page.keyboard.press("Shift+D");
+    await canevasLibre.waitFor();
+    await maillagePret();
+    await page.waitForFunction((b) => document.querySelector("canvas[data-studio-vue3d-canvas]")?.getAttribute("data-studio-gpu-geometries") === b, gpuBase, { timeout: 5000 }).catch(() => {});
+  }
+  check("tâches : après trois fermetures / réouvertures de la vue 3D, mêmes compteurs GPU et brouillon inchangé",
+    (await canevasLibre.getAttribute("data-studio-gpu-geometries")) === gpuBase && (await portee()) === porteeAvantRafale, `${gpuBase} → ${await canevasLibre.getAttribute("data-studio-gpu-geometries")}`);
   await page.keyboard.press("Shift+K");
   await vueLibre.locator("[data-studio-coupe]").getByLabel("Cote de coupe z (m)", { exact: true }).fill("1.5");
   await page.locator('[data-studio-coupe][data-studio-coupe-segments="7"]').waitFor();
@@ -1177,16 +1237,16 @@ try {
   await page.locator(`[data-studio-objet="${formesT[0]}"]`).waitFor({ state: "attached" });
   check("transformations : l'actualisation restitue le même dessin", (await empreinte()) === empreinteT && JSON.stringify((await a.api("get", variantePath)).revision) === JSON.stringify(transfo.revision));
 
-  // Murs et ouvertures (A.4, REC-A-03) : famille « Architecture » (Mur W, Ouverture H, Modifier Ctrl+Maj+E, Supprimer
+  // Murs et ouvertures (A.4, REC-A-03) : famille « Architecture » (Mur W, Ouverture H, Modifier J, Supprimer
   // avec cascade Ctrl+Suppr), aucune dimension proposée ; mur 6 × 3 × 0,2 m saisi au clavier, ouverture 1 × 2,1 m posée
   // d'un clic sur le mur ; même identifiant sur la planche et dans la vue 3D ; élargissement à 1,20 m depuis la vue 3D
   // (volume net 3,180 → 3,096 m³) ; mur abaissé sous l'ouverture refusé avec son motif, sans commande ajoutée ;
   // enregistrement en une enveloppe, actualisation identique, export SVG avec le vide de l'ouverture.
   await page.evaluate(() => document.activeElement?.blur());
-  check("architecture : Mur (W), Ouverture (H), Modifier (Ctrl+Maj+E), Supprimer le mur et ses ouvertures (Ctrl+Suppr) dans la famille Architecture, icônes propres",
+  check("architecture : Mur (W), Ouverture (H), Modifier (J), Supprimer le mur et ses ouvertures (Ctrl+Suppr) dans la famille Architecture, icônes propres",
     (await outils.locator('[data-studio-famille="architecture"] [data-studio-outil="studio.architecture.mur"][aria-keyshortcuts="W"] svg path').count()) === 1
     && (await outils.locator('[data-studio-famille="architecture"] [data-studio-outil="studio.architecture.ouverture"][aria-keyshortcuts="H"] svg path').count()) === 1
-    && (await outils.locator('[data-studio-famille="architecture"] [data-studio-outil="studio.architecture.modifier"][aria-keyshortcuts="Control+Shift+E"]').count()) === 1
+    && (await outils.locator('[data-studio-famille="architecture"] [data-studio-outil="studio.architecture.modifier"][aria-keyshortcuts="J"]').count()) === 1
     && (await outils.locator('[data-studio-famille="architecture"] [data-studio-outil="studio.architecture.supprimer"][aria-keyshortcuts="Control+Delete"]').count()) === 1);
   await page.keyboard.press("w");
   const formMur = proprietes.locator("[data-studio-architecture-mur-formulaire]");
@@ -1283,6 +1343,33 @@ try {
     const t = await svgArchi.text();
     check("architecture : l'export SVG dessine le mur interrompu par l'ouverture", t.includes(`<g data-architecture="wall" data-id="${idMur}">`) && t.includes(`<g data-architecture="opening" data-id="${idOuv}" data-host="${idMur}">`));
   }
+  // Le mur se sélectionne sur la planche comme un objet et se copie (Copier, D) : son ouverture est copiée avec lui ;
+  // la copie est enregistrée et relue identique.
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+Z");
+  await page.locator(`svg [data-studio-architecture="${idMur}"] polygon`).first().click();
+  await page.waitForFunction((id) => document.querySelector(`svg [data-studio-architecture="${id}"]`)?.getAttribute("aria-pressed") === "true", idMur);
+  check("architecture : un clic sur le mur le sélectionne sur la planche (et l'ouvre dans le panneau)", (await proprietes.locator(`[data-studio-architecture-choisi="${idMur}"]`).count()) === 1);
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("d");
+  for (const [nom, v] of [["Déplacement X", 0], ["Déplacement Y", 3], ["Copies", 1]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
+  await proprietes.getByRole("button", { name: "Copier la sélection", exact: true }).click();
+  await page.waitForFunction(() => document.querySelectorAll('svg [data-studio-architecture][data-studio-type="wall"]').length === 2);
+  const avantCopie = envois.length;
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Control+s");
+  await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
+  const envoiCopie = envois[envois.length - 1];
+  const copieRelue = (await a.api("get", variantePath)).revision.document.architecture ?? [];
+  const murCopie = copieRelue.find((x) => x.type === "wall" && x.id !== idMur);
+  const ouvCopie = copieRelue.find((x) => x.type === "opening" && x.id !== idOuv);
+  check("architecture : copie du mur enregistrée (studio.dessin.copier), ouverture copiée avec lui, valeurs exactes",
+    envois.length === avantCopie + 1 && JSON.stringify(envoiCopie.commands.map((c) => [c.toolId, c.params.ids])) === JSON.stringify([["studio.dessin.copier", [idMur]]])
+    && copieRelue.length === 4 && JSON.stringify(murCopie?.axis) === JSON.stringify([{ x: 0, y: -27 }, { x: 6, y: -27 }]) && ouvCopie?.hostId === murCopie?.id && ouvCopie?.width === 1.2,
+    JSON.stringify(copieRelue));
+  await page.reload();
+  await page.locator(`svg [data-studio-architecture="${murCopie?.id}"]`).waitFor({ state: "attached" });
+  check("architecture : l'actualisation restitue le mur copié et son ouverture", (await page.locator('svg [data-studio-architecture][data-studio-type="opening"]').count()) === 2);
 
   // Accessibilité de l'accueil Studio.
   await page.goto(`${BASE}/studio`);

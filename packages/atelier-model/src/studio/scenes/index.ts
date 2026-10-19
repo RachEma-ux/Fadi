@@ -9,7 +9,7 @@ export {
   type StudioApparence, type StudioCameraScene, type StudioCibleApparence, type StudioElementVisualisation, type StudioFinitionAffichage,
   type StudioModeAffichage, type StudioProjectionScene, type StudioScene,
 } from "./scenes.js";
-export { studioApparenceResolue, studioApparences, studioMeshScene, studioRappelerScene, studioScenes, type StudioApparenceResolue } from "./affichage.js";
+export { studioApparenceResolue, studioApparences, studioDocumentToutVisible, studioFiltrerMaillageScene, studioMeshScene, studioRappelerScene, studioScenes, type StudioApparenceResolue } from "./affichage.js";
 export {
   STUDIO_NATURE_RENDU, STUDIO_RENDU_SCHEMA, studioNomFichierRendu, studioProvenanceRendu, type EntreeProvenanceRendu, type StudioProvenanceRendu,
 } from "./provenance.js";

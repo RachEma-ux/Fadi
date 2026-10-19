@@ -50,9 +50,21 @@ export function studioApparenceResolue(doc: StudioDocument, objetId: string, lay
  */
 export function studioMeshScene(document: StudioDocument, visibleLayers: readonly string[] | null): StudioMesh3d {
   if (visibleLayers === null) return studioMesh3d(document);
+  return studioFiltrerMaillageScene(studioMesh3d(studioDocumentToutVisible(document)), visibleLayers);
+}
+
+/**
+ * Copie de vue du document, tous calques affichés (validée d'abord) : entrée du maillage d'une scène, jamais enregistrée.
+ * La vue 3D la donne au maillage en tâche de fond, puis filtre le résultat par `studioFiltrerMaillageScene`.
+ */
+export function studioDocumentToutVisible(document: StudioDocument): StudioDocument {
   const doc = validateStudioDocument(document);
+  return { ...doc, ...(doc.layers ? { layers: doc.layers.map((l) => ({ ...l, visible: true })) } : {}) };
+}
+
+/** Garde du maillage (tous calques affichés) les seuls éléments des calques `visibleLayers` ; emprise et décomptes recalculés. */
+export function studioFiltrerMaillageScene(tout: StudioMesh3d, visibleLayers: readonly string[]): StudioMesh3d {
   const montre = new Set(visibleLayers);
-  const tout = studioMesh3d({ ...doc, ...(doc.layers ? { layers: doc.layers.map((l) => ({ ...l, visible: true })) } : {}) });
   const garde = (o: { layerId?: string }) => montre.has(o.layerId ?? STUDIO_DEFAULT_LAYER_ID);
   const solids = tout.solids.filter(garde), outlines = tout.outlines.filter(garde);
   const freeSolids = tout.freeSolids?.filter(garde), architecture = tout.architecture?.filter(garde);

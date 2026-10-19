@@ -52,7 +52,7 @@ export interface Dessin2DProps {
   /** `ajouter` : Maj tenue (bascule de l'objet dans la sélection). */
   surSelection: (id: string, ajouter: boolean) => void;
   /** Murs et ouvertures (A.4) : objet architectural sélectionné, sa désignation, clics vers la planche (outil Ouverture). */
-  architecture?: { selection: string | null; surSelection: (id: string) => void; versPlanche: boolean };
+  architecture?: { selection: ReadonlySet<string>; surSelection: (id: string, ajouter: boolean) => void; versPlanche: boolean };
 }
 
 export function Dessin2D({ svgRef, doc, cadre, pas, outil, selection, trace, survol, rectangle, glissement, apercuForme, sommetsPoses = [], clicsVersPlanche, surPlanche, surSurvol, surPointeurBas, surPointeurHaut, surClicCapture, surSelection, architecture }: Dessin2DProps) {

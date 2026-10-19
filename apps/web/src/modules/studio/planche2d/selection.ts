@@ -7,7 +7,7 @@
  * propriété). Pur : ni React ni DOM.
  */
 import {
-  dessinerCoteAngulaire, studioArcPoints, studioShapeSegments, studioTextBox, type StudioAnnotation, type StudioCommand, type StudioDimension, type StudioDocument,
+  dessinerCoteAngulaire, geometrieMur, studioArcPoints, type StudioWall, studioShapeSegments, studioTextBox, type StudioAnnotation, type StudioCommand, type StudioDimension, type StudioDocument,
   type StudioPoint, type StudioShape,
 } from "@parcours/atelier-model";
 import { estSelectionnable } from "./calques";
@@ -24,9 +24,16 @@ export const estForme = (e: Element2D): e is StudioShape => e.type !== "dimensio
 /** Objets, cotes puis annotations du document, dans l'ordre d'affichage. */
 export const elements = (doc: StudioDocument): Element2D[] => [...doc.objects, ...(doc.dimensions ?? []), ...(doc.annotations ?? [])];
 
-/** Identifiants sélectionnables (affichés, déverrouillés), dans l'ordre du document. */
+/**
+ * Murs (A.4) du document : ils se sélectionnent comme les objets (clic, rectangle, tout sélectionner) pour Déplacer,
+ * Copier, Rotation, Symétrie, Échelle, Supprimer et Placer sur le calque ; leurs ouvertures les suivent (une ouverture se
+ * désigne seule par un clic, pour être modifiée).
+ */
+export const murs = (doc: StudioDocument): StudioWall[] => (doc.architecture ?? []).filter((x): x is StudioWall => x.type === "wall");
+
+/** Identifiants sélectionnables (affichés, déverrouillés), dans l'ordre du document, murs compris. */
 export const toutSelectionnable = (doc: StudioDocument): string[] =>
-  elements(doc).filter((e) => estSelectionnable(doc, e.layerId)).map((e) => e.id);
+  [...elements(doc), ...murs(doc)].filter((e) => estSelectionnable(doc, e.layerId)).map((e) => e.id);
 
 /** Sélection nettoyée : objets encore présents et sélectionnables, sans doublon, ordre conservé. */
 export function selectionValide(doc: StudioDocument, ids: readonly string[]): string[] {
@@ -49,7 +56,13 @@ type Segment = readonly [StudioPoint, StudioPoint];
  * Segments dessinés d'un élément (traits de la ligne, côtés du rectangle, contour discrétisé d'un cercle, d'un arc ou
  * d'une polyligne, lignes d'une cote).
  */
-export function segments(e: Element2D): Segment[] {
+export function segments(e: Element2D | StudioWall): Segment[] {
+  if (e.type === "wall") {
+    // Contour de l'emprise du mur (onglets compris).
+    const g = geometrieMur(e);
+    const r = g.ok ? g.valeur.anneau : [];
+    return r.map((p, i) => [p, r[(i + 1) % r.length]!] as const);
+  }
   if (e.type === "text") {
     // Emprise approchée du texte (dérivée, jamais une donnée).
     const b = studioTextBox(e);
@@ -82,7 +95,7 @@ export function segmentTouche(r: Rectangle2D, [a, b]: Segment): boolean {
 }
 
 /** L'élément est-il retenu par le rectangle selon le mode (fenêtre : entièrement dedans ; capture : touché) ? */
-export function retenu(e: Element2D, r: Rectangle2D, mode: ModeRectangle): boolean {
+export function retenu(e: Element2D | StudioWall, r: Rectangle2D, mode: ModeRectangle): boolean {
   const s = segments(e);
   return mode === "fenetre" ? s.every(([a, b]) => dedans(r, a) && dedans(r, b)) : s.some((x) => segmentTouche(r, x));
 }
@@ -90,13 +103,13 @@ export function retenu(e: Element2D, r: Rectangle2D, mode: ModeRectangle): boole
 /** Sélection par rectangle, parcours linéaire de tous les éléments (référence de l'index, et règle sous le seuil). */
 export function selectionParRectangleLineaire(doc: StudioDocument, a: StudioPoint, b: StudioPoint): string[] {
   const r = rectangleEntre(a, b), mode = modeRectangle(a, b);
-  return elements(doc).filter((e) => estSelectionnable(doc, e.layerId) && retenu(e, r, mode)).map((e) => e.id);
+  return [...elements(doc), ...murs(doc)].filter((e) => estSelectionnable(doc, e.layerId) && retenu(e, r, mode)).map((e) => e.id);
 }
 
 /** Tracé mémorisé d'un élément (objet immuable du document) et son emprise ; emprise infinie s'il n'a aucun segment. */
-interface Trace { e: Element2D; segments: Segment[]; boite: Boite2D }
-const TRACES = new WeakMap<Element2D, Trace>();
-function trace(e: Element2D): Trace {
+interface Trace { e: Element2D | StudioWall; segments: Segment[]; boite: Boite2D }
+const TRACES = new WeakMap<Element2D | StudioWall, Trace>();
+function trace(e: Element2D | StudioWall): Trace {
   let t = TRACES.get(e);
   if (!t) {
     const s = segments(e);
@@ -117,11 +130,11 @@ const INDEX_SELECTION = new WeakMap<StudioDocument, IndexSpatial<Trace>>();
  * qu'examiner trop, jamais écarter à tort) passent le contrôle exact.
  */
 export function selectionParRectangle(doc: StudioDocument, a: StudioPoint, b: StudioPoint, seuil = SEUIL_INDEX_SPATIAL): string[] {
-  const n = doc.objects.length + (doc.dimensions?.length ?? 0) + (doc.annotations?.length ?? 0);
+  const n = doc.objects.length + (doc.dimensions?.length ?? 0) + (doc.annotations?.length ?? 0) + (doc.architecture?.length ?? 0);
   if (n < seuil) return selectionParRectangleLineaire(doc, a, b);
   let index = INDEX_SELECTION.get(doc);
   if (!index) {
-    index = indexGrille(elements(doc).map(trace), (t) => t.boite);
+    index = indexGrille([...elements(doc), ...murs(doc)].map(trace), (t) => t.boite);
     INDEX_SELECTION.set(doc, index);
   }
   const r = rectangleEntre(a, b), mode = modeRectangle(a, b);
@@ -150,7 +163,7 @@ export interface Deplacement {
 export function commandesDeplacement(doc: StudioDocument, ids: readonly string[], dx: number, dy: number): Deplacement {
   if (!Number.isFinite(dx) || !Number.isFinite(dy) || (dx === 0 && dy === 0)) return { commandes: [], cotesLiees: [] };
   const commandes: StudioCommand[] = [], cotesLiees: string[] = [];
-  const parId = new Map(elements(doc).map((e) => [e.id, e]));
+  const parId = new Map<string, Element2D | StudioWall>([...elements(doc), ...murs(doc)].map((e) => [e.id, e]));
   for (const id of selectionValide(doc, ids)) {
     const e = parId.get(id)!;
     if (e.type === "dimension" && (e.links.start || e.links.end)) { cotesLiees.push(id); continue; }

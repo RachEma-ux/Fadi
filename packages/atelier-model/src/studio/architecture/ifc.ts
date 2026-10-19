@@ -13,7 +13,20 @@ import { lireArchitecture } from "./validation.js";
  *   déclaré son type, un `IfcDoor` (porte) ou un `IfcWindow` (fenêtre) le remplit (`IfcRelFillsElement`), sans corps
  *   propre ; une baie, ou une ouverture sans type déclaré, reste un `IfcOpeningElement` seul.
  * Jeux de propriétés : `Fadi_StudioWall` et `Fadi_StudioOpening` (valeurs saisies seulement).
+ *
+ * Placements : l'ouverture et son remplissage sont placés **relativement au mur** (`PlacementRelTo` = placement du mur),
+ * comme le veut l'usage IFC des éléments hébergés. Le corps de l'ouverture traverse l'épaisseur du mur augmentée de
+ * `STUDIO_IFC_DEBORD_OUVERTURE` de chaque côté : débord **technique** (pas une dimension du projet) qui évite les faces
+ * confondues au découpage booléen des lecteurs ; les valeurs saisies (largeur, hauteur, épaisseur du mur) restent celles
+ * des jeux de propriétés et du métré.
+ *
+ * Calques masqués : `ObjectsOnHiddenLayers` compte les **murs** d'un calque masqué (éléments à corps portés par un
+ * calque) ; les ouvertures, qui suivent le calque de leur mur sans élément de calque propre, n'y sont pas ajoutées —
+ * à la différence du rapport de fidélité, qui compte aussi les ouvertures. Les effectifs ne sont pas alignés à dessein.
  */
+
+/** Débord technique du corps d'une ouverture au-delà de chaque face du mur (m), pour le découpage booléen. */
+export const STUDIO_IFC_DEBORD_OUVERTURE = 0.001;
 
 export interface IfcOutilsProprietes {
   pset(id: string, name: string, target: number, props: number[]): void;
@@ -53,12 +66,18 @@ export function studioIfcArchitecture(items: readonly StudioArchitectureItem[], 
     res.construits.push({ element: wall, item, layerId: mur.layerId ?? STUDIO_DEFAULT_LAYER_ID });
     res.murs++;
     const { droite, gauche } = lateraux(mur);
+    /** Placement relatif au mur (placé en (0, 0, base), axes du repère local-3d). */
+    const relatif = (x: number, y: number, z: number, ux: number, uy: number) => {
+      const origine = s.add(`IFCCARTESIANPOINT((${studioStepReal(x)},${studioStepReal(y)},${studioStepReal(z)}))`);
+      const axe = s.add(`IFCDIRECTION((${studioStepReal(ux)},${studioStepReal(uy)},0.))`);
+      return s.add(`IFCLOCALPLACEMENT(${ref(placement)},${ref(s.add(`IFCAXIS2PLACEMENT3D(${ref(origine)},${ref(c.zAxis)},${ref(axe)})`))})`);
+    };
     for (const o of ouvertures) {
       const { segment: g, s0, ouverture: x } = o;
-      const ox = g.a.x + g.d.x * s0, oy = g.a.y + g.d.y * s0, oz = mur.base + x.sill;
-      const corps = c.rectangleSolid(x.width / 2, (droite + gauche) / 2, x.width, mur.thickness, x.height);
+      const ox = g.a.x + g.d.x * s0, oy = g.a.y + g.d.y * s0, oz = x.sill;
+      const corps = c.rectangleSolid(x.width / 2, (droite + gauche) / 2, x.width, mur.thickness + 2 * STUDIO_IFC_DEBORD_OUVERTURE, x.height);
       const rep = s.add(`IFCSHAPEREPRESENTATION(${ref(c.body)},'Body','SweptSolid',${refs([corps])})`);
-      const opening = s.add(`IFCOPENINGELEMENT(${c.gid(x.id)},$,${studioStepString(x.id)},$,$,${ref(c.placed(ox, oy, oz, g.d.x, g.d.y))},${ref(c.shape([rep]))},${studioStepString(x.id)},.OPENING.)`);
+      const opening = s.add(`IFCOPENINGELEMENT(${c.gid(x.id)},$,${studioStepString(x.id)},$,$,${ref(relatif(ox, oy, oz, g.d.x, g.d.y))},${ref(c.shape([rep]))},${studioStepString(x.id)},.OPENING.)`);
       s.add(`IFCRELVOIDSELEMENT(${c.gid(`rel-voids|${x.id}`)},$,$,$,${ref(wall)},${ref(opening)})`);
       p.pset(`opening|${x.id}`, "Fadi_StudioOpening", opening, [
         p.prop("StudioId", p.label(x.id)), p.prop("HostId", p.label(mur.id)), p.prop("Position", p.length(x.position)),
@@ -68,7 +87,7 @@ export function studioIfcArchitecture(items: readonly StudioArchitectureItem[], 
       res.ouvertures++;
       if (x.kind === "porte" || x.kind === "fenetre") {
         const entite = x.kind === "porte" ? "IFCDOOR" : "IFCWINDOW";
-        const remplissage = s.add(`${entite}(${c.gid(`${x.kind}|${x.id}`)},$,${studioStepString(x.id)},$,$,${ref(c.placed(ox, oy, oz, g.d.x, g.d.y))},$,${studioStepString(x.id)},${studioStepReal(x.height)},${studioStepReal(x.width)},.NOTDEFINED.,$,$)`);
+        const remplissage = s.add(`${entite}(${c.gid(`${x.kind}|${x.id}`)},$,${studioStepString(x.id)},$,$,${ref(relatif(ox, oy, oz, g.d.x, g.d.y))},$,${studioStepString(x.id)},${studioStepReal(x.height)},${studioStepReal(x.width)},.NOTDEFINED.,$,$)`);
         s.add(`IFCRELFILLSELEMENT(${c.gid(`rel-fills|${x.id}`)},$,$,$,${ref(opening)},${ref(remplissage)})`);
         res.remplissages.push(remplissage);
         if (x.kind === "porte") res.portes++;

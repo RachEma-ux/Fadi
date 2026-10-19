@@ -1,6 +1,5 @@
-import { STUDIO_LIMITS } from "../noyau/limites.js";
 import { array, discriminator, fail, finite, identifier, layerRef, point, record, same } from "../noyau/validation.js";
-import { geometrieMur, ouverturesSeChevauchent, placerOuverture, type GeometrieMur, type OuverturePlacee } from "./geometrie.js";
+import { geometrieMur, ouverturesSeChevauchent, placerOuverture, STUDIO_LIMITES_MUR, type GeometrieMur, type OuverturePlacee } from "./geometrie.js";
 import { STUDIO_OPENING_KINDS, STUDIO_WALL_JUSTIFICATIONS, type StudioArchitectureItem, type StudioOpening, type StudioOpeningKind, type StudioWall, type StudioWallJustification } from "./types.js";
 
 /**
@@ -29,9 +28,10 @@ function positifOuNul(value: unknown, path: string, nom: string): number {
 export function validerMur(value: unknown, path: string): StudioWall {
   const o = record(value, ["id", "type", "axis", "thickness", "height", "base", "justification"], path, ["layerId"]);
   if (o.type !== "wall") fail(`${path}.type`, "mur attendu");
+  const id = identifier(o.id, `${path}.id`);
   const raw = array(o.axis, `${path}.axis`);
   if (raw.length < 2) fail(`${path}.axis`, "deux points au moins attendus");
-  if (raw.length > STUDIO_LIMITS.polylinePoints) fail(`${path}.axis`, `${STUDIO_LIMITS.polylinePoints} points au plus`);
+  if (raw.length > STUDIO_LIMITES_MUR.axePoints) fail(`${path}.axis`, `mur ${id} : axe de ${STUDIO_LIMITES_MUR.axePoints} points au plus (borne technique de contrôle du mur)`);
   const axis = raw.map((p, i) => point(p, `${path}.axis[${i}]`));
   for (let i = 1; i < axis.length; i++) if (same(axis[i - 1]!, axis[i]!)) fail(`${path}.axis[${i}]`, "deux points consécutifs confondus");
   const thickness = positif(o.thickness, `${path}.thickness`, "épaisseur");
@@ -40,7 +40,7 @@ export function validerMur(value: unknown, path: string): StudioWall {
   finite(base + height, `${path}.height`);
   if (typeof o.justification !== "string" || !STUDIO_WALL_JUSTIFICATIONS.includes(o.justification as StudioWallJustification)) fail(`${path}.justification`, "justification left, center ou right attendue");
   const w: StudioWall = {
-    id: identifier(o.id, `${path}.id`), type: "wall", ...layerRef(o, path), axis, thickness, height, base: Object.is(base, -0) ? 0 : base,
+    id, type: "wall", ...layerRef(o, path), axis, thickness, height, base: Object.is(base, -0) ? 0 : base,
     justification: o.justification as StudioWallJustification,
   };
   const g = geometrieMur(w);
@@ -81,25 +81,54 @@ export interface ArchitectureLue {
  * chevauchement deux à deux sur un même mur. Refus au premier motif, avec l'identifiant des objets en cause.
  */
 export function controlerArchitecture(items: readonly StudioArchitectureItem[], path: string): ArchitectureLue {
+  return controler(items, path, null);
+}
+
+/**
+ * Contrôle limité aux murs `murIds` et à leurs ouvertures (ce qu'une commande a touché) : les autres murs n'ont pas
+ * changé, leur compatibilité tient toujours. Géométrie mémorisée par mur, chevauchements par balayage : le coût d'une
+ * commande ne dépend plus de la taille du document (hormis un parcours linéaire sans géométrie).
+ */
+export function controlerMurs(items: readonly StudioArchitectureItem[], murIds: Iterable<string>, path: string): void {
+  const ids = new Set(murIds);
+  if (ids.size) controler(items, path, ids);
+}
+
+function controler(items: readonly StudioArchitectureItem[], path: string, filtre: Set<string> | null): ArchitectureLue {
   const murs: ArchitectureLue["murs"] = new Map();
   for (const it of items) {
-    if (it.type !== "wall") continue;
+    if (it.type !== "wall" || (filtre && !filtre.has(it.id))) continue;
     const g = geometrieMur(it);
     if (!g.ok) fail(path, `mur ${it.id} : ${g.raison}`);
     murs.set(it.id, { mur: it, geometrie: g.valeur, ouvertures: [] });
   }
   const ouvertures: ArchitectureLue["ouvertures"] = new Map();
-  for (const it of items) {
-    if (it.type !== "opening") continue;
+  const rang = new Map<string, number>();
+  items.forEach((it, i) => {
+    if (it.type !== "opening" || (filtre && !filtre.has(it.hostId))) return;
+    rang.set(it.id, i);
     const hote = murs.get(it.hostId);
     if (!hote) fail(path, items.some((x) => x.id === it.hostId) ? `ouverture ${it.id} : l’hôte ${it.hostId} n’est pas un mur` : `ouverture ${it.id} : mur hôte ${it.hostId} introuvable`);
     const p = placerOuverture(hote.mur, hote.geometrie, it);
     if (!p.ok) fail(path, `ouverture ${it.id} incompatible avec son mur : ${p.raison}`);
-    for (const autre of hote.ouvertures) {
-      if (ouverturesSeChevauchent(autre.ouverture, it, hote.geometrie.tolerance)) fail(path, `ouvertures ${autre.ouverture.id} et ${it.id} : elles se chevauchent sur le mur hôte ${hote.mur.id}`);
-    }
     hote.ouvertures.push(p.valeur);
     ouvertures.set(it.id, p.valeur);
+  });
+  // Chevauchements deux à deux par mur, par balayage le long de l'axe (ordre du document pour nommer la paire).
+  for (const m of murs.values()) {
+    const tri = [...m.ouvertures].sort((a, b) => a.ouverture.position - b.ouverture.position);
+    const actives: OuverturePlacee[] = [];
+    for (const o of tri) {
+      for (let k = actives.length - 1; k >= 0; k--) {
+        const a = actives[k]!;
+        if (a.ouverture.position + a.ouverture.width <= o.ouverture.position + m.geometrie.tolerance) { actives.splice(k, 1); continue; }
+        if (ouverturesSeChevauchent(a.ouverture, o.ouverture, m.geometrie.tolerance)) {
+          const [x, y] = rang.get(a.ouverture.id)! < rang.get(o.ouverture.id)! ? [a, o] : [o, a];
+          fail(path, `ouvertures ${x.ouverture.id} et ${y.ouverture.id} : elles se chevauchent sur le mur hôte ${m.mur.id}`);
+        }
+      }
+      actives.push(o);
+    }
   }
   return { murs, ouvertures };
 }

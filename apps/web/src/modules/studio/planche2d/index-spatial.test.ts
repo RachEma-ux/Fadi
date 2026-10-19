@@ -2,7 +2,10 @@
  * Index spatial de la planche 2D (C.1) : propriété « indexé = linéaire » sur des documents aléatoires (grille seule,
  * sélection par rectangle, candidats d'accrochage), seuil mesuré, et repli linéaire sous le seuil.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// Propriétés sur documents aléatoires (≈ 3 s seules) : marge explicite pour les machines chargées (CI, agents parallèles).
+vi.setConfig({ testTimeout: 30_000 });
 import type { StudioAnnotation, StudioDimension, StudioDocument, StudioLayer, StudioShape } from "@parcours/atelier-model";
 import { candidatsObjets, indexAccrochage, indexLineaire, MODES_ACCROCHAGE, type ReglagesAccrochage } from "./accrochage";
 import { indexGrille, indexLineaireBoites, indexSpatial, SEUIL_INDEX_SPATIAL, type Boite2D } from "./index-spatial";

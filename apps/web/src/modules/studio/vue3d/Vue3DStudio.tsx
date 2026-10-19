@@ -10,6 +10,9 @@
  * les commandes `studio.solide.*` du brouillon ; aucun geste de navigation ne modifie le document.
  * Coupe horizontale (A.3-07, Maj+K) : `couperStudio` à la cote saisie, dessinée en surimpression dérivée, non
  * modifiable, chaque contour rattaché à son solide. Studio n'importe aucun module de l'Atelier.
+ * Maillage en tâche de fond (D.1/D.2, `taches/`) : `studioMesh3d` tourne dans le groupe de Workers ; le maillage
+ * précédent reste affiché jusqu'au suivant et un maillage remplacé n'est jamais affiché. Ressources GPU libérées à
+ * chaque reconstruction et au démontage (`ressources-gpu.ts`, D.3-02) ; compteurs exposés sur le canevas.
  *
  * Visualisation (lot E.5, `scenes/`) : scènes enregistrées (caméra relevée de la vue, calques montrés, mode
  * d'affichage), rappelées sans modifier le modèle ; apparence d'affichage (couleur, finition) d'un calque ou d'un
@@ -21,10 +24,15 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
-  couperStudio, studioApparenceResolue, studioMeshScene, studioNomFichierRendu, studioProvenanceRendu, studioScenes, studioVolumeSolide,
+  couperStudio, studioApparenceResolue, studioDocumentToutVisible, studioFiltrerMaillageScene, studioMesh3d, studioNomFichierRendu, studioProvenanceRendu, studioScenes, studioVolumeSolide,
   type StudioCameraScene, type StudioCommand, type StudioCoupe, type StudioDocument, type StudioFinitionAffichage, type StudioMesh3d, type StudioModeAffichage, type StudioScene,
 } from "@parcours/atelier-model";
+import { empreinteDe } from "../taches/empreinte";
+import { useTache } from "../taches/useTache";
+import { MESSAGES_TACHE } from "../taches/messages";
+import { compteGpu, libererObjet, vider } from "./ressources-gpu";
 import { Icon } from "../../../components/Icon";
+import { estSelectionnable } from "../planche2d/calques";
 import { LOCALE } from "../../../lib/i18n";
 import {
   auCentimetre, BOITE_VIDE, commandeBoite, commandeDeplacementSolide, commandePrisme, DEPLACEMENT_VIDE, descriptionSolide, PRISME_VIDE, profilsFermes,
@@ -86,15 +94,10 @@ interface Moteur {
 
 const nombre = (v: number) => v.toLocaleString(LOCALE, { maximumFractionDigits: 3 });
 
-function vider(groupe: THREE.Group) {
-  for (const enfant of [...groupe.children]) {
-    groupe.remove(enfant);
-    const o = enfant as THREE.Mesh;
-    o.geometry?.dispose();
-    const m = o.material as THREE.Material | THREE.Material[] | undefined;
-    if (Array.isArray(m)) m.forEach((x) => x.dispose()); else m?.dispose();
-  }
-}
+/** Maillage affiché tant que le premier calcul n'est pas rendu (rien n'est cadré dessus). */
+const MAILLAGE_VIDE: StudioMesh3d = Object.freeze({
+  frame: "local-3d", units: "m", source: { frame: "local-2d", conversion: "(x, y) → (x, y, z)" }, solids: [], outlines: [], nonExtruded: 0, hidden: 0, bounds: null,
+}) as StudioMesh3d;
 
 /** Aspect d'affichage d'un volume : couleur (apparence ou défaut de la vue), finition, mode d'affichage. */
 interface Aspect { couleur: number; finition?: StudioFinitionAffichage; mode: StudioModeAffichage; apparence: boolean }
@@ -274,7 +277,19 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const enAttente = useRef<StudioScene | null>(null);
   // La scène active ne se réévalue au fil de la navigation que lorsqu'une scène est choisie et montrée.
   const suiviCamera = useRef(false);
-  const mesh = useMemo(() => studioMeshScene(doc, calquesMontres), [doc, calquesMontres]);
+  // Maillage en tâche de fond (D.2) : avec une scène montrée, le Worker maille le document « tous calques affichés »
+  // (copie de vue, mémorisée pour garder la même empreinte), puis la scène ne garde que ses calques (`studioFiltrerMaillageScene`).
+  const montreScene = calquesMontres !== null;
+  const docMaillage = useMemo(() => (montreScene ? studioDocumentToutVisible(doc) : doc), [doc, montreScene]);
+  const empreinte = empreinteDe(docMaillage);
+  const maillage = useTache<{ document: StudioDocument }, StudioMesh3d>(
+    { cle: "studio.maillage-3d", classe: "fond", nature: "maillage.3d", charge: { document: docMaillage }, empreinte },
+    { initial: () => studioMesh3d(docMaillage) },
+  );
+  const brut = maillage.valeur ?? MAILLAGE_VIDE;
+  const mesh = useMemo(() => (calquesMontres && brut !== MAILLAGE_VIDE ? studioFiltrerMaillageScene(brut, calquesMontres) : brut), [brut, calquesMontres]);
+  /** Le maillage affiché est celui du document courant (pas un maillage antérieur encore affiché pendant le calcul). */
+  const maillageAJour = maillage.valeur !== undefined && maillage.revision === empreinte.revision;
   const scenes = studioScenes(doc);
   const calquesVue = calquesMontres ?? calquesVisualisation(doc).filter((c) => c.visible).map((c) => c.id);
   suiviCamera.current = sceneChoisie !== null && calquesMontres !== null;
@@ -297,7 +312,9 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     }
     const touche = rayon.intersectObjects(m.libres.children, false).find((h) => typeof h.object.userData.solide === "string");
     // Mur ou ouverture (A.4) : l'ouverture, boîte du vide, l'emporte sur le mur qu'elle traverse.
-    const touches = rayon.intersectObjects(m.architecture.children, false).filter((h) => h.object instanceof THREE.Mesh && typeof h.object.userData.architecture === "string");
+    // Seuls les murs et ouvertures d'un calque affiché et déverrouillé se désignent (comme sur la planche 2D).
+    const designables = new Set((mesh.architecture ?? []).filter((a) => estSelectionnable(doc, a.layerId)).map((a) => a.id));
+    const touches = rayon.intersectObjects(m.architecture.children, false).filter((h) => h.object instanceof THREE.Mesh && designables.has(h.object.userData.architecture as string));
     const archi = touches.find((h) => mesh.architecture?.some((a) => a.id === h.object.userData.architecture && a.type === "opening")) ?? touches[0];
     if (archi && (!touche || archi.distance <= touche.distance)) { surSelectionArchitecture?.(archi.object.userData.architecture as string); return; }
     surSelection?.((touche?.object.userData.solide as string | undefined) ?? null);
@@ -327,7 +344,17 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     scene.add(grille);
     const contenu = new THREE.Group(), libres = new THREE.Group(), architecture = new THREE.Group(), surimpression = new THREE.Group();
     scene.add(contenu, libres, architecture, surimpression);
-    const m: Moteur = { renderer, scene, perspective, plan, camera: perspective, controls: null, contenu, libres, architecture, surimpression, rendre: () => renderer.render(scene, m.camera), surCamera: () => { if (suiviCamera.current) setCameraVersion((v) => v + 1); } };
+    const m: Moteur = {
+      renderer, scene, perspective, plan, camera: perspective, controls: null, contenu, libres, architecture, surimpression,
+      rendre: () => {
+        renderer.render(scene, m.camera);
+        // Compteurs GPU (recette D.3-02) : ils reviennent à leur ligne de base après chaque reconstruction.
+        const c = compteGpu(renderer);
+        renderer.domElement.dataset.studioGpuGeometries = String(c.geometries);
+        renderer.domElement.dataset.studioGpuTextures = String(c.textures);
+      },
+      surCamera: () => { if (suiviCamera.current) setCameraVersion((v) => v + 1); },
+    };
     moteur.current = m;
     poserControles(m, navigation);
     const taille = () => {
@@ -358,8 +385,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       m.controls?.removeEventListener("change", m.surCamera);
       m.controls?.dispose();
       vider(contenu); vider(libres); vider(architecture); vider(surimpression);
-      grille.geometry.dispose();
-      (grille.material as THREE.Material).dispose();
+      libererObjet(grille);
       renderer.forceContextLoss();
       renderer.dispose();
       renderer.domElement.remove();
@@ -376,7 +402,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     m.controls?.removeEventListener("change", m.surCamera);
     poserControles(m, navigation);
     // Scène rappelée qui a demandé ce changement de navigation : sa caméra, sinon le cadrage.
-    if (enAttente.current) { poserCamera(m, enAttente.current.camera); enAttente.current = null; }
+    if (enAttente.current) { poserCamera(m, enAttente.current.camera); enAttente.current = null; cadre.current = true; }
     else cadrer(m, mesh);
     setCameraVersion((v) => v + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -386,7 +412,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     const m = moteur.current; if (!m) return;
     construire(m, mesh, selection, doc, mode);
     construireArchitecture(m, mesh, selectionArchitecture, doc, mode);
-    if (!cadre.current) { cadrer(m, mesh); cadre.current = true; }
+    if (!cadre.current && mesh !== MAILLAGE_VIDE) { cadrer(m, mesh); cadre.current = true; }
     else m.rendre();
   }, [mesh, selection, selectionArchitecture, indisponible, doc, mode]);
 
@@ -419,7 +445,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       if (!surNavigation) { setErreur("Cette scène demande une autre navigation : basculez la vue en plan (Maj+G), puis rappelez-la."); return; }
       enAttente.current = s;
       surNavigation(voulue);
-    } else if (m) { poserCamera(m, s.camera); setCameraVersion((v) => v + 1); }
+    } else if (m) { poserCamera(m, s.camera); cadre.current = true; setCameraVersion((v) => v + 1); }
     setStatut("Scène rappelée : la vue suit son réglage, le modèle n’est pas modifié.");
   }
   function reglages() { return { nom: nomScene.trim() || prochainNomScene(doc), calques: calquesVue, mode }; }
@@ -459,7 +485,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   }
   const raisonRendu = indisponible ? "Vue 3D indisponible : aucun rendu ne peut être tiré du canevas."
     : !provenance ? "Provenance inconnue : le rendu n’est pas exporté."
-    : provenance.nonEnregistre ? "Enregistrez d’abord : le rendu porte sur une révision enregistrée, pas sur les modifications non enregistrées." : null;
+    : provenance.nonEnregistre ? "Enregistrez d’abord : le rendu porte sur une révision enregistrée, pas sur les modifications non enregistrées."
+    : !maillageAJour ? "Maillage en cours de calcul : le rendu attend la géométrie du document affiché." : null;
   async function exporterPng() {
     const m = moteur.current;
     if (!m || !provenance || raisonRendu) { setErreur(raisonRendu ?? "Vue 3D indisponible."); return; }
@@ -517,12 +544,14 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const libres = mesh.freeSolids?.length ?? 0;
   const architecture = mesh.architecture ?? [];
   return (
-    <section className="studio-vue3d" aria-label="Vue 3D" data-studio-vue3d data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-architecture-3d={architecture.length} data-studio-navigation={navigation}
+    <section className="studio-vue3d" aria-label="Vue 3D" data-studio-vue3d data-studio-maillage={maillage.etat} data-studio-maillage-revision={maillage.revision ?? ""} data-studio-revision-courante={empreinte.revision} data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-architecture-3d={architecture.length} data-studio-navigation={navigation}
       data-studio-affichage={mode} data-studio-scene-active={sceneActive ?? ""} data-studio-calques-montres={calquesMontres?.join(" ") ?? ""}>
       <div className="studio-vue3d-bandeau">
         <span role="status" data-studio-vue3d-decompte><span>{`${mesh.solids.length} volume(s)`}</span>{" · "}<span>{`${mesh.nonExtruded} objet(s) non extrudé(s), dessinés à plat`}</span>{libres > 0 && <>{" · "}<span>{`${libres} solide(s) libre(s)`}</span></>}</span>
         <button type="button" onClick={() => { const m = moteur.current; if (m) cadrer(m, mesh); }} disabled={indisponible}>Recadrer la vue 3D</button>
       </div>
+      {maillage.message && <p className="studio-alert" role="alert" data-studio-maillage-erreur>{maillage.message}</p>}
+      {maillage.valeur === undefined && !maillage.message && <p className="studio-hint" role="status">{MESSAGES_TACHE.enCours}</p>}
       {indisponible && <p className="studio-alert" role="alert" data-studio-vue3d-indisponible>Vue 3D indisponible : WebGL n’est pas pris en charge par ce navigateur.</p>}
       <div ref={hote} className="studio-vue3d-hote" data-studio-vue3d-outil={outil} />
       <p className="studio-hint">{navigation === "plan"
@@ -596,7 +625,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         <ul>
           {architecture.map((a) => (
             <li key={a.id}>
-              <button type="button" aria-pressed={a.id === selectionArchitecture} onClick={() => surSelectionArchitecture?.(a.id === selectionArchitecture ? null : a.id)} data-studio-architecture-3d-objet={a.id} data-studio-type={a.type}>
+              <button type="button" aria-pressed={a.id === selectionArchitecture} disabled={!estSelectionnable(doc, a.layerId)} onClick={() => surSelectionArchitecture?.(a.id === selectionArchitecture ? null : a.id)} data-studio-architecture-3d-objet={a.id} data-studio-type={a.type}>
                 <Icon name={a.type === "wall" ? "studio-wall" : "studio-opening"} size={16} /> {a.type === "wall" ? "Mur" : "Ouverture"} <span translate="no">{a.id.slice(0, 8)}</span>
               </button>
             </li>

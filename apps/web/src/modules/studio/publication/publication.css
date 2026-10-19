@@ -15,3 +15,7 @@
 .studio-publication-journal { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
 .studio-publication-journal q { display: block; opacity: 0.85; }
 .studio-publication-journal-bouton { justify-self: start; }
+.studio-publication-statut.statut-en-revue, .studio-publication-statut.statut-remplace { font-style: italic; }
+.studio-publication-ecarts { margin: 0; padding-left: 18px; display: grid; gap: 2px; font-size: 0.9rem; }
+.studio-publication-coordonnees { display: grid; gap: 4px; border: 1px solid rgba(127, 127, 127, 0.35); border-radius: 6px; padding: 6px 10px; min-width: 0; }
+.studio-publication-coordonnees label { display: flex; gap: 6px; align-items: center; overflow-wrap: anywhere; }

@@ -2,7 +2,7 @@
 /**
  * Recette de la visualisation de Studio (lot E.5-01 à E.5-05) sur l'API réelle et l'application construite (même
  * origine, base migrée) :
- * - scène créée par son outil (V) dans la vue 3D, enregistrée (Ctrl+S), relue après actualisation et rappelée (J) :
+ * - scène créée par son outil (V) dans la vue 3D, enregistrée (Ctrl+S), relue après actualisation et rappelée (F) :
  *   la vue reprend caméra, calques montrés et mode d'affichage, sans aucune commande envoyée ;
  * - apparence d'affichage d'un mur : la géométrie, les murs, les solides, les exports SVG / DXF et l'effectif IFC sont
  *   inchangés ;
@@ -91,7 +91,7 @@ try {
   const sansFocus = () => page.evaluate(() => document.activeElement?.blur());
 
   // Règle d'or : chaque outil de la famille Visualisation a son bouton, son icône et son raccourci dans la barre.
-  const attendus = [["studio.scene.creer", "V"], ["studio.scene.modifier", "F2"], ["studio.scene.rappeler", "J"], ["studio.scene.supprimer", "Control+Shift+X"], ["studio.apparence.definir", "T"], ["studio.apparence.retirer", "Control+Shift+L"]];
+  const attendus = [["studio.scene.creer", "V"], ["studio.scene.modifier", "F2"], ["studio.scene.rappeler", "F"], ["studio.scene.supprimer", "Control+Shift+X"], ["studio.apparence.definir", "T"], ["studio.apparence.retirer", "Control+Shift+L"]];
   for (const [id, r] of attendus) check(`barre : ${id} présent, raccourci ${r}, icône dessinée`, (await outils.locator(`[data-studio-outil="${id}"][aria-keyshortcuts="${r}"] svg path`).count()) === 1);
   check("barre : « Exporter le rendu PNG » (F4) présent", (await outils.locator('[data-studio-commande="exporter-png"][aria-keyshortcuts="F4"] svg path').count()) === 1);
 
@@ -124,7 +124,7 @@ try {
   const refuse = await page.request.post(`${BASE}${variantePath}/commands`, { data: { contractVersion: "studio-commands/1", requestId: `visu-refus-${Date.now()}`, baseRevisionId: tete1.revision.id, commands: [{ toolId: "studio.scene.creer", params: { ...sc, id: "autre", frame: "local-2d" } }] } });
   check("serveur : une scène hors repère local-3d est refusée (400)", refuse.status() === 400, String(refuse.status()));
 
-  // Actualisation, navigation (la vue n'est plus la scène), puis rappel (J) : caméra, calques, mode repris.
+  // Actualisation, navigation (la vue n'est plus la scène), puis rappel (F) : caméra, calques, mode repris.
   await page.reload();
   await outils.waitFor();
   await ouvrir3d();
@@ -138,9 +138,9 @@ try {
   await vue.locator(`[data-studio-scene="${sceneId}"]`).click();
   const envoisAvantRappel = envois.length;
   await sansFocus();
-  await page.keyboard.press("j");
+  await page.keyboard.press("f");
   await page.locator(`[data-studio-vue3d][data-studio-scene-active="${sceneId}"]`).waitFor();
-  check("Rappeler (J) : la vue reprend la scène (caméra, calques, mode filaire)", (await vue.getAttribute("data-studio-affichage")) === "wireframe" && (await vue.getAttribute("data-studio-calques-montres")).split(" ").sort().join() === "default,murs");
+  check("Rappeler (F) : la vue reprend la scène (caméra, calques, mode filaire)", (await vue.getAttribute("data-studio-affichage")) === "wireframe" && (await vue.getAttribute("data-studio-calques-montres")).split(" ").sort().join() === "default,murs");
   check("Rappeler : aucune commande, aucune modification en attente", envois.length === envoisAvantRappel && (await page.locator("[data-studio-annuler-portee]").textContent()).includes("(0 commande(s)"));
 
   // E.5-02 : apparence d'affichage du mur, géométrie et données constructives inchangées.
@@ -169,8 +169,10 @@ try {
   // E.5-03 : rendu du modèle (F4) de la scène rappelée, provenance incluse.
   await vue.locator(`[data-studio-scene="${sceneId}"]`).click();
   await sansFocus();
-  await page.keyboard.press("j");
+  await page.keyboard.press("f");
   await page.locator(`[data-studio-vue3d][data-studio-scene-active="${sceneId}"]`).waitFor();
+  // Le maillage de la scène (tous calques affichés, filtré) est calculé en tâche de fond : l'export attend qu'il soit à jour.
+  await vue.locator("[data-studio-exporter-png]:not([disabled])").waitFor();
   const telechargement = page.waitForEvent("download");
   await page.keyboard.press("F4");
   const fichier = await telechargement;
@@ -186,6 +188,7 @@ try {
   await outils.waitFor();
   await ouvrir3d();
   check("révision historique : création de scène indisponible (lecture seule)", await vue.locator('[data-studio-scene-action="studio.scene.creer"]').isDisabled());
+  await vue.locator("[data-studio-exporter-png]:not([disabled])").waitFor();
   const telechargementHist = page.waitForEvent("download");
   await vue.locator("[data-studio-exporter-png]").click();
   const pHist = JSON.parse(textesPng(readFileSync(await (await telechargementHist).path()))?.["fadi:rendu"] ?? "null");
