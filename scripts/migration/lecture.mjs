@@ -4,6 +4,11 @@
  * - Copie déclarée : la base lue doit être nommée par l'opérateur (`copieDeclaree`) et ce nom doit être exactement
  *   `current_database()` ; sinon la lecture est refusée avant toute requête de données. Mandat : jamais une base de
  *   production existante, seulement une copie isolée ou une base de recette.
+ * - Marqueur de copie posé À LA RESTAURATION : le nom de la base se termine par `_copie`, `_mig` ou `_synth`, OU la base
+ *   porte un commentaire contenant `fadi-copie-migration`
+ *   (`COMMENT ON DATABASE <copie> IS 'fadi-copie-migration — restaurée le …'`, posé par l'opérateur juste après la
+ *   restauration de la sauvegarde). Sans l'un ou l'autre, la lecture est refusée (`COPIE_NON_MARQUEE`) : déclarer le
+ *   nom ne suffit pas, une base de production nommée par erreur n'est jamais lue.
  * - Session en lecture seule (`default_transaction_read_only = on`) puis une seule transaction
  *   `REPEATABLE READ READ ONLY` (instantané cohérent) ; `transaction_read_only` est relu avant la première requête de
  *   données, et la transaction se termine par ROLLBACK. PostgreSQL refuse toute écriture dans cette transaction
@@ -13,6 +18,15 @@
  */
 import pg from 'pg';
 import { REQUETES } from './migration-lib.mjs';
+
+export const SUFFIXES_COPIE = Object.freeze(['_copie', '_mig', '_synth']);
+export const MARQUEUR_COPIE = 'fadi-copie-migration';
+
+/** Vrai si la base porte le marqueur de copie : suffixe de nom ou commentaire de base contenant le marqueur. */
+export function estCopieMarquee(nom, commentaire) {
+  return (typeof nom === 'string' && SUFFIXES_COPIE.some((s) => nom.endsWith(s) && nom.length > s.length))
+    || (typeof commentaire === 'string' && commentaire.includes(MARQUEUR_COPIE));
+}
 
 export class RefusLecture extends Error {
   constructor(code, message) { super(message); this.code = code; this.name = 'RefusLecture'; }
@@ -27,8 +41,12 @@ export async function ouvrirSessionLecture({ connectionString, copieDeclaree }) 
   try {
     await client.query('SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY');
     await client.query('SET default_transaction_read_only = on');
-    const base = (await client.query('SELECT current_database() AS nom, current_user AS role, version() AS serveur')).rows[0];
+    const base = (await client.query("SELECT current_database() AS nom, current_user AS role, version() AS serveur, shobj_description((SELECT oid FROM pg_database WHERE datname = current_database()), 'pg_database') AS commentaire")).rows[0];
     if (base.nom !== copieDeclaree) throw new RefusLecture('COPIE_DIFFERENTE', `La base connectée (${base.nom}) n'est pas la copie déclarée (${copieDeclaree}).`);
+    if (!estCopieMarquee(base.nom, base.commentaire)) {
+      throw new RefusLecture('COPIE_NON_MARQUEE', `La base ${base.nom} ne porte pas de marqueur de copie : son nom doit se terminer par ${SUFFIXES_COPIE.join(', ')} ou elle doit porter un commentaire contenant « ${MARQUEUR_COPIE} » (COMMENT ON DATABASE, posé à la restauration). Lecture refusée.`);
+    }
+    delete base.commentaire;
     return { client, base, fermer: () => client.end() };
   } catch (err) {
     await client.end().catch(() => undefined);
