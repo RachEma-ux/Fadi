@@ -107,6 +107,7 @@ export const BARRES_STUDIO: readonly { id: BarreStudio; libelleFR: string }[] = 
   { id: "calques", libelleFR: "Calques" },
   { id: "volume", libelleFR: "Volume" },
   { id: "volume-libre", libelleFR: "Volume libre" },
+  { id: "architecture", libelleFR: "Architecture" },
   { id: "edition", libelleFR: "Édition" },
   { id: "vue", libelleFR: "Vue" },
   { id: "accrochage", libelleFR: "Accrochage" },
@@ -136,11 +137,13 @@ export const OUTILS_MODES: ReadonlySet<StudioToolId> = new Set<StudioToolId>([
   "studio.solide.boite", "studio.solide.prisme", "studio.solide.deplacer",
   "studio.dessin.copier", "studio.dessin.rotation", "studio.dessin.symetrie", "studio.dessin.echelle",
   "studio.dessin.cote-angulaire", "studio.dessin.texte",
+  // Architecture (A.4) : poser l'axe d'un mur, désigner le mur d'une ouverture.
+  "studio.architecture.mur", "studio.architecture.ouverture",
 ]);
 /** Outils du volume libre : ils agissent dans la vue 3D, qu'ils ouvrent. */
 export const OUTILS_VOLUME_LIBRE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.solide.boite", "studio.solide.prisme", "studio.solide.deplacer", "studio.solide.supprimer"]);
 /** Outils qui posent des points sur la planche. */
-export const OUTILS_TRACE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte"]);
+export const OUTILS_TRACE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte", "studio.architecture.mur", "studio.architecture.ouverture"]);
 
 export const outilsDeBarre = (barre: BarreStudio): StudioToolEntry[] => STUDIO_TOOLS.filter((t) => t.groupe === barre);
 export const commandesDeBarre = (barre: BarreStudio): CommandeEditeur[] => COMMANDES_EDITEUR.filter((c) => c.groupe === barre);

@@ -100,7 +100,9 @@ export function PanneauQuantites({ doc, lectureSeule, ajustementsInitiaux, surAj
   return <section className="studio-quantites" aria-labelledby="studio-quantites-titre" data-studio-quantites={doc.id}>
     <h2 id="studio-quantites-titre">Quantités</h2>
     <p>Quantités brutes dérivées du dessin, en mètres (repère local). Arrondi à l’affichage seulement.</p>
-    <p data-studio-quantites-deductions><strong>Déductions : non déclarées</strong> — aucune ouverture n’est déduite d’un recouvrement ; les quantités nettes ne sont pas évaluées.</p>
+    {brut.deductions === "ouvertures-declarees"
+      ? <p data-studio-quantites-deductions="ouvertures-declarees"><strong>Déductions : ouvertures déclarées seulement</strong> — chaque mur architectural déduit les ouvertures créées dans ce mur (volume net) ; rien n’est déduit d’un recouvrement.</p>
+      : <p data-studio-quantites-deductions><strong>Déductions : non déclarées</strong> — aucune ouverture n’est déduite d’un recouvrement ; les quantités nettes ne sont pas évaluées.</p>}
     {brut.cotesExclues > 0 && <p>{`${brut.cotesExclues} cote(s) exclue(s) du métré.`}</p>}
     {brut.nonPrisEnCharge > 0 && <p role="note" data-studio-quantites-inconnus>{`${brut.nonPrisEnCharge} objet(s) d’un type non pris en charge : non évalué(s).`}</p>}
 

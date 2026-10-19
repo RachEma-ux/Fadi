@@ -26,9 +26,11 @@ export interface PropsPanneauProprietes {
   formulaire: ReactNode;
   /** Panneau des calques. */
   calques: ReactNode;
+  /** Panneau « Architecture » (murs et ouvertures, A.4). */
+  architecture?: ReactNode;
 }
 
-export function PanneauProprietes({ titre, drawing, selectionIds, selected, writable, formesChoisies, extrusion, surExtrusion, surExtruder, surAplatir, surSupprimer, formulaire, calques }: PropsPanneauProprietes) {
+export function PanneauProprietes({ titre, drawing, selectionIds, selected, writable, formesChoisies, extrusion, surExtrusion, surExtruder, surAplatir, surSupprimer, formulaire, calques, architecture }: PropsPanneauProprietes) {
   return <aside className="studio-properties" aria-label="Propriétés du dessin"><h2>{titre}</h2><p>{`${drawing.objects.length} objets · ${drawing.dimensions?.length ?? 0} cotes`}</p>
     {selectionIds.length > 0 && <div className="studio-selection" data-studio-selection={selected?.id} data-studio-selection-compte={selectionIds.length}>
       {selected ? <p>Objet sélectionné : <span translate="no">{selected.id.slice(0, 8)}</span></p> : <p>{`${selectionIds.length} objets sélectionnés`}</p>}
@@ -43,6 +45,7 @@ export function PanneauProprietes({ titre, drawing, selectionIds, selected, writ
     {formesChoisies.length > 0 && <FormulaireExtrusion valeurs={extrusion} modifiable={writable} formes={formesChoisies.length} extrudes={formesChoisies.filter(o => o.extrusion).length}
       surValeurs={surExtrusion} surExtruder={surExtruder} surAplatir={surAplatir} />}
     {formulaire}
+    {architecture}
     {calques}
     <div className="studio-note"><strong>Une planche autonome</strong><p>Les tracés restent en brouillon jusqu’à la confirmation du serveur. Aucun modèle 3D n’est nécessaire.</p></div></aside>;
 }

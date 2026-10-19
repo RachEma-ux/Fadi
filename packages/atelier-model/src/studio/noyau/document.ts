@@ -4,6 +4,8 @@ import { validerSolide, type StudioSolid } from "../objets-3d/solides.js";
 import { controlerLiensAnnotation, validerAnnotation } from "../objets/annotation.js";
 import { studioAngularValue } from "../objets/cote-angulaire.js";
 import { validerCalque } from "./calques.js";
+import type { StudioArchitectureItem } from "../architecture/types.js";
+import { controlerArchitecture, validerElementArchitectural } from "../architecture/validation.js";
 import { STUDIO_LIMITS } from "./limites.js";
 import type { StudioAnnotation, StudioDocument, StudioLayer, StudioShape } from "./types.js";
 import { array, fail, identifier, record } from "./validation.js";
@@ -11,19 +13,20 @@ import { array, fail, identifier, record } from "./validation.js";
 /** Document Studio : forme canonique, validation complète, création, lectures (sélection, mesure d'une cote). */
 
 /** Forme canonique : `layers`, `dimensions`, `solides` et `annotations` vides sont omis. */
-export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[], solides: StudioSolid[] = [], annotations: StudioAnnotation[] = []): StudioDocument {
+export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[], solides: StudioSolid[] = [], annotations: StudioAnnotation[] = [], architecture: StudioArchitectureItem[] = []): StudioDocument {
   return {
     id, schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects,
     ...(layers.length ? { layers } : {}),
     ...(dimensions.length ? { dimensions } : {}),
     ...(solides.length ? { solides } : {}),
     ...(annotations.length ? { annotations } : {}),
+    ...(architecture.length ? { architecture } : {}),
   };
 }
 
 /** Returns a private, canonical copy (empty `layers` / `dimensions` / `annotations` omitted) or throws `StudioValidationError`. */
 export function validateStudioDocument(value: unknown): StudioDocument {
-  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions", "solides", "annotations"]);
+  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions", "solides", "annotations", "architecture"]);
   if (d.schemaVersion !== "studio-document/1") fail("studioDocument.schemaVersion", "version non prise en charge");
   if (d.units !== "m") fail("studioDocument.units", "unité m attendue");
   if (d.frame !== "local-2d") fail("studioDocument.frame", "repère local-2d attendu");
@@ -71,7 +74,17 @@ export function validateStudioDocument(value: unknown): StudioDocument {
     controlerLiensAnnotation(o, shapes, `studioDocument.annotations[${i}]`);
     if (o.layerId !== undefined && !layerIds.has(o.layerId)) fail("studioDocument.annotations", "calque inconnu");
   });
-  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions, solides, annotations);
+  // Objets architecturaux (A.4) : identifiants uniques dans tout le document, calque connu, compatibilité ouverture / mur.
+  const rawArchitecture = Object.hasOwn(d, "architecture") ? array(d.architecture, "studioDocument.architecture") : [];
+  if (rawObjects.length + rawDimensions.length + rawAnnotations.length + rawSolides.length + rawArchitecture.length > STUDIO_LIMITS.objects) fail("studioDocument.architecture", `${STUDIO_LIMITS.objects} objets au plus, objets architecturaux compris`);
+  const architecture = rawArchitecture.map((o, i) => validerElementArchitectural(o, `studioDocument.architecture[${i}]`));
+  for (const o of architecture) {
+    if (shapes.has(o.id) || dimensionIds.has(o.id) || annotationIds.has(o.id)) fail("studioDocument.architecture", "identifiant dupliqué");
+    annotationIds.add(o.id);
+    if (o.type === "wall" && o.layerId !== undefined && !layerIds.has(o.layerId)) fail("studioDocument.architecture", "calque inconnu");
+  }
+  controlerArchitecture(architecture, "studioDocument.architecture");
+  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions, solides, annotations, architecture);
 }
 
 /** Valeur mesurée d'une cote angulaire (degrés), dérivée ; « non évaluée » (null) tant qu'elle est à résoudre. */

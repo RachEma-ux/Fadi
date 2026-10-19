@@ -1177,6 +1177,113 @@ try {
   await page.locator(`[data-studio-objet="${formesT[0]}"]`).waitFor({ state: "attached" });
   check("transformations : l'actualisation restitue le même dessin", (await empreinte()) === empreinteT && JSON.stringify((await a.api("get", variantePath)).revision) === JSON.stringify(transfo.revision));
 
+  // Murs et ouvertures (A.4, REC-A-03) : famille « Architecture » (Mur W, Ouverture H, Modifier Ctrl+Maj+E, Supprimer
+  // avec cascade Ctrl+Suppr), aucune dimension proposée ; mur 6 × 3 × 0,2 m saisi au clavier, ouverture 1 × 2,1 m posée
+  // d'un clic sur le mur ; même identifiant sur la planche et dans la vue 3D ; élargissement à 1,20 m depuis la vue 3D
+  // (volume net 3,180 → 3,096 m³) ; mur abaissé sous l'ouverture refusé avec son motif, sans commande ajoutée ;
+  // enregistrement en une enveloppe, actualisation identique, export SVG avec le vide de l'ouverture.
+  await page.evaluate(() => document.activeElement?.blur());
+  check("architecture : Mur (W), Ouverture (H), Modifier (Ctrl+Maj+E), Supprimer le mur et ses ouvertures (Ctrl+Suppr) dans la famille Architecture, icônes propres",
+    (await outils.locator('[data-studio-famille="architecture"] [data-studio-outil="studio.architecture.mur"][aria-keyshortcuts="W"] svg path').count()) === 1
+    && (await outils.locator('[data-studio-famille="architecture"] [data-studio-outil="studio.architecture.ouverture"][aria-keyshortcuts="H"] svg path').count()) === 1
+    && (await outils.locator('[data-studio-famille="architecture"] [data-studio-outil="studio.architecture.modifier"][aria-keyshortcuts="Control+Shift+E"]').count()) === 1
+    && (await outils.locator('[data-studio-famille="architecture"] [data-studio-outil="studio.architecture.supprimer"][aria-keyshortcuts="Control+Delete"]').count()) === 1);
+  await page.keyboard.press("w");
+  const formMur = proprietes.locator("[data-studio-architecture-mur-formulaire]");
+  await formMur.waitFor();
+  check("architecture : W choisit Mur, aucune dimension proposée", (await element(outils, "Mur").getAttribute("aria-pressed")) === "true"
+    && (await formMur.getByLabel("Épaisseur (m)").inputValue()) === "" && (await formMur.getByLabel("Hauteur (m)").inputValue()) === "" && (await formMur.locator('[data-studio-champ-architecture="justification"]').inputValue()) === "");
+  await formMur.getByLabel("Axe (x y ; …)").fill("0 -30; 6 -30");
+  await formMur.getByRole("button", { name: "Créer le mur", exact: true }).click();
+  check("architecture : création impossible tant que les dimensions ne sont pas saisies (champs exigés, aucun mur créé)",
+    (await page.locator("svg [data-studio-architecture]").count()) === 0 && (await formMur.getByLabel("Épaisseur (m)").evaluate((e) => e.validity.valueMissing)) && (await portee()).includes("(0 commande(s)"), await portee());
+  for (const [libelle, v] of [["Épaisseur (m)", "0.2"], ["Hauteur (m)", "3"], ["Cote de base z (m)", "0"]]) await formMur.getByLabel(libelle, { exact: true }).fill(v);
+  await formMur.locator('[data-studio-champ-architecture="justification"]').selectOption("center");
+  await formMur.getByRole("button", { name: "Créer le mur", exact: true }).click();
+  const murPlanche = page.locator('svg [data-studio-architecture][data-studio-type="wall"]');
+  await murPlanche.waitFor({ state: "attached" });
+  const idMur = await murPlanche.getAttribute("data-studio-architecture");
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+Z");
+  await page.keyboard.press("h");
+  const formOuv = proprietes.locator("[data-studio-architecture-ouverture-formulaire]");
+  await formOuv.waitFor();
+  for (const [libelle, v] of [["Largeur (m)", "1"], ["Hauteur (m)", "2.1"], ["Allège (m)", "0"]]) await formOuv.getByLabel(libelle, { exact: true }).fill(v);
+  // Clic sur l'axe du mur en (3 ; −30) : point du repère du document converti en point de l'écran par la planche.
+  await planche.scrollIntoViewIfNeeded();
+  const ecran = await page.evaluate(() => {
+    const svg = document.querySelector('[aria-label="Planche de dessin 2D"]');
+    const q = svg.createSVGPoint(); q.x = 3; q.y = -30;
+    const r = q.matrixTransform(svg.getScreenCTM());
+    return { x: r.x, y: r.y };
+  });
+  await page.mouse.click(ecran.x, ecran.y);
+  const ouvPlanche = page.locator('svg [data-studio-architecture][data-studio-type="opening"]');
+  const ouvPosee = await ouvPlanche.waitFor({ state: "attached", timeout: 5000 }).then(() => true, () => false);
+  check("architecture : H choisit Ouverture ; un clic sur le mur la pose", ouvPosee, `${JSON.stringify(ecran)} · ${await page.locator(".studio-alert, .studio-info").allTextContents()} · ${await page.locator(".studio-hint").first().textContent()}`);
+  const idOuv = await ouvPlanche.getAttribute("data-studio-architecture");
+  check("architecture : un clic sur le mur pose l'ouverture ; le mur est dessiné en deux parties pleines autour du vide",
+    (await murPlanche.locator("polygon").count()) === 2 && (await portee()).includes("(2 commande(s)"), await portee());
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Escape");
+  // Le mur créé au clavier est déjà sélectionné ; le bouton de la liste bascule la sélection.
+  const choisirMur = proprietes.locator(`[data-studio-architecture-choisir="${idMur}"]`);
+  if ((await choisirMur.getAttribute("aria-pressed")) !== "true") await choisirMur.click();
+  const choisiMur = proprietes.locator(`[data-studio-architecture-choisi="${idMur}"]`);
+  await choisiMur.waitFor();
+  const netAvant = Number(await choisiMur.locator("[data-studio-architecture-metre]").getAttribute("data-studio-volume-net"));
+  check("REC-A-03 : volume brut 3,600 m³, déduction 0,420 m³, net 3,180 m³", Math.abs(netAvant - 3.18) < 1e-9
+    && Math.abs(Number(await choisiMur.locator("[data-studio-architecture-metre]").getAttribute("data-studio-volume-brut")) - 3.6) < 1e-9, String(netAvant));
+  // Mur abaissé sous son ouverture : refus du modèle, motif affiché, aucune commande ajoutée.
+  await choisiMur.getByLabel("Hauteur (m)", { exact: true }).fill("2");
+  await choisiMur.getByRole("button", { name: "Appliquer", exact: true }).click();
+  const alerte = await page.locator(".studio-alert").first().textContent();
+  check("architecture : mur abaissé sous l'ouverture refusé, motif clair, brouillon inchangé", /incompatible avec son mur : plus haute que le mur hôte/.test(alerte ?? "") && (await portee()).includes("(2 commande(s)"), alerte ?? "");
+  // Vue 3D : mêmes identifiants ; l'ouverture choisie dans la vue 3D s'élargit à 1,20 m.
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+D");
+  const vueArchi = page.locator("[data-studio-vue3d]");
+  await vueArchi.locator("[data-studio-architecture-vue3d]").waitFor();
+  const ids3d = await vueArchi.locator("[data-studio-architecture-3d-objet]").evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-architecture-3d-objet")));
+  check("architecture : la vue 3D porte les mêmes identifiants que la planche (mur, ouverture)", JSON.stringify(ids3d) === JSON.stringify([idMur, idOuv]), JSON.stringify(ids3d));
+  await vueArchi.locator(`[data-studio-architecture-3d-objet="${idOuv}"]`).click();
+  const choisiOuv = proprietes.locator(`[data-studio-architecture-choisi="${idOuv}"]`);
+  await choisiOuv.waitFor();
+  await choisiOuv.getByLabel("Largeur (m)", { exact: true }).fill("1.2");
+  await choisiOuv.getByRole("button", { name: "Appliquer", exact: true }).click();
+  await page.waitForFunction(() => document.querySelector("[data-studio-annuler-portee]")?.textContent?.includes("(3 commande(s)"));
+  await vueArchi.locator(`[data-studio-architecture-3d-objet="${idMur}"]`).click();
+  await choisiMur.waitFor();
+  const netApres = Number(await choisiMur.locator("[data-studio-architecture-metre]").getAttribute("data-studio-volume-net"));
+  check("REC-A-03 : élargie à 1,20 m depuis la vue 3D — déduction 0,504 m³, net 3,096 m³", Math.abs(netApres - 3.096) < 1e-9
+    && Math.abs(Number(await choisiMur.locator("[data-studio-architecture-metre]").getAttribute("data-studio-volume-deduit")) - 0.504) < 1e-9, String(netApres));
+  await page.screenshot({ path: join(OUT, "studio-architecture-3d.png") });
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+D");
+  const avantArchi = envois.length;
+  await page.keyboard.press("Control+s");
+  await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
+  const envoiArchi = envois[envois.length - 1];
+  check("architecture : une enveloppe (mur, ouverture, modifier), même identité de l'ouverture", envois.length === avantArchi + 1
+    && JSON.stringify(envoiArchi.commands.map((c) => c.toolId)) === JSON.stringify(["studio.architecture.mur", "studio.architecture.ouverture", "studio.architecture.modifier"])
+    && envoiArchi.commands[2].params.id === idOuv && envoiArchi.commands[2].params.width === 1.2, JSON.stringify(envoiArchi?.commands));
+  const reluArchi = await a.api("get", variantePath);
+  const archiRelue = reluArchi.revision.document.architecture ?? [];
+  check("architecture : le serveur range mur et ouverture dans `architecture`, valeurs saisies exactes",
+    JSON.stringify(archiRelue.map((x) => x.id)) === JSON.stringify([idMur, idOuv]) && JSON.stringify(archiRelue[0].axis) === JSON.stringify([{ x: 0, y: -30 }, { x: 6, y: -30 }])
+    && archiRelue[0].thickness === 0.2 && archiRelue[0].height === 3 && archiRelue[1].width === 1.2 && archiRelue[1].height === 2.1 && archiRelue[1].kind === undefined, JSON.stringify(archiRelue));
+  await page.reload();
+  await page.locator(`svg [data-studio-architecture="${idOuv}"]`).waitFor({ state: "attached" });
+  check("architecture : l'actualisation restitue le même mur et la même ouverture", JSON.stringify((await a.api("get", variantePath)).revision) === JSON.stringify(reluArchi.revision)
+    && (await page.locator(`svg [data-studio-architecture="${idMur}"] polygon`).count()) === 2);
+  await page.screenshot({ path: join(OUT, "studio-architecture-plan.png") });
+  const svgArchi = await page.request.get(`${BASE}${variantePath}/export?format=svg`);
+  if (svgArchi.status() === 404) console.log("· export SVG : point d'entrée absent de ce serveur");
+  else {
+    const t = await svgArchi.text();
+    check("architecture : l'export SVG dessine le mur interrompu par l'ouverture", t.includes(`<g data-architecture="wall" data-id="${idMur}">`) && t.includes(`<g data-architecture="opening" data-id="${idOuv}" data-host="${idMur}">`));
+  }
+
   // Accessibilité de l'accueil Studio.
   await page.goto(`${BASE}/studio`);
   await page.locator("[data-studio-projets]").waitFor();

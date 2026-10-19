@@ -1,5 +1,6 @@
 import { studioArcSweep, studioBulgeArc, studioPolylinePath, studioPolylineSegments, studioRingSimple, studioSignedArea } from "./courbes.js";
 import { STUDIO_DEFAULT_LAYER_ID, STUDIO_LIMITS, type StudioDocument, type StudioPoint } from "./document-2d.js";
+import { studioQuantitesArchitecture } from "./architecture/quantites.js";
 
 /**
  * Métré du document 2D Studio (E.3-04 / E.3-05). Pur : ni React, ni DOM, ni stockage.
@@ -10,6 +11,9 @@ import { STUDIO_DEFAULT_LAYER_ID, STUDIO_LIMITS, type StudioDocument, type Studi
  *   extrudé n'a pas de volume, une ligne extrudée sans épaisseur non plus. Aucune valeur par défaut n'est inventée.
  * - **Déductions : non déclarées.** Aucune ouverture n'est devinée d'un recouvrement (un prisme posé sur un mur n'est pas
  *   une baie) : les quantités nettes restent non évaluées tant qu'aucune déduction n'est déclarée.
+ * - **Seule exception, A.4** : un mur architectural (`architecture`, créé comme mur par l'utilisateur) déduit les vides
+ *   de ses ouvertures **déclarées** (créées comme ouvertures de ce mur) : volume brut, volume déduit, volume net
+ *   (`architecture/quantites.ts`) ; `deductions` vaut alors `ouvertures-declarees`. Rien d'autre n'est déduit.
  * - Courbes (cercle, arc, polyligne) : valeurs **exactes** tirées de la courbe saisie, jamais de sa discrétisation —
  *   longueur d'arc rθ, renflement `bulge = tan(θ/4)` porté par un arc de rayon c(1 + b²) / (4|b|), aire d'une polyligne
  *   fermée = aire du polygone des sommets + segments circulaires signés R²(θ − sin θ) / 2. Mur courbe (arc + épaisseur e,
@@ -24,16 +28,20 @@ import { STUDIO_DEFAULT_LAYER_ID, STUDIO_LIMITS, type StudioDocument, type Studi
  * conservée à côté de la valeur ajustée, avec motif, auteur et date.
  */
 
-export type GrandeurQuantite = "longueur" | "perimetre" | "surface" | "hauteur" | "surface-laterale" | "surface-verticale" | "volume";
+export type GrandeurQuantite = "longueur" | "perimetre" | "surface" | "hauteur" | "surface-laterale" | "surface-verticale" | "volume"
+  /** A.4 : vides des ouvertures déclarées d'un mur, volume net du mur, surface d'une ouverture. */
+  | "volume-deduit" | "volume-net" | "surface-ouverture";
 export type UniteQuantite = "m" | "m2" | "m3";
 
-export const GRANDEURS_QUANTITE: readonly GrandeurQuantite[] = Object.freeze(["longueur", "perimetre", "surface", "hauteur", "surface-laterale", "surface-verticale", "volume"] as const);
+export const GRANDEURS_QUANTITE: readonly GrandeurQuantite[] = Object.freeze(["longueur", "perimetre", "surface", "hauteur", "surface-laterale", "surface-verticale", "volume", "volume-deduit", "volume-net", "surface-ouverture"] as const);
 export const UNITE_GRANDEUR: Readonly<Record<GrandeurQuantite, UniteQuantite>> = Object.freeze({
   longueur: "m", perimetre: "m", surface: "m2", hauteur: "m", "surface-laterale": "m2", "surface-verticale": "m2", volume: "m3",
+  "volume-deduit": "m3", "volume-net": "m3", "surface-ouverture": "m2",
 });
 /** Une hauteur ne s'additionne pas : elle n'entre dans aucun total. */
 export const GRANDEUR_CUMULABLE: Readonly<Record<GrandeurQuantite, boolean>> = Object.freeze({
   longueur: true, perimetre: true, surface: true, hauteur: false, "surface-laterale": true, "surface-verticale": true, volume: true,
+  "volume-deduit": true, "volume-net": true, "surface-ouverture": true,
 });
 
 /**
@@ -47,6 +55,8 @@ export type NatureQuantite =
   | "ligne" | "rectangle" | "mur" | "ligne-extrudee" | "prisme"
   | "cercle" | "cylindre" | "arc" | "mur-courbe" | "arc-extrude"
   | "polyligne-ouverte" | "polyligne-ouverte-extrudee" | "polyligne-fermee" | "prisme-polyligne"
+  /** A.4 : mur et ouverture créés comme tels (`architecture`). */
+  | "mur-architectural" | "ouverture"
   | "non-pris-en-charge";
 
 export type MotifNonEvalue =
@@ -102,8 +112,8 @@ export interface QuantitesStudio {
   documentId: string;
   unites: "m";
   repere: "local-2d";
-  /** Quantités brutes seulement ; aucune déduction n'est devinée. */
-  deductions: "non-declarees";
+  /** Quantités brutes ; aucune déduction n'est devinée. `ouvertures-declarees` : des murs déduisent leurs ouvertures (A.4). */
+  deductions: "non-declarees" | "ouvertures-declarees";
   calques: QuantitesCalque[];
   objets: QuantitesObjet[];
   totaux: TotalQuantite[];
@@ -294,6 +304,23 @@ export function quantitesStudio(doc: StudioDocument): QuantitesStudio {
     objets.push(q);
     parCalque.set(calqueId, [...(parCalque.get(calqueId) ?? []), q]);
   }
+  // Objets architecturaux (A.4) : métré dérivé de la géométrie validée ; un ensemble invalide est « non évalué ».
+  const architecture = doc.architecture ?? [];
+  let lus: ReturnType<typeof studioQuantitesArchitecture> | null = null;
+  try { lus = studioQuantitesArchitecture(architecture); } catch { lus = null; }
+  architecture.forEach((it, i) => {
+    const l = lus?.[i];
+    const calqueId = (it.type === "wall" ? it.layerId : l?.layerId) ?? STUDIO_DEFAULT_LAYER_ID;
+    if (!infos.has(calqueId)) infos.set(calqueId, { nom: calqueId, masque: false, implicite: false });
+    const base = { objetId: it.id, type: it.type, calqueId, calqueMasque: infos.get(calqueId)!.masque };
+    const q: QuantitesObjet = it.type === "wall"
+      ? { ...base, nature: "mur-architectural", valeurs: l?.type === "wall"
+        ? [val("longueur", l.longueur), val("hauteur", l.hauteur), val("volume", l.volumeBrut), val("volume-deduit", l.deduction), val("volume-net", l.volumeNet)]
+        : [val("longueur", null), val("hauteur", null), val("volume", null), val("volume-deduit", null), val("volume-net", null)] }
+      : { ...base, nature: "ouverture", valeurs: l?.type === "opening" ? [val("surface-ouverture", l.surface)] : [val("surface-ouverture", null)] };
+    objets.push(q);
+    parCalque.set(calqueId, [...(parCalque.get(calqueId) ?? []), q]);
+  });
   const ordre = [STUDIO_DEFAULT_LAYER_ID, ...declares.map((l) => l.id).filter((id) => id !== STUDIO_DEFAULT_LAYER_ID), ...[...parCalque.keys()].filter((id) => id !== STUDIO_DEFAULT_LAYER_ID && !declares.some((l) => l.id === id))];
   const calques: QuantitesCalque[] = [];
   for (const id of ordre) {
@@ -304,7 +331,7 @@ export function quantitesStudio(doc: StudioDocument): QuantitesStudio {
     calques.push({ calqueId: id, nom: info.nom, masque: info.masque, implicite: info.implicite, objets: liste, totaux: totaliserQuantites(liste) });
   }
   return {
-    documentId: doc.id, unites: "m", repere: "local-2d", deductions: "non-declarees",
+    documentId: doc.id, unites: "m", repere: "local-2d", deductions: architecture.some((x) => x.type === "opening") ? "ouvertures-declarees" : "non-declarees",
     calques, objets, totaux: totaliserQuantites(objets),
     cotesExclues: doc.dimensions?.length ?? 0,
     nonPrisEnCharge: objets.filter((o) => o.nature === "non-pris-en-charge").length,
