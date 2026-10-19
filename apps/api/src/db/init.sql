@@ -792,3 +792,11 @@ ALTER TABLE studio_publication_events DROP CONSTRAINT IF EXISTS studio_publicati
   ADD CONSTRAINT studio_publication_events_manifest_hash_check
   CHECK (manifest_hash IS NULL OR manifest_hash ~ '^[0-9a-f]{64}$') NOT VALID;
 CREATE INDEX IF NOT EXISTS studio_publications_variant_idx ON studio_publications(variant_id, diffused_at);
+-- Clé de signature des archives de projet propre à la base (lib/archive-signing-key.ts) : utilisée seulement quand
+-- ARCHIVE_SIGNING_KEY n'est pas fournie, créée à la première signature (une ligne, id 'local'). La clé ne sort jamais
+-- du serveur : l'archive ne porte que son identifiant. Table nouvelle, additive.
+CREATE TABLE IF NOT EXISTS archive_signing_keys (
+  id text PRIMARY KEY,
+  secret text NOT NULL CONSTRAINT archive_signing_keys_secret_length CHECK (length(secret) >= 32),
+  created_at timestamptz NOT NULL DEFAULT now()
+);

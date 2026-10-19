@@ -36,7 +36,7 @@ import { newId } from "./ids.js";
 import { computationFor, loadStepContext, type StepContextProject } from "./step-context.js";
 import { loadStepRows, upsertStep, type Querier, type Tx } from "./step-rows.js";
 import type { SiteContextDeclaration } from "@parcours/domain-model";
-import { exportStudioArchive, importStudioArchive } from "./studio-archive.js";
+import { exportStudioArchive, importStudioArchive, type StudioImportOutcome } from "./studio-archive.js";
 
 /** Modèle typé d'archive refusé par la revalidation : la transaction est annulée, rien n'est créé. */
 export class ArchiveModeleError extends Error {
@@ -175,7 +175,7 @@ export async function stampStepFingerprints(tx: Tx, project: StepContextProject)
  * modifiés. Retourne le projet créé et les réserves (pièces jointes
  * illisibles, modèle non projeté).
  */
-export async function importProjectArchive(tx: Tx, ownerId: string, archive: ProjectArchive, now: string): Promise<{ project: ProjectRow; warnings: string[] }> {
+export async function importProjectArchive(tx: Tx, ownerId: string, archive: ProjectArchive, now: string): Promise<{ project: ProjectRow; warnings: string[]; studio: Omit<StudioImportOutcome, "warnings"> | null }> {
   const id = newId("proj");
   const warnings = [...archive.warnings];
   const [project] = await tx
@@ -258,8 +258,13 @@ export async function importProjectArchive(tx: Tx, ownerId: string, archive: Pro
 
   // Studio (R.1-02) : lignes réinsérées telles quelles (révisions immuables, empreintes conservées), après les étapes
   // (liens d'étapes du Parcours) ; une section altérée annule tout l'import (StudioArchiveError).
-  if (archive.studio) warnings.push(...(await importStudioArchive(tx, id, ownerId, archive.studio)));
+  // Signature vérifiée par une clé de ce serveur : auteurs et approbations conservés ; sinon rien n'est cru (réserves).
+  let studio: StudioImportOutcome | null = null;
+  if (archive.studio) {
+    studio = await importStudioArchive(tx, id, ownerId, archive.studio);
+    warnings.push(...studio.warnings);
+  }
 
   await stampStepFingerprints(tx, { id, name: project.name, siteObservations: project.siteObservations, harmony: project.harmony });
-  return { project, warnings };
+  return { project, warnings, studio: studio ? { trust: studio.trust, restored: studio.restored, downgraded: studio.downgraded } : null };
 }
