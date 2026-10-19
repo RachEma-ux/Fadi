@@ -2,7 +2,7 @@
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, StudioValidationError, validateStudioDocument, type StudioDifferenceDocuments, type StudioEnvelope } from "@parcours/atelier-model";
+import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { projectMembers, studioRevisions, studioStudies, studioVariants, type StudioContext, type StudioProvenance } from "../db/schema.js";
 import { newId } from "./ids.js";
@@ -168,6 +168,43 @@ export async function listStudioRevisions(q: Querier, scope: StudioScope, actorI
   }).from(studioRevisions).where(eq(studioRevisions.variantId, variant.id))
     .orderBy(desc(studioRevisions.createdAt), desc(studioRevisions.id));
   return { revisions: rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() })) };
+}
+
+/**
+ * Historique hybride (A.5-07) : une révision se lit comme les commandes qui l'ont produite (l'enveloppe enregistrée,
+ * telle que le client l'a envoyée, jamais réécrite) et le delta qui en résulte par rapport à sa révision parente
+ * (`studioElementsModifies`, et le résumé de `comparerDocumentsStudio`). Une révision d'initialisation n'a pas de
+ * commandes ; une dérivation est comparée à un document vide. Lecture seule, mêmes droits et refus que la lecture.
+ */
+export interface StudioRevisionChanges {
+  revisionId: string;
+  parentRevisionId: string | null;
+  source: string;
+  authorId: string;
+  createdAt: string;
+  requestId: string | null;
+  commands: StudioEnvelope["commands"];
+  changedKeys: string[];
+  summary: StudioDifferenceDocuments["resume"];
+}
+export async function readStudioRevisionChanges(q: Querier, scope: StudioScope, actorId: string, revisionId: string): Promise<StudioRevisionChanges> {
+  const context = await readStudioContext(q, scope, actorId, revisionId);
+  const [row] = await q.select({ source: studioRevisions.source, authorId: studioRevisions.authorId, createdAt: studioRevisions.createdAt, envelope: studioRevisions.envelope, requestId: studioRevisions.requestId })
+    .from(studioRevisions).where(and(eq(studioRevisions.id, context.revision.id), eq(studioRevisions.variantId, context.variant.id))).limit(1);
+  if (!row) return notFound();
+  let parent = newStudioDocument(context.revision.document.id);
+  if (context.revision.parentRevisionId) {
+    const [p] = await q.select({ document: studioRevisions.document }).from(studioRevisions)
+      .where(and(eq(studioRevisions.id, context.revision.parentRevisionId), eq(studioRevisions.variantId, context.variant.id))).limit(1);
+    if (!p) return notFound();
+    parent = validateStudioDocument(p.document);
+  }
+  const envelope = row.envelope as StudioEnvelope | null;
+  return {
+    revisionId: context.revision.id, parentRevisionId: context.revision.parentRevisionId, source: row.source, authorId: row.authorId,
+    createdAt: row.createdAt.toISOString(), requestId: envelope ? row.requestId : null, commands: envelope?.commands ?? [],
+    changedKeys: studioElementsModifies(parent, context.revision.document), summary: comparerDocumentsStudio(parent, context.revision.document).resume,
+  };
 }
 
 export type StudioCreation = StudioContext & { replayed: boolean };
@@ -339,6 +376,35 @@ export async function compareStudioRevisions(q: Querier, projectId: string, stud
   };
 }
 
+/** Au plus tant de clés d'éléments citées dans un refus `stale_revision` (les comptes, eux, sont toujours exacts). */
+export const STUDIO_CONFLICT_KEYS_MAX = 100;
+
+/**
+ * Corps d'un refus `stale_revision` (A.5-06) : la tête courante et, si la base citée est une révision de cette
+ * variante, ce qui a changé depuis (`changedKeys`) et ce que le lot changerait aussi, autrement (`overlaps`,
+ * `studioChevauchements`). Rien n'est écrit ni fusionné : le client revalide et décide (report ou rechargement).
+ * `appliesOnHead` dit si le modèle accepterait encore le lot tel quel sur la tête (il n'est jamais appliqué pour autant).
+ */
+async function staleRevisionBody(tx: Tx, variantId: string, envelope: StudioEnvelope, headRevisionId: string, head: StudioDocument): Promise<Record<string, unknown>> {
+  const body: Record<string, unknown> = { error: "stale_revision", headRevisionId, baseRevisionId: envelope.baseRevisionId };
+  const [base] = await tx.select({ document: studioRevisions.document }).from(studioRevisions)
+    .where(and(eq(studioRevisions.id, envelope.baseRevisionId), eq(studioRevisions.variantId, variantId))).limit(1);
+  if (!base) return { ...body, baseKnown: false };
+  // Une base qui ne passe plus la validation ne change pas la nature du refus : 409 sans détail (« non évalué »), jamais
+  // un 500 que le client prendrait pour une issue inconnue et rejouerait.
+  let baseDocument: StudioDocument;
+  try { baseDocument = validateStudioDocument(base.document); }
+  catch { return { ...body, baseKnown: true, detail: "non évalué", appliesOnHead: null }; }
+  const changed = studioElementsModifies(baseDocument, head);
+  const tryApply = (doc: StudioDocument): StudioDocument | null => { try { return applyStudioCommands(doc, envelope.commands); } catch { return null; } };
+  const local = tryApply(baseDocument);
+  const overlaps = local ? studioChevauchements(baseDocument, local, head) : null;
+  return {
+    ...body, baseKnown: true, changedCount: changed.length, changedKeys: changed.slice(0, STUDIO_CONFLICT_KEYS_MAX),
+    overlapCount: overlaps?.length ?? null, overlaps: overlaps?.slice(0, STUDIO_CONFLICT_KEYS_MAX) ?? null, appliesOnHead: tryApply(head) !== null,
+  };
+}
+
 export async function submitStudioCommands(scope: StudioScope, actorId: string, input: unknown): Promise<StudioContext & { replayed: boolean }> {
   // Capture avant le premier await : aucun changement du payload durant les verrous/rejeu.
   scope = Object.freeze({ projectId: scope.projectId, studyId: scope.studyId, variantId: scope.variantId });
@@ -372,7 +438,7 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
         // Lu sous les verrous du projet et de la variante : un (dés)archivage concurrent est sérialisé avec ce lot.
         if (current.archived) return studioArchivedRefusal();
         if (envelope.baseRevisionId !== current.variant.headRevisionId) {
-          throw new StudioRequestError(409, { error: "stale_revision", headRevisionId: current.variant.headRevisionId });
+          throw new StudioRequestError(409, await staleRevisionBody(transaction, scope.variantId, envelope, current.variant.headRevisionId, current.revision.document));
         }
         let document;
         try { document = applyStudioCommands(current.revision.document, envelope.commands); }

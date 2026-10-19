@@ -28,7 +28,7 @@ import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { BUILDING_LIBRARY } from "../data/parcours.js";
 import { loadDesignContext } from "../lib/design-context.js";
-import { documentCatalogue, documentDescriptors, recordProducedDocument, studioPackageDocuments } from "../lib/documents.js";
+import { documentCatalogue, documentDescriptors, recordProducedDocument, studioDossierDocuments, studioPackageDocuments } from "../lib/documents.js";
 import { exampleReportFor } from "../lib/example-report.js";
 import { projectOr404, type OwnedProject } from "../lib/owned-project.js";
 
@@ -50,7 +50,14 @@ documentsRouter.get("/", async (req, res) => {
   const documents = await documentCatalogue(db, project, dctx);
   // Groupe Studio, à part du catalogue productible (aucune production ici) : paquets diffusés et retirés.
   const studioPackages = await studioPackageDocuments(project.id, req.user!.id);
-  res.json({ modelRevision: project.modelRevision, nativeHash: dctx.analysis.nativeHash, computedAt: now, documents, studioPackages });
+  // Dossiers de conception Studio (E.3-03, E.3-06) : livrables recalculés depuis des révisions immuables.
+  // Chaque dossier en échec devient une entrée en erreur (code traduit côté client) ; un échec du groupe entier ne
+  // casse pas les autres groupes du catalogue (M-4) : le groupe est vide et son code d'erreur est rapporté.
+  let studioDossiers: Awaited<ReturnType<typeof studioDossierDocuments>> = [];
+  let studioDossiersError: string | null = null;
+  try { studioDossiers = await studioDossierDocuments(project.id, req.user!.id); }
+  catch (e) { console.error("studio_dossiers_catalogue", project.id, e); studioDossiersError = "dossier_unavailable"; }
+  res.json({ modelRevision: project.modelRevision, nativeHash: dctx.analysis.nativeHash, computedAt: now, documents, studioPackages, studioDossiers, studioDossiersError });
 });
 
 /** Produit un document du catalogue : le corps par `render`, la trace de production avec la révision et l'empreinte courantes. */

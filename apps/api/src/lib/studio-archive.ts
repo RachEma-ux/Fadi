@@ -53,10 +53,18 @@ export async function loadStudioTables(q: Querier, projectId: string, ownerId: s
   tables.studio_comments = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_comments t WHERE variant_id IN ${inVariants} ORDER BY id`);
   tables.studio_observations = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_observations t WHERE variant_id IN ${inVariants} ORDER BY comment_id`);
   tables.studio_observation_events = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_observation_events t WHERE observation_id IN (SELECT comment_id FROM studio_observations WHERE variant_id IN ${inVariants}) ORDER BY id`);
+  // Suivi des observations (E.2) : liens de domaines, tâches et leur journal, décisions.
+  const inObservations = sql`(SELECT comment_id FROM studio_observations WHERE variant_id IN ${inVariants})`;
+  tables.studio_observation_links = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_observation_links t WHERE variant_id IN ${inVariants} ORDER BY id`);
+  tables.studio_observation_tasks = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_observation_tasks t WHERE observation_id IN ${inObservations} ORDER BY id`);
+  tables.studio_observation_task_events = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_observation_task_events t WHERE task_id IN (SELECT id FROM studio_observation_tasks WHERE observation_id IN ${inObservations}) ORDER BY id`);
+  tables.studio_observation_decisions = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_observation_decisions t WHERE observation_id IN ${inObservations} ORDER BY id`);
   tables.studio_study_steps = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_study_steps t WHERE study_id IN ${inStudies} ORDER BY study_id, step_number`);
   tables.studio_requirement_sets = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_requirement_sets t WHERE study_id IN ${inStudies} ORDER BY id`);
   tables.studio_requirement_checks = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_requirement_checks t WHERE study_id IN ${inStudies} ORDER BY id`);
   tables.studio_quantity_adjustments = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_quantity_adjustments t WHERE study_id IN ${inStudies} ORDER BY id`);
+  tables.studio_sheets = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_sheets t WHERE study_id IN ${inStudies} ORDER BY id`);
+  tables.studio_dossiers = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_dossiers t WHERE study_id IN ${inStudies} ORDER BY id`);
   tables.studio_publications = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_publications t WHERE project_id = ${projectId} ORDER BY id`);
   tables.studio_publication_events = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_publication_events t WHERE publication_id IN (SELECT id FROM studio_publications WHERE project_id = ${projectId}) ORDER BY id`);
   const volumeIds = packageVolumeIds(tables.studio_publications);
@@ -152,7 +160,7 @@ export async function importStudioArchive(tx: Tx, projectId: string, importerId:
   let downgraded = 0;
   if (!trusted) {
     warnings.push(TRUST_WARNING[trust]);
-    warnings.push("Auteurs, approbations, acteurs des publications et responsables des observations attribués au compte qui restaure ; droits et préférences d'outils non repris.");
+    warnings.push("Auteurs, approbations, acteurs des publications, responsables des observations, personnes chargées des tâches et auteurs des décisions attribués au compte qui restaure ; droits et préférences d'outils non repris.");
     const declared = [...new Set(section.accounts.map((a) => a.email).filter(Boolean))].sort();
     if (declared.length) warnings.push(`Auteurs d'origine déclarés (non vérifiés) : ${declared.join(", ")}.`);
   }
@@ -183,7 +191,10 @@ export async function importStudioArchive(tx: Tx, projectId: string, importerId:
       extraEvents = d.events;
       ({ sets: requirementSets, cleared: clearedAcceptances } = distrustRequirementSets(requirementSets));
     }
-    for (const t of ["studio_studies", "studio_variants", "studio_revisions", "studio_comments", "studio_observations", "studio_observation_events", "studio_study_steps"] as const) await insertRows(tx, t, tables[t]);
+    for (const t of [
+      "studio_studies", "studio_variants", "studio_revisions", "studio_comments", "studio_observations", "studio_observation_events",
+      "studio_observation_links", "studio_observation_tasks", "studio_observation_task_events", "studio_observation_decisions", "studio_study_steps",
+    ] as const) await insertRows(tx, t, tables[t]);
     // Exigences (lot E.1) : versions insérées (append-only, déclencheur UPDATE intact), puis contrôles qui les citent.
     await insertRows(tx, "studio_requirement_sets", requirementSets);
     await insertRows(tx, "studio_requirement_checks", tables.studio_requirement_checks);
@@ -191,6 +202,9 @@ export async function importStudioArchive(tx: Tx, projectId: string, importerId:
     // vérifiée : auteurs = compte qui restaure (colonne author_id, comme tout acteur), contenu inchangé.
     await insertRows(tx, "studio_quantity_adjustments", tables.studio_quantity_adjustments);
     if (!trusted && tables.studio_quantity_adjustments.length) warnings.push(`${tables.studio_quantity_adjustments.length} ajustement(s) du métré repris, attribué(s) au compte qui restaure : valeurs, motifs, dates et révisions d'origine conservés.`);
+    // Feuilles composées puis dossiers qui les citent (E.3-02 / E.3-03) : définitions et ordre conservés tels quels.
+    await insertRows(tx, "studio_sheets", tables.studio_sheets);
+    await insertRows(tx, "studio_dossiers", tables.studio_dossiers);
     if (clearedAcceptances) warnings.push(`${clearedAcceptances} acceptation(s) de référence partenaire non reprise(s) : les références redeviennent « non acceptées » et doivent être acceptées à nouveau.`);
     // Volumes adressés par leur contenu : un volume déjà présent est le même fichier (même SHA-256).
     await insertRows(tx, "volumes", tables.volumes, "ignore");

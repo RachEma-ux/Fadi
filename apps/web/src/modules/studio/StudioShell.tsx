@@ -6,6 +6,8 @@
  * une adresse inconnue donne un écran explicite (R-B). Le serveur reste seul juge des droits.
  * Cycle de vie : dériver une variante d'une révision (tête par défaut), renommer, archiver / désarchiver avec
  * confirmation (jamais de suppression) ; les archives s'affichent sur demande (`?archives=1`).
+ * Chargement (B.3-02, B.3-03) : la coquille porte le catalogue léger et lit le profil d'outils ; la planche (éditeur
+ * de variante) n'est chargée qu'à l'ouverture d'une variante (`chargement/`).
  */
 import { Component, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,7 +16,7 @@ import { api, ApiError, ROLE_LABEL, type StudioVariantSummary } from "../../lib/
 import { LOCALE } from "../../lib/i18n";
 import { cheminComparaisonStudio, cheminEtudeStudio, cheminProjetStudio, cheminVarianteStudio, lireRouteStudio, RACINE_STUDIO } from "./routes-studio";
 import { StudioRefus } from "./studio-ecrans";
-import { VariantWorkspace } from "./VariantWorkspace";
+import { DemarrageStudio, PlancheDifferee } from "./chargement/DemarrageStudio";
 import { PageComparaison } from "./comparaison/PageComparaison";
 import { EtapesParcoursEtude } from "./liens/EtapesLiees";
 import { PanneauPublications } from "./publication/PanneauPublications";
@@ -55,6 +57,7 @@ export function StudioShell() {
   const route = lireRouteStudio(pathname, search);
   return (
     <div className="studio-shell" data-studio={route.vue}>
+      <DemarrageStudio projectId={"projectId" in route ? route.projectId : null} />
       <StudioErrorBoundary cle={pathname + search}>
         {route.vue !== "accueil" && (
           <nav className="studio-fil" aria-label="Fil d’Ariane Studio">
@@ -69,7 +72,7 @@ export function StudioShell() {
         {route.vue === "accueil" && <StudioAccueil />}
         {route.vue === "projet" && <StudioProjet projectId={route.projectId} archives={route.archives} />}
         {route.vue === "etude" && <StudioEtude projectId={route.projectId} studyId={route.studyId} archives={route.archives} />}
-        {route.vue === "variante" && <VariantWorkspace key={`${route.projectId}/${route.studyId}/${route.variantId}/${route.revisionId ?? ""}`} projectId={route.projectId} studyId={route.studyId} variantId={route.variantId} revisionId={route.revisionId} commentairesOuverts={route.commentaires} />}
+        {route.vue === "variante" && <PlancheDifferee key={`${route.projectId}/${route.studyId}/${route.variantId}/${route.revisionId ?? ""}`} projectId={route.projectId} studyId={route.studyId} variantId={route.variantId} revisionId={route.revisionId} commentairesOuverts={route.commentaires} />}
         {route.vue === "comparer" && <PageComparaison projectId={route.projectId} studyId={route.studyId} de={route.de} a={route.a} />}
         {route.vue === "inconnue" && (
           <section className="studio-welcome" role="alert" data-studio-inconnue>

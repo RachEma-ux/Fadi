@@ -127,6 +127,7 @@ function Passage({ c, ctx, action, surFermer }: { c: StudioComment; ctx: Context
   });
   const [revisionId, setRevision] = useState(ctx.revisionId);
   const reattribuer = action === "reattribuer";
+  const cloturer = action === "cloturer";
   const candidats = ctx.participants.filter((p) => p.assignable && p.id !== c.observation?.responsableId);
   const [responsableId, setResponsable] = useState(candidats[0]?.id ?? "");
   const [note, setNote] = useState("");
@@ -135,7 +136,7 @@ function Passage({ c, ctx, action, surFermer }: { c: StudioComment; ctx: Context
   const demande = useRef<{ cle: string; id: string } | null>(null);
   async function envoyer(e: FormEvent) {
     e.preventDefault();
-    if (envoi || (reattribuer && !responsableId)) return;
+    if (envoi || (reattribuer && !responsableId) || (cloturer && !note.trim())) return;
     setEnvoi(true); setError("");
     const input = { action, ...(avecRevision ? { revisionId } : {}), ...(reattribuer ? { responsableId } : {}), ...(note.trim() ? { note: note.trim() } : {}) };
     try {
@@ -161,11 +162,12 @@ function Passage({ c, ctx, action, surFermer }: { c: StudioComment; ctx: Context
       </select>
       {candidats.length === 0 && <p className="studio-info">Aucun autre membre ne peut être responsable (propriétaire ou éditeur requis).</p>}
     </>}
-    <label htmlFor={`${id}-note`}>Note (facultative)</label>
-    <textarea id={`${id}-note`} maxLength={2000} rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
+    {/* La clôture est une décision du propriétaire : son motif est exigé et consigné au journal des décisions (E.2-04). */}
+    <label htmlFor={`${id}-note`}>{cloturer ? "Motif de la décision de clôture" : "Note (facultative)"}</label>
+    <textarea id={`${id}-note`} required={cloturer} maxLength={2000} rows={2} value={note} onChange={(e) => setNote(e.target.value)} data-studio-passage-note />
     {error && <p role="alert">{error}</p>}
     <div className="studio-commentaires-actions">
-      <button type="submit" disabled={envoi || (reattribuer && !responsableId)}>{PASSAGE_LIBELLE[action]}</button>
+      <button type="submit" disabled={envoi || (reattribuer && !responsableId) || (cloturer && !note.trim())}>{PASSAGE_LIBELLE[action]}</button>
       <button type="button" onClick={surFermer}>Fermer</button>
     </div>
   </form>;

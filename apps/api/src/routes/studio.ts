@@ -4,14 +4,16 @@ import { z } from "zod";
 import { studioRapportFidelite } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
-import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioStudy, STUDIO_EXPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
+import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioRevisionChanges, readStudioStudy, STUDIO_EXPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
 import { createStudioComment, createStudioObservation, deleteStudioComment, listStudioComments, studioCommentSchema, studioObservationSchema, studioObservationTransitionSchema, transitionStudioObservation } from "../lib/studio-commentaires.js";
 import { listStudiesOfStep, listStudioStudySteps, setStudioStudySteps, studioStudyStepsSchema } from "../lib/studio-liens.js";
 import { renameStudioStudy, renameStudioVariant, setStudioStudyArchived, setStudioVariantArchived, studioRenameSchema } from "../lib/studio-variantes.js";
 import { studioExigencesRouter } from "./studio-exigences.js";
 import { studioPublicationsRouter } from "./studio-publications.js";
+import { studioObservationsRouter } from "./studio-observations.js";
 import { studioPreferencesRouter } from "./studio-preferences.js";
 import { studioQuantitesRouter } from "./studio-quantites.js";
+import { studioDossiersRouter } from "./studio-dossiers.js";
 
 export const studioRouter = Router({ mergeParams: true });
 studioRouter.use(requireAuth);
@@ -124,6 +126,11 @@ studioRouter.get("/studies/:studyId/variants/:variantId/revisions", endpoint(asy
 studioRouter.get("/studies/:studyId/variants/:variantId", endpoint(async (req, res) => {
   res.json(await readStudioContext(db, scope(req), req.user!.id));
 }));
+/** Historique hybride (A.5-07) : commandes enregistrées et delta d'une révision ; lecture seule. */
+studioRouter.get("/studies/:studyId/variants/:variantId/revisions/:revisionId/changes", endpoint(async (req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await readStudioRevisionChanges(db, scope(req), req.user!.id, req.params["revisionId"] as string));
+}));
 studioRouter.get("/studies/:studyId/variants/:variantId/revisions/:revisionId", endpoint(async (req, res) => {
   res.json(await readStudioContext(db, scope(req), req.user!.id, req.params["revisionId"] as string));
 }));
@@ -222,3 +229,7 @@ studioRouter.use(studioPublicationsRouter);
 studioRouter.use(studioExigencesRouter);
 // Ajustements manuels du métré, journal versionné par variante (E.3-05) : `routes/studio-quantites.ts`.
 studioRouter.use(studioQuantitesRouter);
+// Observations : identité réemployée, contexte, tâches, décisions, clôture (E.2-01 à E.2-05) : `routes/studio-observations.ts`.
+studioRouter.use(studioObservationsRouter);
+// Feuilles composées et dossiers de conception (E.3-01 à E.3-03, E.3-06) : `routes/studio-dossiers.ts`.
+studioRouter.use(studioDossiersRouter);

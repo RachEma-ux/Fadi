@@ -24,6 +24,15 @@
  * un morceau empreint de son propre build, hors ligne) ; il disparaît à
  * l'activation suivante. Seuls les fichiers empreints (/assets/…, nom = contenu)
  * y sont lus : un fichier non empreint d'un autre build n'est jamais servi.
+ *
+ * Classes du précache (B.3-07, EX-042 ; `chargement/carte-morceaux.ts`) : (a) coquille minimale (document, bundle
+ * initial), (b) ressources du profil Studio (coquille Studio, catalogue, planche 2D, carte des morceaux
+ * `/chargement.json`), (c) modules facultatifs (vue 3D, Workers, Atelier, autres écrans) ; (d) les données métier et
+ * la file des commandes restent dans IndexedDB, jamais ici. L'installation met en cache (a) et (b) d'abord, puis (c).
+ * Politique retenue (option conservatrice) : les modules facultatifs restent précachés comme avant (aucune capacité
+ * hors ligne déjà livrée n'est retirée), mais « précaché » n'est jamais « chargé » : un module n'est exécuté qu'à son
+ * premier usage, et sa disponibilité hors connexion est lue dans ce cache par l'interface (Tool Manager), fichier
+ * par fichier, jamais supposée.
  */
 // Les marqueurs ci-dessous sont remplacés au build (vite.config.ts) : l'identifiant du build (un cache par build) et la
 // liste des fichiers à mettre en cache dès l'installation (application, morceaux chargés paresseusement, moteurs).
@@ -32,11 +41,18 @@ const PRECACHE = "__FADI_ASSETS__";
 const PREFIX = "fadi-shell-";
 const CACHE = `${PREFIX}${BUILD}`;
 const SHELL = "/index.html";
+const CARTE = "/chargement.json";
 const STATIC = /^\/(assets|parcelle)\//;
 const HASHED = /^\/assets\//;
 const API = /^\/(auth|projects|examples|library|notifications|preferences|health)(\/|$)/;
 const MARQUE = `<meta name="fadi-build" content="${BUILD}">`;
-const LISTE = Array.isArray(PRECACHE) ? PRECACHE : [];
+/** Classes du précache dans l'ordre d'installation (coquille et profil, puis facultatif) ; une liste simple reste acceptée. */
+const CLASSES = Array.isArray(PRECACHE)
+  ? [PRECACHE]
+  : PRECACHE && typeof PRECACHE === "object"
+    ? [[...(PRECACHE.coquille ?? []), ...(PRECACHE.profil ?? [])], PRECACHE.facultatif ?? []]
+    : [];
+const LISTE = CLASSES.flat();
 /** Fichiers non empreints de la liste anticipée de CE build (Parcelle) : seuls admis dans le cache après l'installation. */
 const NON_EMPREINTS = new Set(LISTE.filter((path) => path !== SHELL && !HASHED.test(path)));
 /** Fichier admis dans le cache de ce build après l'installation : empreint, ou non empreint de la liste anticipée. */
@@ -52,6 +68,20 @@ async function coquilleDeCeBuild(response) {
   }
 }
 
+/**
+ * La réponse est-elle la carte des morceaux de CE build ? (JSON lisible, champ `build` identique) : la carte d'un
+ * déploiement plus récent (ou plus ancien) n'entre jamais dans ce cache, elle décrirait d'autres fichiers.
+ */
+async function carteDeCeBuild(response) {
+  if (!response.ok) return false;
+  try {
+    const carte = await response.clone().json();
+    return !!carte && typeof carte === "object" && carte.build === BUILD;
+  } catch {
+    return false;
+  }
+}
+
 self.addEventListener("install", (event) =>
   event.waitUntil(
     (async () => {
@@ -60,13 +90,15 @@ self.addEventListener("install", (event) =>
       // empreints contournent le cache HTTP du navigateur (`reload`) : rien d'un build antérieur ne s'y glisse. Les
       // morceaux empreints sont immuables (nom = contenu) : le cache HTTP peut les fournir sans nouveau téléchargement.
       const cache = await caches.open(CACHE);
-      await Promise.all(
-        LISTE.map(async (path) => {
+      // Coquille et profil d'abord, puis les modules facultatifs.
+      for (const classe of CLASSES) await Promise.all(
+        classe.map(async (path) => {
           try {
             const response = await fetch(HASHED.test(path) ? path : new Request(path, { cache: "reload" }));
             if (!response.ok) return;
             // Le serveur sert déjà un autre build : sa page n'est pas la coquille de celui-ci.
             if (path === SHELL && !(await coquilleDeCeBuild(response))) return;
+            if (path === CARTE && !(await carteDeCeBuild(response))) return;
             await cache.put(path, response);
           } catch {
             /* fichier manquant ou réseau coupé : ignoré */
@@ -88,6 +120,9 @@ self.addEventListener("activate", (event) =>
       const garde = ouvertes.length ? anciens[anciens.length - 1] : undefined;
       for (const name of anciens) if (name !== garde) await caches.delete(name);
       await self.clients.claim();
+      // B.3-10 : chaque page ouverte apprend la mise à jour (ancien cache gardé ou non) ; elle ne se recharge pas
+      // d'elle-même, ses commandes non synchronisées restent dans IndexedDB, que ce service worker ne touche jamais.
+      for (const client of ouvertes) client.postMessage({ type: "fadi-sw-active", build: BUILD, ancienGarde: garde ?? null, precedents: anciens.length });
     })(),
   ),
 );
@@ -138,6 +173,20 @@ async function staticPage(request, url) {
   }
 }
 
+/** Carte des morceaux : réseau d'abord ; seule la carte de CE build est enregistrée ; hors ligne, sa copie de ce build. */
+async function carte(request) {
+  const cache = await caches.open(CACHE);
+  try {
+    const response = await fetch(request);
+    if (await carteDeCeBuild(response)) await cache.put(CARTE, response.clone());
+    return response;
+  } catch (err) {
+    const cached = await cache.match(CARTE);
+    if (cached) return cached;
+    throw err;
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
@@ -149,5 +198,8 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(STATIC.test(url.pathname) ? staticPage(request, url) : shell(request));
     return;
   }
+  // Carte des morceaux de ce build (non empreinte) : réseau d'abord, sinon la copie de ce build (hors ligne) ; une carte
+  // d'un autre build reçue du réseau est rendue à la page mais jamais enregistrée.
+  if (url.pathname === CARTE) { event.respondWith(carte(request)); return; }
   if (STATIC.test(url.pathname) || url.pathname === "/favicon.svg") event.respondWith(cacheFirst(request, url));
 });

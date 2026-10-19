@@ -12,7 +12,7 @@
  * l'erreur de repères que `docs/architecture.md` interdit.
  */
 import { boolean, customType, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
-import type { ConclusionControle, EtatExecution, ExigenceStudio, GrandeurQuantite, ResultatControle, StudioDocument, StudioEnvelope, UniteQuantite } from "@parcours/atelier-model";
+import type { ConclusionControle, EtatExecution, ExigenceStudio, GrandeurQuantite, ResultatControle, StudioDocument, StudioEnvelope, StudioFeuilleComposeeDefinition, UniteQuantite } from "@parcours/atelier-model";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
 const geography = customType<{ data: string; driverData: string }>({
@@ -710,7 +710,19 @@ export const studioObservations = pgTable("studio_observations", {
   createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  // Contexte de vue déclaré à l'ouverture (E.2-02) ; null pour une observation antérieure ou sans vue citée.
+  vueMode: text("vue_mode").$type<StudioObservationVueMode | null>(),
+  vueRef: text("vue_ref"),
 }, (t) => [index("studio_observations_variant_idx").on(t.variantId), index("studio_observations_responsable_idx").on(t.responsableId)]);
+
+/** Modes de l'espace de travail Studio cités comme contexte de vue d'une observation (E.2-02). */
+export type StudioObservationVueMode = "plan" | "3d" | "feuille" | "quantites" | "exigences" | "revue";
+/** Domaines où une même observation est réemployée (E.2-01). */
+export type StudioObservationDomaine = "exigence" | "metre" | "revue" | "objet";
+export type StudioObservationTacheStatut = "a-faire" | "faite" | "annulee";
+export type StudioObservationTacheAction = "creer" | "terminer" | "annuler" | "rouvrir" | "reattribuer";
+export type StudioObservationDecisionNature = "proposition" | "decision";
+export type StudioObservationDecisionPortee = "cloture" | "autre";
 
 /** Journal append-only des passages d'une observation (qui, quand, révision, note), ordonné par `seq`. */
 export const studioObservationEvents = pgTable("studio_observation_events", {
@@ -732,6 +744,79 @@ export const studioObservationEvents = pgTable("studio_observation_events", {
 }, (t) => [
   uniqueIndex("studio_observation_events_seq_unique").on(t.observationId, t.seq),
   index("studio_observation_events_at_idx").on(t.at),
+]);
+
+/**
+ * Lien d'une observation vers un élément d'un domaine (E.2-01) : exigence (et contrôle), ligne de métré
+ * (`objetId#grandeur`), revue (publication) ou objet du modèle, avec la révision citée. Un élément d'un domaine n'est
+ * suivi que par une observation de la variante (index unique `variant_id, domaine, ref`, init.sql). Jamais réécrit.
+ */
+export const studioObservationLinks = pgTable("studio_observation_links", {
+  id: text("id").primaryKey(),
+  observationId: text("observation_id").notNull(),
+  variantId: text("variant_id").notNull().references(() => studioVariants.id, { onDelete: "cascade" }),
+  domaine: text("domaine").$type<StudioObservationDomaine>().notNull(),
+  ref: text("ref").notNull(),
+  revisionId: text("revision_id"),
+  controleId: text("controle_id"),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex("studio_observation_links_ref_unique").on(t.variantId, t.domaine, t.ref),
+  index("studio_observation_links_observation_idx").on(t.observationId),
+]);
+
+/** Tâche d'une observation (E.2-03) : état courant ; son journal est `studioObservationTaskEvents`. */
+export const studioObservationTasks = pgTable("studio_observation_tasks", {
+  id: text("id").primaryKey(),
+  observationId: text("observation_id").notNull().references(() => studioObservations.commentId, { onDelete: "cascade" }),
+  libelle: text("libelle").notNull(),
+  assigneeId: text("assignee_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  echeance: date("echeance", { mode: "string" }),
+  statut: text("statut").$type<StudioObservationTacheStatut>().notNull(),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_observation_tasks_observation_idx").on(t.observationId), index("studio_observation_tasks_assignee_idx").on(t.assigneeId)]);
+
+/** Journal append-only des passages d'une tâche, ordonné par `seq`. */
+export const studioObservationTaskEvents = pgTable("studio_observation_task_events", {
+  id: text("id").primaryKey(),
+  taskId: text("task_id").notNull().references(() => studioObservationTasks.id, { onDelete: "cascade" }),
+  seq: integer("seq").notNull(),
+  action: text("action").$type<StudioObservationTacheAction>().notNull(),
+  fromStatut: text("from_statut").$type<StudioObservationTacheStatut | null>(),
+  toStatut: text("to_statut").$type<StudioObservationTacheStatut>().notNull(),
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  assigneeId: text("assignee_id"),
+  note: text("note"),
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  at: timestamp("at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex("studio_observation_task_events_seq_unique").on(t.taskId, t.seq),
+  index("studio_observation_task_events_at_idx").on(t.at),
+]);
+
+/** Décisions et propositions d'une observation (E.2-03 / E.2-04), distinctes des passages ; append-only, par `seq`. */
+export const studioObservationDecisions = pgTable("studio_observation_decisions", {
+  id: text("id").primaryKey(),
+  observationId: text("observation_id").notNull().references(() => studioObservations.commentId, { onDelete: "cascade" }),
+  seq: integer("seq").notNull(),
+  nature: text("nature").$type<StudioObservationDecisionNature>().notNull(),
+  portee: text("portee").$type<StudioObservationDecisionPortee>().notNull(),
+  texte: text("texte").notNull(),
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  actorRole: text("actor_role").$type<"proprietaire" | "editeur">().notNull(),
+  revisionId: text("revision_id"),
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  at: timestamp("at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex("studio_observation_decisions_seq_unique").on(t.observationId, t.seq),
+  index("studio_observation_decisions_at_idx").on(t.at),
 ]);
 
 /**
@@ -758,6 +843,8 @@ export type StudioPublicationDiffusionStatus = "non-diffuse" | "diffuse" | "reti
 /** Manifeste figé multi-sources d'un dossier (E.4-03) : sources coordonnées, métadonnées gelées, documents du paquet. */
 export interface StudioPublicationManifest {
   schema: "studio-publication-manifest/1";
+  /** E.3-07 : dessin 2D indépendant (SVG, DXF, feuille PDF ; sans IFC) ; absent : dossier complet. */
+  contenu?: "dessin-2d";
   sources: { role: "principale" | "coordonnee"; variantId: string; revisionId: string; documentHash: string }[];
   meta: { projectCode: string; projectName: string; studyName: string; variantName: string; revisionCreatedAt: string };
   documents: { format: string; fileName: string; mime: string; size: number; sha256: string }[];
@@ -768,6 +855,8 @@ export interface StudioPackageFile { format: StudioPackageFormat; fileName: stri
 /** Paquet figé à la diffusion : révision, empreinte du document, métadonnées gelées des exports et fichiers. */
 export interface StudioPublicationPackage {
   schema: "studio-publication-package/1";
+  /** E.3-07 : dessin 2D indépendant ; absent : paquet complet. */
+  contenu?: "dessin-2d";
   revisionId: string;
   documentHash: string;
   meta: { projectCode: string; projectName: string; studyName: string; variantName: string; revisionCreatedAt: string };
@@ -833,13 +922,17 @@ export const studioPublicationEvents = pgTable("studio_publication_events", {
 /**
  * Préférences d'outils Studio d'un compte (lib/studio-preferences.ts) : profil des barres (`standard`,
  * `metier:<id>`, `personnel`), favoris et liste personnelle, identifiants du registre `STUDIO_TOOLS`. Une ligne par
- * compte, sans rapport avec les documents : ni géométrie, ni révision, ni droit (B.2-07).
+ * compte, sans rapport avec les documents : ni géométrie, ni révision, ni droit (B.2-07). Regroupements personnels
+ * (`groups`, B.2-02) et version du manifeste d'écriture (`manifest_version`, B.1-06) : colonnes additives facultatives
+ * (null = aucun regroupement / ligne antérieure au manifeste), lisibles depuis une archive qui ne les porte pas.
  */
 export const studioToolPreferences = pgTable("studio_tool_preferences", {
   userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
   profile: text("profile").notNull().default("standard"),
   favorites: jsonb("favorites").$type<string[]>().notNull().default([]),
   personal: jsonb("personal").$type<string[]>().notNull().default([]),
+  groups: jsonb("groups").$type<{ id: string; nom: string; outils: string[] }[]>(),
+  manifestVersion: text("manifest_version"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -899,3 +992,36 @@ export const studioQuantityAdjustments = pgTable("studio_quantity_adjustments", 
   payloadHash: text("payload_hash"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [uniqueIndex("studio_quantity_adjustments_seq_unique").on(t.variantId, t.seq)]);
+
+/** Feuilles composées Studio (E.3-02) : définition propre, lecture d'une révision identifiée ; jamais la planche. */
+export const studioSheets = pgTable("studio_sheets", {
+  id: text("id").primaryKey(),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  variantId: text("variant_id").notNull(),
+  revisionId: text("revision_id").notNull(),
+  number: text("number").notNull(),
+  definition: jsonb("definition").$type<StudioFeuilleComposeeDefinition>().notNull(),
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [uniqueIndex("studio_sheets_number_unique").on(t.studyId, t.number)]);
+
+/** Dossiers de conception Studio (E.3-03) : feuilles ordonnées, métré facultatif, fidélité. */
+export const studioDossiers = pgTable("studio_dossiers", {
+  id: text("id").primaryKey(),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  sheetIds: jsonb("sheet_ids").$type<string[]>().notNull(),
+  quantitiesVariantId: text("quantities_variant_id"),
+  quantitiesRevisionId: text("quantities_revision_id"),
+  /** Borne du journal des ajustements du métré lue par le dossier (séquence max à l'épinglage) ; null : aucun ajustement. */
+  quantitiesAdjustmentSeq: integer("quantities_adjustment_seq"),
+  includeFidelity: boolean("include_fidelity").notNull().default(true),
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_dossiers_study_idx").on(t.studyId, t.createdAt)]);

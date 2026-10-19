@@ -1,0 +1,105 @@
+/**
+ * Production documentaire Studio (E.3-01 à E.3-03, E.3-06) — monté depuis `routes/studio.ts` (sous
+ * `/projects/:projectId/studio`, authentification et analyse JSON déjà posées). Règles : `lib/studio-dossiers.ts`.
+ *   GET    /dossiers                                              dossiers du projet (module Documents)
+ *   GET    /studies/:studyId/sheets                               feuilles composées de l'étude (provenance recalculée)
+ *   POST   /studies/:studyId/variants/:variantId/sheets           nouvelle feuille sur une révision de la variante (201 ; rejeu par requestId)
+ *   PATCH  /studies/:studyId/sheets/:sheetId                      définition, réépinglage (`revisionId`)
+ *   DELETE /studies/:studyId/sheets/:sheetId                      suppression (409 si un dossier la cite)
+ *   GET    /studies/:studyId/sheets/:sheetId/files/:format        rendu svg | pdf (provenance et empreintes en en-têtes)
+ *   GET    /studies/:studyId/dossiers                             dossiers de l'étude
+ *   POST   /studies/:studyId/dossiers                             nouveau dossier (201 ; rejeu par requestId)
+ *   GET    /studies/:studyId/dossiers/:dossierId                  détail et dossier assemblé
+ *   PATCH  /studies/:studyId/dossiers/:dossierId                  titre, feuilles ordonnées, métré, fidélité
+ *   GET    /studies/:studyId/dossiers/:dossierId/files/:format    pdf | json
+ * Aucune de ces routes n'écrit une révision : la planche de travail n'est jamais modifiée.
+ */
+import { Router, type NextFunction, type Request, type Response } from "express";
+import { StudioRequestError } from "../lib/studio-commands.js";
+import {
+  createStudioDossier, createStudioSheet, deleteStudioSheet, listProjectStudioDossiers, listStudioDossiers, listStudioSheets, readStudioDossier,
+  readStudioDossierFile, readStudioSheetFile, studioDossierCreateSchema, studioDossierUpdateSchema, studioSheetCreateSchema, studioSheetUpdateSchema,
+  updateStudioDossier, updateStudioSheet,
+} from "../lib/studio-dossiers.js";
+
+export const studioDossiersRouter = Router({ mergeParams: true });
+
+function endpoint(handler: (req: Request, res: Response) => Promise<void>) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try { await handler(req, res); }
+    catch (error) {
+      if (error instanceof StudioRequestError) res.status(error.status).json(error.body);
+      else next(error);
+    }
+  };
+}
+const param = (req: Request, key: string) => (req.params as Record<string, string>)[key] ?? "";
+const invalid = (res: Response, details: unknown) => res.status(400).json({ error: "invalid_input", details });
+const sheet = "/studies/:studyId/sheets/:sheetId";
+const dossier = "/studies/:studyId/dossiers/:dossierId";
+
+function sendFile(res: Response, out: { body: Buffer; fileName: string; mime: string; sha256: string }, extra: Record<string, string>) {
+  res.setHeader("Content-Type", out.mime);
+  res.setHeader("Content-Disposition", `attachment; filename="${out.fileName}"`);
+  res.setHeader("X-Content-SHA256", out.sha256);
+  for (const [k, v] of Object.entries(extra)) res.setHeader(k, v);
+  res.setHeader("Cache-Control", "private, no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  if (out.mime.startsWith("image/svg")) res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
+  res.status(200).send(out.body);
+}
+
+studioDossiersRouter.get("/dossiers", endpoint(async (req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await listProjectStudioDossiers(param(req, "projectId"), req.user!.id));
+}));
+studioDossiersRouter.get("/studies/:studyId/sheets", endpoint(async (req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await listStudioSheets(param(req, "projectId"), param(req, "studyId"), req.user!.id));
+}));
+studioDossiersRouter.post("/studies/:studyId/variants/:variantId/sheets", endpoint(async (req, res) => {
+  const parsed = studioSheetCreateSchema.safeParse(req.body ?? {});
+  if (!parsed.success) { invalid(res, parsed.error.flatten()); return; }
+  const out = await createStudioSheet(param(req, "projectId"), param(req, "studyId"), param(req, "variantId"), req.user!.id, parsed.data);
+  res.setHeader("Idempotent-Replayed", String(out.replayed));
+  res.status(201).json(out);
+}));
+studioDossiersRouter.patch(sheet, endpoint(async (req, res) => {
+  const parsed = studioSheetUpdateSchema.safeParse(req.body ?? {});
+  if (!parsed.success) { invalid(res, parsed.error.flatten()); return; }
+  res.json(await updateStudioSheet(param(req, "projectId"), param(req, "studyId"), param(req, "sheetId"), req.user!.id, parsed.data));
+}));
+studioDossiersRouter.delete(sheet, endpoint(async (req, res) => {
+  res.json(await deleteStudioSheet(param(req, "projectId"), param(req, "studyId"), param(req, "sheetId"), req.user!.id));
+}));
+studioDossiersRouter.get(`${sheet}/files/:format`, endpoint(async (req, res) => {
+  const out = await readStudioSheetFile(param(req, "projectId"), param(req, "studyId"), param(req, "sheetId"), req.user!.id, param(req, "format"));
+  sendFile(res, out, {
+    "X-Studio-Revision": out.feuille.vue.source.revisionId, "X-Studio-Variant": out.feuille.vue.source.variantId,
+    "X-Studio-Document-Hash": out.feuille.vue.source.documentHash, "X-Studio-View-Hash": out.feuille.vue.empreinteDonnees, "X-Studio-Sheet-Hash": out.feuille.empreinte,
+  });
+}));
+studioDossiersRouter.get("/studies/:studyId/dossiers", endpoint(async (req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await listStudioDossiers(param(req, "projectId"), param(req, "studyId"), req.user!.id));
+}));
+studioDossiersRouter.post("/studies/:studyId/dossiers", endpoint(async (req, res) => {
+  const parsed = studioDossierCreateSchema.safeParse(req.body ?? {});
+  if (!parsed.success) { invalid(res, parsed.error.flatten()); return; }
+  const out = await createStudioDossier(param(req, "projectId"), param(req, "studyId"), req.user!.id, parsed.data);
+  res.setHeader("Idempotent-Replayed", String(out.replayed));
+  res.status(201).json(out);
+}));
+studioDossiersRouter.get(dossier, endpoint(async (req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await readStudioDossier(param(req, "projectId"), param(req, "studyId"), param(req, "dossierId"), req.user!.id));
+}));
+studioDossiersRouter.patch(dossier, endpoint(async (req, res) => {
+  const parsed = studioDossierUpdateSchema.safeParse(req.body ?? {});
+  if (!parsed.success) { invalid(res, parsed.error.flatten()); return; }
+  res.json(await updateStudioDossier(param(req, "projectId"), param(req, "studyId"), param(req, "dossierId"), req.user!.id, parsed.data));
+}));
+studioDossiersRouter.get(`${dossier}/files/:format`, endpoint(async (req, res) => {
+  const out = await readStudioDossierFile(param(req, "projectId"), param(req, "studyId"), param(req, "dossierId"), req.user!.id, param(req, "format"));
+  sendFile(res, out, { "X-Studio-Dossier-Hash": out.empreinte });
+}));

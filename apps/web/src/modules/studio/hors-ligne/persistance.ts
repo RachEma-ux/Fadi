@@ -9,10 +9,10 @@
  * (`pasCouverts`) : ils repartent ensuite, sur la révision que l'enveloppe aura produite.
  * Pur : ni React, ni DOM, ni IndexedDB (l'écriture est dans `lib/local-store.ts`).
  */
-import type { StudioCommand } from "@parcours/atelier-model";
+import { studioChevauchements, studioElementsModifies, type StudioCommand } from "@parcours/atelier-model";
 import type { StudioContext } from "../../../lib/api";
 import type { PlanEnvoi } from "../import/envoi";
-import { annulerBrouillon, appliquerBrouillon, avecPlancher, creerBrouillon, peutAnnuler, type Brouillon } from "../planche2d/brouillon";
+import { annulerBrouillon, appliquerBrouillon, avecPlancher, creerBrouillon, documentBrouillon, peutAnnuler, type Brouillon } from "../planche2d/brouillon";
 
 export const VERSION_BROUILLON_HORS_LIGNE = 1;
 
@@ -103,13 +103,33 @@ export function restaurerBrouillon(document: StudioContext["revision"]["document
   return avecPlancher(r, plancher);
 }
 
-export type ResultatReport = { ok: true; brouillon: Brouillon } | { ok: false };
+/**
+ * `chevauchements` : éléments que le brouillon change ET que la nouvelle tête a changés autrement depuis la base
+ * (`studioChevauchements`) ; vide si la base n'est pas fournie. Les reporter remplacerait le changement d'autrui : le
+ * report n'est alors confirmé que par l'utilisateur, jamais en silence (A.5-06, A.5-08).
+ */
+export type ResultatReport = { ok: true; brouillon: Brouillon; chevauchements: string[] } | { ok: false };
 
 /**
- * Report des commandes en attente sur une nouvelle tête (après un conflit) : réussi seulement si le modèle applique
- * chaque pas sur le nouveau document (`applyStudioCommands`). Sinon rien ne change : résolution manuelle.
+ * Report des commandes en attente sur une nouvelle tête (après un conflit) : revalidé par le modèle, réussi seulement
+ * s'il applique chaque pas sur le nouveau document (`applyStudioCommands`). Sinon rien ne change : résolution manuelle.
+ * Les changements d'autrui présents dans la tête restent sous les pas reportés : annuler ne les retire jamais.
  */
-export function reporterSurTete(document: StudioContext["revision"]["document"], pas: readonly (readonly StudioCommand[])[]): ResultatReport {
-  try { return { ok: true, brouillon: restaurerBrouillon(document, pas) }; }
+export function reporterSurTete(document: StudioContext["revision"]["document"], pas: readonly (readonly StudioCommand[])[], base?: StudioContext["revision"]["document"]): ResultatReport {
+  let brouillon: Brouillon;
+  try { brouillon = restaurerBrouillon(document, pas); }
   catch { return { ok: false }; }
+  let chevauchements: string[] = [];
+  if (base) {
+    try { chevauchements = studioChevauchements(base, documentBrouillon(restaurerBrouillon(base, pas)), document); }
+    // Les pas ne s'appliquent plus à leur propre base (impossible en pratique) : tout ce qui a changé est à vérifier.
+    catch { chevauchements = studioElementsModifies(base, document); }
+  }
+  return { ok: true, brouillon, chevauchements };
+}
+
+/** Identifiants cités par la confirmation d'un report (`objects:a` → `a`), dix au plus puis « … ». Donnée du projet. */
+export function identifiantsCites(cles: readonly string[], max = 10): string {
+  const ids = cles.map((c) => (c.includes(":") ? c.slice(c.indexOf(":") + 1) : c));
+  return ids.length > max ? `${ids.slice(0, max).join(", ")}, …` : ids.join(", ");
 }

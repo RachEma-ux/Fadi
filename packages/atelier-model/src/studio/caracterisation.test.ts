@@ -317,6 +317,9 @@ const AJOUTS = {
     "STUDIO_OPENING_KINDS", "STUDIO_WALL_JUSTIFICATIONS", "SCHEMA_ARCHITECTURE", "SCHEMA_MUR", "SCHEMA_OUVERTURE",
     "controlerArchitecture", "validerElementArchitectural", "validerMur", "validerOuverture", "geometrieMur", "lateraux", "placerOuverture",
     "studioPlanArchitecture", "studioMaillageArchitecture", "studioQuantitesArchitecture",
+    // Manifeste versionné du catalogue d'outils, chargeurs et alias de migration (B.1, `manifeste-outils.ts`).
+    "STUDIO_ALIAS_OUTILS", "STUDIO_CHARGEURS_OUTILS", "STUDIO_CONTEXTES_OUTILS", "STUDIO_MANIFESTE_OUTILS", "STUDIO_MANIFESTE_OUTILS_VERSION",
+    "controlerManifesteOutils", "entreeManifeste", "resoudreAliasOutil", "toolIdCanonique",
     // Rapport de fidélité des exports (E.6-03, `echanges/rapport-fidelite.ts`).
     "STUDIO_CAPACITES_EXPORT", "STUDIO_FORMATS_ECHANGE", "STUDIO_LISTES_ECHANGE", "STUDIO_RAISONS_FIDELITE", "STUDIO_RAPPORT_FIDELITE_SCHEMA",
     "STUDIO_STATUTS_FIDELITE", "studioRapportFidelite",
@@ -333,6 +336,13 @@ const AJOUTS = {
     "studioFusionnerMorceaux", "studioJsonStable", "studioMaillerObjets", "studioMesh3dIncremental", "studioVersionProjection",
     // Ajustements de quantités enregistrés (E.3-05, `quantites-ajustements.ts`, extension additive).
     "STUDIO_LIMITES_AJUSTEMENTS", "appliquerAjustementsEnregistres", "controlerSaisieAjustement", "etatCibleQuantite", "evaluerAjustementsQuantites", "jsonCanoniqueQuantites",
+    // Concurrence des écritures (A.5-06, A.5-08, `concurrence.ts`).
+    "studioChevauchements", "studioElementsModifies",
+    // Production documentaire (lot E.3 : vues, feuilles composées, dossier de conception, bilan brut / déductions / net).
+    "STUDIO_BILAN_QUANTITES_SCHEMA", "bilanQuantitesStudio", "sousTotauxAvecNet", "studioTexteTronque", "largeurHelvetica","studioSha256", "studioSha256Octets", "studioUtf8", "pdfPages",
+    "STUDIO_VUE_DOCUMENTAIRE_SCHEMA", "STUDIO_FEUILLE_COMPOSEE_SCHEMA", "STUDIO_DOSSIER_CONCEPTION_SCHEMA", "STUDIO_NON_EVALUE", "STUDIO_LIMITES_DOSSIER",
+    "studioDonneesVue", "produireVueDocumentaire", "validerFeuilleComposee", "studioLigneProvenance", "composerFeuilleComposee", "studioFeuilleComposeeSvg",
+    "assemblerDossierConception", "pdfDossierConception",
   ]),
 };
 function sansAjouts(value: unknown): unknown {

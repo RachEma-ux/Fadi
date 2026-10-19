@@ -16,7 +16,7 @@ export type IdCommandeEditeur =
   | "accrochage-milieu" | "accrochage-centre" | "accrochage-quadrant" | "accrochage-intersection"
   | "accrochage-perpendiculaire" | "accrochage-tangente" | "accrochage-proche"
   | "reperage-orthogonal" | "reperage-polaire" | "pas-polaire"
-  | "importer-dxf" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille"
+  | "importer-dxf" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille" | "dossier"
   | "exporter-png"
   | "outils" | "palette"
   | "exigences";
@@ -30,7 +30,7 @@ export type IconeCommande =
   | "studio-snap-midpoint" | "studio-snap-center" | "studio-snap-quadrant" | "studio-snap-intersection"
   | "studio-snap-perpendicular" | "studio-snap-tangent" | "studio-snap-nearest"
   | "studio-track-ortho" | "studio-track-polar" | "studio-track-polar-step"
-  | "studio-import-dxf" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet"
+  | "studio-import-dxf" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet" | "studio-dossier"
   | "studio-export-png"
   | "studio-catalog" | "studio-palette"
   | "studio-requirements";
@@ -102,6 +102,9 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "exporter-ifc", libelleFR: "Exporter IFC", raccourci: "Shift+I", iconeSymbolique: "studio-export-ifc", groupe: "export", ecrit: false, telechargement: "ifc" },
   // Feuille de présentation (format, échelle, cartouche) : Maj+P (P comme page) ; Ctrl+P reste l'impression du navigateur.
   { id: "feuille", libelleFR: "Feuille", raccourci: "Shift+P", iconeSymbolique: "studio-sheet", groupe: "presentation", ecrit: false },
+  // Feuilles composées et dossier de conception (E.3) : Ctrl+Maj+D (D comme dossier) ; toutes les lettres Maj+… sont
+  // prises et Ctrl+D (marque-page) reste au navigateur. Lecture admise : un lecteur consulte et télécharge.
+  { id: "dossier", libelleFR: "Feuilles et dossier", raccourci: "Ctrl+Shift+D", iconeSymbolique: "studio-dossier", groupe: "presentation", ecrit: false },
   { id: "outils", libelleFR: "Outils", raccourci: "Shift+O", iconeSymbolique: "studio-catalog", groupe: "catalogue", ecrit: false },
   { id: "palette", libelleFR: "Palette de commandes", raccourci: "Ctrl+K", iconeSymbolique: "studio-palette", groupe: "catalogue", ecrit: false, dansUnChamp: true },
   // Exigences et écarts (E.1) : F comme « fiche d’exigences » (lettre seule libre et non réservée ; V appartient à la Visualisation) ; lecture admise.

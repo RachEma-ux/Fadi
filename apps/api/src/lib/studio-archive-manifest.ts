@@ -12,19 +12,22 @@
  * changent (réattribution déclarée dans les réserves).
  */
 import { createHash } from "node:crypto";
+import { StudioValidationError, validerFeuilleComposee, type StudioFeuilleComposeeDefinition } from "@parcours/atelier-model";
 import { dimensionsDe, statutCombine, type Dimensions, type StatutCombine, type StatutDiffusion, type StatutTravail } from "./studio-publication-statuts.js";
 
 export const STUDIO_ARCHIVE_SCHEMA = "fadi-studio-archive/1";
-/** Version du schéma Studio couvert (document des révisions et jeu de tables de `init.sql`). */
-export const STUDIO_ARCHIVE_SCHEMA_VERSION = { document: "studio-document/1", tables: "studio-v1/2026-10-19.2" } as const;
 /**
- * Versions antérieures des tables encore relues, avec les tables qu'elles ne portaient pas encore (lues vides, hors
- * manifeste : l'empreinte d'une archive antérieure reste celle de ses propres tables). Toute autre version est refusée.
- * `studio-v1/2026-10-19` : avant les ajustements du métré (E.3-05, `studio_quantity_adjustments`).
+ * Version du schéma Studio couvert (document des révisions et jeu de tables de `init.sql`).
+ * `studio-v1/2026-10-19.3` ajoute les tables du suivi des observations (E.2 : liens de domaines, tâches et leur journal,
+ * décisions), la vue citée d'une observation (colonnes nullables), les feuilles composées et les dossiers de conception
+ * (E.3-02 / E.3-03).
  */
-export const STUDIO_ARCHIVE_PREVIOUS_TABLE_VERSIONS: Readonly<Record<string, readonly string[]>> = Object.freeze({
-  "studio-v1/2026-10-19": ["studio_quantity_adjustments"],
-});
+export const STUDIO_ARCHIVE_SCHEMA_VERSION = { document: "studio-document/1", tables: "studio-v1/2026-10-19.3" } as const;
+export interface StudioArchiveSchemaVersion { document: string; tables: string }
+/** Version des tables antérieure au suivi E.2 et aux feuilles / dossiers (après les ajustements du métré E.3-05). */
+export const STUDIO_ARCHIVE_LEGACY_TABLES_VERSION = "studio-v1/2026-10-19.2";
+/** Version antérieure aux ajustements du métré (E.3-05) et au suivi E.2. */
+export const STUDIO_ARCHIVE_PRE_QUANTITES_TABLES_VERSION = "studio-v1/2026-10-19";
 
 /** Tables archivées, dans l'ordre d'insertion (parents d'abord). `project_members` porte les droits du projet. */
 export const STUDIO_ARCHIVE_TABLES = [
@@ -34,10 +37,16 @@ export const STUDIO_ARCHIVE_TABLES = [
   "studio_comments",
   "studio_observations",
   "studio_observation_events",
+  "studio_observation_links",
+  "studio_observation_tasks",
+  "studio_observation_task_events",
+  "studio_observation_decisions",
   "studio_study_steps",
   "studio_requirement_sets",
   "studio_requirement_checks",
   "studio_quantity_adjustments",
+  "studio_sheets",
+  "studio_dossiers",
   "volumes",
   "studio_publications",
   "studio_publication_events",
@@ -48,6 +57,17 @@ export type StudioArchiveTable = (typeof STUDIO_ARCHIVE_TABLES)[number];
 export type StudioArchiveRow = Record<string, unknown>;
 export type StudioArchiveTables = Record<StudioArchiveTable, StudioArchiveRow[]>;
 
+/** Tables ajoutées par le suivi des observations (E.2) : absentes d'une section de la version antérieure. */
+export const STUDIO_ARCHIVE_TABLES_E2: readonly StudioArchiveTable[] = ["studio_observation_links", "studio_observation_tasks", "studio_observation_task_events", "studio_observation_decisions"];
+/** Tables ajoutées par la production documentaire (E.3-02 / E.3-03), dans la même version que celles du suivi E.2. */
+export const STUDIO_ARCHIVE_TABLES_E3: readonly StudioArchiveTable[] = ["studio_sheets", "studio_dossiers"];
+/** Tables couvertes par chaque version prise en charge (le manifeste et sa signature portent sur celles-ci seulement). */
+export const STUDIO_ARCHIVE_TABLES_BY_VERSION: Readonly<Record<string, readonly StudioArchiveTable[]>> = Object.freeze({
+  [STUDIO_ARCHIVE_SCHEMA_VERSION.tables]: STUDIO_ARCHIVE_TABLES,
+  [STUDIO_ARCHIVE_LEGACY_TABLES_VERSION]: STUDIO_ARCHIVE_TABLES.filter((t) => !STUDIO_ARCHIVE_TABLES_E2.includes(t) && !STUDIO_ARCHIVE_TABLES_E3.includes(t)),
+  [STUDIO_ARCHIVE_PRE_QUANTITES_TABLES_VERSION]: STUDIO_ARCHIVE_TABLES.filter((t) => !STUDIO_ARCHIVE_TABLES_E2.includes(t) && !STUDIO_ARCHIVE_TABLES_E3.includes(t) && t !== "studio_quantity_adjustments"),
+});
+
 /** Clé de chaque table (comparaison ligne à ligne, tri déterministe). */
 export const STUDIO_TABLE_KEYS: Readonly<Record<StudioArchiveTable, readonly string[]>> = Object.freeze({
   studio_studies: ["id"],
@@ -56,10 +76,16 @@ export const STUDIO_TABLE_KEYS: Readonly<Record<StudioArchiveTable, readonly str
   studio_comments: ["id"],
   studio_observations: ["comment_id"],
   studio_observation_events: ["id"],
+  studio_observation_links: ["id"],
+  studio_observation_tasks: ["id"],
+  studio_observation_task_events: ["id"],
+  studio_observation_decisions: ["id"],
   studio_study_steps: ["study_id", "step_number"],
   studio_requirement_sets: ["id"],
   studio_requirement_checks: ["id"],
   studio_quantity_adjustments: ["id"],
+  studio_sheets: ["id"],
+  studio_dossiers: ["id"],
   volumes: ["id"],
   studio_publications: ["id"],
   studio_publication_events: ["id"],
@@ -75,10 +101,16 @@ export const STUDIO_USER_COLUMNS: Readonly<Record<StudioArchiveTable, readonly s
   studio_comments: ["author_id"],
   studio_observations: ["responsable_id", "created_by"],
   studio_observation_events: ["actor_id", "responsable_id"],
+  studio_observation_links: ["created_by"],
+  studio_observation_tasks: ["assignee_id", "created_by"],
+  studio_observation_task_events: ["actor_id", "assignee_id"],
+  studio_observation_decisions: ["actor_id"],
   studio_study_steps: ["created_by"],
   studio_requirement_sets: ["author_id"],
   studio_requirement_checks: ["author_id"],
   studio_quantity_adjustments: ["author_id"],
+  studio_sheets: ["created_by"],
+  studio_dossiers: ["created_by"],
   volumes: [],
   studio_publications: ["approved_by", "diffused_by", "created_by", "replaced_by"],
   studio_publication_events: ["author_id"],
@@ -108,8 +140,12 @@ export const STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS: Readonly<Partial<Record<Studio
   studio_requirement_checks: ["result"],
   // État de la cible d'un ajustement du métré (objet du document, quantités brutes) : aucun compte.
   studio_quantity_adjustments: ["target_state"],
+  // Définition d'une feuille composée (numéro, titre, format, vue source, auteur saisi en texte) et feuilles d'un
+  // dossier (identifiants) : aucun compte (l'auteur du cartouche est un texte saisi, jamais un identifiant de compte).
+  studio_sheets: ["definition"],
+  studio_dossiers: ["sheet_ids"],
   studio_publications: ["package", "manifest"],
-  studio_tool_preferences: ["favorites", "personal"],
+  studio_tool_preferences: ["favorites", "personal", "groups"],
 });
 
 /** Colonnes qui portent l'identifiant du projet (remplacé par celui du projet restauré). */
@@ -122,21 +158,22 @@ export const STUDIO_PROJECT_COLUMNS: Readonly<Partial<Record<StudioArchiveTable,
 /** Tables dont les identifiants sont globaux : une collision dans la base cible empêche la restauration Studio. */
 export const STUDIO_IDENTITY_TABLES: readonly StudioArchiveTable[] = [
   "studio_studies", "studio_variants", "studio_revisions", "studio_comments", "studio_observations",
-  "studio_observation_events", "studio_requirement_sets", "studio_requirement_checks", "studio_quantity_adjustments", "studio_publications", "studio_publication_events",
+  "studio_observation_events", "studio_observation_links", "studio_observation_tasks", "studio_observation_task_events", "studio_observation_decisions",
+  "studio_requirement_sets", "studio_requirement_checks", "studio_quantity_adjustments", "studio_sheets", "studio_dossiers", "studio_publications", "studio_publication_events",
 ];
 
 export interface StudioArchiveAccount { id: string; email: string }
 export interface StudioTableManifest { count: number; hash: string }
 export interface StudioArchiveManifest {
   schema: typeof STUDIO_ARCHIVE_SCHEMA;
-  schemaVersion: typeof STUDIO_ARCHIVE_SCHEMA_VERSION;
+  schemaVersion: StudioArchiveSchemaVersion;
   tables: Record<StudioArchiveTable, StudioTableManifest>;
   /** Empreinte globale : SHA-256 du JSON canonique des empreintes par table. */
   hash: string;
 }
 export interface StudioArchiveSection {
   schema: typeof STUDIO_ARCHIVE_SCHEMA;
-  schemaVersion: typeof STUDIO_ARCHIVE_SCHEMA_VERSION;
+  schemaVersion: StudioArchiveSchemaVersion;
   sourceProjectId: string;
   /** Propriétaire du projet d'origine (droits : il n'est pas membre, il possède le projet). */
   ownerId: string;
@@ -179,11 +216,13 @@ export interface StudioArchiveIdentity { sourceProjectId: string; ownerId: strin
  * Manifeste : effectif et empreinte par table ; l'empreinte globale couvre aussi le projet, le propriétaire et les
  * comptes cités (identifiant → adresse) — une adresse réécrite change l'empreinte, donc invalide la signature.
  */
-export function buildStudioManifest(tables: StudioArchiveTables, identity: StudioArchiveIdentity, covered: readonly StudioArchiveTable[] = STUDIO_ARCHIVE_TABLES): StudioArchiveManifest {
+export function buildStudioManifest(tables: StudioArchiveTables, identity: StudioArchiveIdentity, tablesVersion: string = STUDIO_ARCHIVE_SCHEMA_VERSION.tables): StudioArchiveManifest {
+  // Une version antérieure ne couvre que ses tables : le manifeste recalculé est celui qu'elle avait signé.
+  const covered = STUDIO_ARCHIVE_TABLES_BY_VERSION[tablesVersion] ?? STUDIO_ARCHIVE_TABLES;
   const perTable = Object.fromEntries(covered.map((t) => [t, { count: tables[t].length, hash: studioTableHash(t, tables[t]) }])) as Record<StudioArchiveTable, StudioTableManifest>;
   const accounts = [...identity.accounts].map((a) => ({ id: a.id, email: a.email })).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const hash = sha256(canonicalJson({ tables: perTable, sourceProjectId: identity.sourceProjectId, ownerId: identity.ownerId, accounts }));
-  return { schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: STUDIO_ARCHIVE_SCHEMA_VERSION, tables: perTable, hash };
+  return { schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: { document: STUDIO_ARCHIVE_SCHEMA_VERSION.document, tables: tablesVersion }, tables: perTable, hash };
 }
 
 /** Identifiants de compte cités par les lignes (et le propriétaire), triés. */
@@ -279,24 +318,21 @@ export function checkStudioArchive(raw: unknown): { ok: true; section: StudioArc
   if (raw["schema"] !== STUDIO_ARCHIVE_SCHEMA) return { ok: false, errors: [`schéma de section Studio non pris en charge : ${String(raw["schema"])}`] };
   const sv = raw["schemaVersion"];
   if (!isRecord(sv) || sv["document"] !== STUDIO_ARCHIVE_SCHEMA_VERSION.document) errors.push("version du document Studio non prise en charge");
-  // Disposition des lignes lue par `jsonb_populate_recordset` : une autre version des tables est refusée, jamais devinée ;
-  // une version antérieure déclarée (`STUDIO_ARCHIVE_PREVIOUS_TABLE_VERSIONS`) est relue sans les tables qu'elle n'avait pas.
-  const tableVersion = isRecord(sv) ? sv["tables"] : undefined;
-  const absentes = typeof tableVersion === "string" && Object.hasOwn(STUDIO_ARCHIVE_PREVIOUS_TABLE_VERSIONS, tableVersion) ? STUDIO_ARCHIVE_PREVIOUS_TABLE_VERSIONS[tableVersion]! : null;
-  if (tableVersion !== STUDIO_ARCHIVE_SCHEMA_VERSION.tables && !absentes) errors.push("version des tables Studio non prise en charge");
-  const covered = STUDIO_ARCHIVE_TABLES.filter((t) => !(absentes ?? []).includes(t));
+  // Disposition des lignes lue par `jsonb_populate_recordset` : une version des tables inconnue est refusée, jamais
+  // devinée. Une version antérieure déclarée (`STUDIO_ARCHIVE_TABLES_BY_VERSION`) est relue telle quelle (ses tables absentes : aucune ligne ; les colonnes
+  // ajoutées depuis, nullables, restent nulles).
+  const tablesVersion = isRecord(sv) && typeof sv["tables"] === "string" ? sv["tables"] : "";
+  const covered = STUDIO_ARCHIVE_TABLES_BY_VERSION[tablesVersion];
+  if (!covered) errors.push("version des tables Studio non prise en charge");
   if (!isId(raw["sourceProjectId"]) || !isId(raw["ownerId"])) errors.push("projet ou propriétaire d'origine absent");
   const accounts = Array.isArray(raw["accounts"]) ? raw["accounts"] : null;
   if (!accounts || accounts.some((a) => !isRecord(a) || !isId(a["id"]) || typeof a["email"] !== "string")) errors.push("comptes cités illisibles");
   const rawTables = raw["tables"];
   if (!isRecord(rawTables)) return { ok: false, errors: [...errors, "tables absentes"] };
   const tables = emptyStudioTables();
-  for (const t of STUDIO_ARCHIVE_TABLES) {
+  for (const t of STUDIO_ARCHIVE_TABLES) if (covered && !covered.includes(t) && rawTables[t] !== undefined) errors.push(`table ${t} inattendue dans cette version`);
+  for (const t of covered ?? STUDIO_ARCHIVE_TABLES) {
     const rows = rawTables[t];
-    if (!covered.includes(t)) {
-      if (rows !== undefined) errors.push(`table ${t} inattendue dans cette version`);
-      continue;
-    }
     if (!Array.isArray(rows) || rows.some((r) => !isRecord(r))) { errors.push(`table ${t} illisible`); continue; }
     tables[t] = rows as StudioArchiveRow[];
     const keys = new Set<string>();
@@ -311,10 +347,10 @@ export function checkStudioArchive(raw: unknown): { ok: true; section: StudioArc
 
   // Manifeste : effectifs et empreintes recalculés depuis les lignes reçues.
   const manifest = raw["manifest"];
-  const expected = buildStudioManifest(tables, { sourceProjectId: raw["sourceProjectId"] as string, ownerId: raw["ownerId"] as string, accounts: accounts as StudioArchiveAccount[] }, covered);
+  const expected = buildStudioManifest(tables, { sourceProjectId: raw["sourceProjectId"] as string, ownerId: raw["ownerId"] as string, accounts: accounts as StudioArchiveAccount[] }, tablesVersion);
   if (!isRecord(manifest) || !isRecord(manifest["tables"])) errors.push("manifeste Studio absent");
   else {
-    for (const t of covered) {
+    for (const t of covered!) {
       const m = (manifest["tables"] as Record<string, unknown>)[t];
       if (!isRecord(m) || m["count"] !== expected.tables[t].count) errors.push(`${t} : effectif différent du manifeste`);
       else if (m["hash"] !== expected.tables[t].hash) errors.push(`${t} : empreinte différente du manifeste`);
@@ -354,6 +390,19 @@ export function checkStudioArchive(raw: unknown): { ok: true; section: StudioArc
     if (!sameVariantRevision(r["variant_id"], r["correction_revision_id"]) || !sameVariantRevision(r["variant_id"], r["recontrole_revision_id"])) errors.push(`observation ${String(r["comment_id"])} : révision absente`);
   }
   for (const r of tables.studio_observation_events) if (!observations.has(r["observation_id"] as string)) errors.push(`passage ${String(r["id"])} : observation absente`);
+  // Suivi E.2 : liens de domaines (même variante que l'observation, révision de cette variante), tâches et décisions.
+  const observationVariant = new Map(tables.studio_observations.map((r) => [r["comment_id"] as string, r["variant_id"] as string]));
+  for (const r of tables.studio_observation_links) {
+    if (observationVariant.get(r["observation_id"] as string) !== r["variant_id"]) errors.push(`lien ${String(r["id"])} : observation absente`);
+    if (!sameVariantRevision(r["variant_id"], r["revision_id"])) errors.push(`lien ${String(r["id"])} : révision absente`);
+  }
+  const tasks = ids("studio_observation_tasks");
+  for (const r of tables.studio_observation_tasks) if (!observations.has(r["observation_id"] as string)) errors.push(`tâche ${String(r["id"])} : observation absente`);
+  for (const r of tables.studio_observation_task_events) if (!tasks.has(r["task_id"] as string)) errors.push(`passage de tâche ${String(r["id"])} : tâche absente`);
+  for (const r of tables.studio_observation_decisions) {
+    if (!observations.has(r["observation_id"] as string)) errors.push(`décision ${String(r["id"])} : observation absente`);
+    else if (!sameVariantRevision(observationVariant.get(r["observation_id"] as string), r["revision_id"])) errors.push(`décision ${String(r["id"])} : révision absente`);
+  }
   for (const r of tables.studio_study_steps) if (!studies.has(r["study_id"] as string)) errors.push(`lien d'étape : étude ${String(r["study_id"])} absente`);
   // Lot E.1 : jeux d'exigences versionnés (append-only) et contrôles liés à une révision et à une version du jeu.
   const setVersions = new Set<string>();
@@ -382,6 +431,41 @@ export function checkStudioArchive(raw: unknown): { ok: true; section: StudioArc
     sequences.add(k);
     if (!isRecord(r["target_state"])) errors.push(`ajustement ${String(r["id"])} : état de la cible illisible`);
     if (typeof r["motif"] !== "string" || !r["motif"].trim()) errors.push(`ajustement ${String(r["id"])} : motif absent`);
+  }
+  // Feuilles composées (E.3-02) : variante de l'étude, révision de cette variante, définition lisible, numéro unique par
+  // étude ; dossiers (E.3-03) : étude de la section, feuilles de la même étude, métré complet (variante et révision).
+  const numeros = new Set<string>();
+  const sheetStudy = new Map(tables.studio_sheets.map((r) => [r["id"] as string, r["study_id"] as string]));
+  for (const r of tables.studio_sheets) {
+    if (variantStudy.get(r["variant_id"] as string) !== r["study_id"]) errors.push(`feuille ${String(r["id"])} : variante absente`);
+    if (revisionVariant.get(r["revision_id"] as string) !== r["variant_id"]) errors.push(`feuille ${String(r["id"])} : révision absente`);
+    // Définition contrôlée par le modèle (M-5) : refus clair à la relecture plutôt qu'un échec plus tard à la composition.
+    if (!isRecord(r["definition"])) errors.push(`feuille ${String(r["id"])} : définition illisible`);
+    else {
+      try {
+        const def = validerFeuilleComposee(r["definition"] as unknown as StudioFeuilleComposeeDefinition);
+        if (def.numero !== r["number"]) errors.push(`feuille ${String(r["id"])} : numéro différent de sa définition`);
+      } catch (e) {
+        if (!(e instanceof StudioValidationError)) throw e;
+        errors.push(`feuille ${String(r["id"])} : définition invalide (${e.message})`);
+      }
+    }
+    const k = `${String(r["study_id"])}|${String(r["number"])}`;
+    if (numeros.has(k)) errors.push(`feuille ${String(r["id"])} : numéro en double`);
+    numeros.add(k);
+  }
+  for (const r of tables.studio_dossiers) {
+    if (!studies.has(r["study_id"] as string)) errors.push(`dossier ${String(r["id"])} : étude absente`);
+    const feuilles = Array.isArray(r["sheet_ids"]) ? (r["sheet_ids"] as unknown[]) : null;
+    if (!feuilles) errors.push(`dossier ${String(r["id"])} : feuilles illisibles`);
+    else for (const id of feuilles) if (sheetStudy.get(id as string) !== r["study_id"]) errors.push(`dossier ${String(r["id"])} : feuille ${String(id)} absente`);
+    const qv = r["quantities_variant_id"], qr = r["quantities_revision_id"];
+    if ((qv === null || qv === undefined) !== (qr === null || qr === undefined)) errors.push(`dossier ${String(r["id"])} : métré incomplet`);
+    else if (qv !== null && qv !== undefined && (variantStudy.get(qv as string) !== r["study_id"] || revisionVariant.get(qr as string) !== qv)) errors.push(`dossier ${String(r["id"])} : révision du métré absente`);
+    // Borne du journal des ajustements (I-2) : colonne nullable, absente des sections antérieures (null : aucun
+    // ajustement pris en compte) ; sinon entier ≥ 1, avec un métré.
+    const seq = r["quantities_adjustment_seq"];
+    if (seq !== null && seq !== undefined && (!Number.isInteger(seq) || (seq as number) < 1 || qv === null || qv === undefined)) errors.push(`dossier ${String(r["id"])} : borne des ajustements du métré invalide`);
   }
   for (const r of tables.volumes) {
     const bytes = volumeBytes(r["content"]);

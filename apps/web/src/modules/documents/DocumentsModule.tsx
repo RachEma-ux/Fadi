@@ -10,8 +10,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { api, type DocumentDescriptor, type DocumentsView, type StudioPackageDocument } from "../../lib/api";
+import { api, type DocumentDescriptor, type DocumentsView, type StudioDossierDocument, type StudioPackageDocument } from "../../lib/api";
 import { LOCALE } from "../../lib/i18n";
+import { libelleErreurDossier } from "../../lib/studio-dossier-erreurs";
 
 const GROUPS: { id: DocumentDescriptor["group"]; title: string; note: string }[] = [
   { id: "harmonie", title: "Rapports Harmonie", note: "Documents HTML autonomes des choix par étape (feuille du prototype), produits depuis l'état courant des propositions et des arbitrages." },
@@ -80,6 +81,64 @@ const courte = (hash: string) => hash.slice(0, 12);
  * Groupe « Studio — paquets diffusés » : paquets figés des publications Studio, en lecture seule (ils sont produits par
  * le flux de publication, jamais ici). Un paquet retiré reste listé et téléchargeable, marqué « Retiré ».
  */
+/** Dossiers de conception Studio (E.3-03, E.3-06) : livrables recalculés depuis des révisions immuables, identifiés par leur empreinte. */
+function StudioDossiers({ dossiers }: { dossiers: StudioDossierDocument[] }) {
+  return (
+    <section className="biz-card" aria-labelledby="documents-studio-dossiers" data-studio-dossiers={dossiers.length}>
+      <h2 id="documents-studio-dossiers">Studio — dossiers de conception</h2>
+      <p className="biz-sub">
+        Feuilles composées dans l'ordre du dossier, métré (brut, déductions et net séparés) et rapport de fidélité, produits à la demande depuis les révisions enregistrées qu'ils citent. L'empreinte SHA-256
+        identifie le dossier assemblé : une feuille réépinglée sur une autre révision la change.
+      </p>
+      <div className="table-scroll" tabIndex={0}>
+        <table className="programme-table studio-packages-table">
+          <thead>
+            <tr>
+              <th>Dossier</th>
+              <th>Sources</th>
+              <th>Empreinte</th>
+              <th>Fichiers</th>
+            </tr>
+          </thead>
+          <tbody>
+            {dossiers.map((d) => (
+              <tr key={d.kind} data-studio-dossier-document={d.dossierId} data-dossier-hash={d.hash ?? ""}>
+                <td>
+                  <b translate="no">{d.title}</b>
+                  <br />
+                  <small>
+                    Étude <span translate="no">{d.studyName}</span>{` · ${d.sheetCount} feuille(s)`}
+                  </small>
+                </td>
+                <td>
+                  {d.sources.map((s) => (
+                    <small key={`${s.variantId}:${s.revisionId}`} translate="no">
+                      {`${s.variantName ?? "non évalué"} · ${s.revisionShort}`}
+                      <br />
+                    </small>
+                  ))}
+                </td>
+                <td>
+                  {d.hash ? <code translate="no" title={d.hash}>{courte(d.hash)}</code> : <span className="h7-chip warn" data-studio-dossier-erreur={d.error ?? ""}>{libelleErreurDossier(d.error)}</span>}
+                </td>
+                <td>
+                  {d.files.map((f) => (
+                    <span key={f.format} className="studio-package-file">
+                      <a className="button-secondary" href={f.href} download data-studio-dossier-file={f.format} translate="no">
+                        {f.format.toUpperCase()} ↓
+                      </a>{" "}
+                    </span>
+                  ))}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 function StudioPackages({ packages }: { packages: StudioPackageDocument[] }) {
   return (
     <section className="biz-card" aria-labelledby="documents-studio" data-studio-packages={packages.length}>
@@ -101,9 +160,10 @@ function StudioPackages({ packages }: { packages: StudioPackageDocument[] }) {
           </thead>
           <tbody>
             {packages.map((p) => (
-              <tr key={p.kind} data-studio-package={p.publicationId} data-status={p.status} data-package-hash={p.packageHash}>
+              <tr key={p.kind} data-studio-package={p.publicationId} data-status={p.status} data-package-hash={p.packageHash} data-contenu={p.contenu ?? "complet"}>
                 <td>
                   <b translate="no">{p.title}</b>
+                  {p.contenu === "dessin-2d" && <> <span className="h7-chip" data-studio-package-dessin2d>Dessin 2D indépendant</span></>}
                   <br />
                   <small>
                     Étude <span translate="no">{p.studyName}</span> · variante <span translate="no">{p.variantName}</span> · révision <code translate="no">{p.revisionShort}</code>
@@ -239,6 +299,12 @@ export function DocumentsModule({ projectId }: { projectId: string }) {
         );
       })}
       {(v.studioPackages?.length ?? 0) > 0 && <StudioPackages packages={v.studioPackages!} />}
+      {(v.studioDossiers?.length ?? 0) > 0 && <StudioDossiers dossiers={v.studioDossiers!} />}
+      {v.studioDossiersError && (
+        <p className="h7-chip warn" role="status" data-studio-dossiers-erreur={v.studioDossiersError}>
+          {`Studio — dossiers de conception : ${libelleErreurDossier(v.studioDossiersError)}`}
+        </p>
+      )}
     </div>
   );
 }

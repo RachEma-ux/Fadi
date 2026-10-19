@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   STUDIO_ARCHIVE_SCHEMA, STUDIO_ARCHIVE_SCHEMA_VERSION, STUDIO_ARCHIVE_TABLES, buildStudioManifest, canonicalJson, checkStudioArchive,
   STUDIO_DOWNGRADE_COMMENT, distrustRequirementSets, distrustStudioPublications, orderPublicationsForInsert, emptyStudioTables, mapStudioAccounts, orderCommentsForInsert, packageVolumeIds, remapStudioJsonAccounts, remapStudioRows, studioAccountIds, studioExportAccountIds, studioJsonAccountIds,
-  STUDIO_JSON_ACCOUNT_FIELDS, STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS,
+  STUDIO_JSON_ACCOUNT_FIELDS, STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS, STUDIO_ARCHIVE_LEGACY_TABLES_VERSION, STUDIO_ARCHIVE_PRE_QUANTITES_TABLES_VERSION, STUDIO_ARCHIVE_TABLES_BY_VERSION, STUDIO_ARCHIVE_TABLES_E2,
   studioArchiveDocumentHash, studioTableHash, type StudioArchiveTables,
 } from "./studio-archive-manifest.js";
 
@@ -297,6 +297,48 @@ describe("section Studio : versions et forme (revue #198)", () => {
     expect(errorsOf(autre)).toContain("version des tables Studio non prise en charge");
     expect(errorsOf(section)).toEqual([]);
   });
+  it("suivi E.2 : liens, tâches, journal des tâches et décisions archivés, leurs comptes réattribués, leurs références contrôlées", () => {
+    const f = fixture();
+    f.tables.studio_observation_links = [{ id: "l1", observation_id: "c1", variant_id: "v1", domaine: "objet", ref: "l0", revision_id: "r2", controle_id: null, created_by: "uEditor" }];
+    f.tables.studio_observation_tasks = [{ id: "t1", observation_id: "c1", libelle: "Reprendre l'about", assignee_id: "uEditor", statut: "a-faire", created_by: "uOwner" }];
+    f.tables.studio_observation_task_events = [{ id: "te1", task_id: "t1", seq: 1, action: "creer", actor_id: "uOwner", assignee_id: "uEditor" }];
+    f.tables.studio_observation_decisions = [{ id: "d1", observation_id: "c1", seq: 1, nature: "proposition", portee: "cloture", texte: "Clore", actor_id: "uEditor", actor_role: "editeur", revision_id: "r2" }];
+    f.section["manifest"] = buildStudioManifest(f.tables, IDENT);
+    expect(errorsOf(clone(f.section))).toEqual([]);
+    const map = new Map([["uOwner", "uB1"], ["uEditor", "uB2"]]);
+    expect(remapStudioRows("studio_observation_tasks", f.tables.studio_observation_tasks, "pB", map)[0]).toMatchObject({ assignee_id: "uB2", created_by: "uB1" });
+    expect(remapStudioRows("studio_observation_task_events", f.tables.studio_observation_task_events, "pB", map)[0]).toMatchObject({ actor_id: "uB1", assignee_id: "uB2" });
+    expect(remapStudioRows("studio_observation_decisions", f.tables.studio_observation_decisions, "pB", map)[0]).toMatchObject({ actor_id: "uB2", texte: "Clore" });
+    expect(remapStudioRows("studio_observation_links", f.tables.studio_observation_links, "pB", map)[0]).toMatchObject({ created_by: "uB2", ref: "l0" });
+    // Références hors section : lien d'une autre variante, tâche sans observation, passage sans tâche, décision sur une révision étrangère.
+    const g = fixture();
+    g.tables.studio_observation_links = [{ id: "l2", observation_id: "c1", variant_id: "v2", domaine: "objet", ref: "x", revision_id: "r3", created_by: "uOwner" }];
+    g.tables.studio_observation_tasks = [{ id: "t2", observation_id: "inconnue", libelle: "x", assignee_id: "uOwner", statut: "a-faire", created_by: "uOwner" }];
+    g.tables.studio_observation_task_events = [{ id: "te2", task_id: "absente", seq: 1, action: "creer", actor_id: "uOwner" }];
+    g.tables.studio_observation_decisions = [{ id: "d2", observation_id: "c1", seq: 1, nature: "decision", portee: "autre", texte: "x", actor_id: "uOwner", actor_role: "proprietaire", revision_id: "r3" }];
+    g.section["manifest"] = buildStudioManifest(g.tables, IDENT);
+    expect(errorsOf(clone(g.section))).toEqual(expect.arrayContaining([
+      "lien l2 : observation absente", "tâche t2 : observation absente", "passage de tâche te2 : tâche absente", "décision d2 : révision absente",
+    ]));
+  });
+  it("version antérieure au suivi E.2 relue telle quelle (tables absentes = aucune ligne) ; une table E.2 y est inattendue", () => {
+    const { tables } = fixture();
+    const couvertes = STUDIO_ARCHIVE_TABLES_BY_VERSION[STUDIO_ARCHIVE_LEGACY_TABLES_VERSION]!;
+    expect(couvertes.some((t) => STUDIO_ARCHIVE_TABLES_E2.includes(t))).toBe(false);
+    const legacyTables = Object.fromEntries(Object.entries(clone(tables)).filter(([t]) => couvertes.includes(t as never)));
+    const manifest = buildStudioManifest(tables, IDENT, STUDIO_ARCHIVE_LEGACY_TABLES_VERSION);
+    expect(Object.keys(manifest.tables)).not.toContain("studio_observation_links");
+    const legacy = { schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: { document: "studio-document/1", tables: STUDIO_ARCHIVE_LEGACY_TABLES_VERSION }, sourceProjectId: "pA", ownerId: "uOwner", accounts: ACCOUNTS, tables: legacyTables, manifest };
+    const r = checkStudioArchive(clone(legacy));
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.section.tables.studio_observation_tasks).toEqual([]);
+    const extra = clone(legacy) as unknown as { tables: Record<string, unknown> };
+    extra.tables["studio_observation_tasks"] = [];
+    expect(errorsOf(extra)).toContain("table studio_observation_tasks inattendue dans cette version");
+    // Section courante : le manifeste couvre toutes les tables, la version antérieure ne remplace pas la courante.
+    expect(STUDIO_ARCHIVE_SCHEMA_VERSION.tables).not.toBe(STUDIO_ARCHIVE_LEGACY_TABLES_VERSION);
+    expect(Object.keys(buildStudioManifest(tables, IDENT).tables)).toEqual([...STUDIO_ARCHIVE_TABLES]);
+  });
   it("une section présente mais mal formée (null, tableau, texte) est refusée", () => {
     for (const v of [null, [], "tronqué"]) expect(errorsOf(v).length).toBeGreaterThan(0);
   });
@@ -346,11 +388,12 @@ describe("section Studio : ajustements du métré (E.3-05)", () => {
 
   it("archive de la version antérieure des tables (sans ajustements) : relue telle quelle, sans la table", () => {
     const { tables } = fixture();
-    const anterieures = STUDIO_ARCHIVE_TABLES.filter((t) => t !== "studio_quantity_adjustments");
+    const anterieures = STUDIO_ARCHIVE_TABLES_BY_VERSION[STUDIO_ARCHIVE_PRE_QUANTITES_TABLES_VERSION]!;
+    expect(anterieures).not.toContain("studio_observation_links");
     const rawTables = Object.fromEntries(anterieures.map((t) => [t, tables[t]]));
     const ancienne = {
-      schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: { document: "studio-document/1", tables: "studio-v1/2026-10-19" }, sourceProjectId: "pA", ownerId: "uOwner", accounts: ACCOUNTS,
-      tables: rawTables, manifest: buildStudioManifest(tables, IDENT, anterieures),
+      schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: { document: "studio-document/1", tables: STUDIO_ARCHIVE_PRE_QUANTITES_TABLES_VERSION }, sourceProjectId: "pA", ownerId: "uOwner", accounts: ACCOUNTS,
+      tables: rawTables, manifest: buildStudioManifest(tables, IDENT, STUDIO_ARCHIVE_PRE_QUANTITES_TABLES_VERSION),
     };
     expect(Object.keys(ancienne.manifest.tables)).not.toContain("studio_quantity_adjustments");
     const r = checkStudioArchive(clone(ancienne));
@@ -358,5 +401,86 @@ describe("section Studio : ajustements du métré (E.3-05)", () => {
     if (r.ok) expect(r.section.tables.studio_quantity_adjustments).toEqual([]);
     // Une archive de l'ancienne version qui porterait la table nouvelle est refusée (jamais devinée).
     expect(errorsOf({ ...clone(ancienne), tables: { ...rawTables, studio_quantity_adjustments: [] } })).toContain("table studio_quantity_adjustments inattendue dans cette version");
+  });
+});
+
+describe("section Studio : feuilles composées et dossiers de conception (E.3-02 / E.3-03)", () => {
+  const avecDossier = () => {
+    const { tables } = fixture();
+    const definition = { numero: "A-101", titre: "Plan", format: "A3", orientation: "paysage", echelle: "ajuster", vueSource: { type: "planche-2d" } };
+    tables.studio_sheets = [
+      { id: "sh1", study_id: "s1", variant_id: "v1", revision_id: "r2", number: "A-101", definition, request_id: null, payload_hash: "f".repeat(64), created_by: "uEditor", created_at: "2026-10-19T10:00:00.000001+00:00", updated_at: "2026-10-19T10:00:00.000001+00:00" },
+      { id: "sh2", study_id: "s1", variant_id: "v2", revision_id: "r3", number: "A-102", definition: { ...definition, numero: "A-102" }, request_id: null, payload_hash: null, created_by: "uOwner", created_at: "2026-10-19T10:01:00.000001+00:00", updated_at: "2026-10-19T10:01:00.000001+00:00" },
+    ];
+    tables.studio_dossiers = [
+      { id: "d1", study_id: "s1", title: "Dossier", sheet_ids: ["sh2", "sh1"], quantities_variant_id: "v1", quantities_revision_id: "r2", include_fidelity: true, request_id: null, payload_hash: null, created_by: "uEditor", created_at: "2026-10-19T10:02:00.000001+00:00", updated_at: "2026-10-19T10:02:00.000001+00:00" },
+    ];
+    return { tables, section: { schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: STUDIO_ARCHIVE_SCHEMA_VERSION, sourceProjectId: "pA", ownerId: "uOwner", accounts: ACCOUNTS, tables, manifest: buildStudioManifest(tables, IDENT) } };
+  };
+
+  it("tables couvertes par le manifeste ; auteurs réattribuables ; contenu inchangé au remappage", () => {
+    const { tables, section } = avecDossier();
+    expect(errorsOf(clone(section))).toEqual([]);
+    expect(section.manifest.tables.studio_sheets.count).toBe(2);
+    expect(section.manifest.tables.studio_dossiers.count).toBe(1);
+    const map = new Map(ACCOUNTS.map((a) => [a.id, "uImporter"]));
+    const out = remapStudioRows("studio_dossiers", tables.studio_dossiers, "pB", map);
+    expect(out[0]).toEqual({ ...tables.studio_dossiers[0], created_by: "uImporter" });
+    const altere = clone(section) as { tables: StudioArchiveTables };
+    altere.tables.studio_dossiers[0]!["sheet_ids"] = ["sh1", "sh2"];
+    expect(errorsOf(altere)).toContain("studio_dossiers : empreinte différente du manifeste");
+  });
+
+  it("intégrité : révision de la variante, numéro unique, feuilles de l'étude, métré complet", () => {
+    const { tables } = avecDossier();
+    tables.studio_sheets[1]!["revision_id"] = "r2";
+    tables.studio_sheets[1]!["number"] = "A-101";
+    tables.studio_dossiers[0]!["sheet_ids"] = ["sh1", "sh9"];
+    tables.studio_dossiers[0]!["quantities_revision_id"] = null;
+    const section = { schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: STUDIO_ARCHIVE_SCHEMA_VERSION, sourceProjectId: "pA", ownerId: "uOwner", accounts: ACCOUNTS, tables, manifest: buildStudioManifest(tables, IDENT) };
+    expect(errorsOf(section)).toEqual(expect.arrayContaining([
+      "feuille sh2 : révision absente", "feuille sh2 : numéro en double", "dossier d1 : feuille sh9 absente", "dossier d1 : métré incomplet",
+    ]));
+  });
+
+  it("définition de chaque feuille contrôlée par le modèle : refus clair, jamais un échec plus tard (M-5)", () => {
+    const { tables } = avecDossier();
+    tables.studio_sheets[0]!["definition"] = { ...(tables.studio_sheets[0]!["definition"] as object), format: "A9" };
+    tables.studio_sheets[1]!["definition"] = { ...(tables.studio_sheets[1]!["definition"] as object), numero: "B-200" };
+    const section = { schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: STUDIO_ARCHIVE_SCHEMA_VERSION, sourceProjectId: "pA", ownerId: "uOwner", accounts: ACCOUNTS, tables, manifest: buildStudioManifest(tables, IDENT) };
+    const errors = errorsOf(section);
+    expect(errors.some((e) => e.startsWith("feuille sh1 : définition invalide (feuille.format"))).toBe(true);
+    expect(errors).toContain("feuille sh2 : numéro différent de sa définition");
+  });
+
+  it("borne des ajustements du métré (I-2) : colonne absente ou nulle acceptée (lignes antérieures) ; entier ≥ 1 avec métré seulement", () => {
+    const ok = avecDossier();
+    ok.tables.studio_dossiers[0]!["quantities_adjustment_seq"] = 3;
+    expect(errorsOf({ ...ok.section, manifest: buildStudioManifest(ok.tables, IDENT) })).toEqual([]);
+    ok.tables.studio_dossiers[0]!["quantities_adjustment_seq"] = null;
+    expect(errorsOf({ ...ok.section, manifest: buildStudioManifest(ok.tables, IDENT) })).toEqual([]);
+    for (const [seq, metre] of [[0, true], [1.5, true], [2, false]] as const) {
+      const { tables } = avecDossier();
+      tables.studio_dossiers[0]!["quantities_adjustment_seq"] = seq;
+      if (!metre) Object.assign(tables.studio_dossiers[0]!, { quantities_variant_id: null, quantities_revision_id: null });
+      const section = { schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: STUDIO_ARCHIVE_SCHEMA_VERSION, sourceProjectId: "pA", ownerId: "uOwner", accounts: ACCOUNTS, tables, manifest: buildStudioManifest(tables, IDENT) };
+      expect(errorsOf(section), String(seq)).toContain("dossier d1 : borne des ajustements du métré invalide");
+    }
+  });
+
+  it("archive de la version précédente (avec ajustements, sans feuilles ni dossiers) : relue sans ces tables", () => {
+    const { tables } = fixture();
+    const anterieures = STUDIO_ARCHIVE_TABLES_BY_VERSION[STUDIO_ARCHIVE_LEGACY_TABLES_VERSION]!;
+    expect(anterieures).toContain("studio_quantity_adjustments");
+    expect(anterieures).not.toContain("studio_sheets");
+    const rawTables = Object.fromEntries(anterieures.map((t) => [t, tables[t]]));
+    const ancienne = {
+      schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: { document: "studio-document/1", tables: STUDIO_ARCHIVE_LEGACY_TABLES_VERSION }, sourceProjectId: "pA", ownerId: "uOwner", accounts: ACCOUNTS,
+      tables: rawTables, manifest: buildStudioManifest(tables, IDENT, STUDIO_ARCHIVE_LEGACY_TABLES_VERSION),
+    };
+    const r = checkStudioArchive(clone(ancienne));
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.section.tables.studio_sheets).toEqual([]);
+    expect(errorsOf({ ...clone(ancienne), tables: { ...rawTables, studio_dossiers: [] } })).toContain("table studio_dossiers inattendue dans cette version");
   });
 });

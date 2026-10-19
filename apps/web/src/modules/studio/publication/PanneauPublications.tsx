@@ -54,6 +54,8 @@ function PreparerPublication({ projectId, studyId, variants, surCree }: { projec
   const [variantId, setVariantId] = useState(variants[0]?.id ?? "");
   const [titre, setTitre] = useState("");
   const [coordonnees, setCoordonnees] = useState<string[]>([]);
+  // Dessin 2D indépendant (E.3-07) : SVG, DXF et feuille PDF, sans IFC ni variante coordonnée.
+  const [dessin2d, setDessin2d] = useState(false);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState("");
   const demande = useRef<{ cle: string; id: string } | null>(null);
@@ -61,13 +63,13 @@ function PreparerPublication({ projectId, studyId, variants, surCree }: { projec
     e.preventDefault();
     if (!variantId || enCours) return;
     const variante = variants.find((v) => v.id === variantId);
-    const autres = coordonnees.filter((id) => id !== variantId);
-    const cle = `${variantId}\u0000${variante?.headRevisionId ?? ""}\u0000${titre.trim()}\u0000${[...autres].sort().join(",")}`;
+    const autres = dessin2d ? [] : coordonnees.filter((id) => id !== variantId);
+    const cle = `${variantId}\u0000${variante?.headRevisionId ?? ""}\u0000${titre.trim()}\u0000${[...autres].sort().join(",")}\u0000${dessin2d ? "dessin-2d" : "complet"}`;
     if (demande.current?.cle !== cle) demande.current = { cle, id: crypto.randomUUID() };
     setEnCours(true); setErreur("");
     try {
-      await api.createStudioPublication(projectId, studyId, variantId, { ...(titre.trim() ? { title: titre.trim() } : {}), ...(variante ? { revisionId: variante.headRevisionId } : {}), ...(autres.length ? { coordinatedVariantIds: autres } : {}), requestId: demande.current.id });
-      demande.current = null; setTitre(""); setCoordonnees([]);
+      await api.createStudioPublication(projectId, studyId, variantId, { ...(titre.trim() ? { title: titre.trim() } : {}), ...(variante ? { revisionId: variante.headRevisionId } : {}), ...(autres.length ? { coordinatedVariantIds: autres } : {}), ...(dessin2d ? { contenu: "dessin-2d" as const } : {}), requestId: demande.current.id });
+      demande.current = null; setTitre(""); setCoordonnees([]); setDessin2d(false);
       await surCree();
     } catch (err) {
       setErreur(err instanceof ApiError ? messageRefus(err.status, err.body) : "Préparation non confirmée. Réessayez : la même demande sera rejouée sans doublon.");
@@ -83,7 +85,11 @@ function PreparerPublication({ projectId, studyId, variants, surCree }: { projec
       </select>
       <label htmlFor="studio-publication-titre">Titre (facultatif)</label>
       <input id="studio-publication-titre" maxLength={200} value={titre} onChange={(e) => setTitre(e.target.value)} />
-      {variants.length > 1 && (
+      <label className="studio-publication-dessin2d">
+        <input type="checkbox" checked={dessin2d} onChange={(e) => setDessin2d(e.target.checked)} data-studio-publication-dessin2d />
+        <span>Dessin 2D indépendant (SVG, DXF et feuille PDF, sans modèle 3D ni IFC)</span>
+      </label>
+      {variants.length > 1 && !dessin2d && (
         <fieldset className="studio-publication-coordonnees" data-studio-publication-coordonnees>
           <legend>Variantes coordonnées (facultatif)</legend>
           {variants.filter((v) => v.id !== variantId).map((v) => (
@@ -123,9 +129,10 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
     } finally { setEnCours(false); }
   }
   return (
-    <li className="studio-publication" data-studio-publication={p.id} data-statut={p.status} data-travail={p.workStatus} data-diffusion={p.diffusionStatus} data-actualite={p.freshness} data-documents={p.documentsCheck ?? "non-verifiee"}>
+    <li className="studio-publication" data-studio-publication={p.id} data-contenu={p.contenu ?? "complet"} data-statut={p.status} data-travail={p.workStatus} data-diffusion={p.diffusionStatus} data-actualite={p.freshness} data-documents={p.documentsCheck ?? "non-verifiee"}>
       <div className="studio-publication-tete">
         <strong translate="no">{p.title}</strong>
+        {p.contenu === "dessin-2d" && <span className="studio-publication-statut" data-studio-publication-contenu>Dessin 2D indépendant</span>}
         <span className={`studio-publication-statut statut-${p.workStatus}`} data-studio-publication-statut title="Travail">{LIBELLE_TRAVAIL[p.workStatus]}</span>
         <span className={`studio-publication-statut statut-${p.diffusionStatus}`} data-studio-publication-diffusion title="Diffusion">{LIBELLE_DIFFUSION[p.diffusionStatus]}</span>
         <span className={`studio-publication-statut ${p.freshness === "perimee" ? "studio-publication-perimee" : ""}`} data-studio-publication-actualite title="Actualité">{libelleActualite(p)}</span>
@@ -167,7 +174,7 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
       {action && (
         <form className="studio-publication-confirmer" onSubmit={(e) => void confirmer(e)}>
           {action === "approuver" && <p data-studio-publication-examine>{`Vous approuvez le manifeste ${empreinteCourte(p.manifestHash ?? "")} : révision ${court(p.revisionId)} (empreinte ${empreinteCourte(p.documentHash)}).`}</p>}
-          {action === "diffuser" && <p>La diffusion fige un paquet SVG, DXF, IFC et feuille PDF de la révision approuvée.</p>}
+          {action === "diffuser" && <p>{p.contenu === "dessin-2d" ? "La diffusion fige un paquet SVG, DXF et feuille PDF de la révision approuvée (dessin 2D, sans IFC)." : "La diffusion fige un paquet SVG, DXF, IFC et feuille PDF de la révision approuvée."}</p>}
           {action === "actualiser" && <p>Le manifeste est reconstruit depuis les révisions courantes ; l’approbation précédente ne vaut plus et le dossier repasse en brouillon.</p>}
           <label htmlFor={`studio-publication-commentaire-${p.id}`}>{COMMENTAIRE_REQUIS.has(action) ? "Commentaire (requis)" : "Commentaire (facultatif)"}</label>
           <textarea id={`studio-publication-commentaire-${p.id}`} maxLength={2000} value={commentaire} onChange={(e) => setCommentaire(e.target.value)} />

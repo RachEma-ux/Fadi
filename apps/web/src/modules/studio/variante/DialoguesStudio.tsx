@@ -9,14 +9,18 @@ import type { EntreeCatalogue } from "../planche2d/catalogue";
 import { GestionnaireOutils, PaletteCommandes } from "../planche2d/CatalogueOutils";
 import { PanneauFeuille } from "../feuille/PanneauFeuille";
 import { DialogueImportDxf } from "../import/DialogueImportDxf";
+import { PanneauDossier } from "../dossier/PanneauDossier";
 import { appartientAuDialogue, focalisables, suivantDansLePiege } from "./piege-focus";
+import type { RaisonIndisponible } from "./droits";
 
-export type DialogueStudio = "outils" | "palette" | "feuille" | "import-dxf" | null;
+export type DialogueStudio = "outils" | "palette" | "feuille" | "import-dxf" | "dossier" | null;
 
 export interface PropsDialoguesStudio {
   dialogue: DialogueStudio;
   surFermer: () => void;
   disponible: (e: EntreeCatalogue) => boolean;
+  /** Raison d'une entrée non lançable (droit réel, révision, enregistrement, contexte), `variante/droits.ts`. */
+  raison?: (e: EntreeCatalogue) => RaisonIndisponible | null;
   surExecuter: (e: EntreeCatalogue) => void;
   drawing: StudioDocument;
   modifiable: boolean;
@@ -27,6 +31,8 @@ export interface PropsDialoguesStudio {
   brouillonNonEnregistre: boolean;
   /** Cartouche prérempli, calculé à l'ouverture de la feuille. */
   cartouche: () => StudioSheetTitleBlock;
+  /** Feuilles composées et dossier (E.3) : étude, variante et révision affichée. */
+  portee: { projectId: string; studyId: string; variantId: string; revisionId: string };
 }
 
 /** Piège du focus de la boîte ouverte ; rend le focus à l'élément d'origine à la fermeture. */
@@ -96,12 +102,13 @@ function usePiegeFocus(dialogue: DialogueStudio, surFermer: () => void) {
   return { zone, tabulation };
 }
 
-export function DialoguesStudio({ dialogue, surFermer, disponible, surExecuter, drawing, modifiable, surImporter, revision, brouillonNonEnregistre, cartouche }: PropsDialoguesStudio) {
+export function DialoguesStudio({ dialogue, surFermer, disponible, raison, surExecuter, drawing, modifiable, surImporter, revision, brouillonNonEnregistre, cartouche, portee }: PropsDialoguesStudio) {
   const { zone, tabulation } = usePiegeFocus(dialogue, surFermer);
   return <div ref={zone} onKeyDown={tabulation} data-studio-dialogues={dialogue ?? undefined}>
-    {dialogue === "outils" && <GestionnaireOutils disponible={disponible} surExecuter={surExecuter} surFermer={surFermer} />}
-    {dialogue === "palette" && <PaletteCommandes disponible={disponible} surExecuter={surExecuter} surFermer={surFermer} />}
+    {dialogue === "outils" && <GestionnaireOutils disponible={disponible} raison={raison} surExecuter={surExecuter} surFermer={surFermer} />}
+    {dialogue === "palette" && <PaletteCommandes disponible={disponible} raison={raison} surExecuter={surExecuter} surFermer={surFermer} />}
     {dialogue === "import-dxf" && <DialogueImportDxf doc={drawing} modifiable={modifiable} surFermer={surFermer} surAjouter={surImporter} />}
     {dialogue === "feuille" && <PanneauFeuille doc={revision} brouillonNonEnregistre={brouillonNonEnregistre} surFermer={surFermer} cartouche={cartouche()} />}
+    {dialogue === "dossier" && <PanneauDossier {...portee} revision={revision} brouillonNonEnregistre={brouillonNonEnregistre} surFermer={surFermer} />}
   </div>;
 }

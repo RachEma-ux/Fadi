@@ -129,6 +129,27 @@ describe("lecture DXF : Worker (banc d'essai) et appel direct donnent le même r
     expect(BancWorker.instances.length).toBe(Math.max(avant, 1));
   });
 
+  it("appel direct : usage du moteur calcul déclaré pendant le calcul, retiré après (succès comme échec)", async () => {
+    const { ressourcesStudio } = await import("../chargement/ressources-studio");
+    const usages = () => ressourcesStudio.instantaneEtats().find((e) => e.id === "calcul")!.usages.filter((u) => u.startsWith("client:"));
+    const p = client.lireDxfHorsFil({ source: sansUnite, document: vide, unite: "m" });
+    expect(usages()).toHaveLength(1);
+    expect(usages()[0]).toMatch(/^client:dxf\.lire:/);
+    expect(ressourcesStudio.peutLiberer("calcul")).toBe(false);
+    await p;
+    expect(usages()).toEqual([]);
+    const f = client.composerFeuilleHorsFil(docFeuille, { format: "A9" as never, orientation: "paysage", scale: 100 });
+    expect(usages()[0]).toMatch(/^client:feuille\.composer:/);
+    await f;
+    const c = new AbortController();
+    const annulee = client.lireDxfHorsFil({ source: grand, document: vide, unite: null }, { signal: c.signal });
+    c.abort();
+    await expect(annulee).rejects.toMatchObject({ code: "annulee" });
+    expect(usages()).toEqual([]);
+    // Le Worker annulé est remplacé à la demande suivante (laissé prêt pour les cas qui suivent).
+    await client.lireDxfHorsFil({ source: sansUnite, document: vide, unite: "m" });
+  });
+
   it("annulation d'une lecture : rejet « annulee », la lecture suivante réussit sur un nouveau Worker", async () => {
     const c = new AbortController();
     const avant = BancWorker.instances.length;

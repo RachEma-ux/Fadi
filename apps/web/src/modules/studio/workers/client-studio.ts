@@ -2,10 +2,12 @@
  * Client du Worker de Studio : fonctions typées pour la lecture DXF et la composition de la feuille, sur le premier
  * hôte du groupe partagé (`taches/pool-studio.ts`, Workers réutilisés). L'interface passe par l'ordonnanceur
  * (`taches/`) ; ces appels directs restent pour les bancs d'essai. Sans Worker, le calcul se fait directement (mêmes
- * fonctions, mêmes résultats).
+ * fonctions, mêmes résultats). Chaque appel déclare un usage du moteur `calcul` (comme `executeurHotes`) : ses
+ * Workers ne sont jamais libérés pendant un calcul en cours.
  */
 import type { StudioDocument, StudioSheetOptions } from "@parcours/atelier-model";
 import type { LectureDxf } from "../import/import-dxf-ui";
+import { ressourcesStudio } from "../chargement/ressources-studio";
 import { groupeEnRepli, hotesStudio } from "../taches/pool-studio";
 import type { ErreurHote, HoteWorker, OptionsDemande } from "./hote-worker";
 import type { ChargeDxf, ResultatFeuille } from "./traitements";
@@ -18,11 +20,28 @@ export const DELAI_FEUILLE_MS = 30_000;
 /** Premier hôte du groupe partagé (un seul Worker réutilisé pour ces appels). */
 export const hoteStudio = (): HoteWorker => hotesStudio()[0]!;
 
+let appels = 0;
+/**
+ * Appel direct à l'hôte, déclaré comme usage du moteur `calcul` pendant toute sa durée (B.3-05) : le gestionnaire ne
+ * libère jamais les Workers pendant un appel en cours, et le Tool Manager le montre actif.
+ */
+function demanderAvecUsage<T>(nature: string, charge: unknown, o: OptionsDemande): Promise<T> {
+  const fin = ressourcesStudio.utiliser("calcul", `client:${nature}:${++appels}`);
+  let p: Promise<T>;
+  try {
+    p = hoteStudio().demander<T>(nature, charge, o);
+  } catch (e) {
+    fin();
+    throw e;
+  }
+  return p.finally(fin);
+}
+
 export const lireDxfHorsFil = (charge: ChargeDxf, o: OptionsDemande = {}): Promise<LectureDxf> =>
-  hoteStudio().demander<LectureDxf>("dxf.lire", charge, { delaiMs: DELAI_DXF_MS, ...o });
+  demanderAvecUsage<LectureDxf>("dxf.lire", charge, { delaiMs: DELAI_DXF_MS, ...o });
 
 export const composerFeuilleHorsFil = (document: StudioDocument, options: StudioSheetOptions, o: OptionsDemande = {}): Promise<ResultatFeuille> =>
-  hoteStudio().demander<ResultatFeuille>("feuille.composer", { document, options }, { delaiMs: DELAI_FEUILLE_MS, ...o });
+  demanderAvecUsage<ResultatFeuille>("feuille.composer", { document, options }, { delaiMs: DELAI_FEUILLE_MS, ...o });
 
 /**
  * Le Worker a été abandonné après trop d'échecs : les calculs lourds se font désormais sur le fil principal (mêmes

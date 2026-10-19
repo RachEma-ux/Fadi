@@ -28,19 +28,20 @@
  */
 import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { applyStudioCommands, STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, studioVersionProjection, type StudioCommand, type StudioDocument, type StudioLayer, type StudioPoint, type StudioWall } from "@parcours/atelier-model";
+import { STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, studioVersionProjection, type StudioCommand, type StudioDocument, type StudioLayer, type StudioPoint, type StudioWall } from "@parcours/atelier-model";
 import { api, studioExportUrl, type StudioContext } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
 import { LOCALE } from "../../lib/i18n";
 import { StudioRefus } from "./studio-ecrans";
 import { BarreOutils } from "./planche2d/BarreOutils";
-import { annulerBrouillon, appliquerBrouillon, commandesEnAttente, creerBrouillon, documentBrouillon, messageRefus, peutAnnuler, peutRetablir, retablirBrouillon, type Brouillon } from "./planche2d/brouillon";
+import { annulerBrouillon, apercuBrouillon, appliquerBrouillon, commandesEnAttente, creerBrouillon, documentBrouillon, messageRefus, peutAnnuler, peutRetablir, retablirBrouillon, type Brouillon } from "./planche2d/brouillon";
 import { commandeDisponible, outilDisponible } from "./variante/disponibilite";
 import { calqueActifOuPremier, commandeReglage, estVisible, layerIdPour, listeCalques, prochainNomCalque } from "./planche2d/calques";
 import { ListeElements } from "./planche2d/ListeElements";
 import { AvisRevision } from "./variante/AvisRevision";
 import { useFocusConserve } from "./variante/useFocusConserve";
-import type { EntreeCatalogue } from "./planche2d/catalogue";
+import { CATALOGUE, type EntreeCatalogue } from "./planche2d/catalogue";
+import { raisonEntree, type EtatDroit } from "./variante/droits";
 import { Dessin2D, type PointPose } from "./planche2d/Dessin2D";
 import { cadrer, emprise } from "./planche2d/geometrie-2d";
 import { PanneauCalques } from "./planche2d/PanneauCalques";
@@ -58,6 +59,7 @@ import { commandesAplatir, commandesExtrusion, formesSelectionnees, valeursDe, V
 import { cartoucheInitial } from "./feuille/feuille-ui";
 import { revisionDocument } from "./taches/empreinte";
 import { PanneauCommentaires } from "./commentaires/PanneauCommentaires";
+import { PanneauObservations } from "./observations/PanneauObservations";
 import { PanneauQuantites } from "./quantites/PanneauQuantites";
 import { PanneauExigences } from "./exigences/PanneauExigences";
 import { cibleSelection } from "./exigences/exigences-ui";
@@ -71,12 +73,17 @@ import { PanneauProprietes } from "./variante/PanneauProprietes";
 import { RevisionsPanel } from "./variante/PanneauRevisions";
 import { useClavierStudio } from "./variante/useClavierStudio";
 import { useEnregistrement } from "./variante/useEnregistrement";
+import { lectureApplicable } from "./variante/revision-courante";
 import { useChargementVariante } from "./hors-ligne/useChargementVariante";
 import { useGardeNavigation } from "./variante/useGardeNavigation";
 import { Vue3D } from "./variante/Vue3D";
 import { RapportExport } from "./variante/RapportExport";
 import { FORMATS_RAPPORT } from "./variante/rapport-export";
 import { OUTILS_VISUALISATION, type DemandeVue3d } from "./vue3d/scenes/scenes-ui";
+import { useCycleOutils } from "./chargement/useRessources";
+import { AvisFileLocale } from "./hors-ligne/AvisFileLocale";
+import { cleVariante } from "./hors-ligne/persistance";
+import { mesurerCommandes } from "./chargement/mesures-studio";
 import "./studio.css";
 import "./planche2d/planche2d.css";
 
@@ -131,6 +138,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [parametresArchi, setParametresArchi] = useState<ParametresArchitecture>(PARAMETRES_ARCHITECTURE_VIDES);
   const [selectionArchi, setSelectionArchi] = useState<string | null>(null);
   const alive = useRef(true), dirty = useRef(false);
+  /** Contexte et brouillon du dernier rendu (comparés par les lectures asynchrones avant de s'appliquer, A.5-10). */
+  const affiche = useRef({ context, brouillon });
+  affiche.current = { context, brouillon };
   const shell = useRef<HTMLElement>(null), nomRef = useRef<HTMLInputElement>(null);
   const historical = revisionId !== null;
   const drawing = brouillon ? documentBrouillon(brouillon) : null;
@@ -154,6 +164,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const writable = !historical && !!context?.canWrite && !pending && (!uncertain || enr.dessinHorsLigne) && !blocked;
   // Données réelles du cartouche de la feuille (mêmes clés que le fil d'Ariane et l'historique : cache partagé).
   const projet = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId), staleTime: 30_000, retry: (n, e) => !refused(e) && n < 1, enabled: !!context });
+  // Catalogue autorisé (B.2-06) : motif réel d'un refus d'écriture (rôle, référence protégée, verrou), lecture seule.
+  const catalogueAutorise = useQuery({ queryKey: ["studio-catalogue-outils", projectId], queryFn: () => api.studioCatalogueOutils(projectId), staleTime: 30_000, retry: (n, e) => !refused(e) && n < 1, enabled: !!context });
   const revisionsFeuille = useQuery({ queryKey: ["studio-revisions", projectId, studyId, variantId], queryFn: () => api.studioRevisions(projectId, studyId, variantId), retry: (n, e) => !refused(e) && n < 1, enabled: dialogue === "feuille" });
   const revisionAffichee = revisionsFeuille.data?.revisions.find(r => r.id === context?.revision.id);
 
@@ -191,9 +203,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   // Aperçu du glisser : le document tel que le relâchement le donnerait (les cotes liées suivent).
   const apercuDoc = useMemo(() => {
     if (!drawing || !gestes.apercu) return null;
-    const { commandes } = commandesDeplacement(drawing, gestes.apercu.ids, gestes.apercu.dx, gestes.apercu.dy);
-    if (!commandes.length) return null;
-    try { return applyStudioCommands(drawing, commandes); } catch { return null; }
+    return apercuBrouillon(drawing, commandesDeplacement(drawing, gestes.apercu.ids, gestes.apercu.dx, gestes.apercu.dy).commandes);
   }, [drawing, gestes.apercu]);
 
   function properties(o: Element2D) {
@@ -233,7 +243,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   function apply(cs: StudioCommand[]): boolean {
     if (!brouillon || !writable) return false;
     try {
-      const next = appliquerBrouillon(brouillon, cs);
+      const next = mesurerCommandes(cs, () => appliquerBrouillon(brouillon, cs));
       setBrouillon(next);
       const doc = documentBrouillon(next);
       const seul = selectionIds.length === 1 ? selectionIds[0] : undefined;
@@ -422,6 +432,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       case "exporter-png": return demander3d("exporter-png");
       case "importer-dxf": return setDialogue("import-dxf");
       case "feuille": return setDialogue("feuille");
+      case "dossier": return setDialogue("dossier");
       case "outils": return setDialogue("outils");
       case "palette": return setDialogue("palette");
       case "exigences": { const s = shell.current?.querySelector<HTMLElement>("[data-studio-exigences]"); s?.scrollIntoView({ block: "start" }); s?.focus(); return; }
@@ -449,11 +460,24 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     if (c && (!verifier || commandAvailable(c))) runCommand(cible.id);
   }
   const entreeDisponible = (e: EntreeCatalogue) => (e.outil ? toolAvailable(e.outil) : e.commande ? commandAvailable(e.commande) : false);
+  // Visibilité (profil), disponibilité (contexte) et droit réel (serveur) restent trois choses : la raison d'un refus
+  // ne lit jamais les préférences d'outils (`variante/droits.ts`).
+  const etatDroit: EtatDroit = {
+    canWrite: context ? context.canWrite : null, historique: historical, suspendue: pending || blocked || (uncertain && !enr.dessinHorsLigne),
+    ...(catalogueAutorise.data ? { motif: catalogueAutorise.data.droits.motif } : {}),
+  };
+  const raisonDe = (e: EntreeCatalogue) => raisonEntree(e.droit, entreeDisponible(e), etatDroit);
+  const raisonCible = (c: CibleRaccourci) => {
+    const e = CATALOGUE.find(x => (c.type === "outil" ? x.outil?.toolId === c.toolId : x.commande?.id === c.id));
+    return e ? raisonDe(e) : null;
+  };
   function executerEntree(e: EntreeCatalogue) {
     setDialogue(null);
     executer(e.cible, true);
   }
   useClavierStudio({ dialogue: !!dialogue, pret: !!context && !!drawing, commandeDisponible: commandAvailable, executer, espace: gestes.espace });
+  // Cycle des outils (B.3-01) : moteurs de l'outil chargés au besoin puis actifs ; première planche prête (PERF-01).
+  useCycleOutils({ outil: tool, pret: !loading && !!context && !!drawing, objets: drawing?.objects.length ?? 0 });
 
   if (!loading && refused(loadError)) return <StudioRefus quoi={historical ? "revision" : "variante"} />;
   const toolEntry = STUDIO_TOOLS.find(t => t.toolId === tool);
@@ -464,8 +488,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   // Aperçu d'une transformation (Copier, Rotation, Symétrie, Échelle) : le brouillon tel que le clic le donnerait.
   const apercuTransformation = (() => {
     const cs = drawing && trace && survol && writable ? outil?.apercuCommandes?.({ ...etatTrace, trace }, survol.point, contexteClic()) : null;
-    if (!cs) return null;
-    try { return applyStudioCommands(drawing!, cs); } catch { return null; }
+    return cs ? apercuBrouillon(drawing!, cs) : null;
   })();
   const hint = aidePlanche({ ...etatTrace, moveWithPointer, lectureSeule: !writable && !historical && context?.canWrite === false });
   const pasAffiche = pas.toLocaleString(LOCALE, { maximumFractionDigits: 3 });
@@ -473,12 +496,19 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   return <section className="studio-workspace" ref={shell} aria-label="Studio" data-studio-variante={variantId} data-studio-revision-vue={historical ? revisionId : undefined}>
     <EnTeteStudio context={context} />
     <AlerteStudio error={error} blocked={blocked && !enr.horsLigne.conflit} surRecharger={() => void enr.rechargerServeur()} />
+    <AvisFileLocale cle={user && !historical ? cleVariante(user.id, projectId, studyId, variantId) : null} />
     {loading && <p role="status">Chargement de la planche…</p>}
     {context && drawing && !historical && <AvisRevision projectId={projectId} studyId={studyId} variantId={variantId} teteAffichee={context.variant.headRevisionId} actif={!pending && !blocked && !uncertain && !enr.horsLigne.conflit} nonEnregistre={commands.length > 0}
-      surRecharger={async () => { const c = await api.studioContext(projectId, studyId, variantId); if (!alive.current) return; setContext(c); setBrouillon(creerBrouillon(c.revision.document)); cancelTrace(); enr.setSaved(false); setError(""); }} />}
+      surRecharger={async () => {
+        const depart = context.revision.id, brouillonDepart = brouillon;
+        const c = await api.studioContext(projectId, studyId, variantId);
+        // A.5-10 : une lecture dépassée par un enregistrement ou un rechargement survenu entre-temps n'est pas appliquée.
+        if (!alive.current) return;
+        if (!lectureApplicable(depart, affiche.current.context, affiche.current.brouillon, brouillonDepart)) throw new Error("lecture dépassée");
+        setContext(c); setBrouillon(creerBrouillon(c.revision.document)); cancelTrace(); enr.setSaved(false); setError(""); }} />}
     {context && drawing && <><BandeauVariante projectId={projectId} studyId={studyId} variantId={variantId} context={context} historical={historical} etat={etat} commentaires={commentaires} surCommentaires={() => setCommentaires(v => !v)}
       connexion={{ etat: enr.horsLigne, surRecharger: () => void enr.rechargerServeur(), surReporter: () => void enr.reporter() }} />
-    <BarreOutils outil={tool} outilDisponible={toolAvailable} commandeDisponible={commandAvailable} libelleCommande={uncertain ? { enregistrer: "Réessayer la sauvegarde" } : undefined}
+    <BarreOutils outil={tool} outilDisponible={toolAvailable} commandeDisponible={commandAvailable} raison={raisonCible} libelleCommande={uncertain ? { enregistrer: "Réessayer la sauvegarde" } : undefined}
       basculeActive={{ ...gestes.basculesActives, "accrochage-sommets": accrocheSommets, "accrochage-grille": accrocheGrille, "vue-3d": vue3d, "navigation-3d": vue3d && navigation3d === "plan", "coupe-3d": vue3d && coupe3d }} lienCommande={liens} surOutil={runTool} surCommande={runCommand} surLien={surLien} />
     <p className="studio-undo-scope" data-studio-annuler-portee>{`Annuler et Rétablir ne portent que sur les modifications non enregistrées (${commands.length} commande(s) en attente) ; une révision enregistrée ne s’annule pas ici.`}</p>
     <div className="studio-editor"><div className="studio-sheet" data-studio-projection-plan={!vue3d ? versionPlan(drawing) : undefined}><div className="studio-sheet-caption"><span>Dessin et modélisation</span><span data-studio-pas-grille={pas}>{`Grille ${pasAffiche} m`}</span><span>1 unité = 1 m</span></div>
@@ -511,15 +541,18 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       calques={<PanneauCalques doc={drawing} actif={actif?.id ?? STUDIO_DEFAULT_LAYER_ID} modifiable={writable} nom={nomCalque} nomRef={nomRef} surActif={id => setCalqueActif(id)} surNom={setNomCalque} surReglage={setLayer} surRenommer={renameLayer} />} /></div>
     <ListeElements doc={drawing} selection={selectionIds} modifiable={writable} surSelection={select} surSupprimer={() => runTool("studio.dessin.supprimer")} />
     {commentaires && <div id="studio-commentaires"><PanneauCommentaires projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} revision={context.revision.document} dessin={drawing}
-      selection={selectionIds} canWrite={!historical && context.canWrite} surSelection={ids => { setTool("studio.dessin.selection"); cancelTrace(); select(ids); }} /></div>}
+      selection={selectionIds} canWrite={!historical && context.canWrite} surSelection={ids => { setTool("studio.dessin.selection"); cancelTrace(); select(ids); }} />
+      <PanneauObservations projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} revision={context.revision.document} selection={selectionIds}
+        vue={vue3d ? "3d" : "plan"} surSelection={ids => { setTool("studio.dessin.selection"); cancelTrace(); select(ids); }} /></div>}
     <RevisionsPanel projectId={projectId} studyId={studyId} variantId={variantId} headRevisionId={context.variant.headRevisionId} shownRevisionId={context.revision.id} />
     {drawing && <PanneauQuantites projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} doc={drawing} lectureSeule={!writable || historical} nonEnregistre={commands.length > 0} />}
     {drawing && <PanneauExigences projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} doc={drawing} cibleId={cibleSelection(drawing, selectionArchi, selectionIds)}
       modifiable={writable} ecriture={!historical && context.canWrite} nonEnregistre={commands.length > 0} surCommandes={apply} surErreur={setError} />}
-    <DialoguesStudio dialogue={dialogue} surFermer={() => setDialogue(null)} disponible={entreeDisponible} surExecuter={executerEntree} drawing={drawing} modifiable={writable}
+    <DialoguesStudio dialogue={dialogue} surFermer={() => setDialogue(null)} disponible={entreeDisponible} raison={raisonDe} surExecuter={executerEntree} drawing={drawing} modifiable={writable}
       surImporter={(cs, r) => { if (!apply(cs)) return false; setDialogue(null); setInfo(`Import DXF ajouté au brouillon : ${r.rapport.entites.total} objet(s). Enregistrez pour l’envoyer au serveur.`); return true; }}
       revision={context.revision.document} brouillonNonEnregistre={commands.length > 0}
-      cartouche={() => cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })} />
+      cartouche={() => cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })}
+      portee={{ projectId, studyId, variantId, revisionId: context.revision.id }} />
     {rapportExport && liens[rapportExport] && <RapportExport format={FORMATS_RAPPORT[rapportExport]!} urlExport={liens[rapportExport]!} exportId={`${context?.revision.id ?? ""}#${exportsLances}`} surFermer={() => setRapportExport(null)} />}</>}
   </section>;
 }

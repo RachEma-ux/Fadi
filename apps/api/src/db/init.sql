@@ -622,6 +622,111 @@ END;
 $$;
 CREATE OR REPLACE TRIGGER studio_observation_events_no_update BEFORE UPDATE ON studio_observation_events
   FOR EACH ROW EXECUTE FUNCTION studio_observation_event_immutable();
+-- Observations Studio, suite (E.2-01 à E.2-05) — additif : colonnes nullables et tables nouvelles, aucune ligne réécrite.
+-- Contexte de vue (E.2-02) : mode de l'espace de travail où l'observation a été faite (plan, 3D, feuille, quantités,
+-- exigences, revue) et repère facultatif dans ce mode (niveau, feuille…), déclarés par le client, jamais devinés.
+ALTER TABLE studio_observations ADD COLUMN IF NOT EXISTS vue_mode text;
+ALTER TABLE studio_observations ADD COLUMN IF NOT EXISTS vue_ref text;
+ALTER TABLE studio_observations DROP CONSTRAINT IF EXISTS studio_observations_vue_check,
+  ADD CONSTRAINT studio_observations_vue_check CHECK (
+    (vue_mode IS NULL OR vue_mode IN ('plan', '3d', 'feuille', 'quantites', 'exigences', 'revue'))
+    AND (vue_ref IS NULL OR (vue_mode IS NOT NULL AND length(vue_ref) BETWEEN 1 AND 256))) NOT VALID;
+-- Paire (variante, observation) unique (la clé primaire l'est déjà) : cible des clés composites « même variante ».
+CREATE UNIQUE INDEX IF NOT EXISTS studio_observations_variant_comment_unique ON studio_observations(variant_id, comment_id);
+-- Identité unique d'une observation réemployée dans plusieurs domaines (E.2-01) : une observation porte des liens vers
+-- une exigence BIM (et le contrôle où son écart a été vu), une ligne de métré (objet et grandeur d'une révision), une
+-- revue (publication de la même variante) ou un objet du modèle (d'une révision). Un même élément d'un domaine n'est
+-- suivi que par UNE observation de la variante (index unique) : on réemploie l'observation existante, on n'en crée pas
+-- une seconde. Les liens ne se réécrivent pas (déclencheur) ; ils disparaissent avec l'observation (cascade).
+CREATE TABLE IF NOT EXISTS studio_observation_links (
+  id text PRIMARY KEY,
+  observation_id text NOT NULL,
+  variant_id text NOT NULL REFERENCES studio_variants(id) ON DELETE CASCADE,
+  domaine text NOT NULL CONSTRAINT studio_observation_links_domaine_check CHECK (domaine IN ('exigence', 'metre', 'revue', 'objet')),
+  ref text NOT NULL CONSTRAINT studio_observation_links_ref_length CHECK (length(ref) BETWEEN 1 AND 300),
+  revision_id text,
+  controle_id text,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  request_id text,
+  payload_hash text CONSTRAINT studio_observation_links_payload_hash_check CHECK (payload_hash IS NULL OR payload_hash ~ '^[0-9a-f]{64}$'),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT studio_observation_links_observation_same_variant FOREIGN KEY(variant_id, observation_id)
+    REFERENCES studio_observations(variant_id, comment_id) ON DELETE CASCADE,
+  CONSTRAINT studio_observation_links_revision_same_variant FOREIGN KEY(variant_id, revision_id)
+    REFERENCES studio_revisions(variant_id, id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_observation_links_ref_unique ON studio_observation_links(variant_id, domaine, ref);
+CREATE INDEX IF NOT EXISTS studio_observation_links_observation_idx ON studio_observation_links(observation_id);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_observation_links_request_unique ON studio_observation_links(observation_id, request_id)
+  WHERE request_id IS NOT NULL;
+CREATE OR REPLACE FUNCTION studio_observation_link_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_observation_link_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_observation_links_no_update BEFORE UPDATE ON studio_observation_links
+  FOR EACH ROW EXECUTE FUNCTION studio_observation_link_immutable();
+-- Tâches d'une observation (E.2-03) : libellé, personne chargée (propriétaire ou éditeur), échéance facultative, statut
+-- à faire → faite | annulée (rouverte par le propriétaire). La ligne porte l'état courant ; chaque passage est journalisé
+-- dans studio_observation_task_events (append-only).
+CREATE TABLE IF NOT EXISTS studio_observation_tasks (
+  id text PRIMARY KEY,
+  observation_id text NOT NULL REFERENCES studio_observations(comment_id) ON DELETE CASCADE,
+  libelle text NOT NULL CONSTRAINT studio_observation_tasks_libelle_length CHECK (length(libelle) BETWEEN 1 AND 500),
+  assignee_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  echeance date,
+  statut text NOT NULL CONSTRAINT studio_observation_tasks_statut_check CHECK (statut IN ('a-faire', 'faite', 'annulee')),
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_observation_tasks_observation_idx ON studio_observation_tasks(observation_id);
+CREATE INDEX IF NOT EXISTS studio_observation_tasks_assignee_idx ON studio_observation_tasks(assignee_id);
+CREATE TABLE IF NOT EXISTS studio_observation_task_events (
+  id text PRIMARY KEY,
+  task_id text NOT NULL REFERENCES studio_observation_tasks(id) ON DELETE CASCADE,
+  seq integer NOT NULL CHECK (seq >= 1),
+  action text NOT NULL CONSTRAINT studio_observation_task_events_action_check
+    CHECK (action IN ('creer', 'terminer', 'annuler', 'rouvrir', 'reattribuer')),
+  from_statut text,
+  to_statut text NOT NULL,
+  actor_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  assignee_id text REFERENCES users(id) ON DELETE RESTRICT,
+  note text CONSTRAINT studio_observation_task_events_note_length CHECK (note IS NULL OR length(note) BETWEEN 1 AND 2000),
+  request_id text,
+  payload_hash text CONSTRAINT studio_observation_task_events_payload_hash_check CHECK (payload_hash IS NULL OR payload_hash ~ '^[0-9a-f]{64}$'),
+  at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT studio_observation_task_events_seq_unique UNIQUE(task_id, seq)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_observation_task_events_request_unique ON studio_observation_task_events(task_id, request_id)
+  WHERE request_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS studio_observation_task_events_at_idx ON studio_observation_task_events(at);
+CREATE OR REPLACE TRIGGER studio_observation_task_events_no_update BEFORE UPDATE ON studio_observation_task_events
+  FOR EACH ROW EXECUTE FUNCTION studio_observation_event_immutable();
+-- Décisions d'une observation (E.2-03 / E.2-04), distinctes des passages et des tâches : une proposition (éditeur ou
+-- propriétaire) ou une décision (propriétaire seul), de portée « clôture » ou « autre », avec son texte, le rôle de son
+-- auteur au moment de l'écrire et, facultativement, la révision examinée. La décision de clôture est écrite par le
+-- passage « clôturer » lui-même (même transaction). Journal append-only ordonné par `seq`.
+CREATE TABLE IF NOT EXISTS studio_observation_decisions (
+  id text PRIMARY KEY,
+  observation_id text NOT NULL REFERENCES studio_observations(comment_id) ON DELETE CASCADE,
+  seq integer NOT NULL CHECK (seq >= 1),
+  nature text NOT NULL CONSTRAINT studio_observation_decisions_nature_check CHECK (nature IN ('proposition', 'decision')),
+  portee text NOT NULL CONSTRAINT studio_observation_decisions_portee_check CHECK (portee IN ('cloture', 'autre')),
+  texte text NOT NULL CONSTRAINT studio_observation_decisions_texte_length CHECK (length(texte) BETWEEN 1 AND 2000),
+  actor_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  actor_role text NOT NULL CONSTRAINT studio_observation_decisions_role_check CHECK (actor_role IN ('proprietaire', 'editeur')),
+  revision_id text,
+  request_id text,
+  payload_hash text CONSTRAINT studio_observation_decisions_payload_hash_check CHECK (payload_hash IS NULL OR payload_hash ~ '^[0-9a-f]{64}$'),
+  at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT studio_observation_decisions_seq_unique UNIQUE(observation_id, seq)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_observation_decisions_request_unique ON studio_observation_decisions(observation_id, request_id)
+  WHERE request_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS studio_observation_decisions_at_idx ON studio_observation_decisions(at);
+CREATE OR REPLACE TRIGGER studio_observation_decisions_no_update BEFORE UPDATE ON studio_observation_decisions
+  FOR EACH ROW EXECUTE FUNCTION studio_observation_event_immutable();
 -- Rattachement facultatif d'une étude Studio à des étapes du Parcours du même projet (numéro d'étape de
 -- project_steps, vérifié par le serveur). Table nouvelle, additive : aucune étape ni aucune étude n'est réécrite.
 CREATE TABLE IF NOT EXISTS studio_study_steps (
@@ -727,6 +832,17 @@ ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_prefer
 ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_preferences_lists_check,
   ADD CONSTRAINT studio_tool_preferences_lists_check
   CHECK (jsonb_typeof(favorites) = 'array' AND jsonb_typeof(personal) = 'array') NOT VALID;
+-- Regroupements personnels d'outils (B.2-02) et version du manifeste du catalogue sous laquelle la ligne a été écrite
+-- (B.1-06, « studio-tool-manifest/<n> ») : colonnes additives facultatives (null = aucun regroupement / ligne écrite
+-- avant le manifeste), pour qu'une ligne d'archive antérieure se relise sans elles.
+ALTER TABLE studio_tool_preferences ADD COLUMN IF NOT EXISTS groups jsonb;
+ALTER TABLE studio_tool_preferences ADD COLUMN IF NOT EXISTS manifest_version text;
+ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_preferences_groups_check,
+  ADD CONSTRAINT studio_tool_preferences_groups_check
+  CHECK (groups IS NULL OR (jsonb_typeof(groups) = 'array' AND jsonb_array_length(groups) <= 20)) NOT VALID;
+ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_preferences_manifest_check,
+  ADD CONSTRAINT studio_tool_preferences_manifest_check
+  CHECK (manifest_version IS NULL OR manifest_version ~ '^studio-tool-manifest/[1-9][0-9]*$') NOT VALID;
 -- Publications Studio, jamais de suppression (E.4-06) : une DELETE directe d'un évènement du journal est refusée tant
 -- que sa publication existe ; une DELETE directe d'une publication diffusée ou retirée est refusée tant que son projet
 -- existe. Seule la cascade (parent déjà supprimé dans la même instruction, donc invisible) passe ; la route
@@ -940,3 +1056,72 @@ END;
 $$;
 CREATE OR REPLACE TRIGGER studio_quantity_adjustments_no_update BEFORE UPDATE ON studio_quantity_adjustments
   FOR EACH ROW EXECUTE FUNCTION studio_quantity_adjustment_immutable();
+-- Production documentaire Studio (E.3-01 à E.3-03) : feuilles composées et dossiers de conception, rangés À PART des
+-- révisions (une feuille ne modifie jamais la planche de travail). Une feuille lit une révision IDENTIFIÉE d'une
+-- variante de l'étude (`revision_id`, réépinglée explicitement à la demande) ; sa définition (numéro, titre, format,
+-- échelle, vue source, cartouche saisi) est un objet JSON contrôlé par `@parcours/atelier-model`. Un dossier est une
+-- liste ordonnée de feuilles de la même étude, un métré facultatif (variante et révision identifiées) et le choix de
+-- joindre le rapport de fidélité. Additif et idempotent : tables nouvelles, contraintes recréées (NOT VALID).
+CREATE TABLE IF NOT EXISTS studio_sheets (
+  id text PRIMARY KEY,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  variant_id text NOT NULL,
+  revision_id text NOT NULL,
+  number text NOT NULL,
+  definition jsonb NOT NULL,
+  request_id text,
+  payload_hash text,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_sheets_number_unique ON studio_sheets(study_id, number);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_sheets_request_unique ON studio_sheets(study_id, request_id) WHERE request_id IS NOT NULL;
+ALTER TABLE studio_sheets DROP CONSTRAINT IF EXISTS studio_sheets_variant_of_study,
+  ADD CONSTRAINT studio_sheets_variant_of_study FOREIGN KEY(study_id, variant_id)
+  REFERENCES studio_variants(study_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_sheets DROP CONSTRAINT IF EXISTS studio_sheets_revision_of_variant,
+  ADD CONSTRAINT studio_sheets_revision_of_variant FOREIGN KEY(variant_id, revision_id)
+  REFERENCES studio_revisions(variant_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_sheets DROP CONSTRAINT IF EXISTS studio_sheets_number_length,
+  ADD CONSTRAINT studio_sheets_number_length CHECK (length(btrim(number)) BETWEEN 1 AND 20) NOT VALID;
+ALTER TABLE studio_sheets DROP CONSTRAINT IF EXISTS studio_sheets_definition_object,
+  ADD CONSTRAINT studio_sheets_definition_object CHECK (jsonb_typeof(definition) = 'object') NOT VALID;
+ALTER TABLE studio_sheets DROP CONSTRAINT IF EXISTS studio_sheets_payload_hash_check,
+  ADD CONSTRAINT studio_sheets_payload_hash_check CHECK (payload_hash IS NULL OR payload_hash ~ '^[0-9a-f]{64}$') NOT VALID;
+CREATE TABLE IF NOT EXISTS studio_dossiers (
+  id text PRIMARY KEY,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  sheet_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+  quantities_variant_id text,
+  quantities_revision_id text,
+  include_fidelity boolean NOT NULL DEFAULT true,
+  request_id text,
+  payload_hash text,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_dossiers_request_unique ON studio_dossiers(study_id, request_id) WHERE request_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS studio_dossiers_study_idx ON studio_dossiers(study_id, created_at);
+ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_quantities_variant_of_study,
+  ADD CONSTRAINT studio_dossiers_quantities_variant_of_study FOREIGN KEY(study_id, quantities_variant_id)
+  REFERENCES studio_variants(study_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_quantities_revision_of_variant,
+  ADD CONSTRAINT studio_dossiers_quantities_revision_of_variant FOREIGN KEY(quantities_variant_id, quantities_revision_id)
+  REFERENCES studio_revisions(variant_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_quantities_complete,
+  ADD CONSTRAINT studio_dossiers_quantities_complete CHECK ((quantities_variant_id IS NULL) = (quantities_revision_id IS NULL)) NOT VALID;
+ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_title_length,
+  ADD CONSTRAINT studio_dossiers_title_length CHECK (length(btrim(title)) BETWEEN 1 AND 200) NOT VALID;
+ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_sheet_ids_array,
+  ADD CONSTRAINT studio_dossiers_sheet_ids_array CHECK (jsonb_typeof(sheet_ids) = 'array') NOT VALID;
+ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_payload_hash_check,
+  ADD CONSTRAINT studio_dossiers_payload_hash_check CHECK (payload_hash IS NULL OR payload_hash ~ '^[0-9a-f]{64}$') NOT VALID;
+-- Borne du journal des ajustements du métré (E.3-05) lue par le dossier : séquence maximale du journal de la variante
+-- au moment où le métré est épinglé. Null : aucun ajustement pris en compte (journal vide à l'épinglage, ou pas de métré).
+ALTER TABLE studio_dossiers ADD COLUMN IF NOT EXISTS quantities_adjustment_seq integer;
+ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_quantities_adjustment_seq_check,
+  ADD CONSTRAINT studio_dossiers_quantities_adjustment_seq_check
+  CHECK (quantities_adjustment_seq IS NULL OR (quantities_adjustment_seq >= 1 AND quantities_variant_id IS NOT NULL)) NOT VALID;

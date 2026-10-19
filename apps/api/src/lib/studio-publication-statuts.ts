@@ -157,15 +157,36 @@ export type RoleSource = "principale" | "coordonnee";
 export interface ManifesteSource { role: RoleSource; variantId: string; revisionId: string; documentHash: string }
 export interface ManifesteMeta { projectCode: string; projectName: string; studyName: string; variantName: string; revisionCreatedAt: string }
 export interface ManifesteDocument { format: string; fileName: string; mime: string; size: number; sha256: string }
+/**
+ * Contenu d'un dossier : `complet` (SVG, DXF, IFC, feuille PDF) ou `dessin-2d` (E.3-07 : dessin 2D indépendant, publié
+ * sans modèle 3D — SVG, DXF et feuille PDF, sans IFC ni variante coordonnée).
+ */
+export type ContenuPublication = "complet" | "dessin-2d";
 export interface ManifestePublication {
   schema: "studio-publication-manifest/1";
+  /** Absent : dossier complet (forme historique, empreintes inchangées) ; `dessin-2d` : dessin 2D indépendant. */
+  contenu?: "dessin-2d";
   sources: ManifesteSource[];
   meta: ManifesteMeta;
   documents: ManifesteDocument[];
 }
+/** Contenu d'un manifeste (absent : complet). */
+export const contenuDe = (m: { contenu?: string } | null | undefined): ContenuPublication => (m?.contenu === "dessin-2d" ? "dessin-2d" : "complet");
+/**
+ * Diffusions qu'une nouvelle diffusion remplace (E.4-06) : celles de MÊME contenu seulement. Un dessin 2D indépendant ne
+ * remplace pas un paquet complet de la même variante, et inversement : chacun reste en vigueur pour son contenu.
+ * Le contenu d'une ligne est lu sur son manifeste, à défaut sur son paquet (absent des deux : complet).
+ */
+export function memeContenu<T extends { manifest?: { contenu?: string } | null; package?: { contenu?: string } | null }>(contenu: ContenuPublication, autres: readonly T[]): T[] {
+  return autres.filter((a) => contenuDe(a.manifest ?? a.package) === contenu);
+}
+/** Formats d'un paquet, dans l'ordre du paquet, selon son contenu : un dessin 2D indépendant ne porte pas d'IFC. */
+export function formatsDuContenu(contenu: ContenuPublication): ("svg" | "dxf" | "ifc" | "pdf")[] {
+  return contenu === "dessin-2d" ? ["svg", "dxf", "pdf"] : ["svg", "dxf", "ifc", "pdf"];
+}
 
 /** Manifeste normalisé : une seule source principale en tête, coordonnées triées et sans doublon, documents triés par format. */
-export function construireManifeste(sources: readonly ManifesteSource[], meta: ManifesteMeta, documents: readonly ManifesteDocument[]): ManifestePublication {
+export function construireManifeste(sources: readonly ManifesteSource[], meta: ManifesteMeta, documents: readonly ManifesteDocument[], contenu: ContenuPublication = "complet"): ManifestePublication {
   const principales = sources.filter((s) => s.role === "principale");
   if (principales.length !== 1) throw new Error("studio_manifest_principal_source");
   const vus = new Set<string>([principales[0]!.variantId]);
@@ -173,8 +194,11 @@ export function construireManifeste(sources: readonly ManifesteSource[], meta: M
     .sort((a, b) => (a.variantId < b.variantId ? -1 : a.variantId > b.variantId ? 1 : 0));
   const formats = new Set<string>();
   for (const d of documents) { if (formats.has(d.format)) throw new Error("studio_manifest_duplicate_document"); formats.add(d.format); }
+  if (contenu === "dessin-2d" && coordonnees.length) throw new Error("studio_manifest_drawing_coordinated");
+  if (contenu === "dessin-2d" && documents.some((d) => d.format === "ifc")) throw new Error("studio_manifest_drawing_ifc");
   return {
     schema: "studio-publication-manifest/1",
+    ...(contenu === "dessin-2d" ? { contenu } : {}),
     sources: [principales[0]!, ...coordonnees].map((s) => ({ role: s.role, variantId: s.variantId, revisionId: s.revisionId, documentHash: s.documentHash })),
     meta: { projectCode: meta.projectCode, projectName: meta.projectName, studyName: meta.studyName, variantName: meta.variantName, revisionCreatedAt: meta.revisionCreatedAt },
     documents: [...documents].sort((a, b) => (a.format < b.format ? -1 : a.format > b.format ? 1 : 0))

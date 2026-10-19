@@ -17,7 +17,10 @@
  *                               commentaires des autres sur les variantes
  *                               Studio de ces projets (non supprimés) et
  *                               passages des observations Studio dont vous
- *                               êtes responsable ou auteur ;
+ *                               êtes responsable ou auteur, passages des
+ *                               tâches qui vous sont confiées ou que vous
+ *                               avez créées, propositions et décisions sur
+ *                               ces observations ;
  *                               « non lue » = postérieure à votre dernière
  *                               consultation ; types masqués et projets mis
  *                               en sourdine par vos préférences retirés avant
@@ -31,7 +34,10 @@
 import { Router } from "express";
 import { db } from "../db/client.js";
 import { and, desc, eq, gt, inArray, isNull, ne, or } from "drizzle-orm";
-import { atelierCommands, atelierLockEvents, atelierLocks, drawingExports, projectComments, projectMembers, projects, studioComments, studioObservationEvents, studioObservations, studioStudies, studioVariants, users } from "../db/schema.js";
+import {
+  atelierCommands, atelierLockEvents, atelierLocks, drawingExports, projectComments, projectMembers, projects, studioComments, studioObservationDecisions, studioObservationEvents,
+  studioObservations, studioObservationTaskEvents, studioObservationTasks, studioStudies, studioVariants, users,
+} from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { activeLock, type ProjectRole } from "../lib/owned-project.js";
 import { ROLE_LABEL } from "./members.js";
@@ -190,6 +196,62 @@ export async function notificationsFor(userId: string, email: string): Promise<{
         stepNumber: null,
         studio: { studyId: p.studyId, variantId: p.variantId },
         text: `${p.email} ${VERBE[p.action] ?? p.action} « ${excerpt} » (variante « ${p.variantName} », ${p.code}).`,
+        unread: false,
+      });
+    }
+    // Tâches des observations (E.2-03), même type : chaque passage fait par un autre est signalé à la personne chargée
+    // de la tâche et à son créateur, 30 derniers jours.
+    const tachePassages = await db
+      .select({ id: studioObservationTaskEvents.id, action: studioObservationTaskEvents.action, at: studioObservationTaskEvents.at, libelle: studioObservationTasks.libelle, body: studioComments.body, variantId: studioVariants.id, variantName: studioVariants.name, studyId: studioStudies.id, projectId: projects.id, code: projects.code, name: projects.name, email: users.email })
+      .from(studioObservationTaskEvents)
+      .innerJoin(studioObservationTasks, eq(studioObservationTasks.id, studioObservationTaskEvents.taskId))
+      .innerJoin(studioObservations, eq(studioObservations.commentId, studioObservationTasks.observationId))
+      .innerJoin(studioComments, eq(studioComments.id, studioObservations.commentId))
+      .innerJoin(studioVariants, eq(studioVariants.id, studioObservations.variantId))
+      .innerJoin(studioStudies, eq(studioStudies.id, studioVariants.studyId))
+      .innerJoin(projects, eq(projects.id, studioStudies.projectId))
+      .innerJoin(users, eq(users.id, studioObservationTaskEvents.actorId))
+      .where(and(
+        inArray(studioStudies.projectId, projectIds), ne(studioObservationTaskEvents.actorId, userId), gt(studioObservationTaskEvents.at, since),
+        or(eq(studioObservationTasks.assigneeId, userId), eq(studioObservationTasks.createdBy, userId)),
+      ))
+      .orderBy(desc(studioObservationTaskEvents.at))
+      .limit(LIMIT);
+    const VERBE_TACHE: Record<string, string> = { creer: "a créé la tâche", terminer: "a déclaré faite la tâche", annuler: "a annulé la tâche", rouvrir: "a rouvert la tâche", reattribuer: "a réattribué la tâche" };
+    for (const t of tachePassages) {
+      const excerpt = t.body.length > 80 ? `${t.body.slice(0, 80)}…` : t.body;
+      items.push({
+        id: `tache-studio:${t.id}`, at: t.at.toISOString(), kind: "commentaire-studio", projectId: t.projectId, projectCode: t.code, projectName: t.name, stepNumber: null,
+        studio: { studyId: t.studyId, variantId: t.variantId },
+        text: `${t.email} ${VERBE_TACHE[t.action] ?? t.action} « ${t.libelle} » (observation « ${excerpt} », variante « ${t.variantName} », ${t.code}).`,
+        unread: false,
+      });
+    }
+    // Propositions et décisions (E.2-03), même type : signalées au responsable et à l'auteur de l'observation (la
+    // décision de clôture l'est déjà par le passage « clôturer »).
+    const decisions = await db
+      .select({ id: studioObservationDecisions.id, nature: studioObservationDecisions.nature, portee: studioObservationDecisions.portee, at: studioObservationDecisions.at, body: studioComments.body, variantId: studioVariants.id, variantName: studioVariants.name, studyId: studioStudies.id, projectId: projects.id, code: projects.code, name: projects.name, email: users.email })
+      .from(studioObservationDecisions)
+      .innerJoin(studioObservations, eq(studioObservations.commentId, studioObservationDecisions.observationId))
+      .innerJoin(studioComments, eq(studioComments.id, studioObservations.commentId))
+      .innerJoin(studioVariants, eq(studioVariants.id, studioObservations.variantId))
+      .innerJoin(studioStudies, eq(studioStudies.id, studioVariants.studyId))
+      .innerJoin(projects, eq(projects.id, studioStudies.projectId))
+      .innerJoin(users, eq(users.id, studioObservationDecisions.actorId))
+      .where(and(
+        inArray(studioStudies.projectId, projectIds), ne(studioObservationDecisions.actorId, userId), gt(studioObservationDecisions.at, since),
+        or(eq(studioObservations.responsableId, userId), eq(studioComments.authorId, userId)),
+        or(ne(studioObservationDecisions.nature, "decision"), ne(studioObservationDecisions.portee, "cloture")),
+      ))
+      .orderBy(desc(studioObservationDecisions.at))
+      .limit(LIMIT);
+    const VERBE_DECISION = (nature: string, portee: string) => (nature === "decision" ? "a consigné une décision sur l’observation" : portee === "cloture" ? "a proposé de clôturer l’observation" : "a fait une proposition sur l’observation");
+    for (const d of decisions) {
+      const excerpt = d.body.length > 80 ? `${d.body.slice(0, 80)}…` : d.body;
+      items.push({
+        id: `decision-studio:${d.id}`, at: d.at.toISOString(), kind: "commentaire-studio", projectId: d.projectId, projectCode: d.code, projectName: d.name, stepNumber: null,
+        studio: { studyId: d.studyId, variantId: d.variantId },
+        text: `${d.email} ${VERBE_DECISION(d.nature, d.portee)} « ${excerpt} » (variante « ${d.variantName} », ${d.code}).`,
         unread: false,
       });
     }

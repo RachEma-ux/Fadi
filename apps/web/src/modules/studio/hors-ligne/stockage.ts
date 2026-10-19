@@ -4,17 +4,43 @@
  * « absent ». Les écritures du brouillon sont comparées puis écrites (jeton `stamp`) : si un autre onglet a écrit
  * depuis la dernière lecture de celui-ci, rien n'est écrasé et l'appelant affiche le conflit. Elles sont confirmées
  * ou lèvent `LocalPersistenceError`. La mémoire des dernières versions lues reste facultative.
+ * La première écriture d'un brouillon (ligne créée) relance la demande de stockage persistant (`protegerFileLocale`) :
+ * une file locale née après l'ouverture de Studio est protégée de l'éviction dès qu'elle existe (EX-044).
  */
 import type { StudioContext } from "../../../lib/api";
-import { localStore } from "../../../lib/local-store";
+import { localStore, type StudioBrouillonEntry } from "../../../lib/local-store";
+import { protegerFileLocale } from "../chargement/hors-connexion-studio";
+import { migrerBrouillon, type RaisonIncompatible } from "./contrats";
 import { horsLigneVide, lireHorsLigne, type BrouillonHorsLigne } from "./persistance";
 
-export interface BrouillonLu { brouillon: BrouillonHorsLigne; stamp: string }
+export interface BrouillonLu { brouillon: BrouillonHorsLigne; stamp: string; /** Format antérieur migré en mémoire (la ligne reste intacte). */ migreDe?: number }
 
+/** File locale conservée mais incompatible avec les contrats de ce build (B.3-11) : rien n'est envoyé ni effacé. */
+export class ErreurFileLocale extends Error {
+  constructor(readonly raison: RaisonIncompatible, readonly entree: StudioBrouillonEntry) {
+    super(raison);
+    this.name = "ErreurFileLocale";
+  }
+}
+
+/**
+ * Lit le brouillon conservé : migré au format courant s'il le faut (`contrats.ts`), en mémoire seulement. Lève
+ * `ErreurFileLocale` (ligne brute jointe, pour l'export) s'il est incompatible ou illisible.
+ */
 export async function lireBrouillonHorsLigne(cle: string, userId: string): Promise<BrouillonLu | null> {
   const entree = await localStore.studioBrouillon(cle, userId);
-  return entree ? { brouillon: lireHorsLigne(entree.donnees, userId), stamp: entree.stamp } : null;
+  if (!entree) return null;
+  const m = migrerBrouillon(entree.donnees);
+  if (m.type === "incompatible") throw new ErreurFileLocale(m.raison, entree);
+  try {
+    return { brouillon: lireHorsLigne(m.json, userId), stamp: entree.stamp, ...(m.type === "migre" ? { migreDe: m.de } : {}) };
+  } catch {
+    throw new ErreurFileLocale("illisible", entree);
+  }
 }
+
+/** Ligne brute conservée (export explicite de la file locale), ou null. */
+export const brouillonBrut = (cle: string, userId: string): Promise<StudioBrouillonEntry | null> => localStore.studioBrouillon(cle, userId);
 
 /** Jeton de la ligne telle qu'elle est maintenant (null si absente), pour reprendre après un conflit d'onglets. */
 export async function jetonActuel(cle: string, userId: string): Promise<string | null> {
@@ -31,6 +57,7 @@ export async function ecrireBrouillonHorsLigne(cle: string, h: BrouillonHorsLign
   if (horsLigneVide(h)) return (await localStore.studioSupprimerBrouillonSi(cle, attendu)) ? { type: "retire" } : { type: "autre-onglet" };
   const stamp = crypto.randomUUID();
   const ok = await localStore.studioEcrireBrouillonSi({ cle, userId: h.userId, projectId: h.base.study.projectId, stamp, donnees: JSON.stringify(h), majA: new Date().toISOString() }, attendu);
+  if (ok && attendu === null) void protegerFileLocale(h.userId).catch(() => undefined);
   return ok ? { type: "ecrit", stamp } : { type: "autre-onglet" };
 }
 
@@ -39,8 +66,11 @@ export async function retirerBrouillonHorsLigne(cle: string, attendu: string | n
   return localStore.studioSupprimerBrouillonSi(cle, attendu);
 }
 
-/** Abandon explicite, confirmé par l'utilisateur. */
-export const supprimerBrouillonHorsLigne = (cle: string): Promise<void> => localStore.studioSupprimerBrouillon(cle);
+/**
+ * Abandon explicite, confirmé par l'utilisateur, de la ligne **telle qu'elle a été exportée** (jeton `jetonExporte`) :
+ * si un autre onglet l'a réécrite depuis l'export, rien n'est retiré (faux) et un nouvel export est demandé.
+ */
+export const abandonnerBrouillonHorsLigne = (cle: string, jetonExporte: string): Promise<boolean> => localStore.studioSupprimerBrouillonSi(cle, jetonExporte);
 
 export function memoriserContexte(cle: string, userId: string, c: StudioContext): Promise<void> {
   return localStore.studioMemoriserContexte({ cle, userId, projectId: c.study.projectId, contexte: JSON.stringify(c), luA: new Date().toISOString() });

@@ -1,4 +1,6 @@
-import type { StudioDifferenceDocuments, StudioDocument, StudioEnvelope } from "@parcours/atelier-model";
+import type {
+  StudioDifferenceDocuments, StudioDocument, StudioDossierConception, StudioEnvelope, StudioFeuilleComposeeDefinition, StudioSheetTitleBlock, StudioVueDocumentaire,
+} from "@parcours/atelier-model";
 /**
  * Client HTTP minimal vers `apps/api`. Toujours `credentials: "include"`
  * (cookie de session httpOnly) ; jamais de jeton stocké en `localStorage`
@@ -585,6 +587,27 @@ export interface DocumentsView {
   documents: DocumentDescriptor[];
   /** Paquets Studio diffusés ou retirés (lecture seule, produits par le flux de publication). */
   studioPackages?: StudioPackageDocument[];
+  /** Dossiers de conception Studio (E.3-03, E.3-06), recalculés depuis des révisions immuables. */
+  studioDossiers?: StudioDossierDocument[];
+  /** Code d'erreur du groupe des dossiers Studio quand il n'a pas pu être lu (les autres groupes restent servis). */
+  studioDossiersError?: string | null;
+}
+
+/** Dossier de conception Studio tel que le module Documents le liste (`lib/documents.ts` côté API). */
+export interface StudioDossierDocument {
+  kind: string;
+  group: "studio-dossier";
+  dossierId: string;
+  title: string;
+  studyId: string;
+  studyName: string;
+  sheetCount: number;
+  hash: string | null;
+  /** Code d'erreur (jamais un texte du serveur) : libellé traduit par `libelleErreurDossier`. */
+  error: string | null;
+  sources: { variantId: string; variantName: string | null; revisionId: string; revisionShort: string }[];
+  updatedAt: string;
+  files: { format: "pdf" | "json"; href: string }[];
 }
 
 /** Paquet figé d'une publication Studio, tel que le module Documents le liste (`lib/documents.ts` côté API). */
@@ -600,6 +623,8 @@ export interface StudioPackageDocument {
   revisionId: string;
   revisionShort: string;
   status: "diffuse" | "retire";
+  /** Contenu (E.3-07) : dossier complet, ou dessin 2D indépendant (sans IFC) ; absent : complet (serveur antérieur). */
+  contenu?: "complet" | "dessin-2d";
   diffusedAt: string | null;
   diffusedBy: string | null;
   withdrawnAt: string | null;
@@ -894,6 +919,8 @@ export interface StudioPublicationEvent {
 export interface StudioPublication {
   id: string; projectId: string; studyId: string; variantId: string; variantName: string; title: string;
   revisionId: string; documentHash: string; status: StudioPublicationStatus;
+  /** Contenu (E.3-07) : complet, ou dessin 2D indépendant (SVG, DXF, feuille PDF ; sans IFC). */
+  contenu?: "complet" | "dessin-2d";
   workStatus: StudioPublicationWorkStatus; diffusionStatus: StudioPublicationDiffusionStatus;
   manifest: StudioPublicationManifest | null; manifestHash: string | null; manifestBuiltAt: string | null;
   createdBy: { id: string; email: string }; createdAt: string; updatedAt: string;
@@ -913,12 +940,51 @@ const studioPublicationPath = (p: string, s: string, id: string) => `${studioStu
 export function studioPackageFileUrl(p: string, s: string, id: string, format: StudioPackageFile["format"]): string {
   return `${studioPublicationPath(p, s, id)}/files/${format}`;
 }
+/** Saisie d'une feuille composée (E.3-02) : numéro, titre, mise en page, calques de la vue source, auteur du cartouche. */
+export interface StudioSheetInput {
+  number: string; title: string; format: "A4" | "A3" | "A2" | "A1"; orientation: "portrait" | "paysage"; scale: number | "ajuster";
+  layers?: string[] | null; author?: string | null;
+}
+/** Feuille composée telle que le serveur la rend : révision épinglée, actualité, provenance recalculée. */
+export interface StudioSheet {
+  id: string; studyId: string; variantId: string; variantName: string;
+  revisionId: string; headRevisionId: string; freshness: "a-jour" | "perimee";
+  definition: StudioFeuilleComposeeDefinition;
+  provenance: null | { documentHash: string; vue: StudioVueDocumentaire; empreinte: string; echelle: string; decoupee: boolean; cartouche: Required<StudioSheetTitleBlock> };
+  error: string | null;
+  createdBy: { id: string; email: string }; createdAt: string; updatedAt: string;
+  files: { svg: string; pdf: string };
+}
+export interface StudioDossierInput {
+  title: string; sheetIds: string[]; quantities?: { variantId: string; revisionId?: string } | null; includeFidelity?: boolean;
+  /** Modification seulement : réépingle le métré sur la révision envoyée et reprend les ajustements enregistrés depuis. */
+  repinQuantities?: boolean;
+}
+export interface StudioDossier {
+  id: string; studyId: string; title: string; sheetIds: string[];
+  quantities: { variantId: string; revisionId: string } | null; includeFidelity: boolean;
+  /** Borne du journal des ajustements lue par le métré (séquence max à l'épinglage) ; null : aucun ajustement pris en compte. */
+  quantitiesAdjustmentSeq: number | null;
+  createdBy: { id: string; email: string }; createdAt: string; updatedAt: string;
+  files: { pdf: string; json: string };
+}
 /** Préférences d'outils Studio du compte : visibilité dans les barres seulement, jamais un droit (B.2-06). */
-export interface StudioToolPreferencesInput { profil: string; favoris: string[]; personnel: string[] }
+export interface StudioGroupeOutilsVue { id: string; nom: string; outils: string[] }
+export interface StudioToolPreferencesInput { profil: string; favoris: string[]; personnel: string[]; groupes?: StudioGroupeOutilsVue[] }
 export interface StudioToolPreferences extends StudioToolPreferencesInput {
+  groupes: StudioGroupeOutilsVue[];
   /** Outils enregistrés puis retirés du registre (écartés à la lecture). */
   retires: string[];
+  /** Version du manifeste du catalogue d'outils du serveur. */
+  manifeste: string;
   updatedAt: string | null;
+}
+/** Catalogue autorisé : droit réel d'exécution de chaque outil pour le compte dans ce projet (B.2-06). */
+export interface StudioCatalogueAutorise {
+  manifeste: string;
+  role: string;
+  droits: { lecture: true; ecriture: boolean; motif: "role" | "reference-protegee" | "verrou" | null };
+  entrees: { toolId: string; droit: "lecture" | "ecriture"; autorise: boolean }[];
 }
 export const api = {
   /** Études du projet ; `archives` : archivées comprises. */
@@ -960,15 +1026,30 @@ export const api = {
   /** Détail d'une publication avec son journal. */
   studioPublication: (p: string, s: string, id: string) => request<StudioPublication>(studioPublicationPath(p, s, id)),
   /** Nouvelle publication `travail` d'une révision (tête par défaut) ; `requestId` : renvoi sans doublon. */
-  createStudioPublication: (p: string, s: string, v: string, input: { title?: string; revisionId?: string; coordinatedVariantIds?: string[]; comment?: string; requestId?: string }) => request<StudioPublication & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/publications`, { method: "POST", body: JSON.stringify(input) }),
+  createStudioPublication: (p: string, s: string, v: string, input: { title?: string; revisionId?: string; coordinatedVariantIds?: string[]; contenu?: "complet" | "dessin-2d"; comment?: string; requestId?: string }) => request<StudioPublication & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/publications`, { method: "POST", body: JSON.stringify(input) }),
   /** Transition (soumettre, approuver, refuser, diffuser, retirer) ; l'approbation porte revisionId + documentHash examinés. */
   transitionStudioPublication: (p: string, s: string, id: string, action: StudioPublicationTransition, input: StudioPublicationTransitionInput) => request<StudioPublication>(`${studioPublicationPath(p, s, id)}/${action}`, { method: "POST", body: JSON.stringify(input) }),
+  /** Feuilles composées de l'étude (E.3-02), provenance recalculée par le serveur. */
+  studioSheets: (p: string, s: string) => request<{ sheets: StudioSheet[]; canWrite: boolean }>(`${studioStudyPath(p, s)}/sheets`),
+  /** Nouvelle feuille sur une révision de la variante (tête par défaut) ; elle ne modifie jamais la planche. */
+  createStudioSheet: (p: string, s: string, v: string, input: StudioSheetInput & { revisionId?: string; requestId?: string }) => request<StudioSheet & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/sheets`, { method: "POST", body: JSON.stringify(input) }),
+  /** Modification d'une feuille ; `revisionId` la réépingle sur une révision de sa variante. */
+  updateStudioSheet: (p: string, s: string, id: string, input: Partial<StudioSheetInput> & { revisionId?: string }) => request<StudioSheet>(`${studioStudyPath(p, s)}/sheets/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) }),
+  deleteStudioSheet: (p: string, s: string, id: string) => request<{ deleted: string }>(`${studioStudyPath(p, s)}/sheets/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  /** Dossiers de conception de l'étude (E.3-03). */
+  studioDossiers: (p: string, s: string) => request<{ dossiers: StudioDossier[] }>(`${studioStudyPath(p, s)}/dossiers`),
+  createStudioDossier: (p: string, s: string, input: StudioDossierInput & { requestId?: string }) => request<StudioDossier & { replayed: boolean }>(`${studioStudyPath(p, s)}/dossiers`, { method: "POST", body: JSON.stringify(input) }),
+  updateStudioDossier: (p: string, s: string, id: string, input: Partial<StudioDossierInput>) => request<StudioDossier>(`${studioStudyPath(p, s)}/dossiers/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) }),
+  /** Dossier assemblé (feuilles, métré, fidélité, empreinte), recalculé par le serveur. */
+  studioDossier: (p: string, s: string, id: string) => request<StudioDossier & { assembly: StudioDossierConception }>(`${studioStudyPath(p, s)}/dossiers/${encodeURIComponent(id)}`),
   /** Paquets diffusés du projet (pour le module Documents). */
   studioPackages: (p: string) => request<{ packages: (StudioPublication & { studyName: string })[] }>(`/projects/${encodeURIComponent(p)}/studio/publications`),
   /** Préférences d'outils Studio du compte (profil des barres, favoris, liste personnelle) ; le projet doit être lisible. */
   studioToolPreferences: (p: string) => request<StudioToolPreferences>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils`),
   /** Remplace les préférences d'outils du compte ; un outil hors registre → 400 `unknown_tool`. */
   setStudioToolPreferences: (p: string, prefs: StudioToolPreferencesInput) => request<StudioToolPreferences>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils`, { method: "PUT", body: JSON.stringify(prefs) }),
+  /** Catalogue autorisé : droit réel d'exécution de chaque outil du manifeste pour le compte (lecture seule). */
+  studioCatalogueOutils: (p: string) => request<StudioCatalogueAutorise>(`/projects/${encodeURIComponent(p)}/studio/preferences/catalogue`),
   register: (email: string, password: string) =>
     request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
   login: (email: string, password: string) =>

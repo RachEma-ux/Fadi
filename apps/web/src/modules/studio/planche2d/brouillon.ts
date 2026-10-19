@@ -5,7 +5,7 @@
  * et l'historique local est vide. Pur : ni React ni DOM.
  */
 import {
-  applyToStudioHistory, canRedoStudio, canUndoStudio, createStudioHistory, redoStudioHistory, STUDIO_CONTRACT, StudioValidationError,
+  applyStudioCommands, applyToStudioHistory, canRedoStudio, canUndoStudio, createStudioHistory, redoStudioHistory, STUDIO_CONTRACT, StudioValidationError,
   undoStudioHistory, type StudioCommand, type StudioDocument, type StudioEnvelope, type StudioHistory,
 } from "@parcours/atelier-model";
 
@@ -54,6 +54,16 @@ export function retablirBrouillon(b: Brouillon): Brouillon {
 }
 
 export const commandesEnAttente = (b: Brouillon): StudioCommand[] => b.pas.flat();
+
+/**
+ * Prévisualisation (A.5-03) : le document tel que le lot le donnerait, calculé par le même modèle, mais jamais un pas
+ * du brouillon — ni commande en attente, ni historique, ni envoi. `null` si le modèle refuse le lot (rien n'est
+ * montré). Abandonner le geste (Échap, changement d'outil) revient simplement à ne plus afficher cet aperçu.
+ */
+export function apercuBrouillon(document: StudioDocument, commandes: readonly StudioCommand[]): StudioDocument | null {
+  if (!commandes.length) return null;
+  try { return applyStudioCommands(document, commandes); } catch { return null; }
+}
 
 /** Enveloppe d'enregistrement : toutes les commandes en attente, sur la révision de tête chargée. */
 export function enveloppeBrouillon(b: Brouillon, baseRevisionId: string, requestId: string): StudioEnvelope {
