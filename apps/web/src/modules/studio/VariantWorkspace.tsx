@@ -71,6 +71,8 @@ import { useEnregistrement } from "./variante/useEnregistrement";
 import { useChargementVariante } from "./hors-ligne/useChargementVariante";
 import { useGardeNavigation } from "./variante/useGardeNavigation";
 import { Vue3D } from "./variante/Vue3D";
+import { RapportExport } from "./variante/RapportExport";
+import { FORMATS_RAPPORT } from "./variante/rapport-export";
 import "./studio.css";
 import "./planche2d/planche2d.css";
 
@@ -93,6 +95,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [accrocheSommets, setAccrocheSommets] = useState(true);
   const [accrocheGrille, setAccrocheGrille] = useState(false);
   const [dialogue, setDialogue] = useState<DialogueStudio>(null);
+  // Rapport de fidélité du dernier export lancé (E.6-03) : boîte non modale, fermée à la demande.
+  const [rapportExport, setRapportExport] = useState<"exporter-svg" | "exporter-dxf" | "exporter-ifc" | null>(null);
   const { user } = useAuth();
   const [calqueActif, setCalqueActif] = useState<string>(STUDIO_DEFAULT_LAYER_ID);
   const [nomCalque, setNomCalque] = useState("");
@@ -384,7 +388,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     }
   }
   function surLien(id: IdCommandeEditeur) {
-    if ((id === "exporter-svg" || id === "exporter-dxf" || id === "exporter-ifc") && commands.length) setInfo("L’export porte sur la révision enregistrée affichée, pas sur les modifications non enregistrées.");
+    if (id !== "exporter-svg" && id !== "exporter-dxf" && id !== "exporter-ifc") return;
+    if (commands.length) setInfo("L’export porte sur la révision enregistrée affichée, pas sur les modifications non enregistrées.");
+    setRapportExport(id);
   }
   const formesChoisies = drawing ? formesSelectionnees(drawing, selectionIds) : [];
   const toolAvailable = (t: StudioToolEntry) => outilDisponible(t, { writable, selectionIds, formesChoisies });
@@ -466,6 +472,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     <DialoguesStudio dialogue={dialogue} surFermer={() => setDialogue(null)} disponible={entreeDisponible} surExecuter={executerEntree} drawing={drawing} modifiable={writable}
       surImporter={(cs, r) => { if (!apply(cs)) return false; setDialogue(null); setInfo(`Import DXF ajouté au brouillon : ${r.rapport.entites.total} objet(s). Enregistrez pour l’envoyer au serveur.`); return true; }}
       revision={context.revision.document} brouillonNonEnregistre={commands.length > 0}
-      cartouche={() => cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })} /></>}
+      cartouche={() => cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })} />
+    {rapportExport && liens[rapportExport] && <RapportExport format={FORMATS_RAPPORT[rapportExport]!} urlExport={liens[rapportExport]!} surFermer={() => setRapportExport(null)} />}</>}
   </section>;
 }

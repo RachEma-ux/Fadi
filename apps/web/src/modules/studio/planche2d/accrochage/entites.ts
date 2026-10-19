@@ -1,13 +1,14 @@
 /**
  * Entités d'accrochage : chaque forme du document décomposée en segments, cercles et arcs (repère `local-2d`, mètres),
  * avec ses boîtes englobantes, et l'index qui borne la recherche des candidats à la zone utile (vue + tolérance autour
- * du pointeur). L'index est linéaire aujourd'hui ; l'interface `IndexAccrochage` est celle qu'un index spatial (grille,
- * arbre R) implémentera plus tard sans toucher au moteur. Dérivé, jamais une donnée du document. Pur : ni React ni DOM.
+ * du pointeur). L'index est linéaire sous `SEUIL_INDEX_SPATIAL` formes, une grille au-dessus (`indexAccrochage`,
+ * `../index-spatial.ts`) : même interface `IndexAccrochage`, même résultat, sans toucher au moteur. Dérivé, jamais une donnée du document. Pur : ni React ni DOM.
  */
 import {
   studioAnchorPoint, studioArcSweep, studioBulgeArc, studioPolylineSegments, studioShapeAnchors, studioShapeBoundPoints,
   type StudioAnchor, type StudioPoint, type StudioShape,
 } from "@parcours/atelier-model";
+import { indexGrille, SEUIL_INDEX_SPATIAL } from "../index-spatial";
 
 export const DEUX_PI = 2 * Math.PI;
 
@@ -102,4 +103,27 @@ export function indexerForme(o: StudioShape, rang: number): FormeIndexee {
 export function indexLineaire(objects: readonly StudioShape[]): IndexAccrochage {
   const formes = objects.map(indexerForme);
   return { taille: formes.length, formes: (zone) => formes.filter((f) => seRecouvrent(f.boite, zone)) };
+}
+
+/** Décomposition mémorisée par forme (objet immuable du document) : une nouvelle version ne repaie que les formes changées. */
+const DECOMPOSITIONS = new WeakMap<StudioShape, Omit<FormeIndexee, "rang">>();
+function indexerFormeMemo(o: StudioShape, rang: number): FormeIndexee {
+  let d = DECOMPOSITIONS.get(o);
+  if (!d) {
+    const { rang: _r, ...reste } = indexerForme(o, rang);
+    d = reste;
+    DECOMPOSITIONS.set(o, d);
+  }
+  return { ...d, rang };
+}
+
+/**
+ * Index des formes accrochables adapté à la taille du document : parcours linéaire (`indexLineaire`) sous
+ * `SEUIL_INDEX_SPATIAL` formes, grille uniforme au-dessus. Même contrat : mêmes formes, dans l'ordre du document.
+ */
+export function indexAccrochage(objects: readonly StudioShape[], seuil = SEUIL_INDEX_SPATIAL): IndexAccrochage {
+  if (objects.length < seuil) return indexLineaire(objects);
+  const formes = objects.map(indexerFormeMemo);
+  const grille = indexGrille(formes, (f) => f.boite);
+  return { taille: formes.length, formes: (zone) => grille.chercher(zone) };
 }
