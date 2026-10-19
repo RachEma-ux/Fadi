@@ -11,7 +11,7 @@ export type StudioToolId = StudioToolEntry["toolId"];
 export type IdCommandeEditeur =
   | "annuler" | "retablir" | "annuler-trace" | "enregistrer" | "tout-selectionner"
   | "terminer-polyligne" | "fermer-polyligne"
-  | "zoom-avant" | "zoom-arriere" | "cadrer" | "plein-ecran" | "vue-3d"
+  | "zoom-avant" | "zoom-arriere" | "cadrer" | "plein-ecran" | "vue-3d" | "navigation-3d" | "coupe-3d"
   | "accrochage-sommets" | "accrochage-grille"
   | "importer-dxf" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille"
   | "outils" | "palette";
@@ -20,7 +20,7 @@ export type BarreStudio = StudioToolGroup | GroupeCommande;
 export type IconeCommande =
   | "studio-undo" | "studio-redo" | "studio-cancel" | "studio-save" | "studio-select-all"
   | "studio-polyline-finish" | "studio-polyline-close"
-  | "studio-zoom-in" | "studio-zoom-out" | "studio-frame" | "studio-fullscreen" | "studio-view-3d"
+  | "studio-zoom-in" | "studio-zoom-out" | "studio-frame" | "studio-fullscreen" | "studio-view-3d" | "studio-nav-plan" | "studio-section-plane"
   | "studio-snap-vertex" | "studio-snap-grid"
   | "studio-import-dxf" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet"
   | "studio-catalog" | "studio-palette";
@@ -60,6 +60,9 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "plein-ecran", libelleFR: "Plein écran / Quitter", raccourci: "Ctrl+Shift+F", iconeSymbolique: "studio-fullscreen", groupe: "vue", ecrit: false },
   // F3 est réservé (recherche du navigateur) et Maj+3 dépend de la disposition du clavier : Maj+D (« 3D »).
   { id: "vue-3d", libelleFR: "Vue 3D", raccourci: "Shift+D", iconeSymbolique: "studio-view-3d", groupe: "vue", ecrit: false, bascule: true },
+  // Vue 3D : navigation en plan (vue de dessus, panoramique) ou en orbite (Maj+G) ; coupe horizontale dérivée (Maj+K).
+  { id: "navigation-3d", libelleFR: "Vue en plan (3D)", raccourci: "Shift+G", iconeSymbolique: "studio-nav-plan", groupe: "vue", ecrit: false, bascule: true },
+  { id: "coupe-3d", libelleFR: "Coupe horizontale (3D)", raccourci: "Shift+K", iconeSymbolique: "studio-section-plane", groupe: "vue", ecrit: false, bascule: true },
   { id: "accrochage-sommets", libelleFR: "Accrocher aux sommets", raccourci: "Shift+S", iconeSymbolique: "studio-snap-vertex", groupe: "accrochage", ecrit: false, bascule: true },
   { id: "accrochage-grille", libelleFR: "Accrocher à la grille", raccourci: "F9", iconeSymbolique: "studio-snap-grid", groupe: "accrochage", ecrit: false, bascule: true },
   // Import DXF vers le brouillon (aperçu, unité, entités non prises) : Maj+U (U comme « upload »), libre et non réservé.
@@ -80,6 +83,7 @@ export const BARRES_STUDIO: readonly { id: BarreStudio; libelleFR: string }[] = 
   { id: "modification", libelleFR: "Modification" },
   { id: "calques", libelleFR: "Calques" },
   { id: "volume", libelleFR: "Volume" },
+  { id: "volume-libre", libelleFR: "Volume libre" },
   { id: "edition", libelleFR: "Édition" },
   { id: "vue", libelleFR: "Vue" },
   { id: "accrochage", libelleFR: "Accrochage" },
@@ -104,7 +108,11 @@ export const RACCOURCIS_RESERVES: readonly string[] = Object.freeze([
 export const OUTILS_MODES: ReadonlySet<StudioToolId> = new Set<StudioToolId>([
   "studio.dessin.selection", "studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne",
   "studio.dessin.cote", "studio.dessin.deplacer", "studio.dessin.modifier", "studio.dessin.decaler",
+  // Volume libre : modes de la vue 3D (poser une boîte, un prisme sur profil, déplacer un solide).
+  "studio.solide.boite", "studio.solide.prisme", "studio.solide.deplacer",
 ]);
+/** Outils du volume libre : ils agissent dans la vue 3D, qu'ils ouvrent. */
+export const OUTILS_VOLUME_LIBRE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.solide.boite", "studio.solide.prisme", "studio.solide.deplacer", "studio.solide.supprimer"]);
 /** Outils qui posent des points sur la planche. */
 export const OUTILS_TRACE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote"]);
 

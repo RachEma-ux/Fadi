@@ -44,7 +44,7 @@ import type { EntreeCatalogue } from "./planche2d/catalogue";
 import { Dessin2D, type PointPose } from "./planche2d/Dessin2D";
 import { cadrer, emprise } from "./planche2d/geometrie-2d";
 import { PanneauCalques } from "./planche2d/PanneauCalques";
-import { COMMANDES_EDITEUR, OUTILS_MODES, OUTILS_TRACE, type CibleRaccourci, type CommandeEditeur, type IdCommandeEditeur, type StudioToolEntry, type StudioToolId } from "./planche2d/raccourcis";
+import { COMMANDES_EDITEUR, OUTILS_MODES, OUTILS_VOLUME_LIBRE, OUTILS_TRACE, type CibleRaccourci, type CommandeEditeur, type IdCommandeEditeur, type StudioToolEntry, type StudioToolId } from "./planche2d/raccourcis";
 import { basculer, commandesDeplacement, selectionValide, toutSelectionnable } from "./planche2d/selection";
 import { zoomerAuCentre } from "./planche2d/vue";
 import { aidePlanche, apercuPlanche, outilPlanche } from "./planche2d/outils";
@@ -97,6 +97,10 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [values, setValues] = useState<Valeurs>(VALEURS_INITIALES);
   const [extrusion, setExtrusion] = useState<ValeursExtrusion>(VALEURS_VIDES);
   const [vue3d, setVue3d] = useState(false);
+  // Vue 3D : navigation (orbite ou plan), coupe horizontale affichée, solide libre sélectionné.
+  const [navigation3d, setNavigation3d] = useState<"orbite" | "plan">("orbite");
+  const [coupe3d, setCoupe3d] = useState(false);
+  const [solide3d, setSolide3d] = useState<string | null>(null);
   const [commentaires, setCommentaires] = useState(commentairesOuverts);
   const alive = useRef(true), dirty = useRef(false);
   const shell = useRef<HTMLElement>(null), nomRef = useRef<HTMLInputElement>(null);
@@ -246,8 +250,15 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   // ——— Outils et commandes ———
   function cancelTrace() { setTrace(null); setSuite([]); gestes.setSurvol(null); }
   function runTool(toolId: StudioToolId) {
+    // Les outils du volume libre agissent dans la vue 3D : ils l'ouvrent.
+    if (OUTILS_VOLUME_LIBRE.has(toolId)) setVue3d(true);
     if (OUTILS_MODES.has(toolId)) { setTool(toolId); cancelTrace(); setInfo(""); return; }
     if (!writable || !drawing) return;
+    if (toolId === "studio.solide.supprimer") {
+      if (!solide3d || !drawing.solides?.some(s => s.id === solide3d)) { setInfo("Sélectionnez d’abord, dans la vue 3D, le solide à supprimer."); return; }
+      if (apply([{ toolId: "studio.solide.supprimer", params: { ids: [solide3d] } }])) setSolide3d(null);
+      return;
+    }
     if (toolId === "studio.dessin.supprimer") {
       if (!selectionIds.length) { setInfo("Sélectionnez d’abord l’objet à supprimer."); return; }
       if (apply([{ toolId: "studio.dessin.supprimer", params: { ids: selectionIds } }])) setSelection([]);
@@ -317,6 +328,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       case "cadrer": if (drawing) poserCadre(cadrer(emprise(drawing, l => estVisible(drawing, l)))); return;
       case "plein-ecran": return fullscreen();
       case "vue-3d": return setVue3d(v => !v);
+      case "navigation-3d": setVue3d(true); return setNavigation3d(n => (vue3d && n === "plan" ? "orbite" : "plan"));
+      case "coupe-3d": setVue3d(true); return setCoupe3d(v => !(vue3d && v));
       case "accrochage-sommets": return setAccrocheSommets(v => !v);
       case "accrochage-grille": return setAccrocheGrille(v => !v);
       case "exporter-svg": case "exporter-dxf": case "exporter-ifc":
@@ -369,10 +382,11 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     {context && drawing && <><BandeauVariante projectId={projectId} studyId={studyId} variantId={variantId} context={context} historical={historical} etat={etat} commentaires={commentaires} surCommentaires={() => setCommentaires(v => !v)}
       connexion={{ etat: enr.horsLigne, surRecharger: () => void enr.rechargerServeur(), surReporter: () => void enr.reporter() }} />
     <BarreOutils outil={tool} outilDisponible={toolAvailable} commandeDisponible={commandAvailable} libelleCommande={uncertain ? { enregistrer: "Réessayer la sauvegarde" } : undefined}
-      basculeActive={{ "accrochage-sommets": accrocheSommets, "accrochage-grille": accrocheGrille, "vue-3d": vue3d }} lienCommande={liens} surOutil={runTool} surCommande={runCommand} surLien={surLien} />
+      basculeActive={{ "accrochage-sommets": accrocheSommets, "accrochage-grille": accrocheGrille, "vue-3d": vue3d, "navigation-3d": vue3d && navigation3d === "plan", "coupe-3d": vue3d && coupe3d }} lienCommande={liens} surOutil={runTool} surCommande={runCommand} surLien={surLien} />
     <p className="studio-undo-scope" data-studio-annuler-portee>{`Annuler et Rétablir ne portent que sur les modifications non enregistrées (${commands.length} commande(s) en attente) ; une révision enregistrée ne s’annule pas ici.`}</p>
     <div className="studio-editor"><div className="studio-sheet"><div className="studio-sheet-caption"><span>Dessin et modélisation</span><span data-studio-pas-grille={pas}>{`Grille ${pasAffiche} m`}</span><span>1 unité = 1 m</span></div>
-      {vue3d && <Vue3D doc={drawing} />}
+      {vue3d && <Vue3D doc={drawing} outil={tool} modifiable={writable} navigation={navigation3d} coupe={coupe3d} selection={solide3d} layerId={actif?.id ?? STUDIO_DEFAULT_LAYER_ID}
+        surSelection={setSolide3d} surCommandes={apply} />}
       {!vue3d && <Dessin2D svgRef={gestes.refPlanche} doc={apercuDoc ?? drawing} cadre={cadre} pas={pas} outil={tool} selection={selectionSet} trace={trace} survol={survol} rectangle={gestes.rectangle} glissement={!!gestes.apercu}
         apercuForme={apercuForme} sommetsPoses={suite}
         clicsVersPlanche={o => OUTILS_TRACE.has(tool) || (tool === "studio.dessin.deplacer" && (!!trace || selectionSet.has(o.id)))}
@@ -385,7 +399,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     </div>
     <PanneauProprietes titre={toolEntry?.libelleFR} drawing={drawing} selectionIds={selectionIds} selected={selected} writable={writable} formesChoisies={formesChoisies} extrusion={extrusion}
       surExtrusion={setExtrusion} surExtruder={extrude} surAplatir={() => runTool("studio.objet.aplatir")} surSupprimer={() => runTool("studio.dessin.supprimer")}
-      formulaire={tool !== "studio.dessin.selection" && <FormulaireValeurs tool={tool} selected={selected} desactive={!writable || formulaireInactif(tool, selectionIds, selected) || (tool === "studio.dessin.modifier" && selected?.type === "dimension" && selected.toResolve)}
+      formulaire={tool !== "studio.dessin.selection" && !OUTILS_VOLUME_LIBRE.has(tool) && <FormulaireValeurs tool={tool} selected={selected} desactive={!writable || formulaireInactif(tool, selectionIds, selected) || (tool === "studio.dessin.modifier" && selected?.type === "dimension" && selected.toResolve)}
         values={values} surValeur={(k, v) => setValues(x => ({ ...x, [k]: v }))} modeArc={modeArc} surModeArc={m => { setModeArc(m); cancelTrace(); }}
         sommetsTexte={sommetsTexte} surSommets={setSommetsTexte} fermee={fermee} surFermee={setFermee} surSoumettre={numeric} />}
       calques={<PanneauCalques doc={drawing} actif={actif?.id ?? STUDIO_DEFAULT_LAYER_ID} modifiable={writable} nom={nomCalque} nomRef={nomRef} surActif={id => setCalqueActif(id)} surNom={setNomCalque} surReglage={setLayer} surRenommer={renameLayer} />} /></div>

@@ -69,7 +69,13 @@ export type IconName =
   | "studio-polyline"
   | "studio-offset"
   | "studio-polyline-finish"
-  | "studio-polyline-close";
+  | "studio-polyline-close"
+  | "studio-solid-box"
+  | "studio-solid-prism"
+  | "studio-solid-move"
+  | "studio-solid-delete"
+  | "studio-nav-plan"
+  | "studio-section-plane";
 
 const PATHS: Record<IconName, string> = {
   search: "M10.5 3.5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 5 5",
@@ -144,6 +150,14 @@ const PATHS: Record<IconName, string> = {
   // Fin de polyligne : tracé ouvert et marque de validation ; fermeture : tracé refermé sur son premier sommet.
   "studio-polyline-finish": "M3 17 8 9l5 6M14 15l3 3 5-6",
   "studio-polyline-close": "M4 18 8 6l8 3 4 9ZM2 16h4v4H2Z",
+  // Volume libre (vue 3D) : boîte posée sur la grille ; prisme d'un profil en L ; solide et flèche de translation ;
+  // solide barré ; vue de dessus (œil au-dessus d'un plan) ; plan de coupe horizontal traversant un volume.
+  "studio-solid-box": "M4 9l6-4 10 2v9l-6 4-10-2ZM4 9l10 2 6-4M14 11v9M2 22h20",
+  "studio-solid-prism": "M4 8h7v4h5v8H4ZM4 8l3-3h7l-3 3M11 12l3-3h5l-3 3M16 20l3-3V9",
+  "studio-solid-move": "M3 10l5-3 6 2v7l-5 3-6-2ZM3 10l6 2 5-3M9 12v7M16 6h6M19 3l3 3-3 3",
+  "studio-solid-delete": "M3 9l6-3 8 2v8l-6 3-8-2ZM3 9l8 2 6-3M11 11v8M16 16l6 6M22 16l-6 6",
+  "studio-nav-plan": "M3 17l9 4 9-4-9-4ZM12 3v7M9 7l3 3 3-3M7 3h10",
+  "studio-section-plane": "M8 3h8v18H8ZM2 13l4-3h16l-4 3ZM2 13h16",
 };
 
 export function Icon({ name, size = 20, className }: { name: IconName; size?: number; className?: string }) {

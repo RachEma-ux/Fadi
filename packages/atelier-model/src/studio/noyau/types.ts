@@ -5,6 +5,7 @@ import type { StudioDimension } from "../objets/cote.js";
 import type { StudioLine } from "../objets/ligne.js";
 import type { StudioPolyline } from "../objets/polyligne.js";
 import type { StudioRectangle } from "../objets/rectangle.js";
+import type { StudioBox, StudioProfilePrism, StudioSolid } from "../objets-3d/solides.js";
 import type { STUDIO_CONTRACT } from "./limites.js";
 
 /**
@@ -48,6 +49,8 @@ export interface StudioDocument {
   layers?: StudioLayer[];
   /** Cotes, séparées de `objects` pour qu'un lecteur V1 (lignes et rectangles) ne les interprète jamais à tort. */
   dimensions?: StudioDimension[];
+  /** Solides libres (`objets-3d/`, repère `local-3d`), séparés de `objects` : un lecteur 2D ne les lit jamais à tort. */
+  solides?: StudioSolid[];
 }
 export type StudioCommand =
   | { toolId: "studio.dessin.ligne"; params: StudioLine }
@@ -64,7 +67,11 @@ export type StudioCommand =
   | { toolId: "studio.calque.modifier"; params: StudioLayer }
   | { toolId: "studio.objet.calque"; params: { ids: string[]; layerId: string } }
   | { toolId: "studio.objet.extruder"; params: { ids: string[]; base: number; height: number; thickness?: number } }
-  | { toolId: "studio.objet.aplatir"; params: { ids: string[] } };
+  | { toolId: "studio.objet.aplatir"; params: { ids: string[] } }
+  | { toolId: "studio.solide.boite"; params: StudioBox }
+  | { toolId: "studio.solide.prisme"; params: StudioProfilePrism }
+  | { toolId: "studio.solide.deplacer"; params: { id: string; dx: number; dy: number; dz: number } }
+  | { toolId: "studio.solide.supprimer"; params: { ids: string[] } };
 export type StudioCommandToolId = StudioCommand["toolId"];
 export interface StudioEnvelope {
   contractVersion: typeof STUDIO_CONTRACT;

@@ -2,6 +2,7 @@ import { studioSignedArea } from "./courbes.js";
 import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument, type StudioDocument, type StudioExtrusion, type StudioPoint, type StudioShape } from "./document-2d.js";
 import { bool, ref, refs, Step, studioIfcGuid, studioStepReal, studioStepString, type IfcConstruit, type IfcContexte, type StudioIfcSummary } from "./exporteurs/ifc-step.js";
 import { typeObjet } from "./objets/index.js";
+import { studioIfcSolide } from "./objets-3d/ifc.js";
 
 export { studioIfcGuid, studioStepReal, studioStepString, type StudioIfcSummary } from "./exporteurs/ifc-step.js";
 
@@ -160,6 +161,21 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
     if (hiddenLayers.has(b.layerId)) summary.onHiddenLayers++;
     built.push(b);
   }
+  // Solides libres : un `IfcBuildingElementProxy` `.NOTDEFINED.` chacun (A.3-09), comptés parmi les prismes.
+  const solides = doc.solides ?? [];
+  for (const sol of solides) {
+    const b = studioIfcSolide(sol, contexte);
+    const { origin, rotation } = sol.placement;
+    pset(`solid|${sol.id}`, "Fadi_StudioFreeSolid", b.element, [
+      prop("StudioId", label(sol.id)), prop("Shape", label(sol.type)),
+      prop("OriginX", length(origin.x)), prop("OriginY", length(origin.y)), prop("OriginZ", length(origin.z)),
+      prop("RotationZ", `IFCPLANEANGLEMEASURE(${studioStepReal(rotation)})`),
+      ...(sol.type === "box" ? [prop("Width", length(sol.width)), prop("Depth", length(sol.depth))] : [prop("ProfileVertices", integer(sol.profile.length))]),
+      prop("Height", length(sol.height)),
+    ]);
+    if (hiddenLayers.has(b.layerId)) summary.onHiddenLayers++;
+    built.push(b);
+  }
   if (built.length) s.add(`IFCRELCONTAINEDINSPATIALSTRUCTURE(${gid("rel-storey-elements")},$,$,$,${refs(built.map((b) => b.element))},${ref(storey)})`);
 
   // Calques : ordre du document, le calque implicite d'abord s'il n'est pas matérialisé ; un calque vide n'est pas écrit.
@@ -184,6 +200,7 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
     prop("NonExtrudedObjects", integer(summary.nonExtruded)),
     prop("DimensionsNotExported", integer(summary.dimensions)),
     prop("ObjectsOnHiddenLayers", integer(summary.onHiddenLayers)),
+    ...(solides.length ? [prop("FreeSolids", integer(solides.length))] : []),
   ]);
 
   const header = [
