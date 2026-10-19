@@ -194,3 +194,99 @@ Contrôles ajoutés à la recette :
 - La clé propre à la base est lisible par qui lit la base. En production, fournir `ARCHIVE_SIGNING_KEY` par le
   gestionnaire de secrets ; cette documentation de déploiement n'est pas faite ici.
 - La CI n'a pas tourné : rien n'a été poussé.
+
+## 6. Publications E.4 et exigences E.1 (branche `teamr12-e4b`, 19 octobre 2026)
+
+La branche `teamr12-e4b` part de `lead-vague5` (`3a58bde`), puis fusionne `lead-vague5` (`fb701d3`) pour les exigences
+de l'équipe E1. Commits : `f78671f` (E.4), fusion `bbca093`, `8e67e5b` (E.1). Tout est local, rien n'est poussé.
+
+**Archive.** Les lignes sont lues par `to_jsonb` et réinsérées par `jsonb_populate_recordset`. Toutes les colonnes
+entrent donc dans l'archive, dans les empreintes par table et dans l'empreinte globale signée, y compris :
+
+- les nouvelles colonnes des publications : `work_status`, `diffusion_status`, `manifest`, `manifest_hash`,
+  `manifest_built_at`, `approved_manifest_hash`, `replaced_by_publication_id`, `replaced_by`, `replaced_at` ;
+- celles des évènements : `manifest_hash`, `work_status`, `diffusion_status`, `related_publication_id`, ainsi que
+  les actions `actualiser` et `remplacer` ;
+- les deux tables E.1, `studio_requirement_sets` et `studio_requirement_checks`, ajoutées au périmètre ;
+- le champ `proprietes`, transporté dans les documents de révision.
+
+Ajouts à la restauration :
+
+- `replaced_by` est traité comme un compte (réattribué comme les autres) ;
+- le dossier remplaçant est inséré avant le dossier remplacé, car la clé étrangère n'est pas différée.
+
+Contrôles d'intégrité ajoutés (une anomalie renvoie 422) :
+
+- empreinte du manifeste ;
+- présence et empreinte de chaque source du manifeste ;
+- approbation portant sur le même manifeste ;
+- présence du dossier remplaçant et du dossier lié ;
+- jeu d'exigences rattaché à son étude, sans version en double ;
+- contrôle lié à une révision de sa variante (empreinte du document) et à une version existante du jeu.
+
+**Archive non vérifiée, projetée sur le modèle E.4** (`distrustStudioPublications`, qui s'appuie sur `dimensionsDe` et
+`statutCombine` de `studio-publication-statuts.ts`) :
+
+- Travail : `approuve` devient `en-revue`. L'approbation est entièrement effacée : `approved_revision_id`,
+  `approved_document_hash`, `approved_manifest_hash`, approbateur et date.
+- Diffusion : `diffuse` devient `non-diffuse` (« diffusion retirée à la restauration »). C'est l'option prudente :
+  - c'est le seul état depuis lequel E.4 admet une nouvelle approbation puis une nouvelle diffusion ;
+  - `retire` est terminal dans E.4, donc ce dossier n'aurait jamais pu être republié ;
+  - `retire` et `remplace`, déjà hors vigueur, restent tels quels.
+- Le statut combiné historique est recalculé par `statutCombine`, comme E.4 le tient ; un dossier diffusé devient
+  `soumis`.
+- Le manifeste, le paquet et leurs empreintes sont conservés et restent lisibles.
+- Un passage `soumettre` est journalisé, daté de la restauration, avec les dimensions, l'empreinte du manifeste et un
+  commentaire explicite.
+- Pour republier, la restauration change le nom du projet (« · import »), ce qui périme le manifeste. Le circuit E.4
+  complet est donc exigé : actualiser, soumettre, approuver le manifeste examiné, diffuser.
+- Exigences E.1 :
+  - **archive signée** : lignes insérées telles quelles ;
+  - **archive non vérifiée** : auteurs attribués au compte qui restaure ; l'acceptation d'une référence partenaire
+    (`origine.acceptation`, qui et quand) est retirée de chaque version insérée. Le jeu reste append-only (insertion,
+    jamais d'UPDATE, déclencheur intact). La référence redevient « non acceptée », avec une réserve traduite.
+
+**Outils.** L'outil de comparaison couvre les deux tables E.1, `replaced_by` comme compte, et 7 déclencheurs
+d'immuabilité. Il contrôle aussi le manifeste, l'approbation, le remplacement, l'empreinte et la version des contrôles.
+`verify-restore.sh` couvre les effectifs E.1, des empreintes qui incluent toutes les colonnes E.4 et E.1, et les 7
+déclencheurs.
+
+### Commandes exécutées et résultats (commit `8e67e5b`)
+
+Les bases jetables neuves `fadi_teamr12a` et `fadi_teamr12b` ont été recréées après la fusion E.1 et migrées **deux fois
+chacune**. Les API ont été arrêtées par PID et les bases supprimées à la fin. Les recettes de la ligne 2 du tableau
+ont tourné sur le build de ce commit.
+
+| Commande | Résultat |
+|---|---|
+| `npm run typecheck`, `npm run build` | succès |
+| Tests des paquets et du web | 47 + 95 + 886 + 744 (1 ignoré) + 22 + 610 réussis |
+| API hors base + `check-api-tests-db3.mjs` (et ses 6 tests) | 207 réussis, dont 16 des modules de restauration et de signature ; 12 suites DB-3 refusées par la garde seule ; contrôle vert |
+| `npm run test:db-guard` | 149 réussis |
+| `node --test` : comparaison (7), gardes d'architecture, dépendances, continuité ; `check-frontieres.test.mjs` | 77/77 ; 26/26 |
+| `studio-restauration.mjs` | **75 contrôles réussis, 0 échec** ; comparaison A / B : 39 lignes, **0 anomalie** |
+| `studio-publication.mjs` | 123 réussis, 0 échec |
+| `studio-persistance.mjs` | 293 réussis, 0 échec |
+| `verify-restore.sh` | effectifs (dont 3 jeux d'exigences, 2 contrôles) et empreintes identiques, 7 déclencheurs ; comparaison `--all` : 5 projets, 0 anomalie |
+
+Contrôles ajoutés à la recette :
+
+- **Rôles E.4 :** l'éditeur prépare et soumet ; le propriétaire approuve, sur l'empreinte du manifeste, puis diffuse.
+- **Projet restauré depuis une archive signée :**
+  - remplacement archivé et restauré : action `remplacer` et dossier lié ;
+  - actualisation archivée et restaurée : action `actualiser` ;
+  - dossier remplacé restauré `approuve` / `remplace` ;
+  - un jeu d'exigences et un contrôle identiques dans A et B.
+- **Archive falsifiée :**
+  - dossier diffusé restauré `en-revue` / `non-diffuse` / `soumis`, sans approbation, manifeste conservé ;
+  - passage de restauration journalisé avec ses dimensions ;
+  - circuit E.4 complet avant une nouvelle diffusion ;
+  - référence partenaire non acceptée après restauration, puis réacceptée (version 3) ;
+  - versions du jeu toujours immuables ;
+  - réserve visible dans le navigateur.
+
+**Limite de la section 6 :**
+
+- Dans une archive signée, `origine.acceptation.par` et les comptes cités dans les résultats de contrôle sont des
+  valeurs JSON. Ils restent tels quels (identifiant de la base d'origine, adresse dans `parEmail`), comme le veut la
+  règle « lignes telles quelles ». Seules les colonnes de compte sont réattribuées par adresse.
