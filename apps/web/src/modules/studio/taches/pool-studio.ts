@@ -34,9 +34,10 @@ export function versErreurTache(e: unknown): ErreurTache {
 
 /** Exécuteur sur un groupe d'hôtes : l'emplacement désigne toujours le même hôte, donc le même Worker. */
 export function executeurHotes(hotes: readonly HoteWorker[]): Executeur {
-  return ({ nature, charge, emplacement, signal, delaiMs, surProgression }) => {
+  return ({ nature, charge, emplacement, signal, delaiMs, reprise, surProgression }) => {
     const h = hotes[emplacement % hotes.length]!;
-    return h.demander(nature, charge, { signal, delaiMs, surProgression }).catch((e: unknown) => { throw versErreurTache(e); });
+    // Une reprise après plantage ne compte pas un second échec : une soumission coûte au plus un échec à l'hôte.
+    return h.demander(nature, charge, { signal, delaiMs, surProgression, compterEchec: !reprise }).catch((e: unknown) => { throw versErreurTache(e); });
   };
 }
 
