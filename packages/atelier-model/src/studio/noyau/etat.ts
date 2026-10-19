@@ -2,6 +2,7 @@ import { controlerLiens, validerCote, type StudioDimension } from "../objets/cot
 import { studioAnchorPoint } from "../objets/index.js";
 import { studioLayerState, type StudioLayerState } from "./calques.js";
 import { sortie } from "./document.js";
+import type { StudioSolid } from "../objets-3d/solides.js";
 import type { StudioLayer, StudioShape } from "./types.js";
 import { fail, same } from "./validation.js";
 
@@ -12,6 +13,8 @@ export interface Etat {
   objects: StudioShape[];
   layers: StudioLayer[];
   dimensions: StudioDimension[];
+  /** Solides libres (`objets-3d/`). */
+  solides: StudioSolid[];
   /** Identifiants d'objets et de cotes présents : contrôle d'unicité en temps constant (un import peut compter 20 000 créations). */
   ids: Set<string>;
 }

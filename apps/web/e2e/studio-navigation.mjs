@@ -724,6 +724,123 @@ try {
     check("courbes : l'export SVG contient <circle> et des <path> d'arc et de polyligne", svg.includes(`<circle data-id="${cercle.id}"`) && svg.includes(`data-id="${arc3.id}" data-type="arc"`) && svg.includes(`data-id="${polyId}" data-type="polyline"`));
   }
 
+  // Volume libre (A.3-02, A.3-05, A.3-07, A.3-09) : barre « Volume libre », Boîte (B) posée par un clic sur la grille
+  // puis saisie 2 × 1 × 3 en (1, 1, 0), Prisme sur profil (Maj+B) de la polyligne fermée, navigation en plan (Maj+G),
+  // coupe horizontale dérivée à z = 1,5 (Maj+K), déplacer / supprimer annulés, enregistrement, actualisation identique,
+  // export IFC : deux IfcBuildingElementProxy .NOTDEFINED. de plus.
+  const proxies = (t) => (t.match(/IFCBUILDINGELEMENTPROXY\(/g) ?? []).length;
+  const ifcAvantSolides = await page.request.get(`${BASE}${variantePath}/export?format=ifc`);
+  const proxiesAvant = ifcAvantSolides.ok() ? proxies(await ifcAvantSolides.text()) : null;
+  await page.evaluate(() => document.activeElement?.blur());
+  check("volume libre : Boîte (B), Prisme sur profil (Maj+B), Déplacer le solide (Maj+T), Supprimer le solide (Maj+Suppr) dans la barre Volume libre, icônes propres",
+    (await outils.locator('[data-studio-barre="volume-libre"] [data-studio-outil="studio.solide.boite"][aria-keyshortcuts="B"] svg path').count()) === 1
+    && (await outils.locator('[data-studio-barre="volume-libre"] [data-studio-outil="studio.solide.prisme"][aria-keyshortcuts="Shift+B"]').count()) === 1
+    && (await outils.locator('[data-studio-barre="volume-libre"] [data-studio-outil="studio.solide.deplacer"][aria-keyshortcuts="Shift+T"]').count()) === 1
+    && (await outils.locator('[data-studio-barre="volume-libre"] [data-studio-outil="studio.solide.supprimer"][aria-keyshortcuts="Shift+Delete"]').count()) === 1
+    && (await outils.locator('[data-studio-barre="vue"] [data-studio-commande="navigation-3d"][aria-keyshortcuts="Shift+G"]').count()) === 1
+    && (await outils.locator('[data-studio-barre="vue"] [data-studio-commande="coupe-3d"][aria-keyshortcuts="Shift+K"]').count()) === 1);
+  await page.keyboard.press("b");
+  const vueLibre = page.locator("[data-studio-vue3d]");
+  const canevasLibre = vueLibre.locator("canvas[data-studio-vue3d-canvas]");
+  await canevasLibre.waitFor({ timeout: 20000 });
+  const formBoite = vueLibre.locator("[data-studio-boite]");
+  await formBoite.waitFor();
+  check("volume libre : B ouvre la vue 3D, outil Boîte enfoncé, aucune dimension proposée",
+    (await outils.locator('[data-studio-outil="studio.solide.boite"]').getAttribute("aria-pressed")) === "true" && (await planche.count()) === 0
+    && (await formBoite.getByLabel("Largeur selon x (m)").inputValue()) === "" && (await formBoite.getByLabel("Hauteur selon z (m)").inputValue()) === "" && (await formBoite.getByLabel("Origine x (m)").inputValue()) === "");
+  await canevasLibre.scrollIntoViewIfNeeded();
+  const cadreLibre = await canevasLibre.boundingBox();
+  await page.mouse.click(cadreLibre.x + cadreLibre.width / 2, cadreLibre.y + cadreLibre.height * 0.6);
+  check("volume libre : un clic sur la grille relève l'origine (z = 0)", (await formBoite.getByLabel("Origine x (m)").inputValue()) !== "" && (await formBoite.getByLabel("Origine z (m)").inputValue()) === "0",
+    `${await formBoite.getByLabel("Origine x (m)").inputValue()} ; ${await formBoite.getByLabel("Origine y (m)").inputValue()}`);
+  for (const [libelle, valeur] of [["Origine x (m)", "1"], ["Origine y (m)", "1"], ["Origine z (m)", "0"], ["Largeur selon x (m)", "2"], ["Profondeur selon y (m)", "1"], ["Hauteur selon z (m)", "3"]]) await formBoite.getByLabel(libelle, { exact: true }).fill(valeur);
+  await formBoite.getByRole("button", { name: "Poser la boîte", exact: true }).click();
+  await page.locator('[data-studio-vue3d][data-studio-solides-libres="1"]').waitFor();
+  check("volume libre : la boîte est posée dans le brouillon (un solide libre, une commande en attente)", (await vueLibre.getAttribute("data-studio-solides-libres")) === "1" && (await portee()).includes("(1 commande(s)"), await portee());
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+B");
+  const formPrisme = vueLibre.locator("[data-studio-prisme]");
+  await formPrisme.waitFor();
+  await formPrisme.locator("[data-studio-prisme-profil]").selectOption(polyId);
+  await formPrisme.getByLabel("Cote de base z (m)", { exact: true }).fill("0");
+  await formPrisme.getByLabel("Hauteur (m)", { exact: true }).fill("2");
+  await formPrisme.getByRole("button", { name: "Poser le prisme", exact: true }).click();
+  await page.locator('[data-studio-vue3d][data-studio-solides-libres="2"]').waitFor();
+  check("volume libre : prisme sur le profil de la polyligne fermée (deux solides libres)", (await vueLibre.getAttribute("data-studio-solides-libres")) === "2" && (await portee()).includes("(2 commande(s)"), await portee());
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+G");
+  await page.locator('[data-studio-vue3d][data-studio-navigation="plan"]').waitFor();
+  check("navigation 3D : Maj+G passe en vue en plan (bascule enfoncée), sans modifier le brouillon", (await outils.locator('[data-studio-commande="navigation-3d"]').getAttribute("aria-pressed")) === "true" && (await portee()).includes("(2 commande(s)"));
+  await page.keyboard.press("Shift+G");
+  await page.locator('[data-studio-vue3d][data-studio-navigation="orbite"]').waitFor();
+  await page.keyboard.press("Shift+K");
+  const panneauCoupe = vueLibre.locator("[data-studio-coupe]");
+  await panneauCoupe.waitFor();
+  check("coupe : aucune cote proposée", (await panneauCoupe.getByLabel("Cote de coupe z (m)").inputValue()) === "" && (await panneauCoupe.getAttribute("data-studio-coupe-segments")) === "0");
+  await panneauCoupe.getByLabel("Cote de coupe z (m)", { exact: true }).fill("1.5");
+  await page.locator('[data-studio-coupe][data-studio-coupe-z="1.5"]').waitFor();
+  const sourcesCoupe = ((await panneauCoupe.getAttribute("data-studio-coupe-sources")) ?? "").split(" ").filter(Boolean);
+  check("coupe à z = 1,5 : contours dérivés de la boîte (4 côtés) et du prisme (3 côtés), provenance par solide, non modifiable",
+    (await panneauCoupe.getAttribute("data-studio-coupe-segments")) === "7" && sourcesCoupe.length === 2 && (await panneauCoupe.locator("[data-studio-coupe-source]").count()) === 2
+    && (await panneauCoupe.getByRole("status").textContent()).includes("non modifiable") && (await portee()).includes("(2 commande(s)"), `${await panneauCoupe.getAttribute("data-studio-coupe-segments")} · ${sourcesCoupe.join()}`);
+  const [idBoite] = await vueLibre.locator('[data-studio-solide-type="box"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-solide")));
+  await vueLibre.locator(`[data-studio-solide="${idBoite}"]`).click();
+  const choisi = vueLibre.locator(`[data-studio-solide-choisi="${idBoite}"]`);
+  await choisi.waitFor();
+  check("sélection 3D : la boîte, volume 6 m³", (await choisi.textContent()).includes("volume 6 m³"));
+  await choisi.getByLabel("dx (m)", { exact: true }).fill("1");
+  await choisi.getByLabel("dy (m)", { exact: true }).fill("0");
+  await choisi.getByLabel("dz (m)", { exact: true }).fill("0.5");
+  await choisi.getByRole("button", { name: "Déplacer le solide", exact: true }).click();
+  await page.waitForFunction(() => document.querySelector("[data-studio-annuler-portee]")?.textContent?.includes("(3 commande(s)"));
+  check("sélection 3D : déplacer (dx, dy, dz) — origine (2 ; 1 ; 0,5)", (await choisi.textContent()).includes("origine (2 ; 1 ; 0,5) m"), await choisi.textContent());
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Control+z");
+  await page.keyboard.press("Shift+Delete");
+  await page.locator('[data-studio-vue3d][data-studio-solides-libres="1"]').waitFor();
+  check("Maj+Suppr supprime le solide sélectionné", (await portee()).includes("(3 commande(s)"), await portee());
+  await page.keyboard.press("Control+z");
+  await page.locator('[data-studio-vue3d][data-studio-solides-libres="2"]').waitFor();
+  check("annuler : déplacement et suppression retirés, la boîte et le prisme restent", (await portee()).includes("(2 commande(s)"), await portee());
+  const avantSolides = envois.length;
+  await page.keyboard.press("Control+s");
+  await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
+  const envoiSolides = envois[envois.length - 1];
+  const polyRelu = courbes.revision.document.objects.find((o) => o.id === polyId);
+  const p0 = polyRelu.points[0];
+  const attenduBoite = { id: idBoite, type: "box", placement: { origin: { x: 1, y: 1, z: 0 }, rotation: 0 }, width: 2, depth: 1, height: 3 };
+  check("volume libre : enregistré en une enveloppe (studio.solide.boite, studio.solide.prisme), valeurs saisies exactes",
+    envois.length === avantSolides + 1 && JSON.stringify(envoiSolides.commands.map((c) => c.toolId)) === JSON.stringify(["studio.solide.boite", "studio.solide.prisme"])
+    && JSON.stringify(envoiSolides.commands[0].params) === JSON.stringify(attenduBoite), JSON.stringify(envoiSolides?.commands));
+  const solidesRelus = await a.api("get", variantePath);
+  const docSolides = solidesRelus.revision.document;
+  const prismeRelu = docSolides.solides?.find((s) => s.type === "prism");
+  check("volume libre : le serveur range les solides dans `solides` (repère local-3d), `objects` inchangé",
+    docSolides.solides?.length === 2 && JSON.stringify(docSolides.solides[0]) === JSON.stringify(attenduBoite)
+    && JSON.stringify(prismeRelu?.placement) === JSON.stringify({ origin: { x: p0.x, y: p0.y, z: 0 }, rotation: 0 }) && prismeRelu?.height === 2
+    && JSON.stringify(prismeRelu?.profile) === JSON.stringify(polyRelu.points.map((q) => ({ x: q.x - p0.x, y: q.y - p0.y })))
+    && JSON.stringify(docSolides.objects) === JSON.stringify(courbes.revision.document.objects), JSON.stringify(docSolides.solides));
+  await page.reload();
+  await page.locator(`[data-studio-objet="${polyId}"]`).waitFor({ state: "attached" });
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+D");
+  await page.locator('[data-studio-vue3d][data-studio-solides-libres="2"]').waitFor();
+  check("volume libre : l'actualisation restitue les mêmes solides", JSON.stringify((await a.api("get", variantePath)).revision) === JSON.stringify(solidesRelus.revision)
+    && (await vueLibre.locator("[data-studio-solide]").count()) === 2);
+  await page.keyboard.press("Shift+K");
+  await vueLibre.locator("[data-studio-coupe]").getByLabel("Cote de coupe z (m)", { exact: true }).fill("1.5");
+  await page.locator('[data-studio-coupe][data-studio-coupe-segments="7"]').waitFor();
+  await page.screenshot({ path: join(OUT, "studio-volume-libre.png") });
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+D");
+  const ifcSolides = await page.request.get(`${BASE}${variantePath}/export?format=ifc`);
+  if (proxiesAvant === null || ifcSolides.status() === 404) console.log("· export IFC : point d'entrée absent de ce serveur");
+  else {
+    const t = await ifcSolides.text();
+    const proxiesSolides = (t.match(/IFCBUILDINGELEMENTPROXY\([^;]*'Volume libre[^;]*\.NOTDEFINED\.\);/g) ?? []).length;
+    check("volume libre : l'export IFC compte deux IfcBuildingElementProxy .NOTDEFINED. de plus, sans catégorie devinée", proxies(t) === proxiesAvant + 2 && proxiesSolides === 2 && t.includes("IFCPROPERTYSINGLEVALUE('FreeSolids',$,IFCINTEGER(2),$)"), `${proxiesAvant} → ${proxies(t)} (${proxiesSolides})`);
+  }
+
   // Grand import (600 lignes, mètres) sur la variante initiale : deux enveloppes chaînées (500 puis 100 commandes).
   const baseInitiale = `${BASE}/studio/projets/${pA.id}/etudes/${studyId}/variantes/${initialVariantId}`;
   const cheminInitial = `/projects/${pA.id}/studio/studies/${studyId}/variants/${initialVariantId}`;

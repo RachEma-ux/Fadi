@@ -10,6 +10,7 @@ export * from "./studio/feuille.js";
 export * from "./studio/comparaison.js";
 export * from "./studio/import-dxf.js";
 export * from "./studio/quantites.js";
+export * from "./studio/objets-3d/index.js";
 export * from "./ontologie.js";
 export * from "./modele.js";
 export * from "./geometrie.js";
