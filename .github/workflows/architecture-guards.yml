@@ -23,6 +23,10 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Régressions et témoins des garde-fous
         run: node --test scripts/architecture-guards*.test.mjs scripts/check-module-deps.test.mjs
+      # Lot X.4 : table scripts/frontieres.json (couches du modèle Studio, modèle pur, Studio de l'API, Studio ↔ Atelier/Planche),
+      # témoins sur fixtures (un mauvais import fait échouer) et exceptions périmées refusées.
+      - name: Table des frontières Studio — témoins sur fixtures
+        run: node --test scripts/check-frontieres.test.mjs
       - name: Frontières et cycles sur le dépôt réel
         run: node scripts/check-module-deps.mjs
       - name: Isolation nominale sur le dépôt réel
