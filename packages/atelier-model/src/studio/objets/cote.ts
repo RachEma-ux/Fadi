@@ -33,6 +33,10 @@ export interface StudioDimension {
   toResolve: boolean;
 }
 
+/** Valeur mesurée (mètres) : longueur de l'extrémité de départ à l'extrémité d'arrivée ; null (« non évaluée ») tant que la cote est à résoudre. */
+export const studioDimensionValue = (d: Pick<StudioDimension, "start" | "end" | "toResolve">): number | null =>
+  d.toResolve ? null : Math.hypot(d.end.x - d.start.x, d.end.y - d.start.y);
+
 // ——— Schéma ———
 
 const anchor = { anyOf: [{ enum: [...STUDIO_FIXED_ANCHORS] }, { type: "string", pattern: STUDIO_INDEXED_ANCHOR.source }] } as const;

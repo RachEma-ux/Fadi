@@ -1,5 +1,9 @@
 {
-  "$commentaire": "Empreintes conservées des corpus de qualification Studio S1–S7 (REF-02 §18.2, X.1-08) : SHA-256 du corpus (suite des empreintes de ses feuillets), des SVG de référence et empreintes de contenu du maillage 3D dérivé, par scène et par taille illustrative (X.1-10, pas un engagement de capacité). Géométrie synthétique. Réécrites seulement par STUDIO_CORPUS_ECRIRE=1 (corpus.test.ts).",
+  "$commentaire": "Empreintes conservées des corpus de qualification Studio S1–S7 (REF-02 §18.2, X.1-08) : SHA-256 du corpus (suite des empreintes de ses feuillets), des SVG de référence et empreintes de contenu du maillage 3D dérivé, par scène et par taille illustrative (X.1-10, pas un engagement de capacité) ; plans S6 : SHA-256 du plan entier (base, variantes, étapes, exigences). Géométrie synthétique. Réécrites seulement par STUDIO_CORPUS_ECRIRE=1 (corpus.test.ts), entrée par entrée, chacune calculée en entier ; les entrées lourdes exigent STUDIO_CORPUS_LOURD=1. « plateforme » : Node et ICU de la dernière écriture.",
+  "plateforme": {
+    "node": "22.22.0",
+    "icu": "77.1"
+  },
   "scenes": {
     "S1": {
       "100": {
@@ -247,6 +251,6 @@
     }
   },
   "plans": {
-    "S6": "6b1b2fbb8f13f1ad5296256260ca1a62e502e374f9846ab83ee953360edb4b7c"
+    "S6": "71fe389c32b18dd66a062dfc02a4b164915033e9f5f6d5db284172b1e32acca2"
   }
 }

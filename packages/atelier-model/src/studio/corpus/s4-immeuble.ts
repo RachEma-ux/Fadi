@@ -27,7 +27,11 @@ export const PARAMETRES_S4 = Object.freeze({
   descente: { rayon: 0.1 },
 });
 
-/** Travées par niveau pour `motifs` travées au total (deux niveaux au moins). */
+/**
+ * Travées par niveau pour `motifs` travées au total : au plus le côté de la grille carrée (⌈√motifs⌉) et au plus la
+ * moitié des travées (arrondie au-dessus), une au moins — donc deux niveaux au moins dès deux travées, un seul niveau
+ * pour une travée.
+ */
 export const traveesParNiveau = (motifs: number): number => Math.max(1, Math.min(coteGrille(motifs), Math.ceil(motifs / 2)));
 
 export function corpusS4(taille: number): CorpusStudio {
@@ -57,9 +61,10 @@ export function corpusS4(taille: number): CorpusStudio {
   return construireCorpus({
     scene: "S4", definition: DEFINITION_S4, taille, motif: MOTIF_S4, primitive, calques,
     couverture: {
-      representes: ["niveaux empilés (cote de base des murs, des boîtes et des extrusions)", "géométrie rangée sur un calque « structure »", "réseaux (polylignes, lignes, cercles extrudés)", "composants répétés (travées, fenêtres, portes)"],
+      representes: ["niveaux empilés (cote de base des murs, des boîtes et des extrusions)", "géométrie rangée sur un calque « structure »", "réseaux (polylignes, lignes, cercles extrudés)", "répétition géométrique (travées, fenêtres et portes répétées par motif)"],
       absents: [
         { element: "niveaux comme objets", raison: "studio-document/1 n'a pas d'objet niveau : un calque par niveau et la cote de base en tiennent lieu" },
+        { element: "composants (définition partagée + occurrences)", raison: "studio-document/1 n'a pas de type composant" },
         { element: "éléments structurels typés (poteau, dalle)", raison: "aucune signification BIM n'est acquise par la géométrie (A.3-09) : boîtes et prismes seulement" },
       ],
     },

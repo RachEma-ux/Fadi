@@ -1,11 +1,11 @@
 import { aleaMotif } from "./alea.js";
 import { annotation, architecture, calque, construireCorpus, cote, coteGrille, nombreMotifs, objet, type Primitive } from "./commun.js";
-import { GRAINES_CORPUS, type CorpusStudio, type SceneCorpus } from "./types.js";
+import { GRAINES_CORPUS, type CorpusStudio, type CouvertureCorpus, type SceneCorpus } from "./types.js";
 
 /**
  * S2 — plan de niveau (X.1-02). REF-02 §18.2 : « plan de niveau avec murs, portes, fenêtres, croisements et références
- * liées ». Motif de 8 primitives par cellule d'une grille de 6 m : mur horizontal et mur vertical (ils se croisent aux
- * nœuds de la grille et avec les murs voisins), une porte dans le mur horizontal, une fenêtre dans le mur vertical, deux
+ * liées ». Motif de 8 primitives par cellule d'une grille de 6 m : mur horizontal et mur vertical (ils se rejoignent aux
+ * nœuds de la grille, par leurs extrémités seulement — aucun croisement à mi-portée), une porte dans le mur horizontal, une fenêtre dans le mur vertical, deux
  * lignes d'axe (références) qui traversent les murs, une cote **liée** à l'axe horizontal, un texte de pièce.
  *
  * Toutes les dimensions sont synthétiques et saisies ici (aucune valeur par défaut ni normative) ; le premier motif
@@ -24,8 +24,17 @@ export const PARAMETRES_S2 = Object.freeze({
 /** Position de la porte le long du mur horizontal du motif `j` (tirée parmi trois, sans effet sur les quantités). */
 const POSITIONS_PORTE = [1, 2, 3] as const;
 
-/** S2 et S7 partagent ce plan (S7 : graine et préfixe propres). */
-export function planDeNiveau(scene: SceneCorpus, definition: string, taille: number): CorpusStudio {
+/** Couverture du plan de niveau S2 (REF-02 §18.2) : ce que le plan représente et ce qu'il déclare absent. */
+export const COUVERTURE_S2: CouvertureCorpus = Object.freeze({
+  representes: ["murs", "portes et fenêtres (ouvertures déclarées)", "croisements d'axes avec les murs", "rencontres de murs aux nœuds de la grille (extrémités)", "références liées : cotes liées aux axes"],
+  absents: [
+    { element: "croisements de murs", raison: "murs sans croisement à mi-portée, jonctions aux extrémités seulement, volume compté sans jonction (mur droit à deux points : longueur × épaisseur × hauteur)" },
+    { element: "références externes (modèles liés)", raison: "studio-document/1 n'a pas de référence externe ; seules les cotes liées aux objets du document existent" },
+  ],
+}) as CouvertureCorpus;
+
+/** S2, S6 et S7 partagent ce plan (graine et préfixe propres) ; chaque scène déclare sa propre couverture. */
+export function planDeNiveau(scene: SceneCorpus, definition: string, taille: number, couverture: CouvertureCorpus = COUVERTURE_S2): CorpusStudio {
   const P = PARAMETRES_S2, motifs = nombreMotifs(taille, MOTIF_S2), cols = coteGrille(motifs), pre = scene.toLowerCase();
   const primitive = (j: number, role: number): Primitive => {
     const x = (j % cols) * P.maille, y = Math.floor(j / cols) * P.maille, id = (s: string) => `${pre}-${j}-${s}`;
@@ -55,10 +64,7 @@ export function planDeNiveau(scene: SceneCorpus, definition: string, taille: num
   return construireCorpus({
     scene, definition, taille, motif: MOTIF_S2, primitive,
     calques: [calque("murs", "Murs (synthétique)"), calque("axes", "Axes de référence (synthétique)"), calque("cotes", "Cotes (synthétique)"), calque("textes", "Textes (synthétique)")],
-    couverture: {
-      representes: ["murs", "portes et fenêtres (ouvertures déclarées)", "croisements de murs et d'axes", "références liées : cotes liées aux axes"],
-      absents: [{ element: "références externes (modèles liés)", raison: "studio-document/1 n'a pas de référence externe ; seules les cotes liées aux objets du document existent" }],
-    },
+    couverture,
   });
 }
 

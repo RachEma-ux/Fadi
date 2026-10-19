@@ -48,6 +48,7 @@ async function atteindre(barre, selecteur) {
 let context;
 try {
   check("corpus S7 synthétique (fixture du corpus)", corpus.scene === "S7" && corpus.synthetique === true && corpus.commandes.length === 100 + (corpus.document.layers?.length ?? 0));
+  check("couverture propre à la session hors réseau (le plan de niveau n'en est que l'état de départ)", corpus.couverture?.representes?.some((x) => /hors réseau/.test(x)) && corpus.couverture.absents?.every((x) => x.raison?.length > 0), JSON.stringify(corpus.couverture)?.slice(0, 200));
   context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   page.setDefaultTimeout(20000);

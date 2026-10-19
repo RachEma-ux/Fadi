@@ -5,8 +5,27 @@
   "taille": 100,
   "graine": 606,
   "synthetique": true,
-  "licence": "Corpus synthétique généré par le dépôt Fadi (géométrie seule, aucune source tierce) : libre usage pour les essais Studio.",
+  "licence": "Licence à valider par le maître d'ouvrage (corpus synthétique, généré par le dépôt Fadi : géométrie seule, aucune source tierce).",
   "avertissement": "Géométrie synthétique de test : aucune donnée de projet réelle ni inventée ; tailles illustratives (X.1-10), non des engagements de capacité.",
+  "couverture": {
+   "representes": [
+    "plusieurs variantes : A initiale, B dérivée d'une révision antérieure de A, C dérivée de la tête de A",
+    "révisions : une enveloppe de commandes par étape (six étapes), rejeu d'une enveloppe sans révision en double (recette)",
+    "dossier : une feuille et un dossier de conception sur la tête de A",
+    "contrôles : trois exigences de recette contrôlées sur chaque tête, statuts et conclusions attendus",
+    "comparaison de révisions entre variantes (A ↔ B)"
+   ],
+   "absents": [
+    {
+     "element": "exigences réglementaires",
+     "raison": "aucune valeur réglementaire n'est inventée : exigences de recette synthétiques, source déclarée"
+    },
+    {
+     "element": "fusion de variantes",
+     "raison": "le plan dérive et compare des variantes ; il n'en fusionne aucune"
+    }
+   ]
+  },
   "etude": "Étude synthétique S6 (corpus de qualification)",
   "base": {
    "id": "s6-100-f1",

@@ -12,7 +12,12 @@ import type { SceneCorpus } from "./types.js";
  * Oracles numériques des corpus (X.1-08) : valeurs attendues **calculées indépendamment** du modèle — en forme close, à
  * partir des seules dimensions nominales de chaque motif et du rôle de chaque primitive, sans lire les documents
  * générés ni appeler le métré. Les tests comparent ensuite ce que le modèle dérive des documents (comptes, métré
- * `quantitesStudio`, volumes des solides, mesures des cotes) à ces valeurs, dans une tolérance relative déclarée.
+ * `quantitesStudio`, volumes des solides, mesures des cotes par `studioDimensionValue` / `measureStudioDimension`) à
+ * ces valeurs, dans une tolérance relative déclarée.
+ *
+ * Limite de l'indépendance : les **paramètres nominaux** (`PARAMETRES_S2`, `PARAMETRES_S4`, `parametresS1`…) sont
+ * **partagés** avec les générateurs — oracle et générateur lisent les mêmes dimensions d'entrée. L'oracle est indépendant
+ * du calcul (métré, mesure), pas de ces entrées : une dimension nominale fausse passerait des deux côtés à la fois.
  *
  * Volumes des murs : brut = longueur × épaisseur × hauteur (mur droit à deux points, sans jonction), déduction =
  * Σ largeur × hauteur × épaisseur des ouvertures déclarées, net = brut − déduction (REC-A-03).

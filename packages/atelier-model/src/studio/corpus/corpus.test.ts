@@ -4,8 +4,14 @@
  *
  * Tailles contrôlées par `npm test` : 100 (tout, références visuelles comprises) et 10 000 (validité, oracles,
  * empreinte du corpus). Le contrôle lourd — références visuelles à 10 000 et tout à 100 000 primitives — est derrière
- * `STUDIO_CORPUS_LOURD=1` (script `npm run test:corpus-lourd --workspace=@parcours/atelier-model`). Réécriture des
- * empreintes, références et fixtures : `STUDIO_CORPUS_ECRIRE=1` (avec `STUDIO_CORPUS_LOURD=1` pour les tailles lourdes).
+ * `STUDIO_CORPUS_LOURD=1` (script `npm run test:corpus-lourd`, job CI `corpus-lourd` à la demande et chaque semaine).
+ * Réécriture des empreintes, références et fixtures : `STUDIO_CORPUS_ECRIRE=1`. Une entrée n'est écrite que **calculée en
+ * entier** et remplace l'ancienne (jamais de fusion) : sans `STUDIO_CORPUS_LOURD=1`, les entrées lourdes (10 000 avec
+ * leurs références visuelles, 100 000) ne sont pas écrites — elles restent comparées sur ce qui est calculé, et un écart
+ * demande la réécriture lourde (`STUDIO_CORPUS_LOURD=1 STUDIO_CORPUS_ECRIRE=1`).
+ *
+ * Plateforme : les SVG de référence formatent les cotes en `fr-FR` ; une plateforme sans données ICU françaises
+ * produirait d'autres octets. Le chargement l'exige et le manifeste consigne Node et ICU.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -16,13 +22,19 @@ import { quantitesStudio, type GrandeurQuantite } from "../quantites.js";
 import { studioQuantitesSolides } from "../solides-libres.js";
 import { studioQuantitesArchitecture } from "../architecture/index.js";
 import { studioAngularValue } from "../objets/cote-angulaire.js";
+import { studioDimensionValue } from "../objets/cote.js";
+import { measureStudioDimension } from "../document-2d.js";
 import { controlerExigences } from "../facade-exigences.js";
 import {
-  commandesDuDocument, empreinteCorpus, genererCorpus, oracleCorpus, oracleS6, oracleSessionS7, planS6, primitivesDu, referenceVisuelle,
+  commandesDuDocument, empreinteCorpus, empreintePlanS6, genererCorpus, oracleCorpus, oracleS6, oracleSessionS7, planS6, primitivesDu, referenceVisuelle,
   SCENES_DOCUMENTS, TAILLES_ILLUSTRATIVES, TOLERANCE_ORACLE, type CorpusStudio, type OracleCorpus, type SceneDocuments,
 } from "./index.js";
 
-vi.setConfig({ testTimeout: 600_000 });
+// Plateforme exigée par les références visuelles (cotes formatées en fr-FR) : échec explicite plutôt qu'un écart d'octets.
+const FORMAT_FR = new Intl.NumberFormat("fr-FR").format(1.5);
+if (FORMAT_FR !== "1,5") {
+  throw new Error(`Plateforme non conforme pour le corpus Studio : Intl.NumberFormat("fr-FR").format(1.5) donne « ${FORMAT_FR} » au lieu de « 1,5 » (Node ${process.versions.node}, ICU ${process.versions.icu ?? "absent"}). Installez Node avec les données ICU complètes (full-icu).`);
+}
 
 const ICI = dirname(fileURLToPath(import.meta.url));
 const MANIFESTE = join(ICI, "empreintes.json");
@@ -30,11 +42,24 @@ const REFERENCES = join(ICI, "references");
 const FIXTURES = join(ICI, "fixtures");
 const LOURD = process.env.STUDIO_CORPUS_LOURD === "1";
 const ECRIRE = process.env.STUDIO_CORPUS_ECRIRE === "1";
+// Tailles normales : quelques secondes ; le contrôle lourd (100 000 primitives, références à 10 000) a sa propre borne.
+vi.setConfig({ testTimeout: LOURD ? 900_000 : 120_000 });
 
 interface EntreeManifeste { corpus: string; feuillets: number; svg?: string[]; maillage?: string[] }
-interface Manifeste { $commentaire: string; scenes: Record<string, Record<string, EntreeManifeste>>; plans: Record<string, string> }
+interface Manifeste { $commentaire: string; plateforme?: { node: string; icu: string }; scenes: Record<string, Record<string, EntreeManifeste>>; plans: Record<string, string> }
 const manifeste: Manifeste = existsSync(MANIFESTE) ? JSON.parse(readFileSync(MANIFESTE, "utf8")) as Manifeste : { $commentaire: "", scenes: {}, plans: {} };
-manifeste.$commentaire = "Empreintes conservées des corpus de qualification Studio S1–S7 (REF-02 §18.2, X.1-08) : SHA-256 du corpus (suite des empreintes de ses feuillets), des SVG de référence et empreintes de contenu du maillage 3D dérivé, par scène et par taille illustrative (X.1-10, pas un engagement de capacité). Géométrie synthétique. Réécrites seulement par STUDIO_CORPUS_ECRIRE=1 (corpus.test.ts).";
+
+/** Réécrit le manifeste, plateforme d'écriture consignée (Node et ICU : le formatage fr-FR des SVG en dépend). */
+function ecrireManifeste() {
+  const { scenes, plans } = manifeste;
+  const ecrit: Manifeste = {
+    $commentaire: "Empreintes conservées des corpus de qualification Studio S1–S7 (REF-02 §18.2, X.1-08) : SHA-256 du corpus (suite des empreintes de ses feuillets), des SVG de référence et empreintes de contenu du maillage 3D dérivé, par scène et par taille illustrative (X.1-10, pas un engagement de capacité) ; plans S6 : SHA-256 du plan entier (base, variantes, étapes, exigences). Géométrie synthétique. Réécrites seulement par STUDIO_CORPUS_ECRIRE=1 (corpus.test.ts), entrée par entrée, chacune calculée en entier ; les entrées lourdes exigent STUDIO_CORPUS_LOURD=1. « plateforme » : Node et ICU de la dernière écriture.",
+    plateforme: { node: process.versions.node, icu: process.versions.icu ?? "absent" },
+    scenes, plans,
+  };
+  Object.assign(manifeste, ecrit);
+  writeFileSync(MANIFESTE, `${JSON.stringify(ecrit, null, 2)}\n`);
+}
 
 /** Égalité dans la tolérance relative déclarée de l'oracle. */
 function proche(mesure: number | null | undefined, attendu: number, quoi: string) {
@@ -63,10 +88,14 @@ function mesures(corpus: CorpusStudio) {
       if (t.grandeur === "volume") volumeNonEvalues += t.nonEvalues;
     }
     volumeSolides += studioQuantitesSolides(d).totalVolume;
-    for (const c of d.dimensions ?? []) {
+    const cotes = d.dimensions ?? [];
+    for (const c of cotes) {
       if (c.links.start && c.links.end) liees++; else libres++;
-      sommeMesures += Math.hypot(c.end.x - c.start.x, c.end.y - c.start.y);
+      // Valeur mesurée par le modèle (celle de `measureStudioDimension`, sans revalider le feuillet à chaque cote).
+      sommeMesures += studioDimensionValue(c) ?? Number.NaN;
     }
+    // La façade de mesure rend la même valeur : contrôlé sur la première cote de chaque feuillet.
+    if (cotes[0]) expect(measureStudioDimension(d, cotes[0].id)?.value).toBe(studioDimensionValue(cotes[0]));
     for (const a of d.annotations ?? []) {
       if (a.type !== "angular-dimension") continue;
       angles++;
@@ -126,6 +155,8 @@ for (const scene of SCENES_DOCUMENTS) {
         const corpus = genererCorpus(scene as SceneDocuments, taille);
         expect(corpus.synthetique).toBe(true);
         expect(corpus.licence).toMatch(/synthétique/);
+        // La licence n'est pas affirmée : elle attend la décision du maître d'ouvrage.
+        expect(corpus.licence).toMatch(/^Licence à valider par le maître d'ouvrage/);
         expect(corpus.taille).toBe(taille);
         for (const d of corpus.documents) {
           const n = d.objects.length + (d.dimensions?.length ?? 0) + (d.annotations?.length ?? 0) + (d.architecture?.length ?? 0) + (d.solides?.length ?? 0);
@@ -146,14 +177,18 @@ for (const scene of SCENES_DOCUMENTS) {
           }
         }
         const conservee = manifeste.scenes[scene]?.[String(taille)];
-        if (ECRIRE) {
-          (manifeste.scenes[scene] ??= {})[String(taille)] = { ...conservee, ...entree };
-          writeFileSync(MANIFESTE, `${JSON.stringify(manifeste, null, 2)}\n`);
+        // Entrée complète (références visuelles calculées) : seule une entrée complète peut être écrite, et elle
+        // remplace l'ancienne en entier. Une entrée lourde calculée sans STUDIO_CORPUS_LOURD n'est jamais écrite.
+        const complete = referencesVisuelles(taille);
+        if (ECRIRE && complete) {
+          (manifeste.scenes[scene] ??= {})[String(taille)] = entree;
+          ecrireManifeste();
         } else {
-          expect(conservee, `empreintes conservées de ${scene} / ${taille} (STUDIO_CORPUS_ECRIRE=1 pour les écrire)`).toBeDefined();
-          expect(entree.corpus, "empreinte du corpus").toBe(conservee!.corpus);
-          expect(entree.feuillets).toBe(conservee!.feuillets);
-          if (entree.svg) {
+          const lourde = !complete ? " (entrée lourde : STUDIO_CORPUS_LOURD=1 STUDIO_CORPUS_ECRIRE=1 pour la réécrire)" : "";
+          expect(conservee, `empreintes conservées de ${scene} / ${taille} (STUDIO_CORPUS_ECRIRE=1 pour les écrire)${lourde}`).toBeDefined();
+          expect(entree.corpus, `empreinte du corpus${lourde}`).toBe(conservee!.corpus);
+          expect(entree.feuillets, `feuillets${lourde}`).toBe(conservee!.feuillets);
+          if (complete) {
             expect(entree.svg, "empreintes des SVG de référence").toEqual(conservee!.svg);
             expect(entree.maillage, "empreintes du maillage 3D dérivé").toEqual(conservee!.maillage);
           }
@@ -234,6 +269,8 @@ describe("S6 — étude à variantes et révisions (plan rejoué par le modèle)
     proche(apresA2.volumeNet, 3.096, "A2 : net du mur s6-0-mur-h");
     proche(apresA2.volumeNet, o.premierMur.apres.net, "A2 : net selon l'oracle");
     for (const [cle, n] of Object.entries(o.revisionsAjoutees)) expect(plan.etapes.filter((e) => e.variante === cle)).toHaveLength(n);
+    expect(plan.couverture.representes.length).toBeGreaterThan(0);
+    for (const x of plan.couverture.absents) expect(x.raison.length).toBeGreaterThan(0);
   });
 
   it("fixture de la recette API (fixtures/s6-plan.json) identique au plan et à l'oracle générés", () => {
@@ -250,9 +287,12 @@ describe("S6 — étude à variantes et révisions (plan rejoué par le modèle)
 describe("S7 — session hors réseau (corpus de départ de la recette e2e)", () => {
   it("fixture de la recette (fixtures/s7-100.json) : document, commandes qui le recréent, attendus après reconnexion", () => {
     const corpus = genererCorpus("S7", 100), doc = corpus.documents[0]!;
+    // Couverture propre à la session hors réseau, distincte de celle du plan de niveau S2.
+    expect(corpus.couverture).not.toEqual(genererCorpus("S2", 100).couverture);
+    expect(corpus.couverture.representes.join(" ")).toMatch(/hors réseau/);
     const commandes = commandesDuDocument(doc);
     expect(JSON.stringify(applyStudioCommands(newStudioDocument(doc.id), commandes))).toBe(JSON.stringify(doc));
-    const attendu = `${JSON.stringify({ scene: "S7", definition: corpus.definition, synthetique: true, licence: corpus.licence, avertissement: corpus.avertissement, empreinte: empreinteCorpus(corpus), document: doc, commandes, session: oracleSessionS7(100) }, null, 1)}\n`;
+    const attendu = `${JSON.stringify({ scene: "S7", definition: corpus.definition, synthetique: true, licence: corpus.licence, avertissement: corpus.avertissement, couverture: corpus.couverture, empreinte: empreinteCorpus(corpus), document: doc, commandes, session: oracleSessionS7(100) }, null, 1)}\n`;
     const fichier = join(FIXTURES, "s7-100.json");
     if (ECRIRE) { mkdirSync(FIXTURES, { recursive: true }); writeFileSync(fichier, attendu); }
     expect(readFileSync(fichier, "utf8")).toBe(attendu);
@@ -260,9 +300,13 @@ describe("S7 — session hors réseau (corpus de départ de la recette e2e)", ()
 });
 
 describe("Empreintes des plans", () => {
-  it("S6 : empreinte du plan conservée", () => {
-    const e = empreinteCorpus({ documents: [planS6().base] } as CorpusStudio);
-    if (ECRIRE) { manifeste.plans.S6 = e; writeFileSync(MANIFESTE, `${JSON.stringify(manifeste, null, 2)}\n`); }
+  it("S6 : empreinte du plan entier conservée (base, variantes, étapes et exigences)", () => {
+    const e = empreintePlanS6(planS6());
+    if (ECRIRE) { manifeste.plans.S6 = e; ecrireManifeste(); }
     expect(e).toBe(manifeste.plans.S6);
+    // Une étape ou une exigence changée change l'empreinte.
+    const p = planS6();
+    expect(empreintePlanS6({ ...p, etapes: p.etapes.slice(1) })).not.toBe(e);
+    expect(empreintePlanS6({ ...p, exigences: p.exigences.map((x) => ({ ...x, tolerance: 0 })) })).not.toBe(e);
   });
 });
