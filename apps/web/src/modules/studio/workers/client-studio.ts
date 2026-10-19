@@ -28,6 +28,13 @@ export const lireDxfHorsFil = (charge: ChargeDxf, o: OptionsDemande = {}): Promi
 export const composerFeuilleHorsFil = (document: StudioDocument, options: StudioSheetOptions, o: OptionsDemande = {}): Promise<ResultatFeuille> =>
   hoteStudio().demander<ResultatFeuille>("feuille.composer", { document, options }, { delaiMs: DELAI_FEUILLE_MS, ...o });
 
+/**
+ * Le Worker a été abandonné après trop d'échecs : les calculs lourds se font désormais sur le fil principal (mêmes
+ * fonctions, mêmes résultats). Faux sans Worker du tout (rendu serveur, tests) : rien à annoncer.
+ */
+export const calculSurFilPrincipal = (): boolean => hote !== null && hote.indisponible && hote.repli;
+export const MESSAGE_REPLI = "Calcul hors du fil principal indisponible après plusieurs échecs : ce calcul se fait sur le fil principal, l’interface peut se figer quelques instants.";
+
 /** Message d'interface (français source) d'un échec de l'hôte ; `null` pour un résultat simplement écarté. */
 export function messageHote(e: unknown): string | null {
   const code = (e as ErreurHote | null)?.code;

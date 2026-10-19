@@ -8,9 +8,12 @@
  *   suivante en crée un nouveau (borne de sûreté choisie par Fadi, pas une mesure de performance).
  * - Annulation par `AbortSignal` : le calcul est synchrone dans le Worker, seul son arrêt le libère. La demande
  *   annulée est rejetée (`annulee`), le Worker est arrêté sans compter d'échec et les autres demandes en cours sont
- *   renvoyées, telles quelles, au Worker suivant.
+ *   renvoyées au Worker suivant, avec un délai qui repart de zéro. Les charges sont toujours copiées vers le Worker,
+ *   jamais transférées : un renvoi retrouve donc des données intactes.
  * - Reprise après échec : une erreur fatale, une réponse illisible ou un délai dépassé arrêtent le Worker ; après
- *   `echecsMax` échecs consécutifs sans réponse réussie, l'hôte reste indisponible pour la session.
+ *   `echecsMax` échecs consécutifs sans réponse réussie, le Worker n'est plus relancé pour la session : les demandes
+ *   suivantes passent par l'exécution directe (`direct`, mêmes fonctions, sur le fil principal) — `repli` le signale
+ *   pour que l'interface l'annonce — ou, sans `direct`, sont refusées (`indisponible`).
  * - Canal : une nouvelle demande sur le même canal remplace la précédente, dont le résultat sera écarté (`remplacee`) ;
  *   le Worker n'est pas arrêté pour autant (un réglage de feuille change souvent, le calcul suivant est court).
  * - Sans Worker (tests, navigateur ancien) : exécution directe sur le fil principal par la même fonction, mêmes
@@ -72,20 +75,18 @@ export interface OptionsDemande {
   delaiMs?: number;
   /** Une demande plus récente sur le même canal écarte celle-ci. */
   canal?: string;
-  /** Objets transférés (non copiés) au Worker. */
-  transfert?: Transferable[];
   surProgression?: (p: Progression) => void;
 }
 
 interface Attente {
   nature: string;
   charge: unknown;
-  transfert: Transferable[];
+  delai: number;
   canal: string | undefined;
   surProgression: ((p: Progression) => void) | undefined;
   resoudre: (v: unknown) => void;
   rejeter: (e: Error) => void;
-  minuteur: ReturnType<typeof setTimeout>;
+  minuteur: ReturnType<typeof setTimeout> | undefined;
   detacher: () => void;
 }
 
@@ -114,6 +115,11 @@ export class HoteWorker {
   /** Demandes en attente d'une réponse. */
   get enCours(): number { return this.enAttente.size; }
   get indisponible(): boolean { return this.fil === null; }
+  /** Les calculs se font sur le fil principal (Worker absent ou abandonné après trop d'échecs) alors qu'un repli existe. */
+  get repli(): boolean {
+    const disponible = this.options.workerDisponible ?? (() => typeof Worker !== "undefined");
+    return this.options.direct !== undefined && (this.fil === null || !disponible());
+  }
 
   demander<T>(nature: string, charge: unknown, o: OptionsDemande = {}): Promise<T> {
     if (o.signal?.aborted) return Promise.reject(erreur("annulee"));
@@ -126,15 +132,14 @@ export class HoteWorker {
     const disponible = this.options.workerDisponible ?? (() => typeof Worker !== "undefined");
     if (!disponible()) return this.directement<T>(id, nature, charge, o);
     const w = this.obtenirFil();
-    if (!w) { this.liberer(id, o.canal); return Promise.reject(erreur("indisponible")); }
+    // Worker abandonné pour la session : repli sur l'exécution directe quand elle existe.
+    if (!w) return this.directement<T>(id, nature, charge, o);
     return new Promise<T>((resoudre, rejeter) => {
-      const delai = o.delaiMs ?? this.options.delaiMs;
-      const minuteur = setTimeout(() => { if (this.enAttente.has(id)) this.abandonner("delai"); }, delai);
       const surAbandon = () => this.annuler(id);
       o.signal?.addEventListener("abort", surAbandon, { once: true });
       this.enAttente.set(id, {
-        nature, charge, transfert: o.transfert ?? [], canal: o.canal, surProgression: o.surProgression,
-        resoudre: resoudre as (v: unknown) => void, rejeter, minuteur, detacher: () => o.signal?.removeEventListener("abort", surAbandon),
+        nature, charge, delai: o.delaiMs ?? this.options.delaiMs, canal: o.canal, surProgression: o.surProgression,
+        resoudre: resoudre as (v: unknown) => void, rejeter, minuteur: undefined, detacher: () => o.signal?.removeEventListener("abort", surAbandon),
       });
       this.poster(w, id);
     });
@@ -147,11 +152,14 @@ export class HoteWorker {
     if (this.fil !== null) this.fil = undefined;
   }
 
+  /** Envoie (ou renvoie) une demande ; son délai repart de zéro à chaque envoi. Copie seule, jamais de transfert. */
   private poster(w: Worker, id: number): void {
     const a = this.enAttente.get(id)!;
+    clearTimeout(a.minuteur);
+    a.minuteur = setTimeout(() => { if (this.enAttente.has(id)) this.abandonner("delai"); }, a.delai);
     const message: DemandeWorker = { id, nature: a.nature, charge: a.charge };
     try {
-      w.postMessage(message, a.transfert);
+      w.postMessage(message);
     } catch {
       // Charge non clonable : erreur de la demande seule, le Worker reste sain.
       this.ecarter(id, new ErreurHote("calcul", "Données du calcul non transmissibles au Worker."));

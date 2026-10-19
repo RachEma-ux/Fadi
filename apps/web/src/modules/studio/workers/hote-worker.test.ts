@@ -13,7 +13,8 @@ class FauxWorker {
   private ecouteurs = new Map<string, ((e: unknown) => void)[]>();
   constructor() { FauxWorker.instances.push(this); }
   addEventListener(type: string, f: (e: unknown) => void) { this.ecouteurs.set(type, [...(this.ecouteurs.get(type) ?? []), f]); }
-  postMessage(m: DemandeWorker) { this.envoyes.push(m); }
+  readonly transferts: unknown[] = [];
+  postMessage(m: DemandeWorker, transfert?: unknown) { this.envoyes.push(m); this.transferts.push(transfert); }
   terminate() { this.termine = true; }
   emettre(type: string, data?: unknown) { for (const f of this.ecouteurs.get(type) ?? []) f({ data }); }
   repondre(valeur: unknown, n = this.envoyes.length - 1) { this.emettre("message", { id: this.envoyes[n]!.id, valeur }); }
@@ -160,6 +161,54 @@ describe("hôte des Workers de Studio", () => {
     // Sans Worker ni exécution directe : indisponible.
     const h3 = new HoteWorker({ creer: () => { throw new Error("jamais"); }, delaiMs: 1000, workerDisponible: () => false });
     await expect(h3.demander("x", 0)).rejects.toMatchObject({ code: "indisponible" });
+  });
+
+  it("renvoi après annulation : copie seule (aucune liste de transfert) et délai qui repart de zéro", async () => {
+    vi.useFakeTimers();
+    const h = hote();
+    const c = new AbortController();
+    const charge = { tampon: new Uint8Array([1, 2, 3]) };
+    const a = h.demander("x", "long", { signal: c.signal });
+    const b = h.demander("x", charge, { delaiMs: 100 });
+    const w1 = dernier();
+    expect(w1.transferts).toEqual([undefined, undefined]);
+    vi.advanceTimersByTime(80);
+    c.abort();
+    await expect(a).rejects.toMatchObject({ code: "annulee" });
+    const w2 = dernier();
+    expect(w2).not.toBe(w1);
+    expect(w2.envoyes.map((m) => m.charge)).toEqual([charge]);
+    expect(w2.transferts).toEqual([undefined]);
+    expect(Array.from(charge.tampon)).toEqual([1, 2, 3]);
+    // 80 + 80 ms : au-delà du délai d'origine, mais seulement 80 ms depuis le renvoi — la demande attend encore.
+    let issue = "";
+    b.then(() => { issue = "resolue"; }, (e: ErreurHote) => { issue = e.code; });
+    vi.advanceTimersByTime(80);
+    await Promise.resolve();
+    expect(issue).toBe("");
+    expect(w2.termine).toBe(false);
+    vi.advanceTimersByTime(25);
+    await Promise.resolve();
+    expect(issue).toBe("delai");
+    expect(w2.termine).toBe(true);
+  });
+
+  it("après trois échecs, repli sur l'exécution directe (mêmes fonctions) au lieu d'un refus ; aucun Worker relancé", async () => {
+    const direct = vi.fn((n: string, c: unknown) => `${n}:${String(c)}`);
+    const h = hote({ direct });
+    expect(h.repli).toBe(false);
+    for (let i = 0; i < 3; i++) { const p = h.demander("x", i); dernier().emettre("error"); await expect(p).rejects.toMatchObject({ code: "interrompu" }); }
+    expect(direct).not.toHaveBeenCalled();
+    expect(h.indisponible).toBe(true);
+    expect(h.repli).toBe(true);
+    await expect(h.demander("x", 4)).resolves.toBe("x:4");
+    expect(direct).toHaveBeenCalledTimes(1);
+    expect(FauxWorker.instances).toHaveLength(3);
+    // Le canal et l'annulation restent respectés en repli.
+    const a = h.demander("x", 5, { canal: "k" });
+    const b = h.demander("x", 6, { canal: "k" });
+    await expect(a).rejects.toMatchObject({ code: "remplacee" });
+    await expect(b).resolves.toBe("x:6");
   });
 
   it("arrêt explicite : demandes rejetées, Worker arrêté, recréé à la demande suivante", async () => {

@@ -9049,6 +9049,7 @@
 "Analyse des entités du DXF…": "Analysing the DXF entities…",
 "Lecture du DXF en cours": "DXF reading in progress",
 "Annuler la lecture": "Cancel reading",
+"Calcul hors du fil principal indisponible après plusieurs échecs : ce calcul se fait sur le fil principal, l’interface peut se figer quelques instants.": "Off-main-thread computation unavailable after several failures: this computation runs on the main thread, the interface may freeze for a few moments.",
 "Lecture annulée : rien n’est ajouté. Choisissez de nouveau un fichier.": "Reading cancelled: nothing is added. Choose a file again.",
 "Le calcul n’a pas répondu à temps : réessayez ; il sera relancé.": "The computation did not respond in time: try again; it will be restarted.",
 "Calcul indisponible : trois échecs consécutifs. Rechargez la page pour réessayer.": "Computation unavailable: three consecutive failures. Reload the page to try again.",

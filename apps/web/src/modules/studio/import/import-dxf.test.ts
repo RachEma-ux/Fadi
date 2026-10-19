@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { applyStudioCommands, lireDxfStudio, newStudioDocument, STUDIO_CONTRACT, StudioValidationError, type StudioCommand } from "@parcours/atelier-model";
 import dico from "../../../lib/i18n/en.json";
 import { DialogueImportDxf, ETAPES_LECTURE, Rapport } from "./DialogueImportDxf";
-import { messageHote } from "../workers/client-studio";
+import { MESSAGE_REPLI, messageHote } from "../workers/client-studio";
 import { ErreurHote } from "../workers/hote-worker";
 import { accuserLot, commandesNonEnvoyees, decouperCommandes, ENVELOPPE_MAX_COMMANDES, ENVELOPPE_MAX_OCTETS, enveloppeSuivante, envoiPartiel, envoiTermine, planEnvoi } from "./envoi";
 import { CIBLES_CALQUE, lireDxf, messageImport, typeNonPris, UNITES_PROPOSEES } from "./import-dxf-ui";
@@ -179,7 +179,7 @@ describe("Boîte « Importer DXF »", () => {
     const echecs = (["delai", "indisponible", "interrompu", "illisible", "calcul"] as const).map((code) => messageHote(new ErreurHote(code, "x"))!);
     expect(messageHote(new ErreurHote("annulee", "x"))).toBeNull();
     expect(messageHote(new ErreurHote("remplacee", "x"))).toBeNull();
-    const textes = [...Object.values(ETAPES_LECTURE), ...echecs, "Lecture du DXF en cours", "Annuler la lecture",
+    const textes = [...Object.values(ETAPES_LECTURE), ...echecs, MESSAGE_REPLI, "Lecture du DXF en cours", "Annuler la lecture",
       "Lecture annulée : rien n’est ajouté. Choisissez de nouveau un fichier.", "Composition de la feuille…"];
     for (const t of textes) expect(en[t], t).toBeTruthy();
   });
