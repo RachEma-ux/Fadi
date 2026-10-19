@@ -4,7 +4,8 @@ import { nb, xml } from "../exporteurs/texte.js";
 import { STUDIO_INDEXED_ANCHOR } from "../noyau/ancres.js";
 import { STUDIO_BULGE_MAX, STUDIO_LIMITS } from "../noyau/limites.js";
 import { array, boolean, extrusionRef, fail, finite, identifier, layerRef, point, record, REFUS_EPAISSEUR_COURBE, same } from "../noyau/validation.js";
-import type { StudioExtrusion, StudioPoint, StudioShape } from "../noyau/types.js";
+import type { StudioExtrusion, StudioPoint } from "../noyau/types.js";
+import type { StudioShape } from "./formes.js";
 import { id, layerId, point as pointSchema, rectangleExtrusion } from "../registre/schemas-base.js";
 import type { StudioTypeObjet } from "./type.js";
 

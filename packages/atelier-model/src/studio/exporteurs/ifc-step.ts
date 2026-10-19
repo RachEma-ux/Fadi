@@ -1,5 +1,5 @@
 import { StudioValidationError } from "../noyau/validation.js";
-import type { StudioPoint, StudioShape } from "../noyau/types.js";
+import type { StudioPoint, StudioShapeBase } from "../noyau/types.js";
 
 /**
  * Écriture STEP (ISO 10303-21) de l'export IFC Studio : chaînes, réels, GlobalId déterministes, numérotation des
@@ -120,8 +120,8 @@ export interface IfcContexte {
   rectangleSolid(cx: number, cy: number, xDim: number, yDim: number, depth: number): number;
   /** Profil fermé discrétisé (coordonnées absolues du plan, sens trigonométrique), extrudé depuis la cote de base. */
   arbitrarySolid(ring: StudioPoint[], depth: number): number;
-  proxy(o: StudioShape, description: string, item: number, representation: "SweptSolid" | "Tessellation", placement: number): number;
+  proxy(o: StudioShapeBase, description: string, item: number, representation: "SweptSolid" | "Tessellation", placement: number): number;
   /** Surface verticale ouverte le long d'un tracé discrétisé (coordonnées absolues, z de 0 à h au-dessus de la base). */
   stripItem(path: StudioPoint[], h: number): number;
-  layerOf(o: StudioShape): string;
+  layerOf(o: StudioShapeBase): string;
 }

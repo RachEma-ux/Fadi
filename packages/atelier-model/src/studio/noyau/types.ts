@@ -1,21 +1,10 @@
 import type { Point2 } from "../../unites.js";
-import type { StudioArc } from "../objets/arc.js";
-import type { StudioCircle } from "../objets/cercle.js";
-import type { StudioDimension } from "../objets/cote.js";
-import type { StudioAngularDimension } from "../objets/cote-angulaire.js";
-import type { StudioLine } from "../objets/ligne.js";
-import type { StudioPolyline } from "../objets/polyligne.js";
-import type { StudioRectangle } from "../objets/rectangle.js";
-import type { StudioBox, StudioProfilePrism, StudioSolid } from "../objets-3d/solides.js";
-import type { StudioText } from "../objets/texte.js";
-import type { STUDIO_CONTRACT } from "./limites.js";
-import type { StudioArchitectureItem, StudioOpening, StudioWall } from "../architecture/types.js";
-import type { StudioPropriete } from "../exigences/proprietes.js";
-import type { StudioApparence, StudioElementVisualisation, StudioScene } from "../scenes/scenes.js";
 
 /**
- * Types communs du document 2D natif de Studio (`studio-document/1`). Chaque type d'objet déclare son interface dans son
- * module (`objets/`) ; l'union `StudioShape` les rassemble. Toutes les coordonnées sont dans le repère explicite
+ * Types du socle du document 2D natif de Studio (`studio-document/1`) : point, extrusion, calque, et la forme minimale
+ * commune à tout objet 2D (`StudioShapeBase`). Le socle ne connaît aucun type d'objet : chaque type déclare son interface
+ * dans son module (`objets/`) et l'union `StudioShape` les rassemble (`objets/formes.ts`) ; le document entier et les
+ * commandes sont composés au-dessus (`composition/types.ts`). Toutes les coordonnées sont dans le repère explicite
  * `local-2d`, en mètres.
  */
 
@@ -34,92 +23,23 @@ export interface StudioExtrusion {
   thickness?: number;
 }
 
-export type StudioShape = StudioLine | StudioRectangle | StudioCircle | StudioArc | StudioPolyline;
-/** Annotations (cotes angulaires, textes), rangées à part dans `StudioDocument.annotations`. */
-export type StudioAnnotation = StudioAngularDimension | StudioText;
-export type StudioItem = StudioShape | StudioDimension | StudioAnnotation;
+/**
+ * Discriminants des formes 2D (`StudioShape["type"]`), nommés au socle pour que les primitives d'écriture (`exporteurs/`)
+ * les désignent sans connaître les objets. L'égalité avec l'union des objets est contrôlée à la compilation
+ * (`objets/formes.ts`).
+ */
+export type StudioShapeType = "line" | "rectangle" | "circle" | "arc" | "polyline";
+
+/** Forme minimale commune à tout objet 2D (identité, discriminant, calque) : chaque membre de `StudioShape` l'étend. */
+export interface StudioShapeBase {
+  id: string;
+  type: StudioShapeType;
+  layerId?: string;
+}
 
 export interface StudioLayer {
   id: string;
   name: string;
   visible: boolean;
   locked: boolean;
-}
-
-export interface StudioDocument {
-  id: string;
-  schemaVersion: "studio-document/1";
-  units: "m";
-  frame: "local-2d";
-  objects: StudioShape[];
-  /** Absent ou vide : seul le calque implicite existe. */
-  layers?: StudioLayer[];
-  /** Cotes, séparées de `objects` pour qu'un lecteur V1 (lignes et rectangles) ne les interprète jamais à tort. */
-  dimensions?: StudioDimension[];
-  /** Solides libres (`objets-3d/`, repère `local-3d`), séparés de `objects` : un lecteur 2D ne les lit jamais à tort. */
-  solides?: StudioSolid[];
-  /**
-   * Annotations (extension additive, facultative) : cotes angulaires et textes, séparés de `objects` et `dimensions` pour
-   * qu'un lecteur antérieur ne les interprète jamais à tort ; absent ou vide : aucune annotation (forme canonique).
-   */
-  annotations?: StudioAnnotation[];
-  /**
-   * Objets architecturaux (extension additive, facultative, A.4) : murs et ouvertures créés explicitement par
-   * l’utilisateur (`architecture/`) ; absent ou vide : aucun (forme canonique).
-   */
-  architecture?: StudioArchitectureItem[];
-  /**
-   * Propriétés BIM déclarées (extension additive, facultative, E.1-01) sur les murs, ouvertures et objets extrudés
-   * (`exigences/proprietes.ts`) ; absent ou vide : aucune (forme canonique). Une valeur absente est « non évaluée ».
-   */
-  proprietes?: StudioPropriete[];
-  /**
-   * Visualisation (extension additive, facultative, lot E.5) : scènes enregistrées (repère `local-3d`) et apparences
-   * d’affichage (`scenes/`) ; réglages de vue seulement, jamais lus par la géométrie, les quantités ni les exports.
-   */
-  scenes?: StudioElementVisualisation[];
-}
-export type StudioCommand =
-  | { toolId: "studio.dessin.ligne"; params: StudioLine }
-  | { toolId: "studio.dessin.rectangle"; params: StudioRectangle }
-  | { toolId: "studio.dessin.cercle"; params: StudioCircle }
-  | { toolId: "studio.dessin.arc"; params: StudioArc }
-  | { toolId: "studio.dessin.polyligne"; params: StudioPolyline }
-  | { toolId: "studio.dessin.decaler"; params: { id: string; newId: string; distance: number } }
-  | { toolId: "studio.dessin.deplacer"; params: { id: string; dx: number; dy: number } }
-  | { toolId: "studio.dessin.modifier"; params: StudioItem }
-  | { toolId: "studio.dessin.cote"; params: StudioDimension }
-  | { toolId: "studio.dessin.cote-angulaire"; params: StudioAngularDimension }
-  | { toolId: "studio.dessin.texte"; params: StudioText }
-  | { toolId: "studio.dessin.supprimer"; params: { ids: string[] } }
-  | { toolId: "studio.dessin.copier"; params: { ids: string[]; dx: number; dy: number; copies: number; prefix: string } }
-  | { toolId: "studio.dessin.rotation"; params: { ids: string[]; center: StudioPoint; angle: number } }
-  | { toolId: "studio.dessin.symetrie"; params: { ids: string[]; axisStart: StudioPoint; axisEnd: StudioPoint; keepSource: boolean; prefix?: string } }
-  | { toolId: "studio.dessin.echelle"; params: { ids: string[]; center: StudioPoint; factor: number; includeVolumes: boolean } }
-  | { toolId: "studio.calque.creer"; params: StudioLayer }
-  | { toolId: "studio.calque.modifier"; params: StudioLayer }
-  | { toolId: "studio.objet.calque"; params: { ids: string[]; layerId: string } }
-  | { toolId: "studio.objet.extruder"; params: { ids: string[]; base: number; height: number; thickness?: number } }
-  | { toolId: "studio.objet.aplatir"; params: { ids: string[] } }
-  | { toolId: "studio.solide.boite"; params: StudioBox }
-  | { toolId: "studio.solide.prisme"; params: StudioProfilePrism }
-  | { toolId: "studio.solide.deplacer"; params: { id: string; dx: number; dy: number; dz: number } }
-  | { toolId: "studio.solide.supprimer"; params: { ids: string[] } }
-  | { toolId: "studio.architecture.mur"; params: StudioWall }
-  | { toolId: "studio.architecture.ouverture"; params: StudioOpening }
-  | { toolId: "studio.architecture.modifier"; params: StudioArchitectureItem }
-  | { toolId: "studio.architecture.supprimer"; params: { ids: string[]; cascade: boolean } }
-  | { toolId: "studio.propriete.definir"; params: StudioPropriete }
-  | { toolId: "studio.propriete.retirer"; params: { cibleId: string; nom: string } }
-  | { toolId: "studio.scene.creer"; params: StudioScene }
-  | { toolId: "studio.scene.modifier"; params: StudioScene }
-  | { toolId: "studio.scene.supprimer"; params: { ids: string[] } }
-  | { toolId: "studio.apparence.definir"; params: StudioApparence }
-  | { toolId: "studio.apparence.retirer"; params: { ids: string[] } };
-export type StudioCommandToolId = StudioCommand["toolId"];
-export interface StudioEnvelope {
-  contractVersion: typeof STUDIO_CONTRACT;
-  requestId: string;
-  baseRevisionId: string;
-  commands: StudioCommand[];
 }

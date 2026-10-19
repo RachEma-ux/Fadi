@@ -1,6 +1,6 @@
 import { validerForme } from "../objets/index.js";
-import { editable, type Gestionnaire } from "../noyau/etat.js";
-import type { StudioShape } from "../noyau/types.js";
+import { editable, type Gestionnaire } from "./etat.js";
+import type { StudioShape } from "../objets/formes.js";
 import { extrusionValues, fail, idList, record } from "../noyau/validation.js";
 
 /** Commandes de volume : extrusion déclarée (valeurs saisies seulement) et aplatissement. */

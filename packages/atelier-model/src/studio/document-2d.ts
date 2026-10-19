@@ -7,23 +7,28 @@
  * Pur : ni React, ni DOM, ni stockage.
  *
  * Façade publique (API inchangée) du découpage :
- * - `noyau/` : limites et contrat (`limites.ts`), types communs (`types.ts`), sommets nommés (`ancres.ts`), primitives de
- *   validation (`validation.ts`), calques (`calques.ts`), document et lectures (`document.ts`), état d'un lot
- *   (`etat.ts`), aiguillage des commandes (`commandes.ts`) ;
- * - `objets/` : un module par type (ligne, rectangle, cercle, arc, polyligne, cote), table `STUDIO_TYPES_OBJETS` ;
- * - `commandes/` : familles de commandes (dessin, modification, calques, volume).
+ * - `noyau/` (socle) : limites et contrat (`limites.ts`), types du socle (`types.ts` : point, extrusion, calque, forme
+ *   minimale), sommets nommés (`ancres.ts`), primitives de validation (`validation.ts`), calques (`calques.ts`) ;
+ * - `objets/` : un module par type (ligne, rectangle, cercle, arc, polyligne, cote), table `STUDIO_TYPES_OBJETS`, unions
+ *   `StudioShape` / `StudioAnnotation` / `StudioItem` (`formes.ts`) ;
+ * - `commandes/` : état d'un lot (`etat.ts`) et familles de commandes (dessin, modification, calques, volume) ;
+ * - `composition/` : document et contrat composés (`types.ts`), validation du document et lectures (`document.ts`),
+ *   aiguillage des commandes (`commandes.ts`), coupe et quantités des solides (`coupe.ts`, `quantites-solides.ts`).
  */
 
 export { STUDIO_BULGE_MAX, STUDIO_CONTRACT, STUDIO_DEFAULT_LAYER_ID, STUDIO_LIMITS } from "./noyau/limites.js";
-export type { StudioCommand, StudioCommandToolId, StudioDocument, StudioEnvelope, StudioExtrusion, StudioItem, StudioLayer, StudioPoint, StudioShape } from "./noyau/types.js";
+export type { StudioCommand, StudioCommandToolId, StudioDocument, StudioEnvelope } from "./composition/types.js";
+export type { StudioExtrusion, StudioLayer, StudioPoint } from "./noyau/types.js";
+export type { StudioItem, StudioShape } from "./objets/formes.js";
 export {
   STUDIO_FIXED_ANCHORS, STUDIO_INDEXED_ANCHOR, STUDIO_LINE_ANCHORS, STUDIO_RECTANGLE_ANCHORS,
   type StudioAnchor, type StudioCurveAnchor, type StudioLineAnchor, type StudioRectangleAnchor,
 } from "./noyau/ancres.js";
 export { StudioValidationError } from "./noyau/validation.js";
-export { studioLayerState, type StudioLayerState } from "./noyau/calques.js";
-export { measureStudioDimension, newStudioDocument, selectStudioShape, validateStudioDocument, type StudioDimensionMeasure } from "./noyau/document.js";
-export { applyStudioCommands, STUDIO_APPLIED_TOOL_IDS } from "./noyau/commandes.js";
+export type { StudioLayerState } from "./noyau/calques.js";
+export { studioLayerState } from "./composition/document.js";
+export { measureStudioDimension, newStudioDocument, selectStudioShape, validateStudioDocument, type StudioDimensionMeasure } from "./composition/document.js";
+export { applyStudioCommands, STUDIO_APPLIED_TOOL_IDS } from "./composition/commandes.js";
 export { studioAnchorPoint } from "./objets/index.js";
 export type { StudioLine } from "./objets/ligne.js";
 export type { StudioRectangle } from "./objets/rectangle.js";
@@ -32,8 +37,8 @@ export type { StudioArc } from "./objets/arc.js";
 export { studioExtrudedRingVertices, type StudioPolyline } from "./objets/polyligne.js";
 export type { StudioDimension, StudioDimensionLink } from "./objets/cote.js";
 // Annotations (extension additive `annotations`) : cote angulaire et texte.
-export type { StudioAnnotation } from "./noyau/types.js";
-export { measureStudioAngularDimension, type StudioAngularMeasure } from "./noyau/document.js";
+export type { StudioAnnotation } from "./objets/formes.js";
+export { measureStudioAngularDimension, type StudioAngularMeasure } from "./composition/document.js";
 export {
   dessinerCoteAngulaire, formatStudioAngle, studioAngularFromSegments, studioAngularValue, studioStraightSegment,
   type DessinCoteAngulaire, type StudioAngularDimension, type StudioAngularLink,

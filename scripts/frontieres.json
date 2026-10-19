@@ -21,116 +21,54 @@
     }
   },
   "studioModele": {
-    "$commentaire": "Couches du modèle Studio (packages/atelier-model/src/studio), dérivées du code au 19 octobre 2026. Socle : noyau (types, limites, validation, calques, ancres). Primitives d'écriture : exporteurs (texte, maillage, ifc-step, dxf) et registre/schemas-base. Objets 2D (objets), solides (objets-3d) et architecture se branchent sur le socle et les primitives. registre décrit les outils à partir des schémas d'objets ; commandes les exécute ; echanges est une feuille. Les fichiers à la racine de studio/ (façades export, registry, document-2d…) ne sont pas contraints. Les imports « type » (import type, export type) sont distingués des imports de valeur dans les exceptions.",
+    "$commentaire": "Couches du modèle Studio (packages/atelier-model/src/studio), dérivées du code au 19 octobre 2026. Socle : noyau (types du socle — point, extrusion, calque, forme minimale —, limites, validation, calques, ancres), qui n'importe aucune autre couche. Primitives d'écriture : exporteurs (texte, maillage, ifc-step, dxf) et registre/schemas-base. Objets 2D (objets, unions StudioShape / StudioAnnotation / StudioItem comprises), solides (objets-3d) et architecture se branchent sur le socle et les primitives. registre décrit les outils à partir des schémas d'objets ; commandes les exécute (état d'un lot compris, commandes/etat.ts) ; composition rassemble le document (StudioDocument, StudioCommand), sa validation, l'aiguillage applyStudioCommands et les lectures du document entier (coupe, quantités des solides) ; echanges est une feuille. Les fichiers à la racine de studio/ (façades document-2d, solides-libres, export, registry…) ne sont pas contraints. Les imports « type » (import type, export type) sont distingués des imports de valeur dans les exceptions.",
     "racine": "packages/atelier-model/src/studio",
     "regles": [
       {
         "de": "noyau",
-        "interdits": ["objets", "objets-3d", "commandes", "registre", "exporteurs", "architecture", "echanges"],
+        "interdits": ["objets", "objets-3d", "commandes", "registre", "exporteurs", "architecture", "echanges", "composition", "exigences", "scenes"],
         "motif": "le noyau est le socle : il n'importe aucune couche supérieure"
       },
       {
         "de": "exporteurs",
-        "interdits": ["objets", "objets-3d", "commandes", "registre", "architecture", "echanges"],
+        "interdits": ["objets", "objets-3d", "commandes", "registre", "architecture", "echanges", "composition"],
         "motif": "les exporteurs sont des primitives d'écriture : ils ne connaissent que le noyau"
       },
       {
         "de": "objets",
-        "interdits": ["objets-3d", "commandes", "registre", "architecture", "echanges"],
+        "interdits": ["objets-3d", "commandes", "registre", "architecture", "echanges", "composition"],
         "sauf": ["registre/schemas-base"],
         "motif": "un objet 2D se décrit avec le socle, les primitives d'écriture et les schémas de base, sans commande ni registre d'outils"
       },
       {
         "de": "objets-3d",
-        "interdits": ["objets", "commandes", "registre", "architecture", "echanges"],
+        "interdits": ["objets", "commandes", "registre", "architecture", "echanges", "composition"],
         "sauf": ["registre/schemas-base"],
         "motif": "un solide se décrit avec le socle, les primitives d'écriture et les schémas de base"
       },
       {
         "de": "architecture",
-        "interdits": ["objets", "objets-3d", "commandes", "registre", "echanges"],
+        "interdits": ["objets", "objets-3d", "commandes", "registre", "echanges", "composition"],
         "sauf": ["registre/schemas-base"],
         "motif": "l'architecture se décrit avec le socle, les primitives d'écriture et les schémas de base"
       },
       {
         "de": "registre",
-        "interdits": ["commandes", "exporteurs", "echanges"],
+        "interdits": ["commandes", "exporteurs", "echanges", "composition"],
         "motif": "le registre décrit les outils (schémas, libellés) sans dépendre de leur exécution ni des exporteurs"
       },
       {
         "de": "commandes",
+        "interdits": ["registre", "exporteurs", "echanges", "composition"],
+        "motif": "les commandes valident elles-mêmes leurs paramètres : elles ne s'appuient pas sur le registre déclaratif (X.2-03) ; l'aiguillage qui les compose vit au-dessus (composition)"
+      },
+      {
+        "de": "composition",
         "interdits": ["registre", "exporteurs", "echanges"],
-        "motif": "les commandes valident elles-mêmes leurs paramètres : elles ne s'appuient pas sur le registre déclaratif (X.2-03)"
+        "motif": "la composition assemble le socle, les objets, les solides, l'architecture, les exigences, les scènes et les commandes en un document validé ; elle ne dépend ni du registre déclaratif, ni des exporteurs, ni des échanges"
       }
     ],
-    "exceptions": [
-      {
-        "fichier": "noyau/types.ts",
-        "cible": "objets",
-        "nature": "type",
-        "raison": "union StudioShape et types des cotes : types seulement, effacés à la compilation. Inverser exigerait de déplacer l'union hors du noyau (refonte, hors lot X.4)."
-      },
-      {
-        "fichier": "noyau/types.ts",
-        "cible": "objets-3d",
-        "nature": "type",
-        "raison": "types StudioSolid / StudioBox / StudioProfilePrism du document : types seulement."
-      },
-      {
-        "fichier": "noyau/types.ts",
-        "cible": "architecture",
-        "nature": "type",
-        "raison": "types StudioArchitectureItem / StudioWall / StudioOpening du document : types seulement."
-      },
-      {
-        "fichier": "noyau/etat.ts",
-        "cible": "objets",
-        "nature": "valeur",
-        "raison": "VIOLATION RÉELLE : l'état des lots appelle controlerLiens, validerCote (objets/cote) et studioAnchorPoint (objets/index). Correction non triviale (injection des contrôles d'objets dans l'état) : signalée, à traiter dans un lot de refonte."
-      },
-      {
-        "fichier": "noyau/etat.ts",
-        "cible": "objets-3d",
-        "nature": "type",
-        "raison": "type StudioSolid de l'état : type seulement."
-      },
-      {
-        "fichier": "noyau/etat.ts",
-        "cible": "architecture",
-        "nature": "type",
-        "raison": "type StudioArchitectureItem de l'état : type seulement."
-      },
-      {
-        "fichier": "noyau/document.ts",
-        "cible": "objets",
-        "nature": "valeur",
-        "raison": "VIOLATION RÉELLE : validateStudioDocument délègue aux validateurs des objets (validerForme, validerCote, validerAnnotation, studioAngularValue). Le validateur de document est un agrégateur placé dans le noyau ; le déplacer hors du noyau change l'API interne (non trivial)."
-      },
-      {
-        "fichier": "noyau/document.ts",
-        "cible": "objets-3d",
-        "nature": "valeur",
-        "raison": "VIOLATION RÉELLE : validateStudioDocument appelle validerSolide (objets-3d/solides). Même cause que ci-dessus."
-      },
-      {
-        "fichier": "noyau/document.ts",
-        "cible": "architecture",
-        "nature": "valeur",
-        "raison": "VIOLATION RÉELLE : validateStudioDocument appelle controlerArchitecture et validerElementArchitectural (architecture/validation). Même cause que ci-dessus."
-      },
-      {
-        "fichier": "noyau/commandes.ts",
-        "cible": "commandes",
-        "nature": "valeur",
-        "raison": "VIOLATION RÉELLE : applyStudioCommands (répartiteur des commandes) vit dans le noyau et importe chaque famille de commandes. Le répartiteur est un orchestrateur, pas un élément du socle ; le déplacer vers studio/ (racine) est une refonte des chemins d'import, hors lot X.4."
-      },
-      {
-        "fichier": "noyau/commandes.ts",
-        "cible": "objets",
-        "nature": "valeur",
-        "raison": "VIOLATION RÉELLE : le répartiteur appelle studioExtrudedRingVertices (objets/polyligne) pour le budget global des contours extrudés. Même cause que ci-dessus."
-      }
-    ]
+    "exceptions": []
   },
   "modelePur": {
     "$commentaire": "Le modèle pur (packages/*) n'importe ni React, ni le DOM, ni three, ni apps/*, même si un manifeste venait à le déclarer. Les globals du navigateur sont refusés par BROWSER_API ; apps/* par FORBIDDEN_BOUNDARY (tous deux déjà en place).",

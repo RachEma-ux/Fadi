@@ -1,6 +1,6 @@
-import { validateStudioDocument } from "../noyau/document.js";
-import type { StudioDocument } from "../noyau/types.js";
-import { aireProfil, type StudioSolid } from "./solides.js";
+import { validateStudioDocument } from "./document.js";
+import type { StudioDocument } from "./types.js";
+import { aireProfil, type StudioSolid } from "../objets-3d/solides.js";
 
 /**
  * Quantités géométriques des solides libres, pour le module de quantités (qui pourra les appeler) : volume et aire

@@ -1,7 +1,7 @@
 import { transformerMur, transformerOuverture } from "../architecture/transformations.js";
 import type { StudioArchitectureItem, StudioOpening, StudioWall } from "../architecture/types.js";
 import { controlerMurs, validerElementArchitectural, validerMur, validerOuverture } from "../architecture/validation.js";
-import { calqueEtat, editable, freeId, type Etat, type Gestionnaire } from "../noyau/etat.js";
+import { calqueEtat, editable, freeId, type Etat, type Gestionnaire } from "./etat.js";
 import { STUDIO_DEFAULT_LAYER_ID } from "../noyau/limites.js";
 import { boolean, fail, finite, identifier, idList, point, record, same } from "../noyau/validation.js";
 import { studioEchelle, studioRotation, studioSymetrie, studioTranslation, type StudioTransformation } from "../transformations.js";

@@ -2,8 +2,9 @@ import { studioOffset } from "../courbes.js";
 import { validerCote, type StudioDimensionLink } from "../objets/cote.js";
 import { validerElement } from "../objets/element.js";
 import { studioAnchorPoint, translaterForme, validerForme } from "../objets/index.js";
-import { editable, enteredDimension, followLinks, freeId, type Etat, type Gestionnaire } from "../noyau/etat.js";
-import type { StudioItem, StudioPoint, StudioShape } from "../noyau/types.js";
+import { editable, enteredDimension, followLinks, freeId, type Etat, type Gestionnaire } from "./etat.js";
+import type { StudioPoint } from "../noyau/types.js";
+import type { StudioItem, StudioShape } from "../objets/formes.js";
 import { boolean, fail, finite, identifier, idList, point, record, same } from "../noyau/validation.js";
 import {
   studioAncreImage, studioDecalageImage, studioEchelle, studioRotation, studioSymetrie, studioTransformerCoteAngulaire, studioTransformerForme, studioTransformerSolide,

@@ -2,7 +2,8 @@ import { studioAngleNormal, studioArcPoints, studioPolylineSegmentCount, studioP
 import type { DxfWriter } from "../exporteurs/dxf.js";
 import { nb, svgY, xml } from "../exporteurs/texte.js";
 import { boolean, discriminator, fail, finite, identifier, layerRef, point, record, same } from "../noyau/validation.js";
-import type { StudioPoint, StudioShape } from "../noyau/types.js";
+import type { StudioPoint } from "../noyau/types.js";
+import type { StudioShape } from "./formes.js";
 import { id, layerId, point as pointSchema } from "../registre/schemas-base.js";
 import type { StudioArc } from "./arc.js";
 import { STUDIO_EXPORT_TO_RESOLVE } from "./cote.js";

@@ -1,6 +1,7 @@
 import { studioAngleNormal, studioShapeAnchors } from "./courbes.js";
 import type { StudioAnchor } from "./noyau/ancres.js";
-import type { StudioPoint, StudioShape } from "./noyau/types.js";
+import type { StudioPoint } from "./noyau/types.js";
+import type { StudioShape } from "./objets/formes.js";
 import type { StudioDimension } from "./objets/cote.js";
 import type { StudioAngularDimension } from "./objets/cote-angulaire.js";
 import type { StudioText } from "./objets/texte.js";
