@@ -2,7 +2,7 @@ import { controlerLiensAngulaires, studioAngularFromSegments, studioStraightSegm
 import { translaterTexte, validerTexte } from "../objets/texte.js";
 import { editable, shapeMap, type Etat } from "./etat.js";
 import type { StudioPoint } from "../noyau/types.js";
-import type { StudioAnnotation } from "../objets/formes.js";
+import type { StudioAnnotation, StudioShape } from "../objets/formes.js";
 import { fail, same } from "../noyau/validation.js";
 
 /**
@@ -59,6 +59,27 @@ export function suivreAnnotations(state: Etat, shapeId: string, path: string): v
     if (same(g.vertex, a.vertex) && same(g.first, a.first) && same(g.second, a.second)) return a;
     editable(state, a, `${path} (cote angulaire liée ${a.id})`);
     return { ...a, ...g };
+  });
+}
+
+/**
+ * INV-013 — segments d'une polyligne renumérotés (topologie changée, `modifier`) : un lien de cote angulaire vers un
+ * segment de rang i n'est gardé que si ce segment est exactement le même avant et après ; sinon il est rompu et la cote
+ * passe « à résoudre » (géométrie figée), jamais rattachée en silence à un autre segment. Un segment qui n'existe plus
+ * (ou devenu courbe) n'est pas rompu ici : le suivi des segments refuse la modification, comme avant.
+ */
+export function rompreSegmentsRenumerotes(state: Etat, avant: StudioShape, apres: StudioShape, path: string): void {
+  const rompu = (l: { objectId: string; segment: number } | null) => {
+    if (!l || l.objectId !== apres.id) return false;
+    const a = studioStraightSegment(avant, l.segment), b = studioStraightSegment(apres, l.segment);
+    return !!a && !!b && !(same(a.a, b.a) && same(a.b, b.b));
+  };
+  state.annotations = state.annotations.map((a) => {
+    if (a.type !== "angular-dimension") return a;
+    const r1 = rompu(a.links.first), r2 = rompu(a.links.second);
+    if (!r1 && !r2) return a;
+    editable(state, a, `${path} (cote angulaire liée ${a.id})`);
+    return { ...a, links: { first: r1 ? null : a.links.first, second: r2 ? null : a.links.second }, toResolve: true };
   });
 }
 
