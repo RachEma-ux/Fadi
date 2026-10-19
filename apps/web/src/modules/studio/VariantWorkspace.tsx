@@ -80,6 +80,10 @@ import { Vue3D } from "./variante/Vue3D";
 import { RapportExport } from "./variante/RapportExport";
 import { FORMATS_RAPPORT } from "./variante/rapport-export";
 import { OUTILS_VISUALISATION, type DemandeVue3d } from "./vue3d/scenes/scenes-ui";
+import { useCycleOutils } from "./chargement/useRessources";
+import { AvisFileLocale } from "./hors-ligne/AvisFileLocale";
+import { cleVariante } from "./hors-ligne/persistance";
+import { mesurerCommandes } from "./chargement/mesures-studio";
 import "./studio.css";
 import "./planche2d/planche2d.css";
 
@@ -239,7 +243,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   function apply(cs: StudioCommand[]): boolean {
     if (!brouillon || !writable) return false;
     try {
-      const next = appliquerBrouillon(brouillon, cs);
+      const next = mesurerCommandes(cs, () => appliquerBrouillon(brouillon, cs));
       setBrouillon(next);
       const doc = documentBrouillon(next);
       const seul = selectionIds.length === 1 ? selectionIds[0] : undefined;
@@ -472,6 +476,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     executer(e.cible, true);
   }
   useClavierStudio({ dialogue: !!dialogue, pret: !!context && !!drawing, commandeDisponible: commandAvailable, executer, espace: gestes.espace });
+  // Cycle des outils (B.3-01) : moteurs de l'outil chargés au besoin puis actifs ; première planche prête (PERF-01).
+  useCycleOutils({ outil: tool, pret: !loading && !!context && !!drawing, objets: drawing?.objects.length ?? 0 });
 
   if (!loading && refused(loadError)) return <StudioRefus quoi={historical ? "revision" : "variante"} />;
   const toolEntry = STUDIO_TOOLS.find(t => t.toolId === tool);
@@ -490,6 +496,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   return <section className="studio-workspace" ref={shell} aria-label="Studio" data-studio-variante={variantId} data-studio-revision-vue={historical ? revisionId : undefined}>
     <EnTeteStudio context={context} />
     <AlerteStudio error={error} blocked={blocked && !enr.horsLigne.conflit} surRecharger={() => void enr.rechargerServeur()} />
+    <AvisFileLocale cle={user && !historical ? cleVariante(user.id, projectId, studyId, variantId) : null} />
     {loading && <p role="status">Chargement de la planche…</p>}
     {context && drawing && !historical && <AvisRevision projectId={projectId} studyId={studyId} variantId={variantId} teteAffichee={context.variant.headRevisionId} actif={!pending && !blocked && !uncertain && !enr.horsLigne.conflit} nonEnregistre={commands.length > 0}
       surRecharger={async () => {

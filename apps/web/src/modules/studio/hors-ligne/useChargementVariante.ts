@@ -17,8 +17,10 @@ import { creerBrouillon, type Brouillon } from "../planche2d/brouillon";
 import { refused } from "../variante/etat-variante";
 import { navigateurEnLigne } from "./connexion";
 import { cleVariante, restaurerBrouillon, type BrouillonHorsLigne, type ConflitHorsLigne } from "./persistance";
-import { contexteMemorise, lireBrouillonHorsLigne, memoriserContexte, type BrouillonLu } from "./stockage";
+import { brouillonBrut, contexteMemorise, ErreurFileLocale, lireBrouillonHorsLigne, memoriserContexte, type BrouillonLu } from "./stockage";
+import { signalerFileBloquee } from "./AvisFileLocale";
 import type { PlanEnvoi } from "../import/envoi";
+import { perfStudio } from "../chargement/perf";
 
 export interface RepriseHorsLigne {
   plan: PlanEnvoi | null;
@@ -59,6 +61,7 @@ export function useChargementVariante(o: OptionsChargement): void {
     alive.current = true;
     let active = true;
     const f = () => ref.current;
+    const t0 = perfStudio.maintenant();
     void (async () => {
       if (revisionId !== null) {
         try { const c = await api.studioRevision(projectId, studyId, variantId, revisionId); if (active) { f().setContext(c); f().setBrouillon(creerBrouillon(c.revision.document)); } }
@@ -68,7 +71,14 @@ export function useChargementVariante(o: OptionsChargement): void {
       }
       const cle = userId ? cleVariante(userId, projectId, studyId, variantId) : null;
       let lu: BrouillonLu | null = null, illisible = false;
-      if (cle && userId) { try { lu = await lireBrouillonHorsLigne(cle, userId); } catch { illisible = true; } }
+      if (cle && userId) {
+        try { lu = await lireBrouillonHorsLigne(cle, userId); }
+        catch (e) {
+          illisible = true;
+          // B.3-11 : file incompatible — signalée pour une résolution explicite (export, puis abandon confirmé).
+          if (e instanceof ErreurFileLocale) signalerFileBloquee(cle, e.raison, e.entree);
+        }
+      }
       const h = lu?.brouillon ?? null;
       const reprise = (r: Omit<RepriseHorsLigne, "plan" | "pasCouverts" | "stamp">) => f().reprendre({ plan: h?.plan ?? null, pasCouverts: h?.pasCouverts ?? 0, stamp: lu?.stamp ?? null, ...r });
       try {
@@ -88,6 +98,7 @@ export function useChargementVariante(o: OptionsChargement): void {
         let b: Brouillon;
         try { b = restaurer(base, h); }
         catch {
+          if (cle && userId) void brouillonBrut(cle, userId).then((e) => { if (e) signalerFileBloquee(cle, "ne-s-applique-plus", e); });
           f().setContext({ ...c, canWrite: false }); f().setBrouillon(creerBrouillon(c.revision.document));
           f().setError("Le brouillon hors ligne conservé sur cet appareil ne s’applique plus à sa révision : il n’est ni envoyé ni effacé. La version serveur est ouverte en lecture seule.");
           return;
@@ -108,6 +119,8 @@ export function useChargementVariante(o: OptionsChargement): void {
         }
         try { f().setContext(memoire.contexte); f().setBrouillon(h ? restaurer(memoire.contexte, h) : creerBrouillon(memoire.contexte.revision.document)); }
         catch { f().setLoadError(e); f().setError("Hors ligne : le brouillon conservé sur cet appareil ne s’applique plus ; rien n’est affiché ni modifiable."); return; }
+        // PERF-10 : ouverture d'une variante depuis l'appareil faute de réseau (données récupérables).
+        perfStudio.enregistrer("PERF-10", perfStudio.maintenant() - t0, "ms", { operation: "ouverture-depuis-appareil", brouillon: h ? 1 : 0 }, t0);
         reprise({ conflit: h?.conflit ?? null, conserve: !!h, depuisCache: memoire.luA || new Date().toISOString() });
       } finally { if (active) f().setLoading(false); }
     })();

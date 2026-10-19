@@ -30,6 +30,7 @@ import {
   type IdProfil, type PreferencesOutils,
 } from "./profils";
 import { ariaRaccourci, BARRES_STUDIO, libelleRaccourci, type BarreStudio, type StudioToolId } from "./raccourcis";
+import { PanneauRessources } from "../chargement/PanneauRessources";
 
 export interface CatalogueProps {
   disponible: (e: EntreeCatalogue) => boolean;
@@ -361,6 +362,7 @@ export function GestionnaireOutils({ disponible, raison, surExecuter, surFermer,
         <p className="studio-dialogue-aide">Manifeste du catalogue : <code translate="no">{STUDIO_MANIFESTE_OUTILS_VERSION}</code></p>
         <ChoixProfil profil={profil} />
         <Regroupements profil={profil} compose={groupeCompose?.id ?? null} surComposer={setCompose} />
+        <PanneauRessources />
         <label>Rechercher un outil<input ref={champ} type="search" value={recherche} placeholder="Nom, raccourci ou identifiant" onChange={(e) => setRecherche(e.target.value)} data-studio-recherche-outils /></label>
         <FiltresOutils filtres={filtresActifs} surFiltres={setFiltres} groupes={profil.groupes} />
         <p role="status" className="studio-dialogue-aide" data-studio-nombre-entrees={trouvees.length}>{`${trouvees.length} entrée(s)`}</p>
