@@ -20,6 +20,18 @@ export function suivantDansLePiege(n: number, courant: number, arriere: boolean)
   return null;
 }
 
+/** Marque d'un élément rendu hors de la boîte (portail : liste déroulante, infobulle…) mais qui lui appartient. */
+export const ATTRIBUT_PORTAIL = "data-studio-dialogue-portail";
+
+/**
+ * Le focus sur `cible` appartient-il à la boîte ? Oui s'il est dedans, ou dans un élément marqué
+ * `data-studio-dialogue-portail` (rendu ailleurs dans la page) : le piège ne l'en retire pas.
+ */
+export function appartientAuDialogue(cible: Element | null, boite: Pick<Node, "contains"> | null): boolean {
+  if (!cible || !boite) return false;
+  return boite.contains(cible) || cible.closest(`[${ATTRIBUT_PORTAIL}]`) !== null;
+}
+
 /** Éléments focalisables visibles d'une boîte. */
 export function focalisables(racine: Element): HTMLElement[] {
   return [...racine.querySelectorAll<HTMLElement>(FOCALISABLES)].filter((el) => !el.closest("[inert],[hidden]") && el.getClientRects().length > 0);

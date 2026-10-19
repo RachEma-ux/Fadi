@@ -211,6 +211,44 @@ try {
   await essai("Importer DXF", () => atteindre(outils, '[data-studio-commande="importer-dxf"]').then((b) => b.click()), '[data-studio-commande="importer-dxf"]');
   await essai("Palette (Ctrl+K depuis la liste)", async () => { await liste.locator('[role="option"][tabindex="0"]').focus(); await page.keyboard.press("Control+k"); }, '[role="option"][tabindex="0"]');
 
+  // Passage direct d'une boîte à l'autre (palette → Feuille) : la nouvelle boîte prend le focus ; un portail marqué
+  // data-studio-dialogue-portail, rendu hors de la boîte, garde le focus ; Échap rend le focus à l'origine de la palette.
+  await liste.locator('[role="option"][tabindex="0"]').focus();
+  await page.keyboard.press("Control+k");
+  await page.locator("[data-studio-palette]").waitFor();
+  await page.keyboard.type("Feuille");
+  await page.keyboard.press("Enter");
+  await page.locator("[data-studio-feuille]").waitFor();
+  await page.waitForFunction(() => !!document.activeElement?.closest('[role="dialog"]')?.querySelector("[data-studio-feuille]")).catch(() => {});
+  check("palette → Feuille : la nouvelle boîte prend le focus", await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]')?.querySelector("[data-studio-feuille]")), await focus());
+  const portailGarde = await page.evaluate(async () => {
+    const p = document.createElement("div");
+    p.setAttribute("data-studio-dialogue-portail", "");
+    p.innerHTML = '<button type="button" id="portail-essai">Option</button>';
+    document.body.appendChild(p);
+    document.getElementById("portail-essai").focus();
+    await new Promise((r) => setTimeout(r, 50));
+    const garde = document.activeElement?.id === "portail-essai";
+    p.remove();
+    return garde;
+  });
+  check("portail de la boîte (data-studio-dialogue-portail) : le piège n'en retire pas le focus", portailGarde);
+  const dehors = await page.evaluate(async () => {
+    const b = document.createElement("button");
+    b.textContent = "Dehors";
+    document.body.appendChild(b);
+    b.focus();
+    await new Promise((r) => setTimeout(r, 50));
+    const repris = !!document.activeElement?.closest('[role="dialog"]');
+    b.remove();
+    return repris;
+  });
+  check("élément non marqué hors de la boîte : le focus revient dans la boîte", dehors);
+  await page.keyboard.press("Escape");
+  await page.locator("[data-studio-feuille]").waitFor({ state: "detached" });
+  await page.waitForFunction(() => document.activeElement?.matches('[role="option"][tabindex="0"]') === true).catch(() => {});
+  check("Feuille fermée : le focus revient à l'origine de la première boîte", await page.evaluate(() => document.activeElement?.matches('[role="option"][tabindex="0"]') === true), await focus());
+
   // ——— Téléphone : mêmes pages, aucun débordement, boutons nommés visibles ———
   const mobile = await context.newPage();
   mobile.on("pageerror", (e) => erreurs.push(`mobile : ${e.message}`));
