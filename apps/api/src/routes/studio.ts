@@ -7,10 +7,12 @@ import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportS
 import { createStudioComment, deleteStudioComment, listStudioComments, studioCommentSchema } from "../lib/studio-commentaires.js";
 import { listStudiesOfStep, listStudioStudySteps, setStudioStudySteps, studioStudyStepsSchema } from "../lib/studio-liens.js";
 import { renameStudioStudy, renameStudioVariant, setStudioStudyArchived, setStudioVariantArchived, studioRenameSchema } from "../lib/studio-variantes.js";
+import { studioPreferencesRouter } from "./studio-preferences.js";
 
 export const studioRouter = Router({ mergeParams: true });
 studioRouter.use(requireAuth);
 studioRouter.use(json({ limit: "1mb" }));
+studioRouter.use("/preferences", studioPreferencesRouter);
 // `requestId` facultatif : même règle d'identifiant que les enveloppes de commandes ; rejeu = réponse 201 d'origine.
 const studySchema = z.object({ name: z.string().trim().min(1).max(200), requestId: studioIdentifierSchema.optional() }).strict();
 // Dérivation facultative : `fromVariantId` (même étude) et, si donnée, `fromRevisionId` (de cette variante ; tête sinon).

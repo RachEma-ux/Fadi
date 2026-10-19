@@ -348,6 +348,11 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/studio-navigation.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des profils et favoris d'outils Studio — API (aller-retour, refus, droits) et étoile du gestionnaire (apps/web/e2e/studio-profils.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-profils.mjs 2>&1 | tee -a e2e.log
       - name: Recette des préférences de notification — type masqué, projet en sourdine, état lu relu (apps/web/e2e/notifications-preferences.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |

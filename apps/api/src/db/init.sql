@@ -589,3 +589,19 @@ ALTER TABLE studio_variants DROP CONSTRAINT IF EXISTS studio_variants_derived_fr
 ALTER TABLE studio_variants DROP CONSTRAINT IF EXISTS studio_variants_derived_from_revision,
   ADD CONSTRAINT studio_variants_derived_from_revision FOREIGN KEY(derived_from_variant_id, derived_from_revision_id)
   REFERENCES studio_revisions(variant_id, id) DEFERRABLE INITIALLY DEFERRED NOT VALID;
+-- Préférences d'outils Studio d'un compte (B.2-02/04/05) : profil des barres d'outils, favoris et liste personnelle
+-- (identifiants du registre STUDIO_TOOLS, vérifiés par le serveur). Visibilité seulement : aucune géométrie,
+-- révision ni droit n'en dépend (B.2-06/07). Table nouvelle, additive ; disparaît avec le compte (cascade).
+CREATE TABLE IF NOT EXISTS studio_tool_preferences (
+  user_id text PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  profile text NOT NULL DEFAULT 'standard',
+  favorites jsonb NOT NULL DEFAULT '[]'::jsonb,
+  personal jsonb NOT NULL DEFAULT '[]'::jsonb,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_preferences_profile_check,
+  ADD CONSTRAINT studio_tool_preferences_profile_check
+  CHECK (profile ~ '^(standard|personnel|metier:[a-z0-9-]{1,40})$') NOT VALID;
+ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_preferences_lists_check,
+  ADD CONSTRAINT studio_tool_preferences_lists_check
+  CHECK (jsonb_typeof(favorites) = 'array' AND jsonb_typeof(personal) = 'array') NOT VALID;

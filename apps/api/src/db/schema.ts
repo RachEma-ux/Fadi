@@ -704,3 +704,16 @@ export const studioStudySteps = pgTable("studio_study_steps", {
   uniqueIndex("studio_study_steps_unique").on(t.studyId, t.stepNumber),
   index("studio_study_steps_step_idx").on(t.stepNumber),
 ]);
+
+/**
+ * Préférences d'outils Studio d'un compte (lib/studio-preferences.ts) : profil des barres (`standard`,
+ * `metier:<id>`, `personnel`), favoris et liste personnelle, identifiants du registre `STUDIO_TOOLS`. Une ligne par
+ * compte, sans rapport avec les documents : ni géométrie, ni révision, ni droit (B.2-07).
+ */
+export const studioToolPreferences = pgTable("studio_tool_preferences", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  profile: text("profile").notNull().default("standard"),
+  favorites: jsonb("favorites").$type<string[]>().notNull().default([]),
+  personal: jsonb("personal").$type<string[]>().notNull().default([]),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
