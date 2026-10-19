@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  controleFeuillesDossier, definitionDeSaisie, empreinteSaisie, saisieDeDefinition, saisieModifiee, studioDossierCreateSchema, studioSheetCreateSchema,
+  borneAjustements, codeErreurDossier, controleFeuillesDossier, definitionDeSaisie, empreinteSaisie, journalBorne, STUDIO_DOSSIER_ERREURS, saisieDeDefinition, saisieModifiee, studioDossierCreateSchema, studioSheetCreateSchema,
   studioSheetUpdateSchema,
 } from "./studio-dossiers-regles.js";
 import { construireManifeste, contenuDe, empreinteManifeste, formatsDuContenu } from "./studio-publication-statuts.js";
@@ -72,5 +72,34 @@ describe("E.3-07 : dessin 2D indépendant", () => {
     const coord = { role: "coordonnee" as const, variantId: "v_b", revisionId: "r_b1", documentHash: H("b") };
     expect(() => construireManifeste([principale, coord], meta, [doc("svg")], "dessin-2d")).toThrow("studio_manifest_drawing_coordinated");
     expect(() => construireManifeste([principale], meta, [doc("ifc")], "dessin-2d")).toThrow("studio_manifest_drawing_ifc");
+  });
+});
+
+describe("dossiers : borne du journal des ajustements du métré (I-2) et codes d'erreur du catalogue (M-4, M-7)", () => {
+  const journal = [{ seq: 1, id: "a1" }, { seq: 2, id: "a2" }, { seq: 3, id: "a3" }];
+  it("épinglage : séquence max courante ; même métré : borne conservée ; métré retiré : null", () => {
+    const ancien = { variantId: "v1", revisionId: "r1", seq: 2 };
+    expect(borneAjustements(null, { variantId: "v1", revisionId: "r1" }, 2)).toBe(2);
+    expect(borneAjustements(null, { variantId: "v1", revisionId: "r1" }, null)).toBeNull();
+    // Un ajustement ajouté après l'épinglage (séquence max 3) n'entre pas tant que le métré n'est pas réépinglé.
+    expect(borneAjustements(ancien, { variantId: "v1", revisionId: "r1" }, 3)).toBe(2);
+    expect(borneAjustements(ancien, { variantId: "v1", revisionId: "r2" }, 3)).toBe(3);
+    expect(borneAjustements(ancien, { variantId: "v2", revisionId: "r1" }, null)).toBeNull();
+    expect(borneAjustements(ancien, { variantId: null, revisionId: null }, 3)).toBeNull();
+    expect(borneAjustements({ variantId: null, revisionId: null, seq: null }, { variantId: "v1", revisionId: "r1" }, 3)).toBe(3);
+  });
+  it("journal lu : séquences ≤ borne seulement ; borne nulle : aucun ajustement pris en compte", () => {
+    expect(journalBorne(journal, 2).map((l) => l.id)).toEqual(["a1", "a2"]);
+    expect(journalBorne(journal, 3)).toHaveLength(3);
+    expect(journalBorne(journal, null)).toEqual([]);
+  });
+  it("toute exception d'assemblage devient un code connu, jamais un texte du serveur", () => {
+    expect(codeErreurDossier({ status: 409, body: { error: "dossier_sheet_missing", message: "Une feuille…" } })).toBe("dossier_sheet_missing");
+    expect(codeErreurDossier({ status: 409, body: { error: "dossier_invalid" } })).toBe("dossier_invalid");
+    expect(codeErreurDossier({ status: 404, body: { error: "not_found" } })).toBe("not_found");
+    expect(codeErreurDossier(new Error("boom"))).toBe("dossier_unavailable");
+    expect(codeErreurDossier({ body: { error: "autre_chose" } })).toBe("dossier_unavailable");
+    expect(codeErreurDossier(null)).toBe("dossier_unavailable");
+    expect(STUDIO_DOSSIER_ERREURS).toContain("dossier_unavailable");
   });
 });

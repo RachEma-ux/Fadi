@@ -308,6 +308,7 @@ export interface StudioDossierDocument {
   sheetCount: number;
   /** Empreinte du dossier assemblé ; null si une feuille ne peut plus être produite (`error`). */
   hash: string | null;
+  /** Code d'erreur (`codeErreurDossier`), jamais un texte : le client le traduit (M-7). */
   error: string | null;
   sources: { variantId: string; variantName: string | null; revisionId: string; revisionShort: string }[];
   updatedAt: string;

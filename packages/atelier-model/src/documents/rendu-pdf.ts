@@ -39,7 +39,7 @@ export function winAnsi(t: string): string {
 }
 
 /** Largeur approchée d'un texte Helvetica (en fractions de corps) pour aligner au milieu ou à droite. */
-function largeurHelvetica(t: string): number {
+export function largeurHelvetica(t: string): number {
   let w = 0;
   for (const ch of t) {
     if (" .,:;'!|il".includes(ch)) w += 0.278;

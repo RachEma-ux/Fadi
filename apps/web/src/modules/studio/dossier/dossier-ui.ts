@@ -1,7 +1,7 @@
 /**
  * Règles d'affichage du panneau « Feuilles et dossier » (E.3-01 à E.3-03). Pur : ni React, ni DOM.
  */
-import { STUDIO_DEFAULT_LAYER_ID, STUDIO_NON_EVALUE, type BilanQuantitesStudio, type StudioDocument, type TotalBilan } from "@parcours/atelier-model";
+import { sousTotauxAvecNet, STUDIO_DEFAULT_LAYER_ID, STUDIO_NON_EVALUE, type BilanQuantitesStudio, type StudioDocument, type TotalBilan } from "@parcours/atelier-model";
 import type { StudioSheet, StudioSheetInput } from "../../../lib/api";
 
 /** Saisie initiale d'une nouvelle feuille : numéro proposé, A3 paysage ajustée, calques visibles, auteur vide. */
@@ -76,11 +76,28 @@ export function libelleTotal(t: TotalBilan, locale: string): string {
   if (t.valeur === null) return STUDIO_NON_EVALUE;
   return `${nombre(t.valeur, locale)} m³${t.nonEvalues ? ` (partiel : ${t.nonEvalues} non évalué${t.nonEvalues > 1 ? "s" : ""})` : ""}`;
 }
-/** Résumé du bilan brut / déductions / net. */
-export const resumeBilan = (b: BilanQuantitesStudio, locale: string) => ({
-  brut: libelleTotal(b.totaux.brut, locale), deduit: libelleTotal(b.totaux.deduit, locale), net: libelleTotal(b.totaux.net, locale),
-  deductions: b.deductionsDeclarees, coherent: b.controle.coherent,
-});
+/**
+ * Résumé du bilan brut / déductions / net. Totaux cohérents (M-1) : à côté du net, le sous-total brut et les déductions
+ * des seules lignes qui ont un net (sous-total − déductions = net) ; le brut de toutes les lignes reste affiché à part.
+ */
+export const resumeBilan = (b: BilanQuantitesStudio, locale: string) => {
+  const s = sousTotauxAvecNet(b);
+  return {
+    brut: libelleTotal(b.totaux.brut, locale), deduit: libelleTotal(b.totaux.deduit, locale), net: libelleTotal(b.totaux.net, locale),
+    brutAvecNet: libelleTotal(s.brut, locale), deduitAvecNet: libelleTotal(s.deduit, locale),
+    deductions: b.deductionsDeclarees, coherent: b.controle.coherent,
+  };
+};
+
+/**
+ * Ajustements manuels du métré d'un dossier (hors bilan) et borne du journal lue (I-2) : seules les séquences ≤ borne
+ * comptent ; borne nulle : aucun ajustement pris en compte.
+ */
+export function libelleAjustements(m: { ajustements: { enVigueur: number; aRevoir: number } | string; borneAjustements?: number | null }): string {
+  const compte = typeof m.ajustements === "string" ? STUDIO_NON_EVALUE : `${m.ajustements.enVigueur} en vigueur, ${m.ajustements.aRevoir} à revoir (hors bilan)`;
+  if (m.borneAjustements === undefined) return compte;
+  return m.borneAjustements === null ? `${compte} · aucun ajustement pris en compte` : `${compte} · journal lu jusqu’au n° ${m.borneAjustements}`;
+}
 
 /** Message d'un refus du serveur pour les feuilles et dossiers. */
 export function messageRefusDossier(status: number, body: unknown): string {

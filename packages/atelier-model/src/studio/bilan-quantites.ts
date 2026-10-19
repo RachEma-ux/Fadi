@@ -14,7 +14,14 @@ import { quantitesStudio, type MotifNonEvalue, type NatureQuantite, type Quantit
  * - **net** : brut − somme des déductions, pour un mur architectural seulement (un mur sans ouverture a une déduction
  *   déclarée nulle : net = brut).
  * Un contrôle vérifie, ligne par ligne, que le net rapporté par le métré égale le brut moins ses déductions détaillées.
+ * C'est un **contrôle d'arithmétique** sur une même source (le net et les déductions proviennent du même calcul
+ * architectural) : il détecte une incohérence de report entre colonnes, il ne constitue PAS une vérification
+ * indépendante des quantités (aucun second calcul, aucune mesure extérieure).
  * Aucun arrondi ici ; les ajustements manuels (E.3-05) restent à part et ne modifient jamais ce bilan.
+ *
+ * Totaux : le total brut porte sur toutes les lignes, le total net sur les seules lignes qui ont un net. Pour que les
+ * totaux se lisent ensemble, `sousTotauxAvecNet` donne le brut et les déductions des seules lignes qui ont un net : le
+ * sous-total brut moins ces déductions égale le total net.
  */
 
 export const STUDIO_BILAN_QUANTITES_SCHEMA = "studio-bilan-quantites/1" as const;
@@ -65,7 +72,10 @@ export interface BilanQuantitesStudio {
   totaux: { brut: TotalBilan; deduit: TotalBilan; net: TotalBilan };
   /** Nombre total de déductions déclarées détaillées. */
   deductionsDeclarees: number;
-  /** Contrôle : net = brut − Σ déductions, à 1e-9 près (relatif), pour chaque ligne qui a un net. */
+  /**
+   * Contrôle d'arithmétique (même source, pas une vérification indépendante) : net = brut − Σ déductions, à 1e-9 près
+   * (relatif), pour chaque ligne qui a un net.
+   */
   controle: { coherent: boolean; ecartMax: number; lignesControlees: number };
 }
 
@@ -77,6 +87,16 @@ const total = (valeurs: readonly (number | null)[]): TotalBilan => {
   }
   return { valeur: evalues ? somme : null, evalues, nonEvalues };
 };
+
+/**
+ * Sous-totaux des seules lignes qui ont un net (dérivés des lignes, hors empreinte du bilan) : brut et déductions de ces
+ * lignes, qui se lisent à côté du total net (sous-total brut − déductions = net). Les valeurs par ligne ne changent pas ;
+ * une ligne sans net (objet hors architecture, brut non évalué) n'y entre pas.
+ */
+export function sousTotauxAvecNet(b: Pick<BilanQuantitesStudio, "lignes">): { brut: TotalBilan; deduit: TotalBilan } {
+  const avecNet = b.lignes.filter((l) => l.net !== null);
+  return { brut: total(avecNet.map((l) => l.brut)), deduit: total(avecNet.map((l) => l.deduit)) };
+}
 
 /** Bilan brut / déductions / net du document (volume), à partir du métré brut (calculé s'il n'est pas fourni). */
 export function bilanQuantitesStudio(doc: StudioDocument, metre: QuantitesStudio = quantitesStudio(doc)): BilanQuantitesStudio {

@@ -172,6 +172,14 @@ export interface ManifestePublication {
 }
 /** Contenu d'un manifeste (absent : complet). */
 export const contenuDe = (m: { contenu?: string } | null | undefined): ContenuPublication => (m?.contenu === "dessin-2d" ? "dessin-2d" : "complet");
+/**
+ * Diffusions qu'une nouvelle diffusion remplace (E.4-06) : celles de MÊME contenu seulement. Un dessin 2D indépendant ne
+ * remplace pas un paquet complet de la même variante, et inversement : chacun reste en vigueur pour son contenu.
+ * Le contenu d'une ligne est lu sur son manifeste, à défaut sur son paquet (absent des deux : complet).
+ */
+export function memeContenu<T extends { manifest?: { contenu?: string } | null; package?: { contenu?: string } | null }>(contenu: ContenuPublication, autres: readonly T[]): T[] {
+  return autres.filter((a) => contenuDe(a.manifest ?? a.package) === contenu);
+}
 /** Formats d'un paquet, dans l'ordre du paquet, selon son contenu : un dessin 2D indépendant ne porte pas d'IFC. */
 export function formatsDuContenu(contenu: ContenuPublication): ("svg" | "dxf" | "ifc" | "pdf")[] {
   return contenu === "dessin-2d" ? ["svg", "dxf", "pdf"] : ["svg", "dxf", "ifc", "pdf"];

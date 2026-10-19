@@ -17,7 +17,7 @@ import { api, ApiError, type StudioDossier, type StudioSheet } from "../../../li
 import { LOCALE } from "../../../lib/i18n";
 import { Dialogue } from "../planche2d/CatalogueOutils";
 import {
-  calquesProposes, corpsFeuille, deplacer, empreinteAbregee, libelleVueSource, messageRefusDossier, refusSaisie, resumeBilan, revisionCourte,
+  calquesProposes, corpsFeuille, deplacer, empreinteAbregee, libelleAjustements, libelleVueSource, messageRefusDossier, refusSaisie, resumeBilan, revisionCourte,
   saisieInitiale, type SaisieFeuilleUi,
 } from "./dossier-ui";
 import "./dossier.css";
@@ -219,10 +219,17 @@ function ResumeDossier({ d }: { d: Awaited<ReturnType<typeof api.studioDossier>>
       </ol>
       {b ? (
         <dl className="studio-dossier-faits" data-studio-dossier-metre>
-          <dt>Volume brut</dt><dd data-studio-dossier-brut>{b.brut}</dd>
-          <dt>Déductions déclarées</dt><dd data-studio-dossier-deduit>{`${b.deduit} · ${b.deductions} ouverture(s)`}</dd>
+          <dt>Volume brut (toutes les lignes)</dt><dd data-studio-dossier-brut>{b.brut}</dd>
+          <dt>Sous-total brut (lignes avec net)</dt><dd data-studio-dossier-brut-avec-net>{b.brutAvecNet}</dd>
+          <dt>Déductions (lignes avec net)</dt><dd data-studio-dossier-deduit-avec-net>{b.deduitAvecNet}</dd>
           <dt>Volume net</dt><dd data-studio-dossier-net>{b.net}</dd>
-          <dt>Contrôle</dt><dd>{b.coherent ? "Net = brut − déductions" : "Écart entre le net et le brut moins les déductions"}</dd>
+          <dt>Déductions déclarées (toutes les lignes)</dt><dd data-studio-dossier-deduit>{`${b.deduit} · ${b.deductions} ouverture(s)`}</dd>
+          <dt>Contrôle d’arithmétique</dt>
+          <dd title="Contrôle sur une même source : il ne vérifie pas les quantités de façon indépendante.">
+            {b.coherent ? "Net = brut − déductions (même source, pas une vérification indépendante)" : "Écart entre le net et le brut moins les déductions"}
+          </dd>
+          <dt>Ajustements manuels</dt>
+          <dd data-studio-dossier-ajustements data-studio-dossier-borne={a.metre!.borneAjustements ?? ""}>{libelleAjustements(a.metre!)}</dd>
         </dl>
       ) : <p data-studio-dossier-sans-metre>Métré non joint.</p>}
       <p>{a.fidelite ? `Rapport de fidélité joint (${a.fidelite.length} feuille(s)).` : "Rapport de fidélité non joint."}</p>

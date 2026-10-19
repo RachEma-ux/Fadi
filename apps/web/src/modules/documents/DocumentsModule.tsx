@@ -12,6 +12,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api, type DocumentDescriptor, type DocumentsView, type StudioDossierDocument, type StudioPackageDocument } from "../../lib/api";
 import { LOCALE } from "../../lib/i18n";
+import { libelleErreurDossier } from "../../lib/studio-dossier-erreurs";
 
 const GROUPS: { id: DocumentDescriptor["group"]; title: string; note: string }[] = [
   { id: "harmonie", title: "Rapports Harmonie", note: "Documents HTML autonomes des choix par étape (feuille du prototype), produits depuis l'état courant des propositions et des arbitrages." },
@@ -118,7 +119,7 @@ function StudioDossiers({ dossiers }: { dossiers: StudioDossierDocument[] }) {
                   ))}
                 </td>
                 <td>
-                  {d.hash ? <code translate="no" title={d.hash}>{courte(d.hash)}</code> : <span className="h7-chip warn">{d.error ?? "non évalué"}</span>}
+                  {d.hash ? <code translate="no" title={d.hash}>{courte(d.hash)}</code> : <span className="h7-chip warn" data-studio-dossier-erreur={d.error ?? ""}>{libelleErreurDossier(d.error)}</span>}
                 </td>
                 <td>
                   {d.files.map((f) => (
@@ -299,6 +300,11 @@ export function DocumentsModule({ projectId }: { projectId: string }) {
       })}
       {(v.studioPackages?.length ?? 0) > 0 && <StudioPackages packages={v.studioPackages!} />}
       {(v.studioDossiers?.length ?? 0) > 0 && <StudioDossiers dossiers={v.studioDossiers!} />}
+      {v.studioDossiersError && (
+        <p className="h7-chip warn" role="status" data-studio-dossiers-erreur={v.studioDossiersError}>
+          {`Studio — dossiers de conception : ${libelleErreurDossier(v.studioDossiersError)}`}
+        </p>
+      )}
     </div>
   );
 }

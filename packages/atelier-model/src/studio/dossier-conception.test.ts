@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { bilanQuantitesStudio } from "./bilan-quantites.js";
+import { largeurHelvetica } from "../documents/rendu-pdf.js";
+import { bilanQuantitesStudio, sousTotauxAvecNet } from "./bilan-quantites.js";
 import { applyStudioCommands, newStudioDocument, type StudioCommand, type StudioDocument } from "./document-2d.js";
 import {
   assemblerDossierConception, composerFeuilleComposee, pdfDossierConception, produireVueDocumentaire, STUDIO_NON_EVALUE, studioDonneesVue,
-  studioFeuilleComposeeSvg, validerFeuilleComposee, type StudioFeuilleComposeeDefinition, type StudioSourceDocumentaire,
+  studioFeuilleComposeeSvg, studioTexteTronque, validerFeuilleComposee, type StudioFeuilleComposeeDefinition, type StudioSourceDocumentaire,
 } from "./dossier-conception.js";
 import { studioSha256, studioUtf8 } from "./empreinte-sha256.js";
 import { composerFeuilleStudio, exportStudioSheetSvg, studioSheetPdf, studioSheetSvg } from "./feuille.js";
@@ -146,6 +147,24 @@ describe("E.3-04 — bilan brut / déductions / net calculés séparément", () 
     expect(b.totaux.net).toEqual({ valeur: expect.closeTo(3.18, 12), evalues: 1, nonEvalues: 2 });
     expect(b.controle).toMatchObject({ coherent: true, lignesControlees: 1 });
     expect(b.deductionsDeclarees).toBe(1);
+    // Totaux cohérents (M-1) : sous-total brut et déductions des seules lignes qui ont un net ; valeurs par ligne inchangées.
+    const s = sousTotauxAvecNet(b);
+    expect(s.brut).toEqual({ valeur: expect.closeTo(3.6, 12), evalues: 1, nonEvalues: 0 });
+    expect(s.deduit).toEqual({ valeur: expect.closeTo(0.42, 12), evalues: 1, nonEvalues: 0 });
+    expect(s.brut.valeur! - s.deduit.valeur!).toBeCloseTo(b.totaux.net.valeur!, 12);
+    expect(bilanQuantitesStudio(doc)).toEqual(b);
+  });
+});
+
+describe("PDF du dossier : titres longs tronqués (M-8)", () => {
+  it("un texte qui dépasse sa largeur est coupé et terminé par « … » ; un texte court est inchangé", () => {
+    expect(studioTexteTronque("Plan", 30, 2.8)).toBe("Plan");
+    const long = "Plan du rez-de-chaussée avec toutes les cotes et annotations de la façade nord-est";
+    const t = studioTexteTronque(long, 66, 2.8);
+    expect(t.endsWith("…")).toBe(true);
+    expect(t.length).toBeLessThan(long.length);
+    expect(long.startsWith(t.slice(0, -1))).toBe(true);
+    expect(largeurHelvetica(t) * 2.8).toBeLessThanOrEqual(66);
   });
 });
 
@@ -187,5 +206,26 @@ describe("E.3-03 — dossier de conception", () => {
     expect(dossier.metre).toBeNull();
     expect(dossier.etude.nom).toBe(STUDIO_NON_EVALUE);
     expect(Buffer.from(pdfDossierConception(dossier, rendus)).toString("latin1")).toContain("non joint");
+  });
+
+  it("métré : borne du journal rapportée (I-2), sous-totaux et contrôle d'arithmétique au PDF ; titre long tronqué", () => {
+    const doc = pilote();
+    const f = { id: "f1", definition: def({ titre: "T".repeat(150) }), document: doc, source: source(doc) };
+    const aj = { objets: [], calques: [], aRevoir: [] } as unknown as NonNullable<NonNullable<Parameters<typeof assemblerDossierConception>[0]["metre"]>["ajustements"]>;
+    const avecBorne = (borne: number | null | undefined) => assemblerDossierConception({ titre: "D", etude: { id: "e" }, feuilles: [f], metre: { document: doc, source: source(doc), ajustements: aj, ...(borne !== undefined ? { borneAjustements: borne } : {}) } });
+    expect(avecBorne(4).dossier.metre?.borneAjustements).toBe(4);
+    expect(avecBorne(null).dossier.metre?.borneAjustements).toBeNull();
+    expect(avecBorne(undefined).dossier.metre && "borneAjustements" in avecBorne(undefined).dossier.metre!).toBe(false);
+    // Même borne, même empreinte ; une autre borne la change.
+    expect(avecBorne(4).dossier.empreinte).toBe(avecBorne(4).dossier.empreinte);
+    expect(avecBorne(5).dossier.empreinte).not.toBe(avecBorne(4).dossier.empreinte);
+    expect(() => avecBorne(0)).toThrow(/borneAjustements/);
+    const { dossier, rendus } = avecBorne(4);
+    const t = Buffer.from(pdfDossierConception(dossier, rendus)).toString("latin1");
+    expect(t).toContain("Sous-total brut");
+    expect(t).toContain("Contr\xf4le d'arithm\xe9tique");
+    expect(t).toContain("journal lu jusqu'au n\xb0 4");
+    // Sommaire : le titre long est tronqué à sa colonne (il figure entier dans le cartouche de la feuille).
+    expect(t).toMatch(/\(T{10,60}\x85\) Tj/);
   });
 });
