@@ -13,11 +13,20 @@
  * Maillage en tâche de fond (D.1/D.2, `taches/`) : `studioMesh3d` tourne dans le groupe de Workers ; le maillage
  * précédent reste affiché jusqu'au suivant et un maillage remplacé n'est jamais affiché. Ressources GPU libérées à
  * chaque reconstruction et au démontage (`ressources-gpu.ts`, D.3-02) ; compteurs exposés sur le canevas.
+ *
+ * Visualisation (lot E.5, `scenes/`) : scènes enregistrées (caméra relevée de la vue, calques montrés, mode
+ * d'affichage), rappelées sans modifier le modèle ; apparence d'affichage (couleur, finition) d'un calque ou d'un
+ * objet, appliquée au rendu seulement ; « Exporter le rendu PNG » : image du canevas WebGL avec sa provenance (bloc
+ * `iTXt` : étude, variante, révision affichée, scène, date, « rendu du modèle »). La barre transmet ses outils
+ * `studio.scene.*` / `studio.apparence.*` et la commande `exporter-png` par `demande`.
  */
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { couperStudio, studioMesh3d, studioVolumeSolide, type StudioCommand, type StudioCoupe, type StudioDocument, type StudioMesh3d } from "@parcours/atelier-model";
+import {
+  couperStudio, studioApparenceResolue, studioDocumentToutVisible, studioFiltrerMaillageScene, studioMesh3d, studioNomFichierRendu, studioProvenanceRendu, studioScenes, studioVolumeSolide,
+  type StudioCameraScene, type StudioCommand, type StudioCoupe, type StudioDocument, type StudioFinitionAffichage, type StudioMesh3d, type StudioModeAffichage, type StudioScene,
+} from "@parcours/atelier-model";
 import { empreinteDe } from "../taches/empreinte";
 import { useTache } from "../taches/useTache";
 import { MESSAGES_TACHE } from "../taches/messages";
@@ -29,6 +38,12 @@ import {
   auCentimetre, BOITE_VIDE, commandeBoite, commandeDeplacementSolide, commandePrisme, DEPLACEMENT_VIDE, descriptionSolide, PRISME_VIDE, profilsFermes,
   type ValeursBoite, type ValeursDeplacement, type ValeursPrisme,
 } from "./volume-libre";
+import { CLE_PROVENANCE_PNG, insererTextePng } from "./scenes/png";
+import { PanneauVisualisation } from "./scenes/PanneauVisualisation";
+import {
+  calquesVisualisation, cameraScene, commandeApparence, commandeMiseAJourScene, commandeNouvelleScene, commandeRetraitApparence, commandeSuppressionScene,
+  apparenceDe, couleurEntiere, hautCamera, MODE_INITIAL, parametresMateriau, prochainNomScene, type DemandeVue3d,
+} from "./scenes/scenes-ui";
 import "./vue3d.css";
 
 export type Navigation3d = "orbite" | "plan";
@@ -51,6 +66,13 @@ export interface Vue3DStudioProps {
   /** Mur ou ouverture sélectionné(e) (A.4) : même identifiant que sur la planche 2D. */
   selectionArchitecture?: string | null;
   surSelectionArchitecture?: (id: string | null) => void;
+  /** Outil de visualisation ou commande `exporter-png` transmis par la barre ; `surDemandeTraitee` le consomme. */
+  demande?: DemandeVue3d | null;
+  surDemandeTraitee?: () => void;
+  /** Passage orbite / plan demandé par le rappel d'une scène (perspective / orthographique). */
+  surNavigation?: (n: Navigation3d) => void;
+  /** Provenance du rendu : étude, variante, révision affichée ; `nonEnregistre` : le brouillon diffère de la révision. */
+  provenance?: { etude: { id: string; nom: string }; variante: { id: string; nom: string }; revisionId: string; nonEnregistre: boolean };
 }
 
 interface Moteur {
@@ -66,6 +88,8 @@ interface Moteur {
   architecture: THREE.Group;
   surimpression: THREE.Group;
   rendre: () => void;
+  /** Caméra déplacée (navigation, rappel) : la scène active est réévaluée. */
+  surCamera: () => void;
 }
 
 const nombre = (v: number) => v.toLocaleString(LOCALE, { maximumFractionDigits: 3 });
@@ -75,32 +99,50 @@ const MAILLAGE_VIDE: StudioMesh3d = Object.freeze({
   frame: "local-3d", units: "m", source: { frame: "local-2d", conversion: "(x, y) → (x, y, z)" }, solids: [], outlines: [], nonExtruded: 0, hidden: 0, bounds: null,
 }) as StudioMesh3d;
 
-function solide(groupe: THREE.Group, s: { id: string; vertices: { x: number; y: number; z: number }[]; triangles: [number, number, number][]; edges: [number, number][] }, couleur: number, double: boolean, libre: boolean) {
+/** Aspect d'affichage d'un volume : couleur (apparence ou défaut de la vue), finition, mode d'affichage. */
+interface Aspect { couleur: number; finition?: StudioFinitionAffichage; mode: StudioModeAffichage; apparence: boolean }
+
+function solide(groupe: THREE.Group, s: { id: string; vertices: { x: number; y: number; z: number }[]; triangles: [number, number, number][]; edges: [number, number][] }, aspect: Aspect, double: boolean, libre: boolean) {
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(s.vertices.flatMap((v) => [v.x, v.y, v.z])), 3));
   g.setIndex(s.triangles.flat());
   g.computeVertexNormals();
-  const surface = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: couleur, roughness: 0.85, flatShading: true, side: double ? THREE.DoubleSide : THREE.FrontSide }));
+  const p = parametresMateriau(aspect.finition);
+  const matiere = new THREE.MeshStandardMaterial({ color: aspect.couleur, roughness: p.roughness, metalness: p.metalness, transparent: p.transparent, opacity: p.opacity, depthWrite: !p.transparent, flatShading: true, side: double || p.transparent ? THREE.DoubleSide : THREE.FrontSide });
+  // Filaire : la surface reste désignable (clic) mais n'est pas dessinée.
+  matiere.visible = aspect.mode !== "wireframe";
+  const surface = new THREE.Mesh(g, matiere);
   surface.name = s.id;
   if (libre) surface.userData.solide = s.id;
   groupe.add(surface);
+  if (aspect.mode === "shaded") return;
   const a = new THREE.BufferGeometry();
   a.setAttribute("position", new THREE.BufferAttribute(new Float32Array(s.edges.flatMap(([i, j]) => [i, j].flatMap((k) => [s.vertices[k]!.x, s.vertices[k]!.y, s.vertices[k]!.z]))), 3));
-  groupe.add(new THREE.LineSegments(a, new THREE.LineBasicMaterial({ color: 0x234f5b })));
+  groupe.add(new THREE.LineSegments(a, new THREE.LineBasicMaterial({ color: aspect.mode === "wireframe" && aspect.apparence ? aspect.couleur : 0x234f5b })));
+}
+
+/** Aspect d'un volume : la sélection l'emporte, puis l'apparence d'affichage (objet, sinon calque), puis le défaut. */
+function aspectDe(doc: StudioDocument, mode: StudioModeAffichage, o: { id: string; layerId?: string }, defaut: number, choisi: boolean): Aspect {
+  const a = studioApparenceResolue(doc, o.id, o.layerId);
+  if (choisi) return { couleur: 0xf0b44c, mode, apparence: false };
+  return a ? { couleur: couleurEntiere(a.color), ...(a.finish ? { finition: a.finish } : {}), mode, apparence: true } : { couleur: defaut, mode, apparence: false };
 }
 
 /** Murs opaques et ouvertures (boîte du vide, translucide) ; chaque maillage porte l'identifiant de son objet. */
-function construireArchitecture(m: Moteur, mesh: StudioMesh3d, selection: string | null) {
+function construireArchitecture(m: Moteur, mesh: StudioMesh3d, selection: string | null, doc: StudioDocument, mode: StudioModeAffichage) {
   vider(m.architecture);
   for (const a of mesh.architecture ?? []) {
     const choisi = a.id === selection;
     const avant = m.architecture.children.length;
-    if (a.type === "wall") solide(m.architecture, a, choisi ? 0xf0b44c : 0xd8d2c4, false, false);
+    if (a.type === "wall") solide(m.architecture, a, aspectDe(doc, mode, a, 0xd8d2c4, choisi), false, false);
     else {
       const g = new THREE.BufferGeometry();
       g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(a.vertices.flatMap((v) => [v.x, v.y, v.z])), 3));
       g.setIndex(a.triangles.flat());
-      const vide = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: choisi ? 0xf0b44c : 0x7fb2d6, transparent: true, opacity: choisi ? 0.45 : 0.2, depthWrite: false }));
+      // Le vide d'une ouverture ne prend que l'apparence de l'ouverture elle-même (pas celle du calque de son mur).
+      const propre = studioApparenceResolue(doc, a.id, undefined);
+      const teinte = choisi ? 0xf0b44c : propre?.source === "object" ? couleurEntiere(propre.color) : 0x7fb2d6;
+      const vide = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: teinte, transparent: true, opacity: choisi ? 0.45 : 0.2, depthWrite: false }));
       vide.name = a.id;
       m.architecture.add(vide);
     }
@@ -108,10 +150,10 @@ function construireArchitecture(m: Moteur, mesh: StudioMesh3d, selection: string
   }
 }
 
-function construire(m: Moteur, mesh: StudioMesh3d, selection: string | null) {
+function construire(m: Moteur, mesh: StudioMesh3d, selection: string | null, doc: StudioDocument, mode: StudioModeAffichage) {
   vider(m.contenu);
   vider(m.libres);
-  for (const s of mesh.solids) solide(m.contenu, s, s.type === "line" ? 0xd9d2c3 : 0xb9d3cf, s.kind === "wall-surface", false);
+  for (const s of mesh.solids) solide(m.contenu, s, aspectDe(doc, mode, s, s.type === "line" ? 0xd9d2c3 : 0xb9d3cf, false), s.kind === "wall-surface", false);
   for (const o of mesh.outlines) {
     const g = new THREE.BufferGeometry().setFromPoints(o.points.map((p) => new THREE.Vector3(p.x, p.y, p.z)));
     const mat = new THREE.LineDashedMaterial({ color: 0x8a6a3a, dashSize: 0.15, gapSize: 0.1 });
@@ -119,7 +161,36 @@ function construire(m: Moteur, mesh: StudioMesh3d, selection: string | null) {
     l.computeLineDistances();
     m.contenu.add(l);
   }
-  for (const s of mesh.freeSolids ?? []) solide(m.libres, s, s.id === selection ? 0xf0b44c : 0xc9bde3, false, true);
+  for (const s of mesh.freeSolids ?? []) solide(m.libres, s, aspectDe(doc, mode, s, 0xc9bde3, s.id === selection), false, true);
+}
+
+/** Caméra relevée de la vue (repère de rendu = `local-3d`, conversion `cameraScene`). */
+function cameraCourante(m: Moteur): StudioCameraScene {
+  const t = m.controls?.target ?? new THREE.Vector3();
+  if (m.camera === m.plan) return cameraScene("orthographic", m.plan.position, t, (m.plan.top - m.plan.bottom) / m.plan.zoom);
+  return cameraScene("perspective", m.perspective.position, t, m.perspective.fov);
+}
+
+/** Pose une caméra enregistrée sur la caméra active (la navigation correspondante est déjà posée). */
+function poserCamera(m: Moteur, c: StudioCameraScene) {
+  const distance = Math.hypot(c.position.x - c.target.x, c.position.y - c.target.y, c.position.z - c.target.z);
+  if (c.projection === "orthographic") {
+    const el = m.renderer.domElement, aspect = Math.max(el.width, 1) / Math.max(el.height, 1), demi = c.height / 2;
+    Object.assign(m.plan, { left: -demi * aspect, right: demi * aspect, top: demi, bottom: -demi, zoom: 1, near: 0.01, far: Math.max(distance * 10, 1000) });
+    const haut = hautCamera(c.position, c.target);
+    m.plan.position.set(c.position.x, c.position.y, c.position.z);
+    m.plan.up.set(haut.x, haut.y, haut.z);
+    m.plan.lookAt(c.target.x, c.target.y, c.target.z);
+    m.plan.updateProjectionMatrix();
+  } else {
+    m.perspective.fov = c.fov;
+    m.perspective.position.set(c.position.x, c.position.y, c.position.z);
+    m.perspective.near = Math.max(distance / 1000, 0.001); m.perspective.far = Math.max(distance * 100, 1000);
+    m.perspective.updateProjectionMatrix();
+  }
+  m.controls?.target.set(c.target.x, c.target.y, c.target.z);
+  m.controls?.update();
+  m.rendre();
 }
 
 /** Surimpression dérivée de la coupe : segments à la cote du plan, toujours visibles, jamais sélectionnables. */
@@ -173,6 +244,7 @@ function poserControles(m: Moteur, navigation: Navigation3d) {
     c.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN };
   }
   c.addEventListener("change", m.rendre);
+  c.addEventListener("change", m.surCamera);
   m.controls = c;
 }
 
@@ -182,7 +254,7 @@ function Champ({ nom, libelle, valeur, surValeur, requis = true }: { nom: string
   </label>;
 }
 
-export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbite", coupe = false, selection = null, layerId, surSelection, surCommandes, selectionArchitecture = null, surSelectionArchitecture }: Vue3DStudioProps) {
+export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbite", coupe = false, selection = null, layerId, surSelection, surCommandes, selectionArchitecture = null, surSelectionArchitecture, demande = null, surDemandeTraitee, surNavigation, provenance }: Vue3DStudioProps) {
   const hote = useRef<HTMLDivElement>(null);
   const moteur = useRef<Moteur | null>(null);
   const cadre = useRef(false);
@@ -192,12 +264,35 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const [deplacement, setDeplacement] = useState<ValeursDeplacement>(DEPLACEMENT_VIDE);
   const [coteCoupe, setCoteCoupe] = useState(Number.NaN);
   const [erreur, setErreur] = useState("");
-  const empreinte = empreinteDe(doc);
+  // Visualisation (lot E.5) : scène choisie, calques montrés par la vue (null : visibilité du dessin), mode, apparence.
+  const [sceneChoisie, setSceneChoisie] = useState<string | null>(null);
+  const [calquesMontres, setCalquesMontres] = useState<string[] | null>(null);
+  const [mode, setMode] = useState<StudioModeAffichage>(MODE_INITIAL);
+  const [nomScene, setNomScene] = useState("");
+  const [cibleApparence, setCibleApparence] = useState("");
+  const [couleur, setCouleur] = useState("#888888");
+  const [finition, setFinition] = useState<StudioFinitionAffichage | "">("");
+  const [statut, setStatut] = useState("");
+  const [cameraVersion, setCameraVersion] = useState(0);
+  const enAttente = useRef<StudioScene | null>(null);
+  // La scène active ne se réévalue au fil de la navigation que lorsqu'une scène est choisie et montrée.
+  const suiviCamera = useRef(false);
+  // Maillage en tâche de fond (D.2) : avec une scène montrée, le Worker maille le document « tous calques affichés »
+  // (copie de vue, mémorisée pour garder la même empreinte), puis la scène ne garde que ses calques (`studioFiltrerMaillageScene`).
+  const montreScene = calquesMontres !== null;
+  const docMaillage = useMemo(() => (montreScene ? studioDocumentToutVisible(doc) : doc), [doc, montreScene]);
+  const empreinte = empreinteDe(docMaillage);
   const maillage = useTache<{ document: StudioDocument }, StudioMesh3d>(
-    { cle: "studio.maillage-3d", classe: "fond", nature: "maillage.3d", charge: { document: doc }, empreinte },
-    { initial: () => studioMesh3d(doc) },
+    { cle: "studio.maillage-3d", classe: "fond", nature: "maillage.3d", charge: { document: docMaillage }, empreinte },
+    { initial: () => studioMesh3d(docMaillage) },
   );
-  const mesh = maillage.valeur ?? MAILLAGE_VIDE;
+  const brut = maillage.valeur ?? MAILLAGE_VIDE;
+  const mesh = useMemo(() => (calquesMontres && brut !== MAILLAGE_VIDE ? studioFiltrerMaillageScene(brut, calquesMontres) : brut), [brut, calquesMontres]);
+  /** Le maillage affiché est celui du document courant (pas un maillage antérieur encore affiché pendant le calcul). */
+  const maillageAJour = maillage.valeur !== undefined && maillage.revision === empreinte.revision;
+  const scenes = studioScenes(doc);
+  const calquesVue = calquesMontres ?? calquesVisualisation(doc).filter((c) => c.visible).map((c) => c.id);
+  suiviCamera.current = sceneChoisie !== null && calquesMontres !== null;
   const solides = doc.solides ?? [];
   const choisi = solides.find((s) => s.id === selection) ?? null;
   const resultatCoupe = useMemo(() => (coupe && Number.isFinite(coteCoupe) ? couperStudio(doc, { z: coteCoupe }) : null), [doc, coupe, coteCoupe]);
@@ -258,6 +353,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         renderer.domElement.dataset.studioGpuGeometries = String(c.geometries);
         renderer.domElement.dataset.studioGpuTextures = String(c.textures);
       },
+      surCamera: () => { if (suiviCamera.current) setCameraVersion((v) => v + 1); },
     };
     moteur.current = m;
     poserControles(m, navigation);
@@ -286,6 +382,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       renderer.domElement.removeEventListener("pointerdown", pointeurBas);
       renderer.domElement.removeEventListener("pointerup", pointeurHaut);
       m.controls?.removeEventListener("change", m.rendre);
+      m.controls?.removeEventListener("change", m.surCamera);
       m.controls?.dispose();
       vider(contenu); vider(libres); vider(architecture); vider(surimpression);
       libererObjet(grille);
@@ -302,24 +399,123 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   useEffect(() => {
     const m = moteur.current; if (!m) return;
     if ((navigation === "plan") === (m.camera === m.plan) && m.controls) return;
+    m.controls?.removeEventListener("change", m.surCamera);
     poserControles(m, navigation);
-    cadrer(m, mesh);
+    // Scène rappelée qui a demandé ce changement de navigation : sa caméra, sinon le cadrage.
+    if (enAttente.current) { poserCamera(m, enAttente.current.camera); enAttente.current = null; cadre.current = true; }
+    else cadrer(m, mesh);
+    setCameraVersion((v) => v + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigation]);
 
   useEffect(() => {
     const m = moteur.current; if (!m) return;
-    construire(m, mesh, selection);
-    construireArchitecture(m, mesh, selectionArchitecture);
+    construire(m, mesh, selection, doc, mode);
+    construireArchitecture(m, mesh, selectionArchitecture, doc, mode);
     if (!cadre.current && mesh !== MAILLAGE_VIDE) { cadrer(m, mesh); cadre.current = true; }
     else m.rendre();
-  }, [mesh, selection, selectionArchitecture, indisponible]);
+  }, [mesh, selection, selectionArchitecture, indisponible, doc, mode]);
 
   useEffect(() => {
     const m = moteur.current; if (!m) return;
     construireCoupe(m, resultatCoupe);
     m.rendre();
   }, [resultatCoupe]);
+
+  // ——— Visualisation (lot E.5) ———
+  /** Scène dont la vue courante est exactement le réglage (caméra, calques montrés, mode) ; null sinon. */
+  const sceneActive = (() => {
+    void cameraVersion;
+    const m = moteur.current;
+    if (!m || calquesMontres === null) return null;
+    const cam = JSON.stringify(cameraCourante(m));
+    return scenes.find((s) => s.id === sceneChoisie && s.displayMode === mode && JSON.stringify(s.camera) === cam
+      && JSON.stringify([...s.visibleLayers].sort()) === JSON.stringify([...calquesMontres].sort()))?.id ?? null;
+  })();
+  function choisirScene(id: string) {
+    const s = scenes.find((x) => x.id === id);
+    setSceneChoisie(id);
+    if (s) setNomScene(s.name);
+  }
+  function rappeler(s: StudioScene) {
+    setSceneChoisie(s.id); setNomScene(s.name); setCalquesMontres([...s.visibleLayers]); setMode(s.displayMode); setErreur("");
+    const voulue: Navigation3d = s.camera.projection === "orthographic" ? "plan" : "orbite";
+    const m = moteur.current;
+    if (voulue !== navigation) {
+      if (!surNavigation) { setErreur("Cette scène demande une autre navigation : basculez la vue en plan (Maj+G), puis rappelez-la."); return; }
+      enAttente.current = s;
+      surNavigation(voulue);
+    } else if (m) { poserCamera(m, s.camera); cadre.current = true; setCameraVersion((v) => v + 1); }
+    setStatut("Scène rappelée : la vue suit son réglage, le modèle n’est pas modifié.");
+  }
+  function reglages() { return { nom: nomScene.trim() || prochainNomScene(doc), calques: calquesVue, mode }; }
+  function visualisation(action: string) {
+    const m = moteur.current;
+    const mutation = action !== "studio.scene.rappeler" && action !== "exporter-png";
+    if (mutation && !modifiable) { setErreur("Lecture seule : les scènes et les apparences ne se modifient pas ici."); return; }
+    switch (action) {
+      case "studio.scene.creer": {
+        if (!m) { setErreur("Vue 3D indisponible : la caméra ne peut pas être relevée."); return; }
+        const id = crypto.randomUUID();
+        const r = reglages();
+        envoyer(commandeNouvelleScene(id, r, cameraCourante(m)), () => { setSceneChoisie(id); setNomScene(r.nom); setCalquesMontres([...r.calques]); setStatut("Scène ajoutée au brouillon. Enregistrez pour la conserver."); });
+        return;
+      }
+      case "studio.scene.modifier":
+        if (!m) { setErreur("Vue 3D indisponible : la caméra ne peut pas être relevée."); return; }
+        envoyer(commandeMiseAJourScene(doc, sceneChoisie, reglages(), cameraCourante(m)), () => { setCalquesMontres([...calquesVue]); setStatut("Scène mise à jour dans le brouillon."); });
+        return;
+      case "studio.scene.rappeler": {
+        const s = scenes.find((x) => x.id === sceneChoisie) ?? (scenes.length === 1 ? scenes[0] : undefined);
+        if (!s) { setErreur("Choisissez d’abord la scène à rappeler."); return; }
+        rappeler(s);
+        return;
+      }
+      case "studio.scene.supprimer":
+        envoyer(commandeSuppressionScene(doc, sceneChoisie), () => { setSceneChoisie(null); setStatut("Scène supprimée du brouillon."); });
+        return;
+      case "studio.apparence.definir":
+        envoyer(commandeApparence(doc, cibleApparence, couleur, finition, () => crypto.randomUUID()), () => setStatut("Apparence d’affichage appliquée : la géométrie n’a pas changé."));
+        return;
+      case "studio.apparence.retirer":
+        envoyer(commandeRetraitApparence(doc, cibleApparence), () => setStatut("Apparence d’affichage retirée."));
+        return;
+      case "exporter-png": void exporterPng(); return;
+    }
+  }
+  const raisonRendu = indisponible ? "Vue 3D indisponible : aucun rendu ne peut être tiré du canevas."
+    : !provenance ? "Provenance inconnue : le rendu n’est pas exporté."
+    : provenance.nonEnregistre ? "Enregistrez d’abord : le rendu porte sur une révision enregistrée, pas sur les modifications non enregistrées."
+    : !maillageAJour ? "Maillage en cours de calcul : le rendu attend la géométrie du document affiché." : null;
+  async function exporterPng() {
+    const m = moteur.current;
+    if (!m || !provenance || raisonRendu) { setErreur(raisonRendu ?? "Vue 3D indisponible."); return; }
+    try {
+      const actif = scenes.find((s) => s.id === sceneActive) ?? null;
+      const p = studioProvenanceRendu({
+        etude: provenance.etude, variante: provenance.variante, revisionId: provenance.revisionId,
+        scene: actif ? { id: actif.id, nom: actif.name } : null, date: new Date(), camera: cameraCourante(m),
+      });
+      m.rendre();
+      const blob = await new Promise<Blob | null>((ok) => m.renderer.domElement.toBlob(ok, "image/png"));
+      if (!blob) throw new Error("canevas vide");
+      const octets = insererTextePng(new Uint8Array(await blob.arrayBuffer()), CLE_PROVENANCE_PNG, JSON.stringify(p));
+      const url = URL.createObjectURL(new Blob([octets as BlobPart], { type: "image/png" }));
+      const lien = document.createElement("a");
+      lien.href = url; lien.download = studioNomFichierRendu(p); lien.hidden = true;
+      document.body.append(lien); lien.click(); lien.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      setErreur("");
+      setStatut(actif ? "Rendu du modèle exporté (PNG), provenance incluse : scène rappelée." : "Rendu du modèle exporté (PNG), provenance incluse : vue courante, sans scène.");
+    } catch { setErreur("Export du rendu impossible : le canevas n’a pas pu être lu."); }
+  }
+  // Demande de la barre (outil ou commande), traitée une fois puis rendue.
+  useEffect(() => {
+    if (!demande) return;
+    visualisation(demande.action);
+    surDemandeTraitee?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demande?.n]);
 
   function envoyer(r: ReturnType<typeof commandeBoite>, apres: () => void) {
     if ("erreur" in r) { setErreur(r.erreur); return; }
@@ -348,7 +544,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const libres = mesh.freeSolids?.length ?? 0;
   const architecture = mesh.architecture ?? [];
   return (
-    <section className="studio-vue3d" aria-label="Vue 3D" data-studio-vue3d data-studio-maillage={maillage.etat} data-studio-maillage-revision={maillage.revision ?? ""} data-studio-revision-courante={empreinte.revision} data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-architecture-3d={architecture.length} data-studio-navigation={navigation}>
+    <section className="studio-vue3d" aria-label="Vue 3D" data-studio-vue3d data-studio-maillage={maillage.etat} data-studio-maillage-revision={maillage.revision ?? ""} data-studio-revision-courante={empreinte.revision} data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-architecture-3d={architecture.length} data-studio-navigation={navigation}
+      data-studio-affichage={mode} data-studio-scene-active={sceneActive ?? ""} data-studio-calques-montres={calquesMontres?.join(" ") ?? ""}>
       <div className="studio-vue3d-bandeau">
         <span role="status" data-studio-vue3d-decompte><span>{`${mesh.solids.length} volume(s)`}</span>{" · "}<span>{`${mesh.nonExtruded} objet(s) non extrudé(s), dessinés à plat`}</span>{libres > 0 && <>{" · "}<span>{`${libres} solide(s) libre(s)`}</span></>}</span>
         <button type="button" onClick={() => { const m = moteur.current; if (m) cadrer(m, mesh); }} disabled={indisponible}>Recadrer la vue 3D</button>
@@ -361,6 +558,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         ? "Repère local 3D : z vers le haut, en mètres. Vue en plan : glisser : déplacer ; molette : zoom."
         : "Repère local 3D : z vers le haut, en mètres. Glisser : orbite ; clic droit ou Maj + glisser : déplacer ; molette : zoom."}</p>
       {erreur && <p className="studio-alert" role="alert" data-studio-volume-erreur>{erreur}</p>}
+      {statut && <p className="studio-info" role="status" data-studio-visualisation-statut>{statut}</p>}
 
       {outil === "studio.solide.boite" && <form className="studio-vue3d-formulaire" onSubmit={poserBoite} data-studio-boite aria-labelledby="studio-boite-titre">
         <h3 id="studio-boite-titre"><Icon name="studio-solid-box" size={18} /> Boîte</h3>
@@ -434,6 +632,11 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
           ))}
         </ul>
       </div>}
+
+      <PanneauVisualisation doc={doc} modifiable={modifiable} sceneChoisie={sceneChoisie} sceneActive={sceneActive} nom={nomScene} calques={calquesVue} mode={mode}
+        cible={cibleApparence} couleur={couleur} finition={finition} rendu={{ possible: !raisonRendu, raison: raisonRendu }}
+        surChoix={choisirScene} surNom={setNomScene} surCalques={(ids) => setCalquesMontres(ids)} surMode={setMode} surVueDessin={() => { setCalquesMontres(null); setMode(MODE_INITIAL); setSceneChoisie(null); setStatut(""); }}
+        surCible={(c) => { setCibleApparence(c); const a = apparenceDe(doc, c); if (a) { setCouleur(a.color); setFinition(a.finish ?? ""); } }} surCouleur={setCouleur} surFinition={setFinition} surAction={visualisation} />
 
       {coupe && <div className="studio-vue3d-coupe" data-studio-coupe data-studio-coupe-z={Number.isFinite(coteCoupe) ? coteCoupe : ""} data-studio-coupe-segments={resultatCoupe?.segments.length ?? 0}
         data-studio-coupe-sources={resultatCoupe?.sources.map((s) => s.id).join(" ") ?? ""}>

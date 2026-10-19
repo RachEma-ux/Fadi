@@ -63,7 +63,7 @@ const DEPUIS_BARRE: Readonly<Record<BarreStudio, IdFamille>> = Object.freeze({
   dessin: "dessin", modification: "modification", calques: "calques", volume: "volume", "volume-libre": "volume", architecture: "architecture",
   // Propriétés BIM et exigences (E.1) : rangées avec l'architecture, leur périmètre pilote.
   proprietes: "architecture", exigences: "architecture",
-  edition: "edition", vue: "vue", accrochage: "vue", reperage: "vue", import: "echanges", export: "echanges", presentation: "presentation", catalogue: "catalogue",
+  edition: "edition", vue: "vue", accrochage: "vue", reperage: "vue", visualisation: "vue", import: "echanges", export: "echanges", presentation: "presentation", catalogue: "catalogue",
 });
 
 export const familleDe = (id: string, barre: BarreStudio): IdFamille => PLACEMENT[id] ?? DEPUIS_BARRE[barre];

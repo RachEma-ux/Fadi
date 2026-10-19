@@ -75,6 +75,7 @@ import { useGardeNavigation } from "./variante/useGardeNavigation";
 import { Vue3D } from "./variante/Vue3D";
 import { RapportExport } from "./variante/RapportExport";
 import { FORMATS_RAPPORT } from "./variante/rapport-export";
+import { OUTILS_VISUALISATION, type DemandeVue3d } from "./vue3d/scenes/scenes-ui";
 import "./studio.css";
 import "./planche2d/planche2d.css";
 
@@ -115,6 +116,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [navigation3d, setNavigation3d] = useState<"orbite" | "plan">("orbite");
   const [coupe3d, setCoupe3d] = useState(false);
   const [solide3d, setSolide3d] = useState<string | null>(null);
+  // Visualisation (lot E.5) : outil de scène / d'apparence ou export PNG demandé à la vue 3D, qui l'ouvre.
+  const [demande3d, setDemande3d] = useState<DemandeVue3d | null>(null);
+  const demander3d = (action: string) => { setVue3d(true); setDemande3d(d => ({ action, n: (d?.n ?? 0) + 1 })); };
   const [commentaires, setCommentaires] = useState(commentairesOuverts);
   // Architecture (A.4) : paramètres saisis des outils Mur / Ouverture et objet architectural sélectionné (2D ou 3D).
   const [parametresArchi, setParametresArchi] = useState<ParametresArchitecture>(PARAMETRES_ARCHITECTURE_VIDES);
@@ -302,6 +306,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   function runTool(toolId: StudioToolId) {
     // Les outils du volume libre agissent dans la vue 3D : ils l'ouvrent.
     if (OUTILS_VOLUME_LIBRE.has(toolId)) setVue3d(true);
+    if (OUTILS_VISUALISATION.has(toolId)) { demander3d(toolId); return; }
     if (OUTILS_MODES.has(toolId)) { setTool(toolId); cancelTrace(); setInfo(""); return; }
     if (!writable || !drawing) return;
     // Propriétés BIM (E.1) : le formulaire du panneau « Propriétés et exigences » porte la saisie.
@@ -407,6 +412,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
         // Le lien de la barre télécharge (même origine, cookie de session) : le raccourci le suit.
         shell.current?.querySelector<HTMLAnchorElement>(`a[data-studio-commande="${id}"][href]`)?.click();
         return;
+      case "exporter-png": return demander3d("exporter-png");
       case "importer-dxf": return setDialogue("import-dxf");
       case "feuille": return setDialogue("feuille");
       case "outils": return setDialogue("outils");
@@ -470,7 +476,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     <p className="studio-undo-scope" data-studio-annuler-portee>{`Annuler et Rétablir ne portent que sur les modifications non enregistrées (${commands.length} commande(s) en attente) ; une révision enregistrée ne s’annule pas ici.`}</p>
     <div className="studio-editor"><div className="studio-sheet"><div className="studio-sheet-caption"><span>Dessin et modélisation</span><span data-studio-pas-grille={pas}>{`Grille ${pasAffiche} m`}</span><span>1 unité = 1 m</span></div>
       {vue3d && <Vue3D doc={drawing} outil={tool} modifiable={writable} navigation={navigation3d} coupe={coupe3d} selection={solide3d} layerId={actif?.id ?? STUDIO_DEFAULT_LAYER_ID}
-        surSelection={setSolide3d} surCommandes={apply} selectionArchitecture={panneauArchi} surSelectionArchitecture={(id) => (id ? choisirArchitecture(id, false) : setSelectionArchi(null))} />}
+        surSelection={setSolide3d} surCommandes={apply} selectionArchitecture={panneauArchi} surSelectionArchitecture={(id) => (id ? choisirArchitecture(id, false) : setSelectionArchi(null))}
+        demande={demande3d} surDemandeTraitee={() => setDemande3d(null)} surNavigation={setNavigation3d}
+        provenance={{ etude: { id: context.study.id, nom: context.study.name }, variante: { id: context.variant.id, nom: context.variant.name }, revisionId: context.revision.id, nonEnregistre: commands.length > 0 }} />}
       {!vue3d && <Dessin2D svgRef={gestes.refPlanche} doc={apercuDoc ?? apercuTransformation ?? drawing} cadre={cadre} pas={pas} outil={tool} selection={selectionSet} trace={trace} survol={survol} rectangle={gestes.rectangle} glissement={!!gestes.apercu}
         apercuForme={apercuForme} sommetsPoses={suite}
         clicsVersPlanche={o => OUTILS_TRACE.has(tool) || (moveWithPointer && (!!trace || selectionSet.has(o.id)))}

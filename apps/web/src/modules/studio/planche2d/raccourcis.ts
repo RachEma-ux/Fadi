@@ -17,9 +17,10 @@ export type IdCommandeEditeur =
   | "accrochage-perpendiculaire" | "accrochage-tangente" | "accrochage-proche"
   | "reperage-orthogonal" | "reperage-polaire" | "pas-polaire"
   | "importer-dxf" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille"
+  | "exporter-png"
   | "outils" | "palette"
   | "exigences";
-export type GroupeCommande = "edition" | "vue" | "accrochage" | "reperage" | "import" | "export" | "presentation" | "catalogue" | "exigences";
+export type GroupeCommande = "edition" | "vue" | "accrochage" | "reperage" | "visualisation" | "import" | "export" | "presentation" | "catalogue" | "exigences";
 export type BarreStudio = StudioToolGroup | GroupeCommande;
 export type IconeCommande =
   | "studio-undo" | "studio-redo" | "studio-cancel" | "studio-save" | "studio-select-all"
@@ -30,6 +31,7 @@ export type IconeCommande =
   | "studio-snap-perpendicular" | "studio-snap-tangent" | "studio-snap-nearest"
   | "studio-track-ortho" | "studio-track-polar" | "studio-track-polar-step"
   | "studio-import-dxf" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet"
+  | "studio-export-png"
   | "studio-catalog" | "studio-palette"
   | "studio-requirements";
 
@@ -90,6 +92,8 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "reperage-orthogonal", libelleFR: "Mode orthogonal", raccourci: "F8", iconeSymbolique: "studio-track-ortho", groupe: "reperage", ecrit: false, bascule: true },
   { id: "reperage-polaire", libelleFR: "Repérage polaire", raccourci: "F10", iconeSymbolique: "studio-track-polar", groupe: "reperage", ecrit: false, bascule: true },
   { id: "pas-polaire", libelleFR: "Pas polaire suivant", raccourci: "Shift+Y", iconeSymbolique: "studio-track-polar-step", groupe: "reperage", ecrit: false },
+  // Rendu du modèle (lot E.5-03) : image PNG de la vue 3D, provenance incluse ; F4, libre et non réservé (F3 l'est).
+  { id: "exporter-png", libelleFR: "Exporter le rendu PNG", raccourci: "F4", iconeSymbolique: "studio-export-png", groupe: "visualisation", ecrit: false },
   // Import DXF vers le brouillon (aperçu, unité, entités non prises) : Maj+U (U comme « upload »), libre et non réservé.
   { id: "importer-dxf", libelleFR: "Importer DXF", raccourci: "Shift+U", iconeSymbolique: "studio-import-dxf", groupe: "import", ecrit: true },
   { id: "exporter-svg", libelleFR: "Exporter SVG", raccourci: "Shift+V", iconeSymbolique: "studio-export-svg", groupe: "export", ecrit: false, telechargement: "svg" },
@@ -118,6 +122,7 @@ export const BARRES_STUDIO: readonly { id: BarreStudio; libelleFR: string }[] = 
   { id: "vue", libelleFR: "Vue" },
   { id: "accrochage", libelleFR: "Accrochage" },
   { id: "reperage", libelleFR: "Repérage" },
+  { id: "visualisation", libelleFR: "Visualisation" },
   { id: "import", libelleFR: "Importer" },
   { id: "export", libelleFR: "Exporter" },
   { id: "presentation", libelleFR: "Présentation" },
