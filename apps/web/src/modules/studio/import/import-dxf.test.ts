@@ -7,7 +7,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { applyStudioCommands, lireDxfStudio, newStudioDocument, STUDIO_CONTRACT, StudioValidationError, type StudioCommand } from "@parcours/atelier-model";
 import dico from "../../../lib/i18n/en.json";
-import { DialogueImportDxf, Rapport } from "./DialogueImportDxf";
+import { DialogueImportDxf, ETAPES_LECTURE, Rapport } from "./DialogueImportDxf";
+import { messageHote } from "../workers/client-studio";
+import { ErreurHote } from "../workers/hote-worker";
 import { accuserLot, commandesNonEnvoyees, decouperCommandes, ENVELOPPE_MAX_COMMANDES, ENVELOPPE_MAX_OCTETS, enveloppeSuivante, envoiPartiel, envoiTermine, planEnvoi } from "./envoi";
 import { CIBLES_CALQUE, lireDxf, messageImport, typeNonPris, UNITES_PROPOSEES } from "./import-dxf-ui";
 
@@ -170,5 +172,23 @@ describe("Boîte « Importer DXF »", () => {
       "espace papier", "hors plan XY", "longueur nulle", "segment courbe", "segment de longueur nulle", "maillage", "lissée", "moins de deux sommets",
     ];
     for (const t of textes) expect(en[t], t).toBeTruthy();
+  });
+
+  it("lecture hors du fil principal : étapes, annulation et échecs du calcul ont leur traduction anglaise", () => {
+    const en = dico as Record<string, string>;
+    const echecs = (["delai", "indisponible", "interrompu", "illisible", "calcul"] as const).map((code) => messageHote(new ErreurHote(code, "x"))!);
+    expect(messageHote(new ErreurHote("annulee", "x"))).toBeNull();
+    expect(messageHote(new ErreurHote("remplacee", "x"))).toBeNull();
+    const textes = [...Object.values(ETAPES_LECTURE), ...echecs, "Lecture du DXF en cours", "Annuler la lecture",
+      "Lecture annulée : rien n’est ajouté. Choisissez de nouveau un fichier.", "Composition de la feuille…"];
+    for (const t of textes) expect(en[t], t).toBeTruthy();
+  });
+
+  it("rapport pendant une relecture (autre unité) : marqué en cours, pas à jour", () => {
+    const lecture = lireDxf(petitDxf(), newStudioDocument("d"), "mm");
+    if (!("resultat" in lecture)) throw new Error("lecture attendue");
+    const html = renderToStaticMarkup(createElement(Rapport, { nom: "x.dxf", resultat: lecture.resultat, unite: "mm", surUnite: () => {}, enCours: true }));
+    expect(html).toContain('aria-busy="true"');
+    expect(html).toContain('data-studio-import-a-jour="non"');
   });
 });
