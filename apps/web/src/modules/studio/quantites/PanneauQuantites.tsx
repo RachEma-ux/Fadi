@@ -20,7 +20,8 @@ import { MESSAGES_TACHE } from "../taches/messages";
 import { useTache } from "../taches/useTache";
 import { LOCALE } from "../../../lib/i18n";
 import { useAuth } from "../../../lib/auth-context";
-import { apiQuantites } from "./api-quantites";
+import { apiQuantites, ErreurQuantites } from "./api-quantites";
+import { apresEnvoi, preparerTentative, type TentativeAjustement } from "./tentative";
 import { csvQuantites, nomFichierCsvQuantites, type SeparateurDecimal } from "./csv-quantites";
 import {
   FILTRE_INITIAL, filtrerQuantites, lienCsvExportable, formaterQuantite, LIBELLE_GRANDEUR, LIBELLE_MOTIF, LIBELLE_NATURE, LIBELLE_REFUS_ENREGISTRE, LIBELLE_REVUE,
@@ -132,6 +133,7 @@ export function PanneauQuantites({ projectId, studyId, variantId, revisionId, do
   const [erreur, setErreur] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [occupe, setOccupe] = useState(false);
+  const tentative = useRef<TentativeAjustement | null>(null);
   const grandeursCible = typeCible === "objet"
     ? brut.objets.find((o) => o.objetId === cibleId)?.valeurs.map((v) => v.grandeur) ?? []
     : brut.calques.find((c) => c.calqueId === cibleId)?.totaux.map((t) => t.grandeur).filter((g) => GRANDEUR_CUMULABLE[g]) ?? [];
@@ -146,11 +148,16 @@ export function PanneauQuantites({ projectId, studyId, variantId, revisionId, do
     const refus = controlerSaisieAjustement(doc, brut, s);
     if (refus) { setErreur(LIBELLE_REFUS_ENREGISTRE[refus]); return; }
     setOccupe(true); setErreur(null); setMessage("");
+    // Même contenu qu'un envoi à l'issue inconnue : même corps et même requestId (le serveur rejoue, sans doublon).
+    const t = preparerTentative(tentative.current, s, { baseSequence: lecture.data.sequence, revisionId }, () => crypto.randomUUID());
+    tentative.current = t;
     try {
-      await apiQuantites.ajuster(projectId, studyId, variantId, { ...s, baseSequence: lecture.data.sequence, revisionId, requestId: crypto.randomUUID() });
+      await apiQuantites.ajuster(projectId, studyId, variantId, t.corps);
+      tentative.current = apresEnvoi(t, { ok: true });
       setSaisie(""); setMotif(""); setRetour(false);
       setMessage("Ajustement enregistré.");
     } catch (x) {
+      tentative.current = apresEnvoi(t, { ok: false, ...(x instanceof ErreurQuantites ? { status: x.status } : {}) });
       setErreur(x instanceof Error ? x.message : String(x));
     } finally {
       setOccupe(false);

@@ -151,6 +151,19 @@ try {
   const archivee = await api("post", `${racine}/${studyId}/variants/${derivee.variant.id}/ajustements-quantites`, { ...base, baseSequence: 0, revisionId: derivee.variant.headRevisionId, motif: "Relevé" });
   check("variante archivée : écriture refusée (409 archived), journal intact", archivee.status === 409 && archivee.body.error === "archived", JSON.stringify(archivee.body));
 
+  // Rejeu (réponse perdue) : le même envoi, même requestId, ne crée qu'une entrée ; l'entrée d'origine est rendue.
+  const soeur = (await api("post", `${racine}/${studyId}/variants`, { name: "Variante rejeu", fromVariantId: variantId })).body;
+  const cheminSoeur = `${racine}/${studyId}/variants/${soeur.variant.id}/ajustements-quantites`;
+  const corpsRejeu = { ...base, baseSequence: 0, revisionId: soeur.variant.headRevisionId, motif: "Relevé rejoué", requestId: `rejeu-${randomUUID()}` };
+  const envoi1 = await api("post", cheminSoeur, corpsRejeu);
+  const envoi2 = await api("post", cheminSoeur, corpsRejeu);
+  const journalSoeur = (await api("get", cheminSoeur)).body;
+  check("rejeu : même requestId => même entrée rendue (replayed), une seule ligne au journal",
+    envoi1.status === 201 && envoi1.body.replayed === false && envoi2.status === 201 && envoi2.body.replayed === true && envoi2.body.id === envoi1.body.id
+    && envoi2.body.sequence === 1 && journalSoeur.sequence === 1 && journalSoeur.ajustements.length === 1, JSON.stringify([envoi1.body, envoi2.body, journalSoeur.sequence]));
+  const autreContenu = await api("post", cheminSoeur, { ...corpsRejeu, valeur: 6.3 });
+  check("rejeu : même requestId pour un autre contenu => 409 request_conflict, rien d'ajouté", autreContenu.status === 409 && autreContenu.body.error === "request_conflict" && (await api("get", cheminSoeur)).body.sequence === 1, JSON.stringify(autreContenu.body));
+
   // 5. L'objet ajusté change : nouvelle révision, l'ajustement est « à revoir ».
   const modif = await envoyer(rev1, [{ toolId: "studio.dessin.modifier", params: { id: "l1", type: "line", layerId: "murs", start: { x: 0, y: 0 }, end: { x: 5, y: 0 } } }]);
   check("objet modifié : nouvelle révision enregistrée", modif.status === 200, String(modif.status));

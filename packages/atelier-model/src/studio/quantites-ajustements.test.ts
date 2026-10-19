@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { newStudioDocument, type StudioDocument } from "./document-2d.js";
+import { applyStudioCommands, newStudioDocument, type StudioDocument } from "./document-2d.js";
 import { quantitesStudio } from "./quantites.js";
 import {
   appliquerAjustementsEnregistres, controlerSaisieAjustement, etatCibleQuantite, evaluerAjustementsQuantites, jsonCanoniqueQuantites,
@@ -158,6 +158,30 @@ describe("ajustements de quantités enregistrés (E.3-05)", () => {
     // Le retour de l'objet à sa brute change à nouveau l'état du total : à revoir.
     const aRetour = enregistre(d1, { type: "objet", id: "l1" }, "longueur", null, "Erreur", [aCalque, aObjet, aCalque2]);
     expect(evaluerAjustementsQuantites(d1, q1, [aCalque, aObjet, aCalque2, aRetour]).journal.at(2)!.statut).toBe("a-revoir");
+  });
+
+  it("ouverture : le mur hôte déplacé rend son ajustement « à revoir » ; un état ancien sans hôte n'est jamais en vigueur (revue Codex #200)", () => {
+    const mur = { id: "mur-1", type: "wall" as const, axis: [{ x: 0, y: 0 }, { x: 6, y: 0 }], thickness: 0.2, height: 3, base: 0, justification: "center" as const };
+    const d = applyStudioCommands(newStudioDocument("d"), [
+      { toolId: "studio.architecture.mur", params: mur },
+      { toolId: "studio.architecture.ouverture", params: { id: "baie-1", type: "opening", hostId: "mur-1", position: 2, width: 1, height: 2, sill: 0, kind: "porte" } },
+    ]);
+    const q = quantitesStudio(d);
+    const a = enregistre(d, { type: "objet", id: "baie-1" }, "surface-ouverture", 2.1, "Baie relevée");
+    expect(JSON.stringify(a.etatCible)).toContain('"hote"');
+    expect(evaluerAjustementsQuantites(d, q, [a]).journal[0]!.statut).toBe("en-vigueur");
+    // Mur déplacé (même longueur) : la largeur et la hauteur de la baie ne changent pas, sa surface non plus.
+    const deplace = applyStudioCommands(d, [{ toolId: "studio.architecture.modifier", params: { ...mur, axis: [{ x: 1, y: 2 }, { x: 7, y: 2 }] } }]);
+    const qd = quantitesStudio(deplace);
+    expect(qd.objets.find((o) => o.objetId === "baie-1")!.valeurs).toEqual(q.objets.find((o) => o.objetId === "baie-1")!.valeurs);
+    expect(evaluerAjustementsQuantites(deplace, qd, [a]).journal[0]).toMatchObject({ statut: "a-revoir", revue: "cible-modifiee" });
+    // Épaisseur du mur changée : à revoir aussi.
+    const epais = applyStudioCommands(d, [{ toolId: "studio.architecture.modifier", params: { ...mur, thickness: 0.3 } }]);
+    expect(evaluerAjustementsQuantites(epais, quantitesStudio(epais), [a]).journal[0]!.statut).toBe("a-revoir");
+    // Ajustement enregistré avant la règle (état sans `hote`) : à revoir, jamais en vigueur en silence.
+    const { hote: _h, ...ancien } = a.etatCible as Record<string, unknown>;
+    void _h;
+    expect(evaluerAjustementsQuantites(d, q, [{ ...a, etatCible: ancien }]).journal[0]!.statut).toBe("a-revoir");
   });
 
   it("état de cible : JSON canonique stable après un aller-retour de stockage (ordre des clés indifférent)", () => {

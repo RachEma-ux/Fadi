@@ -24,6 +24,10 @@ import {
  * - Choix conservateur assumé : l'état de la cible reprend la forme du métré (grandeurs présentes, codes de motif
  *   « non évalué », nature). Une évolution du modèle de métré (nouvelle grandeur, motif renommé…) change donc cet état,
  *   et TOUS les ajustements concernés passent « à revoir » : ils sont à reconfirmer, jamais réappliqués en silence.
+ * - Une ouverture porte aussi l'état de son mur hôte (`hote`) : déplacer ou modifier le mur rend l'ajustement de
+ *   l'ouverture « à revoir », même si sa largeur et sa hauteur restent les mêmes. Un ajustement d'ouverture enregistré
+ *   avant cette règle (état sans `hote`) diffère donc de l'état calculé aujourd'hui : il passe « à revoir », jamais
+ *   « en vigueur » en silence — choix sûr, à reconfirmer par une nouvelle saisie.
  * - Le journal d'une variante est borné (`STUDIO_LIMITES_AJUSTEMENTS.journal`) : au-delà, le serveur refuse.
  */
 
@@ -76,7 +80,7 @@ function sourceDe(doc: StudioDocument, id: string): unknown {
 }
 
 /**
- * État d'une cible à une révision, et sa valeur brute. Objet : son enregistrement dans le document et toutes ses
+ * État d'une cible à une révision, et sa valeur brute. Objet : son enregistrement dans le document (et, pour une ouverture, celui de son mur hôte) et toutes ses
  * quantités brutes (un mur dont une ouverture change change donc aussi). Calque : la grandeur de chacun de ses objets et
  * le nombre d'objets non pris en charge. Le nom ou la visibilité d'un calque n'en font pas partie : ils ne changent
  * aucune quantité.
@@ -91,8 +95,16 @@ export function etatCibleQuantite(
     if (!o) return { refus: "objet-inconnu" };
     const v = o.valeurs.find((x) => x.grandeur === grandeur);
     if (!v) return { refus: "grandeur-non-applicable" };
+    const source = sourceDe(doc, cible.id);
+    const hostId = o.nature === "ouverture" && source && typeof source === "object" ? (source as { hostId?: unknown }).hostId : undefined;
+    const hote = typeof hostId === "string" ? sourceDe(doc, hostId) : undefined;
     return {
-      etat: { cible: "objet", source: sourceDe(doc, cible.id), type: o.type, nature: o.nature, calqueId: o.calqueId, valeurs: o.valeurs.map(({ grandeur: g, unite, valeur, motif }) => ({ grandeur: g, unite, valeur, motif })) },
+      etat: {
+        cible: "objet", source, type: o.type, nature: o.nature, calqueId: o.calqueId, valeurs: o.valeurs.map(({ grandeur: g, unite, valeur, motif }) => ({ grandeur: g, unite, valeur, motif })),
+        // Une ouverture dépend de son mur hôte (axe, épaisseur, base, calque), comme ses clés de projection
+        // (`projections.ts`) : le mur hôte déplacé ou modifié change l'état de l'ouverture.
+        ...(hote !== undefined ? { hote } : {}),
+      },
       derivee: v.valeur,
     };
   }
