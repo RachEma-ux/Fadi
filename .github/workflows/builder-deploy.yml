@@ -31,7 +31,10 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # ≈ 5 min (installation, tests, build) + publication au pire ≈ 30 min (3 tunnels × 90 s d'enregistrement
+    # + 24 sondes de ≤ 21 s : dig 2 × 3 s, curl 10 s, pause 5 s) + durée demandée (30 min au plus) : la fenêtre
+    # annoncée reste entière et les étapes de fin (statut, arrêt, journaux) ont le temps de tourner.
+    timeout-minutes: 75
 
     services:
       postgres:
