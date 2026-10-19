@@ -87,6 +87,11 @@ export interface StudioIfcSummary {
   dimensions: number;
   /** Objets exportés dont le calque est masqué (exportés calque éteint). */
   onHiddenLayers: number;
+  /**
+   * Annotations 2D (cotes angulaires, textes) non exportées : l'IFC ne porte que les objets extrudés (aucun
+   * `IfcAnnotation` n'est écrit). Présent seulement quand le document en compte, pour ne rien changer aux autres exports.
+   */
+  annotations?: number;
 }
 
 /** Élément IFC produit pour un objet extrudé : l'élément, l'item de représentation (calques) et le calque Studio. */

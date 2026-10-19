@@ -11,6 +11,7 @@ import { estSelectionnable, estVisible } from "./calques";
 import { viewBox, type Cadre, type PointAccroche } from "./geometrie-2d";
 import type { StudioToolId } from "./raccourcis";
 import type { ModeRectangle } from "./selection";
+import { Annotation } from "./rendus/annotations";
 import { Apercu } from "./rendus/apercu";
 import { Cote } from "./rendus/cote";
 import { Forme } from "./rendus/formes";
@@ -64,6 +65,9 @@ export function Dessin2D({ svgRef, doc, cadre, pas, outil, selection, trace, sur
       ))}
       {(doc.dimensions ?? []).filter((d) => visible(d.layerId)).map((d) => (
         <Cote key={d.id} d={d} choisie={selection.has(d.id)} selectionnable={estSelectionnable(doc, d.layerId)} surSelection={surSelection} versPlanche={clicsVersPlanche(d)} />
+      ))}
+      {(doc.annotations ?? []).filter((a) => visible(a.layerId)).map((a) => (
+        <Annotation key={a.id} a={a} choisie={selection.has(a.id)} selectionnable={estSelectionnable(doc, a.layerId)} surSelection={surSelection} versPlanche={clicsVersPlanche(a)} />
       ))}
       <Apercu cadre={cadre} outil={outil} trace={trace} survol={survol} rectangle={rectangle} apercuForme={apercuForme} sommetsPoses={sommetsPoses} />
     </svg>

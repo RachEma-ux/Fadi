@@ -28,7 +28,7 @@
  */
 import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { applyStudioCommands, STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, type StudioCommand, type StudioDimension, type StudioLayer, type StudioPoint, type StudioShape } from "@parcours/atelier-model";
+import { applyStudioCommands, STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, type StudioCommand, type StudioLayer, type StudioPoint } from "@parcours/atelier-model";
 import { api, studioExportUrl, type StudioContext } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
 import { LOCALE } from "../../lib/i18n";
@@ -45,10 +45,10 @@ import { Dessin2D, type PointPose } from "./planche2d/Dessin2D";
 import { cadrer, emprise } from "./planche2d/geometrie-2d";
 import { PanneauCalques } from "./planche2d/PanneauCalques";
 import { COMMANDES_EDITEUR, OUTILS_MODES, OUTILS_VOLUME_LIBRE, OUTILS_TRACE, type CibleRaccourci, type CommandeEditeur, type IdCommandeEditeur, type StudioToolEntry, type StudioToolId } from "./planche2d/raccourcis";
-import { basculer, commandesDeplacement, selectionValide, toutSelectionnable } from "./planche2d/selection";
+import { basculer, commandesDeplacement, elements, estForme, selectionValide, toutSelectionnable, type Element2D } from "./planche2d/selection";
 import { zoomerAuCentre } from "./planche2d/vue";
 import { aidePlanche, apercuPlanche, outilPlanche } from "./planche2d/outils";
-import { formulaireInactif, SOMMETS_INITIAUX, soumettre, VALEURS_INITIALES, valeursObjet, type Valeurs } from "./planche2d/outils/formulaire";
+import { CONTENU_INITIAL, formulaireInactif, SOMMETS_INITIAUX, soumettre, VALEURS_INITIALES, valeursObjet, type Valeurs } from "./planche2d/outils/formulaire";
 import { useGestesPlanche } from "./planche2d/outils/gestes";
 import { ChampMesures } from "./planche2d/accrochage/ChampMesures";
 import { estTransformation, optionsDeSaisie } from "./planche2d/outils/modification";
@@ -86,6 +86,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [modeArc, setModeArc] = useState<ModeArc>("trois-points");
   const [sommetsTexte, setSommetsTexte] = useState(SOMMETS_INITIAUX);
   const [fermee, setFermee] = useState(false);
+  // Texte saisi pour l'outil Texte (contenu du projet, jamais traduit) et sa justification.
+  const [texteSaisi, setTexteSaisi] = useState(CONTENU_INITIAL);
   const [accrocheSommets, setAccrocheSommets] = useState(true);
   const [accrocheGrille, setAccrocheGrille] = useState(false);
   const [dialogue, setDialogue] = useState<DialogueStudio>(null);
@@ -114,9 +116,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     surVersionServeur: (current) => {
       setContext(current); setBrouillon(creerBrouillon(current.revision.document)); cancelTrace();
       const doc = current.revision.document;
-      const restants = selectionIds.filter(id => doc.objects.some(o => o.id === id) || doc.dimensions?.some(d => d.id === id));
+      const restants = selectionIds.filter(id => elements(doc).some(e => e.id === id));
       setSelection(restants);
-      const seul = restants.length === 1 ? doc.objects.find(o => o.id === restants[0]) ?? doc.dimensions?.find(d => d.id === restants[0]) : undefined;
+      const seul = restants.length === 1 ? elements(doc).find(e => e.id === restants[0]) : undefined;
       if (seul) properties(seul);
     },
     surRebase: (accuse, rebase) => { setContext(accuse); setBrouillon(rebase); cancelTrace(); },
@@ -137,7 +139,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   // ——— Sélection et calques (lectures dérivées du brouillon) ———
   const selectionIds = drawing ? selectionValide(drawing, selection) : [];
   const selectionSet = new Set(selectionIds);
-  const itemDe = (id: string | undefined) => (id && drawing ? drawing.objects.find(o => o.id === id) ?? drawing.dimensions?.find(d => d.id === id) ?? null : null);
+  const itemDe = (id: string | undefined) => (id && drawing ? elements(drawing).find(e => e.id === id) ?? null : null);
   const selected = selectionIds.length === 1 ? itemDe(selectionIds[0]) : null;
   const calques = drawing ? listeCalques(drawing) : [];
   const { calque: actif, repli: calqueReplie } = calqueActifOuPremier(calques, calqueActif);
@@ -164,13 +166,14 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     try { return applyStudioCommands(drawing, commandes); } catch { return null; }
   }, [drawing, gestes.apercu]);
 
-  function properties(o: StudioShape | StudioDimension) {
+  function properties(o: Element2D) {
     // Les valeurs d'extrusion affichées sont celles que l'utilisateur a saisies pour cet objet, jamais une proposition.
-    const saisies = o.type === "dimension" ? null : valeursDe(o);
+    const saisies = estForme(o) ? valeursDe(o) : null;
     setExtrusion(saisies ?? VALEURS_VIDES);
     const r = valeursObjet(o);
     if (r.maj) setValues(r.maj);
     if (r.sommets) { setSommetsTexte(r.sommets.texte); setFermee(r.sommets.fermee); }
+    if (r.texte) setTexteSaisi(r.texte);
   }
   function select(ids: string[]) {
     setSelection(ids);
@@ -178,7 +181,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     if (o) properties(o);
     else if (ids.length > 1) {
       // Sélection multiple : des valeurs d'extrusion ne s'affichent que si tous les objets ont exactement les mêmes.
-      const valeurs = ids.map((id) => { const x = itemDe(id); return x && x.type !== "dimension" ? JSON.stringify(valeursDe(x)) : "null"; });
+      const valeurs = ids.map((id) => { const x = itemDe(id); return x && estForme(x) ? JSON.stringify(valeursDe(x)) : "null"; });
       setExtrusion(new Set(valeurs).size === 1 && valeurs[0] !== "null" ? JSON.parse(valeurs[0]!) as ValeursExtrusion : VALEURS_VIDES);
     }
   }
@@ -191,15 +194,18 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       setBrouillon(next);
       const doc = documentBrouillon(next);
       const seul = selectionIds.length === 1 ? selectionIds[0] : undefined;
-      const updated = seul ? doc.objects.find(o => o.id === seul) ?? doc.dimensions?.find(d => d.id === seul) : undefined;
+      const updated = seul ? elements(doc).find(e => e.id === seul) : undefined;
       if (updated) properties(updated);
       enr.setSaved(false); setError(""); setInfo("");
       return true;
     } catch (e) { setError(messageRefus(e)); return false; }
   }
   const layerId = () => layerIdPour(actif?.id ?? STUDIO_DEFAULT_LAYER_ID);
-  const creation = (): ContexteCreation => ({ nouvelId: () => crypto.randomUUID(), layerId: layerId(), decalageCote: values.offset });
-  const contexteClic = () => ({ ...creation(), tolerance: gestes.tolerance(), selection: selectionIds, options: optionsDeSaisie(values) });
+  const creation = (): ContexteCreation => ({
+    nouvelId: () => crypto.randomUUID(), layerId: layerId(), decalageCote: values.offset, rayonAngulaire: values.ra,
+    texte: { contenu: texteSaisi.contenu, hauteur: values.h, rotation: values.rot, justification: texteSaisi.justification },
+  });
+  const contexteClic = () => ({ ...creation(), tolerance: gestes.tolerance(), selection: selectionIds, options: optionsDeSaisie(values), document: drawing });
   /** Termine la polyligne en cours (ouverte, ou fermée sur son premier sommet). */
   function finishPolyline(closed: boolean) {
     if (tool !== "studio.dessin.polyligne" || !trace) return;
@@ -236,8 +242,10 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   /** Point posé (clic ou saisie directe du champ « Mesures ») : premier point, ou point interprété par l'outil actif. */
   function poser(p: PointPose) {
     if (!writable || !outil) return;
-    if (!trace) { setTrace(p); setSuite([]); return; }
-    const action = outil.clic({ outil: tool, trace, suite, modeArc }, p, contexteClic());
+    const contexte = contexteClic();
+    // Outil à un clic (Texte) : le premier clic agit aussitôt.
+    if (!trace && !outil.premierClic) { setTrace(p); setSuite([]); return; }
+    const action = !trace ? outil.premierClic!(p, contexte) : outil.clic({ outil: tool, trace, suite, modeArc }, p, contexte);
     switch (action.type) {
       case "deplacer": if (moveSelection(selectionIds, action.dx, action.dy)) { setTrace(null); gestes.setSurvol(null); } return;
       case "sommet": setSuite(action.suite); setError(""); return;
@@ -249,7 +257,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   /** Saisie numérique : mêmes commandes que le pointeur. */
   function numeric(e: FormEvent) {
     e.preventDefault();
-    const a = soumettre({ tool, values, sommetsTexte, fermee, selected, selectionIds, drawing, creation: creation() });
+    const a = soumettre({ tool, values, sommetsTexte, fermee, selected, selectionIds, drawing, creation: creation(), texte: texteSaisi });
     if (a.type === "erreur") setError(a.message);
     else if (a.type === "deplacer") moveSelection(selectionIds, a.dx, a.dy);
     else if (a.type === "decaler") offsetSelection(a.distance);
@@ -379,6 +387,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   if (!loading && refused(loadError)) return <StudioRefus quoi={historical ? "revision" : "variante"} />;
   const toolEntry = STUDIO_TOOLS.find(t => t.toolId === tool);
   const toResolve = drawing?.dimensions?.filter(d => d.toResolve).length ?? 0;
+  const angulairesAResoudre = drawing?.annotations?.filter(a => a.type === "angular-dimension" && a.toResolve).length ?? 0;
   const etatTrace = { outil: tool, trace, suite, modeArc };
   const apercuForme = apercuPlanche(etatTrace, survol?.point);
   // Aperçu d'une transformation (Copier, Rotation, Symétrie, Échelle) : le brouillon tel que le clic le donnerait.
@@ -414,14 +423,15 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       <p className="studio-hint">{hint}</p>
       <p className="studio-hint" data-studio-aide-vue>Molette : zoom sur le pointeur ; bouton du milieu, Espace + glisser ou deux doigts : déplacer la vue.</p>
       {toResolve > 0 && <p className="studio-alert" role="status" data-studio-cotes-a-resoudre={toResolve}>{`${toResolve} cote(s) à résoudre : un objet coté a été supprimé.`}</p>}
+      {angulairesAResoudre > 0 && <p className="studio-alert" role="status" data-studio-cotes-angulaires-a-resoudre={angulairesAResoudre}>{`${angulairesAResoudre} cote(s) angulaire(s) à résoudre : un segment lié a été supprimé.`}</p>}
       {info && <p className="studio-info" role="status">{info}</p>}
       {actif && !actif.visible && OUTILS_TRACE.has(tool) && <p className="studio-info">Le calque actif est masqué : ce que vous dessinez n’apparaîtra pas.</p>}
     </div>
     <PanneauProprietes titre={toolEntry?.libelleFR} drawing={drawing} selectionIds={selectionIds} selected={selected} writable={writable} formesChoisies={formesChoisies} extrusion={extrusion}
       surExtrusion={setExtrusion} surExtruder={extrude} surAplatir={() => runTool("studio.objet.aplatir")} surSupprimer={() => runTool("studio.dessin.supprimer")}
-      formulaire={tool !== "studio.dessin.selection" && !OUTILS_VOLUME_LIBRE.has(tool) && <FormulaireValeurs tool={tool} selected={selected} desactive={!writable || formulaireInactif(tool, selectionIds, selected) || (tool === "studio.dessin.modifier" && selected?.type === "dimension" && selected.toResolve)}
+      formulaire={tool !== "studio.dessin.selection" && !OUTILS_VOLUME_LIBRE.has(tool) && <FormulaireValeurs tool={tool} selected={selected} desactive={!writable || formulaireInactif(tool, selectionIds, selected) || (tool === "studio.dessin.modifier" && (selected?.type === "dimension" || selected?.type === "angular-dimension") && selected.toResolve)}
         values={values} surValeur={(k, v) => setValues(x => ({ ...x, [k]: v }))} modeArc={modeArc} surModeArc={m => { setModeArc(m); cancelTrace(); }}
-        sommetsTexte={sommetsTexte} surSommets={setSommetsTexte} fermee={fermee} surFermee={setFermee} surSoumettre={numeric} />}
+        sommetsTexte={sommetsTexte} surSommets={setSommetsTexte} fermee={fermee} surFermee={setFermee} surSoumettre={numeric} texte={texteSaisi} surTexte={setTexteSaisi} />}
       calques={<PanneauCalques doc={drawing} actif={actif?.id ?? STUDIO_DEFAULT_LAYER_ID} modifiable={writable} nom={nomCalque} nomRef={nomRef} surActif={id => setCalqueActif(id)} surNom={setNomCalque} surReglage={setLayer} surRenommer={renameLayer} />} /></div>
     <ListeElements doc={drawing} selection={selectionIds} modifiable={writable} surSelection={select} surSupprimer={() => runTool("studio.dessin.supprimer")} />
     {commentaires && <div id="studio-commentaires"><PanneauCommentaires projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} revision={context.revision.document} dessin={drawing}

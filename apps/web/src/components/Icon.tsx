@@ -89,7 +89,9 @@ export type IconName =
   | "studio-copy"
   | "studio-rotate"
   | "studio-mirror"
-  | "studio-scale";
+  | "studio-scale"
+  | "studio-angular-dimension"
+  | "studio-text";
 
 const PATHS: Record<IconName, string> = {
   search: "M10.5 3.5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 5 5",
@@ -191,6 +193,9 @@ const PATHS: Record<IconName, string> = {
   "studio-rotate": "M20 12a8 8 0 1 1-2.34-5.66M20 3v4h-4",
   "studio-mirror": "M12 2v3M12 9v6M12 19v3M9 6 3 18h6ZM15 6l6 12h-6Z",
   "studio-scale": "M3 21h7v-7H3ZM10 14l10-10M14 4h6v6",
+  // Annotations : cote angulaire (deux rayons depuis un sommet, arc de cote fléché) ; texte (lettre T et ligne de base).
+  "studio-angular-dimension": "M4 20h16M4 20 15 6M11 20a7 7 0 0 0-2.3-5.2M7.5 13.5l1.2 1.3-1.6.6",
+  "studio-text": "M5 5h14M12 5v13M9 18h6M4 21h16",
 };
 
 export function Icon({ name, size = 20, className }: { name: IconName; size?: number; className?: string }) {

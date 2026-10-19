@@ -4,16 +4,22 @@
  * touché suffit) et commandes de déplacement d'une sélection. Seuls les objets et les cotes affichés et déverrouillés
  * se sélectionnent. Pur : ni React ni DOM.
  */
-import { studioShapeSegments, type StudioCommand, type StudioDimension, type StudioDocument, type StudioPoint, type StudioShape } from "@parcours/atelier-model";
+import {
+  dessinerCoteAngulaire, studioArcPoints, studioShapeSegments, studioTextBox, type StudioAnnotation, type StudioCommand, type StudioDimension, type StudioDocument,
+  type StudioPoint, type StudioShape,
+} from "@parcours/atelier-model";
 import { estSelectionnable } from "./calques";
 import { traceCote } from "./geometrie-2d";
 
-export type Element2D = StudioShape | StudioDimension;
+export type Element2D = StudioShape | StudioDimension | StudioAnnotation;
 export type ModeRectangle = "fenetre" | "capture";
 export interface Rectangle2D { min: StudioPoint; max: StudioPoint }
 
-/** Objets puis cotes du document, dans l'ordre d'affichage. */
-export const elements = (doc: StudioDocument): Element2D[] => [...doc.objects, ...(doc.dimensions ?? [])];
+/** L'élément est-il une forme (ligne, rectangle, cercle, arc, polyligne) plutôt qu'une cote ou une annotation ? */
+export const estForme = (e: Element2D): e is StudioShape => e.type !== "dimension" && e.type !== "angular-dimension" && e.type !== "text";
+
+/** Objets, cotes puis annotations du document, dans l'ordre d'affichage. */
+export const elements = (doc: StudioDocument): Element2D[] => [...doc.objects, ...(doc.dimensions ?? []), ...(doc.annotations ?? [])];
 
 /** Identifiants sélectionnables (affichés, déverrouillés), dans l'ordre du document. */
 export const toutSelectionnable = (doc: StudioDocument): string[] =>
@@ -41,6 +47,16 @@ type Segment = readonly [StudioPoint, StudioPoint];
  * d'une polyligne, lignes d'une cote).
  */
 export function segments(e: Element2D): Segment[] {
+  if (e.type === "text") {
+    // Emprise approchée du texte (dérivée, jamais une donnée).
+    const b = studioTextBox(e);
+    return b.map((p, i) => [p, b[(i + 1) % b.length]!] as const);
+  }
+  if (e.type === "angular-dimension") {
+    const g = dessinerCoteAngulaire(e, "fr-FR", 0);
+    const arc = studioArcPoints(g.arc.center, g.arc.radius, g.arc.startAngle, g.sweep);
+    return [...arc.slice(1).map((p, i) => [arc[i]!, p] as const), ...g.extensions];
+  }
   if (e.type !== "dimension") return studioShapeSegments(e);
   const g = traceCote(e);
   return [[e.start, g.a], [e.end, g.b], [g.a, g.b]];
@@ -95,6 +111,7 @@ export function commandesDeplacement(doc: StudioDocument, ids: readonly string[]
   for (const id of selectionValide(doc, ids)) {
     const e = parId.get(id)!;
     if (e.type === "dimension" && (e.links.start || e.links.end)) { cotesLiees.push(id); continue; }
+    if (e.type === "angular-dimension" && (e.links.first || e.links.second)) { cotesLiees.push(id); continue; }
     commandes.push({ toolId: "studio.dessin.deplacer", params: { id, dx, dy } });
   }
   return { commandes, cotesLiees };

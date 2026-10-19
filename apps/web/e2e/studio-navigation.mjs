@@ -269,6 +269,8 @@ try {
   await note.locator("a").click();
   await page.waitForURL(`${base}?commentaires=ouverts`);
   await page.locator("#studio-commentaires").waitFor();
+  // Les commentaires se chargent après l'ouverture du panneau : on attend leur affichage plutôt que de lire tout de suite.
+  await page.locator("#studio-commentaires").filter({ hasText: "Remarque du lecteur sur la variante" }).waitFor().catch(() => {});
   check("notification → variante, panneau des commentaires ouvert", (await page.locator("[data-studio-basculer-commentaires]").getAttribute("aria-pressed")) === "true" && (await page.locator("#studio-commentaires").textContent()).includes("Remarque du lecteur sur la variante"));
 
   // Planche 2D : ligne, cote associative accrochée, déplacement (la cote suit), suppression (cote « à résoudre »),
@@ -468,7 +470,8 @@ try {
   await gestionnaire.waitFor();
   check("Outils : le catalogue liste tout le registre", (await gestionnaire.locator("[data-studio-catalogue-entree]").count()) >= 25 && (await gestionnaire.locator('[data-studio-catalogue-entree="studio.dessin.ligne"] [data-studio-exposition="none"]').count()) === 1);
   await gestionnaire.getByLabel("Rechercher un outil", { exact: true }).fill("Cote");
-  check("Outils : la recherche « Cote » trouve l'outil Cote, et lui seul", (await gestionnaire.locator("[data-studio-catalogue-entree]").count()) === 1 && (await gestionnaire.locator('[data-studio-catalogue-entree="studio.dessin.cote"]').isVisible()));
+  check("Outils : la recherche « Cote » trouve les outils Cote et Cote angulaire, et eux seuls", (await gestionnaire.locator("[data-studio-catalogue-entree]").count()) === 2 && (await gestionnaire.locator('[data-studio-catalogue-entree="studio.dessin.cote"]').isVisible())
+    && (await gestionnaire.locator('[data-studio-catalogue-entree="studio.dessin.cote-angulaire"]').isVisible()));
   await page.getByRole("dialog").getByRole("button", { name: "Fermer", exact: true }).click();
   await gestionnaire.waitFor({ state: "detached" });
 
@@ -839,6 +842,100 @@ try {
     const t = await ifcSolides.text();
     const proxiesSolides = (t.match(/IFCBUILDINGELEMENTPROXY\([^;]*'Volume libre[^;]*\.NOTDEFINED\.\);/g) ?? []).length;
     check("volume libre : l'export IFC compte deux IfcBuildingElementProxy .NOTDEFINED. de plus, sans catégorie devinée", proxies(t) === proxiesAvant + 2 && proxiesSolides === 2 && t.includes("IFCPROPERTYSINGLEVALUE('FreeSolids',$,IFCINTEGER(2),$)"), `${proxiesAvant} → ${proxies(t)} (${proxiesSolides})`);
+  }
+
+  // Annotations : Cote angulaire (Maj+A) liée à deux lignes par deux clics sur leurs segments, Texte (Maj+T) posé d'un
+  // clic ; la ligne modifiée → l'angle suit ; la ligne supprimée → « à résoudre » ; enregistrement, actualisation
+  // identique ; export DXF (TEXT, ARC) et SVG.
+  check("annotations : Cote angulaire (Maj+A) et Texte (Maj+T) dans la barre Dessin, icônes propres",
+    (await outils.locator('[data-studio-barre="dessin"] [data-studio-outil="studio.dessin.cote-angulaire"][aria-keyshortcuts="Shift+A"] svg path').count()) === 1
+    && (await outils.locator('[data-studio-barre="dessin"] [data-studio-outil="studio.dessin.texte"][aria-keyshortcuts="Shift+T"] svg path').count()) === 1);
+  const lignesAvantAnnotations = await idsDe("line");
+  for (const [x, y, xf, yf] of [[40, 40, 44, 40], [40, 40, 40, 43]]) {
+    await outils.getByRole("button", { name: "Ligne", exact: true }).click();
+    for (const [nom, v] of [["X", x], ["Y", y], ["X final", xf], ["Y final", yf]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
+    await proprietes.getByRole("button", { name: "Ajouter au dessin", exact: true }).click();
+  }
+  const [ligneA, ligneB] = (await idsDe("line")).filter((id) => !lignesAvantAnnotations.includes(id));
+  check("annotations : deux lignes saisies", !!ligneA && !!ligneB);
+  await page.evaluate(() => document.activeElement?.blur());
+  // Accrochage aux sommets coupé : les clics visent les segments, pas leurs extrémités ; la vue cadre tout le dessin.
+  await page.keyboard.press("Shift+S");
+  await page.keyboard.press("Shift+Z");
+  await page.keyboard.press("Shift+A");
+  check("annotations : Maj+A choisit l'outil Cote angulaire", (await outils.getByRole("button", { name: "Cote angulaire", exact: true }).getAttribute("aria-pressed")) === "true");
+  await cliquer(42.5, 40);
+  await cliquer(40, 41.5);
+  const angulaire = page.locator("svg [data-studio-cote-angulaire]");
+  await angulaire.waitFor({ state: "attached" });
+  check("annotations : deux clics sur deux segments lient la cote angulaire (90,00°)", (await angulaire.getAttribute("data-studio-angle")) === "90.000"
+    && (await angulaire.locator("text").textContent()) === "90,00°" && (await angulaire.getAttribute("data-studio-cote-etat")) === "resolue");
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+T");
+  check("annotations : Maj+T choisit l'outil Texte", (await outils.getByRole("button", { name: "Texte", exact: true }).getAttribute("aria-pressed")) === "true");
+  await proprietes.getByLabel("Texte", { exact: true }).fill("Séjour — nord");
+  await proprietes.getByLabel("Hauteur du texte", { exact: true }).fill("0.5");
+  await proprietes.locator('[data-studio-champ="justification"]').selectOption("center");
+  await page.evaluate(() => document.activeElement?.blur());
+  await cliquer(41, 44.5);
+  const texteAnnotation = page.locator("svg [data-studio-texte]");
+  await texteAnnotation.waitFor({ state: "attached" });
+  check("annotations : un clic pose le texte saisi, tel quel (non traduit)", (await texteAnnotation.locator("text").textContent()) === "Séjour — nord"
+    && (await texteAnnotation.locator("text").getAttribute("translate")) === "no" && (await texteAnnotation.locator("text").getAttribute("text-anchor")) === "middle");
+  // La ligne B tourne (son extrémité est modifiée) : la cote angulaire liée suit, l'angle passe à 45°.
+  await outils.getByRole("button", { name: "Sélection", exact: true }).click();
+  await page.locator(`[data-studio-objet="${ligneB}"]`).focus();
+  await page.keyboard.press("Enter");
+  await page.locator(`[data-studio-selection="${ligneB}"]`).waitFor();
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("e");
+  await proprietes.getByLabel("X final", { exact: true }).fill("43");
+  await proprietes.getByLabel("Y final", { exact: true }).fill("43");
+  await proprietes.getByRole("button", { name: "Modifier la sélection", exact: true }).click();
+  await page.locator('svg [data-studio-cote-angulaire][data-studio-angle="45.000"]').waitFor({ state: "attached" });
+  check("annotations : la ligne liée modifiée, l'angle suit (45,00°)", (await angulaire.locator("text").textContent()) === "45,00°");
+  await page.keyboard.press("Shift+S");
+  const avantAnnotations = envois.length;
+  await page.keyboard.press("Control+s");
+  await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
+  const envoiAnnotations = envois[envois.length - 1];
+  check("annotations : enregistrées en une enveloppe (deux lignes, cote angulaire, texte, modification)", envois.length === avantAnnotations + 1
+    && JSON.stringify(envoiAnnotations.commands.map((c) => c.toolId)) === JSON.stringify(["studio.dessin.ligne", "studio.dessin.ligne", "studio.dessin.cote-angulaire", "studio.dessin.texte", "studio.dessin.modifier"]), JSON.stringify(envoiAnnotations?.commands.map((c) => c.toolId)));
+  const annotes = await a.api("get", variantePath);
+  const angServeur = annotes.revision.document.annotations.find((x) => x.type === "angular-dimension");
+  const texteServeur = annotes.revision.document.annotations.find((x) => x.type === "text");
+  check("annotations : relues du serveur (liens, sommet, aucune valeur d'angle stockée ; texte tel quel)",
+    angServeur.links.first.objectId === ligneA && angServeur.links.second.objectId === ligneB && angServeur.vertex.x === 40 && angServeur.vertex.y === 40 && !("value" in angServeur)
+    && texteServeur.content === "Séjour — nord" && texteServeur.height === 0.5 && texteServeur.justification === "center", JSON.stringify(annotes.revision.document.annotations));
+  const empreinteAnnotations = await empreinte();
+  await page.reload();
+  await page.locator("svg [data-studio-cote-angulaire]").waitFor({ state: "attached" });
+  check("annotations : l'actualisation restitue le même dessin", (await empreinte()) === empreinteAnnotations && JSON.stringify((await a.api("get", variantePath)).revision) === JSON.stringify(annotes.revision));
+  // Suppression de la ligne B : la cote angulaire passe « à résoudre », elle n'est ni supprimée ni rattachée ailleurs.
+  await page.locator(`[data-studio-objet="${ligneB}"]`).focus();
+  await page.keyboard.press("Enter");
+  await page.locator(`[data-studio-selection="${ligneB}"]`).waitFor();
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Delete");
+  await page.locator("[data-studio-cotes-angulaires-a-resoudre]").waitFor();
+  check("annotations : la ligne liée supprimée, la cote angulaire passe « à résoudre »", (await angulaire.getAttribute("data-studio-cote-etat")) === "a-resoudre"
+    && (await angulaire.getAttribute("data-studio-angle")) === null && (await page.locator("[data-studio-cotes-angulaires-a-resoudre]").getAttribute("data-studio-cotes-angulaires-a-resoudre")) === "1");
+  await page.keyboard.press("Control+s");
+  await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
+  const resolu = await a.api("get", variantePath);
+  const empreinteResoudre = await empreinte();
+  await page.reload();
+  await page.locator("[data-studio-cotes-angulaires-a-resoudre]").waitFor();
+  check("annotations : « à résoudre » enregistré, actualisation identique", resolu.revision.document.annotations.find((x) => x.type === "angular-dimension").toResolve === true
+    && (await empreinte()) === empreinteResoudre && JSON.stringify((await a.api("get", variantePath)).revision) === JSON.stringify(resolu.revision));
+  const dxfAnnotations = await page.request.get(`${BASE}${variantePath}/export?format=dxf`);
+  if (dxfAnnotations.status() === 404) console.log("· export DXF : point d'entrée absent de ce serveur");
+  else {
+    const t = await dxfAnnotations.text();
+    check("annotations : l'export DXF contient le TEXT du texte (justifié, 72 = 1) et l'ARC de la cote « à résoudre »",
+      t.includes("\r\nTEXT\r\n") && t.includes("\r\n1\r\nS\\U+00E9jour \\U+2014 nord\r\n") && t.includes("\r\n72\r\n1\r\n") && t.includes("\\U+00E0 r\\U+00E9soudre") && /\r\nARC\r\n/.test(t));
+    const svg = await (await page.request.get(`${BASE}${variantePath}/export?format=svg`)).text();
+    check("annotations : l'export SVG contient le texte et la cote angulaire", svg.includes(`<text data-text="${texteServeur.id}"`) && svg.includes(">Séjour — nord</text>") && svg.includes(`<g data-angular-dimension="${angServeur.id}" data-status="to-resolve">`));
   }
 
   // Grand import (600 lignes, mètres) sur la variante initiale : deux enveloppes chaînées (500 puis 100 commandes).

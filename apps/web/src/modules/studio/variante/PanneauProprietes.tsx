@@ -3,7 +3,7 @@
  * numérique de l'outil actif, calques, note. Lecture seule : tout est affiché, rien n'est modifiable.
  */
 import type { ReactNode } from "react";
-import type { StudioDimension, StudioDocument, StudioShape } from "@parcours/atelier-model";
+import { formatStudioAngle, studioAngularValue, type StudioAnnotation, type StudioDimension, type StudioDocument, type StudioShape } from "@parcours/atelier-model";
 import { Icon } from "../../../components/Icon";
 import { LOCALE } from "../../../lib/i18n";
 import { formaterMetres, valeurCote } from "../planche2d/geometrie-2d";
@@ -14,7 +14,7 @@ export interface PropsPanneauProprietes {
   titre: string | undefined;
   drawing: StudioDocument;
   selectionIds: readonly string[];
-  selected: StudioShape | StudioDimension | null;
+  selected: StudioShape | StudioDimension | StudioAnnotation | null;
   writable: boolean;
   formesChoisies: readonly StudioShape[];
   extrusion: ValeursExtrusion;
@@ -35,6 +35,9 @@ export function PanneauProprietes({ titre, drawing, selectionIds, selected, writ
       {selected?.type === "dimension" && (selected.toResolve
         ? <p data-studio-cote-statut="a-resoudre">À résoudre : un objet coté a été supprimé.</p>
         : <p data-studio-cote-statut={selected.links.start || selected.links.end ? "liee" : "libre"}>Valeur mesurée : <span translate="no">{formaterMetres(valeurCote(selected) ?? 0, LOCALE)}</span> · {selected.links.start || selected.links.end ? "Associée : suit l’objet coté." : "Libre."}</p>)}
+      {selected?.type === "angular-dimension" && (selected.toResolve
+        ? <p data-studio-cote-statut="a-resoudre">À résoudre : un segment lié a été supprimé.</p>
+        : <p data-studio-cote-statut={selected.links.first ? "liee" : "libre"}>Angle mesuré : <span translate="no" data-studio-angle-mesure>{formatStudioAngle(studioAngularValue(selected) ?? 0, LOCALE)}</span> · {selected.links.first ? "Associée : suit les segments." : "Libre."}</p>)}
       <button type="button" disabled={!writable} onClick={surSupprimer} data-studio-supprimer-selection><Icon name="studio-delete" size={18} /> Supprimer la sélection</button>
     </div>}
     {formesChoisies.length > 0 && <FormulaireExtrusion valeurs={extrusion} modifiable={writable} formes={formesChoisies.length} extrudes={formesChoisies.filter(o => o.extrusion).length}

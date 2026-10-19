@@ -8,6 +8,7 @@ import { boolean, fail, finite, identifier, idList, point, record, same } from "
 import {
   studioAncreImage, studioDecalageImage, studioEchelle, studioRotation, studioSymetrie, studioTransformerForme, studioTranslation, type StudioTransformation,
 } from "../transformations.js";
+import { deplacerAnnotation, modifierAnnotation, suivreAnnotations, supprimerAnnotations } from "./annotations.js";
 
 /** Commandes de modification : Déplacer, Modifier, Décaler, Supprimer ; Copier, Rotation, Symétrie, Échelle. */
 
@@ -23,8 +24,10 @@ export const deplacer: Gestionnaire = (state, params, path) => {
     editable(state, o, path);
     state.objects[index] = validerForme(translaterForme(o, translate), path);
     followLinks(state, id, path);
+    suivreAnnotations(state, id, path);
     return;
   }
+  if (deplacerAnnotation(state, id, translate, path)) return;
   const dIndex = state.dimensions.findIndex((x) => x.id === id);
   const d = state.dimensions[dIndex];
   if (!d) fail(path, "objet introuvable");
@@ -35,6 +38,7 @@ export const deplacer: Gestionnaire = (state, params, path) => {
 
 export const modifier: Gestionnaire = (state, params, path) => {
   const o = validerElement(params, `${path}.params`);
+  if (o.type === "angular-dimension" || o.type === "text") return modifierAnnotation(state, o, path);
   const index = state.objects.findIndex((current) => current.id === o.id);
   const dIndex = state.dimensions.findIndex((current) => current.id === o.id);
   const previous = state.objects[index] ?? state.dimensions[dIndex];
@@ -47,6 +51,7 @@ export const modifier: Gestionnaire = (state, params, path) => {
   } else {
     state.objects[index] = o;
     followLinks(state, o.id, path);
+    suivreAnnotations(state, o.id, path);
   }
 };
 
@@ -69,7 +74,7 @@ export const decaler: Gestionnaire = (state, params, path) => {
 export const supprimer: Gestionnaire = (state, params, path) => {
   const p = record(params, ["ids"], `${path}.params`);
   const ids = new Set(idList(p.ids, `${path}.params.ids`));
-  const items = new Map<string, StudioItem>([...state.objects, ...state.dimensions].map((o) => [o.id, o]));
+  const items = new Map<string, StudioItem>([...state.objects, ...state.dimensions, ...state.annotations].map((o) => [o.id, o]));
   for (const id of ids) {
     const target = items.get(id);
     if (!target) fail(path, `objet introuvable : ${id}`);
@@ -84,6 +89,7 @@ export const supprimer: Gestionnaire = (state, params, path) => {
     editable(state, d, `${path} (cote liée ${d.id})`);
     return { ...d, links: { start: breakStart ? null : d.links.start, end: breakEnd ? null : d.links.end }, toResolve: true };
   });
+  supprimerAnnotations(state, ids, path);
 };
 
 // ——— Transformations de la sélection (Copier, Rotation, Symétrie, Échelle) ———
@@ -129,6 +135,8 @@ function transformerSurPlace(state: Etat, ids: readonly string[], t: StudioTrans
     transformes.set(o.id, image);
     return image;
   });
+  // Les cotes angulaires liées (annotations) suivent les segments transformés, comme après Déplacer ou Modifier.
+  for (const id of transformes.keys()) suivreAnnotations(state, id, path);
   state.dimensions = state.dimensions.map((d) => {
     const choisie = choisis.has(d.id);
     const bout = (end: "start" | "end"): Bout => {

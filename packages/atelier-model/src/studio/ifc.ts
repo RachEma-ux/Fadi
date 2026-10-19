@@ -29,6 +29,8 @@ export { studioIfcGuid, studioStepReal, studioStepString, type StudioIfcSummary 
  *   ouverte → `IfcBuildingElementProxy` surface verticale (`IfcTriangulatedFaceSet` ouvert le long du tracé discrétisé) ;
  *   les types prédéfinis restent `.NOTDEFINED.` ;
  * - objets non extrudés et cotes : non exportés en 3D, comptés dans le jeu de propriétés `Fadi_StudioExport` du projet ;
+ * - annotations 2D (cotes angulaires, textes) : aucun `IfcAnnotation` n'est écrit (choix explicite : l'IFC de Studio ne
+ *   porte que les objets extrudés) ; elles sont comptées (`AnnotationsNotExported`) quand le document en contient ;
  * - calques : `IfcPresentationLayerWithStyle` (nom du calque, identifiant Studio, visibilité `LayerOn`, verrou
  *   `LayerBlocked`) sur les éléments de représentation ; les objets des calques masqués sont exportés, calque éteint ;
  * - identités : GlobalId dérivé de la clé du document et de l'identifiant Studio ; l'identifiant est aussi le `Tag`.
@@ -127,6 +129,8 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
   const hiddenLayers = new Set(layers.filter((l) => !l.visible).map((l) => l.id));
   const built: IfcConstruit[] = [];
   const summary: StudioIfcSummary = { walls: 0, surfaces: 0, prisms: 0, nonExtruded: 0, dimensions: doc.dimensions?.length ?? 0, onHiddenLayers: 0 };
+  // Annotations (cotes angulaires, textes) : non exportées, comptées (jamais omises en silence).
+  if (doc.annotations?.length) summary.annotations = doc.annotations.length;
 
   /** Profil fermé discrétisé (coordonnées absolues du plan, sens trigonométrique), extrudé depuis la cote de base. */
   const arbitrarySolid = (ring: StudioPoint[], depth: number) => {
@@ -201,6 +205,7 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
     prop("DimensionsNotExported", integer(summary.dimensions)),
     prop("ObjectsOnHiddenLayers", integer(summary.onHiddenLayers)),
     ...(solides.length ? [prop("FreeSolids", integer(solides.length))] : []),
+    ...(summary.annotations !== undefined ? [prop("AnnotationsNotExported", integer(summary.annotations))] : []),
   ]);
 
   const header = [

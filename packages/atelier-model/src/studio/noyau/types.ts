@@ -2,10 +2,12 @@ import type { Point2 } from "../../unites.js";
 import type { StudioArc } from "../objets/arc.js";
 import type { StudioCircle } from "../objets/cercle.js";
 import type { StudioDimension } from "../objets/cote.js";
+import type { StudioAngularDimension } from "../objets/cote-angulaire.js";
 import type { StudioLine } from "../objets/ligne.js";
 import type { StudioPolyline } from "../objets/polyligne.js";
 import type { StudioRectangle } from "../objets/rectangle.js";
 import type { StudioBox, StudioProfilePrism, StudioSolid } from "../objets-3d/solides.js";
+import type { StudioText } from "../objets/texte.js";
 import type { STUDIO_CONTRACT } from "./limites.js";
 
 /**
@@ -30,7 +32,9 @@ export interface StudioExtrusion {
 }
 
 export type StudioShape = StudioLine | StudioRectangle | StudioCircle | StudioArc | StudioPolyline;
-export type StudioItem = StudioShape | StudioDimension;
+/** Annotations (cotes angulaires, textes), rangées à part dans `StudioDocument.annotations`. */
+export type StudioAnnotation = StudioAngularDimension | StudioText;
+export type StudioItem = StudioShape | StudioDimension | StudioAnnotation;
 
 export interface StudioLayer {
   id: string;
@@ -51,6 +55,11 @@ export interface StudioDocument {
   dimensions?: StudioDimension[];
   /** Solides libres (`objets-3d/`, repère `local-3d`), séparés de `objects` : un lecteur 2D ne les lit jamais à tort. */
   solides?: StudioSolid[];
+  /**
+   * Annotations (extension additive, facultative) : cotes angulaires et textes, séparés de `objects` et `dimensions` pour
+   * qu'un lecteur antérieur ne les interprète jamais à tort ; absent ou vide : aucune annotation (forme canonique).
+   */
+  annotations?: StudioAnnotation[];
 }
 export type StudioCommand =
   | { toolId: "studio.dessin.ligne"; params: StudioLine }
@@ -62,6 +71,8 @@ export type StudioCommand =
   | { toolId: "studio.dessin.deplacer"; params: { id: string; dx: number; dy: number } }
   | { toolId: "studio.dessin.modifier"; params: StudioItem }
   | { toolId: "studio.dessin.cote"; params: StudioDimension }
+  | { toolId: "studio.dessin.cote-angulaire"; params: StudioAngularDimension }
+  | { toolId: "studio.dessin.texte"; params: StudioText }
   | { toolId: "studio.dessin.supprimer"; params: { ids: string[] } }
   | { toolId: "studio.dessin.copier"; params: { ids: string[]; dx: number; dy: number; copies: number; prefix: string } }
   | { toolId: "studio.dessin.rotation"; params: { ids: string[]; center: StudioPoint; angle: number } }

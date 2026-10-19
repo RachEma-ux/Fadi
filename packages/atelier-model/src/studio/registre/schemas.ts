@@ -2,6 +2,8 @@ import { STUDIO_LIMITS } from "../noyau/limites.js";
 import { SCHEMA_ARC } from "../objets/arc.js";
 import { SCHEMA_CERCLE } from "../objets/cercle.js";
 import { SCHEMA_COTE } from "../objets/cote.js";
+import { SCHEMA_COTE_ANGULAIRE } from "../objets/cote-angulaire.js";
+import { SCHEMA_TEXTE } from "../objets/texte.js";
 import { SCHEMA_LIGNE } from "../objets/ligne.js";
 import { SCHEMA_POLYLIGNE } from "../objets/polyligne.js";
 import { SCHEMA_RECTANGLE } from "../objets/rectangle.js";
@@ -24,5 +26,6 @@ export const STUDIO_DOCUMENT_SCHEMA = {
     layers: { type: "array", maxItems: STUDIO_LIMITS.layers, items: layer },
     dimensions: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_COTE },
     solides: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_SOLIDE },
+    annotations: { type: "array", maxItems: STUDIO_LIMITS.objects, items: { oneOf: [SCHEMA_COTE_ANGULAIRE, SCHEMA_TEXTE] } },
   },
 } as const;

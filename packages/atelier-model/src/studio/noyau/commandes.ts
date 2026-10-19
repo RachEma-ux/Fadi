@@ -1,5 +1,5 @@
 import { creerCalque, modifierCalque, placerSurCalque } from "../commandes/calques.js";
-import { CREATION_FORMES, creerCote } from "../commandes/dessin.js";
+import { CREATION_FORMES, creerCote, creerCoteAngulaire, creerTexte } from "../commandes/dessin.js";
 import { decaler, deplacer, modifier, supprimer } from "../commandes/modification.js";
 import { copier, echelle, rotation, symetrie } from "../commandes/modification.js";
 import { aplatir, extruder } from "../commandes/volume.js";
@@ -42,6 +42,8 @@ const HANDLERS: Record<StudioCommandToolId, Gestionnaire> = {
   "studio.solide.prisme": creerPrisme,
   "studio.solide.deplacer": deplacerSolide,
   "studio.solide.supprimer": supprimerSolides,
+  "studio.dessin.cote-angulaire": creerCoteAngulaire,
+  "studio.dessin.texte": creerTexte,
 };
 
 /** Identifiants réellement acceptés par `applyStudioCommands` (contrôlés contre le registre par test). */
@@ -53,8 +55,8 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
   // Charge avant le lot, relevée avant toute mutation (l'état partage les tableaux de `current`).
   const avant = studioExtrudedRingVertices(current.objects);
   const state: Etat = {
-    id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [], solides: current.solides ?? [],
-    ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id), ...(current.solides ?? []).map((s) => s.id)]),
+    id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [], solides: current.solides ?? [], annotations: current.annotations ?? [],
+    ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id), ...(current.solides ?? []).map((s) => s.id), ...(current.annotations ?? []).map((a) => a.id)]),
   };
   const batch = array(commands, "commands");
   if (batch.length === 0) fail("commands", "au moins une commande attendue");
@@ -66,7 +68,7 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
     HANDLERS[toolId as StudioCommandToolId](state, c.params, path);
   }
   // Contrôle final : limites, unicité et liens sur le document entier, avant de rendre la copie.
-  const result = validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions, state.solides));
+  const result = validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions, state.solides, state.annotations));
   // Budget d'écriture des extrusions de polylignes fermées : un lot ne peut pas le dépasser ni l'aggraver une fois
   // dépassé ; une révision enregistrée reste toujours lisible (le budget ne s'applique qu'aux écritures).
   const apres = studioExtrudedRingVertices(result.objects);

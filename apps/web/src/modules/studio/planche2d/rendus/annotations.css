@@ -1,0 +1,9 @@
+/* Annotations de la planche 2D : cote angulaire (arc, attaches, libellé) et texte. */
+.studio-cote-angulaire path,.studio-cote-angulaire line{fill:none;stroke:#2f6b4f;stroke-width:1.5px;vector-effect:non-scaling-stroke;pointer-events:stroke}
+.studio-cote-angulaire text{font-size:.34px;fill:#2f6b4f;text-anchor:middle;dominant-baseline:central;font-family:system-ui,sans-serif;pointer-events:all;user-select:none}
+.studio-cote-angulaire.selected path,.studio-cote-angulaire.selected line{stroke:#c3722f}.studio-cote-angulaire.selected text{fill:#c3722f}
+.studio-cote-angulaire.a-resoudre path,.studio-cote-angulaire.a-resoudre line{stroke:#b4471f;stroke-dasharray:6 4}.studio-cote-angulaire.a-resoudre text{fill:#b4471f;font-style:italic}
+.studio-cote-angulaire.verrouille path,.studio-cote-angulaire.verrouille line{stroke:#9fb0b5}.studio-cote-angulaire.verrouille text{fill:#7f9196}
+.studio-texte text{fill:#20343a;font-family:system-ui,sans-serif;pointer-events:all;user-select:none;white-space:pre}
+.studio-texte.selected text{fill:#c3722f}.studio-texte.verrouille text{fill:#7f9196}
+.studio-cote-angulaire:focus,.studio-texte:focus{outline:none}.studio-cote-angulaire:focus path,.studio-texte:focus text{stroke:#b56c22;stroke-width:1px}

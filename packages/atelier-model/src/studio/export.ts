@@ -4,6 +4,7 @@ import { DxfWriter } from "./exporteurs/dxf.js";
 import { dxfText, nb, xml } from "./exporteurs/texte.js";
 import { coteDxf, coteSvg, dessinerCote } from "./objets/cote.js";
 import { typeObjet } from "./objets/index.js";
+import { annotationDxf, annotationPoints, annotationSvg, dessinerAnnotation } from "./objets/annotation.js";
 
 export { formatStudioLength, STUDIO_EXPORT_TO_RESOLVE } from "./objets/cote.js";
 
@@ -97,7 +98,7 @@ export function studioDxfLayerNames(doc: StudioDocument): Record<string, string>
 }
 
 function itemPoints(o: StudioItem): StudioPoint[] {
-  return o.type === "dimension" ? [] : studioShapeBoundPoints(o);
+  return o.type === "dimension" || o.type === "angular-dimension" || o.type === "text" ? [] : studioShapeBoundPoints(o);
 }
 
 // ——— SVG ———
@@ -114,6 +115,7 @@ export function exportStudioSvg(input: StudioDocument, exportOptions?: StudioExp
   const layers = exportLayers(doc);
   const visible = new Set(layers.filter((l) => l.visible).map((l) => l.id));
   const dims = (doc.dimensions ?? []).map((d) => dessinerCote(d, opts.locale, opts.textHeight));
+  const notes = (doc.annotations ?? []).map((a) => dessinerAnnotation(a, opts.locale, opts.textHeight));
 
   const all: StudioPoint[] = [], shown: StudioPoint[] = [];
   const add = (layer: string, pts: StudioPoint[]) => {
@@ -122,6 +124,7 @@ export function exportStudioSvg(input: StudioDocument, exportOptions?: StudioExp
   };
   for (const o of doc.objects) add(layerKey(o), itemPoints(o));
   for (const g of dims) add(layerKey(g.dimension), [g.a, g.b, g.text, ...g.extensions.flat()]);
+  for (const n of notes) add(layerKey(n.annotation), annotationPoints(n));
   const pts = shown.length ? shown : all;
   // Document vide : bornes nulles autour de l'origine (la marge seule donne la vue).
   let minX = pts.length ? Infinity : 0, minY = pts.length ? Infinity : 0, maxX = pts.length ? -Infinity : 0, maxY = pts.length ? -Infinity : 0;
@@ -148,6 +151,10 @@ export function exportStudioSvg(input: StudioDocument, exportOptions?: StudioExp
     for (const g of dims) {
       if (layerKey(g.dimension) !== layer.id) continue;
       lines.push(...coteSvg(g, opts.textHeight));
+    }
+    for (const n of notes) {
+      if (layerKey(n.annotation) !== layer.id) continue;
+      lines.push(...annotationSvg(n, opts.textHeight));
     }
     lines.push("</g>");
   }
@@ -208,6 +215,8 @@ export function exportStudioDxf(input: StudioDocument, exportOptions?: Omit<Stud
   w.pair(2, "ENTITIES");
   for (const o of doc.objects) typeObjet(o).dxf(o, nameOf.get(layerKey(o))!, w);
   for (const d of doc.dimensions ?? []) coteDxf(dessinerCote(d, opts.locale, opts.textHeight), nameOf.get(layerKey(d))!, opts.textHeight, w);
+  // Annotations : cote angulaire → ARC + LINE + TEXT (valeur en degrés ou « à résoudre ») ; texte → TEXT (justification 72).
+  for (const a of doc.annotations ?? []) annotationDxf(dessinerAnnotation(a, opts.locale, opts.textHeight), nameOf.get(layerKey(a))!, opts.textHeight, w);
   w.pair(0, "ENDSEC");
   w.pair(0, "EOF");
   return w.out.join("\r\n") + "\r\n";

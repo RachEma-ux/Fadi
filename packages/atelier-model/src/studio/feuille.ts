@@ -4,6 +4,8 @@ import type { Vec } from "../geometrie.js";
 import { studioShapeBoundPoints, studioShapeOutline } from "./courbes.js";
 import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument, type StudioDimension, type StudioDocument, type StudioShape } from "./document-2d.js";
 import { formatStudioLength, STUDIO_EXPORT_TO_RESOLVE } from "./export.js";
+import { coteAngulairePoints, dessinerCoteAngulaire } from "./objets/cote-angulaire.js";
+import { studioTextBox, studioTextRotationDegrees } from "./objets/texte.js";
 
 /**
  * Feuille de présentation d'un document Studio (`studio-sheet/1`) : format ISO 216 (A4 à A1, portrait ou paysage, aux
@@ -201,6 +203,7 @@ function dimensionGeometry(d: StudioDimension, locale: string): DrawnDimension {
 }
 
 const layerOf = (o: { layerId?: string }): string => o.layerId ?? STUDIO_DEFAULT_LAYER_ID;
+const ANCRE_TEXTE = { left: "debut", center: "milieu", right: "fin" } as const;
 
 function shapePoints(o: StudioShape): Vec[] {
   return studioShapeBoundPoints(o);
@@ -227,9 +230,16 @@ export function composerFeuilleStudio(input: StudioDocument, options: StudioShee
   const shown = new Set(visible.map((l) => l.id));
   const shapes = doc.objects.filter((o) => shown.has(layerOf(o)));
   const dims = (doc.dimensions ?? []).filter((d) => shown.has(layerOf(d))).map((d) => dimensionGeometry(d, locale));
+  // Annotations : arc et libellé des cotes angulaires (texte à hauteur fixe sur la feuille), textes à l'échelle.
+  const notes = (doc.annotations ?? []).filter((a) => shown.has(layerOf(a)));
+  const angulaires = notes.flatMap((a) => (a.type === "angular-dimension" ? [dessinerCoteAngulaire(a, locale, 0)] : []));
+  const textes = notes.flatMap((a) => (a.type === "text" ? [a] : []));
 
   // Bornes du dessin visible, en mètres.
-  const pts: Vec[] = [...shapes.flatMap(shapePoints), ...dims.flatMap((g) => [g.a, g.b, ...g.ext.flat()])];
+  const pts: Vec[] = [
+    ...shapes.flatMap(shapePoints), ...dims.flatMap((g) => [g.a, g.b, ...g.ext.flat()]),
+    ...angulaires.flatMap((g) => [g.dimension.vertex, ...coteAngulairePoints(g), ...g.extensions.flat()]), ...textes.flatMap((t) => studioTextBox(t)),
+  ];
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const p of pts) {
     minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
@@ -283,6 +293,21 @@ export function composerFeuilleStudio(input: StudioDocument, options: StudioShee
         for (const e of [a, b]) raw.push({ type: "ligne", a: { x: e.x - t.x, y: e.y - t.y }, b: { x: e.x + t.x, y: e.y + t.y }, trait: "annotation", objetId: g.d.id });
         const mid = { x: (a.x + b.x) / 2 + g.normal.x * DIM_LIFT_MM * g.side, y: (a.y + b.y) / 2 + g.normal.y * DIM_LIFT_MM * g.side };
         raw.push({ type: "texte", position: mid, texte: g.label, hauteurMm: DIM_TEXT_MM, ancre: "milieu", angle: g.angle, trait: "annotation", objetId: g.d.id });
+      }
+      for (const g of angulaires) {
+        if (layerOf(g.dimension) !== layer.id) continue;
+        const id = g.dimension.id;
+        raw.push({ type: "poly", points: coteAngulairePoints(g).map(map), ferme: false, trait: "annotation", remplissage: null, objetId: id });
+        for (const [p, q] of g.extensions) raw.push({ type: "ligne", a: map(p), b: map(q), trait: "annotation", objetId: id });
+        // Libellé au-delà de l'arc, sur sa bissectrice, à hauteur fixe sur la feuille.
+        const bis = g.arc.startAngle + g.sweep / 2, recul = DIM_LIFT_MM + DIM_TEXT_MM / 2;
+        const on = map({ x: g.dimension.vertex.x + g.dimension.radius * Math.cos(bis), y: g.dimension.vertex.y + g.dimension.radius * Math.sin(bis) });
+        raw.push({ type: "texte", position: { x: on.x + Math.cos(bis) * recul, y: on.y + Math.sin(bis) * recul }, texte: g.label, hauteurMm: DIM_TEXT_MM, ancre: "milieu", angle: g.angle, trait: "annotation", objetId: id });
+      }
+      for (const t of textes) {
+        if (layerOf(t) !== layer.id) continue;
+        // Texte du projet, tel quel, à sa hauteur réelle à l'échelle (mètres → millimètres de feuille).
+        raw.push({ type: "texte", position: map(t.position), texte: t.content, hauteurMm: t.height * k, ancre: ANCRE_TEXTE[t.justification], angle: studioTextRotationDegrees(t), trait: "annotation", objetId: t.id });
       }
       drawing.push({ layerId: layer.id, name: layer.name, primitives: decouper(raw, viewport) });
     }
