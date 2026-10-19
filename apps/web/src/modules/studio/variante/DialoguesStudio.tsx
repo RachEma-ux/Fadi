@@ -66,7 +66,11 @@ function usePiegeFocus(ouvert: boolean, surFermer: () => void) {
       // Après la fermeture, le focus revient à l'élément d'origine (s'il est encore là et que rien d'autre ne l'a pris).
       queueMicrotask(() => {
         const perdu = !document.activeElement || document.activeElement === document.body || !document.activeElement.isConnected;
-        if (perdu && depart && depart !== document.body && depart.isConnected) depart.focus();
+        if (!perdu || !depart || depart === document.body || !depart.isConnected) return;
+        // Origine rangée dans un menu refermé de la barre compacte : le focus revient au bouton « ▾ » de ce menu.
+        const menu = depart.closest<HTMLElement>("[data-studio-menu-liste][hidden]");
+        const bouton = menu?.id ? document.querySelector<HTMLElement>(`[aria-controls="${CSS.escape(menu.id)}"]`) : null;
+        (bouton ?? depart).focus();
       });
     };
   }, [ouvert]);

@@ -20,17 +20,23 @@ export function AlerteStudio({ error, blocked, surRecharger }: { error: string; 
   return error ? <div className="studio-alert" role="alert" data-studio-erreur-planche>{error}{blocked && <button onClick={() => { if (surRecharger) surRecharger(); else if (window.confirm(warning())) window.location.reload(); }}>Recharger la version serveur</button>}</div> : null;
 }
 
-/** État de connexion de la variante et, en conflit, les choix du brouillon hors ligne. */
-export function EtatConnexionStudio({ etat, surRecharger, surReporter }: { etat: EntreeEtatHorsLigne; surRecharger: () => void; surReporter: () => void }) {
+/**
+ * État de connexion de la variante, rangé dans la ligne de contexte (aucune rangée de plus au-dessus de la planche) ;
+ * en conflit seulement, les choix du brouillon hors ligne s'affichent sur leur propre ligne.
+ */
+export function EtatConnexionStudio({ etat }: { etat: EntreeEtatHorsLigne }) {
   const e = etatHorsLigne(etat);
-  return <div className={`studio-connexion studio-connexion-${e.code}`} data-studio-hors-ligne={e.code} data-studio-en-attente={etat.enAttente} data-studio-conserve={etat.conserve ? "oui" : "non"}>
+  return <span className={`studio-connexion studio-connexion-${e.code}`} data-studio-hors-ligne={e.code} data-studio-en-attente={etat.enAttente} data-studio-conserve={etat.conserve ? "oui" : "non"}>
     <span role="status" data-studio-connexion>{e.texte}</span>
     {e.detail && <span className="studio-connexion-detail">{e.detail}</span>}
-    {etat.conflit && <span className="studio-connexion-choix" data-studio-conflit-hors-ligne>
-      <button type="button" onClick={surReporter} disabled={!etat.enLigne} data-studio-reporter>Reporter les commandes sur la nouvelle version</button>
-      <button type="button" onClick={surRecharger} data-studio-recharger>Recharger la version serveur</button>
-    </span>}
-  </div>;
+  </span>;
+}
+
+export function ChoixConflitStudio({ etat, surRecharger, surReporter }: { etat: EntreeEtatHorsLigne; surRecharger: () => void; surReporter: () => void }) {
+  return etat.conflit ? <div className="studio-connexion studio-connexion-choix" data-studio-conflit-hors-ligne>
+    <button type="button" onClick={surReporter} disabled={!etat.enLigne} data-studio-reporter>Reporter les commandes sur la nouvelle version</button>
+    <button type="button" onClick={surRecharger} data-studio-recharger>Recharger la version serveur</button>
+  </div> : null;
 }
 
 export interface PropsBandeauVariante {
@@ -48,5 +54,5 @@ export interface PropsBandeauVariante {
 
 /** Bandeau de révision historique, contexte (études, variante, révision, état) et bascule des commentaires. */
 export function BandeauVariante({ projectId, studyId, variantId, context, historical, etat, commentaires, surCommentaires, connexion }: PropsBandeauVariante) {
-  return <>{historical && <div className="studio-alert studio-history-banner" data-studio-lecture-seule-revision><span>Révision historique en lecture seule. Aucune modification n’est possible ici.</span><Link to={cheminVarianteStudio(projectId, studyId, variantId)}>Revenir à la version courante</Link></div>}<div className="studio-context"><Link to={cheminProjetStudio(projectId)}>Études</Link><span translate="no">{context.variant.name}</span><span>Révision <span translate="no" title={context.revision.id}>{context.revision.id.slice(-8)}</span></span><span role="status" data-studio-etat>{etat}</span><button type="button" aria-pressed={commentaires} onClick={surCommentaires} data-studio-basculer-commentaires>Commentaires</button></div>{!historical && connexion && <EtatConnexionStudio {...connexion} />}{!context.canWrite && <p role="status" data-studio-lecture-seule>Lecture seule</p>}</>;
+  return <>{historical && <div className="studio-alert studio-history-banner" data-studio-lecture-seule-revision><span>Révision historique en lecture seule. Aucune modification n’est possible ici.</span><Link to={cheminVarianteStudio(projectId, studyId, variantId)}>Revenir à la version courante</Link></div>}<div className="studio-context"><Link to={cheminProjetStudio(projectId)}>Études</Link><span translate="no">{context.variant.name}</span><span>Révision <span translate="no" title={context.revision.id}>{context.revision.id.slice(-8)}</span></span><span role="status" data-studio-etat>{etat}</span>{!historical && connexion && <EtatConnexionStudio etat={connexion.etat} />}<button type="button" aria-pressed={commentaires} onClick={surCommentaires} data-studio-basculer-commentaires>Commentaires</button></div>{!historical && connexion && <ChoixConflitStudio {...connexion} />}{!context.canWrite && <p role="status" data-studio-lecture-seule>Lecture seule</p>}</>;
 }

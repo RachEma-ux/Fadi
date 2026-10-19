@@ -43,6 +43,25 @@ const brouillonLocal = (page, cle) => page.evaluate((k) => new Promise((resolve,
 }), cle);
 
 let context;
+
+/**
+ * Barre compacte (une rangée) : un bouton rangé dans le menu « ▾ » de sa famille ou dans « Plus » existe toujours dans
+ * le document (menu fermé = masqué) ; pour l'utiliser, on ouvre d'abord ce menu, comme le ferait l'utilisateur.
+ */
+async function atteindre(barre, selecteur) {
+  const el = barre.locator(selecteur).first();
+  await el.waitFor({ state: "attached" });
+  if (!(await el.isVisible())) {
+    const menu = await el.evaluate((n) => n.closest("[data-studio-menu-liste]")?.id ?? null);
+    if (menu) await barre.locator(`[aria-controls="${menu}"]`).click();
+    await el.waitFor({ state: "visible" });
+  }
+  return el;
+}
+/** Bouton (ou lien) de la barre par son nom exact, qu'il soit dans la rangée ou dans un menu. */
+const element = (barre, nom) => barre.locator(`:is(button,a)[aria-label="${nom}"]`);
+const cliquerBouton = async (barre, nom) => (await atteindre(barre, `:is(button,a)[aria-label="${nom}"]`)).click();
+
 try {
   context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
@@ -82,11 +101,11 @@ try {
   const etat = page.locator("[data-studio-hors-ligne]");
   const rectangles = page.locator('svg [role="button"][aria-label^="Rectangle "]');
   async function rectangle(x, y) {
-    await outils.getByRole("button", { name: /^Rectangle/ }).click();
+    await cliquerBouton(outils, "Rectangle");
     for (const [nom, v] of [["X", x], ["Y", y], ["Largeur", 2], ["Hauteur", 1]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
     await proprietes.getByRole("button", { name: "Ajouter au dessin", exact: true }).click();
   }
-  const enregistrer = () => outils.getByRole("button", { name: /^(Enregistrer|Réessayer la sauvegarde)$/ }).click();
+  const enregistrer = async () => (await atteindre(outils, ':is(button)[aria-label="Enregistrer"], :is(button)[aria-label="Réessayer la sauvegarde"]')).click();
   const attendreEtat = (code) => page.locator(`[data-studio-hors-ligne="${code}"]`).waitFor();
 
   // Ouverture en ligne : la variante est lue (mémorisée sur l'appareil) et le service worker prend la page en charge.
@@ -166,9 +185,9 @@ try {
   const cible = tete3.revision.document.objects.find((o) => o.type === "rectangle");
   await context.setOffline(true);
   await attendreEtat("hors-ligne");
-  await outils.getByRole("button", { name: "Sélection", exact: true }).click();
+  await cliquerBouton(outils, "Sélection");
   await page.locator(`svg [data-studio-objet="${cible.id}"]`).click();
-  await outils.getByRole("button", { name: "Supprimer", exact: true }).click();
+  await cliquerBouton(outils, "Supprimer");
   await page.locator('[data-studio-conserve="oui"]').waitFor();
   await autreApi("post", `${variantePath}/commands`, { contractVersion: "studio-commands/1", requestId: `autre-sup-${Date.now()}`, baseRevisionId: tete3.revision.id, commands: [{ toolId: "studio.dessin.supprimer", params: { ids: [cible.id] } }] });
   await enregistrer();

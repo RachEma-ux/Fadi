@@ -36,6 +36,25 @@ async function axe(page, nom) {
 const ligne = (id, x, y, layerId) => ({ toolId: "studio.dessin.ligne", params: { id, type: "line", ...(layerId ? { layerId } : {}), start: { x, y }, end: { x: x + 3, y } } });
 const rect = (id, x, y, layerId) => ({ toolId: "studio.dessin.rectangle", params: { id, type: "rectangle", ...(layerId ? { layerId } : {}), origin: { x, y }, width: 2, height: 1 } });
 
+
+/**
+ * Barre compacte (une rangée) : un bouton rangé dans le menu « ▾ » de sa famille ou dans « Plus » existe toujours dans
+ * le document (menu fermé = masqué) ; pour l'utiliser, on ouvre d'abord ce menu, comme le ferait l'utilisateur.
+ */
+async function atteindre(barre, selecteur) {
+  const el = barre.locator(selecteur).first();
+  await el.waitFor({ state: "attached" });
+  if (!(await el.isVisible())) {
+    const menu = await el.evaluate((n) => n.closest("[data-studio-menu-liste]")?.id ?? null);
+    if (menu) await barre.locator(`[aria-controls="${menu}"]`).click();
+    await el.waitFor({ state: "visible" });
+  }
+  return el;
+}
+/** Bouton (ou lien) de la barre par son nom exact, qu'il soit dans la rangée ou dans un menu. */
+const element = (barre, nom) => barre.locator(`:is(button,a)[aria-label="${nom}"]`);
+const cliquerBouton = async (barre, nom) => (await atteindre(barre, `:is(button,a)[aria-label="${nom}"]`)).click();
+
 try {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
@@ -136,7 +155,7 @@ try {
 
   // ——— Repli du calque actif ———
   const outils = page.getByRole("toolbar", { name: "Outils de dessin" });
-  await outils.getByRole("button", { name: "Nouveau calque", exact: true }).click();
+  await cliquerBouton(outils, "Nouveau calque");
   const rangees = page.locator("[data-studio-calque-ligne]");
   check("calques : un nouveau calque actif", (await rangees.count()) === 3 && (await rangees.nth(2).getAttribute("aria-current")) === "true");
   await page.evaluate(() => document.activeElement?.blur());
@@ -155,7 +174,7 @@ try {
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   const avis = page.locator("[data-studio-avis-revision]");
   await avis.waitFor();
-  check("révision plus récente : avis non bloquant, la planche reste utilisable", (await avis.getByRole("button", { name: "Recharger", exact: true }).isVisible()) && (await outils.getByRole("button", { name: "Ligne", exact: true }).isEnabled()));
+  check("révision plus récente : avis non bloquant, la planche reste utilisable", (await avis.getByRole("button", { name: "Recharger", exact: true }).isVisible()) && (await element(outils, "Ligne").isEnabled()));
   await page.screenshot({ path: join(OUT, "studio-avis-revision.png") });
   await avis.getByRole("button", { name: "Recharger", exact: true }).click();
   await avis.waitFor({ state: "detached" });
@@ -177,12 +196,19 @@ try {
     await page.evaluate(() => (document.activeElement)?.blur());
     await page.keyboard.press("Escape");
     await d.waitFor({ state: "detached" });
-    await page.waitForFunction((sel) => document.activeElement?.matches(sel) === true, origine).catch(() => {});
-    check(`${nom} : Échap ferme (même focus perdu), le focus revient à l'origine`, await page.evaluate((sel) => document.activeElement?.matches(sel) === true, origine), await focus());
+    // Barre compacte : une origine rangée dans un menu « ▾ » refermé rend le focus au bouton de ce menu.
+    const revenu = (sel) => {
+      const a = document.activeElement;
+      if (a?.matches(sel)) return true;
+      const menu = document.querySelector(sel)?.closest("[data-studio-menu-liste][hidden]");
+      return !!menu && a?.getAttribute("aria-controls") === menu.id;
+    };
+    await page.waitForFunction(revenu, origine).catch(() => {});
+    check(`${nom} : Échap ferme (même focus perdu), le focus revient à l'origine`, await page.evaluate(revenu, origine), await focus());
   };
-  await essai("Outils", () => outils.getByRole("button", { name: "Outils", exact: true }).click(), '[data-studio-commande="outils"]');
-  await essai("Feuille", () => outils.locator('[data-studio-commande="feuille"]').click(), '[data-studio-commande="feuille"]');
-  await essai("Importer DXF", () => outils.locator('[data-studio-commande="importer-dxf"]').click(), '[data-studio-commande="importer-dxf"]');
+  await essai("Outils", () => cliquerBouton(outils, "Outils"), '[data-studio-commande="outils"]');
+  await essai("Feuille", () => atteindre(outils, '[data-studio-commande="feuille"]').then((b) => b.click()), '[data-studio-commande="feuille"]');
+  await essai("Importer DXF", () => atteindre(outils, '[data-studio-commande="importer-dxf"]').then((b) => b.click()), '[data-studio-commande="importer-dxf"]');
   await essai("Palette (Ctrl+K depuis la liste)", async () => { await liste.locator('[role="option"][tabindex="0"]').focus(); await page.keyboard.press("Control+k"); }, '[role="option"][tabindex="0"]');
 
   // ——— Téléphone : mêmes pages, aucun débordement, boutons nommés visibles ———
