@@ -6,15 +6,38 @@
  * ou lèvent `LocalPersistenceError`. La mémoire des dernières versions lues reste facultative.
  */
 import type { StudioContext } from "../../../lib/api";
-import { localStore } from "../../../lib/local-store";
+import { localStore, type StudioBrouillonEntry } from "../../../lib/local-store";
+import { migrerBrouillon, type RaisonIncompatible } from "./contrats";
 import { horsLigneVide, lireHorsLigne, type BrouillonHorsLigne } from "./persistance";
 
-export interface BrouillonLu { brouillon: BrouillonHorsLigne; stamp: string }
+export interface BrouillonLu { brouillon: BrouillonHorsLigne; stamp: string; /** Format antérieur migré en mémoire (la ligne reste intacte). */ migreDe?: number }
 
+/** File locale conservée mais incompatible avec les contrats de ce build (B.3-11) : rien n'est envoyé ni effacé. */
+export class ErreurFileLocale extends Error {
+  constructor(readonly raison: RaisonIncompatible, readonly entree: StudioBrouillonEntry) {
+    super(raison);
+    this.name = "ErreurFileLocale";
+  }
+}
+
+/**
+ * Lit le brouillon conservé : migré au format courant s'il le faut (`contrats.ts`), en mémoire seulement. Lève
+ * `ErreurFileLocale` (ligne brute jointe, pour l'export) s'il est incompatible ou illisible.
+ */
 export async function lireBrouillonHorsLigne(cle: string, userId: string): Promise<BrouillonLu | null> {
   const entree = await localStore.studioBrouillon(cle, userId);
-  return entree ? { brouillon: lireHorsLigne(entree.donnees, userId), stamp: entree.stamp } : null;
+  if (!entree) return null;
+  const m = migrerBrouillon(entree.donnees);
+  if (m.type === "incompatible") throw new ErreurFileLocale(m.raison, entree);
+  try {
+    return { brouillon: lireHorsLigne(m.json, userId), stamp: entree.stamp, ...(m.type === "migre" ? { migreDe: m.de } : {}) };
+  } catch {
+    throw new ErreurFileLocale("illisible", entree);
+  }
 }
+
+/** Ligne brute conservée (export explicite de la file locale), ou null. */
+export const brouillonBrut = (cle: string, userId: string): Promise<StudioBrouillonEntry | null> => localStore.studioBrouillon(cle, userId);
 
 /** Jeton de la ligne telle qu'elle est maintenant (null si absente), pour reprendre après un conflit d'onglets. */
 export async function jetonActuel(cle: string, userId: string): Promise<string | null> {

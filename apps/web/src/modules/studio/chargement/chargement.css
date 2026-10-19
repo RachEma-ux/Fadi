@@ -1,0 +1,10 @@
+.studio-ressources{border-top:1px solid #e0e9eb;margin-top:16px;padding-top:12px}
+.studio-ressources h3{font-size:15px;margin:0 0 8px}
+.studio-ressources h4{font-size:14px;margin:16px 0 6px}
+.studio-ressources-table{width:100%;border-collapse:collapse;font-size:12px;display:block;overflow-x:auto}
+.studio-ressources-table caption{text-align:left;font-weight:600;padding:4px 0}
+.studio-ressources-table th,.studio-ressources-table td{border-bottom:1px solid #e3eaec;padding:6px 8px;text-align:left;vertical-align:top}
+.studio-ressources-table thead th{background:#f3f7f7}
+.studio-ressources-table code{font-size:11px;color:#577079}
+.studio-ressources-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.studio-ressources-indisponibles{margin:4px 0 8px;padding-left:20px;font-size:12px;columns:2}

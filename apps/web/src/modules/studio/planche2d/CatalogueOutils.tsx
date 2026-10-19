@@ -22,6 +22,7 @@ import {
   type IdProfil, type PreferencesOutils,
 } from "./profils";
 import { ariaRaccourci, libelleRaccourci, type StudioToolId } from "./raccourcis";
+import { PanneauRessources } from "../chargement/PanneauRessources";
 
 export interface CatalogueProps {
   disponible: (e: EntreeCatalogue) => boolean;
@@ -250,6 +251,7 @@ export function GestionnaireOutils({ disponible, surExecuter, surFermer, project
       <div data-studio-gestionnaire-outils>
         <p className="studio-dialogue-aide">Catalogue des outils et des commandes de la planche, lu dans le registre de Studio.</p>
         <ChoixProfil profil={profil} />
+        <PanneauRessources />
         <label>Rechercher un outil<input ref={champ} type="search" value={recherche} placeholder="Nom, raccourci ou identifiant" onChange={(e) => setRecherche(e.target.value)} data-studio-recherche-outils /></label>
         <p role="status" className="studio-dialogue-aide">{`${trouvees.length} entrée(s)`}</p>
         {!trouvees.length && <p>Aucun outil ne correspond à la recherche.</p>}

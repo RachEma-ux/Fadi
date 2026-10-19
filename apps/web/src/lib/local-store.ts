@@ -284,6 +284,8 @@ export const localStore = {
   })),
   /** Abandon explicite (après confirmation de l'utilisateur), quel que soit l'onglet qui a écrit. */
   studioSupprimerBrouillon: (cle: string) => checked((d) => d.studioBrouillons.delete(cle)),
+  /** Brouillons Studio non synchronisés conservés pour ce compte (B.3-10) ; null si le stockage est illisible. */
+  studioCompterBrouillons: (userId: string) => safe((d) => d.studioBrouillons.where("userId").equals(userId).count(), null as number | null),
   studioContexte: (cle: string, userId: string) => safe((d) => d.studioContextes.get(cle).then((v) => (v && v.userId === userId ? v : null)), null as StudioContexteEntry | null),
   studioMemoriserContexte: (entry: StudioContexteEntry) => safe((d) => d.studioContextes.put(entry).then(() => undefined), undefined),
   /** Déconnexion ou changement d'utilisateur : brouillons et versions lues de Studio oubliés sur cet appareil. */

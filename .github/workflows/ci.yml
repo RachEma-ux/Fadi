@@ -248,6 +248,10 @@ jobs:
           node --test scripts/check-api-tests-db3.test.mjs
           node scripts/check-api-tests-db3.mjs api-vitest.json
       - run: npm run build
+      # Le build échoue déjà sur un découpage non conforme (vite.config.ts) ; cette étape en affiche le verdict.
+      - name: Découpage des bundles (B.3-06) — carte des morceaux du build
+        run: |
+          node -e "const c=require('./apps/web/dist/chargement.json'); for (const [id, m] of Object.entries(c.moteurs)) console.log(id, m.propres.length, 'fichier(s) propre(s),', m.taille, 'octets'); console.log(JSON.stringify(c.verification)); process.exit(c.verification.ok ? 0 : 1)"
       # Corpus IFC (lot 6, D-006 : conformité testée, jamais « certifiée ») : petit modèle comparé à sa référence,
       # P.118 exporté, puis relu par web-ifc, importé en représentations et réexporté ; chaque fichier validé par
       # IfcOpenShell (schéma IFC4X3_ADD2, règles EXPRESS, effectifs, géométrie d'un échantillon).
@@ -372,6 +376,17 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-hors-ligne node apps/web/e2e/studio-hors-ligne.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du chargement des outils Studio — démarrage léger, planche, 3D au premier usage, états du Tool Manager, hors connexion véridique, file locale incompatible (apps/web/e2e/studio-chargement.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-chargement.mjs 2>&1 | tee -a e2e.log
+      # Mesure seulement (B.3-12, D.3-03) : rapport sans seuil ni verdict, joint aux captures (atelier-captures/).
+      - name: Mesures de chargement Studio — profil de vingt outils à cache froid et chaud, session longue (apps/web/e2e/studio-mesures-chargement.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-mesures-chargement CYCLES=10 node apps/web/e2e/studio-mesures-chargement.mjs 2>&1 | tee -a e2e.log
       - name: Recette d'accessibilité Studio — liste des éléments au clavier, focus, calque de repli, révision plus récente, dialogues, axe-core bureau et téléphone (apps/web/e2e/studio-accessibilite.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |
