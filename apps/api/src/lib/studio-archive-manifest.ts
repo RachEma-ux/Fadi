@@ -12,6 +12,7 @@
  * changent (réattribution déclarée dans les réserves).
  */
 import { createHash } from "node:crypto";
+import { dimensionsDe, statutCombine, type Dimensions, type StatutCombine, type StatutDiffusion, type StatutTravail } from "./studio-publication-statuts.js";
 
 export const STUDIO_ARCHIVE_SCHEMA = "fadi-studio-archive/1";
 /** Version du schéma Studio couvert (document des révisions et jeu de tables de `init.sql`). */
@@ -26,6 +27,8 @@ export const STUDIO_ARCHIVE_TABLES = [
   "studio_observations",
   "studio_observation_events",
   "studio_study_steps",
+  "studio_requirement_sets",
+  "studio_requirement_checks",
   "volumes",
   "studio_publications",
   "studio_publication_events",
@@ -45,6 +48,8 @@ export const STUDIO_TABLE_KEYS: Readonly<Record<StudioArchiveTable, readonly str
   studio_observations: ["comment_id"],
   studio_observation_events: ["id"],
   studio_study_steps: ["study_id", "step_number"],
+  studio_requirement_sets: ["id"],
+  studio_requirement_checks: ["id"],
   volumes: ["id"],
   studio_publications: ["id"],
   studio_publication_events: ["id"],
@@ -61,8 +66,10 @@ export const STUDIO_USER_COLUMNS: Readonly<Record<StudioArchiveTable, readonly s
   studio_observations: ["responsable_id", "created_by"],
   studio_observation_events: ["actor_id", "responsable_id"],
   studio_study_steps: ["created_by"],
+  studio_requirement_sets: ["author_id"],
+  studio_requirement_checks: ["author_id"],
   volumes: [],
-  studio_publications: ["approved_by", "diffused_by", "created_by"],
+  studio_publications: ["approved_by", "diffused_by", "created_by", "replaced_by"],
   studio_publication_events: ["author_id"],
   // `invited_by` garde l'adresse de l'invitant (texte, sans clé étrangère) : historique conservé tel quel.
   project_members: ["user_id"],
@@ -79,7 +86,7 @@ export const STUDIO_PROJECT_COLUMNS: Readonly<Partial<Record<StudioArchiveTable,
 /** Tables dont les identifiants sont globaux : une collision dans la base cible empêche la restauration Studio. */
 export const STUDIO_IDENTITY_TABLES: readonly StudioArchiveTable[] = [
   "studio_studies", "studio_variants", "studio_revisions", "studio_comments", "studio_observations",
-  "studio_observation_events", "studio_publications", "studio_publication_events",
+  "studio_observation_events", "studio_requirement_sets", "studio_requirement_checks", "studio_publications", "studio_publication_events",
 ];
 
 export interface StudioArchiveAccount { id: string; email: string }
@@ -245,6 +252,23 @@ export function checkStudioArchive(raw: unknown): { ok: true; section: StudioArc
   }
   for (const r of tables.studio_observation_events) if (!observations.has(r["observation_id"] as string)) errors.push(`passage ${String(r["id"])} : observation absente`);
   for (const r of tables.studio_study_steps) if (!studies.has(r["study_id"] as string)) errors.push(`lien d'étape : étude ${String(r["study_id"])} absente`);
+  // Lot E.1 : jeux d'exigences versionnés (append-only) et contrôles liés à une révision et à une version du jeu.
+  const setVersions = new Set<string>();
+  for (const r of tables.studio_requirement_sets) {
+    if (!studies.has(r["study_id"] as string)) errors.push(`jeu d'exigences ${String(r["id"])} : étude absente`);
+    if (!Array.isArray(r["requirements"])) errors.push(`jeu d'exigences ${String(r["id"])} : exigences illisibles`);
+    const k = `${String(r["study_id"])}|${String(r["version"])}`;
+    if (setVersions.has(k)) errors.push(`jeu d'exigences ${String(r["id"])} : version en double`);
+    setVersions.add(k);
+  }
+  const variantStudy = new Map(tables.studio_variants.map((v) => [v["id"] as string, v["study_id"] as string]));
+  const revisionDocuments = new Map(tables.studio_revisions.map((r) => [r["id"] as string, r["document"]]));
+  for (const r of tables.studio_requirement_checks) {
+    if (variantStudy.get(r["variant_id"] as string) !== r["study_id"]) errors.push(`contrôle ${String(r["id"])} : variante absente`);
+    if (revisionVariant.get(r["revision_id"] as string) !== r["variant_id"]) errors.push(`contrôle ${String(r["id"])} : révision absente`);
+    else if (studioArchiveDocumentHash(revisionDocuments.get(r["revision_id"] as string)) !== r["document_hash"]) errors.push(`contrôle ${String(r["id"])} : empreinte du document différente de la révision`);
+    if (r["set_version"] !== null && r["set_version"] !== undefined && !setVersions.has(`${String(r["study_id"])}|${String(r["set_version"])}`)) errors.push(`contrôle ${String(r["id"])} : version du jeu absente`);
+  }
   for (const r of tables.volumes) {
     const bytes = volumeBytes(r["content"]);
     if (!bytes || sha256(bytes) !== r["id"]) errors.push(`volume ${String(r["id"])} : contenu différent de son empreinte`);
@@ -259,8 +283,26 @@ export function checkStudioArchive(raw: unknown): { ok: true; section: StudioArc
       if (!isRecord(pkg) || r["package_hash"] !== sha256(canonicalJson(pkg))) errors.push(`publication ${String(r["id"])} : empreinte du paquet différente`);
       for (const id of packageVolumeIds([r])) if (!vols.has(id)) errors.push(`publication ${String(r["id"])} : fichier ${id} absent`);
     }
+    // Lot E.4 : manifeste figé multi-sources (empreinte, sources de la section), approbation liée au manifeste, remplacement.
+    const manifest = r["manifest"];
+    if (manifest !== null && manifest !== undefined) {
+      if (!isRecord(manifest) || r["manifest_hash"] !== sha256(canonicalJson(manifest))) errors.push(`publication ${String(r["id"])} : empreinte du manifeste différente`);
+      else {
+        const sources = Array.isArray(manifest["sources"]) ? manifest["sources"] : [];
+        for (const s of sources) {
+          const src = isRecord(s) ? s : {};
+          if (revisionVariant.get(src["revisionId"] as string) !== src["variantId"]) errors.push(`publication ${String(r["id"])} : source ${String(src["variantId"])} absente`);
+          else if (studioArchiveDocumentHash(documents.get(src["revisionId"] as string)) !== src["documentHash"]) errors.push(`publication ${String(r["id"])} : empreinte d'une source du manifeste différente`);
+        }
+      }
+    } else if (r["manifest_hash"] !== null && r["manifest_hash"] !== undefined) errors.push(`publication ${String(r["id"])} : empreinte de manifeste sans manifeste`);
+    if (r["approved_manifest_hash"] !== null && r["approved_manifest_hash"] !== undefined && r["approved_manifest_hash"] !== r["manifest_hash"]) errors.push(`publication ${String(r["id"])} : approbation d'un autre manifeste`);
+    if (r["replaced_by_publication_id"] && !publications.has(r["replaced_by_publication_id"] as string)) errors.push(`publication ${String(r["id"])} : dossier remplaçant absent`);
   }
-  for (const r of tables.studio_publication_events) if (!publications.has(r["publication_id"] as string)) errors.push(`évènement ${String(r["id"])} : publication absente`);
+  for (const r of tables.studio_publication_events) {
+    if (!publications.has(r["publication_id"] as string)) errors.push(`évènement ${String(r["id"])} : publication absente`);
+    if (r["related_publication_id"] && !publications.has(r["related_publication_id"] as string)) errors.push(`évènement ${String(r["id"])} : dossier lié absent`);
+  }
   for (const r of tables.project_members) if (r["project_id"] !== raw["sourceProjectId"]) errors.push(`membre ${String(r["user_id"])} : autre projet`);
   const known = new Set((accounts ?? []).map((a) => (a as StudioArchiveAccount).id));
   for (const id of studioAccountIds(tables, raw["ownerId"] as string)) if (!known.has(id)) errors.push(`compte ${id} cité sans adresse`);
@@ -285,6 +327,22 @@ export function orderCommentsForInsert(rows: readonly StudioArchiveRow[]): Studi
   return out;
 }
 
+/** Publications dans un ordre d'insertion valable : le dossier remplaçant avant le dossier remplacé (clé non différée). */
+export function orderPublicationsForInsert(rows: readonly StudioArchiveRow[]): StudioArchiveRow[] {
+  const byId = new Map(rows.map((r) => [r["id"] as string, r]));
+  const out: StudioArchiveRow[] = [];
+  const done = new Set<string>();
+  const visit = (r: StudioArchiveRow, depth: number) => {
+    const id = r["id"] as string;
+    if (done.has(id) || depth > rows.length) return;
+    const target = r["replaced_by_publication_id"] ? byId.get(r["replaced_by_publication_id"] as string) : undefined;
+    if (target) visit(target, depth + 1);
+    if (!done.has(id)) { done.add(id); out.push(r); }
+  };
+  for (const r of sortStudioRows("studio_publications", rows)) visit(r, 0);
+  return out;
+}
+
 /**
  * Lignes prêtes à réinsérer : projet remplacé, comptes réattribués (`accountMap` : identifiant d'origine → identifiant
  * dans la base cible). Les autres colonnes restent strictement identiques.
@@ -292,7 +350,8 @@ export function orderCommentsForInsert(rows: readonly StudioArchiveRow[]): Studi
 export function remapStudioRows(table: StudioArchiveTable, rows: readonly StudioArchiveRow[], projectId: string, accountMap: ReadonlyMap<string, string>): StudioArchiveRow[] {
   const projectCols = STUDIO_PROJECT_COLUMNS[table] ?? [];
   const userCols = STUDIO_USER_COLUMNS[table];
-  return (table === "studio_comments" ? orderCommentsForInsert(rows) : sortStudioRows(table, rows)).map((row) => {
+  const ordered = table === "studio_comments" ? orderCommentsForInsert(rows) : table === "studio_publications" ? orderPublicationsForInsert(rows) : sortStudioRows(table, rows);
+  return ordered.map((row) => {
     const out: StudioArchiveRow = { ...row };
     for (const c of projectCols) out[c] = projectId;
     for (const c of userCols) if (typeof out[c] === "string" && accountMap.has(out[c] as string)) out[c] = accountMap.get(out[c] as string)!;
@@ -315,15 +374,19 @@ export function mapStudioAccounts(accounts: readonly StudioArchiveAccount[], fou
   return { map, reassigned: reassigned.sort() };
 }
 
-/** Statuts dont l'approbation est retirée quand l'archive n'est pas vérifiée : ils reviennent « à relire » (soumis). */
-export const STUDIO_APPROVED_STATUSES: readonly string[] = ["approuve", "diffuse"];
-export const STUDIO_DOWNGRADE_COMMENT = "Restauration d'une archive non vérifiée : approbation d'origine non reprise, nouvelle approbation exigée.";
+
+export const STUDIO_DOWNGRADE_COMMENT = "Restauration d'une archive non vérifiée : approbation d'origine non reprise, diffusion d'origine retirée à la restauration (paquet conservé et lisible, plus en vigueur) ; nouvelle approbation exigée avant toute diffusion.";
 
 /**
- * Archive non vérifiée (signature absente, inconnue ou invalide) : rien n'en est cru. Les lignes déjà remappées (tous
- * les comptes → le compte qui restaure) perdent leurs approbations : une publication approuvée ou diffusée revient
- * `soumis` (« à relire »), son paquet et son contenu restent lisibles, et un passage `soumettre` daté de la restauration
- * l'inscrit au journal (append-only : les évènements d'origine ne sont pas réécrits). Pure : identifiants et date fournis.
+ * Archive non vérifiée (signature absente, inconnue ou invalide) : rien n'en est cru. Projection sur le modèle E.4
+ * (`studio-publication-statuts.ts`), lignes déjà remappées (tout acteur → le compte qui restaure) :
+ *   - travail : `approuve` → `en-revue` ; approbation effacée (révision, empreintes du document et du manifeste, auteur, date) ;
+ *   - diffusion : `diffuse` → `non-diffuse` (« retiré à la restauration ») — seul état depuis lequel E.4 admet une nouvelle
+ *     approbation puis une nouvelle diffusion ; `retire` et `remplace`, déjà hors vigueur, restent tels quels ;
+ *   - statut combiné historique recalculé par `statutCombine`, comme E.4 le tient ;
+ *   - manifeste, paquet et empreintes conservés (contenu lisible) ; un passage `soumettre` daté de la restauration
+ *     l'inscrit au journal (append-only : les évènements d'origine ne sont pas réécrits).
+ * Pure : identifiants et date fournis.
  */
 export function distrustStudioPublications(
   publications: readonly StudioArchiveRow[], variants: readonly StudioArchiveRow[], importerId: string, now: string, newEventId: () => string,
@@ -332,18 +395,50 @@ export function distrustStudioPublications(
   const events: StudioArchiveRow[] = [];
   let downgraded = 0;
   const out = publications.map((p) => {
-    const row: StudioArchiveRow = { ...p, approved_revision_id: null, approved_document_hash: null, approved_by: null, approved_at: null };
-    if (STUDIO_APPROVED_STATUSES.includes(p["status"] as string)) {
+    const before = dimensionsDe({
+      status: p["status"] as StatutCombine, workStatus: (p["work_status"] ?? null) as StatutTravail | null, diffusionStatus: (p["diffusion_status"] ?? null) as StatutDiffusion | null,
+      approvedRevisionId: (p["approved_revision_id"] ?? null) as string | null, replacedAt: p["replaced_at"] ? new Date(p["replaced_at"] as string) : null,
+    });
+    const after: Dimensions = { travail: before.travail === "approuve" ? "en-revue" : before.travail, diffusion: before.diffusion === "diffuse" ? "non-diffuse" : before.diffusion };
+    const row: StudioArchiveRow = {
+      ...p, approved_revision_id: null, approved_document_hash: null, approved_manifest_hash: null, approved_by: null, approved_at: null,
+      work_status: after.travail, diffusion_status: after.diffusion, status: statutCombine(after),
+    };
+    if (after.travail !== before.travail || after.diffusion !== before.diffusion) {
       downgraded += 1;
-      row["status"] = "soumis";
       row["updated_at"] = now;
       events.push({
-        id: newEventId(), publication_id: p["id"], action: "soumettre", from_status: p["status"], to_status: "soumis", author_id: importerId,
-        comment: STUDIO_DOWNGRADE_COMMENT, revision_id: p["revision_id"], document_hash: p["document_hash"],
-        head_revision_id: heads.get(p["variant_id"] as string) ?? p["revision_id"], created_at: now,
+        id: newEventId(), publication_id: p["id"], action: "soumettre", from_status: p["status"], to_status: row["status"], work_status: after.travail, diffusion_status: after.diffusion,
+        author_id: importerId, comment: STUDIO_DOWNGRADE_COMMENT, revision_id: p["revision_id"], document_hash: p["document_hash"], manifest_hash: p["manifest_hash"] ?? null,
+        head_revision_id: heads.get(p["variant_id"] as string) ?? p["revision_id"], related_publication_id: null, created_at: now,
       });
     }
     return row;
   });
   return { publications: out, events, downgraded };
+}
+
+/**
+ * Archive non vérifiée, lot E.1 : l'acceptation d'une référence partenaire (qui, quand) n'est pas crue. Elle est retirée
+ * de chaque version du jeu d'exigences réinsérée (lignes INSÉRÉES, jamais mises à jour : le jeu reste append-only) ;
+ * la référence redevient « non acceptée » et doit être acceptée à nouveau dans le projet restauré. Le reste du contenu
+ * (exigences, sources déclarées, motifs, empreintes de requête) est inchangé. Pure.
+ */
+export function distrustRequirementSets(sets: readonly StudioArchiveRow[]): { sets: StudioArchiveRow[]; cleared: number } {
+  let cleared = 0;
+  const out = sets.map((s) => {
+    const list = Array.isArray(s["requirements"]) ? (s["requirements"] as unknown[]) : null;
+    if (!list) return { ...s };
+    return {
+      ...s,
+      requirements: list.map((e) => {
+        if (!isRecord(e) || !isRecord(e["origine"]) || !("acceptation" in e["origine"])) return e;
+        cleared += 1;
+        const { acceptation: _retiree, ...origine } = e["origine"];
+        void _retiree;
+        return { ...e, origine };
+      }),
+    };
+  });
+  return { sets: out, cleared };
 }

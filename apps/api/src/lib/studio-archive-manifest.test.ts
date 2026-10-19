@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   STUDIO_ARCHIVE_SCHEMA, STUDIO_ARCHIVE_SCHEMA_VERSION, STUDIO_ARCHIVE_TABLES, buildStudioManifest, canonicalJson, checkStudioArchive,
-  STUDIO_DOWNGRADE_COMMENT, distrustStudioPublications, emptyStudioTables, mapStudioAccounts, orderCommentsForInsert, packageVolumeIds, remapStudioRows, studioAccountIds,
+  STUDIO_DOWNGRADE_COMMENT, distrustRequirementSets, distrustStudioPublications, orderPublicationsForInsert, emptyStudioTables, mapStudioAccounts, orderCommentsForInsert, packageVolumeIds, remapStudioRows, studioAccountIds,
   studioArchiveDocumentHash, studioTableHash, type StudioArchiveTables,
 } from "./studio-archive-manifest.js";
 
@@ -146,28 +146,95 @@ describe("section Studio de l'archive (logique pure)", () => {
     expect(errorsOf(s)).toContain("empreinte globale différente du manifeste");
   });
 
-  it("archive non vérifiée : approbations retirées, publication approuvée ou diffusée remise « à relire », journal complété", () => {
+  it("archive non vérifiée, modèle E.4 : travail approuvé → en revue, diffusion en vigueur → non diffusée, statut combiné recalculé, journal complété", () => {
     const { tables } = fixture();
-    const pubs = [
-      ...remapStudioRows("studio_publications", tables.studio_publications, "pB", new Map([["uOwner", "uR"], ["uEditor", "uR"]])),
-      { id: "p2", variant_id: "v1", revision_id: "r2", document_hash: "d".repeat(64), status: "approuve", approved_revision_id: "r2", approved_document_hash: "d".repeat(64), approved_by: "uR", approved_at: "2026-10-19T08:00:00+00:00", package: null, package_hash: null },
-      { id: "p3", variant_id: "v2", revision_id: "r3", document_hash: "e".repeat(64), status: "travail", approved_revision_id: null, package: null },
-      { id: "p4", variant_id: "v1", revision_id: "r2", document_hash: "f".repeat(64), status: "retire", approved_revision_id: "r2", approved_document_hash: "f".repeat(64), approved_by: "uR" },
+    const mh = "9".repeat(64);
+    const pubs: Record<string, unknown>[] = [
+      // Ligne E.4 diffusée (fixture) : travail approuvé, diffusion en vigueur.
+      ...remapStudioRows("studio_publications", tables.studio_publications, "pB", new Map([["uOwner", "uR"], ["uEditor", "uR"]])).map((p) => ({ ...p, work_status: "approuve", diffusion_status: "diffuse", manifest_hash: mh, approved_manifest_hash: mh })),
+      { id: "p2", variant_id: "v1", revision_id: "r2", document_hash: "d".repeat(64), status: "approuve", work_status: "approuve", diffusion_status: "non-diffuse", approved_revision_id: "r2", approved_document_hash: "d".repeat(64), approved_manifest_hash: mh, manifest_hash: mh, approved_by: "uR", approved_at: "2026-10-19T08:00:00+00:00", package: null, package_hash: null },
+      { id: "p3", variant_id: "v2", revision_id: "r3", document_hash: "e".repeat(64), status: "soumis", work_status: "en-revue", diffusion_status: "non-diffuse", approved_revision_id: null, package: null },
+      // Remplacé : hors vigueur, la diffusion reste « remplace » ; le travail perd son approbation.
+      { id: "p4", variant_id: "v1", revision_id: "r2", document_hash: "f".repeat(64), status: "diffuse", work_status: "approuve", diffusion_status: "remplace", approved_revision_id: "r2", approved_manifest_hash: mh, manifest_hash: mh, replaced_by_publication_id: "p1", replaced_at: "2026-10-19T09:00:00+00:00" },
+      // Ligne antérieure à E.4 (dimensions déduites du statut combiné) : retirée avec approbation.
+      { id: "p5", variant_id: "v1", revision_id: "r2", document_hash: "f".repeat(64), status: "retire", work_status: null, diffusion_status: null, approved_revision_id: "r2", approved_document_hash: "f".repeat(64), approved_by: "uR" },
+      { id: "p6", variant_id: "v1", revision_id: "r2", document_hash: "f".repeat(64), status: "refuse", work_status: "refuse", diffusion_status: "non-diffuse", approved_revision_id: null },
     ];
     let n = 0;
     const out = distrustStudioPublications(pubs, tables.studio_variants, "uR", "2026-10-19T10:00:00.000Z", () => `ev${++n}`);
-    expect(out.downgraded).toBe(2);
-    expect(out.publications.map((p) => p["status"])).toEqual(["soumis", "soumis", "travail", "retire"]);
-    expect(out.publications.every((p) => p["approved_revision_id"] === null && p["approved_document_hash"] === null && p["approved_by"] === null && p["approved_at"] === null)).toBe(true);
-    // Contenu conservé et lisible : paquet, empreintes et fichiers inchangés.
+    const dims = out.publications.map((p) => [p["id"], p["work_status"], p["diffusion_status"], p["status"]]);
+    expect(dims).toEqual([
+      ["p1", "en-revue", "non-diffuse", "soumis"], ["p2", "en-revue", "non-diffuse", "soumis"], ["p3", "en-revue", "non-diffuse", "soumis"],
+      ["p4", "en-revue", "remplace", "diffuse"], ["p5", "en-revue", "retire", "retire"], ["p6", "refuse", "non-diffuse", "refuse"],
+    ]);
+    expect(out.downgraded).toBe(4);
+    expect(out.publications.every((p) => p["approved_revision_id"] === null && p["approved_document_hash"] === null && p["approved_manifest_hash"] === null && p["approved_by"] === null && p["approved_at"] === null)).toBe(true);
+    // Contenu conservé et lisible : manifeste, paquet et empreintes inchangés ; remplacement conservé.
     expect(out.publications[0]!["package"]).toEqual(tables.studio_publications[0]!["package"]);
     expect(out.publications[0]!["package_hash"]).toBe(tables.studio_publications[0]!["package_hash"]);
-    expect(out.publications[0]!["document_hash"]).toBe(tables.studio_publications[0]!["document_hash"]);
-    expect(out.events).toEqual([
-      expect.objectContaining({ id: "ev1", publication_id: "p1", action: "soumettre", from_status: "diffuse", to_status: "soumis", author_id: "uR", revision_id: "r2", head_revision_id: "r2", comment: STUDIO_DOWNGRADE_COMMENT }),
-      expect.objectContaining({ id: "ev2", publication_id: "p2", from_status: "approuve", to_status: "soumis" }),
+    expect(out.publications[0]!["manifest_hash"]).toBe(mh);
+    expect(out.publications[3]!["replaced_by_publication_id"]).toBe("p1");
+    expect(out.events.map((e) => [e["publication_id"], e["action"], e["from_status"], e["to_status"], e["work_status"], e["diffusion_status"]])).toEqual([
+      ["p1", "soumettre", "diffuse", "soumis", "en-revue", "non-diffuse"], ["p2", "soumettre", "approuve", "soumis", "en-revue", "non-diffuse"],
+      ["p4", "soumettre", "diffuse", "diffuse", "en-revue", "remplace"], ["p5", "soumettre", "retire", "retire", "en-revue", "retire"],
     ]);
+    expect(out.events[0]).toMatchObject({ id: "ev1", author_id: "uR", revision_id: "r2", head_revision_id: "r2", manifest_hash: mh, related_publication_id: null, comment: STUDIO_DOWNGRADE_COMMENT });
     expect(pubs[1]!["status"]).toBe("approuve");
+  });
+
+  it("E.4 : manifeste, approbation liée au manifeste et remplacement contrôlés ; dossier remplaçant inséré d'abord", () => {
+    const f = fixture();
+    const manifest = { schema: "studio-publication-manifest/1", sources: [{ role: "principale", variantId: "v1", revisionId: "r2", documentHash: studioArchiveDocumentHash(doc(1)) }], meta: {}, documents: [] };
+    const mh = sha(canonicalJson(manifest));
+    f.tables.studio_publications[0] = { ...f.tables.studio_publications[0]!, manifest, manifest_hash: mh, approved_manifest_hash: mh };
+    f.tables.studio_publications.push({ ...f.tables.studio_publications[0]!, id: "p0", replaced_by_publication_id: "p1", package: null, package_hash: null });
+    f.tables.studio_publication_events.push({ id: "pe2", publication_id: "p0", author_id: "uEditor", related_publication_id: "p1" });
+    f.section["manifest"] = buildStudioManifest(f.tables, IDENT);
+    expect(errorsOf(clone(f.section))).toEqual([]);
+    expect(orderPublicationsForInsert(f.tables.studio_publications).map((p) => p["id"])).toEqual(["p1", "p0"]);
+
+    const bad = fixture();
+    bad.tables.studio_publications[0] = { ...bad.tables.studio_publications[0]!, manifest: { ...manifest, sources: [{ ...manifest.sources[0], documentHash: "0".repeat(64) }] }, manifest_hash: "1".repeat(64), approved_manifest_hash: "2".repeat(64), replaced_by_publication_id: "absent" };
+    bad.tables.studio_publication_events.push({ id: "pe3", publication_id: "p1", author_id: "uEditor", related_publication_id: "absent" });
+    bad.section["manifest"] = buildStudioManifest(bad.tables, IDENT);
+    expect(errorsOf(clone(bad.section))).toEqual(expect.arrayContaining([
+      "publication p1 : empreinte du manifeste différente", "publication p1 : approbation d'un autre manifeste", "publication p1 : dossier remplaçant absent", "évènement pe3 : dossier lié absent",
+    ]));
+    const src = fixture();
+    const m2 = { ...manifest, sources: [{ ...manifest.sources[0], documentHash: "0".repeat(64) }] };
+    src.tables.studio_publications[0] = { ...src.tables.studio_publications[0]!, manifest: m2, manifest_hash: sha(canonicalJson(m2)) };
+    src.section["manifest"] = buildStudioManifest(src.tables, IDENT);
+    expect(errorsOf(clone(src.section))).toContain("publication p1 : empreinte d'une source du manifeste différente");
+  });
+
+  it("E.1 : jeux d'exigences et contrôles archivés, contrôlés ; acceptation partenaire retirée si l'archive n'est pas vérifiée", () => {
+    const f = fixture();
+    const acceptee = { id: "x1", libelle: "Surface", metrique: { type: "total", grandeur: "surface" }, comparaison: "<=", valeur: 10, unite: "m2", source: "Partenaire", origine: { reference: "R-12", acceptation: { par: "uOwner", parEmail: "owner@example.test", le: "2026-10-19T08:00:00.000Z" } } };
+    const simple = { id: "x2", libelle: "Objets", metrique: { type: "nombre" }, comparaison: ">=", valeur: 1, unite: "u", source: "Programme" };
+    f.tables.studio_requirement_sets = [
+      { id: "rs1", study_id: "s1", version: 1, requirements: [simple], motif: null, author_id: "uEditor", request_id: null, payload_hash: null },
+      { id: "rs2", study_id: "s1", version: 2, requirements: [simple, acceptee], motif: "Acceptation", author_id: "uOwner", request_id: null, payload_hash: null },
+    ];
+    f.tables.studio_requirement_checks = [{ id: "rc1", study_id: "s1", variant_id: "v1", revision_id: "r2", set_version: 2, execution: "execute", conclusion: "satisfaite", result: {}, document_hash: studioArchiveDocumentHash(doc(1)), author_id: "uEditor" }];
+    f.section["manifest"] = buildStudioManifest(f.tables, IDENT);
+    expect(errorsOf(clone(f.section))).toEqual([]);
+    expect(buildStudioManifest(f.tables, IDENT).tables.studio_requirement_sets.count).toBe(2);
+    expect(remapStudioRows("studio_requirement_checks", f.tables.studio_requirement_checks, "pB", new Map([["uEditor", "uR"]]))[0]).toMatchObject({ author_id: "uR", document_hash: studioArchiveDocumentHash(doc(1)) });
+
+    const bad = fixture();
+    bad.tables.studio_requirement_sets = [{ id: "rs1", study_id: "autre", version: 1, requirements: {}, author_id: "uEditor" }];
+    bad.tables.studio_requirement_checks = [{ id: "rc1", study_id: "s1", variant_id: "v1", revision_id: "r2", set_version: 9, document_hash: "0".repeat(64), author_id: "uEditor" }];
+    bad.section["manifest"] = buildStudioManifest(bad.tables, IDENT);
+    expect(errorsOf(clone(bad.section))).toEqual(expect.arrayContaining([
+      "jeu d'exigences rs1 : étude absente", "jeu d'exigences rs1 : exigences illisibles", "contrôle rc1 : empreinte du document différente de la révision", "contrôle rc1 : version du jeu absente",
+    ]));
+
+    const { sets, cleared } = distrustRequirementSets(f.tables.studio_requirement_sets);
+    expect(cleared).toBe(1);
+    expect((sets[1]!["requirements"] as { origine?: Record<string, unknown> }[])[1]!.origine).toEqual({ reference: "R-12" });
+    expect((sets[1]!["requirements"] as unknown[])[0]).toEqual(simple);
+    expect(sets[0]).toEqual(f.tables.studio_requirement_sets[0]);
+    expect((f.tables.studio_requirement_sets[1]!["requirements"] as { origine?: Record<string, unknown> }[])[1]!.origine!["acceptation"]).toBeDefined();
   });
 
   it("volumes cités par les paquets", () => {

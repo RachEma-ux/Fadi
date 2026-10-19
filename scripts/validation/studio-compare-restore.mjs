@@ -38,6 +38,8 @@ const SELECTS = {
   studio_observations: 'SELECT to_jsonb(t) AS row FROM studio_observations t WHERE variant_id IN (SELECT v.id FROM studio_variants v JOIN studio_studies s ON s.id = v.study_id WHERE s.project_id = $1)',
   studio_observation_events: 'SELECT to_jsonb(t) AS row FROM studio_observation_events t WHERE observation_id IN (SELECT o.comment_id FROM studio_observations o JOIN studio_variants v ON v.id = o.variant_id JOIN studio_studies s ON s.id = v.study_id WHERE s.project_id = $1)',
   studio_study_steps: 'SELECT to_jsonb(t) AS row FROM studio_study_steps t WHERE study_id IN (SELECT id FROM studio_studies WHERE project_id = $1)',
+  studio_requirement_sets: 'SELECT to_jsonb(t) AS row FROM studio_requirement_sets t WHERE study_id IN (SELECT id FROM studio_studies WHERE project_id = $1)',
+  studio_requirement_checks: 'SELECT to_jsonb(t) AS row FROM studio_requirement_checks t WHERE study_id IN (SELECT id FROM studio_studies WHERE project_id = $1)',
   studio_publications: 'SELECT to_jsonb(t) AS row FROM studio_publications t WHERE project_id = $1',
   studio_publication_events: 'SELECT to_jsonb(t) AS row FROM studio_publication_events t WHERE publication_id IN (SELECT id FROM studio_publications WHERE project_id = $1)',
   volumes: "SELECT to_jsonb(t) AS row FROM volumes t WHERE id IN (SELECT f->>'sha256' FROM studio_publications p, jsonb_array_elements(coalesce(p.package->'files', '[]'::jsonb)) f WHERE p.project_id = $1)",
