@@ -11,7 +11,7 @@
  * typé par `@parcours/domain-model`. Mélanger les deux serait exactement
  * l'erreur de repères que `docs/architecture.md` interdit.
  */
-import { boolean, customType, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, customType, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import type { StudioDocument, StudioEnvelope } from "@parcours/atelier-model";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
@@ -688,6 +688,48 @@ export const studioComments = pgTable("studio_comments", {
 }, (t) => [
   index("studio_comments_variant_idx").on(t.variantId, t.createdAt),
   uniqueIndex("studio_comments_variant_id_unique").on(t.variantId, t.id),
+]);
+
+/** Statuts d'une observation Studio (E.2) ; `rouverte` se corrige comme `ouverte`. */
+export type StudioObservationStatut = "ouverte" | "corrigee" | "recontrolee" | "cloturee" | "rouverte";
+export type StudioObservationAction = "ouvrir" | "corriger" | "recontroler" | "cloturer" | "rouvrir";
+
+/**
+ * Observation Studio : un commentaire d'origine promu (même identifiant, une seule identité), responsable membre du
+ * projet, échéance facultative, statut et révisions de correction / recontrôle (FK composites « même variante »,
+ * init.sql). Le journal des passages est `studioObservationEvents`.
+ */
+export const studioObservations = pgTable("studio_observations", {
+  commentId: text("comment_id").primaryKey(),
+  variantId: text("variant_id").notNull().references(() => studioVariants.id, { onDelete: "cascade" }),
+  responsableId: text("responsable_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  echeance: date("echeance", { mode: "string" }),
+  statut: text("statut").$type<StudioObservationStatut>().notNull(),
+  correctionRevisionId: text("correction_revision_id"),
+  recontroleRevisionId: text("recontrole_revision_id"),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_observations_variant_idx").on(t.variantId), index("studio_observations_responsable_idx").on(t.responsableId)]);
+
+/** Journal append-only des passages d'une observation (qui, quand, révision, note), ordonné par `seq`. */
+export const studioObservationEvents = pgTable("studio_observation_events", {
+  id: text("id").primaryKey(),
+  observationId: text("observation_id").notNull().references(() => studioObservations.commentId, { onDelete: "cascade" }),
+  seq: integer("seq").notNull(),
+  action: text("action").$type<StudioObservationAction>().notNull(),
+  fromStatut: text("from_statut").$type<StudioObservationStatut | null>(),
+  toStatut: text("to_statut").$type<StudioObservationStatut>().notNull(),
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  revisionId: text("revision_id"),
+  note: text("note"),
+  // Passage idempotent : unique par observation quand renseigné (index partiel, init.sql).
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  at: timestamp("at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex("studio_observation_events_seq_unique").on(t.observationId, t.seq),
+  index("studio_observation_events_at_idx").on(t.at),
 ]);
 
 /**

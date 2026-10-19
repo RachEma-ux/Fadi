@@ -563,6 +563,59 @@ CREATE TABLE IF NOT EXISTS studio_comments (
 CREATE INDEX IF NOT EXISTS studio_comments_variant_idx ON studio_comments(variant_id, created_at);
 CREATE UNIQUE INDEX IF NOT EXISTS studio_comments_request_unique ON studio_comments(variant_id, request_id)
   WHERE request_id IS NOT NULL;
+-- Observations Studio (E.2) : un commentaire d'origine devient au plus une observation (même identifiant que le
+-- commentaire : une seule identité), avec un responsable (membre du projet), une échéance facultative et un statut
+-- ouverte → corrigée (révision de la correction) → recontrôlée (révision ≥ correction) → clôturée, ou rouverte. Chaque
+-- passage est journalisé (qui, quand, révision, note) dans un journal append-only, ordonné par `seq`. Tables nouvelles,
+-- additives : aucun commentaire existant n'est réécrit.
+CREATE TABLE IF NOT EXISTS studio_observations (
+  comment_id text PRIMARY KEY,
+  variant_id text NOT NULL REFERENCES studio_variants(id) ON DELETE CASCADE,
+  responsable_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  echeance date,
+  statut text NOT NULL CONSTRAINT studio_observations_statut_check
+    CHECK (statut IN ('ouverte', 'corrigee', 'recontrolee', 'cloturee', 'rouverte')),
+  correction_revision_id text,
+  recontrole_revision_id text,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT studio_observations_comment_same_variant FOREIGN KEY(variant_id, comment_id)
+    REFERENCES studio_comments(variant_id, id) ON DELETE CASCADE,
+  CONSTRAINT studio_observations_correction_same_variant FOREIGN KEY(variant_id, correction_revision_id)
+    REFERENCES studio_revisions(variant_id, id),
+  CONSTRAINT studio_observations_recontrole_same_variant FOREIGN KEY(variant_id, recontrole_revision_id)
+    REFERENCES studio_revisions(variant_id, id)
+);
+CREATE INDEX IF NOT EXISTS studio_observations_variant_idx ON studio_observations(variant_id);
+CREATE INDEX IF NOT EXISTS studio_observations_responsable_idx ON studio_observations(responsable_id);
+CREATE TABLE IF NOT EXISTS studio_observation_events (
+  id text PRIMARY KEY,
+  observation_id text NOT NULL REFERENCES studio_observations(comment_id) ON DELETE CASCADE,
+  seq integer NOT NULL CHECK (seq >= 1),
+  action text NOT NULL CONSTRAINT studio_observation_events_action_check
+    CHECK (action IN ('ouvrir', 'corriger', 'recontroler', 'cloturer', 'rouvrir')),
+  from_statut text,
+  to_statut text NOT NULL,
+  actor_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  revision_id text,
+  note text CONSTRAINT studio_observation_events_note_length CHECK (note IS NULL OR length(note) BETWEEN 1 AND 2000),
+  request_id text,
+  payload_hash text CONSTRAINT studio_observation_events_payload_hash_check CHECK (payload_hash IS NULL OR payload_hash ~ '^[0-9a-f]{64}$'),
+  at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT studio_observation_events_seq_unique UNIQUE(observation_id, seq)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_observation_events_request_unique ON studio_observation_events(observation_id, request_id)
+  WHERE request_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS studio_observation_events_at_idx ON studio_observation_events(at);
+-- Le journal ne se réécrit pas : toute UPDATE d'un passage est refusée (les suppressions suivent la cascade).
+CREATE OR REPLACE FUNCTION studio_observation_event_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_observation_event_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_observation_events_no_update BEFORE UPDATE ON studio_observation_events
+  FOR EACH ROW EXECUTE FUNCTION studio_observation_event_immutable();
 -- Rattachement facultatif d'une étude Studio à des étapes du Parcours du même projet (numéro d'étape de
 -- project_steps, vérifié par le serveur). Table nouvelle, additive : aucune étape ni aucune étude n'est réécrite.
 CREATE TABLE IF NOT EXISTS studio_study_steps (

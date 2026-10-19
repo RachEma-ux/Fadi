@@ -17,7 +17,7 @@ export const NOTIFICATION_KIND_LABEL: Record<NotificationKind, string> = {
 export const NOTIFICATION_KIND_DESCRIPTION: Record<NotificationKind, string> = {
   acces: "Un accès à un projet vous est donné (invitation, rôle).",
   commentaire: "Un autre membre commente un projet ou une étape du Parcours.",
-  "commentaire-studio": "Un autre membre commente une variante Studio.",
+  "commentaire-studio": "Un autre membre commente une variante Studio ou fait avancer une observation dont vous êtes responsable ou auteur.",
   reservation: "Un autre membre réserve l’édition d’un projet.",
   modification: "Un autre membre modifie dans l’Atelier des objets que vous avez créés ou modifiés.",
   verrou: "Un verrou d’étage, de zone ou d’objet est pris, libéré ou vous est transmis.",

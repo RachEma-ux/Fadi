@@ -794,8 +794,47 @@ export interface StudioComment {
   createdAt: string;
   deletedAt: string | null;
   mine: boolean;
+  /** Observation issue de ce commentaire (même identifiant), null sinon (absent d'un serveur plus ancien). */
+  observation?: StudioObservation | null;
 }
 export interface StudioCommentInput { body: string; revisionId?: string; objectIds?: string[]; parentId?: string; requestId?: string }
+/** Observation Studio (E.2) : statut, responsable, échéance et journal, relus du serveur qui fait autorité. */
+export type StudioObservationStatut = "ouverte" | "corrigee" | "recontrolee" | "cloturee" | "rouverte";
+export type StudioObservationTransition = "corriger" | "recontroler" | "cloturer" | "rouvrir";
+export interface StudioObservationEvent {
+  seq: number;
+  action: "ouvrir" | StudioObservationTransition;
+  fromStatut: StudioObservationStatut | null;
+  toStatut: StudioObservationStatut;
+  actorId: string;
+  actorEmail: string;
+  revisionId: string | null;
+  note: string | null;
+  at: string;
+}
+export interface StudioObservation {
+  id: string;
+  authorId: string;
+  responsableId: string;
+  responsableEmail: string;
+  echeance: string | null;
+  statut: StudioObservationStatut;
+  correctionRevisionId: string | null;
+  recontroleRevisionId: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  journal: StudioObservationEvent[];
+  /** L'utilisateur courant est le responsable. */
+  assignedToMe: boolean;
+  /** Passages permis maintenant à l'utilisateur courant (rôle, statut, archive). */
+  possibles: StudioObservationTransition[];
+}
+/** Propriétaire et membres du projet ; `assignable` = peut être responsable d'une observation. */
+export interface StudioParticipant { id: string; email: string; role: ProjectRole; assignable: boolean }
+export interface StudioCommentsView { comments: StudioComment[]; participants?: StudioParticipant[]; archived?: boolean; me?: { id: string; role: ProjectRole } }
+export interface StudioObservationInput { responsableId: string; echeance?: string | null; note?: string; requestId?: string }
+export interface StudioObservationTransitionInput { action: StudioObservationTransition; revisionId?: string; note?: string; requestId?: string }
 /** Étapes du Parcours rattachées à une étude Studio (`available` : étapes du projet, libellés des définitions). */
 export interface StudioStudySteps {
   steps: { number: number; createdAt: string }[];
@@ -822,7 +861,11 @@ export const api = {
   /** Comparaison lecture seule de deux côtés de la même étude (`variantId` ou `variantId:revisionId`), calculée par le serveur. */
   studioCompare: (p: string, s: string, from: string, to: string) => request<StudioComparison>(`${studioStudyPath(p, s)}/compare?${new URLSearchParams({ from, to })}`),
   /** Fils de commentaires de la variante, dans l'ordre des fils (origine puis réponses). */
-  studioComments: (p: string, s: string, v: string) => request<{ comments: StudioComment[] }>(`${studioVariantPath(p, s, v)}/comments`),
+  studioComments: (p: string, s: string, v: string) => request<StudioCommentsView>(`${studioVariantPath(p, s, v)}/comments`),
+  /** Promotion d'un commentaire d'origine en observation (auteur ou propriétaire). */
+  createStudioObservation: (p: string, s: string, v: string, commentId: string, input: StudioObservationInput) => request<StudioObservation & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/comments/${encodeURIComponent(commentId)}/observation`, { method: "POST", body: JSON.stringify(input) }),
+  /** Passage d'une observation (corriger, recontroler, cloturer, rouvrir), journalisé par le serveur. */
+  transitionStudioObservation: (p: string, s: string, v: string, commentId: string, input: StudioObservationTransitionInput) => request<StudioObservation & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/comments/${encodeURIComponent(commentId)}/observation/transitions`, { method: "POST", body: JSON.stringify(input) }),
   /** Nouveau commentaire ou réponse ; `requestId` : un renvoi rend le même commentaire, sans doublon. */
   createStudioComment: (p: string, s: string, v: string, input: StudioCommentInput) => request<StudioComment & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/comments`, { method: "POST", body: JSON.stringify(input) }),
   deleteStudioComment: (p: string, s: string, v: string, id: string) => request<void>(`${studioVariantPath(p, s, v)}/comments/${encodeURIComponent(id)}`, { method: "DELETE" }),
