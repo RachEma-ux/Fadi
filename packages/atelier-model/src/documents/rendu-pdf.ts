@@ -137,6 +137,39 @@ export function pdfPage(largeurMm: number, hauteurMm: number, primitives: readon
   return octets;
 }
 
+/**
+ * Octets d'un PDF de plusieurs pages (dossier de conception Studio, E.3-03), chacune à ses dimensions (mm) ; mêmes
+ * conventions que `pdfPage` (Helvetica WinAnsi, aucune date de création : mêmes entrées, mêmes octets).
+ */
+export function pdfPages(pages: readonly { largeurMm: number; hauteurMm: number; primitives: readonly Primitive[] }[], titre: string): Uint8Array {
+  if (pages.length === 0) throw new RangeError("au moins une page attendue");
+  // Objets : 1 catalogue, 2 pages, 3 police, 4 informations, puis (page, contenu) par page.
+  const kids = pages.map((_, i) => `${5 + 2 * i} 0 R`).join(" ");
+  const objets = [
+    `<< /Type /Catalog /Pages 2 0 R >>`,
+    `<< /Type /Pages /Kids [${kids}] /Count ${pages.length} >>`,
+    `<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>`,
+    `<< /Title (${winAnsi(titre)}) /Producer (Fadi - Studio) >>`,
+  ];
+  pages.forEach((p, i) => {
+    const flux = contenu(p.primitives);
+    objets.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${n(p.largeurMm * PT)} ${n(p.hauteurMm * PT)}] /Resources << /Font << /F1 3 0 R >> >> /Contents ${6 + 2 * i} 0 R >>`);
+    objets.push(`<< /Length ${flux.length} >>\nstream\n${flux}\nendstream`);
+  });
+  let doc = "%PDF-1.4\n%\xe2\xe3\xcf\xd3\n";
+  const decalages: number[] = [];
+  objets.forEach((o, i) => {
+    decalages.push(doc.length);
+    doc += `${i + 1} 0 obj\n${o}\nendobj\n`;
+  });
+  const xref = doc.length;
+  doc += `xref\n0 ${objets.length + 1}\n0000000000 65535 f \n${decalages.map((d) => `${String(d).padStart(10, "0")} 00000 n \n`).join("")}`;
+  doc += `trailer\n<< /Size ${objets.length + 1} /Root 1 0 R /Info 4 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  const octets = new Uint8Array(doc.length);
+  for (let i = 0; i < doc.length; i++) octets[i] = doc.charCodeAt(i) & 0xff;
+  return octets;
+}
+
 export function pdfFeuille(f: FeuilleComposee): Uint8Array {
   return pdfPage(f.largeur, f.hauteur, f.primitives, `${f.params.numero} - ${f.params.titre}`);
 }

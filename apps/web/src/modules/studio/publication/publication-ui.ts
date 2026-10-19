@@ -82,6 +82,7 @@ export function messageRefus(status: number, body: unknown): string {
   if (status === 409 && b["error"] === "invalid_transition") return "Transition refusée : le statut a changé entre-temps. Rechargez la liste.";
   if (status === 409 && b["error"] === "archived") return "Étude ou variante archivée : publication impossible.";
   if (status === 400 && b["code"] === "comment_required") return "Un commentaire est requis pour cette action.";
+  if (status === 400 && b["code"] === "drawing_coordinated_invalid") return "Un dessin 2D indépendant se publie seul : retirez les variantes coordonnées.";
   if (status === 403) return "Action refusée : vos droits sur ce projet ne la permettent pas.";
   if (status === 423) return "Édition réservée par un autre compte : réessayez plus tard.";
   return "Action refusée par le serveur.";

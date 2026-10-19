@@ -12,7 +12,7 @@
  * l'erreur de repères que `docs/architecture.md` interdit.
  */
 import { boolean, customType, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
-import type { ConclusionControle, EtatExecution, ExigenceStudio, GrandeurQuantite, ResultatControle, StudioDocument, StudioEnvelope, UniteQuantite } from "@parcours/atelier-model";
+import type { ConclusionControle, EtatExecution, ExigenceStudio, GrandeurQuantite, ResultatControle, StudioDocument, StudioEnvelope, StudioFeuilleComposeeDefinition, UniteQuantite } from "@parcours/atelier-model";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
 const geography = customType<{ data: string; driverData: string }>({
@@ -843,6 +843,8 @@ export type StudioPublicationDiffusionStatus = "non-diffuse" | "diffuse" | "reti
 /** Manifeste figé multi-sources d'un dossier (E.4-03) : sources coordonnées, métadonnées gelées, documents du paquet. */
 export interface StudioPublicationManifest {
   schema: "studio-publication-manifest/1";
+  /** E.3-07 : dessin 2D indépendant (SVG, DXF, feuille PDF ; sans IFC) ; absent : dossier complet. */
+  contenu?: "dessin-2d";
   sources: { role: "principale" | "coordonnee"; variantId: string; revisionId: string; documentHash: string }[];
   meta: { projectCode: string; projectName: string; studyName: string; variantName: string; revisionCreatedAt: string };
   documents: { format: string; fileName: string; mime: string; size: number; sha256: string }[];
@@ -853,6 +855,8 @@ export interface StudioPackageFile { format: StudioPackageFormat; fileName: stri
 /** Paquet figé à la diffusion : révision, empreinte du document, métadonnées gelées des exports et fichiers. */
 export interface StudioPublicationPackage {
   schema: "studio-publication-package/1";
+  /** E.3-07 : dessin 2D indépendant ; absent : paquet complet. */
+  contenu?: "dessin-2d";
   revisionId: string;
   documentHash: string;
   meta: { projectCode: string; projectName: string; studyName: string; variantName: string; revisionCreatedAt: string };
@@ -988,3 +992,34 @@ export const studioQuantityAdjustments = pgTable("studio_quantity_adjustments", 
   payloadHash: text("payload_hash"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [uniqueIndex("studio_quantity_adjustments_seq_unique").on(t.variantId, t.seq)]);
+
+/** Feuilles composées Studio (E.3-02) : définition propre, lecture d'une révision identifiée ; jamais la planche. */
+export const studioSheets = pgTable("studio_sheets", {
+  id: text("id").primaryKey(),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  variantId: text("variant_id").notNull(),
+  revisionId: text("revision_id").notNull(),
+  number: text("number").notNull(),
+  definition: jsonb("definition").$type<StudioFeuilleComposeeDefinition>().notNull(),
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [uniqueIndex("studio_sheets_number_unique").on(t.studyId, t.number)]);
+
+/** Dossiers de conception Studio (E.3-03) : feuilles ordonnées, métré facultatif, fidélité. */
+export const studioDossiers = pgTable("studio_dossiers", {
+  id: text("id").primaryKey(),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  sheetIds: jsonb("sheet_ids").$type<string[]>().notNull(),
+  quantitiesVariantId: text("quantities_variant_id"),
+  quantitiesRevisionId: text("quantities_revision_id"),
+  includeFidelity: boolean("include_fidelity").notNull().default(true),
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_dossiers_study_idx").on(t.studyId, t.createdAt)]);

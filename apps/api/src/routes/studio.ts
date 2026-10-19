@@ -13,6 +13,7 @@ import { studioPublicationsRouter } from "./studio-publications.js";
 import { studioObservationsRouter } from "./studio-observations.js";
 import { studioPreferencesRouter } from "./studio-preferences.js";
 import { studioQuantitesRouter } from "./studio-quantites.js";
+import { studioDossiersRouter } from "./studio-dossiers.js";
 
 export const studioRouter = Router({ mergeParams: true });
 studioRouter.use(requireAuth);
@@ -230,3 +231,5 @@ studioRouter.use(studioExigencesRouter);
 studioRouter.use(studioQuantitesRouter);
 // Observations : identité réemployée, contexte, tâches, décisions, clôture (E.2-01 à E.2-05) : `routes/studio-observations.ts`.
 studioRouter.use(studioObservationsRouter);
+// Feuilles composées et dossiers de conception (E.3-01 à E.3-03, E.3-06) : `routes/studio-dossiers.ts`.
+studioRouter.use(studioDossiersRouter);

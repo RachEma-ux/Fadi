@@ -29,7 +29,7 @@ export const MANIFESTE_COMMANDES = Object.freeze({
   "reperage-orthogonal": P2D, "reperage-polaire": P2D, "pas-polaire": P2D,
   "importer-dxf": P2D, "exporter-svg": P2D, "exporter-dxf": P2D, "exporter-ifc": P2D, feuille: ["feuille"], "exporter-png": V3D,
   outils: ["planche-2d", "vue-3d", "feuille"], palette: ["planche-2d", "vue-3d", "feuille"],
-  exigences: P2D,
+  exigences: P2D, dossier: ["planche-2d", "vue-3d", "feuille"],
 } as const satisfies Record<IdCommandeEditeur, readonly StudioContexteOutil[]>);
 export const PROPRIETAIRE_EDITEUR = Object.freeze({ id: "studio.editeur", module: "apps/web/src/modules/studio" });
 

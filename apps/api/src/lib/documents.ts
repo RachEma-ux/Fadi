@@ -21,6 +21,7 @@ import { ownsExampleDossier } from "./example-report.js";
 import { contentOf, type StepContext } from "./step-context.js";
 import type { Querier } from "./step-rows.js";
 import { listProjectStudioPackages } from "./studio-publications.js";
+import { listProjectStudioDossiers } from "./studio-dossiers.js";
 
 export type DocumentGroup = "harmonie" | "bilan" | "atelier" | "dessins" | "tableaux" | "exemple" | "archive" | "studio";
 
@@ -243,6 +244,8 @@ export interface StudioPackageDocument {
   /** Huit derniers caractères de la révision (comme dans les noms de fichiers du paquet). */
   revisionShort: string;
   status: "diffuse" | "retire";
+  /** Contenu (E.3-07) : dossier complet, ou dessin 2D indépendant (sans IFC). */
+  contenu: "complet" | "dessin-2d";
   /** Diffusion (lot E.4) : un seul paquet `diffuse` en vigueur par variante ; les précédents sont `remplace` ou `retire`. */
   diffusionStatus: "diffuse" | "remplace" | "retire";
   diffusedAt: string | null;
@@ -275,6 +278,7 @@ export async function studioPackageDocuments(projectId: string, actorId: string)
       revisionId: p.revisionId,
       revisionShort: p.revisionId.slice(-8),
       status: p.status,
+      contenu: p.contenu,
       diffusionStatus: p.diffusionStatus === "non-diffuse" ? "diffuse" as const : p.diffusionStatus,
       diffusedAt: p.diffusion.at,
       diffusedBy: p.diffusion.by?.email ?? null,
@@ -286,6 +290,38 @@ export async function studioPackageDocuments(projectId: string, actorId: string)
       files: p.diffusion.files.map((f) => ({ format: f.format, fileName: f.fileName, mime: f.mime, size: f.size, sha256: f.sha256, href: `${base}/${f.format}` })),
     }];
   });
+}
+
+// --- Groupe « Studio — dossiers de conception » (E.3-03, E.3-06) ------------------------------------------------
+
+/**
+ * Dossier de conception Studio rattaché au catalogue : livrable recalculé à la demande depuis des révisions immuables
+ * (feuilles ordonnées, métré, fidélité), identifié par son empreinte SHA-256 ; liens vers le PDF et le JSON (droit `read`).
+ */
+export interface StudioDossierDocument {
+  kind: string;
+  group: "studio-dossier";
+  dossierId: string;
+  title: string;
+  studyId: string;
+  studyName: string;
+  sheetCount: number;
+  /** Empreinte du dossier assemblé ; null si une feuille ne peut plus être produite (`error`). */
+  hash: string | null;
+  error: string | null;
+  sources: { variantId: string; variantName: string | null; revisionId: string; revisionShort: string }[];
+  updatedAt: string;
+  files: { format: "pdf" | "json"; href: string }[];
+}
+
+export async function studioDossierDocuments(projectId: string, actorId: string): Promise<StudioDossierDocument[]> {
+  const { dossiers } = await listProjectStudioDossiers(projectId, actorId);
+  return dossiers.map((d) => ({
+    kind: `studio-dossier:${d.id}`, group: "studio-dossier" as const, dossierId: d.id, title: d.title, studyId: d.studyId, studyName: d.studyName,
+    sheetCount: d.sheetCount, hash: d.empreinte, error: d.error,
+    sources: d.sources.map((s) => ({ variantId: s.variantId, variantName: s.variantName ?? null, revisionId: s.revisionId, revisionShort: s.revisionId.slice(-8) })),
+    updatedAt: d.updatedAt, files: [{ format: "pdf" as const, href: d.files.pdf }, { format: "json" as const, href: d.files.json }],
+  }));
 }
 
 export async function documentCatalogue(q: Querier, project: OwnedProject, dctx: DesignContext): Promise<DocumentDescriptor[]> {

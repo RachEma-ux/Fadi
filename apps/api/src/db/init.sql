@@ -1056,3 +1056,66 @@ END;
 $$;
 CREATE OR REPLACE TRIGGER studio_quantity_adjustments_no_update BEFORE UPDATE ON studio_quantity_adjustments
   FOR EACH ROW EXECUTE FUNCTION studio_quantity_adjustment_immutable();
+-- Production documentaire Studio (E.3-01 à E.3-03) : feuilles composées et dossiers de conception, rangés À PART des
+-- révisions (une feuille ne modifie jamais la planche de travail). Une feuille lit une révision IDENTIFIÉE d'une
+-- variante de l'étude (`revision_id`, réépinglée explicitement à la demande) ; sa définition (numéro, titre, format,
+-- échelle, vue source, cartouche saisi) est un objet JSON contrôlé par `@parcours/atelier-model`. Un dossier est une
+-- liste ordonnée de feuilles de la même étude, un métré facultatif (variante et révision identifiées) et le choix de
+-- joindre le rapport de fidélité. Additif et idempotent : tables nouvelles, contraintes recréées (NOT VALID).
+CREATE TABLE IF NOT EXISTS studio_sheets (
+  id text PRIMARY KEY,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  variant_id text NOT NULL,
+  revision_id text NOT NULL,
+  number text NOT NULL,
+  definition jsonb NOT NULL,
+  request_id text,
+  payload_hash text,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_sheets_number_unique ON studio_sheets(study_id, number);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_sheets_request_unique ON studio_sheets(study_id, request_id) WHERE request_id IS NOT NULL;
+ALTER TABLE studio_sheets DROP CONSTRAINT IF EXISTS studio_sheets_variant_of_study,
+  ADD CONSTRAINT studio_sheets_variant_of_study FOREIGN KEY(study_id, variant_id)
+  REFERENCES studio_variants(study_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_sheets DROP CONSTRAINT IF EXISTS studio_sheets_revision_of_variant,
+  ADD CONSTRAINT studio_sheets_revision_of_variant FOREIGN KEY(variant_id, revision_id)
+  REFERENCES studio_revisions(variant_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_sheets DROP CONSTRAINT IF EXISTS studio_sheets_number_length,
+  ADD CONSTRAINT studio_sheets_number_length CHECK (length(btrim(number)) BETWEEN 1 AND 20) NOT VALID;
+ALTER TABLE studio_sheets DROP CONSTRAINT IF EXISTS studio_sheets_definition_object,
+  ADD CONSTRAINT studio_sheets_definition_object CHECK (jsonb_typeof(definition) = 'object') NOT VALID;
+ALTER TABLE studio_sheets DROP CONSTRAINT IF EXISTS studio_sheets_payload_hash_check,
+  ADD CONSTRAINT studio_sheets_payload_hash_check CHECK (payload_hash IS NULL OR payload_hash ~ '^[0-9a-f]{64}$') NOT VALID;
+CREATE TABLE IF NOT EXISTS studio_dossiers (
+  id text PRIMARY KEY,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  sheet_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+  quantities_variant_id text,
+  quantities_revision_id text,
+  include_fidelity boolean NOT NULL DEFAULT true,
+  request_id text,
+  payload_hash text,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_dossiers_request_unique ON studio_dossiers(study_id, request_id) WHERE request_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS studio_dossiers_study_idx ON studio_dossiers(study_id, created_at);
+ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_quantities_variant_of_study,
+  ADD CONSTRAINT studio_dossiers_quantities_variant_of_study FOREIGN KEY(study_id, quantities_variant_id)
+  REFERENCES studio_variants(study_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_quantities_revision_of_variant,
+  ADD CONSTRAINT studio_dossiers_quantities_revision_of_variant FOREIGN KEY(quantities_variant_id, quantities_revision_id)
+  REFERENCES studio_revisions(variant_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_quantities_complete,
+  ADD CONSTRAINT studio_dossiers_quantities_complete CHECK ((quantities_variant_id IS NULL) = (quantities_revision_id IS NULL)) NOT VALID;
+ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_title_length,
+  ADD CONSTRAINT studio_dossiers_title_length CHECK (length(btrim(title)) BETWEEN 1 AND 200) NOT VALID;
+ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_sheet_ids_array,
+  ADD CONSTRAINT studio_dossiers_sheet_ids_array CHECK (jsonb_typeof(sheet_ids) = 'array') NOT VALID;
+ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_payload_hash_check,
+  ADD CONSTRAINT studio_dossiers_payload_hash_check CHECK (payload_hash IS NULL OR payload_hash ~ '^[0-9a-f]{64}$') NOT VALID;
