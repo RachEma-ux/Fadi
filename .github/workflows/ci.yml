@@ -362,6 +362,11 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/studio-publication.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des observations Studio — identité réemployée entre domaines, contexte, tâches, décisions, clôture réservée au propriétaire (apps/web/e2e/studio-observations.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-observations.mjs 2>&1 | tee -a e2e.log
       - name: Recette des profils et favoris d'outils Studio — API (aller-retour, refus, droits) et étoile du gestionnaire (apps/web/e2e/studio-profils.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |

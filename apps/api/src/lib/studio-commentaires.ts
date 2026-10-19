@@ -12,18 +12,28 @@
  * une échéance facultative et un cycle ouverte → corrigée → recontrôlée → clôturée / rouverte ; règles et
  * correspondance des rôles dans `studio-observations.ts`. Chaque passage est journalisé sous verrou de ligne
  * (`seq` croissant) ; une archive refuse promotion et passages (409 archived) ; un commentaire devenu observation ne
- * se supprime plus (409 observation).
+ * se supprime plus (409 observation). La vue d'une observation porte aussi sa vue citée, ses liens de domaines, ses
+ * tâches et ses décisions (suivi E.2 : `studio-observations-suivi.ts`) ; la clôture est motivée, attend la fin des
+ * tâches et consigne la décision de clôture.
  */
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { db } from "../db/client.js";
-import { projectMembers, studioComments, studioObservationEvents, studioObservations, studioRevisions, studioStudies, studioVariants, users, type StudioObservationAction, type StudioObservationStatut } from "../db/schema.js";
+import {
+  projectMembers, studioComments, studioObservationDecisions, studioObservationEvents, studioObservationLinks, studioObservations, studioObservationTaskEvents,
+  studioObservationTasks, studioRevisions, studioStudies, studioVariants, users,
+  type StudioObservationAction, type StudioObservationDecisionNature, type StudioObservationDecisionPortee, type StudioObservationDomaine, type StudioObservationStatut,
+  type StudioObservationTacheAction, type StudioObservationTacheStatut, type StudioObservationVueMode,
+} from "../db/schema.js";
 import { newId } from "./ids.js";
 import { loadProjectAccess, projectAccessRefusal, roleAllows, type AccessibleProject, type ProjectNeed, type ProjectRole } from "./owned-project.js";
 import { lockedAccess, StudioRequestError, studioArchivedRefusal, studioIdentifierSchema, type StudioScope } from "./studio-commands.js";
 import type { Tx } from "./atelier-validation.js";
-import { acteurAutorise, echeanceValide, estAncetreOuEgale, OBSERVATION_TRANSITIONS, REFUS_ACTEUR, REVISION_EXIGEE, statutApres, type ActeurObservation, type ObservationTransition } from "./studio-observations.js";
+import {
+  acteurAutorise, echeanceValide, estAncetreOuEgale, OBSERVATION_TRANSITIONS, peutCreerTache, peutLier, REFUS_ACTEUR, refusCloture, REVISION_EXIGEE, statutApres,
+  TACHE_TRANSITIONS, tacheApres, tacheAutorisee, VUE_MODES, type ActeurObservation, type ObservationTransition, type TacheTransition,
+} from "./studio-observations.js";
 
 export const STUDIO_COMMENT_MAX_OBJECTS = 200;
 
@@ -89,6 +99,55 @@ export interface StudioObservationView {
   assignedToMe: boolean;
   /** Passages que l'utilisateur courant peut faire maintenant (rôle, statut, archive), relus du serveur. */
   possibles: ObservationTransition[];
+  /** Contexte de vue déclaré à l'ouverture (E.2-02), null s'il n'a pas été cité. */
+  vue: { mode: StudioObservationVueMode; ref: string | null } | null;
+  /** Éléments des domaines suivis par cette même observation (E.2-01), du plus ancien au plus récent. */
+  liens: StudioObservationLienView[];
+  /** Tâches attribuées (E.2-03), de la plus ancienne à la plus récente, avec leur journal. */
+  taches: StudioObservationTacheView[];
+  /** Propositions et décisions distinctes (E.2-03 / E.2-04), journal append-only (`seq` croissant). */
+  decisions: StudioObservationDecisionView[];
+  /** Ce que l'utilisateur courant peut écrire maintenant, relu du serveur (rôle, statut, archive). */
+  peut: { lier: boolean; creerTache: boolean; proposer: boolean; decider: boolean };
+}
+
+export interface StudioObservationLienView {
+  id: string;
+  domaine: StudioObservationDomaine;
+  ref: string;
+  revisionId: string | null;
+  controleId: string | null;
+  createdBy: string;
+  createdAt: string;
+}
+export interface StudioObservationTacheEventView {
+  seq: number; action: StudioObservationTacheAction; fromStatut: StudioObservationTacheStatut | null; toStatut: StudioObservationTacheStatut;
+  actorId: string; actorEmail: string; assigneeId: string | null; note: string | null; at: string;
+}
+export interface StudioObservationTacheView {
+  id: string;
+  libelle: string;
+  assigneeId: string;
+  assigneeEmail: string;
+  echeance: string | null;
+  statut: StudioObservationTacheStatut;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  journal: StudioObservationTacheEventView[];
+  assignedToMe: boolean;
+  possibles: TacheTransition[];
+}
+export interface StudioObservationDecisionView {
+  seq: number;
+  nature: StudioObservationDecisionNature;
+  portee: StudioObservationDecisionPortee;
+  texte: string;
+  actorId: string;
+  actorEmail: string;
+  actorRole: "proprietaire" | "editeur";
+  revisionId: string | null;
+  at: string;
 }
 
 /** Personne du projet : le propriétaire et les membres ; `assignable` = peut être responsable (droit `write`). */
@@ -106,10 +165,10 @@ function view(c: Row, actorId: string, observation: StudioObservationView | null
   };
 }
 
-const notFound = (message?: string): never => { throw new StudioRequestError(404, message ? { error: "not_found", message } : { error: "not_found" }); };
+export const notFound = (message?: string): never => { throw new StudioRequestError(404, message ? { error: "not_found", message } : { error: "not_found" }); };
 
 /** Droit vérifié par le serveur, puis portée : étude du projet, variante de l'étude ; sinon 404 sans rien révéler. */
-async function scopedVariant(scope: StudioScope, actorId: string, need: ProjectNeed) {
+export async function scopedVariant(scope: StudioScope, actorId: string, need: ProjectNeed) {
   const access = await loadProjectAccess(scope.projectId, actorId);
   const refusal = projectAccessRefusal(access, actorId, need);
   if (refusal) throw new StudioRequestError(refusal.status, refusal.body);
@@ -141,7 +200,7 @@ export async function listStudioComments(scope: StudioScope, actorId: string): P
 // Observations
 
 /** Propriétaire puis membres (ordre d'invitation) ; un membre `editeur` ou le propriétaire peut être responsable. */
-async function participants(project: AccessibleProject, executor: Pick<typeof db, "select"> = db): Promise<StudioParticipant[]> {
+export async function participants(project: AccessibleProject, executor: Pick<typeof db, "select"> = db): Promise<StudioParticipant[]> {
   const [owner] = await executor.select({ id: users.id, email: users.email }).from(users).where(eq(users.id, project.ownerId)).limit(1);
   const members = await executor.select({ id: users.id, email: users.email, role: projectMembers.role }).from(projectMembers)
     .innerJoin(users, eq(users.id, projectMembers.userId)).where(eq(projectMembers.projectId, project.id))
@@ -151,14 +210,14 @@ async function participants(project: AccessibleProject, executor: Pick<typeof db
   return all;
 }
 
-interface Lecteur { actorId: string; role: ProjectRole; archived: boolean }
+export interface Lecteur { actorId: string; role: ProjectRole; archived: boolean }
 
 /**
  * Comme `scopedVariant`, mais dans la transaction d'écriture et sous les verrous des autres écritures Studio : projet
  * (et membre de l'acteur) verrouillés par `lockedAccess`, ligne de variante partagée — un archivage, une révocation ou
  * un changement de rôle concurrent ne traverse pas la transaction ; droit et archive relus sous ces verrous.
  */
-async function lockedVariant(tx: Tx, scope: StudioScope, actorId: string, need: ProjectNeed) {
+export async function lockedVariant(tx: Tx, scope: StudioScope, actorId: string, need: ProjectNeed) {
   const access = await lockedAccess(tx, scope.projectId, actorId);
   const refusal = projectAccessRefusal(access, actorId, need);
   if (refusal) throw new StudioRequestError(refusal.status, refusal.body);
@@ -172,7 +231,7 @@ async function lockedVariant(tx: Tx, scope: StudioScope, actorId: string, need: 
 }
 
 /** Rôle de l'acteur vis-à-vis d'une observation, droit actuel compris (un responsable rétrogradé lecteur ne corrige plus). */
-function acteurDe(lecteur: Lecteur, responsableId: string, authorId: string): ActeurObservation {
+export function acteurDe(lecteur: Lecteur, responsableId: string, authorId: string): ActeurObservation {
   return {
     estResponsable: responsableId === lecteur.actorId, estAuteur: authorId === lecteur.actorId,
     estProprietaire: roleAllows(lecteur.role, "owner"), peutEcrire: roleAllows(lecteur.role, "write"),
@@ -180,7 +239,7 @@ function acteurDe(lecteur: Lecteur, responsableId: string, authorId: string): Ac
 }
 
 /** Observations de la variante (ou d'un seul commentaire), journal compris, avec les passages possibles du lecteur. */
-async function observationViews(variantId: string, commentId: string | null, lecteur: Lecteur, executor: Pick<typeof db, "select"> = db): Promise<Map<string, StudioObservationView>> {
+export async function observationViews(variantId: string, commentId: string | null, lecteur: Lecteur, executor: Pick<typeof db, "select"> = db): Promise<Map<string, StudioObservationView>> {
   const where = commentId === null ? eq(studioObservations.variantId, variantId) : and(eq(studioObservations.variantId, variantId), eq(studioObservations.commentId, commentId));
   const obs = await executor.select({ o: studioObservations, responsableEmail: users.email, authorId: studioComments.authorId }).from(studioObservations)
     .innerJoin(studioComments, eq(studioComments.id, studioObservations.commentId))
@@ -198,24 +257,75 @@ async function observationViews(variantId: string, commentId: string | null, lec
       revisionId: e.revisionId, responsableId: e.responsableId, note: e.note, at: e.at.toISOString(),
     }]);
   }
+  const ids = obs.map((x) => x.o.commentId);
+  const push = <T>(m: Map<string, T[]>, k: string, v: T) => m.set(k, [...(m.get(k) ?? []), v]);
+  // Liens de domaines (E.2-01), tâches et leur journal (E.2-03), décisions (E.2-03 / E.2-04).
+  const liens = new Map<string, StudioObservationLienView[]>();
+  for (const l of await executor.select().from(studioObservationLinks).where(inArray(studioObservationLinks.observationId, ids)).orderBy(asc(studioObservationLinks.createdAt), asc(studioObservationLinks.id))) {
+    push(liens, l.observationId, { id: l.id, domaine: l.domaine, ref: l.ref, revisionId: l.revisionId, controleId: l.controleId, createdBy: l.createdBy, createdAt: l.createdAt.toISOString() });
+  }
+  const tasks = await executor.select({ t: studioObservationTasks, assigneeEmail: users.email }).from(studioObservationTasks)
+    .leftJoin(users, eq(users.id, studioObservationTasks.assigneeId)).where(inArray(studioObservationTasks.observationId, ids))
+    .orderBy(asc(studioObservationTasks.createdAt), asc(studioObservationTasks.id));
+  const taskJournal = new Map<string, StudioObservationTacheEventView[]>();
+  if (tasks.length) {
+    const tev = await executor.select({ e: studioObservationTaskEvents, actorEmail: users.email }).from(studioObservationTaskEvents)
+      .leftJoin(users, eq(users.id, studioObservationTaskEvents.actorId)).where(inArray(studioObservationTaskEvents.taskId, tasks.map((x) => x.t.id)))
+      .orderBy(asc(studioObservationTaskEvents.taskId), asc(studioObservationTaskEvents.seq));
+    for (const { e, actorEmail } of tev) {
+      push(taskJournal, e.taskId, { seq: e.seq, action: e.action, fromStatut: e.fromStatut, toStatut: e.toStatut, actorId: e.actorId, actorEmail: actorEmail ?? "", assigneeId: e.assigneeId, note: e.note, at: e.at.toISOString() });
+    }
+  }
+  const decisions = new Map<string, StudioObservationDecisionView[]>();
+  for (const { d, actorEmail } of await executor.select({ d: studioObservationDecisions, actorEmail: users.email }).from(studioObservationDecisions)
+    .leftJoin(users, eq(users.id, studioObservationDecisions.actorId)).where(inArray(studioObservationDecisions.observationId, ids))
+    .orderBy(asc(studioObservationDecisions.observationId), asc(studioObservationDecisions.seq))) {
+    push(decisions, d.observationId, { seq: d.seq, nature: d.nature, portee: d.portee, texte: d.texte, actorId: d.actorId, actorEmail: actorEmail ?? "", actorRole: d.actorRole, revisionId: d.revisionId, at: d.at.toISOString() });
+  }
+  const taches = new Map<string, StudioObservationTacheView[]>();
+  for (const { o, authorId } of obs) {
+    const acteur = acteurDe(lecteur, o.responsableId, authorId);
+    const ouverte = !lecteur.archived && o.statut !== "cloturee";
+    for (const { t, assigneeEmail } of tasks.filter((x) => x.t.observationId === o.commentId)) {
+      const at = { estProprietaire: acteur.estProprietaire, peutEcrire: acteur.peutEcrire, estResponsableObservation: acteur.estResponsable, estChargee: t.assigneeId === lecteur.actorId, estCreateur: t.createdBy === lecteur.actorId };
+      push(taches, o.commentId, {
+        id: t.id, libelle: t.libelle, assigneeId: t.assigneeId, assigneeEmail: assigneeEmail ?? "", echeance: t.echeance, statut: t.statut, createdBy: t.createdBy,
+        createdAt: t.createdAt.toISOString(), updatedAt: t.updatedAt.toISOString(), journal: taskJournal.get(t.id) ?? [], assignedToMe: at.estChargee,
+        possibles: ouverte ? TACHE_TRANSITIONS.filter((a) => tacheAutorisee(a, at) && tacheApres(t.statut, a) !== null) : [],
+      });
+    }
+  }
   for (const { o, responsableEmail, authorId } of obs) {
     const acteur = acteurDe(lecteur, o.responsableId, authorId);
+    const ouverte = !lecteur.archived && o.statut !== "cloturee";
     result.set(o.commentId, {
       id: o.commentId, authorId, responsableId: o.responsableId, responsableEmail: responsableEmail ?? "", echeance: o.echeance, statut: o.statut,
       correctionRevisionId: o.correctionRevisionId, recontroleRevisionId: o.recontroleRevisionId, createdBy: o.createdBy,
       createdAt: o.createdAt.toISOString(), updatedAt: o.updatedAt.toISOString(), journal: journal.get(o.commentId) ?? [],
       assignedToMe: acteur.estResponsable,
       possibles: lecteur.archived ? [] : OBSERVATION_TRANSITIONS.filter((a) => acteurAutorise(a, acteur) && statutApres(o.statut, a) !== null),
+      vue: o.vueMode ? { mode: o.vueMode, ref: o.vueRef } : null,
+      liens: liens.get(o.commentId) ?? [], taches: taches.get(o.commentId) ?? [], decisions: decisions.get(o.commentId) ?? [],
+      peut: {
+        lier: ouverte && peutLier(acteur), creerTache: ouverte && peutCreerTache({ ...acteur, estResponsableObservation: acteur.estResponsable }),
+        proposer: ouverte && acteur.peutEcrire, decider: ouverte && acteur.estProprietaire,
+      },
     });
   }
   return result;
 }
 
 const noteSchema = z.string().trim().min(1).max(2000).optional();
+/** Contexte de vue cité à l'ouverture (E.2-02) : mode de l'espace de travail et repère facultatif dans ce mode. */
+export const studioObservationVueSchema = z.object({
+  mode: z.enum(VUE_MODES as [StudioObservationVueMode, ...StudioObservationVueMode[]]),
+  ref: z.string().trim().min(1).max(256).optional(),
+}).strict();
 export const studioObservationSchema = z.object({
   responsableId: z.string().min(1).max(256),
   echeance: z.string().refine(echeanceValide, "Échéance attendue au format AAAA-MM-JJ.").nullable().optional(),
   note: noteSchema,
+  vue: studioObservationVueSchema.optional(),
   requestId: studioIdentifierSchema.optional(),
 }).strict();
 export type StudioObservationInput = z.infer<typeof studioObservationSchema>;
@@ -232,8 +342,8 @@ export const studioObservationTransitionSchema = z.object({
 });
 export type StudioObservationTransitionInput = z.infer<typeof studioObservationTransitionSchema>;
 
-const hashOf = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
-const conflict = (error: string, message: string, extra: Record<string, unknown> = {}): never => { throw new StudioRequestError(409, { error, message, ...extra }); };
+export const hashOf = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
+export const conflict = (error: string, message: string, extra: Record<string, unknown> = {}): never => { throw new StudioRequestError(409, { error, message, ...extra }); };
 
 /** Rejeu d'un passage déjà journalisé avec ce `requestId` : même auteur et même contenu, sinon 409 request_conflict. */
 async function replayedEvent(tx: Pick<typeof db, "select">, observationId: string, requestId: string | undefined, actorId: string, hash: string): Promise<boolean> {
@@ -256,7 +366,8 @@ async function observationResult(variantId: string, commentId: string, lecteur: 
  * déjà promu → 409 already_observation (sauf rejeu du même requestId).
  */
 export async function createStudioObservation(scope: StudioScope, actorId: string, commentId: string, input: StudioObservationInput): Promise<StudioObservationView & { replayed: boolean }> {
-  const hash = hashOf({ action: "ouvrir", responsableId: input.responsableId, echeance: input.echeance ?? null, note: input.note ?? null });
+  // La vue n'entre dans l'empreinte que citée : un rejeu d'une promotion antérieure à ce champ garde son empreinte.
+  const hash = hashOf({ action: "ouvrir", responsableId: input.responsableId, echeance: input.echeance ?? null, note: input.note ?? null, ...(input.vue ? { vue: input.vue } : {}) });
   const { variantId, lecteur, replayed } = await db.transaction(async (tx) => {
     const variant = await lockedVariant(tx, scope, actorId, "comment");
     const lecteur = variant.lecteur;
@@ -274,20 +385,26 @@ export async function createStudioObservation(scope: StudioScope, actorId: strin
     const [existing] = await tx.select({ id: studioObservations.commentId }).from(studioObservations).where(eq(studioObservations.commentId, comment.id)).limit(1);
     if (existing) conflict("already_observation", "Ce commentaire est déjà une observation.");
     const responsable = await assignable(tx, variant.access, input.responsableId);
-    await tx.insert(studioObservations).values({
-      commentId: comment.id, variantId: variant.id, responsableId: responsable, echeance: input.echeance ?? null, statut: "ouverte", createdBy: actorId,
-    });
-    await tx.insert(studioObservationEvents).values({
-      id: newId("studio_observation_event"), observationId: comment.id, seq: 1, action: "ouvrir", fromStatut: null, toStatut: "ouverte", actorId,
-      revisionId: null, responsableId: responsable, note: input.note ?? null, requestId: input.requestId ?? null, payloadHash: hash,
-    });
+    await insertObservationRows(tx, { commentId: comment.id, variantId: variant.id, responsableId: responsable, input, actorId, hash });
     return done(false);
   });
   return observationResult(variantId, commentId, lecteur, replayed);
 }
 
+/** Ouverture : ligne d'observation (statut « ouverte », vue citée) et premier passage du journal (`seq` 1). */
+export async function insertObservationRows(tx: Tx, o: { commentId: string; variantId: string; responsableId: string; input: Pick<StudioObservationInput, "echeance" | "note" | "vue" | "requestId">; actorId: string; hash: string }): Promise<void> {
+  await tx.insert(studioObservations).values({
+    commentId: o.commentId, variantId: o.variantId, responsableId: o.responsableId, echeance: o.input.echeance ?? null, statut: "ouverte", createdBy: o.actorId,
+    vueMode: o.input.vue?.mode ?? null, vueRef: o.input.vue?.ref ?? null,
+  });
+  await tx.insert(studioObservationEvents).values({
+    id: newId("studio_observation_event"), observationId: o.commentId, seq: 1, action: "ouvrir", fromStatut: null, toStatut: "ouverte", actorId: o.actorId,
+    revisionId: null, responsableId: o.responsableId, note: o.input.note ?? null, requestId: o.input.requestId ?? null, payloadHash: o.hash,
+  });
+}
+
 /** Responsable désignable maintenant (propriétaire ou éditeur, relu sous le verrou du projet), sinon 400. */
-async function assignable(tx: Tx, project: AccessibleProject, userId: string): Promise<string> {
+export async function assignable(tx: Tx, project: AccessibleProject, userId: string): Promise<string> {
   const p = (await participants(project, tx)).find((x) => x.id === userId);
   if (!p?.assignable) {
     throw new StudioRequestError(400, { error: "invalid_input", code: "responsable_invalide", message: "Le responsable doit être le propriétaire ou un éditeur du projet." });
@@ -296,7 +413,7 @@ async function assignable(tx: Tx, project: AccessibleProject, userId: string): P
 }
 
 /** Révisions de la variante : identifiant → parent (chaîne immuable). */
-async function revisionParents(tx: Pick<typeof db, "select">, variantId: string): Promise<Map<string, string | null>> {
+export async function revisionParents(tx: Pick<typeof db, "select">, variantId: string): Promise<Map<string, string | null>> {
   const rows = await tx.select({ id: studioRevisions.id, parent: studioRevisions.parentRevisionId }).from(studioRevisions).where(eq(studioRevisions.variantId, variantId));
   return new Map(rows.map((r) => [r.id, r.parent]));
 }
@@ -341,11 +458,26 @@ export async function transitionStudioObservation(scope: StudioScope, actorId: s
         conflict("revision_anterieure", action === "recontroler" ? "Le recontrôle porte sur la révision corrigée ou une révision postérieure." : "La correction porte sur la révision observée ou une révision postérieure.", { revisionId, plancher });
       }
     }
+    // Décision de clôture (E.2-04) : motivée, sans tâche restant à faire (tâches lues sous le verrou de l'observation,
+    // que toute écriture de tâche prend aussi).
+    if (action === "cloturer") {
+      const ouvertes = await tx.select({ id: studioObservationTasks.id }).from(studioObservationTasks)
+        .where(and(eq(studioObservationTasks.observationId, o.commentId), eq(studioObservationTasks.statut, "a-faire")));
+      const refus = refusCloture(input.note, ouvertes.length);
+      if (refus) throw new StudioRequestError(refus.status, refus.body);
+    }
     // Sous le verrou de la ligne d'observation : `seq` suivant sans trou ni doublon.
     const [last] = await tx.select({ seq: studioObservationEvents.seq }).from(studioObservationEvents)
       .where(eq(studioObservationEvents.observationId, o.commentId)).orderBy(desc(studioObservationEvents.seq)).limit(1);
     const seq = (last?.seq ?? 0) + 1;
     const now = new Date();
+    if (action === "cloturer") {
+      // La décision de clôture est consignée à part des passages : qui (propriétaire), quand, motif, révision recontrôlée.
+      await insertDecision(tx, {
+        observationId: o.commentId, nature: "decision", portee: "cloture", texte: input.note!, actorId, actorRole: "proprietaire",
+        revisionId: o.recontroleRevisionId, requestId: null, payloadHash: null, at: now,
+      });
+    }
     await tx.update(studioObservations).set({
       statut: vers!, updatedAt: now,
       ...(action === "corriger" ? { correctionRevisionId: revisionId, recontroleRevisionId: null } : {}),
@@ -359,6 +491,21 @@ export async function transitionStudioObservation(scope: StudioScope, actorId: s
     return done(false);
   });
   return observationResult(variantId, commentId, lecteur, replayed);
+}
+
+/** Décision ou proposition ajoutée au journal des décisions, `seq` suivant (sous le verrou de l'observation). */
+export async function insertDecision(tx: Tx, d: {
+  observationId: string; nature: StudioObservationDecisionNature; portee: StudioObservationDecisionPortee; texte: string; actorId: string;
+  actorRole: "proprietaire" | "editeur"; revisionId: string | null; requestId: string | null; payloadHash: string | null; at?: Date;
+}): Promise<number> {
+  const [last] = await tx.select({ seq: studioObservationDecisions.seq }).from(studioObservationDecisions)
+    .where(eq(studioObservationDecisions.observationId, d.observationId)).orderBy(desc(studioObservationDecisions.seq)).limit(1);
+  const seq = (last?.seq ?? 0) + 1;
+  await tx.insert(studioObservationDecisions).values({
+    id: newId("studio_observation_decision"), observationId: d.observationId, seq, nature: d.nature, portee: d.portee, texte: d.texte, actorId: d.actorId,
+    actorRole: d.actorRole, revisionId: d.revisionId, requestId: d.requestId, payloadHash: d.payloadHash, ...(d.at ? { at: d.at } : {}),
+  });
+  return seq;
 }
 
 // ---------------------------------------------------------------------------

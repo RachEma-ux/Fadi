@@ -9,12 +9,14 @@ import { createHash } from 'node:crypto';
 
 export const TABLES = Object.freeze([
   'studio_studies', 'studio_variants', 'studio_revisions', 'studio_comments', 'studio_observations',
-  'studio_observation_events', 'studio_study_steps', 'studio_requirement_sets', 'studio_requirement_checks', 'studio_quantity_adjustments', 'volumes', 'studio_publications', 'studio_publication_events',
+  'studio_observation_events', 'studio_observation_links', 'studio_observation_tasks', 'studio_observation_task_events', 'studio_observation_decisions',
+  'studio_study_steps', 'studio_requirement_sets', 'studio_requirement_checks', 'studio_quantity_adjustments', 'volumes', 'studio_publications', 'studio_publication_events',
   'project_members', 'studio_tool_preferences',
 ]);
 export const KEYS = Object.freeze({
   studio_studies: ['id'], studio_variants: ['id'], studio_revisions: ['id'], studio_comments: ['id'],
-  studio_observations: ['comment_id'], studio_observation_events: ['id'], studio_study_steps: ['study_id', 'step_number'],
+  studio_observations: ['comment_id'], studio_observation_events: ['id'], studio_observation_links: ['id'], studio_observation_tasks: ['id'],
+  studio_observation_task_events: ['id'], studio_observation_decisions: ['id'], studio_study_steps: ['study_id', 'step_number'],
   studio_requirement_sets: ['id'], studio_requirement_checks: ['id'], studio_quantity_adjustments: ['id'],
   volumes: ['id'], studio_publications: ['id'], studio_publication_events: ['id'], project_members: ['project_id', 'user_id'],
   studio_tool_preferences: ['user_id'],
@@ -22,6 +24,8 @@ export const KEYS = Object.freeze({
 export const USER_COLUMNS = Object.freeze({
   studio_studies: [], studio_variants: [], studio_revisions: ['author_id'], studio_comments: ['author_id'],
   studio_observations: ['responsable_id', 'created_by'], studio_observation_events: ['actor_id', 'responsable_id'],
+  studio_observation_links: ['created_by'], studio_observation_tasks: ['assignee_id', 'created_by'], studio_observation_task_events: ['actor_id', 'assignee_id'],
+  studio_observation_decisions: ['actor_id'],
   studio_study_steps: ['created_by'], studio_requirement_sets: ['author_id'], studio_requirement_checks: ['author_id'], studio_quantity_adjustments: ['author_id'], volumes: [], studio_publications: ['approved_by', 'diffused_by', 'created_by', 'replaced_by'],
   // `invited_by` est l'adresse de l'invitant (texte), comparée telle quelle.
   studio_publication_events: ['author_id'], project_members: ['user_id'], studio_tool_preferences: ['user_id'],
@@ -31,6 +35,9 @@ export const PROJECT_COLUMNS = Object.freeze({ studio_studies: ['project_id'], s
 export const IMMUTABILITY_TRIGGERS = Object.freeze([
   { table: 'studio_revisions', trigger: 'studio_revisions_no_update' },
   { table: 'studio_observation_events', trigger: 'studio_observation_events_no_update' },
+  { table: 'studio_observation_links', trigger: 'studio_observation_links_no_update' },
+  { table: 'studio_observation_task_events', trigger: 'studio_observation_task_events_no_update' },
+  { table: 'studio_observation_decisions', trigger: 'studio_observation_decisions_no_update' },
   { table: 'studio_publication_events', trigger: 'studio_publication_events_no_update' },
   { table: 'studio_publication_events', trigger: 'studio_publication_events_no_delete' },
   { table: 'studio_publications', trigger: 'studio_publications_no_delete' },

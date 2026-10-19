@@ -59,6 +59,7 @@ import { commandesAplatir, commandesExtrusion, formesSelectionnees, valeursDe, V
 import { cartoucheInitial } from "./feuille/feuille-ui";
 import { revisionDocument } from "./taches/empreinte";
 import { PanneauCommentaires } from "./commentaires/PanneauCommentaires";
+import { PanneauObservations } from "./observations/PanneauObservations";
 import { PanneauQuantites } from "./quantites/PanneauQuantites";
 import { PanneauExigences } from "./exigences/PanneauExigences";
 import { cibleSelection } from "./exigences/exigences-ui";
@@ -532,7 +533,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       calques={<PanneauCalques doc={drawing} actif={actif?.id ?? STUDIO_DEFAULT_LAYER_ID} modifiable={writable} nom={nomCalque} nomRef={nomRef} surActif={id => setCalqueActif(id)} surNom={setNomCalque} surReglage={setLayer} surRenommer={renameLayer} />} /></div>
     <ListeElements doc={drawing} selection={selectionIds} modifiable={writable} surSelection={select} surSupprimer={() => runTool("studio.dessin.supprimer")} />
     {commentaires && <div id="studio-commentaires"><PanneauCommentaires projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} revision={context.revision.document} dessin={drawing}
-      selection={selectionIds} canWrite={!historical && context.canWrite} surSelection={ids => { setTool("studio.dessin.selection"); cancelTrace(); select(ids); }} /></div>}
+      selection={selectionIds} canWrite={!historical && context.canWrite} surSelection={ids => { setTool("studio.dessin.selection"); cancelTrace(); select(ids); }} />
+      <PanneauObservations projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} revision={context.revision.document} selection={selectionIds}
+        vue={vue3d ? "3d" : "plan"} surSelection={ids => { setTool("studio.dessin.selection"); cancelTrace(); select(ids); }} /></div>}
     <RevisionsPanel projectId={projectId} studyId={studyId} variantId={variantId} headRevisionId={context.variant.headRevisionId} shownRevisionId={context.revision.id} />
     {drawing && <PanneauQuantites projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} doc={drawing} lectureSeule={!writable || historical} nonEnregistre={commands.length > 0} />}
     {drawing && <PanneauExigences projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} doc={drawing} cibleId={cibleSelection(drawing, selectionArchi, selectionIds)}

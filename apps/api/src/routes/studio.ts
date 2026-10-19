@@ -10,6 +10,7 @@ import { listStudiesOfStep, listStudioStudySteps, setStudioStudySteps, studioStu
 import { renameStudioStudy, renameStudioVariant, setStudioStudyArchived, setStudioVariantArchived, studioRenameSchema } from "../lib/studio-variantes.js";
 import { studioExigencesRouter } from "./studio-exigences.js";
 import { studioPublicationsRouter } from "./studio-publications.js";
+import { studioObservationsRouter } from "./studio-observations.js";
 import { studioPreferencesRouter } from "./studio-preferences.js";
 import { studioQuantitesRouter } from "./studio-quantites.js";
 
@@ -227,3 +228,5 @@ studioRouter.use(studioPublicationsRouter);
 studioRouter.use(studioExigencesRouter);
 // Ajustements manuels du métré, journal versionné par variante (E.3-05) : `routes/studio-quantites.ts`.
 studioRouter.use(studioQuantitesRouter);
+// Observations : identité réemployée, contexte, tâches, décisions, clôture (E.2-01 à E.2-05) : `routes/studio-observations.ts`.
+studioRouter.use(studioObservationsRouter);
