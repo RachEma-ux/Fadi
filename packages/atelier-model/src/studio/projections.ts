@@ -82,6 +82,8 @@ interface Cles {
   calques: string;
   apparences: Map<string, string>;
   versions: Map<StudioProjection, string>;
+  /** Clé de morceau de maillage (mémorisée à la première lecture) : clé de projection et visibilité effective du calque. */
+  morceaux?: Map<string, string>;
 }
 const CLES = new WeakMap<StudioDocument, Cles>();
 
@@ -115,6 +117,24 @@ const LECTURES: Record<StudioProjection, ReadonlySet<string>> = {
   "maillage-3d": new Set(["objet", "solide", "architecture"]),
   "plan-2d": new Set(["objet", "cote", "annotation", "architecture"]),
 };
+
+/**
+ * Clé du morceau de maillage de chaque objet maillable : clé de projection plus visibilité effective de son calque (une
+ * ouverture suit le calque de son mur). Un morceau ne lit que la visibilité des calques : un morceau d'une autre
+ * visibilité n'est donc jamais repris, quel que soit le cache fourni.
+ */
+function clesMorceaux(doc: StudioDocument): Map<string, string> {
+  const c = cles(doc);
+  if (c.morceaux) return c.morceaux;
+  const m = new Map<string, string>();
+  const poser = (id: string, layerId: string | undefined) => m.set(id, `${c.projection.get(id)}|${studioLayerState(doc, layerId)?.visible ? "v" : "m"}`);
+  for (const o of doc.objects) poser(o.id, o.layerId);
+  for (const o of doc.solides ?? []) poser(o.id, o.layerId);
+  const murs = new Map((doc.architecture ?? []).flatMap((x) => (x.type === "wall" ? [[x.id, x.layerId] as const] : [])));
+  for (const o of doc.architecture ?? []) poser(o.id, o.type === "wall" ? o.layerId : murs.get(o.hostId));
+  c.morceaux = m;
+  return m;
+}
 
 /** Clé de projection de chaque objet projeté (objets, cotes, annotations, solides, murs, ouvertures), par identifiant. */
 export function studioClesProjection(doc: StudioDocument): ReadonlyMap<string, string> {
@@ -210,7 +230,7 @@ function* calquesDesObjets(d: StudioDocument): Generator<[string, string]> {
 }
 
 /**
- * Morceau du maillage 3D d'un objet, rangé sous sa clé de projection : son volume (`solid`), son contour plat
+ * Morceau du maillage 3D d'un objet, rangé sous sa clé (clé de projection et visibilité effective de son calque) : son volume (`solid`), son contour plat
  * (`outline`), son solide libre (`freeSolid`) ou son élément architectural (`architecture`) ; `hidden` s'il est sur un
  * calque masqué ; rien s'il n'a aucun volume rendu.
  */
@@ -239,7 +259,7 @@ export function studioMaillerObjets(document: StudioDocument, ids: readonly stri
   const doc = ids === null ? validateStudioDocument(document) : document;
   const voulus = ids === null ? null : new Set(ids);
   const veut = (id: string) => voulus === null || voulus.has(id);
-  const cle = cles(doc).projection;
+  const cle = clesMorceaux(doc);
   const visible = (l: string | undefined) => !!studioLayerState(doc, l)?.visible;
   const out: StudioMorceauMaillage[] = [];
   for (const o of doc.objects) {
@@ -276,10 +296,11 @@ export function studioMaillerObjets(document: StudioDocument, ids: readonly stri
 /**
  * Maillage du document assemblé depuis ses morceaux, dans l'ordre du document : identique à `studioMesh3d(doc)` pour un
  * document validé dont chaque objet maillable a son morceau. Un morceau manquant ou d'une autre clé est remaillé sur
- * place (l'exactitude ne dépend jamais du cache).
+ * place : la clé d'un morceau couvre son contenu, ses dépendances (mur ↔ ouvertures) et la visibilité effective de son
+ * calque, donc l'exactitude ne dépend jamais du cache fourni (un cache périmé, même après un calque masqué, est sûr).
  */
 export function studioAssemblerMaillage(doc: StudioDocument, morceaux: ReadonlyMap<string, StudioMorceauMaillage>): StudioMesh3d {
-  const cle = cles(doc).projection;
+  const cle = clesMorceaux(doc);
   const manquants: string[] = [];
   const maillables = [...doc.objects, ...(doc.solides ?? []), ...(doc.architecture ?? [])];
   for (const o of maillables) if (morceaux.get(o.id)?.cle !== cle.get(o.id)) manquants.push(o.id);

@@ -44,6 +44,7 @@ import { MESSAGES_TACHE } from "../taches/messages";
 import { compteGpu, libererObjet, vider } from "./ressources-gpu";
 import { cleAspect, objetsVolume, preparer, SceneRendu, type AspectVolume, type DonneesLot, type EntreeRendu, type GeometrieObjet } from "./scene-rendu";
 import { designer, type Impact } from "./picking";
+import { architectureDesignable, estOuverture, solidesDesignables } from "./designation";
 import { Icon } from "../../../components/Icon";
 import { estSelectionnable } from "../planche2d/calques";
 import { LOCALE } from "../../../lib/i18n";
@@ -406,21 +407,14 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     }
     // Désignation (C.2-02, C.2-03) : objet seul par son identifiant, lot par sa table (triangle → identifiant) ; un
     // identifiant absent du document courant (objet supprimé, maillage affiché encore antérieur) laisse passer l'objet
-    // derrière, jamais un identifiant périmé.
-    const solidesCourants = new Set((doc.solides ?? []).map((x) => x.id));
-    const touche = designer(rayon.intersectObjects(m.libres.children, false).filter((h) => h.object instanceof THREE.Mesh).map(impact), (id) => solidesCourants.has(id));
+    // derrière, jamais un identifiant périmé. Seuls les objets d'un calque affiché et déverrouillé se désignent
+    // (`designation.ts`, comme sur la planche 2D) : solides libres, murs, ouvertures (calque de leur mur).
+    const touche = designer(rayon.intersectObjects(m.libres.children, false).filter((h) => h.object instanceof THREE.Mesh).map(impact), solidesDesignables(doc));
     // Mur ou ouverture (A.4) : l'ouverture, boîte du vide, l'emporte sur le mur qu'elle traverse.
-    // Seuls les murs et ouvertures d'un calque affiché et déverrouillé se désignent (comme sur la planche 2D).
-    const archiCourante = new Map((doc.architecture ?? []).map((x) => [x.id, x]));
-    const affiches = new Set((mesh.architecture ?? []).map((a) => a.id));
-    const designable = (id: string) => {
-      const a = archiCourante.get(id);
-      if (!a || !affiches.has(id)) return false;
-      const hote = a.type === "wall" ? a : archiCourante.get(a.hostId);
-      return hote?.type === "wall" && estSelectionnable(doc, hote.layerId);
-    };
+    const designable = architectureDesignable(doc, new Set((mesh.architecture ?? []).map((a) => a.id)));
+    const ouverture = estOuverture(doc);
     const impacts = rayon.intersectObjects(m.architecture.children, false).filter((h) => h.object instanceof THREE.Mesh).map(impact);
-    const archi = designer(impacts, (id) => designable(id) && archiCourante.get(id)?.type === "opening") ?? designer(impacts, designable);
+    const archi = designer(impacts, (id) => designable(id) && ouverture(id)) ?? designer(impacts, designable);
     if (archi && (!touche || archi.distance <= touche.distance)) { surSelectionArchitecture?.(archi.id); return; }
     surSelection?.(touche?.id ?? null);
   };

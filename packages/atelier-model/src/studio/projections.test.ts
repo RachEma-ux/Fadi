@@ -111,6 +111,20 @@ describe("Maillage par morceaux : identique à studioMesh3d", () => {
     expect(studioAssemblerMaillage(d, new Map())).toEqual(studioMesh3d(d));
   });
 
+  it("cache périmé après un calque masqué ou réaffiché : l'assemblage direct rend quand même le maillage complet", () => {
+    const d = modele();
+    const perime = new Map(studioMaillerObjets(d, null).map((m) => [m.id, m]));
+    const masque = avec(d, { toolId: "studio.calque.modifier", params: { id: "murs", name: "Murs", visible: false, locked: false } });
+    // Aucune invalidation consultée : seul l'assemblage décide de ce qu'il reprend du cache.
+    expect(studioAssemblerMaillage(masque, perime)).toEqual(studioMesh3d(masque));
+    expect(studioMesh3d(masque).architecture!.map((a) => a.id)).toEqual(["m2", "o3"]);
+    const perimeMasque = new Map(studioMaillerObjets(masque, null).map((m) => [m.id, m]));
+    const reaffiche = avec(masque, { toolId: "studio.calque.modifier", params: { id: "murs", name: "Murs", visible: true, locked: false } });
+    expect(studioAssemblerMaillage(reaffiche, perimeMasque)).toEqual(studioMesh3d(reaffiche));
+    // La clé des morceaux des calques inchangés ne change pas : ils restent repris.
+    expect(studioMaillerObjets(masque, null).find((m) => m.id === "m2")!.cle).toBe(perime.get("m2")!.cle);
+  });
+
   it("propriété : une suite aléatoire de lots, maillage incrémental toujours égal au maillage complet", () => {
     for (let graine = 1; graine <= 12; graine++) {
       const r = hasard(graine);
