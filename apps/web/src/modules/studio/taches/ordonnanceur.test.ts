@@ -144,6 +144,31 @@ describe("ordonnanceur : empreinte, remplacement et résultat périmé (D.2-03)"
     expect(a.tache.etat).toBe("cancelled");
   });
 
+  it("édition continue : une tâche remplacée en file garde sa place, le fond ne s'affame pas (maillage puis métré)", async () => {
+    const { ord, appels } = banc(); // un seul emplacement de fond
+    ord.soumettre(dem("maillage", "fond", "1"));
+    ord.soumettre(dem("quantites", "fond", "1"));
+    // Chaque frappe soumet d'abord le maillage, puis le métré.
+    for (let r = 2; r <= 6; r++) { ord.soumettre(dem("maillage", "fond", String(r))); ord.soumettre(dem("quantites", "fond", String(r))); }
+    expect(appels.map((a) => a.e.nature)).toEqual(["maillage"]);
+    appels[0]!.resoudre("périmé");
+    await flush();
+    // Le métré, en file depuis le début, passe avant le maillage soumis plus tard.
+    expect(appels.map((a) => `${a.e.nature}@${(a.e.charge as { revision: string }).revision}`)).toEqual(["maillage@1", "quantites@6"]);
+    appels[1]!.resoudre("q");
+    await flush();
+    expect(appels[2]!.e.nature).toBe("maillage");
+  });
+
+  it("reprise après plantage : l'exécuteur est prévenu (son échec n'est pas compté deux fois)", async () => {
+    const { ord, appels } = banc();
+    ord.soumettre(dem("m", "fond"));
+    expect(appels[0]!.e.reprise).toBe(false);
+    appels[0]!.rejeter(new ErreurTache("plantage"));
+    await flush();
+    expect(appels[1]!.e.reprise).toBe(true);
+  });
+
   it("signal déjà abandonné : annulée tout de suite, rien n'est exécuté", async () => {
     const { ord, appels } = banc();
     const c = new AbortController(); c.abort();

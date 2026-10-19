@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { appliquerAjustementsQuantites, newStudioDocument, quantitesStudio, type StudioDocument } from "@parcours/atelier-model";
 import { BOM, celluleCsv, csvQuantites, ENTETES_CSV, nomFichierCsvQuantites, nombreCsv } from "./csv-quantites";
-import { filtrerQuantites, FILTRE_INITIAL, lireNombre } from "./quantites-vue";
+import { filtrerQuantites, FILTRE_INITIAL, lienCsvExportable, lireNombre } from "./quantites-vue";
 
 const doc: StudioDocument = {
   ...newStudioDocument("étude 1"),
@@ -88,5 +88,8 @@ describe("filtres et saisie du métré", () => {
     expect(lireNombre("-1")).toBeNull();
     expect(lireNombre("abc")).toBeNull();
     expect(lireNombre("")).toBeNull();
+    // « Exporter en CSV » : désactivé (pas d'adresse) tant que le métré ne correspond pas à la révision affichée.
+    expect(lienCsvExportable("blob:csv", false)).toBeNull();
+    expect(lienCsvExportable("blob:csv", true)).toBe("blob:csv");
   });
 });
