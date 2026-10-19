@@ -496,6 +496,114 @@ if (PHASE === 'reopen') {
   check('désarchivage de variante : commande acceptée', (await owner('POST', `${variantPath(dv)}/commands`, cmd(onDerived.body?.revision?.id, [{ toolId: 'studio.dessin.deplacer', params: { id: 'cv-rect', dx: 1, dy: 0 } }]))).status === 200);
   check('cycle de vie : rien n\'a été supprimé (historique de la dérivée complet)', (await owner('GET', `${variantPath(dv)}/revisions`)).body?.revisions?.length === 3);
 
+  // Observations (E.2), étude dédiée : un commentaire du lecteur devient une observation confiée à l'éditeur ;
+  // cycle complet ouverte → corrigée → recontrôlée → clôturée → rouverte → corrigée, refus par rôle, passages
+  // invalides 409, révision antérieure 409, journal ordonné, notifications, archive 409. Bloc à part : noms locaux.
+  {
+  const obStudy = await owner('POST', root, { name: 'Étude observations' });
+  const ob = { projectId, studyId: obStudy.body?.study?.id, variantId: obStudy.body?.variant?.id };
+  const obPath = variantPath(ob);
+  const r0 = obStudy.body?.revision?.id;
+  const o1 = await owner('POST', `${obPath}/commands`, cmd(r0, [{ toolId: 'studio.dessin.ligne', params: { id: 'ob-ligne', type: 'line', start: { x: 0, y: 0 }, end: { x: 2, y: 0 } } }]));
+  const o2 = await owner('POST', `${obPath}/commands`, cmd(o1.body?.revision?.id, [{ toolId: 'studio.dessin.deplacer', params: { id: 'ob-ligne', dx: 1, dy: 0 } }]));
+  const o3 = await editor('POST', `${obPath}/commands`, cmd(o2.body?.revision?.id, [{ toolId: 'studio.dessin.deplacer', params: { id: 'ob-ligne', dx: 0, dy: 1 } }]));
+  const [r1, r2, r3] = [o1, o2, o3].map((x) => x.body?.revision?.id);
+  check('observations : étude et trois révisions', obStudy.status === 201 && o1.status === 200 && o2.status === 200 && o3.status === 200, `${obStudy.status} ${o1.status} ${o2.status} ${o3.status}`);
+  const obComments = `${obPath}/comments`;
+  const remark = await reader('POST', obComments, { body: 'La ligne déborde du cadre', objectIds: ['ob-ligne'], revisionId: r1 });
+  const ownerReply = await owner('POST', obComments, { body: 'Vu', parentId: remark.body?.id });
+  const ownerRemark = await owner('POST', obComments, { body: 'Remarque du propriétaire' });
+  check('observations : commentaire du lecteur ancré à r1, réponse et second commentaire', remark.status === 201 && remark.body.observation === null && ownerReply.status === 201 && ownerRemark.status === 201);
+  const listed = await owner('GET', obComments);
+  const who = (email) => listed.body?.participants?.find((p) => p.email === email);
+  const ids0 = { owner: who(ownerCredentials.email)?.id, editor: who(editorCredentials.email)?.id, reader: who(readerCredentials.email)?.id };
+  check('observations : participants = propriétaire et éditeur assignables, lecteur non', listed.status === 200 && who(ownerCredentials.email)?.role === 'proprietaire' && who(ownerCredentials.email)?.assignable === true
+    && who(editorCredentials.email)?.assignable === true && who(readerCredentials.email)?.assignable === false && listed.body.me?.id === ids0.owner && listed.body.archived === false, JSON.stringify(listed.body?.participants));
+  const promote = (client, commentId, body) => client('POST', `${obComments}/${commentId}/observation`, body);
+  const pass = (client, body, commentId = remark.body?.id) => client('POST', `${obComments}/${commentId}/observation/transitions`, body);
+  check('promotion : un éditeur ni auteur ni propriétaire → 403', (await promote(editor, remark.body?.id, { responsableId: ids0.editor })).status === 403);
+  const badResp = await promote(reader, remark.body?.id, { responsableId: ids0.reader });
+  check('promotion : responsable lecteur → 400 responsable_invalide', badResp.status === 400 && badResp.body?.code === 'responsable_invalide', JSON.stringify(badResp.body));
+  check('promotion : responsable hors du projet → 400', (await promote(reader, remark.body?.id, { responsableId: 'utilisateur-inconnu' })).body?.code === 'responsable_invalide');
+  check('promotion : échéance invalide ou champ inconnu → 400', (await promote(reader, remark.body?.id, { responsableId: ids0.editor, echeance: '2026-02-30' })).status === 400 && (await promote(reader, remark.body?.id, { responsableId: ids0.editor, statut: 'cloturee' })).status === 400);
+  check('promotion : une réponse ne devient pas observation → 400', (await promote(owner, ownerReply.body?.id, { responsableId: ids0.editor })).body?.code === 'reponse');
+  check('promotion : commentaire inconnu → 404, autre compte 403/404, anonyme 401', (await promote(owner, 'studio_comment_inconnu', { responsableId: ids0.editor })).status === 404
+    && [403, 404].includes((await promote(foreign, remark.body?.id, { responsableId: ids0.editor })).status) && (await promote(anonymous, remark.body?.id, { responsableId: ids0.editor })).status === 401);
+  const promoRequest = `observation-${randomUUID()}`;
+  const promoBody = { responsableId: ids0.editor, echeance: '2026-12-31', note: 'À reprendre avant le rendu', requestId: promoRequest };
+  const promoted = await promote(reader, remark.body?.id, promoBody);
+  check('promotion par l\'auteur lecteur (201) : même identifiant, ouverte, responsable éditeur, échéance, journal ouvrir',
+    promoted.status === 201 && promoted.body.id === remark.body?.id && promoted.body.statut === 'ouverte' && promoted.body.responsableId === ids0.editor && promoted.body.echeance === '2026-12-31'
+    && promoted.body.journal.length === 1 && promoted.body.journal[0].action === 'ouvrir' && promoted.body.journal[0].actorId === ids0.reader && promoted.body.journal[0].note === 'À reprendre avant le rendu'
+    && JSON.stringify(promoted.body.possibles) === '[]' && promoted.body.replayed === false, JSON.stringify(promoted.body));
+  const promotedAgain = await promote(reader, remark.body?.id, promoBody);
+  check('promotion rejouée (même requestId) : 201, replayed=true, rien de doublé', promotedAgain.status === 201 && promotedAgain.body.replayed === true && promotedAgain.headers.get('idempotent-replayed') === 'true' && promotedAgain.body.journal.length === 1);
+  check('promotion : même requestId, autre contenu → 409 request_conflict', (await promote(reader, remark.body?.id, { ...promoBody, echeance: '2027-01-01' })).body?.error === 'request_conflict');
+  check('promotion : commentaire déjà observation → 409 already_observation', (await promote(owner, remark.body?.id, { responsableId: ids0.owner })).body?.error === 'already_observation');
+  check('observation : son commentaire ne se supprime plus → 409 observation', (await reader('DELETE', `${obComments}/${remark.body?.id}`)).body?.error === 'observation');
+  const editorView = (await editor('GET', obComments)).body?.comments?.find((c) => c.id === remark.body?.id)?.observation;
+  check('observation relue par le responsable : assignedToMe, passage possible « corriger » seul', editorView?.assignedToMe === true && JSON.stringify(editorView?.possibles) === '["corriger"]', JSON.stringify(editorView));
+
+  // Passages invalides et refus par rôle.
+  const invalid = await pass(owner, { action: 'cloturer' });
+  check('passage invalide : clôturer une observation ouverte → 409 invalid_transition', invalid.status === 409 && invalid.body?.error === 'invalid_transition' && invalid.body?.statut === 'ouverte', JSON.stringify(invalid.body));
+  check('passage invalide : recontrôler ou rouvrir une observation ouverte → 409', (await pass(reader, { action: 'recontroler', revisionId: r2 })).body?.error === 'invalid_transition' && (await pass(reader, { action: 'rouvrir' })).body?.error === 'invalid_transition');
+  check('rôle : corriger par le propriétaire ou l\'auteur (non responsables) → 403', (await pass(owner, { action: 'corriger', revisionId: r2 })).status === 403 && (await pass(reader, { action: 'corriger', revisionId: r2 })).status === 403);
+  check('passage : action inconnue ou champ inconnu → 400', (await pass(editor, { action: 'valider' })).status === 400 && (await pass(editor, { action: 'corriger', revisionId: r2, statut: 'x' })).status === 400);
+  check('passage : commentaire sans observation → 404, autre compte 403/404, anonyme 401', (await pass(owner, { action: 'cloturer' }, ownerRemark.body?.id)).status === 404
+    && [403, 404].includes((await pass(foreign, { action: 'corriger', revisionId: r2 })).status) && (await pass(anonymous, { action: 'corriger', revisionId: r2 })).status === 401);
+  check('corriger sans révision → 400 revision_exigee', (await pass(editor, { action: 'corriger' })).body?.code === 'revision_exigee');
+  check('corriger avec la révision d\'une autre variante → 404', (await pass(editor, { action: 'corriger', revisionId: head.body.revision.id })).status === 404);
+  const before = await pass(editor, { action: 'corriger', revisionId: r0 });
+  check('corriger contre une révision antérieure à la révision observée → 409 revision_anterieure', before.status === 409 && before.body?.error === 'revision_anterieure', JSON.stringify(before.body));
+  const fixRequest = `correction-${randomUUID()}`;
+  const fixed = await pass(editor, { action: 'corriger', revisionId: r2, note: 'Ligne déplacée', requestId: fixRequest });
+  check('corriger par le responsable (200) : corrigée, révision de correction r2', fixed.status === 200 && fixed.body.statut === 'corrigee' && fixed.body.correctionRevisionId === r2 && fixed.body.journal.length === 2, JSON.stringify(fixed.body));
+  const fixedAgain = await pass(editor, { action: 'corriger', revisionId: r2, note: 'Ligne déplacée', requestId: fixRequest });
+  check('corriger rejoué (même requestId) : 200 replayed, journal inchangé', fixedAgain.status === 200 && fixedAgain.body.replayed === true && fixedAgain.body.journal.length === 2);
+  check('recontrôler par le responsable (ni auteur ni propriétaire) → 403', (await pass(editor, { action: 'recontroler', revisionId: r3 })).status === 403);
+  const early = await pass(reader, { action: 'recontroler', revisionId: r1 });
+  check('recontrôler contre une révision antérieure à la correction → 409 revision_anterieure', early.status === 409 && early.body?.error === 'revision_anterieure');
+  check('recontrôler sans révision → 400 revision_exigee', (await pass(reader, { action: 'recontroler' })).body?.code === 'revision_exigee');
+  const rechecked = await pass(reader, { action: 'recontroler', revisionId: r3, note: 'Conforme en r3' });
+  check('recontrôler par l\'auteur contre r3 ≥ r2 (200) : recontrôlée', rechecked.status === 200 && rechecked.body.statut === 'recontrolee' && rechecked.body.recontroleRevisionId === r3);
+  check('clôturer par l\'auteur ou le responsable → 403 (propriétaire seul)', (await pass(reader, { action: 'cloturer' })).status === 403 && (await pass(editor, { action: 'cloturer' })).status === 403);
+  const closed = await pass(owner, { action: 'cloturer', note: 'Clos' });
+  check('clôturer par le propriétaire (200) : clôturée', closed.status === 200 && closed.body.statut === 'cloturee' && JSON.stringify(closed.body.possibles) === '["rouvrir"]', JSON.stringify(closed.body));
+  check('rouvrir par le responsable → 403', (await pass(editor, { action: 'rouvrir' })).status === 403);
+  const reopened = await pass(reader, { action: 'rouvrir', note: 'Le défaut réapparaît' });
+  check('rouvrir par l\'auteur (200) : rouverte', reopened.status === 200 && reopened.body.statut === 'rouverte');
+  const refixed = await pass(editor, { action: 'corriger', revisionId: r3 });
+  check('rouverte → corrigée : nouvelle correction r3, recontrôle effacé', refixed.status === 200 && refixed.body.statut === 'corrigee' && refixed.body.correctionRevisionId === r3 && refixed.body.recontroleRevisionId === null);
+  const journal = refixed.body?.journal ?? [];
+  check('journal : six passages dans l\'ordre, seq 1..6, statuts enchaînés, révisions et auteurs consignés',
+    JSON.stringify(journal.map((e) => e.seq)) === '[1,2,3,4,5,6]' && JSON.stringify(journal.map((e) => e.action)) === '["ouvrir","corriger","recontroler","cloturer","rouvrir","corriger"]'
+    && journal.every((e, i) => i === 0 ? e.fromStatut === null : e.fromStatut === journal[i - 1].toStatut)
+    && JSON.stringify(journal.map((e) => e.actorId)) === JSON.stringify([ids0.reader, ids0.editor, ids0.reader, ids0.owner, ids0.reader, ids0.editor])
+    && JSON.stringify(journal.map((e) => e.revisionId)) === JSON.stringify([null, r2, r3, null, null, r3]) && journal.every((e) => !Number.isNaN(Date.parse(e.at)))
+    && journal.every((e, i) => i === 0 || e.at >= journal[i - 1].at), JSON.stringify(journal));
+  const relu = (await reader('GET', obComments)).body?.comments?.find((c) => c.id === remark.body?.id)?.observation;
+  check('journal relu par la liste identique à la réponse du dernier passage', canonical(relu?.journal) === canonical(journal));
+
+  // Notifications : responsable et auteur avertis des passages des autres, pas le propriétaire ni un tiers.
+  const obNotes = async (client) => ((await client('GET', '/notifications')).body?.items ?? []).filter((n) => String(n.id).startsWith('observation-studio:'));
+  const editorNotes = await obNotes(editor), readerNotes2 = await obNotes(reader);
+  check('notifications : le responsable reçoit ouverture, recontrôle, clôture et réouverture (4), liées à la variante',
+    editorNotes.length === 4 && editorNotes.every((n) => n.kind === 'commentaire-studio' && n.studio?.variantId === ob.variantId && n.studio?.studyId === ob.studyId), JSON.stringify(editorNotes.map((n) => n.text)));
+  check('notifications : l\'auteur reçoit les deux corrections et la clôture (3)', readerNotes2.length === 3 && readerNotes2.some((n) => n.text.includes('a clôturé l’observation')), JSON.stringify(readerNotes2.map((n) => n.text)));
+  check('notifications : le propriétaire (ni responsable ni auteur) et un tiers ne reçoivent rien', (await obNotes(owner)).length === 0 && (await obNotes(foreign)).length === 0);
+
+  // Archive : lecture conservée, promotion et passages refusés 409.
+  check('archive : étude archivée', (await owner('POST', `${root}/${ob.studyId}/archive`)).body?.study?.archived === true);
+  const archivedList = await editor('GET', obComments);
+  const archivedObs = archivedList.body?.comments?.find((c) => c.id === remark.body?.id)?.observation;
+  check('archive : observations lisibles, archived=true, aucun passage possible', archivedList.status === 200 && archivedList.body.archived === true && archivedObs?.statut === 'corrigee' && JSON.stringify(archivedObs?.possibles) === '[]');
+  check('archive : passage refusé 409 archived', (await pass(reader, { action: 'recontroler', revisionId: r3 })).body?.error === 'archived');
+  check('archive : promotion refusée 409 archived', (await promote(owner, ownerRemark.body?.id, { responsableId: ids0.owner })).body?.error === 'archived');
+  check('archive : journal inchangé', (await editor('GET', obComments)).body?.comments?.find((c) => c.id === remark.body?.id)?.observation?.journal?.length === 6);
+  check('désarchivage : passage de nouveau permis', (await owner('POST', `${root}/${ob.studyId}/unarchive`)).status === 200 && (await pass(reader, { action: 'recontroler', revisionId: r3 })).body?.statut === 'recontrolee');
+  }
+
   if (STATE) writeFileSync(STATE, JSON.stringify({ ...s, commentIds, linkedSteps, owner: ownerCredentials, headRevisionId: head.body.revision.id, initialRevisionId: created.body.revision.id, documentSha256: digest(head.body.revision.document), variantIds: expectedOrder, revisionIds: ids, exportStudy: { studyId: ev.studyId, variantId: ev.variantId, svgSha256: digest(svg.text) } }), { mode: 0o600 });
 }
 if (failures) { console.log(`${failures} vérification(s) en échec`); process.exit(1); }

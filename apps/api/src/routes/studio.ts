@@ -4,7 +4,7 @@ import { z } from "zod";
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioStudy, STUDIO_EXPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
-import { createStudioComment, deleteStudioComment, listStudioComments, studioCommentSchema } from "../lib/studio-commentaires.js";
+import { createStudioComment, createStudioObservation, deleteStudioComment, listStudioComments, studioCommentSchema, studioObservationSchema, studioObservationTransitionSchema, transitionStudioObservation } from "../lib/studio-commentaires.js";
 import { listStudiesOfStep, listStudioStudySteps, setStudioStudySteps, studioStudyStepsSchema } from "../lib/studio-liens.js";
 import { renameStudioStudy, renameStudioVariant, setStudioStudyArchived, setStudioVariantArchived, studioRenameSchema } from "../lib/studio-variantes.js";
 import { studioPublicationsRouter } from "./studio-publications.js";
@@ -161,6 +161,25 @@ studioRouter.post(commentsPath, endpoint(async (req, res) => {
 studioRouter.delete(`${commentsPath}/:commentId`, endpoint(async (req, res) => {
   await deleteStudioComment(scope(req), req.user!.id, req.params["commentId"] as string);
   res.status(204).end();
+}));
+/**
+ * Observations (E.2) : un commentaire d'origine devient une observation (POST …/observation, 201, auteur ou
+ * propriétaire) ; passages corriger / recontroler / cloturer / rouvrir (POST …/observation/transitions, 200),
+ * journalisés. Rôles et refus : `lib/studio-observations.ts`. Idempotents par `requestId`.
+ */
+studioRouter.post(`${commentsPath}/:commentId/observation`, endpoint(async (req, res) => {
+  const parsed = studioObservationSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
+  const observation = await createStudioObservation(scope(req), req.user!.id, req.params["commentId"] as string, parsed.data);
+  res.setHeader("Idempotent-Replayed", String(observation.replayed));
+  res.status(201).json(observation);
+}));
+studioRouter.post(`${commentsPath}/:commentId/observation/transitions`, endpoint(async (req, res) => {
+  const parsed = studioObservationTransitionSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
+  const observation = await transitionStudioObservation(scope(req), req.user!.id, req.params["commentId"] as string, parsed.data);
+  res.setHeader("Idempotent-Replayed", String(observation.replayed));
+  res.json(observation);
 }));
 /**
  * Étapes du Parcours rattachées à une étude : lecture `read`, remplacement de la liste complète avec `modify`
