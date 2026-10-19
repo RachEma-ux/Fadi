@@ -11,6 +11,7 @@ import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
 import { stampStepFingerprints } from "../lib/project-archive.js";
 import { applyExampleDecisions } from "../lib/example-decisions.js";
+import { estProjetExempleP118, installerExempleStudio } from "../lib/studio-exemple.js";
 import {
   PARCOURS_STEPS,
   PROGRAMME_REPARTITION,
@@ -166,6 +167,18 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
 
     return project;
   });
+
+  // Étude exemple de Studio (P.118) : installée APRÈS la validation de l'import, par le contrat de commandes Studio
+  // (ses propres transactions, `lib/studio-exemple.ts`). Choix le plus sûr : un échec n'annule pas l'import (le projet
+  // reste valable et complet) ; il est journalisé, et le propriétaire relance l'installation depuis la page Studio du
+  // projet (`POST /projects/:id/studio/exemple`, idempotente, reprend où elle s'est arrêtée).
+  if (estProjetExempleP118(exampleId)) {
+    try { await installerExempleStudio(id, req.user!.id); }
+    catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(JSON.stringify({ level: "warn", message: `exemple Studio non installé pour ${id} : ${error instanceof Error ? error.message : String(error)}` }));
+    }
+  }
 
   res.status(201).json(created);
 });

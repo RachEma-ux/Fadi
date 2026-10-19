@@ -366,6 +366,11 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/studio-navigation.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de l'étude exemple Studio P.118 — installée à l'import, 6 variantes par niveau, murs et ouvertures = convertisseur, bouton sur un projet sans étude, idempotence, archive (apps/web/e2e/studio-exemple-p118.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-exemple-p118.mjs 2>&1 | tee -a e2e.log
       - name: Recette des domaines Studio — quatre domaines de la référence, planches seulement dans Dessin et modélisation, domaine et planche dans l'adresse (proposition I.4-03), clavier, téléphone (apps/web/e2e/studio-domaines.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |

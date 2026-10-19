@@ -990,6 +990,8 @@ export const api = {
   /** Études du projet ; `archives` : archivées comprises. */
   studioStudies: (p: string, archives?: boolean) => request<{ studies: StudioStudySummary[] }>(`${studioRoot(p)}${studioArchives(archives)}`),
   createStudioStudy: (p: string, name: string, requestId?: string) => request<StudioContext>(studioRoot(p), { method: "POST", body: JSON.stringify(requestId ? { name, requestId } : { name }) }),
+  /** Étude exemple d'un projet issu de l'exemple P.118 (propriétaire) : créée ou reprise (`created`), sinon renvoyée telle quelle. */
+  installStudioExample: (p: string) => request<{ created: boolean; etude: StudioStudyDetail }>(`/projects/${encodeURIComponent(p)}/studio/exemple`, { method: "POST" }),
   studioStudy: (p: string, s: string, archives?: boolean) => request<StudioStudyDetail>(`${studioStudyPath(p, s)}${studioArchives(archives)}`),
   studioVariants: (p: string, s: string, archives?: boolean) => request<{ variants: StudioVariantSummary[] }>(`${studioStudyPath(p, s)}/variants${studioArchives(archives)}`),
   /** Nouvelle variante : document vide, ou copie d'une révision d'une variante de l'étude (`from`, dérivation). */
