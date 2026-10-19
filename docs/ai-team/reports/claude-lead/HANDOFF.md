@@ -30,6 +30,9 @@ le registre.
 | #194 | Recette Docker du profil Studio V1 (`studio-v1-functional.py`) en CI sur les PR Studio et sur `main`. |
 | #195 | Vagues 1–2 et découpage S0 du modèle Studio (noyau, objets, commandes, registre, exporteurs). |
 | #196 | Vague 3 + E2b : transformations, accrochages, annotations, hors ligne (brouillons par utilisateur, comparer-puis-écrire entre onglets), accessibilité clavier, paquets diffusés dans Documents. |
+| #197 | Vague 4 : murs et ouvertures A.4 (REC-A-03 : 3,600 / 0,420 / 3,180 m³), rapport de fidélité des exports E.6-03, index spatial C.1. |
+| #198 | Vague 5 : exigences BIM E.1, visualisation E.5, approbation E.4, tâches de fond D.1–D.3, frontières X.4, sauvegarde et restauration Studio R.1 / R.2 (archives signées). |
+| #199 | Vague 6 : couches du modèle sans exception et contrôle des cycles, propriétés déclarées en IFC, recalage des comptes dans les archives signées, service worker par build. |
 | #171, #174–#177, #142, #143, #152 | Correctifs Atelier et Planche, frontières Studio ↔ Atelier, garde-fous d'architecture, gabarit pleine largeur. Remis à jour et fusionnés par l'équipe 6. |
 
 PR fermées :
@@ -65,12 +68,19 @@ par motif (`pkill -f`), seulement par son PID.
 
 ## Prochaines actions
 
-1. Vague 4 (branche locale `lead-vague4`, PR à ouvrir après #196) : murs et ouvertures (A.4, REC-A-03 vérifié :
-   3,600 m³ brut, 0,420 déduit, 3,180 net), rapport de fidélité des exports (E.6-03), index spatial de la planche (C.1).
-   Revue indépendante faite ; correctifs en cours (validation incrémentale de l'architecture, transformations des murs
-   depuis l'interface, ouverture refusée sur mur masqué, sélection du mur du côté de son corps).
-2. Restent connus : repli du service worker sur un cache périmé, ajustements de métré (E.3-05) non persistés.
-3. DB-3 reste fermé ; exiger le job Studio dans la protection de branche demande l'administrateur du dépôt.
-4. Recette locale dans un worktree sous `.claude/` : copier `apps/web/dist` hors de ce dossier pour `WEB_DIST`
-   (`send` refuse les chemins qui traversent un dossier caché). Une base neuve demande `CREATE EXTENSION postgis` par
-   le superutilisateur avant `db:migrate`.
+1. Vague 7 en cours (équipes C2 et Q1, à partir de `main` 3716e06) :
+   - C.2 : projections versionnées, invalidation minimale par objet et dépendants, tables de picking.
+   - E.3-05 : ajustements de métré persistés et versionnés.
+   - Retrait du chemin indirect `exigences` → `composition`.
+2. Restent connus :
+   - les anciennes clés de GlobalId IFC (`project`, `pset|object|…`) peuvent entrer en collision avec un identifiant d'objet. Les corriger changerait tous les GlobalId déjà exportés.
+3. Hors mandat, sur demande explicite du propriétaire :
+   - DB-3 ;
+   - déploiement en production. `ARCHIVE_SIGNING_KEY` doit alors venir d'un gestionnaire de secrets ; à défaut, la clé propre à la base est lisible par quiconque lit la base ;
+   - F.2 / F.3, IA et MCP (DEC-15) ;
+   - protection de branche, à faire par l'administrateur du dépôt.
+4. Recette locale :
+   - un worktree sous `.claude/` exige `WEB_DIST` hors de ce dossier : `send` refuse les chemins qui traversent un dossier caché ;
+   - une base neuve demande `CREATE EXTENSION postgis` par le superutilisateur ;
+   - la recette de restauration demande `DATABASE_URL_A`, `DATABASE_URL_B`, `RESTORE_PORT` et `WEB_DIST` ;
+   - vérifier qu'aucune ancienne API n'occupe le port avant de lancer les recettes.
