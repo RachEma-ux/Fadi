@@ -5,16 +5,36 @@
 @media(max-width:900px){.studio-shell,.studio-workspace{padding:20px 14px}.studio-shell .studio-workspace{padding:0}.studio-editor{grid-template-columns:1fr}.studio-properties{border-left:0;border-top:1px solid #d5e1e4}.studio-properties fieldset{display:grid;grid-template-columns:1fr 1fr;gap:10px}.studio-properties fieldset button{grid-column:1/-1}.studio-note{display:none}}@media(max-width:540px){.studio-heading{align-items:flex-start}.studio-badge{padding:8px;font-size:11px}.studio-tools-spacer{display:none}.studio-sheet{padding:8px}.studio-context{gap:10px}.studio-context [role=status]{width:100%;margin:0}.studio-welcome{padding:18px}.studio-revisions{padding:14px}}
 /* Étapes du Parcours liées à une étude (choix multiple). */
 .studio-etapes-liste{list-style:none;padding:0;margin:8px 0 14px;display:grid;gap:2px}.studio-etapes-liste label{flex-direction:row;align-items:center;gap:8px;margin:0;min-height:32px}.studio-etapes-liste input{width:auto;margin:0}.studio-etapes-liste small{color:#4f666d}[data-studio-etapes-liees] fieldset{border:0;padding:0;margin:0}[data-studio-etapes-liees] legend{font-weight:600;font-size:17px}
-/* Espace de travail compact : la planche commence au-dessus de la ligne de flottaison (1440×1000, 1280×720, 390×844). */
-.studio-shell:has(.studio-workspace){padding-top:10px;padding-bottom:20px}.studio-shell:has(.studio-workspace) .studio-fil{margin-bottom:6px}.studio-workspace .studio-heading{margin-bottom:4px;gap:8px 12px}.studio-workspace .studio-heading>div{display:flex;align-items:baseline;gap:2px 12px;flex-wrap:wrap;min-width:0;flex:1}.studio-workspace .studio-heading h1{font-size:clamp(18px,2vw,24px);letter-spacing:-.3px;margin:0}.studio-workspace .studio-heading p{margin:0;font-size:12px}.studio-workspace .studio-badge{padding:4px 10px;font-size:12px}.studio-workspace .studio-context{padding:2px 0;gap:4px 16px}.studio-workspace .studio-context button{min-height:32px;padding:4px 10px;font-size:12px}.studio-workspace .studio-sheet{padding:10px}.studio-workspace .studio-sheet-caption{padding:0 0 6px;gap:8px}
-@media(max-width:540px){.studio-shell:has(.studio-workspace){padding:6px 10px 16px}.studio-workspace .studio-heading .studio-eyebrow,.studio-workspace .studio-badge{display:none}.studio-workspace .studio-heading p{font-size:11px}.studio-workspace .studio-context{flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;gap:12px}.studio-workspace .studio-context [role=status]{width:auto;margin-left:auto}.studio-workspace .studio-sheet{padding:6px}.studio-workspace .studio-sheet-caption{font-size:10px;letter-spacing:0;padding-bottom:4px}.studio-shell:has(.studio-workspace) .studio-fil{flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;margin-bottom:4px;font-size:12px}.studio-shell .studio-workspace{display:flex;flex-direction:column}.studio-workspace>.studio-undo-scope{order:1}.studio-workspace>.studio-editor~*{order:2}}
+/* Espace de travail d'une variante : toute la largeur de l'enveloppe de Fadi, gouttières faibles (aucune limite de 1600 px). */
+.studio-shell:has(.studio-workspace){max-width:none;padding:6px 8px 8px}.studio-shell:has(.studio-workspace) .studio-fil{margin-bottom:4px;font-size:12px}.studio-shell .studio-workspace{max-width:none;padding:0}
+@media(max-width:540px){.studio-shell:has(.studio-workspace){padding:4px 6px 12px}}
+/* Lanceur, page d'un projet : en-tête de page avec l'action principale, listes compactes. */
+.studio-bouton-principal,:is(.studio-shell,.studio-workspace) button.studio-bouton-principal{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:9px 16px;border-radius:8px;background:#1a6268;color:#fff;border:1px solid #1a6268;font-weight:600;text-decoration:none;box-sizing:border-box}
+:is(.studio-shell,.studio-workspace) button.studio-bouton-principal:hover:not(:disabled){background:#174f54;color:#fff}
+.studio-page-entete{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}.studio-page-entete h1{margin:0}
+.studio-lanceur{display:grid;gap:14px;max-width:760px}.studio-lanceur h2{font-size:17px;margin:0 0 8px}
+.studio-lanceur-attente{padding:24px}
+.studio-lanceur-reprise{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px;background:#fff;border:1px solid #dde6e8;border-radius:12px}
+.studio-nouvelle-etude{display:grid;gap:8px;padding:14px;background:#fff;border:1px solid #dde6e8;border-radius:12px;max-width:760px}.studio-nouvelle-etude h2{font-size:17px;margin:0}
+.studio-nouvelle-etude fieldset{border:0;margin:0;padding:0;display:grid;gap:4px}.studio-nouvelle-etude legend{font-size:13px;font-weight:600;margin-bottom:4px}
+.studio-choix-projet{max-height:220px;overflow:auto}
+:is(.studio-shell,.studio-workspace) label.studio-choix{flex-direction:row;align-items:center;gap:8px;margin:0;min-height:36px;padding:2px 6px;border-radius:6px}
+:is(.studio-shell,.studio-workspace) label.studio-choix input{width:20px;height:20px;margin:0}
+.studio-choix-planche{grid-auto-flow:column;justify-content:start}
+.studio-nouvelle-etude-actions{display:flex;gap:8px;flex-wrap:wrap}
+.studio-nouvelle-etude label[for=studio-etude-nom]{margin:0}
+.studio-lanceur-section{padding:0 2px}.studio-lanceur-liste{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.studio-lanceur-liste a{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;padding:10px 12px;background:#f5f8f8;border:1px solid #dae6e6;border-radius:8px;color:inherit;text-decoration:none}
+.studio-lanceur-liste a:hover{border-color:var(--studio-accent);background:#edf5f3}
+.studio-page .studio-projects li>a.studio-bouton-principal{align-self:flex-start;padding:8px 14px;height:auto;flex-direction:row;background:#1a6268;color:#fff}
+@media(max-width:540px){.studio-choix-planche{grid-auto-flow:row}}
 
-/* Aperçu des domaines et des outils (page d'un projet) */
-.studio-apercu-domaines { margin: 16px 0; border: 1px solid var(--line, #d9e1dc); border-radius: 10px; padding: 12px 14px; background: var(--surface, #fff); }
-.studio-apercu-domaines > summary { cursor: pointer; font-weight: 600; min-height: 24px; }
-.studio-apercu-grille { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-.studio-apercu-grille > li { border: 1px solid var(--line, #d9e1dc); border-radius: 8px; padding: 10px 12px; }
-.studio-apercu-grille h3, [data-studio-apercu-domaine="a-definir"] h3 { font-size: 1rem; margin: 0 0 4px; }
-.studio-apercu-liste h4 { font-size: .85rem; margin: 8px 0 4px; }
-.studio-apercu-liste ul { display: flex; flex-wrap: wrap; gap: 4px 6px; list-style: none; padding: 0; margin: 0; }
-.studio-apercu-liste li { font-size: .8rem; padding: 2px 8px; border-radius: 999px; background: var(--chip, #eef3ef); }
+
+/* Page d'un projet : études en liste (une ligne par étude : carte, ouverture de l'espace, actions). */
+.studio-page .studio-projects{grid-template-columns:minmax(0,1fr);gap:8px;margin:14px 0}
+.studio-page .studio-projects>li{display:flex!important;flex-direction:row!important;flex-wrap:wrap;align-items:center;gap:8px!important;padding:8px;border:1px solid #dae6e6;border-radius:10px;background:#f5f8f8}
+.studio-page .studio-projects>li>a:first-child{flex:1 1 260px;flex-direction:row;align-items:baseline;gap:12px;padding:8px 10px;border:0;background:transparent;height:auto}
+.studio-page .studio-projects>li>div{flex:none}
+.studio-page .studio-projects>li>form{flex:1 1 100%}
+.studio-welcome.studio-page{padding:18px 20px}
+.studio-page-entete h1{font-size:clamp(20px,2.4vw,28px)}

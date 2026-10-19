@@ -12,13 +12,18 @@
  * Domaine et planche actifs (I.4-03, ROUTE-06, NAV-005 ; **proposé, non livré comme contrat** : le contrat d'URL
  * reste « À définir », décision du maître d'ouvrage attendue ; cette lecture rétrocompatible peut être changée ou
  * retirée par cette décision) : sur une variante, `domaine=dessin|bim|visualisation|documentation` (une seule fois) désigne le
- * domaine actif ; `planche=2d|3d` (une seule fois) la planche active, admise **seulement avec `domaine=dessin`**
+ * domaine actif ; `planche=2d|3d|double` (une seule fois) la planche active — ou la Double vue, Planche 2D et Planche 3D
+ * côte à côte —, admise **seulement avec `domaine=dessin`**
  * (ADR-STUDIO-NAV-01 §1 : les planches n'existent que dans Dessin et modélisation). Paramètres facultatifs et
  * additifs : une adresse sans eux s'ouvre comme avant (Dessin et modélisation, Planche 2D) ; une valeur inconnue,
  * répétée ou une planche hors de `dessin` donne l'adresse non reconnue. Ils se combinent avec `revision` et
  * `commentaires` ; le contexte projet → étude → variante reste dans le chemin. Ils ne transmettent aucun droit.
+ *
+ * Accueil (`/studio`) : aucune redirection ; la dernière variante ouverte y est seulement SUGGÉRÉE (« Reprendre »,
+ * vérifiée par le serveur). `domaine=…` (une fois) désigne le domaine dans lequel l'accueil ouvre la variante reprise,
+ * choisie ou créée (menu « Studio » de la barre latérale, sans variante affichée).
  */
-import { estDomaineStudio, estPlancheStudio, type DomaineStudio, type PlancheStudio } from "./domaines/domaines";
+import { estDomaineStudio, estModePlanche, type DomaineStudio, type ModePlanche } from "./domaines/definitions";
 
 export const RACINE_STUDIO = "/studio";
 
@@ -26,11 +31,11 @@ export const RACINE_STUDIO = "/studio";
 export interface CoteComparaisonStudio { variantId: string; revisionId: string | null }
 
 export type RouteStudio =
-  | { vue: "accueil" }
+  | { vue: "accueil"; domaine: DomaineStudio | null }
   | { vue: "projet"; projectId: string; archives: boolean }
   | { vue: "etude"; projectId: string; studyId: string; archives: boolean }
   | { vue: "comparer"; projectId: string; studyId: string; de: CoteComparaisonStudio | null; a: CoteComparaisonStudio | null }
-  | { vue: "variante"; projectId: string; studyId: string; variantId: string; revisionId: string | null; commentaires: boolean; domaine: DomaineStudio | null; planche: PlancheStudio | null }
+  | { vue: "variante"; projectId: string; studyId: string; variantId: string; revisionId: string | null; commentaires: boolean; domaine: DomaineStudio | null; planche: ModePlanche | null }
   | { vue: "inconnue"; chemin: string };
 
 /** Identifiant opaque admis dans un segment ou un paramètre : jamais interprété comme un nom de fichier. */
@@ -57,7 +62,14 @@ export function lireRouteStudio(pathname: string, search = ""): RouteStudio {
   const params = new URLSearchParams(search);
   const cles = [...params.keys()];
   const reste = pathname.slice(RACINE_STUDIO.length).replace(/\/+$/, "");
-  if (reste === "") return cles.length ? inconnue : { vue: "accueil" };
+  if (reste === "") {
+    if (cles.some((k) => k !== "domaine")) return inconnue;
+    const domaines = params.getAll("domaine");
+    if (domaines.length > 1) return inconnue;
+    const domaine = domaines[0] ?? null;
+    if (domaine !== null && !estDomaineStudio(domaine)) return inconnue;
+    return { vue: "accueil", domaine };
+  }
   let ids: string[];
   try {
     ids = reste.slice(1).split("/").map((x) => decodeURIComponent(x));
@@ -93,7 +105,7 @@ export function lireRouteStudio(pathname: string, search = ""): RouteStudio {
   if (domaines.length > 1 || planches.length > 1) return inconnue;
   const domaine = domaines[0] ?? null, planche = planches[0] ?? null;
   if (domaine !== null && !estDomaineStudio(domaine)) return inconnue;
-  if (planche !== null && (!estPlancheStudio(planche) || domaine !== "dessin")) return inconnue;
+  if (planche !== null && (!estModePlanche(planche) || domaine !== "dessin")) return inconnue;
   return { vue: "variante", projectId, studyId, variantId, revisionId, commentaires: commentaires.length === 1, domaine, planche };
 }
 
@@ -120,6 +132,11 @@ export function cheminComparaisonStudio(projectId: string, studyId: string, de: 
 
 const avecArchives = (base: string, archives: boolean) => (archives ? `${base}?archives=${ARCHIVES_AFFICHEES}` : base);
 
+/** Accueil de Studio, avec le domaine à ouvrir (facultatif). */
+export function cheminAccueilStudio(options: { domaine?: DomaineStudio | null } = {}): string {
+  return options.domaine ? `${RACINE_STUDIO}?domaine=${encodeURIComponent(options.domaine)}` : RACINE_STUDIO;
+}
+
 export const cheminProjetStudio = (projectId: string, options: { archives?: boolean } = {}): string =>
   avecArchives(`${RACINE_STUDIO}/projets/${encodeURIComponent(projectId)}`, !!options.archives);
 
@@ -127,7 +144,7 @@ export const cheminEtudeStudio = (projectId: string, studyId: string, options: {
   avecArchives(`${cheminProjetStudio(projectId)}/etudes/${encodeURIComponent(studyId)}`, !!options.archives);
 
 /** Domaine et planche d'une adresse de variante (I.4-03, proposition). */
-export interface OptionsDomaineVariante { domaine?: DomaineStudio | null; planche?: PlancheStudio | null }
+export interface OptionsDomaineVariante { domaine?: DomaineStudio | null; planche?: ModePlanche | null }
 
 /** `planche` n'est écrite qu'avec `domaine: "dessin"` (sinon ignorée : une planche n'existe que dans ce domaine). */
 export function cheminVarianteStudio(projectId: string, studyId: string, variantId: string, revisionId: string | null = null, options: { commentaires?: boolean } & OptionsDomaineVariante = {}): string {

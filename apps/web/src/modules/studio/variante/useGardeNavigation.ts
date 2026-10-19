@@ -15,7 +15,16 @@ export function lienQuitteLaVariante(link: Pick<Element, "hasAttribute" | "getAt
   return !link.hasAttribute("download") && !link.hasAttribute(ATTRIBUT_SANS_GARDE) && !link.getAttribute("href")?.startsWith("#");
 }
 
-export function useGardeNavigation(dirty: MutableRefObject<boolean>) {
+/**
+ * Retour / avance qui reste dans la même variante et la même révision (changement de domaine, de planche ou des
+ * commentaires : seule la requête change, hors `revision`) : la variante n'est ni quittée ni déchargée, aucune
+ * confirmation n'est demandée (NAV-007). `variante` : chemin de la variante ; `revision` : révision affichée (`null` : tête).
+ */
+export function resteDansLaVariante(adresse: { pathname: string; search: string }, variante: { chemin: string; revision: string | null }): boolean {
+  return adresse.pathname.replace(/\/+$/, "") === variante.chemin && new URLSearchParams(adresse.search).get("revision") === variante.revision;
+}
+
+export function useGardeNavigation(dirty: MutableRefObject<boolean>, variante?: { chemin: string; revision: string | null }) {
   useEffect(() => {
     const unload = (e: BeforeUnloadEvent) => { if (dirty.current) { e.preventDefault(); e.returnValue = ""; } };
     // Un lien de téléchargement (export) ou un changement de domaine ne quitte pas l'étude : aucune confirmation.
@@ -24,10 +33,11 @@ export function useGardeNavigation(dirty: MutableRefObject<boolean>) {
     const back = (e: PopStateEvent) => {
       const target = Number(e.state?.idx ?? currentIndex);
       if (restoring) { restoring = false; e.stopImmediatePropagation(); return; }
+      if (variante && resteDansLaVariante(window.location, variante)) { currentIndex = target; return; }
       if (dirty.current && !window.confirm(warning())) { e.stopImmediatePropagation(); restoring = true; history.go(currentIndex - target || 1); }
       else currentIndex = target;
     };
     window.addEventListener("popstate", back, true); window.addEventListener("beforeunload", unload); document.addEventListener("click", click, true);
     return () => { window.removeEventListener("popstate", back, true); window.removeEventListener("beforeunload", unload); document.removeEventListener("click", click, true); };
-  }, [dirty]);
+  }, [dirty, variante?.chemin, variante?.revision]);
 }

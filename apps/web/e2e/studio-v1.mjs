@@ -246,12 +246,16 @@ async function exerciseStudioUI(page, projectId) {
   page.on('request', (r) => { if (r.method() === 'POST' && /\/studio\/studies\/[^/]+\/variants\/[^/]+\/commands$/.test(new URL(r.url()).pathname)) commandRequests.push(r); });
   await page.getByRole('link', { name: 'Studio', exact: true }).click();
   await page.waitForURL((u) => u.pathname === '/studio');
-  await page.getByRole('link', { name: /Studio QA synthetic project/ }).click();
+  // Accueil Studio : choix explicite du projet, puis ses études ; « Nouvelle étude » en tête de la page du projet.
+  await page.getByRole('button', { name: /Studio QA synthetic project/ }).click();
+  await page.locator(`[data-studio-lanceur-etudes="${projectId}"] [data-studio-gerer-etudes]`).click();
   await page.waitForURL((u) => u.pathname === `/studio/projets/${projectId}`);
+  await page.locator('.studio-page-entete [data-studio-nouvelle-etude]').click();
   await page.getByLabel('Nom de l’étude', { exact: true }).fill('Étude QA Studio');
-  await page.getByRole('button', { name: 'Créer l’étude et sa variante initiale', exact: true }).click();
+  await page.getByRole('button', { name: 'Ouvrir', exact: true }).click();
   await page.getByRole('heading', { name: 'Étude QA Studio', exact: true }).waitFor();
-  const tools = page.getByRole('toolbar', { name: 'Outils de dessin' });
+  // Palette de Dessin et modélisation et barre de l'espace (Annuler, Rétablir, Enregistrer, Outils, palette).
+  const tools = page.locator('[role="toolbar"][aria-label="Outils de dessin"], [role="toolbar"][data-studio-actions-espace]');
   const props = page.getByRole('complementary', { name: 'Propriétés du dessin' });
   // Barre compacte : un outil rangé dans le menu « ▾ » de sa famille (ou « Plus ») est montré en ouvrant ce menu d'abord.
   const tool = (name) => ({ click: async () => {

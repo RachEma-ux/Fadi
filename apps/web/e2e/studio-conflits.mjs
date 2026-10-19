@@ -56,7 +56,8 @@ async function session(nom) {
 
 /** Barre compacte : un bouton rangé dans un menu « ▾ » est atteint en ouvrant ce menu, comme le ferait l'utilisateur. */
 async function cliquer(page, nom) {
-  const barre = page.getByRole("toolbar", { name: "Outils de dessin" });
+  // Palette du domaine et barre de l'espace (Annuler, Rétablir, Enregistrer, Outils, palette).
+  const barre = page.locator('[role="toolbar"][aria-label="Outils de dessin"], [role="toolbar"][data-studio-actions-espace]');
   const el = barre.locator(`:is(button,a)[aria-label="${nom}"]`).first();
   await el.waitFor({ state: "attached" });
   if (!(await el.isVisible())) {
@@ -75,7 +76,7 @@ async function rectangle(page, x, y) {
 const enregistrer = (page) => cliquer(page, "Enregistrer");
 const reessayer = (page) => cliquer(page, "Réessayer la sauvegarde");
 const enregistre = (page) => page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
-const enAttente = async (page) => Number(/\((\d+) commande\(s\) en attente\)/.exec((await page.locator("[data-studio-annuler-portee]").textContent()) ?? "")?.[1] ?? NaN);
+const enAttente = async (page) => Number((await page.locator("[data-studio-annuler-portee]").getAttribute("data-studio-en-attente-nombre")) ?? NaN);
 /** JSON à clés triées : jsonb ne conserve pas l'ordre des clés (le contenu, lui, est celui envoyé). */
 const canonique = (v) => (Array.isArray(v) ? `[${v.map(canonique).join(",")}]` : v && typeof v === "object" ? `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canonique(v[k])}`).join(",")}}` : JSON.stringify(v));
 const enveloppe = (requestId, baseRevisionId, commands) => ({ contractVersion: "studio-commands/1", requestId, baseRevisionId, commands });
@@ -181,7 +182,7 @@ try {
   check("A dessine : une commande en attente", (await enAttente(A.page)) === 1);
   await A.page.keyboard.press("Escape");
   await A.page.keyboard.press("Control+z");
-  await A.page.waitForFunction(() => /\(0 commande\(s\) en attente\)/.test(document.querySelector("[data-studio-annuler-portee]")?.textContent ?? ""));
+  await A.page.waitForFunction(() => document.querySelector("[data-studio-annuler-portee]")?.getAttribute("data-studio-en-attente-nombre") === "0");
   check("annuler chez A : rien n'est écrit, les changements de B restent dans la tête", (await tete()).id === r5.id && (await revisions()).length === 6);
 
   // 5. Coupure après envoi : le serveur enregistre, la réponse se perd ; le nouvel essai rejoue le même requestId.

@@ -94,7 +94,7 @@ try {
   const outils = page.getByRole("toolbar", { name: "Outils de dessin" });
   await outils.waitFor();
   const ouvrirGestionnaire = async () => {
-    await outils.getByRole("button", { name: "Outils", exact: true }).click();
+    await page.getByRole("toolbar", { name: "Actions de l’espace" }).getByRole("button", { name: "Outils", exact: true }).click();
     const g = page.locator("[data-studio-gestionnaire-outils]");
     await g.waitFor();
     await g.locator('[data-studio-preferences-etat="pret"]').waitFor();

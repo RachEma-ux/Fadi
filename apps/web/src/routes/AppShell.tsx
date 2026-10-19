@@ -9,6 +9,7 @@ import { Icon } from "../components/Icon";
 import { initialsFrom, shownName } from "../lib/user-display";
 import { HomeTopbar } from "../modules/accueil/HomeTopbar";
 import { denied } from "../modules/accueil/dossier-data";
+import { MenuStudio } from "./MenuStudio";
 
 export { initialsFrom, shownName } from "../lib/user-display";
 
@@ -18,7 +19,9 @@ export function AppShell() {
   const location = useLocation();
   const projectMatch = useMatch("/projets/:projectId");
   const cockpitMatch = useMatch("/projets/:projectId/pilotage");
-  const projectId = projectMatch?.params.projectId ?? cockpitMatch?.params.projectId;
+  // Routes Studio (`/studio/projets/:projectId…`) : l'en-tête nomme le projet, comme pour les pages du projet (NAV-006).
+  const studioMatch = useMatch("/studio/projets/:projectId/*");
+  const projectId = projectMatch?.params.projectId ?? cockpitMatch?.params.projectId ?? studioMatch?.params.projectId;
   const last = useLastDossier(user?.id);
   const [expanded, setExpanded] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
@@ -90,7 +93,7 @@ export function AppShell() {
           <button ref={projectButton} type="button" className={`sidebar-projects${location.pathname.startsWith("/projets") && !collaborationActive ? " active" : ""}`} aria-label="Projets" title="Projets" aria-haspopup="menu" aria-expanded={projectsOpen} aria-controls={projectsOpen ? "projects-menu" : undefined} onClick={() => projectsOpen ? closeProjects() : openProjects()} onKeyDown={(e) => { if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); openProjects(); } }}>
             <Icon name="folder" /><span className="sidebar-label">Projets</span><Icon name="chevron-right" size={14} className="sidebar-label" />
           </button>
-          <NavLink to="/studio" className={({ isActive }) => isActive ? "active" : undefined} title="Studio" aria-label="Studio" data-nav-studio><Icon name="studio" /><span className="sidebar-label">Studio</span></NavLink>
+          <MenuStudio surNavigation={() => { if (window.matchMedia("(max-width: 700px)").matches) setExpanded(false); }} />
           <Link to={collaborationLink} className={collaborationActive ? "active" : undefined} aria-current={collaborationActive ? "page" : undefined} title="Collaboration" aria-label="Collaboration"><Icon name="people" /><span className="sidebar-label">Collaboration</span></Link>
         </nav>
         <div className="app-nav-secondary">
@@ -110,7 +113,7 @@ export function AppShell() {
         {!denied(projects.error) && projects.data?.map((p) => <Link key={p.id} role="menuitem" to={`/projets/${p.id}`} aria-current={projectId === p.id ? "page" : undefined} className="project-menu-item"><Icon name="folder" size={18} /><span translate="no"><strong>{p.code}</strong><span>{p.name}</span></span>{projectId === p.id && <Icon name="check" size={18} />}</Link>)}
         <Link role="menuitem" className="projects-flyout-all" to="/projets"><Icon name="plus" size={18} />Tous les projets / Créer un projet</Link>
       </div>}
-      <div className="app-main"><HomeTopbar projectId={projectId} /><div id="workspace-content" tabIndex={-1}><Outlet /></div></div>
+      <div className="app-main" data-route-studio={studioMatch || location.pathname === "/studio" ? "" : undefined}><HomeTopbar projectId={projectId} /><div id="workspace-content" tabIndex={-1}><Outlet /></div></div>
     </div>
   </WorkspaceNavigation.Provider>;
 }

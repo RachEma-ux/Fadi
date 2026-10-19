@@ -107,7 +107,8 @@ export type IconName =
   | "studio-appearance-remove"
   | "studio-export-png"
   | "studio-dossier"
-  | "studio-exchanges";
+  | "studio-exchanges"
+  | "studio-comments";
 
 const PATHS: Record<IconName, string> = {
   search: "M10.5 3.5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 5 5",
@@ -236,6 +237,8 @@ const PATHS: Record<IconName, string> = {
   "studio-dossier": "M3 6h6l2 2h10v12H3ZM7 11h10v6H7ZM9 13h6M9 15h4",
   // Matrice d'échanges (E.6) : grille de trois colonnes traversée par deux flèches opposées (import / export).
   "studio-exchanges": "M3 4h18v16H3ZM9 4v16M15 4v16M5 9h14M17 7l2 2-2 2M5 15h14M7 13l-2 2 2 2",
+  // Bascule du panneau des commentaires (barre de l’espace ; ni outil ni commande).
+  "studio-comments": "M20.5 11.5c0 4.1-3.8 7.5-8.5 7.5-1.2 0-2.3-.2-3.3-.6L4 20l1.3-3.6C4.2 15 3.5 13.3 3.5 11.5 3.5 7.4 7.3 4 12 4s8.5 3.4 8.5 7.5ZM8 10h8M8 13.5h5",
 };
 
 export function Icon({ name, size = 20, className }: { name: IconName; size?: number; className?: string }) {

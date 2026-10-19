@@ -376,6 +376,11 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/studio-domaines.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de l'espace de travail Studio — accueil sans redirection, barre des domaines persistante, Outils et palette depuis chaque domaine, Double vue (extension proposée), workflow déclaré, téléphone (apps/web/e2e/studio-espace.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-espace.mjs 2>&1 | tee -a e2e.log
       - name: Recette des publications Studio — cycle, approbation liée, approbation périmée 409, paquet figé, retrait journalisé, droits (apps/web/e2e/studio-publication.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |

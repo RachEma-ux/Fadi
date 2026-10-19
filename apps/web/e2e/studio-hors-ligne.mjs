@@ -132,7 +132,7 @@ try {
     for (const [nom, v] of [["X", x], ["Y", y], ["Largeur", 2], ["Hauteur", 1]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
     await proprietes.getByRole("button", { name: "Ajouter au dessin", exact: true }).click();
   }
-  const enregistrer = async () => (await atteindre(outils, ':is(button)[aria-label="Enregistrer"], :is(button)[aria-label="Réessayer la sauvegarde"]')).click();
+  const enregistrer = async () => (await atteindre(page.getByRole("toolbar", { name: "Actions de l’espace" }), ':is(button)[aria-label="Enregistrer"], :is(button)[aria-label="Réessayer la sauvegarde"]')).click();
   // Un changement d'état peut suivre une relance différée (retour du réseau, renvoi d'enveloppe) : 40 s au plus.
   const attendreEtat = (code) => page.locator(`[data-studio-hors-ligne="${code}"]`).waitFor({ timeout: 40000 });
 

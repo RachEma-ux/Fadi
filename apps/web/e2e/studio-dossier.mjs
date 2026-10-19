@@ -202,8 +202,10 @@ try {
   const revisionsAvant = await nbRevisions();
 
   await ouvrirVariante(page);
-  check("règle d'or : « Feuilles et dossier » dans la barre (icône, raccourci Ctrl+Maj+D annoncé)",
-    (await (await atteindre(outilsDe(page), 'button[data-studio-commande="dossier"]')).getAttribute("aria-keyshortcuts")) === "Control+Shift+D");
+  // « Feuilles et dossier » appartient à Documentation, métrés et collaboration : sa palette le porte.
+  await page.locator('[data-studio-domaine-lien="documentation"]').click();
+  check("règle d'or : « Feuilles et dossier » dans la palette de Documentation (icône, raccourci Ctrl+Maj+D annoncé)",
+    (await (await atteindre(page.locator('[data-studio-palette-outils="documentation"] [role="toolbar"]'), 'button[data-studio-commande="dossier"]')).getAttribute("aria-keyshortcuts")) === "Control+Shift+D");
   await page.keyboard.press("Escape");
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Control+Shift+D");

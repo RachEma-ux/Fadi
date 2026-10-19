@@ -123,8 +123,9 @@ try {
   await bouton.waitFor();
   check("page Studio d'un projet P.118 sans étude : bouton « Charger l'exemple Studio P.118 »", (await bouton.textContent())?.trim() === "Charger l’exemple Studio P.118");
   check("zone d'état aria-live présente", (await page.locator("[data-studio-exemple-statut]").getAttribute("aria-live")) === "polite");
-  const apercuAvant = await page.locator("[data-studio-apercu-domaines]").evaluate((d) => d.open);
-  check("aperçu des domaines ouvert sans étude", apercuAvant === true);
+  // Page du projet : action principale « Nouvelle étude » dans l'en-tête de page ; plus d'aperçu « document » des domaines.
+  check("page du projet : « Nouvelle étude » en tête de page, aucun aperçu documentaire des domaines", (await page.locator(".studio-page-entete [data-studio-nouvelle-etude]").count()) === 1
+    && (await page.locator("[data-studio-apercu-domaines]").count()) === 0);
   await bouton.click();
   const occupe = await page.locator("[data-studio-exemple-p118]").getAttribute("aria-busy").catch(() => null);
   await page.locator("[data-studio-ouvrir-exemple]").waitFor({ timeout: 120000 });
@@ -135,7 +136,7 @@ try {
   check("rapport des absents replié par défaut, 6 niveaux", !(await rapportUi.evaluate((d) => d.open)) && (await rapportUi.locator("[data-studio-exemple-niveau]").count()) === 6);
   await rapportUi.locator("summary").click();
   check("rapport des absents déplié : poteaux déclarés absents", await rapportUi.getByText("columns", { exact: true }).first().isVisible());
-  check("aperçu des domaines : pas de bascule pendant / après le chargement", (await page.locator("[data-studio-apercu-domaines]").evaluate((d) => d.open)) === apercuAvant);
+  check("après le chargement : la page garde son action principale, sans aperçu documentaire", (await page.locator(".studio-page-entete [data-studio-nouvelle-etude]").count()) === 1 && (await page.locator("[data-studio-apercu-domaines]").count()) === 0);
   await page.locator("[data-studio-ouvrir-exemple]").click();
   await page.waitForURL(/\/etudes\/studio_study_/, { timeout: 120000 });
   const sidCopie = decodeURIComponent(page.url().split("/etudes/")[1].split(/[/?]/)[0]);

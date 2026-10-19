@@ -224,3 +224,27 @@ body:not(.atelier-immersive) .fadi-shell .fadi-topbar { display: flex; flex-wrap
 body.atelier-immersive .fadi-shell { grid-template-columns: minmax(0, 1fr); }
 body.atelier-immersive .fadi-shell .app-main { grid-column: 1; }
 @media (prefers-reduced-motion: reduce) { .fadi-shell *, .fadi-dialog { scroll-behavior: auto; transition: none; animation: none; } }
+
+/* Menu « Studio » de la barre latérale : lien Studio, chevron dépliant, quatre domaines (REF-01 §02). Barre repliée :
+   numéro du domaine, nom exact en infobulle et en nom accessible. */
+.fadi-shell .sidebar-studio-tete{display:flex;align-items:center;gap:2px}
+.fadi-shell .sidebar-studio-tete>a{flex:1;min-width:0}
+.fadi-shell .app-nav .sidebar-studio-bascule{flex:none;width:30px;min-height:46px;padding:0;justify-content:center;color:#d8e4dd}
+.fadi-shell .sidebar-studio[data-ouvert] .sidebar-studio-bascule svg{transform:rotate(90deg)}
+.fadi-shell[data-sidebar="collapsed"] .sidebar-studio-tete{flex-direction:column}
+.fadi-shell[data-sidebar="collapsed"] .app-nav .sidebar-studio-bascule{width:100%;min-height:24px}
+.fadi-shell .sidebar-studio-sous-menu[hidden]{display:none}
+.fadi-shell :is(.sidebar-studio-domaines,.sidebar-studio-acces){list-style:none;margin:2px 0 4px;padding:0 0 0 10px;display:flex;flex-direction:column;gap:2px}
+.fadi-shell .sidebar-studio-acces{border-bottom:1px solid #ffffff1f;padding-bottom:4px}
+.fadi-shell[data-sidebar="collapsed"] :is(.sidebar-studio-domaines,.sidebar-studio-acces){padding:0}
+.fadi-shell .app-nav :is(.sidebar-studio-domaines,.sidebar-studio-acces) a{min-height:38px;padding:7px 10px;font-size:13px;gap:10px}
+.fadi-shell .app-nav :is(.sidebar-studio-domaines,.sidebar-studio-acces) a[aria-current=page]{background:#ffffff21;box-shadow:inset 3px 0 #d6de8b;color:#fff;font-weight:600}
+.fadi-shell .sidebar-studio-numero{flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:22px;border:1px solid #ffffff55;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.3px}
+/* Studio au téléphone : en-tête de Fadi compact (une ligne de titre, une rangée d'actions) pour laisser le canevas. */
+@media (max-width: 540px) {
+  body:not(.atelier-immersive) .fadi-shell .app-main[data-route-studio] .fadi-topbar { padding: 8px 10px; gap: 6px; }
+  .fadi-shell .app-main[data-route-studio] .fadi-topbar-title h1 { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+  .fadi-shell .app-main[data-route-studio] .fadi-topbar-title p { display: none; }
+  .fadi-shell .app-main[data-route-studio] .fadi-topbar-actions { flex-wrap: nowrap; overflow-x: auto; }
+  .fadi-shell .app-main[data-route-studio] .studio-fil .studio-role { display: none; }
+}

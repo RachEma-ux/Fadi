@@ -111,7 +111,7 @@ try {
 
   // 3. Tool Manager : états techniques distincts.
   const ouvrirGestionnaire = async () => {
-    await outils.getByRole("button", { name: "Outils", exact: true }).click();
+    await page.getByRole("toolbar", { name: "Actions de l’espace" }).getByRole("button", { name: "Outils", exact: true }).click();
     const g = page.locator("[data-studio-ressources]");
     await g.waitFor();
     await page.locator('[data-studio-ressources][data-studio-verification="evalue"] [data-studio-hors-ligne-etat="aucun"]').waitFor({ timeout: 20000 });

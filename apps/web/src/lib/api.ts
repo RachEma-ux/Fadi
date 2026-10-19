@@ -1,5 +1,5 @@
 import type {
-  StudioDifferenceDocuments, StudioDocument, StudioDossierConception, StudioEnvelope, StudioFeuilleComposeeDefinition, StudioSheetTitleBlock, StudioVueDocumentaire,
+  StudioDifferenceDocuments, StudioDocument, StudioDossierConception, StudioEnvelope, StudioFeuilleComposeeDefinition, StudioPhaseWorkflow, StudioSheetTitleBlock, StudioVueDocumentaire,
 } from "@parcours/atelier-model";
 /**
  * Client HTTP minimal vers `apps/api`. Toujours `credentials: "include"`
@@ -796,7 +796,7 @@ export interface StudioContext {
 /** Provenance d'une variante dérivée (même étude). */
 export interface StudioProvenance { variantId: string; revisionId: string }
 /** Étude de Studio telle que la liste du projet la renvoie. */
-export interface StudioStudySummary { id: string; name: string; initialVariantId: string; createdAt: string; updatedAt: string | null; archived: boolean }
+export interface StudioStudySummary { id: string; name: string; initialVariantId: string; createdAt: string; updatedAt: string | null; archived: boolean; workflowPhase?: StudioPhaseWorkflow | null }
 /** État de l'étude exemple d'un projet issu de l'exemple P.118 (marquage enregistré par le serveur). */
 export interface StudioExempleEtat { etat: "absente" | "partielle" | "complete"; studyId: string | null }
 /** Rapport de conversion de l'étude exemple : par niveau, éléments déclarés absents et refusés (données, non traduites). */
@@ -809,7 +809,8 @@ export interface StudioExempleRapport {
 export interface StudioVariantSummary { id: string; name: string; headRevisionId: string; archived: boolean; derivedFrom: StudioProvenance | null }
 /** Étude ouverte : ses variantes et le droit d'écriture relu par le serveur (qui reste seul juge). */
 export interface StudioStudyDetail {
-  study: { id: string; name: string; projectId: string; initialVariantId: string; createdAt: string; updatedAt: string | null; archived: boolean };
+  /** `workflowPhase` : phase déclarée du workflow de conception (REF-01 §06) ; `null` ou absente = non déclarée. */
+  study: { id: string; name: string; projectId: string; initialVariantId: string; createdAt: string; updatedAt: string | null; archived: boolean; workflowPhase?: StudioPhaseWorkflow | null };
   variants: StudioVariantSummary[];
   /** Écriture dans l'étude : droit de modification et étude active. */
   canWrite: boolean;
@@ -1006,6 +1007,7 @@ export const api = {
   createStudioVariant: (p: string, s: string, name: string, requestId?: string, from?: StudioDerivation) => request<StudioContext>(`${studioStudyPath(p, s)}/variants`, { method: "POST", body: JSON.stringify({ name, ...(requestId ? { requestId } : {}), ...(from ?? {}) }) }),
   renameStudioStudy: (p: string, s: string, name: string) => request<StudioStudyDetail>(studioStudyPath(p, s), { method: "PATCH", body: JSON.stringify({ name }) }),
   /** Archive (sans suppression) ou désarchive une étude. */
+  setStudioStudyWorkflowPhase: (p: string, s: string, phase: StudioPhaseWorkflow | null) => request<StudioStudyDetail>(`${studioStudyPath(p, s)}/workflow`, { method: "PATCH", body: JSON.stringify({ phase }) }),
   setStudioStudyArchived: (p: string, s: string, archived: boolean) => request<StudioStudyDetail>(`${studioStudyPath(p, s)}/${archived ? "archive" : "unarchive"}`, { method: "POST" }),
   renameStudioVariant: (p: string, s: string, v: string, name: string) => request<{ variant: StudioVariantSummary; studyArchived: boolean }>(studioVariantPath(p, s, v), { method: "PATCH", body: JSON.stringify({ name }) }),
   setStudioVariantArchived: (p: string, s: string, v: string, archived: boolean) => request<{ variant: StudioVariantSummary; studyArchived: boolean }>(`${studioVariantPath(p, s, v)}/${archived ? "archive" : "unarchive"}`, { method: "POST" }),

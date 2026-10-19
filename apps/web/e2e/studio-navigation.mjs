@@ -45,7 +45,8 @@ async function nouvelUtilisateur(nom, viewport = { width: 1280, height: 900 }) {
   return { context, page, api };
 }
 
-const titre = (page) => page.locator("[data-studio] h1").first().textContent();
+/** Titre de l'en-tête de Fadi (il nomme le projet sur les routes Studio d'un projet, NAV-006). */
+const titre = (page) => page.locator(".app-topbar h1").first().textContent();
 
 /**
  * Barre compacte (une rangée) : un bouton rangé dans le menu « ▾ » de sa famille ou dans « Plus » existe toujours dans
@@ -61,6 +62,11 @@ async function atteindre(barre, selecteur) {
   }
   return el;
 }
+/**
+ * Vue 3D et ses panneaux : dans l'espace de travail, les panneaux de la vue (saisie des solides, solides libres, murs et
+ * ouvertures, coupe, scènes) sont rendus dans la colonne des panneaux du domaine (portail), plus sous la vue.
+ */
+const PANNEAUX_3D = "[data-studio-vue3d], [data-studio-planche3d-panneaux], [data-studio-visualisation-panneaux]";
 /** Bouton (ou lien) de la barre par son nom exact, qu'il soit dans la rangée ou dans un menu. */
 const element = (barre, nom) => barre.locator(`:is(button,a)[aria-label="${nom}"]`);
 const cliquerBouton = async (barre, nom) => (await atteindre(barre, `:is(button,a)[aria-label="${nom}"]`)).click();
@@ -72,41 +78,71 @@ try {
   const b = await nouvelUtilisateur("b");
   const pB = await b.api("post", "/projects", { code: "P.STU.SECRET", name: "Studio — Projet confidentiel" });
   const { page } = a;
+  const panneaux3d = page.locator(PANNEAUX_3D);
 
-  // NAV-001 : entrée « Studio » dans la navigation principale, après Projets, icône propre, nom accessible et état actif.
+  // NAV-001 : entrée « Studio » dans la navigation principale, après Projets, icône propre, nom accessible et état actif ;
+  // menu dépliable (comme « Projets › ») : accueil, choix d'une étude et les quatre domaines de REF-01 §02.
   await page.goto(`${BASE}/accueil`);
   const entree = page.locator("#workspace-navigation a[data-nav-studio]");
   await entree.waitFor({ state: "visible" }).catch(() => {});
   check("NAV-001 : entrée Studio dans la navigation principale", await entree.isVisible());
   check("NAV-001 : nom accessible et infobulle « Studio »", (await entree.getAttribute("aria-label")) === "Studio" && (await entree.getAttribute("title")) === "Studio");
-  const ordre = await page.locator("#workspace-navigation > *").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")));
-  check("NAV-001 : Studio placé après Projets", ordre.indexOf("Studio") === ordre.indexOf("Projets") + 1, ordre.join(" · "));
+  const position = await page.evaluate(() => {
+    const e = document.querySelector("#workspace-navigation a[data-nav-studio]"), p = document.querySelector("#workspace-navigation .sidebar-projects"), c = document.querySelector('#workspace-navigation a[aria-label="Collaboration"]');
+    return { apresProjets: !!(p.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING), avantCollaboration: !!(e.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING) };
+  });
+  check("NAV-001 : Studio placé après Projets (et avant Collaboration)", position.apresProjets && position.avantCollaboration, JSON.stringify(position));
+  const bascule = page.locator("[data-studio-menu-lateral-bascule]");
+  const sousMenu = page.locator("#studio-menu-domaines");
+  check("menu Studio : replié hors de Studio (aria-expanded, chevron)", (await bascule.getAttribute("aria-expanded")) === "false" && !(await sousMenu.isVisible()));
+  await bascule.focus();
+  await page.keyboard.press("ArrowRight");
+  check("menu Studio : flèche droite le déplie (clavier)", (await bascule.getAttribute("aria-expanded")) === "true" && await sousMenu.isVisible());
+  const entreesDomaines = await page.locator("[data-studio-menu-domaine]").evaluateAll((els) => els.map((e) => [e.getAttribute("data-studio-menu-domaine"), e.getAttribute("aria-label"), e.getAttribute("title")]));
+  check("menu Studio : exactement quatre domaines, dans l'ordre officiel, libellés exacts « 0n · … » (nom accessible et infobulle)", JSON.stringify(entreesDomaines) === JSON.stringify([
+    ["dessin", "01 · Dessin et modélisation", "01 · Dessin et modélisation"], ["bim", "02 · BIM et coordination", "02 · BIM et coordination"],
+    ["visualisation", "03 · Visualisation, rendu et immersion", "03 · Visualisation, rendu et immersion"], ["documentation", "04 · Documentation, métrés et collaboration", "04 · Documentation, métrés et collaboration"],
+  ]), JSON.stringify(entreesDomaines));
+  check("menu Studio : accès permanents à l'accueil et au choix des études ; aucune planche en entrée", (await page.locator("[data-studio-menu-accueil]").getAttribute("href")) === "/studio"
+    && (await page.locator("[data-studio-menu-etudes]").count()) === 1 && !(((await sousMenu.textContent()) ?? "").match(/Planche|Double vue/)));
+  check("menu Studio : hors d'une variante, chaque domaine passe par l'accueil (aucune variante ouverte d'office)", (await page.locator('[data-studio-menu-domaine="bim"]').getAttribute("href")) === "/studio?domaine=bim");
+  await page.keyboard.press("ArrowLeft");
+  check("menu Studio : flèche gauche le replie", (await bascule.getAttribute("aria-expanded")) === "false" && !(await sousMenu.isVisible()));
+  await bascule.click();
+  check("menu Studio : un clic le déplie", (await bascule.getAttribute("aria-expanded")) === "true");
   await entree.click();
   await page.waitForURL(`${BASE}/studio`);
   await page.locator('[data-studio="accueil"]').waitFor();
   check("NAV-001 : Studio actif sur ses routes", (await entree.getAttribute("class"))?.includes("active") === true);
   check("NAV-006 : l'entrée Projets n'est pas faussement active", !((await page.locator(".sidebar-projects").getAttribute("class")) ?? "").includes("active"));
   check("NAV-006 : titre de page « Studio »", (await page.locator(".app-topbar h1").textContent())?.trim() === "Studio");
+  check("accueil : aucune suggestion de reprise pour un compte neuf, aucune redirection", (await page.locator("[data-studio-reprendre]").count()) === 0 && page.url() === `${BASE}/studio`);
 
   // NAV-003 : choix explicite du projet, rien n'est créé à l'ouverture.
-  const liste = page.locator("[data-studio-projets] li");
+  const liste = page.locator("[data-studio-projets] button");
   await liste.first().waitFor();
   const textes = await liste.allTextContents();
   check("NAV-003 : les projets autorisés sont proposés, sans projet d'autrui", textes.some((t) => t.includes("P.STU.A")) && textes.some((t) => t.includes("P.STU.B")) && !textes.some((t) => t.includes("P.STU.SECRET")));
   check("NAV-003 : aucun projet créé par l'ouverture de Studio", (await a.api("get", "/projects")).length === 2);
+  check("NAV-003 : « Nouvelle étude » proposée, sans choix de planche (la planche se choisit dans le domaine 01)", (await page.locator("[data-studio-creer-etude]").count()) === 1 && (await page.locator("[data-studio-creer-etude] [data-studio-planche-depart]").count()) === 0);
 
   // NAV-002 : ouverture d'un projet sans passer par le Parcours ni l'Atelier.
   const requetes = [];
   page.on("request", (r) => requetes.push(new URL(r.url()).pathname));
-  await page.locator("[data-studio-projets] a", { hasText: "P.STU.A" }).click();
+  await liste.filter({ hasText: "P.STU.A" }).click();
+  await page.locator(`[data-studio-lanceur-etudes="${pA.id}"] [data-studio-aucune-etude]`).waitFor();
+  check("NAV-003 : le projet choisi montre ses études (aucune), choix explicite", (await liste.filter({ hasText: "P.STU.A" }).getAttribute("aria-pressed")) === "true");
+  await page.locator(`[data-studio-lanceur-etudes="${pA.id}"] [data-studio-gerer-etudes]`).click();
   await page.waitForURL(`${BASE}/studio/projets/${pA.id}`);
   await page.locator(`[data-studio-projet="${pA.id}"]`).waitFor();
   await page.locator("[data-studio-aucune-etude]").waitFor();
   const parcours = requetes.filter((p) => LECTURES_INTERDITES.test(p));
   check("NAV-002 : aucune lecture du Parcours, du programme ni de l'Atelier", parcours.length === 0, parcours.join(", "));
-  check("NAV-006 : le titre et le fil nomment le bon projet", (await titre(page)).includes("P.STU.A") && (await page.locator(".studio-fil").textContent()).includes("P.STU.A"));
+  check("NAV-006 : l'en-tête de Fadi nomme le bon projet ; le fil d'Ariane ne le répète pas", (await titre(page)).includes("P.STU.A") && (await page.locator(".studio-fil").textContent()).includes("Études")
+    && !(await page.locator(".studio-fil").textContent()).includes("P.STU.A"));
   check("NAV-008 : barre latérale visible, aucun mode immersif", (await page.locator(".app-sidebar").isVisible()) && !(await page.evaluate(() => document.body.classList.contains("atelier-immersive"))));
   check("NAV-006 : Studio reste actif, Projets non", (await entree.getAttribute("class"))?.includes("active") === true && !((await page.locator(".sidebar-projects").getAttribute("class")) ?? "").includes("active"));
+  check("menu Studio : « Choisir une étude » désigne la page du projet affiché", (await page.locator("[data-studio-menu-etudes]").getAttribute("aria-current")) === "page");
 
   // NAV-004 : actualisation, précédent / suivant, ouverture directe.
   await page.reload();
@@ -137,16 +173,19 @@ try {
   await page.locator("[data-studio-inconnue]").waitFor();
   check("paramètre inconnu sur un projet : adresse non reconnue, conservée", page.url().endsWith("?vue=x"));
 
-  // Étude : création par l'interface ; elle ouvre la planche de sa variante initiale.
+  // Étude : « Nouvelle étude » en tête de la page du projet ; elle ouvre l'espace de sa variante initiale.
   await page.goto(`${BASE}/studio/projets/${pA.id}`);
   await page.locator("[data-studio-aucune-etude]").waitFor();
+  const boutonNouvelle = page.locator(".studio-page-entete [data-studio-nouvelle-etude]");
+  check("page du projet : « Nouvelle étude » est l'action principale de l'en-tête de page", await boutonNouvelle.isVisible());
+  await boutonNouvelle.click();
   await page.getByLabel("Nom de l’étude", { exact: true }).fill("Implantation nord");
   requetes.length = 0;
-  await page.locator('[data-studio-creer-etude] button').click();
+  await page.locator('[data-studio-creer-etude] [data-studio-ouvrir-etude]').click();
   await page.waitForURL(new RegExp(`/studio/projets/${pA.id}/etudes/[^/]+/variantes/[^/?]+$`));
   await page.getByRole("toolbar", { name: "Outils de dessin" }).waitFor();
   const [, , , , , studyId, , initialVariantId] = new URL(page.url()).pathname.split("/");
-  check("étude : la création ouvre la planche de la variante initiale, nommée dans le titre et le fil", (await page.getByRole("heading", { level: 1 }).last().textContent()) === "Implantation nord" && (await page.locator(".studio-fil").textContent()).includes("Implantation nord"));
+  check("étude : la création ouvre l'espace de la variante initiale, nommée dans le titre et le fil", (await page.getByRole("heading", { level: 1 }).last().textContent()) === "Implantation nord" && (await page.locator(".studio-fil").textContent()).includes("Implantation nord"));
   check("étude : aucune lecture du Parcours ni de l'Atelier", requetes.filter((p) => LECTURES_INTERDITES.test(p)).length === 0, requetes.join(" "));
   const etudes = await a.api("get", `/projects/${pA.id}/studio/studies`);
   check("étude : listée par l'API avec sa variante initiale", etudes.studies.length === 1 && etudes.studies[0].id === studyId && etudes.studies[0].initialVariantId === initialVariantId);
@@ -165,14 +204,15 @@ try {
   await page.waitForURL(new RegExp(`/etudes/${studyId}/variantes/(?!${initialVariantId}$)[^/?]+$`));
   const variantId = new URL(page.url()).pathname.split("/").pop();
   await page.locator(`[data-studio-variante="${variantId}"]`).getByRole("toolbar", { name: "Outils de dessin" }).waitFor();
-  check("variante : la création ouvre sa planche, nommée dans le fil", (await page.locator(".studio-fil").textContent()).includes("Variante nord") && (await page.locator(".studio-context").textContent()).includes("Variante nord"));
+  check("variante : la création ouvre son espace, nommée dans le fil avec sa révision", (await page.locator(".studio-fil").textContent()).includes("Variante nord") && (await page.locator("[data-studio-fil-revision]").count()) === 1);
   check("variante : document vide à la création", (await page.locator('svg [role="button"]').count()) === 0);
   check("variante : aucune lecture ni écriture du Parcours, de l'Atelier ou de la Planche", requetes.filter((p) => LECTURES_INTERDITES.test(p)).length === 0, requetes.join(" "));
   const detail = await a.api("get", `/projects/${pA.id}/studio/studies/${studyId}`);
   check("variante : l'étude en compte deux côté serveur", detail.variants.length === 2 && detail.variants.some((v) => v.id === variantId && v.name === "Variante nord"));
 
   // Enregistrement par commandes : un rectangle saisi, une révision de plus dans l'historique.
-  const outils = page.getByRole("toolbar", { name: "Outils de dessin" });
+  // Palette de Dessin et modélisation et barre de l'espace (Annuler, Rétablir, Enregistrer, Outils, palette Ctrl+K).
+  const outils = page.locator('[role="toolbar"][aria-label^="Outils"], [role="toolbar"][data-studio-actions-espace]');
   const proprietes = page.getByRole("complementary", { name: "Propriétés du dessin" });
   await cliquerBouton(outils, "Rectangle");
   for (const [nom, v] of [["X", 2], ["Y", 2], ["Largeur", 4], ["Hauteur", 3]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
@@ -187,17 +227,20 @@ try {
   check("historique : la plus récente est la version courante", (await historique.first().getAttribute("data-studio-revision-tete")) === "true");
 
   // Révision passée : lecture seule par ?revision=, aucun enregistrement possible, retour à la version courante.
+  // L'historique des révisions est un panneau de « Documentation, métrés et collaboration ».
   const ancienne = revisions.revisions[1].id;
+  await page.locator('[data-studio-domaine-lien="documentation"]').click();
+  await page.waitForURL(`${BASE}/studio/projets/${pA.id}/etudes/${studyId}/variantes/${variantId}?domaine=documentation`);
   await historique.nth(1).locator("a:not([data-studio-comparer-tete])").click();
-  await page.waitForURL(`${BASE}/studio/projets/${pA.id}/etudes/${studyId}/variantes/${variantId}?revision=${encodeURIComponent(ancienne)}`);
+  await page.waitForURL(`${BASE}/studio/projets/${pA.id}/etudes/${studyId}/variantes/${variantId}?revision=${encodeURIComponent(ancienne)}&domaine=documentation`);
   await page.locator("[data-studio-lecture-seule-revision]").waitFor();
   check("révision passée : document d'origine (vide), lecture seule, enregistrement désactivé", (await page.locator('svg [role="button"]').count()) === 0 && (await element(outils, "Enregistrer").isDisabled()));
   await page.reload();
   await page.locator("[data-studio-lecture-seule-revision]").waitFor();
-  check("révision passée : l'actualisation restitue la même révision", page.url().endsWith(`?revision=${encodeURIComponent(ancienne)}`));
+  check("révision passée : l'actualisation restitue la même révision", page.url().endsWith(`?revision=${encodeURIComponent(ancienne)}&domaine=documentation`));
   await page.screenshot({ path: join(OUT, "studio-revision.png") });
   await page.locator("[data-studio-lecture-seule-revision] a").click();
-  await page.waitForURL(`${BASE}/studio/projets/${pA.id}/etudes/${studyId}/variantes/${variantId}`);
+  await page.waitForURL(`${BASE}/studio/projets/${pA.id}/etudes/${studyId}/variantes/${variantId}?domaine=documentation`);
   await page.locator('svg [role="button"][aria-label^="Rectangle "]').waitFor({ state: "attached" });
   check("version courante : le rectangle enregistré est relu", (await page.locator('svg [role="button"]').count()) === 1);
   const base = `${BASE}/studio/projets/${pA.id}/etudes/${studyId}/variantes/${variantId}`;
@@ -235,7 +278,7 @@ try {
   check("lecteur : voit les variantes sans formulaire de création", (await b.page.locator("[data-studio-creer-variante]").count()) === 0);
   await b.page.goto(base);
   await b.page.locator("[data-studio-lecture-seule]").waitFor();
-  check("lecteur : la variante s'ouvre en lecture seule", await element(b.page.getByRole("toolbar", { name: "Outils de dessin" }), "Enregistrer").isDisabled());
+  check("lecteur : la variante s'ouvre en lecture seule", await element(b.page.getByRole("toolbar", { name: "Actions de l’espace" }), "Enregistrer").isDisabled());
 
   // Étapes du Parcours liées : choix multiple sur la page de l'étude (libellés du serveur, ceux des étapes du projet),
   // enregistrées par la route Studio ; le lecteur voit sans modifier.
@@ -289,7 +332,8 @@ try {
   await note.waitFor();
   check("notification : commentaire Studio du lecteur signalé au propriétaire", (await note.textContent()).includes(`${emailB} a commenté la variante « Variante nord » de l’étude Studio « Implantation nord » (P.STU.A) : « Remarque du lecteur sur la variante »`), await note.textContent());
   await note.locator("a").click();
-  await page.waitForURL(`${base}?commentaires=ouverts`);
+  // Le panneau des commentaires appartient à Documentation : le lien de notification y ouvre la variante.
+  await page.waitForURL(`${base}?commentaires=ouverts&domaine=documentation`);
   await page.locator("#studio-commentaires").waitFor();
   // Les commentaires se chargent après l'ouverture du panneau : on attend leur affichage plutôt que de lire tout de suite.
   await page.locator("#studio-commentaires").filter({ hasText: "Remarque du lecteur sur la variante" }).waitFor().catch(() => {});
@@ -399,7 +443,8 @@ try {
   await page.goto(base);
   await page.locator('svg [role="button"][aria-label^="Rectangle "]').first().waitFor({ state: "attached" });
   const teteAvantVue = (await a.api("get", variantePath)).revision;
-  const portee = async () => (await page.locator("[data-studio-annuler-portee]").textContent()) ?? "";
+  // Commandes en attente (barre d'état) : « (n commande(s) » reconstitué depuis le nombre exact affiché.
+  const portee = async () => `(${await page.locator("[data-studio-annuler-portee]").getAttribute("data-studio-en-attente-nombre")} commande(s) en attente)`;
   const vueBox = async () => (await planche.getAttribute("viewBox")).split(" ").map(Number);
   const ecranDe = (x, y) => planche.evaluate((svg, w) => { const t = new DOMPoint(w.x, w.y).matrixTransform(svg.getScreenCTM()); return { x: t.x, y: t.y }; }, { x, y });
   const sousEcran = (p) => planche.evaluate((svg, q) => { const t = new DOMPoint(q.x, q.y).matrixTransform(svg.getScreenCTM().inverse()); return { x: t.x, y: t.y }; }, p);
@@ -533,7 +578,7 @@ try {
   await page.keyboard.press("Shift+D");
   const vue3d = page.locator("[data-studio-vue3d]");
   await vue3d.waitFor();
-  const canevas = vue3d.locator("canvas[data-studio-vue3d-canvas]");
+  const canevas = panneaux3d.locator("canvas[data-studio-vue3d-canvas]");
   await canevas.waitFor({ timeout: 20000 });
   check("Vue 3D (Maj+D) : bascule enfoncée, planche 2D remplacée", (await outils.locator('[data-studio-commande="vue-3d"]').getAttribute("aria-pressed")) === "true" && (await planche.count()) === 0);
   // Maillage calculé en tâche de fond : attendre celui de la révision affichée.
@@ -546,8 +591,8 @@ try {
     for (let i = 0; i < px.length; i += 4 * 97) vus.add(`${px[i]},${px[i + 1]},${px[i + 2]}`);
     return { largeur: c.width, hauteur: c.height, couleurs: vus.size };
   });
-  check("Vue 3D : un canevas WebGL rendu (non vide)", couleurs.largeur > 0 && couleurs.hauteur > 0 && couleurs.couleurs > 3 && (await vue3d.locator("[data-studio-vue3d-indisponible]").count()) === 0, JSON.stringify(couleurs));
-  check("Vue 3D : un volume, les autres objets visibles comptés « non extrudés »", (await vue3d.getAttribute("data-studio-volumes")) === "1" && (await vue3d.getAttribute("data-studio-non-extrudes")) === String(formesVisibles - 1) && (await vue3d.locator("[data-studio-vue3d-decompte]").textContent()).includes(`${formesVisibles - 1} objet(s) non extrudé(s)`), `${await vue3d.getAttribute("data-studio-non-extrudes")} / ${formesVisibles - 1}`);
+  check("Vue 3D : un canevas WebGL rendu (non vide)", couleurs.largeur > 0 && couleurs.hauteur > 0 && couleurs.couleurs > 3 && (await panneaux3d.locator("[data-studio-vue3d-indisponible]").count()) === 0, JSON.stringify(couleurs));
+  check("Vue 3D : un volume, les autres objets visibles comptés « non extrudés »", (await vue3d.getAttribute("data-studio-volumes")) === "1" && (await vue3d.getAttribute("data-studio-non-extrudes")) === String(formesVisibles - 1) && (await panneaux3d.locator("[data-studio-vue3d-decompte]").textContent()).includes(`${formesVisibles - 1} objet(s) non extrudé(s)`), `${await vue3d.getAttribute("data-studio-non-extrudes")} / ${formesVisibles - 1}`);
   const avantVolume = envois.length;
   await page.keyboard.press("Control+s");
   await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
@@ -562,16 +607,21 @@ try {
   await formExtrusion.waitFor();
   check("volume : après actualisation, les valeurs saisies sont relues", (await formExtrusion.getByLabel("Hauteur (m)").inputValue()) === "2.5" && (await formExtrusion.getByLabel("Épaisseur (m, lignes, facultative)").inputValue()) === "0.2" && (await page.locator("[data-studio-extrusion-etat]").getAttribute("data-studio-extrusion-etat")) === "extrude");
   await (await atteindre(outils, '[data-studio-commande="vue-3d"]')).click();
-  await vue3d.locator("canvas[data-studio-vue3d-canvas]").waitFor();
+  await panneaux3d.locator("canvas[data-studio-vue3d-canvas]").waitFor();
   await page.locator('[data-studio-vue3d][data-studio-maillage="done"]').waitFor();
   check("Vue 3D : relue après actualisation, le volume est rendu", (await vue3d.getAttribute("data-studio-volumes")) === "1");
   await (await atteindre(outils, '[data-studio-commande="vue-3d"]')).click();
   await planche.waitFor();
 
-  // Feuille (Maj+P, barre Présentation) : A3 paysage à 1:100, cartouche prérempli (nom de l'étude), feuille SVG
-  // téléchargée à sa taille réelle, impression de la seule feuille.
+  // Feuille (Maj+P, barre Présentation du domaine Documentation) : A3 paysage à 1:100, cartouche prérempli (nom de
+  // l'étude), feuille SVG téléchargée à sa taille réelle, impression de la seule feuille. Le raccourci ouvre la boîte
+  // par-dessus le domaine affiché (Dessin et modélisation), sans en changer.
+  await page.locator('[data-studio-domaine-lien="documentation"]').click();
+  await page.waitForSelector('[data-studio-domaine-affiche="documentation"]');
   const boutonFeuille = outils.locator('[data-studio-famille="presentation"] [data-studio-commande="feuille"][aria-keyshortcuts="Shift+P"]');
-  check("Feuille : commande dans la barre Présentation, raccourci Maj+P", (await boutonFeuille.count()) === 1);
+  check("Feuille : commande dans la barre Présentation de Documentation, raccourci Maj+P", (await boutonFeuille.count()) === 1);
+  await page.locator('[data-studio-domaine-lien="dessin"]').click();
+  await page.waitForSelector('[data-studio-domaine-affiche="dessin"]');
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Shift+P");
   const feuille = page.locator("[data-studio-feuille]");
@@ -598,8 +648,9 @@ try {
   check("Feuille : à l'impression, seule la feuille paraît, à sa taille réelle (420 mm)", Math.abs(impression.largeur - (420 / 25.4) * 96) < 2 && impression.dialogue === "none", JSON.stringify(impression));
   await page.getByRole("dialog").getByRole("button", { name: "Fermer", exact: true }).click();
   await feuille.waitFor({ state: "detached" });
+  check("Feuille : la boîte s'est ouverte et refermée par-dessus Dessin et modélisation (domaine inchangé)", (await page.locator("[data-studio-domaine-affiche]").getAttribute("data-studio-domaine-affiche")) === "dessin");
 
-  await page.goto(`${base}?revision=${encodeURIComponent(ancienne)}`);
+  await page.goto(`${base}?revision=${encodeURIComponent(ancienne)}&domaine=documentation`);
   await page.locator("[data-studio-lecture-seule-revision]").waitFor();
   check("Feuille : disponible en révision historique (lecture seule)", await outils.locator('[data-studio-commande="feuille"]').isEnabled());
   check("exports : en révision historique, le lien porte la révision affichée", (await lienExport("svg")) === `${variantePath}/export?format=svg&revision=${encodeURIComponent(ancienne)}` && (await lienExport("dxf")) === `${variantePath}/export?format=dxf&revision=${encodeURIComponent(ancienne)}`);
@@ -769,9 +820,9 @@ try {
     && (await outils.locator('[data-studio-famille="vue"] [data-studio-commande="coupe-3d"][aria-keyshortcuts="Shift+K"]').count()) === 1);
   await page.keyboard.press("b");
   const vueLibre = page.locator("[data-studio-vue3d]");
-  const canevasLibre = vueLibre.locator("canvas[data-studio-vue3d-canvas]");
+  const canevasLibre = panneaux3d.locator("canvas[data-studio-vue3d-canvas]");
   await canevasLibre.waitFor({ timeout: 20000 });
-  const formBoite = vueLibre.locator("[data-studio-boite]");
+  const formBoite = panneaux3d.locator("[data-studio-boite]");
   await formBoite.waitFor();
   check("volume libre : B ouvre la vue 3D, outil Boîte enfoncé, aucune dimension proposée",
     (await outils.locator('[data-studio-outil="studio.solide.boite"]').getAttribute("aria-pressed")) === "true" && (await planche.count()) === 0
@@ -787,7 +838,7 @@ try {
   check("volume libre : la boîte est posée dans le brouillon (un solide libre, une commande en attente)", (await vueLibre.getAttribute("data-studio-solides-libres")) === "1" && (await portee()).includes("(1 commande(s)"), await portee());
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Shift+B");
-  const formPrisme = vueLibre.locator("[data-studio-prisme]");
+  const formPrisme = panneaux3d.locator("[data-studio-prisme]");
   await formPrisme.waitFor();
   await formPrisme.locator("[data-studio-prisme-profil]").selectOption(polyId);
   await formPrisme.getByLabel("Cote de base z (m)", { exact: true }).fill("0");
@@ -802,7 +853,7 @@ try {
   await page.keyboard.press("Shift+G");
   await page.locator('[data-studio-vue3d][data-studio-navigation="orbite"]').waitFor();
   await page.keyboard.press("Shift+K");
-  const panneauCoupe = vueLibre.locator("[data-studio-coupe]");
+  const panneauCoupe = panneaux3d.locator("[data-studio-coupe]");
   await panneauCoupe.waitFor();
   check("coupe : aucune cote proposée", (await panneauCoupe.getByLabel("Cote de coupe z (m)").inputValue()) === "" && (await panneauCoupe.getAttribute("data-studio-coupe-segments")) === "0");
   await panneauCoupe.getByLabel("Cote de coupe z (m)", { exact: true }).fill("1.5");
@@ -811,16 +862,16 @@ try {
   check("coupe à z = 1,5 : contours dérivés de la boîte (4 côtés) et du prisme (3 côtés), provenance par solide, non modifiable",
     (await panneauCoupe.getAttribute("data-studio-coupe-segments")) === "7" && sourcesCoupe.length === 2 && (await panneauCoupe.locator("[data-studio-coupe-source]").count()) === 2
     && (await panneauCoupe.getByRole("status").textContent()).includes("non modifiable") && (await portee()).includes("(2 commande(s)"), `${await panneauCoupe.getAttribute("data-studio-coupe-segments")} · ${sourcesCoupe.join()}`);
-  const [idBoite] = await vueLibre.locator('[data-studio-solide-type="box"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-solide")));
-  await vueLibre.locator(`[data-studio-solide="${idBoite}"]`).click();
-  const choisi = vueLibre.locator(`[data-studio-solide-choisi="${idBoite}"]`);
+  const [idBoite] = await panneaux3d.locator('[data-studio-solide-type="box"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-solide")));
+  await panneaux3d.locator(`[data-studio-solide="${idBoite}"]`).click();
+  const choisi = panneaux3d.locator(`[data-studio-solide-choisi="${idBoite}"]`);
   await choisi.waitFor();
   check("sélection 3D : la boîte, volume 6 m³", (await choisi.textContent()).includes("volume 6 m³"));
   await choisi.getByLabel("dx (m)", { exact: true }).fill("1");
   await choisi.getByLabel("dy (m)", { exact: true }).fill("0");
   await choisi.getByLabel("dz (m)", { exact: true }).fill("0.5");
   await choisi.getByRole("button", { name: "Déplacer le solide", exact: true }).click();
-  await page.waitForFunction(() => document.querySelector("[data-studio-annuler-portee]")?.textContent?.includes("(3 commande(s)"));
+  await page.waitForFunction(() => document.querySelector("[data-studio-annuler-portee]")?.getAttribute("data-studio-en-attente-nombre") === "3");
   check("sélection 3D : déplacer (dx, dy, dz) — origine (2 ; 1 ; 0,5)", (await choisi.textContent()).includes("origine (2 ; 1 ; 0,5) m"), await choisi.textContent());
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Control+z");
@@ -830,20 +881,20 @@ try {
     const v = document.querySelector("[data-studio-vue3d]");
     return v?.getAttribute("data-studio-maillage") === "done" && v.getAttribute("data-studio-maillage-revision") === v.getAttribute("data-studio-revision-courante");
   });
-  await page.waitForFunction(() => document.querySelector("[data-studio-annuler-portee]")?.textContent?.includes("(2 commande(s)"));
+  await page.waitForFunction(() => document.querySelector("[data-studio-annuler-portee]")?.getAttribute("data-studio-en-attente-nombre") === "2");
   await maillageAJour3d();
-  await vueLibre.locator(`[data-studio-solide="${idBoite}"][aria-pressed="true"]`).click();
+  await panneaux3d.locator(`[data-studio-solide="${idBoite}"][aria-pressed="true"]`).click();
   await page.locator(`[data-studio-solide-choisi="${idBoite}"]`).waitFor({ state: "detached" });
   await canevasLibre.evaluate((c) => c.scrollIntoView({ block: "center" }));
   const ecranBoite = await page.evaluate((id) => globalThis.__fadiVue3d?.ecran(id) ?? null, idBoite);
   await page.mouse.click(ecranBoite.x, ecranBoite.y);
-  const designeAvant = await vueLibre.locator(`[data-studio-solide-choisi="${idBoite}"]`).waitFor({ timeout: 5000 }).then(() => 1, () => 0);
+  const designeAvant = await panneaux3d.locator(`[data-studio-solide-choisi="${idBoite}"]`).waitFor({ timeout: 5000 }).then(() => 1, () => 0);
   check("désignation 3D : un clic à l'endroit de la boîte la sélectionne (table de désignation)", !!ecranBoite && designeAvant === 1, JSON.stringify(ecranBoite));
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Shift+Delete");
   await page.locator('[data-studio-vue3d][data-studio-solides-libres="1"]').waitFor();
   check("Maj+Suppr supprime le solide sélectionné", (await portee()).includes("(3 commande(s)"), await portee());
-  const choisiApres = async () => vueLibre.locator("[data-studio-solide-choisi]").evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-solide-choisi")));
+  const choisiApres = async () => panneaux3d.locator("[data-studio-solide-choisi]").evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-solide-choisi")));
   await page.mouse.click(ecranBoite.x, ecranBoite.y);
   await page.waitForTimeout(300);
   const aussitot = await choisiApres();
@@ -852,7 +903,7 @@ try {
   await page.waitForTimeout(300);
   const ensuite = await choisiApres();
   check("désignation 3D : boîte supprimée, un clic à son endroit ne désigne jamais son identifiant (tout de suite et après remaillage)",
-    !aussitot.includes(idBoite) && !ensuite.includes(idBoite) && ensuite.length <= 1 && (await vueLibre.locator(`[data-studio-solide="${idBoite}"]`).count()) === 0,
+    !aussitot.includes(idBoite) && !ensuite.includes(idBoite) && ensuite.length <= 1 && (await panneaux3d.locator(`[data-studio-solide="${idBoite}"]`).count()) === 0,
     JSON.stringify({ aussitot, ensuite }));
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Control+z");
@@ -882,7 +933,7 @@ try {
   await page.keyboard.press("Shift+D");
   await page.locator('[data-studio-vue3d][data-studio-solides-libres="2"]').waitFor();
   check("volume libre : l'actualisation restitue les mêmes solides", JSON.stringify((await a.api("get", variantePath)).revision) === JSON.stringify(solidesRelus.revision)
-    && (await vueLibre.locator("[data-studio-solide]").count()) === 2);
+    && (await panneaux3d.locator("[data-studio-solide]").count()) === 2);
 
   // D.2-03 (tâches de fond) : rafale de déplacements de la boîte sans laisser la main à la boucle d'événements entre
   // deux (aucune réponse du Worker ne peut s'intercaler) : chaque maillage remplacé est annulé, son résultat éventuel
@@ -895,8 +946,8 @@ try {
   await maillagePret();
   const gpuBase = await canevasLibre.getAttribute("data-studio-gpu-geometries");
   const porteeAvantRafale = await portee();
-  await vueLibre.locator(`[data-studio-solide="${idBoite}"]`).click();
-  await vueLibre.locator(`[data-studio-solide-choisi="${idBoite}"]`).waitFor();
+  await panneaux3d.locator(`[data-studio-solide="${idBoite}"]`).click();
+  await panneaux3d.locator(`[data-studio-solide-choisi="${idBoite}"]`).waitFor();
   const RAFALE = 6;
   const debutJournal = await page.evaluate(() => globalThis.__fadiTaches?.journal.length ?? 0);
   await page.evaluate(async (n) => {
@@ -923,12 +974,12 @@ try {
   check("tâches : maillages remplacés pendant la rafale annulés, aucun résultat périmé remis ; le dernier maillage affiché est celui de la dernière révision",
     remplaces.length > 0 && perimesRemis.length === 0 && remis.length > 0 && remis.every((r, i) => i === 0 || r > remis[i - 1]) && remis.at(-1) === revisionCourante
     && Number(await vueLibre.getAttribute("data-studio-maillage-revision")) === revisionCourante && (await portee()).includes(`(${RAFALE} commande(s)`)
-    && (await vueLibre.locator(`[data-studio-solide-choisi="${idBoite}"]`).textContent()).includes("origine (1,6 ; 1 ; 0) m"),
+    && (await panneaux3d.locator(`[data-studio-solide-choisi="${idBoite}"]`).textContent()).includes("origine (1,6 ; 1 ; 0) m"),
     JSON.stringify({ remis, remplaces: remplaces.map((e) => `${e.revision}:${e.etat}`), revisionCourante, portee: await portee() }));
   check("tâches : compteurs GPU revenus à leur ligne de base après les reconstructions", (await canevasLibre.getAttribute("data-studio-gpu-geometries")) === gpuBase && Number(gpuBase) > 0, `${gpuBase} → ${await canevasLibre.getAttribute("data-studio-gpu-geometries")}`);
   await page.evaluate(() => document.activeElement?.blur());
   for (let k = 0; k < RAFALE; k++) await page.keyboard.press("Control+z");
-  await page.waitForFunction((t) => (document.querySelector("[data-studio-annuler-portee]")?.textContent ?? "") === t, porteeAvantRafale);
+  await page.waitForFunction((t) => `(${document.querySelector("[data-studio-annuler-portee]")?.getAttribute("data-studio-en-attente-nombre")} commande(s) en attente)` === t, porteeAvantRafale);
   await maillagePret();
   for (let cycle = 0; cycle < 3; cycle++) {
     await page.keyboard.press("Shift+D");
@@ -941,7 +992,7 @@ try {
   check("tâches : après trois fermetures / réouvertures de la vue 3D, mêmes compteurs GPU et brouillon inchangé",
     (await canevasLibre.getAttribute("data-studio-gpu-geometries")) === gpuBase && (await portee()) === porteeAvantRafale, `${gpuBase} → ${await canevasLibre.getAttribute("data-studio-gpu-geometries")}`);
   await page.keyboard.press("Shift+K");
-  await vueLibre.locator("[data-studio-coupe]").getByLabel("Cote de coupe z (m)", { exact: true }).fill("1.5");
+  await panneaux3d.locator("[data-studio-coupe]").getByLabel("Cote de coupe z (m)", { exact: true }).fill("1.5");
   await page.locator('[data-studio-coupe][data-studio-coupe-segments="7"]').waitFor();
   await page.screenshot({ path: join(OUT, "studio-volume-libre.png") });
   await page.evaluate(() => document.activeElement?.blur());
@@ -1052,7 +1103,7 @@ try {
   const baseInitiale = `${BASE}/studio/projets/${pA.id}/etudes/${studyId}/variantes/${initialVariantId}`;
   const cheminInitial = `/projects/${pA.id}/studio/studies/${studyId}/variants/${initialVariantId}`;
   await page.goto(baseInitiale);
-  await outils.waitFor();
+  await outils.first().waitFor();
   const teteInitiale = (await a.api("get", cheminInitial)).revision;
   const grand = dxfDe(6, Array.from({ length: 600 }, (_, i) => ["0", "LINE", "8", "0", "10", "0", "20", String(i), "11", "5", "21", String(i)]).flat());
   await page.evaluate(() => document.activeElement?.blur());
@@ -1074,7 +1125,7 @@ try {
   const apresPremier = await a.api("get", cheminInitial);
   check("Import DXF : refus du second lot — 500 commandes enregistrées, les 100 autres seules en attente, sur la révision du premier lot",
     apresPremier.revision.document.objects.length === teteInitiale.document.objects.length + 500 && (await portee()).includes("(100 commande(s)")
-    && (await page.locator(".studio-context [title]").first().getAttribute("title")) === apresPremier.revision.id
+    && (await page.locator("[data-studio-revision-affichee]").getAttribute("title")) === apresPremier.revision.id
     && (await page.locator("[data-studio-erreur-planche]").textContent()).includes("100 commande(s) non envoyée(s)"), await portee());
   await cliquerBouton(outils, "Enregistrer");
   await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
@@ -1183,7 +1234,7 @@ try {
   // aperçu au pointeur, Rotation 90° (Maj+R), Symétrie en gardant l'original (I), Échelle 2 (S) ; enregistrement en
   // une enveloppe, géométrie relue du serveur, actualisation identique.
   await page.goto(base);
-  await outils.waitFor();
+  await outils.first().waitFor();
   await page.locator("svg [data-studio-objet]").first().waitFor({ state: "attached" });
   check("transformations : Copier (D), Rotation (Maj+R), Symétrie (I), Échelle (S) dans la barre Modification, icônes propres",
     (await outils.locator('[data-studio-famille="modification"] [data-studio-outil="studio.dessin.copier"][aria-keyshortcuts="D"] svg path').count()) === 1
@@ -1335,16 +1386,16 @@ try {
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Shift+D");
   const vueArchi = page.locator("[data-studio-vue3d]");
-  await vueArchi.locator("[data-studio-architecture-vue3d]").waitFor();
-  const ids3d = await vueArchi.locator("[data-studio-architecture-3d-objet]").evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-architecture-3d-objet")));
+  await panneaux3d.locator("[data-studio-architecture-vue3d]").waitFor();
+  const ids3d = await panneaux3d.locator("[data-studio-architecture-3d-objet]").evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-architecture-3d-objet")));
   check("architecture : la vue 3D porte les mêmes identifiants que la planche (mur, ouverture)", JSON.stringify(ids3d) === JSON.stringify([idMur, idOuv]), JSON.stringify(ids3d));
-  await vueArchi.locator(`[data-studio-architecture-3d-objet="${idOuv}"]`).click();
+  await panneaux3d.locator(`[data-studio-architecture-3d-objet="${idOuv}"]`).click();
   const choisiOuv = proprietes.locator(`[data-studio-architecture-choisi="${idOuv}"]`);
   await choisiOuv.waitFor();
   await choisiOuv.getByLabel("Largeur (m)", { exact: true }).fill("1.2");
   await choisiOuv.getByRole("button", { name: "Appliquer", exact: true }).click();
-  await page.waitForFunction(() => document.querySelector("[data-studio-annuler-portee]")?.textContent?.includes("(3 commande(s)"));
-  await vueArchi.locator(`[data-studio-architecture-3d-objet="${idMur}"]`).click();
+  await page.waitForFunction(() => document.querySelector("[data-studio-annuler-portee]")?.getAttribute("data-studio-en-attente-nombre") === "3");
+  await panneaux3d.locator(`[data-studio-architecture-3d-objet="${idMur}"]`).click();
   await choisiMur.waitFor();
   const netApres = Number(await choisiMur.locator("[data-studio-architecture-metre]").getAttribute("data-studio-volume-net"));
   check("REC-A-03 : élargie à 1,20 m depuis la vue 3D — déduction 0,504 m³, net 3,096 m³", Math.abs(netApres - 3.096) < 1e-9
@@ -1411,37 +1462,131 @@ try {
   const graves = await page.evaluate(async () => (await window.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] } })).violations.filter((v) => ["critical", "serious"].includes(v.impact)).map((v) => v.id));
   check("accessibilité de l'accueil Studio : aucune violation critique ou sérieuse", graves.length === 0, graves.join(", "));
 
-  // NAV-001 mobile : la même entrée dans la barre adaptative ; la planche tient dans l'écran.
-  const mobile = await a.context.newPage();
+  // Menu « Studio » de la barre latérale et barre des domaines : MÊME état, lu dans l'adresse ; historique ; adresse
+  // directe ; refus ; suggestion de reprise sans redirection ; brouillon conservé au changement de domaine.
+  const dialoguesMenu = [];
+  page.on("dialog", (d) => dialoguesMenu.push(d.message()));
+  const actifs = () => page.evaluate(() => ({
+    menu: document.querySelector("[data-studio-menu-domaine][aria-current=page]")?.getAttribute("data-studio-menu-domaine") ?? null,
+    barre: document.querySelector("[data-studio-domaines] a[aria-current=page]")?.getAttribute("data-studio-domaine-lien") ?? null,
+    affiche: document.querySelector("[data-studio-domaine-affiche]")?.getAttribute("data-studio-domaine-affiche") ?? null,
+  }));
+  await page.goto(`${base}?domaine=visualisation`);
+  await page.waitForSelector('[data-studio-domaine-affiche="visualisation"]');
+  check("adresse directe d'un domaine : Visualisation affiché ; menu latéral et barre du haut synchronisés", JSON.stringify(await actifs()) === JSON.stringify({ menu: "visualisation", barre: "visualisation", affiche: "visualisation" }), JSON.stringify(await actifs()));
+  check("menu latéral : déplié dans Studio, les domaines visent la variante affichée (sans garde)", (await page.locator("[data-studio-menu-lateral-bascule]").getAttribute("aria-expanded")) === "true"
+    && (await page.locator('[data-studio-menu-domaine="bim"]').getAttribute("href")) === `${new URL(base).pathname}?domaine=bim` && (await page.locator('[data-studio-menu-domaine="bim"]').getAttribute("data-studio-sans-garde")) === "");
+  // Brouillon non enregistré : une suppression en attente, puis changement de domaine par le menu latéral.
+  await page.waitForSelector('[data-studio-domaine-affiche="visualisation"]');
+  await page.locator('[data-studio-domaine-lien="dessin"]').click();
+  await page.waitForSelector('[data-studio-domaine-affiche="dessin"]');
+  await page.locator('svg [role="button"]').first().waitFor({ state: "attached" });
+  // Une modification non enregistrée : un nouveau calque (commande locale, en attente).
+  await cliquerBouton(outils, "Nouveau calque");
+  await page.waitForFunction(() => Number(document.querySelector("[data-studio-annuler-portee]")?.getAttribute("data-studio-en-attente-nombre")) > 0);
+  const attenteAvant = await page.locator("[data-studio-annuler-portee]").getAttribute("data-studio-en-attente-nombre");
+  await page.locator('[data-studio-menu-domaine="bim"]').click();
+  await page.waitForSelector('[data-studio-domaine-affiche="bim"]');
+  check("menu latéral → BIM : barre du haut et menu synchronisés, même variante", JSON.stringify(await actifs()) === JSON.stringify({ menu: "bim", barre: "bim", affiche: "bim" }) && page.url() === `${base}?domaine=bim`, page.url());
+  check("brouillon non enregistré conservé au changement de domaine, sans confirmation (NAV-007)", dialoguesMenu.length === 0
+    && (await page.locator("[data-studio-annuler-portee]").getAttribute("data-studio-en-attente-nombre")) === attenteAvant && (await page.locator("[data-studio-etat]").textContent()) === "Brouillon non enregistré", dialoguesMenu.join(" | "));
+  await page.locator('[data-studio-domaine-lien="documentation"]').click();
+  await page.waitForSelector('[data-studio-domaine-affiche="documentation"]');
+  await page.goBack();
+  await page.waitForSelector('[data-studio-domaine-affiche="bim"]');
+  check("retour du navigateur : domaine précédent (BIM), menu et barre synchronisés, brouillon intact, aucune confirmation", JSON.stringify(await actifs()) === JSON.stringify({ menu: "bim", barre: "bim", affiche: "bim" })
+    && dialoguesMenu.length === 0 && (await page.locator("[data-studio-annuler-portee]").getAttribute("data-studio-en-attente-nombre")) === attenteAvant, JSON.stringify(await actifs()));
+  await page.goBack();
+  await page.waitForSelector('[data-studio-domaine-affiche="dessin"]');
+  check("retour du navigateur : encore un domaine plus tôt (Dessin et modélisation), la variante n'est pas déchargée", (await page.locator("[data-studio-annuler-portee]").getAttribute("data-studio-en-attente-nombre")) === attenteAvant);
+  await page.keyboard.press("Control+z");
+  await page.waitForFunction(() => document.querySelector("[data-studio-annuler-portee]")?.getAttribute("data-studio-en-attente-nombre") === "0");
+  // Révision historique : lecture seule dans tous les domaines (aucun domaine ne rouvre l'écriture).
+  for (const d of ["dessin", "bim", "visualisation", "documentation"]) {
+    await page.goto(`${base}?revision=${encodeURIComponent(ancienne)}&domaine=${d}`);
+    await page.locator("[data-studio-lecture-seule-revision]").waitFor();
+    await page.waitForSelector(`[data-studio-domaine-affiche="${d}"]`);
+    check(`révision historique, domaine ${d} : lecture seule (Enregistrer et Annuler indisponibles)`, (await element(page.getByRole("toolbar", { name: "Actions de l’espace" }), "Enregistrer").isDisabled())
+      && (await element(page.getByRole("toolbar", { name: "Actions de l’espace" }), "Annuler").isDisabled()));
+  }
+  // Refus : une variante d'un projet d'autrui, même avec un domaine, ne divulgue rien.
+  await page.goto(`${BASE}/studio/projets/${pB.id}/etudes/etude-x/variantes/variante-x?domaine=bim`);
+  await page.locator("[data-studio-refus]").waitFor();
+  check("refus d'accès avec domaine : écran neutre, rien divulgué, adresse conservée", !(await page.locator("#workspace-content").textContent()).includes("P.STU.SECRET") && page.url().endsWith("?domaine=bim"));
+  // Dernier contexte : SUGGESTION à l'accueil, jamais de redirection ; une adresse directe est respectée.
+  await page.goto(`${base}?domaine=bim`);
+  await page.waitForSelector('[data-studio-domaine-affiche="bim"]');
+  await page.goto(`${BASE}/studio`);
+  const reprendre = page.locator("[data-studio-reprendre]");
+  await reprendre.waitFor();
+  check("accueil : « Reprendre : projet › étude › variante » proposé, vérifié par le serveur, sans redirection", page.url() === `${BASE}/studio`
+    && ((await reprendre.textContent()) ?? "").includes("P.STU.A › Implantation nord › Variante nord") && (await page.locator('[data-studio-reprise-verifiee="oui"]').count()) === 1
+    && (await reprendre.getAttribute("href")) === `${new URL(base).pathname}?domaine=bim`, `${page.url()} ${await reprendre.textContent()}`);
+  await page.goto(`${BASE}/studio/projets/${pA2.id}`);
+  await page.locator(`[data-studio-projet="${pA2.id}"]`).waitFor();
+  check("adresse directe : respectée malgré la suggestion de reprise", page.url() === `${BASE}/studio/projets/${pA2.id}`);
+  await page.goto(`${BASE}/studio?domaine=documentation`);
+  await reprendre.waitFor();
+  check("menu latéral hors variante (`/studio?domaine=…`) : la reprise proposée s'ouvrira dans ce domaine, rien n'est ouvert d'office", page.url() === `${BASE}/studio?domaine=documentation`
+    && (await reprendre.getAttribute("href")) === `${new URL(base).pathname}?domaine=documentation`);
+
+  // NAV-001 mobile : la même entrée et le même menu dans la barre adaptative ; espace de travail au téléphone.
+  // Écran tactile (hasTouch) du même compte : mêmes cookies de session.
+  const contexteMobile = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, storageState: await a.context.storageState() });
+  const mobile = await contexteMobile.newPage();
+  mobile.setDefaultTimeout(20000);
   mobile.on("pageerror", (e) => erreurs.push(`mobile : ${e.message}`));
-  await mobile.setViewportSize({ width: 390, height: 844 });
   await mobile.goto(`${BASE}/accueil`);
   const entreeMobile = mobile.locator("#workspace-navigation a[data-nav-studio]");
   await entreeMobile.waitFor({ state: "visible" }).catch(() => {});
   check("NAV-001 mobile : entrée Studio présente et visible", await entreeMobile.isVisible());
-  await entreeMobile.click();
+  const basculeMobile = mobile.locator("[data-studio-menu-lateral-bascule]");
+  await basculeMobile.tap();
+  check("menu Studio (tactile) : le chevron déplie les quatre domaines", (await basculeMobile.getAttribute("aria-expanded")) === "true" && (await mobile.locator("[data-studio-menu-domaine]:visible").count()) === 4);
+  await entreeMobile.tap();
   await mobile.waitForURL(`${BASE}/studio`);
-  await mobile.goto(base);
+  await mobile.goto(`${base}?domaine=documentation`);
   await mobile.locator("[data-studio-revisions] li").first().waitFor();
   check("mobile : la variante et son historique ne débordent pas", await mobile.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await mobile.screenshot({ path: join(OUT, "studio-mobile.png") });
+  // Barre compacte des domaines au téléphone : menu au clavier, choix, fermeture après choix, focus et défilement.
+  const menuMobile = mobile.locator("[data-studio-domaines-menu]");
+  await menuMobile.focus();
+  await mobile.keyboard.press("Enter");
+  check("téléphone : le menu des domaines s'ouvre au clavier", (await menuMobile.getAttribute("aria-expanded")) === "true");
+  await mobile.keyboard.press("Tab");
+  await mobile.keyboard.press("Tab");
+  check("téléphone : Tab parcourt les domaines dans l'ordre", await mobile.evaluate(() => document.activeElement?.getAttribute("data-studio-domaine-lien")) === "bim");
+  await mobile.keyboard.press("Enter");
+  await mobile.waitForSelector('[data-studio-domaine-affiche="bim"]');
+  const apresChoix = await mobile.evaluate(() => ({ ferme: document.querySelector("[data-studio-domaines-menu]")?.getAttribute("aria-expanded"), haut: Math.round(document.querySelector("[data-studio-barre-espace]").getBoundingClientRect().top), canevas: Math.round(document.querySelector(".studio-canevas").getBoundingClientRect().top) }));
+  check("téléphone : le menu se referme après le choix ; barre en haut, canevas dans l'écran", apresChoix.ferme === "false" && apresChoix.canevas < 844 && apresChoix.haut < apresChoix.canevas, JSON.stringify(apresChoix));
+  await menuMobile.tap();
+  await mobile.locator('[data-studio-domaines] a[data-studio-domaine-lien="dessin"]').tap();
+  await mobile.waitForSelector('[data-studio-domaine-affiche="dessin"]');
+  check("téléphone (tactile) : choix d'un domaine, menu refermé", (await menuMobile.getAttribute("aria-expanded")) === "false");
 
-  // Barre compacte : une seule rangée d'outils (familles repliables « ▾ », « Plus »), la planche commence dans la moitié
-  // haute de l'écran au bureau (1440×1000, 1280×720) comme au téléphone (390×844), sans débordement horizontal.
+  // Espace de travail outillé : palette verticale à gauche du canevas au bureau ; au téléphone, barre inférieure d'une
+  // rangée sous le canevas ; le canevas commence dans la moitié haute de l'écran ; aucun débordement horizontal.
   for (const [largeur, hauteur] of [[1440, 1000], [1280, 720], [390, 844]]) {
     await mobile.setViewportSize({ width: largeur, height: hauteur });
     await mobile.goto(base);
     await mobile.getByRole("group", { name: "Planche de dessin 2D", exact: true }).waitFor();
+    await mobile.waitForTimeout(300);
     const m = await mobile.evaluate(() => {
       const barre = document.querySelector('[role="toolbar"][aria-label="Outils de dessin"]');
-      const lignes = new Set([...barre.querySelectorAll("[data-studio-ligne]")].filter((e) => e.offsetParent).map((e) => Math.round(e.getBoundingClientRect().top)));
+      const visibles = [...barre.querySelectorAll("[data-studio-ligne]")].filter((e) => e.offsetParent).map((e) => e.getBoundingClientRect());
+      const planche = document.querySelector('[aria-label="Planche de dessin 2D"]').getBoundingClientRect();
       return {
-        planche: Math.round(document.querySelector('[aria-label="Planche de dessin 2D"]').getBoundingClientRect().top + window.scrollY),
-        rangees: lignes.size, debordeBarre: barre.scrollWidth > barre.clientWidth + 1, debordePage: document.documentElement.scrollWidth > window.innerWidth + 1,
+        orientation: barre.getAttribute("aria-orientation"), colonnes: new Set(visibles.map((r) => Math.round(r.left))).size, rangees: new Set(visibles.map((r) => Math.round(r.top))).size,
+        aGauche: Math.round(barre.getBoundingClientRect().right) <= Math.round(planche.left) + 1, sous: Math.round(barre.getBoundingClientRect().top) >= Math.round(planche.bottom) - 1,
+        planche: Math.round(planche.top + window.scrollY), hauteurPlanche: Math.round(planche.height),
+        debordeBarre: barre.scrollHeight > barre.clientHeight + 1, debordePage: document.documentElement.scrollWidth > window.innerWidth + 1,
       };
     });
-    check(`barre compacte ${largeur}×${hauteur} : une rangée, planche au-dessus de la moitié de l'écran (${m.planche} px < ${hauteur / 2} px)`,
-      m.planche < hauteur / 2 && m.rangees === 1 && !m.debordeBarre && !m.debordePage, JSON.stringify(m));
+    const ok = largeur > 540 ? m.orientation === "vertical" && m.colonnes === 1 && m.aGauche && !m.debordeBarre : m.orientation !== "vertical" && m.rangees === 1 && m.sous;
+    check(`espace ${largeur}×${hauteur} : palette ${largeur > 540 ? "verticale à gauche" : "en barre inférieure"}, canevas dans la moitié haute (${m.planche} px < ${hauteur / 2} px), aucun débordement`,
+      ok && m.planche < hauteur / 2 && m.hauteurPlanche >= (largeur > 540 ? 360 : 280) && !m.debordePage, JSON.stringify(m));
     await mobile.screenshot({ path: join(OUT, `studio-barre-compacte-${largeur}x${hauteur}.png`) });
   }
   // Menus de famille au clavier : flèche bas ouvre sur le premier élément, les flèches parcourent, Échap referme et
@@ -1468,7 +1613,7 @@ try {
   // E.6-03 : rapport de fidélité de l'export. Le raccourci Maj+X lance le téléchargement DXF puis ouvre une petite boîte
   // non modale (exact / approché / non couvert par type et raison) ; ses totaux sont ceux du rapport servi par l'API.
   await page.goto(base);
-  await outils.waitFor();
+  await outils.first().waitFor();
   await page.locator("svg [data-studio-objet]").first().waitFor({ state: "attached" });
   await page.evaluate(() => document.activeElement?.blur());
   const telechargementDxf = page.waitForEvent("download");
