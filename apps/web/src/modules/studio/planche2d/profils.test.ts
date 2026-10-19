@@ -2,11 +2,12 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { STUDIO_TOOLS } from "@parcours/atelier-model";
-import { CATALOGUE, rechercher, separerFavoris } from "./catalogue";
+import { CATALOGUE, filtrerCatalogue, rechercher, separerFavoris } from "./catalogue";
 import { creerMagasinPreferences, etatPourCompte, GestionnaireOutils, PaletteCommandes } from "./CatalogueOutils";
 import {
-  basculerFavori, basculerPersonnel, CHOIX_PROFILS, choisirProfil, favorisOrdonnes, filtreBarres, normaliserPreferences, OUTIL_TOUJOURS_VISIBLE,
-  outilsDuProfil, PREFERENCES_DEFAUT, PROFILS_METIER, visibleDansBarres, type PreferencesOutils,
+  basculerDansGroupe, basculerFavori, basculerPersonnel, CHOIX_PROFILS, choisirProfil, corpsPreferences, creerGroupe, favorisOrdonnes, filtreBarres, LIMITES_GROUPES,
+  normaliserPreferences, OUTIL_TOUJOURS_VISIBLE, outilsDuProfil, PREFERENCES_DEFAUT, PROFILS_METIER, refusNomGroupe, supprimerGroupe, visibleDansBarres,
+  type PreferencesOutils,
 } from "./profils";
 import { TABLE_CLAVIER } from "./raccourcis";
 
@@ -61,7 +62,7 @@ describe("profils d'outils : visibilité dans les barres seulement", () => {
   it("normalise les préférences relues : profil inconnu → standard, identifiants hors registre et doublons écartés", () => {
     expect(normaliserPreferences(null)).toEqual(PREFERENCES_DEFAUT);
     expect(normaliserPreferences({ profil: "metier:inconnu", favoris: ["studio.dessin.arc", "x", "studio.dessin.arc"], personnel: "non" }))
-      .toEqual({ profil: "standard", favoris: ["studio.dessin.arc"], personnel: [] });
+      .toEqual({ profil: "standard", favoris: ["studio.dessin.arc"], personnel: [], groupes: [] });
     expect(normaliserPreferences({ profil: "metier:volume", favoris: [], personnel: [] }).profil).toBe("metier:volume");
   });
 });
@@ -155,5 +156,77 @@ describe("favoris", () => {
   it("la palette sans favori garde une liste simple", () => {
     const html = renderToStaticMarkup(createElement(PaletteCommandes, { disponible: () => true, surExecuter: () => {}, surFermer: () => {} }));
     expect(html).not.toContain("data-studio-palette-groupe");
+  });
+});
+
+describe("regroupements personnels (B.2-02)", () => {
+  it("créer, composer, supprimer ; nom vide, en double ou trop long refusé", () => {
+    const a = creerGroupe(PREFERENCES_DEFAUT, "Plans d’étage");
+    expect(a.groupes).toEqual([{ id: "plans-d-etage", nom: "Plans d’étage", outils: [] }]);
+    expect(refusNomGroupe(a, "plans d’ÉTAGE")).toBe("pris");
+    expect(refusNomGroupe(a, "   ")).toBe("vide");
+    expect(refusNomGroupe(a, "x".repeat(LIMITES_GROUPES.nom + 1))).toBe("long");
+    expect(creerGroupe(a, "")).toBe(a);
+    const b = basculerDansGroupe(basculerDansGroupe(a, "plans-d-etage", "studio.architecture.mur"), "plans-d-etage", "studio.dessin.cote");
+    expect(b.groupes[0]!.outils).toEqual(["studio.architecture.mur", "studio.dessin.cote"]);
+    expect(basculerDansGroupe(b, "plans-d-etage", "studio.dessin.cote").groupes[0]!.outils).toEqual(["studio.architecture.mur"]);
+    expect(basculerDansGroupe(b, "inconnu", "studio.dessin.ligne")).toBe(b);
+    expect(supprimerGroupe(b, "plans-d-etage").groupes).toEqual([]);
+    // Identifiant unique même quand le nom se ramène au même identifiant.
+    expect(creerGroupe(a, "Plans d etage!").groupes.map((g) => g.id)).toEqual(["plans-d-etage", "plans-d-etage-2"]);
+  });
+
+  it("borne du nombre de regroupements", () => {
+    let p: PreferencesOutils = PREFERENCES_DEFAUT;
+    for (let i = 0; i < LIMITES_GROUPES.groupes; i += 1) p = creerGroupe(p, `G${i}`);
+    expect(p.groupes).toHaveLength(LIMITES_GROUPES.groupes);
+    expect(refusNomGroupe(p, "Encore un")).toBe("nombre");
+    expect(creerGroupe(p, "Encore un")).toBe(p);
+  });
+
+  it("relecture : regroupement mal formé ou en double écarté, outils hors registre écartés ; corps PUT complet", () => {
+    const p = normaliserPreferences({ profil: "standard", favoris: [], personnel: [], groupes: [
+      { id: "a", nom: " Mes murs ", outils: ["studio.architecture.mur", "x", "studio.architecture.mur"] }, { id: "a", nom: "doublon", outils: [] },
+      { id: "MAJ", nom: "id invalide", outils: [] }, { id: "b", nom: "", outils: [] }, "texte",
+    ] });
+    expect(p.groupes).toEqual([{ id: "a", nom: "Mes murs", outils: ["studio.architecture.mur"] }]);
+    expect(corpsPreferences(p)).toEqual({ profil: "standard", favoris: [], personnel: [], groupes: [{ id: "a", nom: "Mes murs", outils: ["studio.architecture.mur"] }] });
+  });
+
+  it("un regroupement ne change pas les barres (visibilité réglée par le profil seul)", () => {
+    const p = basculerDansGroupe(creerGroupe(PREFERENCES_DEFAUT, "Murs"), "murs", "studio.architecture.mur");
+    const avant = filtreBarres(PREFERENCES_DEFAUT), apres = filtreBarres(p);
+    for (const id of IDS) expect(apres(id)).toBe(avant(id));
+  });
+
+  it("le gestionnaire présente les regroupements, les filtres et le manifeste", () => {
+    const html = renderToStaticMarkup(createElement(GestionnaireOutils, { disponible: () => true, surExecuter: () => {}, surFermer: () => {} }));
+    expect(html).toContain("data-studio-regroupements");
+    expect(html).toContain("Mes regroupements");
+    expect(html).toContain('data-studio-manifeste="studio-tool-manifest/1"');
+    expect(html).toContain('data-studio-filtre="contexte"');
+  });
+});
+
+describe("filtres du catalogue (B.2-01)", () => {
+  const sources = { favoris: ["studio.dessin.cote", "enregistrer"], groupes: [{ id: "g", outils: ["studio.dessin.arc"] }], autorise: () => true };
+  it("par barre, contexte, nature, favoris, regroupement, et combinés", () => {
+    expect(filtrerCatalogue(CATALOGUE, { barre: "calques" }, sources).map((e) => e.identifiant)).toEqual(["studio.calque.creer", "studio.calque.modifier", "studio.objet.calque"]);
+    const v3d = filtrerCatalogue(CATALOGUE, { contexte: "vue-3d" }, sources).map((e) => e.identifiant);
+    expect(v3d).toContain("studio.solide.boite");
+    expect(v3d).toContain("exporter-png");
+    expect(v3d).not.toContain("studio.dessin.ligne");
+    expect(filtrerCatalogue(CATALOGUE, { contexte: "feuille" }, sources).map((e) => e.identifiant)).toEqual(["feuille", "outils", "palette"]);
+    expect(filtrerCatalogue(CATALOGUE, { nature: "lecture" }, sources).map((e) => e.identifiant)).toEqual(["studio.dessin.selection", "studio.scene.rappeler"]);
+    // Favoris : outils du registre seulement.
+    expect(filtrerCatalogue(CATALOGUE, { favoris: true }, sources).map((e) => e.identifiant)).toEqual(["studio.dessin.cote"]);
+    expect(filtrerCatalogue(CATALOGUE, { groupe: "g" }, sources).map((e) => e.identifiant)).toEqual(["studio.dessin.arc"]);
+    expect(filtrerCatalogue(CATALOGUE, { groupe: "absent" }, sources)).toEqual([]);
+    expect(filtrerCatalogue(CATALOGUE, { barre: "dessin", contexte: "vue-3d" }, sources).map((e) => e.identifiant)).toEqual(["studio.dessin.selection"]);
+    expect(filtrerCatalogue(CATALOGUE, {}, sources)).toHaveLength(CATALOGUE.length);
+  });
+  it("les filtres s'appliquent après la recherche, sans changer l'ordre", () => {
+    const r = filtrerCatalogue(rechercher("supprimer"), { contexte: "vue-3d" }, sources).map((e) => e.identifiant);
+    expect(r).toEqual(["studio.solide.supprimer", "studio.scene.supprimer"]);
   });
 });

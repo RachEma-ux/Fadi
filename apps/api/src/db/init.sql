@@ -727,6 +727,17 @@ ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_prefer
 ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_preferences_lists_check,
   ADD CONSTRAINT studio_tool_preferences_lists_check
   CHECK (jsonb_typeof(favorites) = 'array' AND jsonb_typeof(personal) = 'array') NOT VALID;
+-- Regroupements personnels d'outils (B.2-02) et version du manifeste du catalogue sous laquelle la ligne a été écrite
+-- (B.1-06, « studio-tool-manifest/<n> ») : colonnes additives facultatives (null = aucun regroupement / ligne écrite
+-- avant le manifeste), pour qu'une ligne d'archive antérieure se relise sans elles.
+ALTER TABLE studio_tool_preferences ADD COLUMN IF NOT EXISTS groups jsonb;
+ALTER TABLE studio_tool_preferences ADD COLUMN IF NOT EXISTS manifest_version text;
+ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_preferences_groups_check,
+  ADD CONSTRAINT studio_tool_preferences_groups_check
+  CHECK (groups IS NULL OR (jsonb_typeof(groups) = 'array' AND jsonb_array_length(groups) <= 20)) NOT VALID;
+ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_preferences_manifest_check,
+  ADD CONSTRAINT studio_tool_preferences_manifest_check
+  CHECK (manifest_version IS NULL OR manifest_version ~ '^studio-tool-manifest/[1-9][0-9]*$') NOT VALID;
 -- Publications Studio, jamais de suppression (E.4-06) : une DELETE directe d'un évènement du journal est refusée tant
 -- que sa publication existe ; une DELETE directe d'une publication diffusée ou retirée est refusée tant que son projet
 -- existe. Seule la cascade (parent déjà supprimé dans la même instruction, donc invisible) passe ; la route

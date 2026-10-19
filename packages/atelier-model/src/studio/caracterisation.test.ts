@@ -317,6 +317,9 @@ const AJOUTS = {
     "STUDIO_OPENING_KINDS", "STUDIO_WALL_JUSTIFICATIONS", "SCHEMA_ARCHITECTURE", "SCHEMA_MUR", "SCHEMA_OUVERTURE",
     "controlerArchitecture", "validerElementArchitectural", "validerMur", "validerOuverture", "geometrieMur", "lateraux", "placerOuverture",
     "studioPlanArchitecture", "studioMaillageArchitecture", "studioQuantitesArchitecture",
+    // Manifeste versionné du catalogue d'outils, chargeurs et alias de migration (B.1, `manifeste-outils.ts`).
+    "STUDIO_ALIAS_OUTILS", "STUDIO_CHARGEURS_OUTILS", "STUDIO_CONTEXTES_OUTILS", "STUDIO_MANIFESTE_OUTILS", "STUDIO_MANIFESTE_OUTILS_VERSION",
+    "controlerManifesteOutils", "entreeManifeste", "resoudreAliasOutil", "toolIdCanonique",
     // Rapport de fidélité des exports (E.6-03, `echanges/rapport-fidelite.ts`).
     "STUDIO_CAPACITES_EXPORT", "STUDIO_FORMATS_ECHANGE", "STUDIO_LISTES_ECHANGE", "STUDIO_RAISONS_FIDELITE", "STUDIO_RAPPORT_FIDELITE_SCHEMA",
     "STUDIO_STATUTS_FIDELITE", "studioRapportFidelite",

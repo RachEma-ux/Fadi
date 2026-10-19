@@ -367,6 +367,11 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/studio-profils.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du catalogue d'outils Studio — catalogue autorisé (droit réel), filtres, regroupements personnels, outil visible non autorisé désactivé avec sa raison (apps/web/e2e/studio-catalogue.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-catalogue.mjs 2>&1 | tee -a e2e.log
       - name: Recette Studio hors ligne — brouillon conservé au rechargement, rejeu des enveloppes (mêmes requestId, aucune révision en double), conflit sans écrasement (apps/web/e2e/studio-hors-ligne.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |

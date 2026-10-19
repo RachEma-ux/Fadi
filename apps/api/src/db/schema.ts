@@ -833,13 +833,17 @@ export const studioPublicationEvents = pgTable("studio_publication_events", {
 /**
  * Préférences d'outils Studio d'un compte (lib/studio-preferences.ts) : profil des barres (`standard`,
  * `metier:<id>`, `personnel`), favoris et liste personnelle, identifiants du registre `STUDIO_TOOLS`. Une ligne par
- * compte, sans rapport avec les documents : ni géométrie, ni révision, ni droit (B.2-07).
+ * compte, sans rapport avec les documents : ni géométrie, ni révision, ni droit (B.2-07). Regroupements personnels
+ * (`groups`, B.2-02) et version du manifeste d'écriture (`manifest_version`, B.1-06) : colonnes additives facultatives
+ * (null = aucun regroupement / ligne antérieure au manifeste), lisibles depuis une archive qui ne les porte pas.
  */
 export const studioToolPreferences = pgTable("studio_tool_preferences", {
   userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
   profile: text("profile").notNull().default("standard"),
   favorites: jsonb("favorites").$type<string[]>().notNull().default([]),
   personal: jsonb("personal").$type<string[]>().notNull().default([]),
+  groups: jsonb("groups").$type<{ id: string; nom: string; outils: string[] }[]>(),
+  manifestVersion: text("manifest_version"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
