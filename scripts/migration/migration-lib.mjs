@@ -15,7 +15,9 @@
  * l'hypothèse est écrite dans le rapport. Aucune valeur absente n'est remplacée par un défaut : elle est « non évaluée ».
  *
  * Données privées : aucun courriel, mot de passe, contenu de fichier ni texte libre d'annotation n'entre dans le
- * rapport (longueurs et empreintes seulement).
+ * rapport (longueurs et empreintes seulement) ; les noms de calques et de fichiers de publication sont remplacés par
+ * une empreinte courte (`nomMasque`). Seul le chemin local d'un export de file illisible, fourni par l'opérateur, est
+ * cité pour qu'il puisse le retrouver.
  */
 import { createHash } from 'node:crypto';
 
@@ -77,9 +79,11 @@ export const REGLES = Object.freeze({
   'R-STUDIO': { statut: 'compatible', evaluation: 'sourcée', motif: "Donnée déjà Studio (D-0 : Studio V1 est le seul Studio).", sources: [S('apps/api/src/db/init.sql', 'studio_*')] },
   'R-NIVEAU': { statut: 'ambigu', evaluation: 'sourcée', motif: "studio-document/1 n'a pas de niveau : la simulation range le niveau dans une variante simulée (hypothèse structure-cible) ; élévation et hauteur ne sont portées par aucun champ du document.", sources: [S('packages/atelier-model/src/studio/composition/types.ts', 'StudioDocument'), S('apps/api/src/db/init.sql', 'atelier_niveaux')] },
   'R-LIGNE': { statut: 'convertible', evaluation: 'sourcée', hypotheses: ['repere-local-identite'], motif: "Esquisse « ligne » à deux points → line (start, end).", sources: [S('packages/atelier-model/src/modele.ts', 'ParamsEsquisse'), S('packages/atelier-model/src/studio/objets/ligne.ts', 'StudioLine')] },
-  'R-POLYLIGNE': { statut: 'convertible', evaluation: 'sourcée', hypotheses: ['repere-local-identite'], motif: "Polyligne ou polygone → polyline (closed, bulges : un renflement par segment, convention DXF des deux côtés).", sources: [S('packages/atelier-model/src/modele.ts', 'ParamsEsquisse.renflements'), S('packages/atelier-model/src/studio/objets/polyligne.ts', 'StudioPolyline')] },
+  'R-POLYLIGNE': { statut: 'convertible', evaluation: 'sourcée', hypotheses: ['repere-local-identite'], motif: "Polyligne ou polygone → polyline (closed, bulges : un renflement par segment, convention DXF des deux côtés ; renflement absent = segment droit des deux côtés, complété par des zéros comme transformation déclarée).", sources: [S('packages/atelier-model/src/modele.ts', 'ParamsEsquisse.renflements'), S('packages/atelier-model/src/geometrie.ts', 'pointsPolyligne'), S('packages/atelier-model/src/studio/objets/polyligne.ts', 'StudioPolyline')] },
+  'R-POLYLIGNE-RENFLEMENTS': { statut: 'ambigu', evaluation: 'sourcée', motif: "Polyligne dont la liste de renflements dépasse le nombre de segments : l'Atelier ignore le surplus, Studio exige un renflement par segment — tronquer serait un choix non décidé.", sources: [S('packages/atelier-model/src/geometrie.ts', 'pointsPolyligne'), S('packages/atelier-model/src/studio/objets/polyligne.ts', 'StudioPolyline')] },
   'R-CERCLE': { statut: 'convertible', evaluation: 'sourcée', hypotheses: ['repere-local-identite'], motif: "Cercle (centre, rayon en m) → circle.", sources: [S('packages/atelier-model/src/modele.ts', 'ParamsEsquisse'), S('packages/atelier-model/src/studio/objets/cercle.ts', 'StudioCircle')] },
   'R-ARC': { statut: 'convertible', evaluation: 'sourcée', hypotheses: ['repere-local-identite'], motif: "Arc : degrés → radians ramenés dans [0 ; 2π[, même sens direct de début à fin.", sources: [S('packages/atelier-model/src/geometrie.ts', 'pointsArc'), S('packages/atelier-model/src/studio/objets/arc.ts', 'StudioArc')] },
+  'R-ARC-AMBIGU': { statut: 'ambigu', evaluation: 'sourcée', motif: "Arc à angles de début et de fin égaux (l'Atelier trace un tour complet) ou balayage d'au moins 360° (plusieurs tours) : un arc Studio couvre moins d'un tour — cercle ou arc, choix non décidé.", sources: [S('packages/atelier-model/src/geometrie.ts', 'pointsArc'), S('packages/atelier-model/src/studio/objets/arc.ts', 'StudioArc')] },
   'R-RECTANGLE': { statut: 'convertible', evaluation: 'sourcée', hypotheses: ['repere-local-identite'], motif: "Rectangle aux côtés parallèles aux axes (égalité exacte des coordonnées) → rectangle (origin, width, height).", sources: [S('packages/atelier-model/src/blocs-places.ts', 'forme rectangle'), S('packages/atelier-model/src/studio/objets/rectangle.ts', 'StudioRectangle')] },
   'R-RECTANGLE-TOURNE': { statut: 'ambigu', evaluation: 'sourcée', motif: "Rectangle tourné : studio rectangle est aligné sur les axes ; une polyligne fermée en changerait le type — choix non décidé.", sources: [S('packages/atelier-model/src/studio/objets/rectangle.ts', 'StudioRectangle')] },
   'R-ESQUISSE-SANS-CIBLE': { statut: 'non-convertible', evaluation: 'sourcée', motif: "Forme sans type Studio (spline, ellipse, hachure, construction) : l'approcher serait une perte de géométrie.", sources: [S('packages/atelier-model/src/studio/objets/index.ts', 'STUDIO_TYPES_OBJETS')] },
@@ -88,13 +92,14 @@ export const REGLES = Object.freeze({
   'R-MUR': { statut: 'convertible', evaluation: 'sourcée', hypotheses: ['repere-local-identite', 'base-elevation-niveau'], motif: "Mur droit à hauteur saisie → wall ; alignement gauche → right, axe → center, droite → left (l'Atelier aligne l'axe sur la face nommée, Studio nomme le côté du corps).", sources: [S('packages/atelier-model/src/geometrie.ts', 'facesMur'), S('packages/atelier-model/src/studio/architecture/types.ts', 'StudioWall')] },
   'R-MUR-COURBE': { statut: 'non-convertible', evaluation: 'sourcée', motif: "Mur courbe : l'axe d'un mur Studio n'a que des segments droits.", sources: [S('packages/atelier-model/src/studio/architecture/types.ts', 'StudioWall.axis')] },
   'R-MUR-HAUTEUR': { statut: 'ambigu', evaluation: 'sourcée', motif: "Hauteur non évaluée ou liée au niveau haut : Studio exige une hauteur saisie strictement positive.", sources: [S('packages/atelier-model/src/modele.ts', 'ParamsMur.hauteur'), S('packages/atelier-model/src/studio/architecture/types.ts', 'StudioWall.height')] },
-  'R-OUVERTURE': { statut: 'convertible', evaluation: 'sourcée', hypotheses: ['repere-local-identite', 'base-elevation-niveau'], motif: "Ouverture hébergée par un mur converti → opening (position = paramètre × longueur de l'axe, largeur, hauteur, allège ; porte / fenêtre déclarées par la classe).", sources: [S('packages/atelier-model/src/modele.ts', 'ParamsOuverture'), S('packages/atelier-model/src/studio/architecture/types.ts', 'StudioOpening')] },
+  'R-OUVERTURE': { statut: 'convertible', evaluation: 'sourcée', hypotheses: ['repere-local-identite', 'base-elevation-niveau'], motif: "Ouverture hébergée par un mur converti → opening ; l'Atelier pose `position` au CENTRE de la baie (paramètre le long de l'axe), Studio au BORD DE DÉBUT : position Studio = paramètre × longueur de l'axe − largeur / 2 ; largeur, hauteur, allège reprises ; porte / fenêtre déclarées par la classe.", sources: [S('packages/atelier-model/src/modele.ts', 'ParamsOuverture'), S('packages/atelier-model/src/versions.ts', 'collisions'), S('packages/atelier-model/src/studio/architecture/types.ts', 'StudioOpening'), S('packages/atelier-model/src/studio/architecture/geometrie.ts', 'placerOuverture')] },
   'R-OUVERTURE-INCOMPLETE': { statut: 'ambigu', evaluation: 'sourcée', motif: "Ouverture sans allège saisie, à haut cintré, ou dont le mur hôte n'est pas converti.", sources: [S('packages/atelier-model/src/studio/architecture/types.ts', 'StudioOpening')] },
   'R-SANS-CIBLE': { statut: 'non-convertible', evaluation: 'sourcée', motif: "Classe sans équivalent dans studio-document/1 (formes 2D, cotes, annotations, solides libres, murs et ouvertures).", sources: [S('packages/atelier-model/src/studio/composition/types.ts', 'StudioDocument'), S('packages/atelier-model/src/ontologie.ts', 'CLASSES')] },
   'R-CLASSE-INCONNUE': { statut: 'ambigu', evaluation: 'sourcée', motif: "Classe absente de l'ontologie Atelier : ligne illisible pour la simulation.", sources: [S('packages/atelier-model/src/ontologie.ts', 'CLASSES')] },
   'R-PARAMS-ILLISIBLES': { statut: 'ambigu', evaluation: 'sourcée', motif: "Paramètres qui ne respectent pas le type de leur classe : élément non évalué.", sources: [S('packages/atelier-model/src/modele.ts', 'Params*')] },
   'R-CALQUE': { statut: 'convertible', evaluation: 'sourcée', motif: "Calque → layer (name, visible, locked).", sources: [S('apps/api/src/db/init.sql', 'atelier_calques'), S('packages/atelier-model/src/studio/noyau/types.ts', 'StudioLayer')] },
   'R-HEBERGE': { statut: 'convertible', evaluation: 'sourcée', motif: "Relation heberge-par → opening.hostId (si les deux extrémités sont converties).", sources: [S('packages/atelier-model/src/ontologie.ts', 'KindRelation'), S('packages/atelier-model/src/studio/architecture/types.ts', 'StudioOpening.hostId')] },
+  'R-HEBERGE-INCOHERENT': { statut: 'ambigu', evaluation: 'sourcée', motif: "Relation heberge-par dont la cible n'est pas le mur hôte déclaré par l'ouverture (params.murHoteId) ou n'est pas un mur : incohérence du modèle source, rien n'est choisi.", sources: [S('packages/atelier-model/src/ontologie.ts', 'KindRelation'), S('packages/atelier-model/src/modele.ts', 'ParamsOuverture')] },
   'R-ASSOCIATION-REFERENCE': { statut: 'ambigu', evaluation: 'non évalué', motif: "Association annotation → caractéristique : correspondance avec les ancres de cote Studio non étudiée.", sources: [] },
   'R-RELATION-SANS-CIBLE': { statut: 'non-convertible', evaluation: 'sourcée', motif: "Studio n'a pas de table de relations : la relation reste dans atelier_relations.", sources: [S('packages/atelier-model/src/studio/composition/types.ts', 'StudioDocument')] },
   'R-REFERENCE-CARACTERISTIQUE': { statut: 'ambigu', evaluation: 'non évalué', motif: "Référence de caractéristique (état, propositions de réparation) sans équivalent étudié.", sources: [] },
@@ -123,31 +128,31 @@ export const REGLES = Object.freeze({
  * de fichier (taille et SHA-256 calculés par le serveur), pas de courriel ni d'empreinte de mot de passe.
  */
 export const REQUETES = Object.freeze({
-  projects: { mig: ['MIG-01'], sql: 'SELECT id, owner_id, code, name, model_revision FROM projects ORDER BY id' },
-  project_members: { mig: ['MIG-01'], sql: 'SELECT project_id, user_id, role FROM project_members ORDER BY project_id, user_id' },
-  atelier_niveaux: { mig: ['MIG-01'], sql: 'SELECT project_id, id, nom, elevation, hauteur, ordre FROM atelier_niveaux ORDER BY project_id, ordre, id' },
-  atelier_objets: { mig: ['MIG-01', 'MIG-02'], sql: 'SELECT project_id, id, classe, niveau_id, definition_id, calque_id, groupe_id, phase, params, proprietes, model_revision, verrouille FROM atelier_objets ORDER BY project_id, id' },
-  atelier_calques: { mig: ['MIG-01'], sql: 'SELECT project_id, id, nom, parent_id, visible, verrouille, gele, ordre, proprietes IS NOT NULL AS a_proprietes FROM atelier_calques ORDER BY project_id, ordre, id' },
-  atelier_relations: { mig: ['MIG-02'], sql: 'SELECT project_id, id, kind, source_id, target_id FROM atelier_relations ORDER BY project_id, id' },
-  atelier_definitions: { mig: ['MIG-02', 'MIG-04'], sql: 'SELECT project_id, id, classe, nom, version FROM atelier_definitions ORDER BY project_id, id' },
-  atelier_groupes: { mig: ['MIG-02'], sql: 'SELECT project_id, id, reseau IS NOT NULL AS reseau FROM atelier_groupes ORDER BY project_id, id' },
-  atelier_references: { mig: ['MIG-02'], sql: 'SELECT project_id, id, proprietaire_id, objet_id, caracteristique, etat FROM atelier_references ORDER BY project_id, id' },
-  atelier_site: { mig: ['MIG-01'], sql: 'SELECT project_id, parcelle IS NOT NULL AS parcelle, emprise IS NOT NULL AS emprise, ontologies FROM atelier_site ORDER BY project_id' },
-  atelier_commands: { mig: ['MIG-03'], sql: 'SELECT project_id, count(*)::int AS n, min(result_revision) AS rmin, max(result_revision) AS rmax, array_agg(DISTINCT contract ORDER BY contract) AS contrats FROM atelier_commands GROUP BY project_id ORDER BY project_id' },
-  atelier_versions: { mig: ['MIG-03'], sql: 'SELECT id, project_id, revision, empreinte FROM atelier_versions ORDER BY project_id, revision, id' },
-  atelier_variants: { mig: ['MIG-03'], sql: 'SELECT project_id, parent_id, statut, fork_revision FROM atelier_variants ORDER BY project_id' },
-  atelier_scripts: { mig: ['MIG-03'], sql: 'SELECT project_id, count(*)::int AS n FROM atelier_scripts GROUP BY project_id ORDER BY project_id' },
-  atelier_propositions: { mig: ['MIG-03'], sql: 'SELECT project_id, statut, count(*)::int AS n FROM atelier_propositions GROUP BY project_id, statut ORDER BY project_id, statut' },
-  atelier_outbox: { mig: ['MIG-03'], sql: 'SELECT project_id, id, event_type, version, attempts, processed_at IS NULL AS en_attente FROM atelier_outbox ORDER BY project_id, id' },
-  project_comments: { mig: ['MIG-03'], sql: 'SELECT project_id, id, atelier_revision FROM project_comments WHERE atelier_revision IS NOT NULL ORDER BY project_id, id' },
-  users: { mig: ['MIG-03'], sql: 'SELECT id, atelier_ensembles IS NOT NULL AS ensembles FROM users ORDER BY id' },
-  studio_tool_preferences: { mig: ['MIG-03'], sql: 'SELECT user_id, profile FROM studio_tool_preferences ORDER BY user_id' },
-  atelier_publications: { mig: ['MIG-04'], sql: 'SELECT id, project_id, version_id, revision, empreinte, documents FROM atelier_publications ORDER BY project_id, id' },
-  volumes: { mig: ['MIG-04'], sql: "SELECT id, size, octet_length(content) AS taille_reelle, encode(sha256(content), 'hex') AS sha256 FROM volumes ORDER BY id" },
-  drawing_exports: { mig: ['MIG-04'], sql: 'SELECT id, project_id, kind, size, octet_length(content) AS taille_reelle, model_revision FROM drawing_exports ORDER BY project_id, id' },
-  produced_documents: { mig: ['MIG-04'], sql: 'SELECT project_id, kind, model_revision FROM produced_documents ORDER BY project_id, kind' },
-  studio_studies: { mig: ['MIG-COEX-06'], sql: 'SELECT id, project_id FROM studio_studies ORDER BY project_id, id' },
-  studio_publications: { mig: ['MIG-04'], sql: 'SELECT id, project_id, study_id, status FROM studio_publications ORDER BY project_id, id' },
+  projects: { mig: ['MIG-01'], sql: 'SELECT id, owner_id, code, name, model_revision FROM public.projects ORDER BY id' },
+  project_members: { mig: ['MIG-01'], sql: 'SELECT project_id, user_id, role FROM public.project_members ORDER BY project_id, user_id' },
+  atelier_niveaux: { mig: ['MIG-01'], sql: 'SELECT project_id, id, nom, elevation, hauteur, ordre FROM public.atelier_niveaux ORDER BY project_id, ordre, id' },
+  atelier_objets: { mig: ['MIG-01', 'MIG-02'], sql: 'SELECT project_id, id, classe, niveau_id, definition_id, calque_id, groupe_id, phase, params, proprietes, model_revision, verrouille FROM public.atelier_objets ORDER BY project_id, id' },
+  atelier_calques: { mig: ['MIG-01'], sql: 'SELECT project_id, id, nom, parent_id, visible, verrouille, gele, ordre, proprietes IS NOT NULL AS a_proprietes FROM public.atelier_calques ORDER BY project_id, ordre, id' },
+  atelier_relations: { mig: ['MIG-02'], sql: 'SELECT project_id, id, kind, source_id, target_id FROM public.atelier_relations ORDER BY project_id, id' },
+  atelier_definitions: { mig: ['MIG-02', 'MIG-04'], sql: 'SELECT project_id, id, classe, nom, version FROM public.atelier_definitions ORDER BY project_id, id' },
+  atelier_groupes: { mig: ['MIG-02'], sql: 'SELECT project_id, id, reseau IS NOT NULL AS reseau FROM public.atelier_groupes ORDER BY project_id, id' },
+  atelier_references: { mig: ['MIG-02'], sql: 'SELECT project_id, id, proprietaire_id, objet_id, caracteristique, etat FROM public.atelier_references ORDER BY project_id, id' },
+  atelier_site: { mig: ['MIG-01'], sql: 'SELECT project_id, parcelle IS NOT NULL AS parcelle, emprise IS NOT NULL AS emprise, ontologies FROM public.atelier_site ORDER BY project_id' },
+  atelier_commands: { mig: ['MIG-03'], sql: 'SELECT project_id, count(*)::int AS n, min(result_revision) AS rmin, max(result_revision) AS rmax, array_agg(DISTINCT contract ORDER BY contract) AS contrats FROM public.atelier_commands GROUP BY project_id ORDER BY project_id' },
+  atelier_versions: { mig: ['MIG-03'], sql: 'SELECT id, project_id, revision, empreinte FROM public.atelier_versions ORDER BY project_id, revision, id' },
+  atelier_variants: { mig: ['MIG-03'], sql: 'SELECT project_id, parent_id, statut, fork_revision FROM public.atelier_variants ORDER BY project_id' },
+  atelier_scripts: { mig: ['MIG-03'], sql: 'SELECT project_id, count(*)::int AS n FROM public.atelier_scripts GROUP BY project_id ORDER BY project_id' },
+  atelier_propositions: { mig: ['MIG-03'], sql: 'SELECT project_id, statut, count(*)::int AS n FROM public.atelier_propositions GROUP BY project_id, statut ORDER BY project_id, statut' },
+  atelier_outbox: { mig: ['MIG-03'], sql: 'SELECT project_id, id, event_type, version, attempts, processed_at IS NULL AS en_attente FROM public.atelier_outbox ORDER BY project_id, id' },
+  project_comments: { mig: ['MIG-03'], sql: 'SELECT project_id, id, atelier_revision FROM public.project_comments WHERE atelier_revision IS NOT NULL ORDER BY project_id, id' },
+  users: { mig: ['MIG-03'], sql: 'SELECT id, atelier_ensembles IS NOT NULL AS ensembles FROM public.users ORDER BY id' },
+  studio_tool_preferences: { mig: ['MIG-03'], sql: 'SELECT user_id, profile FROM public.studio_tool_preferences ORDER BY user_id' },
+  atelier_publications: { mig: ['MIG-04'], sql: 'SELECT id, project_id, version_id, revision, empreinte, documents FROM public.atelier_publications ORDER BY project_id, id' },
+  volumes: { mig: ['MIG-04'], sql: "SELECT id, size, octet_length(content) AS taille_reelle, encode(sha256(content), 'hex') AS sha256 FROM public.volumes ORDER BY id" },
+  drawing_exports: { mig: ['MIG-04'], sql: 'SELECT id, project_id, kind, size, octet_length(content) AS taille_reelle, model_revision FROM public.drawing_exports ORDER BY project_id, id' },
+  produced_documents: { mig: ['MIG-04'], sql: 'SELECT project_id, kind, model_revision FROM public.produced_documents ORDER BY project_id, kind' },
+  studio_studies: { mig: ['MIG-COEX-06'], sql: 'SELECT id, project_id FROM public.studio_studies ORDER BY project_id, id' },
+  studio_publications: { mig: ['MIG-04'], sql: 'SELECT id, project_id, study_id, status FROM public.studio_publications ORDER BY project_id, id' },
 });
 
 // ——— Outils ———
@@ -160,6 +165,8 @@ export function canonique(v) {
 }
 export const sha256 = (texte) => createHash('sha256').update(texte).digest('hex');
 const court = (...parts) => sha256(parts.join('\u0000')).slice(0, 20);
+/** Nom privé (calque, fichier) : jamais en clair dans le rapport, seulement une empreinte courte stable. */
+export const nomMasque = (genre, nom) => `${genre}:${court(genre, String(nom))}`;
 const parProjet = (rows = []) => {
   const m = new Map();
   for (const r of rows) { const k = r.project_id; if (!m.has(k)) m.set(k, []); m.get(k).push(r); }
@@ -218,8 +225,18 @@ function classerObjetBrut(o, ctx) {
     if (p.forme === 'polyligne' || p.forme === 'polygone') {
       const closed = p.forme === 'polygone' || p.ferme === true;
       const valeur = { type: 'polyline', points: p.points.map(P), closed };
-      if (Array.isArray(p.renflements) && p.renflements.some((b) => b !== 0)) valeur.bulges = [...p.renflements];
-      return { regle: 'R-POLYLIGNE', cible: { collection: 'objects', valeur }, pertes: restes(p, [...base, 'renflements']) };
+      const transformations = [];
+      if (p.renflements !== undefined && p.renflements !== null) {
+        exiger(Array.isArray(p.renflements) && p.renflements.every(fini), 'renflements illisibles');
+        const segments = closed ? p.points.length : Math.max(0, p.points.length - 1);
+        if (p.renflements.length > segments) return { regle: 'R-POLYLIGNE-RENFLEMENTS', pertes: [], manques: [`${p.renflements.length} renflement(s) pour ${segments} segment(s)`] };
+        if (p.renflements.some((b) => b !== 0)) {
+          const manquants = segments - p.renflements.length;
+          valeur.bulges = [...p.renflements, ...Array(manquants).fill(0)];
+          if (manquants) transformations.push(`renflements complétés par ${manquants} zéro(s) (renflement absent = segment droit, pointsPolyligne)`);
+        }
+      }
+      return { regle: 'R-POLYLIGNE', cible: { collection: 'objects', valeur }, pertes: restes(p, [...base, 'renflements']), transformations };
     }
     if (p.forme === 'cercle') {
       exiger(point(p.centre) && longueur(p.rayon), 'centre ou rayon absent');
@@ -227,6 +244,10 @@ function classerObjetBrut(o, ctx) {
     }
     if (p.forme === 'arc') {
       exiger(point(p.centre) && longueur(p.rayon) && angleDeg(p.angleDebut) && angleDeg(p.angleFin), 'centre, rayon ou angles absents');
+      // Balayage tracé par l'Atelier (pointsArc : fin ramenée strictement après le début, tours entiers conservés).
+      let balayage = p.angleFin.value - p.angleDebut.value;
+      while (balayage <= 0) balayage += 360;
+      if (balayage >= 360) return { regle: 'R-ARC-AMBIGU', pertes: [], manques: [p.angleFin.value === p.angleDebut.value ? 'angles de début et de fin égaux (tour complet côté Atelier)' : `balayage de ${balayage}° (au moins un tour)`] };
       return { regle: 'R-ARC', cible: { collection: 'objects', valeur: { type: 'arc', center: P(p.centre), radius: p.rayon.value, startAngle: radians(p.angleDebut.value), endAngle: radians(p.angleFin.value) } }, pertes: restes(p, base) };
     }
     if (p.forme === 'rectangle') {
@@ -404,7 +425,7 @@ export function simuler(lignes, options = {}) {
       const element = { ancienne, classe: o.classe, regle: c.regle, manques: c.manques ?? [], pertes: c.cible ? lp : [] };
       if (c.cible && c.cible.valeur.type === 'opening') { enAttenteHote.push({ o, c, element, lp }); continue; }
       const e = noter(projet, element);
-      if (e.statut === 'convertible') convertis.set(o.id, { nouvelleId: `sim-objet-${court('objet', pid, o.id)}`, element: e, valeur: c.cible, o, lp });
+      if (e.statut === 'convertible') convertis.set(o.id, { nouvelleId: `sim-objet-${court('objet', pid, o.id)}`, element: e, valeur: c.cible, o, lp, transformations: c.transformations ?? [] });
     }
     for (const { o, c, element, lp } of enAttenteHote) {
       const hote = convertis.get(c.cible.valeur.hostAtelier);
@@ -415,7 +436,9 @@ export function simuler(lignes, options = {}) {
       const [a, b] = hote.valeur.valeur.axis;
       const longueurAxe = Math.hypot(b.x - a.x, b.y - a.y);
       const { hostAtelier, positionRelative, ...reste } = c.cible.valeur;
-      const valeur = { ...reste, hostId: hote.nouvelleId, position: positionRelative * longueurAxe };
+      // Atelier : `position` = paramètre du CENTRE de la baie le long de l'axe (versions.ts `collisions`, maillage.ts :
+      // [c − w/2 ; c + w/2]) ; Studio : distance du BORD DE DÉBUT (types.ts StudioOpening, placerOuverture).
+      const valeur = { ...reste, hostId: hote.nouvelleId, position: positionRelative * longueurAxe - reste.width / 2 };
       const e = noter(projet, element);
       if (e.statut === 'convertible') convertis.set(o.id, { nouvelleId: `sim-objet-${court('objet', pid, o.id)}`, element: e, valeur: { collection: 'architecture', valeur }, o, lp, hote: hostAtelier });
     }
@@ -471,7 +494,8 @@ export function simuler(lignes, options = {}) {
         const transformations = [`${x.o.classe}${x.o.classe === 'esquisse' ? ` (${x.o.params.forme})` : ''} → ${v.type}`];
         if (v.type === 'arc') transformations.push('angles : degrés → radians dans [0 ; 2π[');
         if (v.type === 'wall') transformations.push(`alignement ${x.o.params.alignement} → justification ${v.justification}`, `base = élévation du niveau ${n.id}`);
-        if (v.type === 'opening') transformations.push('position : paramètre le long de l\'axe × longueur de l\'axe du mur hôte');
+        if (v.type === 'opening') transformations.push('position : paramètre du centre × longueur de l\'axe du mur hôte − largeur / 2 (centre Atelier → bord de début Studio)');
+        transformations.push(...(x.transformations ?? []));
         transformations.push(`niveau ${n.id} (élévation ${n.elevation} m) → variante simulée`);
         correspondances.push({
           ancienne: x.element.ancienne, nouvelle,
@@ -485,7 +509,10 @@ export function simuler(lignes, options = {}) {
         pertes.push({ projet: pid, element: x.element.ancienne, perte: `élévation du niveau (${n.elevation} m) et sa hauteur : absentes d'un document 2D`, traitement: 'portées par la filiation (niveau source), source conservée' });
         for (const lp of x.lp) pertes.push({ projet: pid, element: x.element.ancienne, perte: lp, traitement: 'reste lisible dans atelier_objets (source conservée), signalé' });
       }
-      const d = { projet: pid, niveau: n.id, etude, variante, revision, objets: membres.length, empreinte: sha256(canonique(document)), conformite: 'non évaluée (aucun validateur fourni)', document };
+      // Rapport : noms de calques remplacés par une empreinte courte (M7) ; l'empreinte et la validation portent sur le
+      // document réel, avec ses noms.
+      const rapporte = document.layers ? { ...document, layers: document.layers.map((l) => ({ ...l, name: nomMasque('calque', l.name) })) } : document;
+      const d = { projet: pid, niveau: n.id, etude, variante, revision, objets: membres.length, empreinte: sha256(canonique(document)), conformite: 'non évaluée (aucun validateur fourni)', nomsCalques: 'masqués (empreinte courte)', document: rapporte };
       if (options.validerDocument) {
         try { options.validerDocument(document); d.conformite = 'conforme (validateStudioDocument)'; } catch (err) {
           d.conformite = 'refusé';
@@ -500,8 +527,18 @@ export function simuler(lignes, options = {}) {
     for (const r of relations) {
       const ancienne = `atelier_relations:${pid}/${r.id}`;
       if (r.kind === 'heberge-par') {
-        const ok = convertis.get(r.source_id)?.element.statut === 'convertible' && convertis.get(r.target_id)?.element.statut === 'convertible';
-        if (ok) {
+        const src = convertis.get(r.source_id), cible = convertis.get(r.target_id);
+        const ok = src?.element.statut === 'convertible' && cible?.element.statut === 'convertible';
+        // La relation doit désigner le mur que l'ouverture déclare elle-même (params.murHoteId), et ce doit être un mur.
+        const sourceObjet = objets.find((o) => o.id === r.source_id), cibleObjet = objets.find((o) => o.id === r.target_id);
+        const hoteDeclare = estObjet(sourceObjet?.params) ? sourceObjet.params.murHoteId : undefined;
+        const incoherences = [
+          ...(sourceObjet && hoteDeclare !== undefined && r.target_id !== hoteDeclare ? [`cible ${r.target_id} ≠ mur hôte déclaré ${String(hoteDeclare)}`] : []),
+          ...(sourceObjet && hoteDeclare === undefined ? ['source sans mur hôte déclaré'] : []),
+          ...(cibleObjet && cibleObjet.classe !== 'mur' ? [`cible de classe « ${cibleObjet.classe} », pas un mur`] : []),
+        ];
+        if (incoherences.length) noter(projet, { ancienne, regle: 'R-HEBERGE-INCOHERENT', manques: incoherences });
+        else if (ok) {
           const e = noter(projet, { ancienne, regle: 'R-HEBERGE', nouvelle: `${convertis.get(r.source_id).element.nouvelle}.hostId` });
           if (e.statut === 'convertible') correspondances.push({ ancienne, nouvelle: e.nouvelle, filiation: { source: { table: 'atelier_relations', projet: pid, id: r.id, kind: r.kind }, regle: 'R-HEBERGE', hypotheses: [], transformations: ['relation → champ hostId de l\'ouverture'] } });
         } else noter(projet, { ancienne, regle: 'R-RELATION-SANS-CIBLE', manques: ['ouverture ou mur hôte non converti'] });
@@ -543,8 +580,24 @@ export function simuler(lignes, options = {}) {
   for (const p of L('studio_tool_preferences')) comptes.push({ element: `studio_tool_preferences:compte:${court('compte', p.user_id)}`, regle: 'R-STUDIO', statut: 'compatible' });
   for (const c of comptes) if (c.statut === 'non-convertible') nonConvertibles.push({ projet: null, element: c.element, regle: c.regle, motif: REGLES[c.regle].motif, traitement: 'conservé dans sa table d\'origine (jamais supprimé), signalé' });
 
-  // Volumes : compatibles, intégrité vérifiée.
-  const volumesRapport = L('volumes').map((v) => ({ id: v.id, regle: 'R-VOLUME', statut: 'compatible', integre: v.sha256 === v.id && v.size === v.taille_reelle }));
+  // Erreurs sans projet (volume commun, export de file non rattaché) : listées et comptées à part, jamais perdues.
+  const erreursHorsProjet = [];
+  const erreurHorsProjet = (projetDeclare, element, code, message) => {
+    const x = { projet: projetDeclare ?? null, element, code, message };
+    erreursHorsProjet.push(x);
+    erreursPartielles.push(x);
+  };
+
+  // Volumes : compatibles, intégrité vérifiée ; un volume non intègre est une erreur partielle (I3).
+  const volumesRapport = L('volumes').map((v) => {
+    const empreinteOk = v.sha256 === v.id, tailleOk = v.size === v.taille_reelle;
+    const r = { id: v.id, regle: 'R-VOLUME', statut: 'compatible', integre: empreinteOk && tailleOk };
+    if (!r.integre) {
+      r.defauts = [...(empreinteOk ? [] : ['empreinte SHA-256 du contenu différente de l\'identifiant']), ...(tailleOk ? [] : [`taille déclarée ${v.size} ≠ taille réelle ${v.taille_reelle}`])];
+      erreurHorsProjet(null, `volumes:${v.id}`, 'volume-non-integre', r.defauts.join(' ; '));
+    }
+    return r;
+  });
 
   // Files locales exportées (MIG-03, MIG-COEX-04).
   const filesLocales = (options.filesLocales ?? []).map((f, i) => recenserFileLocale(f, i));
@@ -552,8 +605,12 @@ export function simuler(lignes, options = {}) {
     const projet = projets.find((p) => p.id === f.projet);
     const e = { ancienne: `file-locale:${f.reference}`, regle: 'R-FILE-LOCALE', manques: [f.traitement] };
     if (projet) noter(projet, e);
-    else ambiguites.push({ projet: f.projet, element: e.ancienne, regle: 'R-FILE-LOCALE', motif: REGLES['R-FILE-LOCALE'].motif, manques: [f.traitement, 'projet absent de la base lue'], hypothesesManquantes: [], traitement: 'conservée, à résoudre' });
-    if (f.erreur) erreursPartielles.push({ projet: f.projet, element: e.ancienne, code: 'file-locale-illisible', message: f.erreur });
+    else ambiguites.push({ projet: f.projet, element: e.ancienne, regle: 'R-FILE-LOCALE', motif: REGLES['R-FILE-LOCALE'].motif, manques: [f.traitement, f.projet ? 'projet absent de la base lue' : 'projet inconnu'], hypothesesManquantes: [], traitement: 'conservée, à résoudre' });
+    if (f.erreur) {
+      const message = f.chemin ? `${f.erreur} — ${f.chemin}` : f.erreur;
+      if (projet) erreur(projet, e.ancienne, 'file-locale-illisible', message);
+      else erreurHorsProjet(f.projet, e.ancienne, 'file-locale-illisible', message);
+    }
   }
 
   // ——— Contrôles prévus ———
@@ -581,6 +638,7 @@ export function simuler(lignes, options = {}) {
     erreurs: p.erreurs.length,
   }));
   const totaux = Object.fromEntries([...STATUTS, 'erreurs'].map((s) => [s, synthese.reduce((n, x) => n + x[s], 0)]));
+  totaux.erreurs += erreursHorsProjet.length;
   const regles = Object.fromEntries(Object.entries(REGLES).map(([id, r]) => [id, { ...r, utilisee: projets.some((p) => p.elements.some((e) => e.regle === id)) || comptes.some((c) => c.regle === id) }]));
 
   const corps = {
@@ -596,15 +654,21 @@ export function simuler(lignes, options = {}) {
     documentsSimules,
     pertes, ambiguites, nonConvertibles, erreursPartielles,
     controles,
-    synthese: { parProjet: synthese, totaux, avertissement: 'Aucun taux global : chaque erreur partielle, ambiguïté et non-convertible est listée avec son élément.' },
+    synthese: { parProjet: synthese, horsProjet: { erreurs: erreursHorsProjet.length }, tablesAbsentes: Object.keys(tables).filter((t) => tables[t] === 'absente'), totaux, avertissement: 'Aucun taux global : chaque erreur partielle, ambiguïté et non-convertible est listée avec son élément.' },
   };
   corps.empreinteCorpus = sha256(canonique({ tables: corps.schema.tables, lignes: Object.fromEntries(Object.keys(REQUETES).map((t) => [t, lignes[t] ?? null])) }));
   return corps;
 }
 
+/** Export de file locale que la ligne de commande n'a pas pu lire ou analyser (M8) : chemin et cause gardés. */
+export class FichierIllisible {
+  constructor(chemin, cause) { this.chemin = String(chemin); this.cause = String(cause); }
+}
+
 /** Brouillon Studio exporté (`fadi-studio-file-locale/1`) : jamais rejoué ici, seulement recensé. */
 export function recenserFileLocale(fichier, i = 0) {
   const reference = `export-${i + 1}`;
+  if (fichier instanceof FichierIllisible) return { reference, projet: null, chemin: fichier.chemin, erreur: `fichier d'export illisible : ${fichier.cause}`, traitement: 'à résoudre : export illisible, projet inconnu — bascule bloquée pour tous les projets tant qu\'il n\'est pas relu' };
   if (!estObjet(fichier) || fichier.format !== FORMAT_EXPORT_FILE_LOCALE || !estObjet(fichier.ligne)) return { reference, projet: null, erreur: 'format d\'export inconnu', traitement: 'à résoudre' };
   const ligne = fichier.ligne;
   let version = null, enveloppes = 0, pas = 0;
@@ -626,7 +690,7 @@ export function controlerPublications(publications, versions, volumes) {
     const pieces = docs.map((d) => {
       const v = volumes.get(d?.volumeId);
       const etat = !v ? 'pièce absente' : v.sha256 !== v.id ? 'empreinte divergente' : v.taille_reelle !== d.size ? 'taille divergente' : 'lien intact';
-      return { fichier: typeof d?.fileName === 'string' ? d.fileName : null, volume: d?.volumeId ?? null, etat };
+      return { fichier: typeof d?.fileName === 'string' ? nomMasque('fichier', d.fileName) : null, volume: d?.volumeId ?? null, etat };
     });
     const versionPresente = ids.has(p.version_id);
     const intacte = versionPresente && pieces.every((x) => x.etat === 'lien intact');
@@ -640,8 +704,10 @@ export function controlerEnAttente(outbox, filesLocales) {
     ...outbox.filter((e) => e.en_attente).map((e) => ({ projet: e.project_id, element: `atelier_outbox:${e.id}`, type: e.event_type, traitement: 'synchroniser ou mettre en résolution avant bascule ; jamais supprimé' })),
     ...filesLocales.map((f) => ({ projet: f.projet, element: `file-locale:${f.reference}`, type: 'brouillon Studio', traitement: f.traitement })),
   ];
-  const bloques = [...new Set(items.map((x) => x.projet))].sort();
-  return { enAttente: items, basculeBloquee: bloques, regle: 'Une bascule est refusée tant qu\'un élément en attente n\'est ni synchronisé, ni migré sous contrat, ni en résolution.' };
+  // Un élément sans projet connu n'est jamais rangé sous `null` : il bloque la bascule de TOUS les projets.
+  const bloques = [...new Set(items.filter((x) => x.projet).map((x) => x.projet))].sort();
+  const nonRattaches = items.filter((x) => !x.projet);
+  return { enAttente: items, basculeBloquee: bloques, nonRattaches, basculeBloqueeTousProjets: nonRattaches.length > 0, regle: 'Une bascule est refusée tant qu\'un élément en attente n\'est ni synchronisé, ni migré sous contrat, ni en résolution ; un élément dont le projet est inconnu bloque tous les projets.' };
 }
 
 /**
@@ -683,7 +749,11 @@ export function rapportMarkdown(r) {
   out.push(`Format \`${r.version}\` · build \`${r.genere.sourceBuild}\` · généré ${r.genere.horodatage ?? 'non renseigné'} · empreinte du corpus \`${r.empreinteCorpus.slice(0, 16)}…\``, '');
   out.push('> Simulation seulement : aucune écriture (lecture : ' + r.mandat.lecture + '). Les non-convertibles restent dans leurs tables d\'origine. ' + r.synthese.avertissement, '');
   out.push('## Hypothèses', '', table(['Identifiant', 'Appliquée', 'Origine', 'Texte'], r.hypotheses.map((h) => [h.id, h.appliquee ? 'oui' : 'non', h.origine, h.texte])), '');
-  out.push('## Synthèse par projet', '', table(['Projet', 'Code', 'Compatibles', 'Convertibles', 'Ambigus', 'Non convertibles', 'Erreurs partielles'], r.synthese.parProjet.map((p) => [p.projet, p.code, p.compatible, p.convertible, p.ambigu, p['non-convertible'], p.erreurs])), '');
+  out.push('## Synthèse par projet', '', table(['Projet', 'Code', 'Compatibles', 'Convertibles', 'Ambigus', 'Non convertibles', 'Erreurs partielles'], [...r.synthese.parProjet.map((p) => [p.projet, p.code, p.compatible, p.convertible, p.ambigu, p['non-convertible'], p.erreurs]), ['hors projet', '—', '—', '—', '—', '—', r.synthese.horsProjet.erreurs], ['total', '—', r.synthese.totaux.compatible, r.synthese.totaux.convertible, r.synthese.totaux.ambigu, r.synthese.totaux['non-convertible'], r.synthese.totaux.erreurs]]), '');
+  const absentes = r.synthese.tablesAbsentes;
+  out.push('## Tables absentes du schéma lu', '', absentes.length ? `> **Alerte** : ${absentes.length} table(s) attendue(s) absente(s) du schéma : rien n'y a été lu, le recensement correspondant est incomplet.\n\n${absentes.map((t) => `- \`${t}\` (${REQUETES[t]?.mig.join(', ') ?? '—'})`).join('\n')}` : 'Aucune : toutes les tables attendues ont été lues.', '');
+  const nonIntegres = r.volumes.filter((v) => !v.integre);
+  out.push('## Volumes', '', `${r.volumes.length} volume(s) lu(s), ${nonIntegres.length} non intègre(s).`, '', nonIntegres.length ? table(['Volume', 'Défauts'], nonIntegres.map((v) => [v.id, (v.defauts ?? []).join(' ; ')])) : 'Tous intègres (empreinte et taille).', '');
   out.push('## Recensement (MIG-01 à MIG-04)', '');
   for (const p of r.projets) {
     const i = p.inventaire;
@@ -693,7 +763,7 @@ export function rapportMarkdown(r) {
     out.push(`- MIG-03 : journal ${JSON.stringify(i['MIG-03'].historique)} ; ${i['MIG-03'].versions} version(s) ; hors ligne serveur ${JSON.stringify(i['MIG-03'].commandesHorsLigne.serveur)} ; navigateur : ${i['MIG-03'].commandesHorsLigne.navigateur}`);
     out.push(`- MIG-04 : ${i['MIG-04'].referencesExternes} référence(s) externe(s) ; publications ${JSON.stringify(i['MIG-04'].publications)} ; ${i['MIG-04'].exportsDessin} export(s) de dessin`, '');
   }
-  out.push('## Erreurs partielles (MIG-10)', '', r.erreursPartielles.length ? table(['Projet', 'Élément', 'Code', 'Message'], r.erreursPartielles.map((e) => [e.projet, e.element, e.code, e.message])) : 'Aucune.', '');
+  out.push('## Erreurs partielles (MIG-10)', '', r.erreursPartielles.length ? table(['Projet', 'Élément', 'Code', 'Message'], r.erreursPartielles.map((e) => [e.projet ?? '— (hors projet)', e.element, e.code, e.message])) : 'Aucune.', '');
   out.push('## Non convertibles conservés (MIG-09)', '', r.nonConvertibles.length ? table(['Projet', 'Élément', 'Règle', 'Traitement'], r.nonConvertibles.map((e) => [e.projet, e.element, e.regle, e.traitement])) : 'Aucun.', '');
   out.push('## Ambiguïtés (MIG-08)', '', r.ambiguites.length ? table(['Projet', 'Élément', 'Règle', 'Manque', 'Hypothèses manquantes'], r.ambiguites.map((e) => [e.projet, e.element, e.regle, e.manques.join(' ; '), e.hypothesesManquantes.join(', ')])) : 'Aucune.', '');
   out.push('## Pertes (MIG-08)', '', r.pertes.length ? table(['Projet', 'Élément', 'Perte', 'Traitement'], r.pertes.map((e) => [e.projet, e.element, e.perte, e.traitement])) : 'Aucune.', '');
@@ -701,7 +771,7 @@ export function rapportMarkdown(r) {
   out.push('## Documents Studio simulés', '', r.documentsSimules.length ? table(['Projet', 'Niveau', 'Révision simulée', 'Objets', 'Conformité'], r.documentsSimules.map((d) => [d.projet, d.niveau, d.revision, d.objets, d.conformite])) : 'Aucun.', '');
   out.push('## Contrôles prévus', '');
   out.push('### MIG-COEX-03 — publications liées à leurs pièces', '', r.controles['MIG-COEX-03'].length ? table(['Publication', 'Projet', 'Version présente', 'État'], r.controles['MIG-COEX-03'].map((c) => [c.publication, c.projet, c.versionPresente ? 'oui' : 'non', c.etat])) : 'Aucune publication Atelier.', '');
-  out.push('### MIG-COEX-04 — éléments en attente', '', `${r.controles['MIG-COEX-04'].regle} Projets bloqués : ${r.controles['MIG-COEX-04'].basculeBloquee.join(', ') || 'aucun'}.`, '');
+  out.push('### MIG-COEX-04 — éléments en attente', '', `${r.controles['MIG-COEX-04'].regle} Projets bloqués : ${r.controles['MIG-COEX-04'].basculeBloqueeTousProjets ? `TOUS (${r.controles['MIG-COEX-04'].nonRattaches.length} élément(s) sans projet connu)` : r.controles['MIG-COEX-04'].basculeBloquee.join(', ') || 'aucun'}.`, '');
   out.push('### MIG-COEX-06 — une seule chaîne d\'écriture par étude', '', table(['Projet', 'Étude simulée', 'Autorité', 'Écrivains', 'Lecture', 'Verdict'], r.controles['MIG-COEX-06'].map((c) => [c.projet, c.etude, c.autorite ?? '—', c.ecrivains.join(', ') || 'aucun', c.lecture.join(', ') || '—', c.verdict])), '');
   for (const id of ['OPS-04', 'OPS-05']) out.push(`### ${id} — ${r.controles[id].etat}`, '', ...r.controles[id].preuves.map((p) => `- ${p}`), '');
   out.push('## Règles de classement (MIG-05)', '', table(['Règle', 'Statut', 'Évaluation', 'Hypothèses', 'Sources', 'Utilisée'], Object.entries(r.regles).map(([id, g]) => [id, g.statut, g.evaluation, (g.hypotheses ?? []).join(', '), g.sources.map((s) => `${s.fichier} (${s.symbole})`).join(' ; ') || 'non évalué', g.utilisee ? 'oui' : 'non'])), '');

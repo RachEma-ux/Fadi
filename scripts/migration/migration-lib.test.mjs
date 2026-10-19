@@ -5,11 +5,12 @@ import path from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  CLASSES_ATELIER, FORMES_ESQUISSE, HYPOTHESES, REGLES, REQUETES, STATUTS, canonique, controlerPublications, planEcriture,
-  rapportMarkdown, recenserFileLocale, sha256, simuler,
+  CLASSES_ATELIER, FichierIllisible, FORMES_ESQUISSE, HYPOTHESES, REGLES, REQUETES, STATUTS, canonique, controlerEnAttente,
+  controlerPublications, nomMasque, planEcriture, rapportMarkdown, recenserFileLocale, sha256, simuler,
 } from './migration-lib.mjs';
-import { lireArguments } from './simuler-migration.mjs';
-import { ouvrirSessionLecture, RefusLecture } from './lecture.mjs';
+import { executer, lireArguments } from './simuler-migration.mjs';
+import { estCopieMarquee, ouvrirSessionLecture, RefusLecture } from './lecture.mjs';
+import { nomBaseSynthetiqueAdmis } from './jeu-synthetique.mjs';
 
 const RACINE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const pt = (x, y) => ({ x, y, frame: 'local', unit: 'm' });
@@ -65,6 +66,7 @@ describe('règles de classement (MIG-05)', () => {
   it('requêtes de lecture : uniquement des SELECT, aucun courriel, mot de passe ni contenu de fichier', () => {
     for (const [t, { sql, mig }] of Object.entries(REQUETES)) {
       assert.match(sql, /^SELECT\s/, t);
+      for (const [, nom] of sql.matchAll(/\bFROM\s+([a-z_.]+)/gi)) assert.ok(nom.startsWith('public.'), `${t} : table non qualifiée ${nom}`);
       assert.doesNotMatch(sql, /\b(INSERT|UPDATE|DELETE|ALTER|CREATE|DROP|TRUNCATE|GRANT|COPY)\b/i, t);
       assert.doesNotMatch(sql, /email|password|body\b|\bmodele\b/i, t);
       assert.ok(!/\bcontent\b/.test(sql.replace(/octet_length\(content\)|sha256\(content\)/g, '')), `${t} : contenu lu`);
@@ -76,7 +78,7 @@ describe('règles de classement (MIG-05)', () => {
 describe('simulation : classement, hypothèses et identités', () => {
   const objets = [
     obj('l1', 'esquisse', esq('ligne', [pt(0, 0), pt(4, 0)])),
-    obj('a1', 'esquisse', esq('arc', [], { centre: pt(1, 1), rayon: m(1), angleDebut: { value: -90, unit: 'deg' }, angleFin: { value: 450, unit: 'deg' } })),
+    obj('a1', 'esquisse', esq('arc', [], { centre: pt(1, 1), rayon: m(1), angleDebut: { value: -90, unit: 'deg' }, angleFin: { value: 90, unit: 'deg' } })),
     obj('r1', 'esquisse', esq('rectangle', [pt(3, 2), pt(1, 1)])),
     obj('r2', 'esquisse', esq('rectangle', [pt(0, 0), pt(1, 1), pt(0, 2), pt(-1, 1)])),
     obj('s1', 'esquisse', esq('spline', [pt(0, 0), pt(1, 1)])),
@@ -120,7 +122,7 @@ describe('simulation : classement, hypothèses et identités', () => {
     assert.equal(w2.justification, 'left');
     assert.equal(w1.base, 1.5, 'base = élévation du niveau, sous hypothèse déclarée');
     assert.equal(f1.hostId, w1.id);
-    assert.equal(f1.position, 2.5);
+    assert.equal(f1.position, 2, 'centre Atelier 0,5 × 5 = 2,5 → bord de début Studio 2,5 − 1 / 2');
     assert.equal(f1.kind, 'fenetre');
     // Paramètres non portés : pertes listées une à une (repère, menuiserie), jamais silencieuses.
     const pertesF1 = r.pertes.filter((p) => p.element === 'atelier_objets:p1/f1').map((p) => p.perte).join(' ; ');
@@ -205,12 +207,94 @@ describe('simulation : classement, hypothèses et identités', () => {
     assert.deepEqual(lireArguments(['--sortie', 'x', '--copie', 'c', '--hypothese', 'repere-local-identite']).hypotheses, ['repere-local-identite']);
   });
 
-  it('tables absentes du schéma : notées absentes, la simulation continue', () => {
+  it('tables absentes du schéma : notées absentes, la simulation continue, section et alerte au Markdown', () => {
     const l = lignes([]);
     delete l.atelier_outbox;
     const r = simuler(l, { horodatage: 'fixe' });
     assert.equal(r.schema.tables.atelier_outbox, 'absente');
     assert.equal(r.schema.tables.projects, 'lue');
+    assert.deepEqual(r.synthese.tablesAbsentes, ['atelier_outbox']);
+    const md = rapportMarkdown(r);
+    assert.match(md, /## Tables absentes du schéma lu\n\n> \*\*Alerte\*\* : 1 table/);
+    assert.match(md, /- `atelier_outbox` \(MIG-03\)/);
+    assert.match(rapportMarkdown(simuler(lignes([]), { horodatage: 'fixe' })), /## Tables absentes du schéma lu\n\nAucune/);
+  });
+
+  it('M1 : arc à angles égaux ou balayage d\'au moins 360° → ambigu ; arc ordinaire converti', () => {
+    const arc = (id, a0, a1) => obj(id, 'esquisse', esq('arc', [], { centre: pt(0, 0), rayon: m(1), angleDebut: { value: a0, unit: 'deg' }, angleFin: { value: a1, unit: 'deg' } }));
+    const r = simuler(lignes([arc('egal', 30, 30), arc('tour', 0, 360), arc('plus', -90, 450), arc('ok', 350, 10)]), { hypotheses: H, horodatage: 'fixe' });
+    for (const id of ['egal', 'tour', 'plus']) {
+      const e = element(r, `atelier_objets:p1/${id}`);
+      assert.deepEqual([e.statut, e.regle], ['ambigu', 'R-ARC-AMBIGU'], id);
+    }
+    assert.match(element(r, 'atelier_objets:p1/egal').manques[0], /égaux/);
+    assert.equal(element(r, 'atelier_objets:p1/ok').statut, 'convertible');
+  });
+
+  it('M2 : renflements trop courts complétés par des zéros (transformation déclarée) ; en surnombre → ambigu', () => {
+    const pl = (id, renflements, ferme = false) => obj(id, 'esquisse', esq('polyligne', [pt(0, 0), pt(2, 0), pt(2, 2)], { renflements, ferme }));
+    const r = simuler(lignes([pl('court', [0.5]), pl('ferme', [0.5], true), pl('long', [0, 0, 0.5]), pl('juste', [0, 0.5])]), { hypotheses: H, horodatage: 'fixe' });
+    const doc = r.documentsSimules[0].document;
+    const v = (id) => doc.objects.find((o) => r.correspondances.find((c) => c.ancienne === `atelier_objets:p1/${id}`).nouvelle.endsWith(o.id));
+    assert.deepEqual(v('court').bulges, [0.5, 0]);
+    assert.deepEqual(v('ferme').bulges, [0.5, 0, 0]);
+    assert.deepEqual(v('juste').bulges, [0, 0.5]);
+    const t = (id) => r.correspondances.find((c) => c.ancienne === `atelier_objets:p1/${id}`).filiation.transformations;
+    assert.ok(t('court').some((x) => /complétés par 1 zéro/.test(x)));
+    assert.ok(t('ferme').some((x) => /complétés par 2 zéro/.test(x)));
+    assert.ok(!t('juste').some((x) => /complétés/.test(x)));
+    assert.deepEqual([element(r, 'atelier_objets:p1/long').statut, element(r, 'atelier_objets:p1/long').regle], ['ambigu', 'R-POLYLIGNE-RENFLEMENTS']);
+  });
+
+  it('M3 : R-HEBERGE exige que la cible soit le mur hôte déclaré (murHoteId) et un mur, sinon ambigu', () => {
+    const fen = (id, hote) => obj(id, 'fenetre', { murHoteId: hote, position: 0.5, largeur: m(1), hauteur: m(1), allege: m(1) });
+    const objs = [obj('w1', 'mur', mur()), obj('w2', 'mur', mur({ a: pt(0, 3), b: pt(5, 3) })), obj('l1', 'esquisse', esq('ligne', [pt(0, 0), pt(1, 0)])), fen('f1', 'w1')];
+    const rel = (id, s, t) => ({ project_id: 'p1', id, kind: 'heberge-par', source_id: s, target_id: t });
+    const r = simuler(lignes(objs, { atelier_relations: [rel('bon', 'f1', 'w1'), rel('autre-mur', 'f1', 'w2'), rel('pas-un-mur', 'f1', 'l1')] }), { hypotheses: H, horodatage: 'fixe' });
+    const e = (id) => element(r, `atelier_relations:p1/${id}`);
+    assert.deepEqual([e('bon').statut, e('bon').regle], ['convertible', 'R-HEBERGE']);
+    assert.deepEqual([e('autre-mur').statut, e('autre-mur').regle], ['ambigu', 'R-HEBERGE-INCOHERENT']);
+    assert.match(e('autre-mur').manques[0], /≠ mur hôte déclaré w1/);
+    assert.deepEqual([e('pas-un-mur').statut, e('pas-un-mur').regle], ['ambigu', 'R-HEBERGE-INCOHERENT']);
+    assert.ok(e('pas-un-mur').manques.some((x) => /pas un mur/.test(x)));
+    assert.ok(!r.correspondances.some((c) => c.ancienne.endsWith('/autre-mur') || c.ancienne.endsWith('/pas-un-mur')));
+  });
+
+  it('I3 : volume non intègre = erreur partielle hors projet, comptée aux totaux, section Volumes au Markdown', () => {
+    const vols = [{ id: 'a'.repeat(64), size: 3, taille_reelle: 3, sha256: 'a'.repeat(64) }, { id: 'b'.repeat(64), size: 4, taille_reelle: 3, sha256: 'autre' }];
+    const r = simuler(lignes([], { volumes: vols }), { horodatage: 'fixe' });
+    const err = r.erreursPartielles.find((e) => e.code === 'volume-non-integre');
+    assert.equal(err.element, `volumes:${'b'.repeat(64)}`);
+    assert.equal(err.projet, null);
+    assert.match(err.message, /empreinte/);
+    assert.match(err.message, /taille déclarée 4 ≠ taille réelle 3/);
+    assert.equal(r.synthese.horsProjet.erreurs, 1);
+    assert.equal(r.synthese.totaux.erreurs, 1);
+    const md = rapportMarkdown(r);
+    assert.match(md, /## Volumes\n\n2 volume\(s\) lu\(s\), 1 non intègre/);
+    assert.match(md, /\| — \(hors projet\) \| volumes:b+ \| volume-non-integre/);
+    assert.match(md, /\| hors projet \| — \| — \| — \| — \| — \| 1 \|/);
+  });
+
+  it('I3 : erreur de file locale rattachée à son projet, comptée dans projet.erreurs, parProjet et totaux', () => {
+    const f = { format: 'fadi-studio-file-locale/1', ligne: { projectId: 'p1', userId: 'u', donnees: '{' } };
+    const r = simuler(lignes([]), { filesLocales: [f], horodatage: 'fixe' });
+    assert.equal(r.projets[0].erreurs.length, 1);
+    assert.equal(r.projets[0].erreurs[0].code, 'file-locale-illisible');
+    assert.equal(r.synthese.parProjet[0].erreurs, 1);
+    assert.equal(r.synthese.horsProjet.erreurs, 0);
+    assert.equal(r.synthese.totaux.erreurs, 1);
+  });
+
+  it('M7 : noms de calques et de fichiers de publication jamais en clair (empreinte courte)', () => {
+    const calques = [{ project_id: 'p1', id: 'c1', nom: 'Calque secret', parent_id: null, visible: true, verrouille: false, gele: false, ordre: 0, a_proprietes: false }];
+    const vol = { id: 'a'.repeat(64), size: 3, taille_reelle: 3, sha256: 'a'.repeat(64) };
+    const pubs = [{ id: 'pub', project_id: 'p1', version_id: 'v', documents: [{ fileName: 'plan-secret.pdf', volumeId: vol.id, size: 3 }] }];
+    const r = simuler(lignes([obj('l1', 'esquisse', esq('ligne', [pt(0, 0), pt(1, 0)]), { calque_id: 'c1' })], { atelier_calques: calques, atelier_publications: pubs, volumes: [vol] }), { hypotheses: H, horodatage: 'fixe' });
+    const sortie = JSON.stringify(r) + rapportMarkdown(r);
+    assert.ok(!sortie.includes('Calque secret') && !sortie.includes('plan-secret'));
+    assert.equal(r.documentsSimules[0].document.layers[0].name, nomMasque('calque', 'Calque secret'));
+    assert.equal(r.controles['MIG-COEX-03'][0].pieces[0].fichier, nomMasque('fichier', 'plan-secret.pdf'));
   });
 });
 
@@ -240,6 +324,20 @@ describe('contrôles prévus (MIG-COEX-03/04/06)', () => {
     assert.ok(!JSON.stringify(r).includes('u-secret'));
   });
 
+  it('M8 : export illisible — chemin et cause au rapport, jamais null dans basculeBloquee, tous les projets bloqués', () => {
+    const r = simuler(lignes([]), { filesLocales: [new FichierIllisible('/tmp/export.json', 'JSON invalide (x)')], horodatage: 'fixe' });
+    assert.deepEqual([r.filesLocales[0].chemin, r.filesLocales[0].erreur], ['/tmp/export.json', 'fichier d\'export illisible : JSON invalide (x)']);
+    const c = r.controles['MIG-COEX-04'];
+    assert.ok(!c.basculeBloquee.includes(null));
+    assert.equal(c.basculeBloqueeTousProjets, true);
+    assert.equal(c.nonRattaches.length, 1);
+    assert.equal(r.synthese.horsProjet.erreurs, 1);
+    assert.equal(r.synthese.totaux.erreurs, 1);
+    assert.ok(r.erreursPartielles[0].message.includes('/tmp/export.json'));
+    assert.match(rapportMarkdown(r), /Projets bloqués : TOUS \(1 élément\(s\) sans projet connu\)/);
+    assert.deepEqual(controlerEnAttente([], [{ projet: 'p2', reference: 'x', traitement: 't' }]).basculeBloquee, ['p2']);
+  });
+
   it('files locales exportées : format courant à synchroniser, autre format à résoudre, illisible signalé', () => {
     const f = (donnees, format = 'fadi-studio-file-locale/1') => ({ format, ligne: { projectId: 'p1', userId: 'u', donnees } });
     assert.match(recenserFileLocale(f(JSON.stringify({ version: 1 }))).traitement, /synchroniser/);
@@ -262,6 +360,19 @@ describe('contrôles prévus (MIG-COEX-03/04/06)', () => {
     const declare = simuler(lignes([obj('l1', 'esquisse', esq('ligne', [pt(0, 0), pt(1, 0)]))]), { horodatage: 'fixe', autorites: { p1: 'studio' } });
     assert.deepEqual(declare.controles['MIG-COEX-06'][0].ecrivains, ['studio']);
     assert.deepEqual(declare.controles['MIG-COEX-06'][0].lecture, ['atelier', 'studio']);
+  });
+});
+
+describe('gardes de base (I1, I2)', () => {
+  it('I1 : marqueur de copie — suffixe _copie / _mig / _synth ou commentaire fadi-copie-migration, sinon refus', () => {
+    for (const nom of ['prod_copie', 'fadi_mig', 'fadi_v9_fxmig_synth']) assert.ok(estCopieMarquee(nom, null), nom);
+    for (const nom of ['fadi', 'production', 'fadi_mig_x', '_mig', 'copie', 'fadi-mig']) assert.ok(!estCopieMarquee(nom, null), nom);
+    assert.ok(estCopieMarquee('restauration_2026', 'fadi-copie-migration — restaurée le 19/10/2026'));
+    assert.ok(!estCopieMarquee('restauration_2026', 'copie de migration'));
+  });
+  it('I2 : le jeu synthétique n\'écrit que dans une base *_mig ou *_synth', () => {
+    for (const nom of ['fadi_mig', 'x_synth']) assert.ok(nomBaseSynthetiqueAdmis(nom), nom);
+    for (const nom of ['fadi', 'prod_copie', '_synth', 'fadi_mig2']) assert.ok(!nomBaseSynthetiqueAdmis(nom), nom);
   });
 });
 

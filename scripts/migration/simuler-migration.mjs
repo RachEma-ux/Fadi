@@ -17,7 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { lireBase, RefusLecture } from './lecture.mjs';
-import { HYPOTHESES, rapportMarkdown, simuler } from './migration-lib.mjs';
+import { FichierIllisible, HYPOTHESES, rapportMarkdown, simuler } from './migration-lib.mjs';
 
 export function lireArguments(argv) {
   const a = { hypotheses: [], filesLocales: [], validerStudio: false };
@@ -45,7 +45,12 @@ export async function executer(argv, env = process.env) {
     const modele = await import('@parcours/atelier-model').catch((err) => { throw new Error(`validateur Studio indisponible (lancer avec tsx) : ${err.message}`); });
     validerDocument = modele.validateStudioDocument;
   }
-  const filesLocales = a.filesLocales.map((f) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return { format: null }; } });
+  // Un export illisible (absent, droits, JSON invalide) reste dans le rapport avec son chemin et sa cause.
+  const filesLocales = a.filesLocales.map((f) => {
+    let texte;
+    try { texte = fs.readFileSync(f, 'utf8'); } catch (err) { return new FichierIllisible(f, `lecture impossible (${err.code ?? err.message})`); }
+    try { return JSON.parse(texte); } catch (err) { return new FichierIllisible(f, `JSON invalide (${err.message})`); }
+  });
   const rapport = simuler(lignes, {
     hypotheses: a.hypotheses, filesLocales, validerDocument, lecture,
     base: { nom: base.nom, role: base.role, serveur: base.serveur },
@@ -63,7 +68,10 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     const t = r.synthese.totaux;
     console.log(`Simulation : ${r.projets.length} projet(s) — compatibles ${t.compatible}, convertibles ${t.convertible}, ambigus ${t.ambigu}, non convertibles ${t['non-convertible']} (conservés), erreurs partielles ${t.erreurs}.`);
     for (const p of r.synthese.parProjet) console.log(`  ${p.code} : ${p.compatible} / ${p.convertible} / ${p.ambigu} / ${p['non-convertible']} ; erreurs ${p.erreurs}`);
+    if (r.synthese.horsProjet.erreurs) console.log(`  hors projet : erreurs ${r.synthese.horsProjet.erreurs}`);
     for (const e of r.erreursPartielles) console.log(`  erreur partielle — ${e.element} : ${e.code} (${e.message})`);
+    if (r.synthese.tablesAbsentes.length) console.warn(`  ALERTE — tables absentes du schéma (rien n'y a été lu, recensement incomplet) : ${r.synthese.tablesAbsentes.join(', ')}`);
+    if (r.controles['MIG-COEX-04'].basculeBloqueeTousProjets) console.warn('  ALERTE — élément en attente sans projet connu : bascule bloquée pour tous les projets.');
   }).catch((err) => {
     console.error(`simulation refusée : ${err.message}`);
     process.exit(err instanceof RefusLecture || /attendu|inconnu|déclarable/.test(err.message) ? 2 : 1);
