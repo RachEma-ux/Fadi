@@ -583,6 +583,31 @@ export interface DocumentsView {
   nativeHash: string;
   computedAt: string;
   documents: DocumentDescriptor[];
+  /** Paquets Studio diffusés ou retirés (lecture seule, produits par le flux de publication). */
+  studioPackages?: StudioPackageDocument[];
+}
+
+/** Paquet figé d'une publication Studio, tel que le module Documents le liste (`lib/documents.ts` côté API). */
+export interface StudioPackageDocument {
+  kind: string;
+  group: "studio";
+  publicationId: string;
+  title: string;
+  studyId: string;
+  studyName: string;
+  variantId: string;
+  variantName: string;
+  revisionId: string;
+  revisionShort: string;
+  status: "diffuse" | "retire";
+  diffusedAt: string | null;
+  diffusedBy: string | null;
+  withdrawnAt: string | null;
+  documentHash: string;
+  packageHash: string;
+  freshness: "a-jour" | "perimee";
+  replacedBy: string | null;
+  files: { format: string; fileName: string; mime: string; size: number; sha256: string; href: string }[];
 }
 
 /** Module Collaboration. */

@@ -9551,5 +9551,17 @@
 "Menu Présentation": "Presentation menu",
 "Menu Importer / Exporter": "Import / Export menu",
 "Menu Édition": "Edition menu",
-"Menu Catalogue": "Catalogue menu"
+"Menu Catalogue": "Catalogue menu",
+"Studio — paquets diffusés": "Studio — issued packages",
+"Paquets figés des publications Studio (SVG, DXF, IFC et feuille PDF), produits à la diffusion d'une révision approuvée et vérifiés par leurs empreintes SHA-256. Lecture seule : un paquet retiré reste consultable, il n'est jamais supprimé.": "Frozen packages of the Studio publications (SVG, DXF, IFC and PDF sheet), produced when an approved revision is issued and checked against their SHA-256 fingerprints. Read only: a withdrawn package remains available, it is never deleted.",
+"Paquet": "Package",
+"Empreintes": "Fingerprints",
+"Fichiers": "Files",
+"variante": "variant",
+"Retiré": "Withdrawn",
+"Diffusé": "Issued",
+"Révision encore en tête de la variante": "Revision still at the head of the variant",
+"La variante a changé depuis": "The variant has changed since",
+"Remplacé par une diffusion plus récente": "Superseded by a more recent issue",
+"Retiré le": "Withdrawn on"
 }
