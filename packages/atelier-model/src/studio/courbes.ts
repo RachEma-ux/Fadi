@@ -1,4 +1,11 @@
-import type { StudioAnchor, StudioArc, StudioCircle, StudioPoint, StudioPolyline, StudioShape } from "./document-2d.js";
+// Types lus à leur définition (socle et objets), non par la façade document-2d.ts : le socle (noyau/validation.ts) importe
+// ce fichier, et ne doit pas atteindre la composition du document, même par un import de type.
+import type { StudioAnchor } from "./noyau/ancres.js";
+import type { StudioPoint } from "./noyau/types.js";
+import type { StudioArc } from "./objets/arc.js";
+import type { StudioCircle } from "./objets/cercle.js";
+import type { StudioShape } from "./objets/formes.js";
+import type { StudioPolyline } from "./objets/polyligne.js";
 
 /**
  * Géométrie pure des courbes de Studio (`studio-document/1`) : cercles, arcs (centre, rayon, angles de début et de fin

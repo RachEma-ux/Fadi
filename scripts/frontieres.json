@@ -21,13 +21,18 @@
     }
   },
   "studioModele": {
-    "$commentaire": "Couches du modèle Studio (packages/atelier-model/src/studio), dérivées du code au 19 octobre 2026. Socle : noyau (types du socle — point, extrusion, calque, forme minimale —, limites, validation, calques, ancres), qui n'importe aucune autre couche. Primitives d'écriture : exporteurs (texte, maillage, ifc-step, dxf) et registre/schemas-base. Objets 2D (objets, unions StudioShape / StudioAnnotation / StudioItem comprises), solides (objets-3d) et architecture se branchent sur le socle et les primitives. registre décrit les outils à partir des schémas d'objets ; commandes les exécute (état d'un lot compris, commandes/etat.ts) ; exigences (propriétés, exigences) et scenes (scènes, apparences) décrivent leurs données ; composition rassemble le document (StudioDocument, StudioCommand), sa validation, l'aiguillage applyStudioCommands et les lectures du document entier (coupe et quantités des solides, écarts aux exigences, affichage des scènes) ; echanges est une feuille. Les fichiers à la racine de studio/ (façades document-2d, solides-libres, facade-exigences, facade-scenes, export, registry…) ne sont pas contraints. Les imports « type » (import type, export type) sont distingués des imports de valeur dans les exceptions.",
+    "$commentaire": "Couches du modèle Studio (packages/atelier-model/src/studio), dérivées du code au 19 octobre 2026. Socle : noyau (types du socle — point, extrusion, calque, forme minimale —, limites, validation, calques, ancres), qui n'importe aucune autre couche. Vocabulaire du métré : metre (noms des grandeurs, unités, natures), feuille sans import, lue par les exigences et par la façade quantites.ts. Primitives d'écriture : exporteurs (texte, maillage, ifc-step, dxf) et registre/schemas-base. Objets 2D (objets, unions StudioShape / StudioAnnotation / StudioItem comprises), solides (objets-3d) et architecture se branchent sur le socle et les primitives. registre décrit les outils à partir des schémas d'objets ; commandes les exécute (état d'un lot compris, commandes/etat.ts) ; exigences (propriétés, exigences) et scenes (scènes, apparences) décrivent leurs données ; composition rassemble le document (StudioDocument, StudioCommand), sa validation, l'aiguillage applyStudioCommands et les lectures du document entier (coupe et quantités des solides, écarts aux exigences, affichage des scènes) ; echanges est une feuille. Les fichiers à la racine de studio/ (façades document-2d, solides-libres, facade-exigences, facade-scenes, export, registry…) ne sont pas contraints. Les imports « type » (import type, export type) sont distingués des imports de valeur dans les exceptions.",
     "racine": "packages/atelier-model/src/studio",
     "regles": [
       {
         "de": "noyau",
-        "interdits": ["objets", "objets-3d", "commandes", "registre", "exporteurs", "architecture", "echanges", "composition", "exigences", "scenes"],
+        "interdits": ["objets", "objets-3d", "commandes", "registre", "exporteurs", "architecture", "echanges", "composition", "exigences", "scenes", "metre"],
         "motif": "le noyau est le socle : il n'importe aucune couche supérieure"
+      },
+      {
+        "de": "metre",
+        "interdits": ["noyau", "objets", "objets-3d", "commandes", "registre", "exporteurs", "architecture", "echanges", "composition", "exigences", "scenes"],
+        "motif": "le vocabulaire du métré (grandeurs, unités, natures) est une feuille sans import : les exigences le lisent sans atteindre la composition, même indirectement par la façade quantites.ts (qui passe par document-2d.ts)"
       },
       {
         "de": "exporteurs",

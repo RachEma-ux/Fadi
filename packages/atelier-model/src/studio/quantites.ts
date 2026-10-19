@@ -1,3 +1,4 @@
+import { GRANDEURS_QUANTITE, GRANDEUR_CUMULABLE, UNITE_GRANDEUR, type GrandeurQuantite, type NatureQuantite, type UniteQuantite } from "./metre/grandeurs.js";
 import { studioArcSweep, studioBulgeArc, studioPolylinePath, studioPolylineSegments, studioRingSimple, studioSignedArea } from "./courbes.js";
 import { STUDIO_DEFAULT_LAYER_ID, STUDIO_LIMITS, type StudioDocument, type StudioPoint } from "./document-2d.js";
 import { studioQuantitesArchitecture } from "./architecture/quantites.js";
@@ -28,36 +29,8 @@ import { studioQuantitesArchitecture } from "./architecture/quantites.js";
  * conservée à côté de la valeur ajustée, avec motif, auteur et date.
  */
 
-export type GrandeurQuantite = "longueur" | "perimetre" | "surface" | "hauteur" | "surface-laterale" | "surface-verticale" | "volume"
-  /** A.4 : vides des ouvertures déclarées d'un mur, volume net du mur, surface d'une ouverture. */
-  | "volume-deduit" | "volume-net" | "surface-ouverture";
-export type UniteQuantite = "m" | "m2" | "m3";
-
-export const GRANDEURS_QUANTITE: readonly GrandeurQuantite[] = Object.freeze(["longueur", "perimetre", "surface", "hauteur", "surface-laterale", "surface-verticale", "volume", "volume-deduit", "volume-net", "surface-ouverture"] as const);
-export const UNITE_GRANDEUR: Readonly<Record<GrandeurQuantite, UniteQuantite>> = Object.freeze({
-  longueur: "m", perimetre: "m", surface: "m2", hauteur: "m", "surface-laterale": "m2", "surface-verticale": "m2", volume: "m3",
-  "volume-deduit": "m3", "volume-net": "m3", "surface-ouverture": "m2",
-});
-/** Une hauteur ne s'additionne pas : elle n'entre dans aucun total. */
-export const GRANDEUR_CUMULABLE: Readonly<Record<GrandeurQuantite, boolean>> = Object.freeze({
-  longueur: true, perimetre: true, surface: true, hauteur: false, "surface-laterale": true, "surface-verticale": true, volume: true,
-  "volume-deduit": true, "volume-net": true, "surface-ouverture": true,
-});
-
-/**
- * Nature métrée d'un objet : `ligne` / `rectangle` non extrudés, `mur` (ligne + épaisseur extrudée), `ligne-extrudee`
- * (sans épaisseur : surface verticale seulement), `prisme` (rectangle extrudé), `cercle` / `cylindre` (cercle extrudé),
- * `arc` / `mur-courbe` (arc + épaisseur) / `arc-extrude` (sans épaisseur : surface verticale), `polyligne-ouverte` /
- * `polyligne-ouverte-extrudee` (surface verticale), `polyligne-fermee` / `prisme-polyligne`, `non-pris-en-charge` (type
- * inconnu).
- */
-export type NatureQuantite =
-  | "ligne" | "rectangle" | "mur" | "ligne-extrudee" | "prisme"
-  | "cercle" | "cylindre" | "arc" | "mur-courbe" | "arc-extrude"
-  | "polyligne-ouverte" | "polyligne-ouverte-extrudee" | "polyligne-fermee" | "prisme-polyligne"
-  /** A.4 : mur et ouverture créés comme tels (`architecture`). */
-  | "mur-architectural" | "ouverture"
-  | "non-pris-en-charge";
+// Vocabulaire du métré (grandeurs, unités, natures) : `metre/grandeurs.ts`, réexporté ici à l'identique.
+export { GRANDEURS_QUANTITE, GRANDEUR_CUMULABLE, UNITE_GRANDEUR, type GrandeurQuantite, type NatureQuantite, type UniteQuantite };
 
 export type MotifNonEvalue =
   | "non-extrude" | "epaisseur-non-declaree" | "type-non-pris-en-charge" | "geometrie-invalide"

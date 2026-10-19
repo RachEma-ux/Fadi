@@ -301,3 +301,62 @@ describe("section Studio : versions et forme (revue #198)", () => {
     for (const v of [null, [], "tronqué"]) expect(errorsOf(v).length).toBeGreaterThan(0);
   });
 });
+
+describe("section Studio : ajustements du métré (E.3-05)", () => {
+  const avecAjustements = () => {
+    const { tables } = fixture();
+    tables.studio_quantity_adjustments = [
+      { id: "qa1", study_id: "s1", variant_id: "v1", revision_id: "r2", seq: 1, target_kind: "objet", target_id: "l0", quantity: "longueur", value: 1.5, unit: "m", derived_value: 1.4142, target_state: { cible: "objet" }, motif: "Relevé", author_id: "uEditor", request_id: null, payload_hash: "d".repeat(64), created_at: "2026-10-19T09:00:00.000001+00:00" },
+      { id: "qa2", study_id: "s1", variant_id: "v1", revision_id: "r2", seq: 2, target_kind: "calque", target_id: "default", quantity: "longueur", value: null, unit: "m", derived_value: 1.4142, target_state: { cible: "calque" }, motif: "Retour", author_id: "uOwner", request_id: null, payload_hash: "e".repeat(64), created_at: "2026-10-19T09:01:00.000001+00:00" },
+    ];
+    const section = { schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: STUDIO_ARCHIVE_SCHEMA_VERSION, sourceProjectId: "pA", ownerId: "uOwner", accounts: ACCOUNTS, tables, manifest: buildStudioManifest(tables, IDENT) };
+    return { tables, section };
+  };
+
+  it("table couverte par le manifeste (effectif, empreinte) et par l'empreinte globale signée", () => {
+    const { tables, section } = avecAjustements();
+    expect(section.manifest.tables.studio_quantity_adjustments.count).toBe(2);
+    expect(section.manifest.hash).not.toBe(buildStudioManifest(fixture().tables, IDENT).hash);
+    expect(errorsOf(clone(section))).toEqual([]);
+    expect(studioAccountIds(tables, "uOwner")).toEqual(["uEditor", "uOwner"]);
+    const altere = clone(section) as { tables: StudioArchiveTables };
+    altere.tables.studio_quantity_adjustments[0]!["value"] = 2;
+    expect(errorsOf(altere)).toContain("studio_quantity_adjustments : empreinte différente du manifeste");
+  });
+
+  it("intégrité : variante de l'étude, révision de la variante, séquence unique, état de la cible et motif", () => {
+    const { tables } = avecAjustements();
+    tables.studio_quantity_adjustments[0]!["revision_id"] = "r3";
+    tables.studio_quantity_adjustments[1]!["seq"] = 1;
+    tables.studio_quantity_adjustments[1]!["target_state"] = "x";
+    tables.studio_quantity_adjustments[1]!["motif"] = " ";
+    const section = { schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: STUDIO_ARCHIVE_SCHEMA_VERSION, sourceProjectId: "pA", ownerId: "uOwner", accounts: ACCOUNTS, tables, manifest: buildStudioManifest(tables, IDENT) };
+    expect(errorsOf(section)).toEqual(expect.arrayContaining([
+      "ajustement qa1 : révision absente", "ajustement qa2 : séquence en double", "ajustement qa2 : état de la cible illisible", "ajustement qa2 : motif absent",
+    ]));
+  });
+
+  it("archive non vérifiée : tout auteur devient le compte qui restaure, contenu inchangé", () => {
+    const { tables } = avecAjustements();
+    const map = new Map(ACCOUNTS.map((a) => [a.id, "uImporter"]));
+    const out = remapStudioRows("studio_quantity_adjustments", tables.studio_quantity_adjustments, "pB", map);
+    expect(out.map((r) => r["author_id"])).toEqual(["uImporter", "uImporter"]);
+    expect(out.map((r) => ({ ...r, author_id: undefined }))).toEqual(tables.studio_quantity_adjustments.map((r) => ({ ...r, author_id: undefined })));
+  });
+
+  it("archive de la version antérieure des tables (sans ajustements) : relue telle quelle, sans la table", () => {
+    const { tables } = fixture();
+    const anterieures = STUDIO_ARCHIVE_TABLES.filter((t) => t !== "studio_quantity_adjustments");
+    const rawTables = Object.fromEntries(anterieures.map((t) => [t, tables[t]]));
+    const ancienne = {
+      schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: { document: "studio-document/1", tables: "studio-v1/2026-10-19" }, sourceProjectId: "pA", ownerId: "uOwner", accounts: ACCOUNTS,
+      tables: rawTables, manifest: buildStudioManifest(tables, IDENT, anterieures),
+    };
+    expect(Object.keys(ancienne.manifest.tables)).not.toContain("studio_quantity_adjustments");
+    const r = checkStudioArchive(clone(ancienne));
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.section.tables.studio_quantity_adjustments).toEqual([]);
+    // Une archive de l'ancienne version qui porterait la table nouvelle est refusée (jamais devinée).
+    expect(errorsOf({ ...clone(ancienne), tables: { ...rawTables, studio_quantity_adjustments: [] } })).toContain("table studio_quantity_adjustments inattendue dans cette version");
+  });
+});
