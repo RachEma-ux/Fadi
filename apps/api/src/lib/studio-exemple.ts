@@ -26,7 +26,7 @@
  * plus ; aucune seconde étude exemple n'est créée d'office (choix conservateur). Une étude complète d'une version
  * antérieure reste l'étude exemple du projet (aucune réinstallation automatique).
  */
-import { and, eq, isNotNull } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { STUDIO_CONTRACT } from "@parcours/atelier-model";
 import { convertirExempleP118, lotsDeCommandes, type ConversionExempleP118, type ConversionNiveauP118 } from "@parcours/atelier-model/studio-exemples";
@@ -82,10 +82,15 @@ export interface StudioExempleInstalle {
 /** État de l'étude exemple d'un projet issu de l'exemple P.118 ; `null` hors d'un tel projet. */
 export interface EtatExempleStudio { etat: "absente" | "partielle" | "complete"; studyId: string | null }
 
-/** Étude marquée comme l'exemple P.118 du projet (archivée comprise), ou null. */
+/**
+ * Étude ACTIVE marquée comme l'exemple P.118 du projet (la plus récente), ou null. Une étude exemple archivée est hors
+ * jeu (revue Codex #206) : c'est la voie de sortie prescrite par `exemple_version_changee` (archiver l'installation
+ * partielle d'une autre version, puis relancer) ; la relancer ne doit pas resélectionner la même étude.
+ */
 async function etudeExemple(projectId: string): Promise<{ id: string; initialVariantId: string; exampleInstall: StudioExampleInstall } | null> {
   const rows = await db.select({ id: studioStudies.id, initialVariantId: studioStudies.initialVariantId, exampleInstall: studioStudies.exampleInstall }).from(studioStudies)
-    .where(and(eq(studioStudies.projectId, projectId), isNotNull(studioStudies.exampleInstall)));
+    .where(and(eq(studioStudies.projectId, projectId), isNotNull(studioStudies.exampleInstall), isNull(studioStudies.archivedAt)))
+    .orderBy(desc(studioStudies.createdAt));
   const s = rows.find((r) => r.exampleInstall?.exampleId === STUDIO_EXEMPLE_P118.exampleId);
   return s ? { ...s, exampleInstall: s.exampleInstall! } : null;
 }

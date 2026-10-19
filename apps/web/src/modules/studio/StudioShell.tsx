@@ -312,7 +312,8 @@ function ChargerExempleP118({ projectId, etat }: { projectId: string; etat: "abs
     if (r) await client.invalidateQueries({ queryKey: ["studio-studies", projectId] });
   }
   if (etat === "complete" && !resultat) return null;
-  const absents = resultat?.rapport.niveaux.reduce((n, x) => n + x.rapport.absents.length, 0) ?? 0;
+  // Nombre d’éléments absents (une entrée peut en regrouper plusieurs : son `nombre`), pas le nombre de lignes du rapport.
+  const absents = resultat?.rapport.niveaux.reduce((n, x) => n + x.rapport.absents.reduce((m, a) => m + a.nombre, 0), 0) ?? 0;
   return (
     <div className="studio-create" data-studio-exemple-p118 data-studio-exemple-etat={resultat ? "complete" : etat} aria-busy={enCours}>
       <h3>Exemple Studio</h3>
