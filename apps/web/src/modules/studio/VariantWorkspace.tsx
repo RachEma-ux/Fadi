@@ -59,6 +59,7 @@ import { FormulaireExtrusion } from "./vue3d/FormulaireExtrusion";
 import { cartoucheInitial } from "./feuille/feuille-ui";
 import { PanneauFeuille } from "./feuille/PanneauFeuille";
 import { PanneauCommentaires } from "./commentaires/PanneauCommentaires";
+import { PanneauQuantites } from "./quantites/PanneauQuantites";
 import { DialogueImportDxf } from "./import/DialogueImportDxf";
 import { accuserLot, commandesNonEnvoyees, enveloppeSuivante, envoiPartiel, planEnvoi, type PlanEnvoi } from "./import/envoi";
 import "./studio.css";
@@ -804,6 +805,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     {commentaires && <div id="studio-commentaires"><PanneauCommentaires projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} revision={context.revision.document} dessin={drawing}
       selection={selectionIds} canWrite={!historical && context.canWrite} surSelection={ids => { setTool("studio.dessin.selection"); cancelTrace(); select(ids); }} /></div>}
     <RevisionsPanel projectId={projectId} studyId={studyId} variantId={variantId} headRevisionId={context.variant.headRevisionId} shownRevisionId={context.revision.id} />
+    {drawing && <PanneauQuantites doc={drawing} lectureSeule={!writable} />}
     {dialogue === "outils" && <GestionnaireOutils disponible={entreeDisponible} surExecuter={executerEntree} surFermer={() => setDialogue(null)} />}
     {dialogue === "palette" && <PaletteCommandes disponible={entreeDisponible} surExecuter={executerEntree} surFermer={() => setDialogue(null)} />}
     {dialogue === "import-dxf" && <DialogueImportDxf doc={drawing} modifiable={writable} surFermer={() => setDialogue(null)}
@@ -813,7 +815,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   </section>;
 }
 
-const SOURCES: Record<string, string> = { "study-initialization": "Création de l’étude", "variant-initialization": "Création de la variante", "authenticated-session": "Enregistrement" };
+const SOURCES: Record<string, string> = { "study-initialization": "Création de l’étude", "variant-initialization": "Création de la variante", "variant-derivation": "Dérivation d’une variante", "authenticated-session": "Enregistrement" };
 
 /** Historique de la variante, de la plus récente à la plus ancienne ; chaque révision s'ouvre en lecture seule. */
 function RevisionsPanel({ projectId, studyId, variantId, headRevisionId, shownRevisionId }: { projectId: string; studyId: string; variantId: string; headRevisionId: string; shownRevisionId: string }) {
