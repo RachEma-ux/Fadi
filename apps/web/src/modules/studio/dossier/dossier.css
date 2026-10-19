@@ -1,0 +1,26 @@
+/* Boîte « Feuilles et dossier » : feuilles composées puis dossier de conception ; une colonne sur petit écran. */
+.studio-dialogue.studio-dossier{width:min(1080px,100%)}
+.studio-dossier-corps{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:start}
+.studio-dossier-corps>p{grid-column:1/-1;margin:0}
+.studio-dossier-corps h3{margin:0 0 8px;font-size:15px}
+.studio-dossier-corps h4{margin:8px 0;font-size:14px}
+.studio-dossier-feuilles{list-style:none;padding:0;margin:0 0 12px;display:grid;gap:8px}
+.studio-dossier-feuille{border:1px solid rgba(127,127,127,.35);border-radius:8px;padding:10px;display:grid;gap:6px;min-width:0}
+.studio-dossier-feuille-tete{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}
+.studio-dossier-etat{font-size:.8rem;border-radius:999px;padding:1px 8px;border:1px solid rgba(127,127,127,.5)}
+.studio-dossier-perimee{font-weight:600}
+.studio-dossier-faits{display:grid;grid-template-columns:max-content 1fr;gap:2px 12px;margin:0;font-size:13px}
+.studio-dossier-faits dd{margin:0;overflow-wrap:anywhere}
+.studio-dossier-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.studio-dossier-actions a,.studio-dossier-actions button,.studio-dossier-nouvelle button,.studio-dossier-editer button{display:inline-flex;align-items:center;gap:6px}
+.studio-dossier-nouvelle,.studio-dossier-editer{border:1px solid #d5e0e3;border-radius:10px;padding:8px 12px;display:grid;gap:8px}
+.studio-dossier-nouvelle label,.studio-dossier-editer label,.studio-dossier-dossiers>label{display:grid;gap:3px;font-size:13px}
+.studio-dossier-nouvelle fieldset,.studio-dossier-editer fieldset{border:1px solid #d5e0e3;border-radius:8px;margin:0;padding:6px 10px;display:grid;gap:6px}
+.studio-dossier-nouvelle label.studio-dossier-case,.studio-dossier-editer label.studio-dossier-case{display:flex;align-items:center;gap:6px}
+.studio-dossier-nouvelle input:not([type=checkbox]):not([type=radio]),.studio-dossier-nouvelle select,.studio-dossier-editer input:not([type=checkbox]),.studio-dossier-dossiers select{font:inherit;padding:5px 7px;border:1px solid #b9c9ce;border-radius:6px;min-width:0}
+.studio-dossier-dossiers{display:grid;gap:10px}
+.studio-dossier-assemble{border:1px solid rgba(127,127,127,.35);border-radius:8px;padding:10px;display:grid;gap:6px;min-width:0}
+.studio-dossier-ordre{margin:0;padding-left:20px;display:grid;gap:4px}
+.studio-dossier-ordre li{overflow-wrap:anywhere}
+.studio-dossier-ordre li button{margin-left:4px}
+@media (max-width:760px){.studio-dossier-corps{grid-template-columns:1fr}}

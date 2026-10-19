@@ -9,20 +9,20 @@ import { createHash } from 'node:crypto';
 
 export const TABLES = Object.freeze([
   'studio_studies', 'studio_variants', 'studio_revisions', 'studio_comments', 'studio_observations',
-  'studio_observation_events', 'studio_study_steps', 'studio_requirement_sets', 'studio_requirement_checks', 'studio_quantity_adjustments', 'volumes', 'studio_publications', 'studio_publication_events',
-  'project_members', 'studio_tool_preferences',
+  'studio_observation_events', 'studio_study_steps', 'studio_requirement_sets', 'studio_requirement_checks', 'studio_quantity_adjustments', 'studio_sheets', 'studio_dossiers',
+  'volumes', 'studio_publications', 'studio_publication_events', 'project_members', 'studio_tool_preferences',
 ]);
 export const KEYS = Object.freeze({
   studio_studies: ['id'], studio_variants: ['id'], studio_revisions: ['id'], studio_comments: ['id'],
   studio_observations: ['comment_id'], studio_observation_events: ['id'], studio_study_steps: ['study_id', 'step_number'],
-  studio_requirement_sets: ['id'], studio_requirement_checks: ['id'], studio_quantity_adjustments: ['id'],
+  studio_requirement_sets: ['id'], studio_requirement_checks: ['id'], studio_quantity_adjustments: ['id'], studio_sheets: ['id'], studio_dossiers: ['id'],
   volumes: ['id'], studio_publications: ['id'], studio_publication_events: ['id'], project_members: ['project_id', 'user_id'],
   studio_tool_preferences: ['user_id'],
 });
 export const USER_COLUMNS = Object.freeze({
   studio_studies: [], studio_variants: [], studio_revisions: ['author_id'], studio_comments: ['author_id'],
   studio_observations: ['responsable_id', 'created_by'], studio_observation_events: ['actor_id', 'responsable_id'],
-  studio_study_steps: ['created_by'], studio_requirement_sets: ['author_id'], studio_requirement_checks: ['author_id'], studio_quantity_adjustments: ['author_id'], volumes: [], studio_publications: ['approved_by', 'diffused_by', 'created_by', 'replaced_by'],
+  studio_study_steps: ['created_by'], studio_requirement_sets: ['author_id'], studio_requirement_checks: ['author_id'], studio_quantity_adjustments: ['author_id'], studio_sheets: ['created_by'], studio_dossiers: ['created_by'], volumes: [], studio_publications: ['approved_by', 'diffused_by', 'created_by', 'replaced_by'],
   // `invited_by` est l'adresse de l'invitant (texte), comparée telle quelle.
   studio_publication_events: ['author_id'], project_members: ['user_id'], studio_tool_preferences: ['user_id'],
 });
@@ -115,6 +115,13 @@ export function integrityAnomalies(tables, side) {
     const k = `${a.variant_id}|${a.seq}`;
     if (sequences.has(k)) push('studio_quantity_adjustments', a.id, 'séquence en double');
     sequences.add(k);
+  }
+  // E.3-02 / E.3-03 : feuille liée à une révision de sa variante ; dossier citant des feuilles de la même étude.
+  const sheets = new Map((tables.studio_sheets ?? []).map((s) => [s.id, s]));
+  for (const s of sheets.values()) if (revisions.get(s.revision_id)?.variant_id !== s.variant_id) push('studio_sheets', s.id, 'révision de la feuille absente');
+  for (const d of tables.studio_dossiers ?? []) {
+    for (const id of Array.isArray(d.sheet_ids) ? d.sheet_ids : []) if (sheets.get(id)?.study_id !== d.study_id) push('studio_dossiers', d.id, `feuille ${id} absente`);
+    if (d.quantities_revision_id && revisions.get(d.quantities_revision_id)?.variant_id !== d.quantities_variant_id) push('studio_dossiers', d.id, 'révision du métré absente');
   }
   const vols = new Map((tables.volumes ?? []).map((v) => [v.id, v]));
   for (const v of vols.values()) {

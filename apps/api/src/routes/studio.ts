@@ -12,6 +12,7 @@ import { studioExigencesRouter } from "./studio-exigences.js";
 import { studioPublicationsRouter } from "./studio-publications.js";
 import { studioPreferencesRouter } from "./studio-preferences.js";
 import { studioQuantitesRouter } from "./studio-quantites.js";
+import { studioDossiersRouter } from "./studio-dossiers.js";
 
 export const studioRouter = Router({ mergeParams: true });
 studioRouter.use(requireAuth);
@@ -222,3 +223,5 @@ studioRouter.use(studioPublicationsRouter);
 studioRouter.use(studioExigencesRouter);
 // Ajustements manuels du métré, journal versionné par variante (E.3-05) : `routes/studio-quantites.ts`.
 studioRouter.use(studioQuantitesRouter);
+// Feuilles composées et dossiers de conception (E.3-01 à E.3-03, E.3-06) : `routes/studio-dossiers.ts`.
+studioRouter.use(studioDossiersRouter);

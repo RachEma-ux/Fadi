@@ -121,7 +121,10 @@ describe("Planche 2D de Studio — règle d'or", () => {
     expect(cibleRaccourci("Ctrl+P")).toBeNull();
     expect(RACCOURCIS_RESERVES).toContain("Ctrl+P");
     expect(COMMANDES_EDITEUR.find((c) => c.id === "feuille")).toMatchObject({ groupe: "presentation", ecrit: false, iconeSymbolique: "studio-sheet" });
-    expect(commandesDeBarre("presentation").map((c) => c.id)).toEqual(["feuille"]);
+    // Feuilles composées et dossier de conception (E.3) : Ctrl+Maj+D, même barre, icône propre.
+    expect(commandesDeBarre("presentation").map((c) => c.id)).toEqual(["feuille", "dossier"]);
+    expect(cibleRaccourci("Ctrl+Shift+D")).toEqual({ type: "commande", id: "dossier" });
+    expect(COMMANDES_EDITEUR.find((c) => c.id === "dossier")).toMatchObject({ groupe: "presentation", ecrit: false, iconeSymbolique: "studio-dossier" });
     // Import DXF : Maj+U, barre Importer, icône propre, indisponible en lecture seule (commande d'écriture), pas un lien.
     expect(cibleRaccourci("Shift+U")).toEqual({ type: "commande", id: "importer-dxf" });
     expect(cibleRaccourci("Ctrl+U")).toBeNull();

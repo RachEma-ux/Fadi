@@ -422,6 +422,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       case "exporter-png": return demander3d("exporter-png");
       case "importer-dxf": return setDialogue("import-dxf");
       case "feuille": return setDialogue("feuille");
+      case "dossier": return setDialogue("dossier");
       case "outils": return setDialogue("outils");
       case "palette": return setDialogue("palette");
       case "exigences": { const s = shell.current?.querySelector<HTMLElement>("[data-studio-exigences]"); s?.scrollIntoView({ block: "start" }); s?.focus(); return; }
@@ -519,7 +520,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     <DialoguesStudio dialogue={dialogue} surFermer={() => setDialogue(null)} disponible={entreeDisponible} surExecuter={executerEntree} drawing={drawing} modifiable={writable}
       surImporter={(cs, r) => { if (!apply(cs)) return false; setDialogue(null); setInfo(`Import DXF ajouté au brouillon : ${r.rapport.entites.total} objet(s). Enregistrez pour l’envoyer au serveur.`); return true; }}
       revision={context.revision.document} brouillonNonEnregistre={commands.length > 0}
-      cartouche={() => cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })} />
+      cartouche={() => cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })}
+      portee={{ projectId, studyId, variantId, revisionId: context.revision.id }} />
     {rapportExport && liens[rapportExport] && <RapportExport format={FORMATS_RAPPORT[rapportExport]!} urlExport={liens[rapportExport]!} exportId={`${context?.revision.id ?? ""}#${exportsLances}`} surFermer={() => setRapportExport(null)} />}</>}
   </section>;
 }

@@ -6,6 +6,7 @@ import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument,
 import { formatStudioLength, STUDIO_EXPORT_TO_RESOLVE } from "./export.js";
 import { coteAngulairePoints, dessinerCoteAngulaire } from "./objets/cote-angulaire.js";
 import { studioTextBox, studioTextRotationDegrees } from "./objets/texte.js";
+import { studioPlanArchitecture } from "./architecture/plan.js";
 
 /**
  * Feuille de présentation d'un document Studio (`studio-sheet/1`) : format ISO 216 (A4 à A1, portrait ou paysage, aux
@@ -61,6 +62,16 @@ export interface StudioSheetOptions {
   north?: { angle: number } | null;
   /** Langue de formatage des valeurs (cotes, échelle graphique) ; `fr-FR` par défaut. */
   locale?: string;
+  /**
+   * Murs et ouvertures (A.4) tracés en plan (parties pleines du mur en trait de coupe, montants des ouvertures).
+   * Facultatif et absent par défaut : la feuille de présentation historique (paquets de publication) n'en change pas.
+   */
+  architecture?: boolean;
+  /**
+   * Ligne de provenance (E.3-01) imprimée sous le cadre : vue source, révision, variante, empreinte des données.
+   * Absente par défaut ; fournie par la feuille composée d'un dossier de conception.
+   */
+  provenance?: string;
 }
 
 export interface StudioSheetScale {
@@ -98,6 +109,8 @@ export interface StudioSheet {
   titleBlock: Primitive[];
   scaleBar: Primitive[];
   north: Primitive[];
+  /** Ligne de provenance sous le cadre (présente seulement si l'option `provenance` est donnée). */
+  provenance?: Primitive[];
   /** Titre lisible (titre saisi, sinon étude), pour le nom du fichier et les métadonnées du PDF. */
   documentTitle: string;
 }
@@ -154,6 +167,8 @@ function validateOptions(o: StudioSheetOptions): void {
   if (o.orientation !== "portrait" && o.orientation !== "paysage") throw new StudioValidationError("sheet.orientation", "portrait ou paysage attendu");
   if (o.scale !== "ajuster" && !(STUDIO_SHEET_SCALES as readonly number[]).includes(o.scale)) throw new StudioValidationError("sheet.scale", "échelle 1:20, 1:50, 1:100, 1:200, 1:500 ou « ajuster » attendue");
   if (o.north != null && !Number.isFinite(o.north.angle)) throw new StudioValidationError("sheet.north.angle", "angle fini attendu (degrés)");
+  if (o.architecture !== undefined && typeof o.architecture !== "boolean") throw new StudioValidationError("sheet.architecture", "booléen attendu");
+  if (o.provenance !== undefined && typeof o.provenance !== "string") throw new StudioValidationError("sheet.provenance", "texte attendu");
   for (const k of FIELD_KEYS) {
     const v = o.titleBlock?.[k];
     if (v !== undefined && typeof v !== "string") throw new StudioValidationError(`sheet.titleBlock.${k}`, "texte attendu");
@@ -234,11 +249,16 @@ export function composerFeuilleStudio(input: StudioDocument, options: StudioShee
   const notes = (doc.annotations ?? []).filter((a) => shown.has(layerOf(a)));
   const angulaires = notes.flatMap((a) => (a.type === "angular-dimension" ? [dessinerCoteAngulaire(a, locale, 0)] : []));
   const textes = notes.flatMap((a) => (a.type === "text" ? [a] : []));
+  // Architecture (option) : murs et ouvertures des calques visibles ; une ouverture suit le calque de son mur.
+  const plan = options.architecture && doc.architecture?.length ? studioPlanArchitecture(doc.architecture) : null;
+  const murs = plan ? plan.murs.filter((m) => shown.has(layerOf(m.mur))) : [];
+  const ouvertures = plan ? plan.ouvertures.filter((o) => shown.has(layerOf(o))) : [];
 
   // Bornes du dessin visible, en mètres.
   const pts: Vec[] = [
     ...shapes.flatMap(shapePoints), ...dims.flatMap((g) => [g.a, g.b, ...g.ext.flat()]),
     ...angulaires.flatMap((g) => [g.dimension.vertex, ...coteAngulairePoints(g), ...g.extensions.flat()]), ...textes.flatMap((t) => studioTextBox(t)),
+    ...murs.flatMap((m) => m.emprise),
   ];
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const p of pts) {
@@ -309,6 +329,14 @@ export function composerFeuilleStudio(input: StudioDocument, options: StudioShee
         // Texte du projet, tel quel, à sa hauteur réelle à l'échelle (mètres → millimètres de feuille).
         raw.push({ type: "texte", position: map(t.position), texte: t.content, hauteurMm: t.height * k, ancre: ANCRE_TEXTE[t.justification], angle: studioTextRotationDegrees(t), trait: "annotation", objetId: t.id });
       }
+      for (const m of murs) {
+        if (layerOf(m.mur) !== layer.id) continue;
+        for (const q of m.morceaux) raw.push({ type: "poly", points: q.map(map), ferme: true, trait: "coupe", remplissage: null, objetId: m.mur.id });
+      }
+      for (const o of ouvertures) {
+        if (layerOf(o) !== layer.id) continue;
+        for (const [a, b] of o.montants) raw.push({ type: "ligne", a: map(a), b: map(b), trait: "vue", objetId: o.id });
+      }
       drawing.push({ layerId: layer.id, name: layer.name, primitives: decouper(raw, viewport) });
     }
   }
@@ -322,7 +350,14 @@ export function composerFeuilleStudio(input: StudioDocument, options: StudioShee
     { type: "poly", points: rectPoints(frame), ferme: true, trait: "coupe", remplissage: null, objetId: "cadre" },
   ];
   const documentTitle = fields.title !== EMPTY ? fields.title : fields.study !== EMPTY ? fields.study : doc.id;
-  return { schema: "studio-sheet/1", documentId: doc.id, format: options.format, orientation: options.orientation, width, height, scale, frame, viewport, titleBlockBox, clipped, frameLines, drawing, titleBlock, scaleBar, north, documentTitle };
+  const sheet: StudioSheet = { schema: "studio-sheet/1", documentId: doc.id, format: options.format, orientation: options.orientation, width, height, scale, frame, viewport, titleBlockBox, clipped, frameLines, drawing, titleBlock, scaleBar, north, documentTitle };
+  if (options.provenance !== undefined) {
+    const texte = options.provenance.replace(/\s+/g, " ").trim();
+    sheet.provenance = texte
+      ? [{ type: "texte", position: { x: frame.min.x, y: frame.min.y / 2 - LABEL_MM / 2 }, texte: studioFitText(texte, frame.max.x - frame.min.x, LABEL_MM), hauteurMm: LABEL_MM, ancre: "debut", angle: 0, trait: "fin", objetId: "provenance" }]
+      : [];
+  }
+  return sheet;
 }
 
 const rectPoints = (r: Bornes): Vec[] => [{ x: r.min.x, y: r.min.y }, { x: r.max.x, y: r.min.y }, { x: r.max.x, y: r.max.y }, { x: r.min.x, y: r.max.y }];
@@ -452,7 +487,7 @@ export function studioSheetSvg(sheet: StudioSheet): string {
     out.push("</g>");
   }
   out.push("</g>");
-  for (const [part, prims] of [["title-block", sheet.titleBlock], ["scale-bar", sheet.scaleBar], ["north", sheet.north]] as const) {
+  for (const [part, prims] of [["title-block", sheet.titleBlock], ["scale-bar", sheet.scaleBar], ["north", sheet.north], ["provenance", sheet.provenance ?? []]] as const) {
     if (!prims.length) continue;
     out.push(`<g data-sheet-part="${part}">`);
     svgPrimitives(prims, H, out);
@@ -463,7 +498,7 @@ export function studioSheetSvg(sheet: StudioSheet): string {
 }
 
 /** Toutes les primitives de la feuille, dans l'ordre de rendu. */
-export const studioSheetPrimitives = (sheet: StudioSheet): Primitive[] => [...sheet.frameLines, ...sheet.drawing.flatMap((l) => l.primitives), ...sheet.titleBlock, ...sheet.scaleBar, ...sheet.north];
+export const studioSheetPrimitives = (sheet: StudioSheet): Primitive[] => [...sheet.frameLines, ...sheet.drawing.flatMap((l) => l.primitives), ...sheet.titleBlock, ...sheet.scaleBar, ...sheet.north, ...(sheet.provenance ?? [])];
 
 /** PDF vectoriel d'une page à la taille réelle de la feuille (mêmes primitives que le SVG). */
 export function studioSheetPdf(sheet: StudioSheet): Uint8Array {

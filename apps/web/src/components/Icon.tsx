@@ -105,7 +105,8 @@ export type IconName =
   | "studio-scene-delete"
   | "studio-appearance"
   | "studio-appearance-remove"
-  | "studio-export-png";
+  | "studio-export-png"
+  | "studio-dossier";
 
 const PATHS: Record<IconName, string> = {
   search: "M10.5 3.5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 5 5",
@@ -230,6 +231,8 @@ const PATHS: Record<IconName, string> = {
   "studio-appearance": "M5 11l6-6 7 7-6 6ZM5 11h13M20 15c0 2 1 3 1 4a1 1 0 0 1-2 0c0-1 1-2 1-4",
   "studio-appearance-remove": "M4 4h10v10H4ZM9 9h11v11H9ZM3 21 21 3",
   "studio-export-png": "M3 5h12v10H3ZM3 13l4-4 3 3 2-2 3 3M19 9v10M16 16l3 3 3-3",
+  // Feuilles et dossier de conception (E.3) : chemise à onglet contenant une feuille lignée.
+  "studio-dossier": "M3 6h6l2 2h10v12H3ZM7 11h10v6H7ZM9 13h6M9 15h4",
 };
 
 export function Icon({ name, size = 20, className }: { name: IconName; size?: number; className?: string }) {

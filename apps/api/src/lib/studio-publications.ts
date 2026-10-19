@@ -27,6 +27,10 @@
  *
  * Catalogue des Documents (E.3-06) : `listProjectStudioPackages` sert `GET /projects/:p/studio/publications`, lu par
  * `lib/documents.ts` (groupe « Studio — paquets diffusés »).
+ *
+ * Dessin 2D indépendant (E.3-07, TEST-001) : `contenu: "dessin-2d"` publie, par le même cycle (revue, approbation,
+ * diffusion), un dessin sans modèle 3D — SVG, DXF et feuille PDF, sans IFC ni variante coordonnée. Le manifeste porte
+ * `contenu` (absent pour un dossier complet : empreintes historiques inchangées), le paquet aussi.
  */
 import { and, asc, desc, eq, inArray, isNull, ne, or } from "drizzle-orm";
 import { z } from "zod";
@@ -43,7 +47,7 @@ import { loadProjectAccess, projectAccessRefusal, type AccessibleProject } from 
 import type { Querier } from "./step-rows.js";
 import { assertAccess, lockedAccess, notFound, StudioRequestError, studioArchivedRefusal, studioFileSegment, studioIdentifierSchema, studyOf } from "./studio-commands.js";
 import {
-  actualiteDe, actualiteParEmpreinte, actualiteVue, besoinTransition, CacheRegeneration, cleRegeneration, type ControleDocuments, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition,
+  actualiteDe, actualiteParEmpreinte, actualiteVue, besoinTransition, CacheRegeneration, cleRegeneration, type ContenuPublication, contenuDe, formatsDuContenu, type ControleDocuments, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition,
   diffusionPlusRecente, dimensionsDe, ecartsManifeste, empreinteManifeste, sha256, statutCombine, STUDIO_PUBLICATION_ACTIONS,
   type Actualite, type Dimensions, type EcartManifeste, type ManifesteDocument, type ManifesteMeta, type ManifesteSource, type StudioPublicationTransition,
 } from "./studio-publication-statuts.js";
@@ -63,6 +67,11 @@ export const studioPublicationCreateSchema = z.object({
   revisionId: studioIdentifierSchema.optional(),
   /** Autres variantes de la même étude coordonnées dans le manifeste (révision courante de chacune). */
   coordinatedVariantIds: z.array(studioIdentifierSchema).max(STUDIO_MAX_COORDINATED).optional(),
+  /**
+   * Contenu (E.3-07) : `complet` par défaut (SVG, DXF, IFC, feuille PDF) ; `dessin-2d` publie un dessin 2D indépendant,
+   * sans modèle 3D (SVG, DXF, feuille PDF ; sans IFC ni variante coordonnée).
+   */
+  contenu: z.enum(["complet", "dessin-2d"]).optional(),
   comment: comment.optional(),
   requestId: studioIdentifierSchema.optional(),
 }).strict();
@@ -78,20 +87,23 @@ export type StudioPublicationTransitionInput = z.infer<typeof studioPublicationT
 /** Empreinte du document d'une révision : SHA-256 du JSON canonique du document tel qu'il est stocké (jamais de sa forme validée). */
 export const studioDocumentHash = (doc: StudioDocument): string => sha256(canonicalJson(doc));
 
+/** Formats d'un paquet selon son contenu : un dessin 2D indépendant ne porte pas d'IFC (aucun modèle 3D publié). */
+export const studioPackageFormats = (contenu: ContenuPublication): readonly StudioPackageFormat[] => formatsDuContenu(contenu);
+
 /** Fichiers d'un paquet, pur et déterministe : mêmes document et métadonnées, mêmes octets. */
-export function studioPackageFiles(doc: StudioDocument, revisionId: string, meta: StudioPublicationPackage["meta"], ifcKey: string): { format: StudioPackageFormat; fileName: string; mime: string; body: Buffer }[] {
+export function studioPackageFiles(doc: StudioDocument, revisionId: string, meta: StudioPublicationPackage["meta"], ifcKey: string, contenu: ContenuPublication = "complet"): { format: StudioPackageFormat; fileName: string; mime: string; body: Buffer }[] {
   const base = [studioFileSegment(meta.studyName, "etude"), studioFileSegment(meta.variantName, "variante"), studioFileSegment(revisionId.slice(-8), "revision")].join("-");
   const sheet = composerFeuilleStudio(doc, {
     format: "A3", orientation: "paysage", scale: "ajuster",
     titleBlock: { projectCode: meta.projectCode, projectName: meta.projectName, study: meta.studyName, variant: meta.variantName, revisionId, revisionDate: meta.revisionCreatedAt.slice(0, 10) },
   });
-  const bodies: Record<StudioPackageFormat, Buffer> = {
-    svg: Buffer.from(exportStudioSvg(doc), "utf8"),
-    dxf: Buffer.from(exportStudioDxf(doc), "utf8"),
-    ifc: Buffer.from(exportStudioIfc(doc, { studyName: meta.studyName, variantName: meta.variantName, revisionId, timestamp: meta.revisionCreatedAt.slice(0, 19), key: ifcKey }), "utf8"),
-    pdf: Buffer.from(studioSheetPdf(sheet)),
+  const bodies: Record<StudioPackageFormat, () => Buffer> = {
+    svg: () => Buffer.from(exportStudioSvg(doc), "utf8"),
+    dxf: () => Buffer.from(exportStudioDxf(doc), "utf8"),
+    ifc: () => Buffer.from(exportStudioIfc(doc, { studyName: meta.studyName, variantName: meta.variantName, revisionId, timestamp: meta.revisionCreatedAt.slice(0, 19), key: ifcKey }), "utf8"),
+    pdf: () => Buffer.from(studioSheetPdf(sheet)),
   };
-  return STUDIO_PACKAGE_FORMATS.map((format) => ({ format, fileName: `${base}${format === "pdf" ? "-feuille" : ""}.${format}`, mime: MIME[format], body: bodies[format] }));
+  return studioPackageFormats(contenu).map((format) => ({ format, fileName: `${base}${format === "pdf" ? "-feuille" : ""}.${format}`, mime: MIME[format], body: bodies[format]() }));
 }
 /**
  * Version des exporteurs du paquet (SVG, DXF, IFC, feuille PDF), entrée de la clé du cache de régénération : à
@@ -101,8 +113,8 @@ export function studioPackageFiles(doc: StudioDocument, revisionId: string, meta
 export const STUDIO_PACKAGE_EXPORTER_VERSION = "studio-package-exports/1";
 /** Cache des empreintes de documents régénérés, lu par les vues de liste et rempli par les lectures exactes. */
 const regenerationCache = new CacheRegeneration();
-const regenerationKey = (documentHash: string, meta: StudioPublicationPackage["meta"], studyId: string, variantId: string): string =>
-  cleRegeneration({ documentHash, meta, ifcKey: `${studyId}|${variantId}`, versionExporteurs: STUDIO_PACKAGE_EXPORTER_VERSION });
+const regenerationKey = (documentHash: string, meta: StudioPublicationPackage["meta"], studyId: string, variantId: string, contenu: ContenuPublication = "complet"): string =>
+  cleRegeneration({ documentHash, meta, ifcKey: `${studyId}|${variantId}${contenu === "dessin-2d" ? "|dessin-2d" : ""}`, versionExporteurs: STUDIO_PACKAGE_EXPORTER_VERSION });
 const manifestDocumentsOf = (files: ReturnType<typeof studioPackageFiles>) =>
   files.map((f) => ({ format: f.format, fileName: f.fileName, mime: f.mime, size: f.body.byteLength, sha256: sha256(f.body) }));
 
@@ -119,6 +131,8 @@ export interface StudioPublicationEventView {
 export interface StudioPublicationView {
   id: string; projectId: string; studyId: string; variantId: string; variantName: string; title: string;
   revisionId: string; documentHash: string;
+  /** Contenu du dossier (E.3-07) : complet, ou dessin 2D indépendant (sans IFC). */
+  contenu: ContenuPublication;
   /** Statut combiné historique (lecteurs existants). */
   status: StudioPublicationStatus;
   /** Dimensions distinctes (E.4-01). */
@@ -189,14 +203,15 @@ async function regeneratedDocuments(q: Querier, access: AccessibleProject, rows:
   const out = new Map<string, ManifesteDocument[]>();
   for (const row of rows) {
     if (!row.manifest || driftOf(access, row, states).length) continue;
-    const key = regenerationKey(row.documentHash, row.manifest.meta, row.studyId, row.variantId);
+    const contenu = contenuDe(row.manifest);
+    const key = regenerationKey(row.documentHash, row.manifest.meta, row.studyId, row.variantId, contenu);
     if (!exact) {
       const cached = regenerationCache.get(key);
       if (cached) out.set(row.id, cached);
       continue;
     }
     const revision = await revisionOf(q, row.variantId, row.revisionId);
-    const docs = manifestDocumentsOf(studioPackageFiles(validateStudioDocument(revision.document), row.revisionId, row.manifest.meta, `${row.studyId}|${row.variantId}`));
+    const docs = manifestDocumentsOf(studioPackageFiles(validateStudioDocument(revision.document), row.revisionId, row.manifest.meta, `${row.studyId}|${row.variantId}`, contenu));
     regenerationCache.set(key, docs);
     out.set(row.id, docs);
   }
@@ -247,7 +262,7 @@ async function views(q: Querier, access: AccessibleProject, actorId: string, row
     const retrait = dims.diffusion === "retire" ? own.filter((e) => e.action === "retirer").at(-1) : undefined;
     const view: StudioPublicationView = {
       id: row.id, projectId: row.projectId, studyId: row.studyId, variantId: row.variantId, variantName: variant?.name ?? "", title: row.title,
-      revisionId: row.revisionId, documentHash: row.documentHash, status: row.status,
+      revisionId: row.revisionId, documentHash: row.documentHash, contenu: contenuDe(row.manifest ?? row.package), status: row.status,
       workStatus: dims.travail, diffusionStatus: dims.diffusion,
       manifest: row.manifest, manifestHash: row.manifestHash, manifestBuiltAt: row.manifestBuiltAt?.toISOString() ?? null,
       createdBy: who(row.createdBy)!, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(),
@@ -296,7 +311,7 @@ interface Dossier {
  * Dossier calculé depuis l'état présent : révision principale donnée, tête courante de chaque variante coordonnée,
  * noms actuels gelés dans les métadonnées, documents exportés de façon déterministe.
  */
-async function construireDossier(q: Querier, access: AccessibleProject, study: Study, variant: Variant, revision: Revision, coordinated: readonly string[]): Promise<Dossier> {
+async function construireDossier(q: Querier, access: AccessibleProject, study: Study, variant: Variant, revision: Revision, coordinated: readonly string[], contenu: ContenuPublication = "complet"): Promise<Dossier> {
   const documentHash = studioDocumentHash(revision.document);
   const sources: ManifesteSource[] = [{ role: "principale", variantId: variant.id, revisionId: revision.id, documentHash }];
   for (const id of coordinated) {
@@ -305,10 +320,10 @@ async function construireDossier(q: Querier, access: AccessibleProject, study: S
     sources.push({ role: "coordonnee", variantId: other.id, revisionId: head.id, documentHash: studioDocumentHash(head.document) });
   }
   const meta: ManifesteMeta = { projectCode: access.code, projectName: access.name, studyName: study.name, variantName: variant.name, revisionCreatedAt: revision.createdAt.toISOString() };
-  const files = studioPackageFiles(validateStudioDocument(revision.document), revision.id, meta, `${study.id}|${variant.id}`);
+  const files = studioPackageFiles(validateStudioDocument(revision.document), revision.id, meta, `${study.id}|${variant.id}`, contenu);
   const documents = manifestDocumentsOf(files);
-  regenerationCache.set(regenerationKey(documentHash, meta, study.id, variant.id), documents);
-  const manifest = construireManifeste(sources, meta, documents);
+  regenerationCache.set(regenerationKey(documentHash, meta, study.id, variant.id, contenu), documents);
+  const manifest = construireManifeste(sources, meta, documents, contenu);
   return { manifest, manifestHash: empreinteManifeste(manifest), documentHash, meta, files };
 }
 const coordinatedOf = (manifest: StudioPublicationManifest | null): string[] => manifest?.sources.filter((s) => s.role === "coordonnee").map((s) => s.variantId) ?? [];
@@ -373,6 +388,10 @@ export async function createStudioPublication(projectId: string, studyId: string
     const variant = await variantOf(tx, study.id, variantId);
     assertAccess(access, actorId, "write");
     const coordinated = [...new Set(input.coordinatedVariantIds ?? [])];
+    const contenu: ContenuPublication = input.contenu ?? "complet";
+    if (contenu === "dessin-2d" && coordinated.length) {
+      throw new StudioRequestError(400, { error: "invalid_input", code: "drawing_coordinated_invalid", message: "Un dessin 2D indépendant se publie seul : aucune variante coordonnée." });
+    }
     if (coordinated.includes(variant.id)) {
       throw new StudioRequestError(400, { error: "invalid_input", code: "coordinated_variant_invalid", message: "Une variante coordonnée doit être distincte de la variante publiée." });
     }
@@ -383,7 +402,8 @@ export async function createStudioPublication(projectId: string, studyId: string
       if (previous) {
         const same = (a: string[], b: string[]) => a.length === b.length && [...a].sort().every((x, i) => x === [...b].sort()[i]);
         if (previous.createdBy !== actorId || (input.revisionId !== undefined && previous.revisionId !== input.revisionId) || (input.title !== undefined && previous.title !== input.title)
-          || (input.coordinatedVariantIds !== undefined && !same(coordinated, coordinatedOf(previous.manifest)))) {
+          || (input.coordinatedVariantIds !== undefined && !same(coordinated, coordinatedOf(previous.manifest)))
+          || contenuDe(previous.manifest) !== contenu) {
           throw new StudioRequestError(409, { error: "request_conflict", message: "Cet identifiant de requête est déjà utilisé pour un autre contenu ou auteur." });
         }
         return { ...(await views(tx, access, actorId, [previous], true))[0]!, replayed: true };
@@ -396,7 +416,7 @@ export async function createStudioPublication(projectId: string, studyId: string
       });
       if (other.archivedAt !== null) return studioArchivedRefusal();
     }
-    const dossier = await construireDossier(tx, access, study, variant, revision, coordinated);
+    const dossier = await construireDossier(tx, access, study, variant, revision, coordinated, contenu);
     const now = new Date();
     const dims: Dimensions = { travail: "brouillon", diffusion: "non-diffuse" };
     const row = {
@@ -428,7 +448,7 @@ export async function transitionStudioPublication(projectId: string, studyId: st
     // Manifeste recalculé maintenant (têtes, noms et exporteurs actuels) : son empreinte fait foi pour l'actualité, de
     // sorte qu'un dossier dont seuls les octets d'export ont changé peut toujours être actualisé (jamais bloqué).
     const current = row.manifest
-      ? await construireDossier(tx, access, study, variant, await revisionOf(tx, variant.id, variant.headRevisionId), coordinatedOf(row.manifest))
+      ? await construireDossier(tx, access, study, variant, await revisionOf(tx, variant.id, variant.headRevisionId), coordinatedOf(row.manifest), contenuDe(row.manifest))
       : null;
     const freshness = current ? actualiteParEmpreinte(row.manifestHash, current.manifestHash) : actualiteDe(driftOf(access, row, await variantStates(tx, sourceIds(row))));
     const verdict = controlerTransition(action, { ...dims, manifeste: row.manifest !== null, actualite: freshness }, input.comment);
@@ -473,7 +493,7 @@ export async function transitionStudioPublication(projectId: string, studyId: st
         await tx.insert(volumes).values({ id, mime: file.mime, size: file.body.byteLength, content: file.body, createdAt: now }).onConflictDoNothing();
         files.push({ format: file.format, fileName: file.fileName, mime: file.mime, size: file.body.byteLength, sha256: id });
       }
-      const pkg: StudioPublicationPackage = { schema: "studio-publication-package/1", revisionId: row.revisionId, documentHash: actualHash, meta: current.meta, files, manifestHash: current.manifestHash };
+      const pkg: StudioPublicationPackage = { schema: "studio-publication-package/1", ...(current.manifest.contenu ? { contenu: current.manifest.contenu } : {}), revisionId: row.revisionId, documentHash: actualHash, meta: current.meta, files, manifestHash: current.manifestHash };
       Object.assign(patch, { package: pkg, packageHash: studioPackageHash(pkg), diffusedBy: actorId, diffusedAt: now });
       // Remplacement (E.4-06) : les diffusions encore en vigueur de la même variante sont marquées remplacées et journalisées.
       const previous = await tx.select().from(studioPublications).where(and(
@@ -523,7 +543,7 @@ export async function readStudioPackageFile(projectId: string, studyId: string, 
 export async function verifierPaquet(projectId: string, studyId: string, publicationId: string, actorId: string) {
   const { row, pkg } = await packageOf(projectId, studyId, publicationId, actorId);
   const revision = await revisionOf(db, row.variantId, pkg.revisionId);
-  const recomputed = studioPackageFiles(validateStudioDocument(revision.document), pkg.revisionId, pkg.meta, `${row.studyId}|${row.variantId}`);
+  const recomputed = studioPackageFiles(validateStudioDocument(revision.document), pkg.revisionId, pkg.meta, `${row.studyId}|${row.variantId}`, contenuDe(pkg));
   const files = pkg.files.map((f) => {
     const again = recomputed.find((r) => r.format === f.format);
     const h = again ? sha256(again.body) : null;

@@ -382,6 +382,11 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/studio-quantites.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la production documentaire Studio — TEST-001 (dessin 2D publié sans 3D), feuilles composées, dossier de conception, Documents (apps/web/e2e/studio-dossier.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-dossier.mjs 2>&1 | tee -a e2e.log
       - name: Recette des préférences de notification — type masqué, projet en sourdine, état lu relu (apps/web/e2e/notifications-preferences.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |
