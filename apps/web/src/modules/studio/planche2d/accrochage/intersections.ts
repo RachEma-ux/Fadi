@@ -39,8 +39,11 @@ export function segmentCercle(a: StudioPoint, b: StudioPoint, c: StudioPoint, r:
   if (A === 0) return [];
   const B = 2 * (fx * vx + fy * vy), C = fx * fx + fy * fy - r * r;
   let disc = B * B - 4 * A * C;
-  // Tangence à l'arrondi près : un seul point.
-  if (disc < 0 && disc > -1e-12 * B * B) disc = 0;
+  // Tangence à l'arrondi près : un seul point. Tolérance relative : au terme B², et au bruit δ des coordonnées
+  // (∝ leur grandeur, ~1e5 m) porté par C (≈ 2rδ), donc jamais nulle quand B ≈ 0 (segment partant du point de tangence).
+  const delta = 1e-12 * Math.max(1, r, Math.abs(a.x), Math.abs(a.y), Math.abs(b.x), Math.abs(b.y), Math.abs(c.x), Math.abs(c.y));
+  const tolDisc = Math.max(1e-12 * B * B, 4 * A * (2 * r * delta + delta * delta));
+  if (Math.abs(disc) <= tolDisc) disc = 0;
   if (disc < 0) return [];
   const s = Math.sqrt(disc);
   const ts = s === 0 ? [-B / (2 * A)] : [(-B - s) / (2 * A), (-B + s) / (2 * A)];
@@ -51,10 +54,14 @@ export function segmentCercle(a: StudioPoint, b: StudioPoint, c: StudioPoint, r:
 export function cercleCercle(c1: StudioPoint, r1: number, c2: StudioPoint, r2: number): StudioPoint[] {
   const dx = c2.x - c1.x, dy = c2.y - c1.y;
   const d = Math.hypot(dx, dy);
-  if (d === 0 || d > r1 + r2 + 1e-12 || d < Math.abs(r1 - r2) - 1e-12) return [];
+  // Tolérance relative à l'échelle (centres à 1e5 m : le bruit de d dépasse largement 1e-12 m).
+  const tol = 1e-12 * Math.max(1, d, r1 + r2, Math.abs(c1.x), Math.abs(c1.y), Math.abs(c2.x), Math.abs(c2.y));
+  if (d === 0 || d > r1 + r2 + tol || d < Math.abs(r1 - r2) - tol) return [];
   const a = (r1 * r1 - r2 * r2 + d * d) / (2 * d);
   const h2 = r1 * r1 - a * a;
-  const h = h2 > 0 ? Math.sqrt(h2) : 0;
+  // Tangence à l'arrondi près (extérieure ou intérieure) : un seul point.
+  const tangence = Math.abs(d - (r1 + r2)) <= tol || Math.abs(d - Math.abs(r1 - r2)) <= tol;
+  const h = !tangence && h2 > 0 ? Math.sqrt(h2) : 0;
   const mx = c1.x + (a * dx) / d, my = c1.y + (a * dy) / d;
   if (h === 0) return [netPoint({ x: mx, y: my })];
   return [netPoint({ x: mx + (h * -dy) / d, y: my + (h * dx) / d }), netPoint({ x: mx - (h * -dy) / d, y: my - (h * dx) / d })];

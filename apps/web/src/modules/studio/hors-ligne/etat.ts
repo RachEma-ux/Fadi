@@ -9,6 +9,8 @@ export interface EntreeEtatHorsLigne {
   /** Enveloppes non confirmées (lots du plan d'envoi restant à accuser). */
   enAttente: number;
   conflit: boolean;
+  /** Le brouillon conservé a été modifié dans un autre onglet (comparer-puis-écrire refusé). */
+  autreOnglet?: boolean;
   /** Le brouillon est conservé sur cet appareil (IndexedDB). */
   conserve: boolean;
   /** Version lue depuis le cache de l'appareil faute de réseau. */
@@ -18,6 +20,7 @@ export interface EntreeEtatHorsLigne {
 export interface EtatHorsLigne { code: CodeHorsLigne; texte: string; detail: string | null }
 
 export function etatHorsLigne(e: EntreeEtatHorsLigne): EtatHorsLigne {
+  if (e.autreOnglet) return { code: "conflit", texte: "Conflit", detail: "Brouillon modifié dans un autre onglet : rien n’a été écrasé." };
   if (e.conflit) return { code: "conflit", texte: "Conflit", detail: "Brouillon hors ligne conservé : une autre révision est devenue la version courante. Rien n’a été écrasé." };
   if (e.enAttente > 0) {
     return {

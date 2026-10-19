@@ -10,7 +10,7 @@ import { applyStudioCommands, newStudioDocument, type StudioCommand, type Studio
 import { calqueActifOuPremier, listeCalques } from "./calques";
 import { annonce, deplacer, focusApresSuppression, groupesElements, idCourt, ordreElements, plage } from "./liste-elements";
 import { ListeElements } from "./ListeElements";
-import { suivantDansLePiege } from "../variante/piege-focus";
+import { appartientAuDialogue, ATTRIBUT_PORTAIL, suivantDansLePiege } from "../variante/piege-focus";
 import { teteDepassee } from "../variante/AvisRevision";
 import { selectionValide, toutSelectionnable } from "./selection";
 
@@ -140,6 +140,21 @@ describe("calque actif : repli sur le premier calque", () => {
     expect(calqueActifOuPremier(calques, "murs")).toEqual({ calque: calques[1], repli: false });
     expect(calqueActifOuPremier(calques, "disparu")).toEqual({ calque: calques[0], repli: true });
     expect(calqueActifOuPremier([], "disparu")).toEqual({ calque: undefined, repli: false });
+  });
+});
+
+describe("boîtes de dialogue : focus dans un portail de la boîte", () => {
+  // Éléments factices : `dans` est contenu par la boîte, `portail` est rendu ailleurs mais marqué, `dehors` ne l'est pas.
+  type Faux = { nom: string; marque: boolean; closest(s: string): unknown };
+  const el = (nom: string, marque = false) => ({ nom, marque, closest: (s: string) => (marque && s === `[${ATTRIBUT_PORTAIL}]` ? {} : null) } as Faux as unknown as Element);
+  const dans = el("dans"), portail = el("portail", true), dehors = el("dehors");
+  const boite = { contains: (n: Node | null) => n === dans };
+  it("dedans ou dans un portail marqué : le piège laisse le focus ; dehors : il le reprend", () => {
+    expect(appartientAuDialogue(dans, boite)).toBe(true);
+    expect(appartientAuDialogue(portail, boite)).toBe(true);
+    expect(appartientAuDialogue(dehors, boite)).toBe(false);
+    expect(appartientAuDialogue(null, boite)).toBe(false);
+    expect(appartientAuDialogue(dans, null)).toBe(false);
   });
 });
 

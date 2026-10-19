@@ -9,7 +9,7 @@ import type { EntreeCatalogue } from "../planche2d/catalogue";
 import { GestionnaireOutils, PaletteCommandes } from "../planche2d/CatalogueOutils";
 import { PanneauFeuille } from "../feuille/PanneauFeuille";
 import { DialogueImportDxf } from "../import/DialogueImportDxf";
-import { focalisables, suivantDansLePiege } from "./piege-focus";
+import { appartientAuDialogue, focalisables, suivantDansLePiege } from "./piege-focus";
 
 export type DialogueStudio = "outils" | "palette" | "feuille" | "import-dxf" | null;
 
@@ -30,7 +30,8 @@ export interface PropsDialoguesStudio {
 }
 
 /** Piège du focus de la boîte ouverte ; rend le focus à l'élément d'origine à la fermeture. */
-function usePiegeFocus(ouvert: boolean, surFermer: () => void) {
+function usePiegeFocus(dialogue: DialogueStudio, surFermer: () => void) {
+  const ouvert = dialogue !== null;
   const zone = useRef<HTMLDivElement>(null);
   const origine = useRef<HTMLElement | null>(null);
   const fermer = useRef(surFermer);
@@ -41,20 +42,26 @@ function usePiegeFocus(ouvert: boolean, surFermer: () => void) {
     origine.current = actif instanceof HTMLElement && actif !== document.body ? actif : null;
     if (!origine.current) origine.current = document.body;
   }
+  const boite = () => zone.current?.querySelector<HTMLElement>('[role="dialog"]') ?? null;
+  // Clé : l'identité de la boîte. Passer directement d'une boîte à une autre (Outils → palette) donne le focus à la
+  // nouvelle, si son contenu ne l'a pas déjà pris (feuille, import).
+  useEffect(() => {
+    if (!dialogue) return;
+    const b = boite();
+    if (b && !appartientAuDialogue(document.activeElement, b)) (focalisables(b)[0] ?? b).focus();
+  }, [dialogue]);
+  // Écouteurs et retour du focus : liés à l'ouverture seule (l'origine reste celle de la première boîte ouverte).
   useEffect(() => {
     if (!ouvert) return;
-    const boite = () => zone.current?.querySelector<HTMLElement>('[role="dialog"]') ?? null;
-    // La boîte prend le focus si son contenu ne l'a pas déjà fait (feuille, import).
-    const b = boite();
-    if (b && !b.contains(document.activeElement)) (focalisables(b)[0] ?? b).focus();
+    // Un focus pris hors de la boîte y revient, sauf dans un portail qui lui appartient (data-studio-dialogue-portail).
     const surFocus = (e: FocusEvent) => {
       const d = boite();
-      if (d && e.target instanceof Node && !d.contains(e.target)) (focalisables(d)[0] ?? d).focus();
+      if (d && e.target instanceof Element && !appartientAuDialogue(e.target, d)) (focalisables(d)[0] ?? d).focus();
     };
     // Échap ferme la boîte même si le focus s'en est perdu (sur le corps de la page).
     const surTouche = (e: globalThis.KeyboardEvent) => {
       const d = boite();
-      if (e.key === "Escape" && d && !d.contains(document.activeElement)) { e.preventDefault(); fermer.current(); }
+      if (e.key === "Escape" && d && !appartientAuDialogue(document.activeElement, d)) { e.preventDefault(); fermer.current(); }
     };
     document.addEventListener("focusin", surFocus);
     document.addEventListener("keydown", surTouche);
@@ -78,6 +85,8 @@ function usePiegeFocus(ouvert: boolean, surFermer: () => void) {
     if (e.key !== "Tab") return;
     const d = zone.current?.querySelector<HTMLElement>('[role="dialog"]');
     if (!d) return;
+    // Dans un portail de la boîte, Tab suit l'ordre du portail (le navigateur).
+    if (document.activeElement && !d.contains(document.activeElement) && appartientAuDialogue(document.activeElement, d)) return;
     const liste = focalisables(d);
     const i = liste.indexOf(document.activeElement as HTMLElement);
     const k = suivantDansLePiege(liste.length, i, e.shiftKey);
@@ -88,7 +97,7 @@ function usePiegeFocus(ouvert: boolean, surFermer: () => void) {
 }
 
 export function DialoguesStudio({ dialogue, surFermer, disponible, surExecuter, drawing, modifiable, surImporter, revision, brouillonNonEnregistre, cartouche }: PropsDialoguesStudio) {
-  const { zone, tabulation } = usePiegeFocus(dialogue !== null, surFermer);
+  const { zone, tabulation } = usePiegeFocus(dialogue, surFermer);
   return <div ref={zone} onKeyDown={tabulation} data-studio-dialogues={dialogue ?? undefined}>
     {dialogue === "outils" && <GestionnaireOutils disponible={disponible} surExecuter={surExecuter} surFermer={surFermer} />}
     {dialogue === "palette" && <PaletteCommandes disponible={disponible} surExecuter={surExecuter} surFermer={surFermer} />}

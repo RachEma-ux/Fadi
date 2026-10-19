@@ -43,6 +43,17 @@ export function forgetsSession(err: unknown): boolean {
   return err instanceof ApiError && err.status === 401;
 }
 
+/**
+ * Oubli de ce que l'utilisateur précédent a laissé sur l'appareil : cache des requêtes, conflits affichés, brouillons
+ * et versions lues de Studio (jamais rejoués ni montrés sous un autre compte).
+ */
+async function forgetDevice(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.clear();
+  conflictsStore.clearAll();
+  await localStore.removeValue(QUERY_CACHE_VERSION);
+  await localStore.studioOublierTout().catch(() => undefined);
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<CurrentUser | null>(null);
@@ -51,11 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /** Un autre utilisateur sur le même appareil ne doit pas relire le cache du précédent : cache vidé (mémoire et IndexedDB). */
   async function adopt(u: CurrentUser) {
     const previous = readLastUser();
-    if (previous && previous.id !== u.id) {
-      queryClient.clear();
-      conflictsStore.clearAll();
-      await localStore.removeValue(QUERY_CACHE_VERSION);
-    }
+    if (previous && previous.id !== u.id) await forgetDevice(queryClient);
     setUser(u);
     writeLastUser(u);
   }
@@ -64,7 +71,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     api
       .me()
-      .then((u) => {
+      .then(async (u) => {
+        if (cancelled) return;
+        // La session ouverte n'est pas celle du dernier utilisateur connu : ce qu'il a laissé sur l'appareil est oublié.
+        const previous = readLastUser();
+        if (previous && previous.id !== u.id) await forgetDevice(queryClient);
         if (cancelled) return;
         setUser(u);
         writeLastUser(u);
@@ -108,9 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await api.logout();
       setUser(null);
       writeLastUser(null);
-      queryClient.clear();
-      conflictsStore.clearAll();
-      await localStore.removeValue(QUERY_CACHE_VERSION);
+      await forgetDevice(queryClient);
     },
   };
 

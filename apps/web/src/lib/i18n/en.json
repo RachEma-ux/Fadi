@@ -9563,5 +9563,10 @@
 "Révision encore en tête de la variante": "Revision still at the head of the variant",
 "La variante a changé depuis": "The variant has changed since",
 "Remplacé par une diffusion plus récente": "Superseded by a more recent issue",
-"Retiré le": "Withdrawn on"
+"Retiré le": "Withdrawn on",
+"Brouillon modifié dans un autre onglet : rien n’a été écrasé. Les modifications de cet onglet-ci ne sont plus conservées sur l’appareil ; reprenez le brouillon de l’autre onglet ou fermez celui-ci.": "Draft changed in another tab: nothing was overwritten. This tab's changes are no longer kept on the device; resume the other tab's draft or close this one.",
+"Brouillon modifié dans un autre onglet : rien n’a été écrasé.": "Draft changed in another tab: nothing was overwritten.",
+"Reprendre le brouillon de l’autre onglet": "Resume the other tab's draft",
+"La session de cet appareil a changé : le brouillon hors ligne n’est pas envoyé sous un autre compte.": "The session on this device has changed: the offline draft is not sent under another account.",
+"Les modifications dessinées après la sauvegarde hors ligne ne s’appliquent plus : elles sont abandonnées.": "The changes drawn after the offline save no longer apply: they are discarded."
 }

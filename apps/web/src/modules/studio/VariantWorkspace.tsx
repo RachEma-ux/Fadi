@@ -126,7 +126,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const { pending, uncertain, blocked } = enr;
   useFocusConserve(pending);
   dirty.current = commands.length > 0 || !!trace || pending || uncertain;
-  const writable = !historical && !!context?.canWrite && !pending && !uncertain && !blocked;
+  // Hors ligne, derrière une enveloppe en attente, le dessin reste permis (`enr.dessinHorsLigne`).
+  const writable = !historical && !!context?.canWrite && !pending && (!uncertain || enr.dessinHorsLigne) && !blocked;
   // Données réelles du cartouche de la feuille (mêmes clés que le fil d'Ariane et l'historique : cache partagé).
   const projet = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId), staleTime: 30_000, retry: (n, e) => !refused(e) && n < 1, enabled: !!context });
   const revisionsFeuille = useQuery({ queryKey: ["studio-revisions", projectId, studyId, variantId], queryFn: () => api.studioRevisions(projectId, studyId, variantId), retry: (n, e) => !refused(e) && n < 1, enabled: dialogue === "feuille" });
