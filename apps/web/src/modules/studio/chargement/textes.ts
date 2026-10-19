@@ -24,8 +24,9 @@ export const TEXTES_RESSOURCES = Object.freeze({
   toutDisponible: "Tous les outils du catalogue sont disponibles hors connexion sur cet appareil.",
   indisponibles: "{0} outil(s) indisponible(s) hors connexion (fichiers absents du cache) :",
   ranges: "{0} fichier(s) rangé(s) dans le cache, {1} échec(s).",
-  fileLocale: "Commandes locales non synchronisées conservées sur cet appareil : {0}.",
-  fileLocaleNonEvaluee: "Commandes locales non synchronisées : non évalué.",
+  cachePurge: "Le cache de cette version de l’application a été supprimé de l’appareil (mise à jour ou nettoyage du navigateur) : aucun outil n’est disponible hors connexion. Rechargez la page en ligne pour retrouver le travail hors connexion.",
+  fileLocale: "Brouillons locaux non synchronisés conservés sur cet appareil : {0}.",
+  fileLocaleNonEvaluee: "Brouillons locaux non synchronisés : non évalué.",
   persistance: {
     persistant: "Stockage de l’appareil persistant : la file locale n’est pas évincée sous pression de quota.",
     "non-persistant": "Stockage de l’appareil non persistant (aucune commande locale à protéger pour l’instant).",

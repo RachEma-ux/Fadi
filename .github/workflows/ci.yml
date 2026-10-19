@@ -396,9 +396,12 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/studio-chargement.mjs 2>&1 | tee -a e2e.log
-      # Mesure seulement (B.3-12, D.3-03) : rapport sans seuil ni verdict, joint aux captures (atelier-captures/).
+      # Mesure seulement (B.3-12, D.3-03) : rapport sans seuil ni verdict, joint aux captures (atelier-captures/). Un
+      # incident d'interaction est consigné dans le rapport ; l'étape ne bloque jamais (la recette bloquante est
+      # studio-chargement.mjs).
       - name: Mesures de chargement Studio — profil de vingt outils à cache froid et chaud, session longue (apps/web/e2e/studio-mesures-chargement.mjs)
         if: ${{ matrix.shard == 'parcours' }}
+        continue-on-error: true
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-mesures-chargement CYCLES=10 node apps/web/e2e/studio-mesures-chargement.mjs 2>&1 | tee -a e2e.log

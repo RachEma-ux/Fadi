@@ -3,13 +3,14 @@
  *
  * - `useCycleOutils` (planche) : chaque changement d'outil passe par le gestionnaire (moteurs chargés au besoin, puis
  *   marqués actifs ; l'outil précédent désactivé) ; la fermeture de la planche désactive l'outil courant. La première
- *   planche prête clôt la mesure PERF-01 de l'ouverture de Studio.
+ *   planche prête clôt la mesure PERF-01 de l'ouverture de la variante.
  * - `useUsageMoteur` : un composant qui emploie un moteur (vue 3D montée) le garde actif tant qu'il est monté.
- * - `useOuvertureStudio` (coquille) : début de PERF-01 — début de la navigation si la page a été ouverte sur une
- *   adresse Studio, sinon premier affichage de la coquille.
+ * - `useOuvertureVariante` (route d'une variante) : début de PERF-01 — début de la navigation si la page a été
+ *   ouverte directement sur une variante, sinon l'entrée sur la route de la variante (jamais le montage de la coquille).
  */
 import { useEffect, useSyncExternalStore } from "react";
 import { STUDIO_TOOLS } from "@parcours/atelier-model";
+import { lireRouteStudio } from "../routes-studio";
 import type { EtatMoteur } from "./gestionnaire-ressources";
 import type { IdMoteur } from "./moteurs";
 import { echantillonMemoire, perfStudio } from "./perf";
@@ -18,33 +19,62 @@ import { ressourcesStudio } from "./ressources-studio";
 export const useEtatsRessources = (): readonly EtatMoteur[] =>
   useSyncExternalStore(ressourcesStudio.abonner, ressourcesStudio.instantaneEtats, ressourcesStudio.instantaneEtats);
 
-let ouverture: { t0: number; depuis: "navigation" | "coquille"; fini: boolean } | null = null;
-/** Studio a déjà été quitté dans cette page : une nouvelle entrée se mesure depuis la coquille. */
-let sessionDejaNaviguee = false;
+export type OrigineOuverture = "navigation" | "route";
+let ouverture: { t0: number; depuis: OrigineOuverture; fini: boolean } | null = null;
+/** Une variante a déjà été ouverte dans cette page : les entrées suivantes se mesurent depuis l'entrée sur la route. */
+let varianteDejaOuverte = false;
 
-function debutOuverture(): void {
-  if (ouverture) return;
-  let depuis: "navigation" | "coquille" = "coquille";
+/**
+ * Origine de la mesure PERF-01 : le début de la navigation seulement si la page s'est ouverte directement sur une
+ * adresse de variante et qu'aucune variante n'a encore été ouverte ; sinon l'entrée sur la route de la variante.
+ */
+export function origineOuverture(urlNavigation: string | null, premiereVariante: boolean): OrigineOuverture {
+  if (!premiereVariante || !urlNavigation) return "route";
   try {
-    const nav = performance.getEntriesByType?.("navigation")[0] as PerformanceNavigationTiming | undefined;
-    // Ouverture directe sur une adresse Studio, sans navigation interne depuis : la mesure part du début de la page.
-    if (nav && new URL(nav.name).pathname.startsWith("/studio") && !sessionDejaNaviguee) depuis = "navigation";
-  } catch { /* environnement sans Navigation Timing */ }
+    const u = new URL(urlNavigation);
+    return lireRouteStudio(u.pathname, u.search).vue === "variante" ? "navigation" : "route";
+  } catch {
+    return "route";
+  }
+}
+
+function adresseNavigation(): string | null {
+  try {
+    return (performance.getEntriesByType?.("navigation")[0] as PerformanceNavigationTiming | undefined)?.name ?? null;
+  } catch {
+    return null; // environnement sans Navigation Timing
+  }
+}
+
+/** Début de PERF-01 à l'entrée sur la route d'une variante (idempotent tant que la mesure court). */
+export function debutOuverture(url: string | null = adresseNavigation()): void {
+  if (ouverture) return;
+  const depuis = origineOuverture(url, !varianteDejaOuverte);
+  varianteDejaOuverte = true;
   ouverture = { t0: depuis === "navigation" ? 0 : perfStudio.maintenant(), depuis, fini: false };
 }
 
-function finOuverture(objets: number): void {
+/** Sortie de la variante : une mesure non close est abandonnée (jamais relevée). */
+export function quitterVariante(): void { ouverture = null; }
+
+export function finOuverture(objets: number): void {
   if (!ouverture || ouverture.fini) return;
   ouverture.fini = true;
   perfStudio.enregistrer("PERF-01", perfStudio.maintenant() - ouverture.t0, "ms", { depuis: ouverture.depuis, objets }, ouverture.t0);
   echantillonMemoire("planche-prete");
 }
 
-/** Coquille de Studio : début de PERF-01 ; la sortie de Studio rouvre une mesure à la prochaine entrée. */
-export function useOuvertureStudio(): void {
+/** Pour les tests : aucune variante ouverte dans la page. */
+export function _reinitialiserOuverture(): void { ouverture = null; varianteDejaOuverte = false; }
+
+/**
+ * Route d'une variante (planche différée, montée à chaque entrée sur une variante) : début de PERF-01 ; la sortie
+ * abandonne une mesure non close et la prochaine entrée en rouvre une.
+ */
+export function useOuvertureVariante(): void {
   useEffect(() => {
     debutOuverture();
-    return () => { ouverture = null; sessionDejaNaviguee = true; };
+    return quitterVariante;
   }, []);
 }
 

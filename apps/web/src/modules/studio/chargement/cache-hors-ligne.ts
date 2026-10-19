@@ -3,7 +3,8 @@
  *
  * Un moteur n'est annoncé « disponible hors connexion » que si **chacun** de ses fichiers (carte du build,
  * `chargement.json`) est dans le cache de CE build (`fadi-shell-<build>`) — lu fichier par fichier, jamais supposé.
- * Sans service worker, sans cache de ce build ou sans carte : « non évalué » (null), jamais « disponible ».
+ * Sans service worker, sans cache de ce build ou sans carte : « non évalué » (null), jamais « disponible ». Un cache de
+ * ce build déjà vu par la page puis disparu (purgé) : « non » pour chaque moteur (`cache-purge`).
  * Un outil est disponible hors connexion si tous les moteurs de sa barre le sont (dépendances comprises).
  *
  * « Préparer le profil hors ligne » télécharge les fichiers manquants des moteurs du profil et les range dans le
@@ -30,7 +31,27 @@ export interface VerificationHorsConnexion {
   /** Fichiers absents du cache, par moteur. */
   readonly manquants: Readonly<Record<IdMoteur, readonly string[]>>;
   readonly coquille: boolean | null;
-  readonly raison: "evalue" | "sans-service-worker" | "sans-carte" | "sans-cache-du-build";
+  readonly raison: "evalue" | "sans-service-worker" | "sans-carte" | "sans-cache-du-build" | "cache-purge";
+}
+
+export interface OptionsVerification {
+  /**
+   * Le cache de ce build a déjà été vu sur cet appareil depuis l'ouverture de la page : s'il manque maintenant, il a
+   * été purgé (mise à jour du service worker, nettoyage du navigateur) et rien n'est disponible hors connexion
+   * (« non », pas « non évalué »).
+   */
+  readonly cacheConnu?: boolean;
+  /**
+   * Présence du cache constatée par l'appelant **avant** de lire la carte : la lecture de la carte passe par le
+   * service worker, qui peut recréer un cache vide du même nom.
+   */
+  readonly cachePresent?: boolean;
+}
+
+/** Le cache de ce build existe-t-il ? null : non évaluable (sans service worker ou hors production). */
+export async function cacheDuBuildPresent(env: EnvCache): Promise<boolean | null> {
+  if (!env.caches || !env.build) return null;
+  try { return await env.caches.has(`${PREFIXE_CACHE}${env.build}`); } catch { return null; }
 }
 
 export const PREFIXE_CACHE = "fadi-shell-";
@@ -50,8 +71,14 @@ export async function lireCarte(env: Pick<EnvCache, "fetch">): Promise<CarteChar
   }
 }
 
-export async function verifierHorsConnexion(env: EnvCache, carte: CarteChargement | null): Promise<VerificationHorsConnexion> {
+export async function verifierHorsConnexion(env: EnvCache, carte: CarteChargement | null, o: OptionsVerification = {}): Promise<VerificationHorsConnexion> {
   if (!env.caches || !env.build) return nonEvalue("sans-service-worker");
+  // Cache de ce build vu puis disparu : purgé. Constaté avant la carte (le réseau peut déjà servir celle d'un autre build).
+  if (o.cacheConnu && !(o.cachePresent ?? (await env.caches.has(`${PREFIXE_CACHE}${env.build}`)))) {
+    const fichiers = (id: IdMoteur): readonly string[] => (carte && carte.build === env.build ? carte.moteurs[id]?.fichiers ?? [] : []);
+    const manquants = Object.fromEntries(MOTEURS.map((m) => [m.id, fichiers(m.id)])) as Record<IdMoteur, readonly string[]>;
+    return { moteurs: vide(false), manquants, coquille: false, raison: "cache-purge" };
+  }
   // Carte d'un autre build (page plus ancienne ou plus récente que le cache) : rien n'est déduit.
   if (!carte || carte.build !== env.build) return nonEvalue("sans-carte");
   const nom = `${PREFIXE_CACHE}${env.build}`;
@@ -79,8 +106,9 @@ export async function verifierHorsConnexion(env: EnvCache, carte: CarteChargemen
   return { moteurs, manquants, coquille: manquantsCoquille.length === 0, raison: "evalue" };
 }
 
-/** Outils disponibles / indisponibles hors connexion d'après la vérification ; null si non évalué. */
+/** Outils disponibles / indisponibles hors connexion d'après la vérification ; null si non évalué (cache purgé : aucun). */
 export function outilsHorsConnexion<T extends { toolId: string; groupe: string }>(outils: readonly T[], v: VerificationHorsConnexion): { disponibles: T[]; indisponibles: T[] } | null {
+  if (v.raison === "cache-purge") return { disponibles: [], indisponibles: [...outils] };
   if (v.raison !== "evalue") return null;
   const ok = (t: T) => (moteursDeBarre(t.groupe) ?? []).every((id) => v.moteurs[id] === true) && moteursDeBarre(t.groupe) !== null;
   return { disponibles: outils.filter(ok), indisponibles: outils.filter((t) => !ok(t)) };
@@ -112,6 +140,8 @@ export async function preparerHorsConnexion(env: EnvCache, carte: CarteChargemen
     try {
       const r = await env.fetch(f, { cache: f === FICHIER_CARTE ? "reload" : "default" });
       if (!r.ok) { echecs.push(f); continue; }
+      // La carte reçue doit être celle de ce build (un déploiement plus récent servirait la sienne) : sinon, échec.
+      if (f === FICHIER_CARTE && ((await r.clone().json().catch(() => null)) as { build?: unknown } | null)?.build !== env.build) { echecs.push(f); continue; }
       await cache.put(f, r);
       ranges.push(f);
     } catch {

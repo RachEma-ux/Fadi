@@ -40,7 +40,7 @@ function bac(build: string, classes: unknown, o: { anciens?: string[]; pagesOuve
     const url = typeof r === "string" ? r : new URL(r.url).pathname;
     ordre.push(url);
     if (o.reseau) return o.reseau(url);
-    const html = url === "/index.html" ? `<html><meta name="fadi-build" content="${build}"></html>` : "x";
+    const html = url === "/index.html" ? `<html><meta name="fadi-build" content="${build}"></html>` : url === "/chargement.json" ? JSON.stringify({ version: 1, build }) : "x";
     return new Response(html, { headers: { "content-type": url.endsWith(".html") ? "text/html" : "text/javascript" } });
   };
   const code = SOURCE.replaceAll("__FADI_BUILD__", build).replace('"__FADI_ASSETS__"', JSON.stringify(classes));
@@ -93,6 +93,24 @@ describe("Service worker : précache par classes et mises à jour (B.3-07, B.3-1
   it("la file locale (IndexedDB) n'est jamais lue ni modifiée par le service worker", () => {
     const code = SOURCE.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
     expect(code).not.toMatch(/indexedDB|IDB|Dexie|localStorage/);
+  });
+
+  it("carte des morceaux : seule celle de CE build est enregistrée (installation et lecture réseau)", async () => {
+    let buildServi = "b3";
+    const b = bac("b2", CLASSES, { reseau: (u) => new Response(u === "/chargement.json" ? JSON.stringify({ version: 1, build: buildServi }) : "x", { headers: { "content-type": u.endsWith(".html") ? "text/html" : "text/javascript" } }) });
+    await b.attendre("install");
+    const cache = b.caches.get("fadi-shell-b2")!;
+    expect(cache.contenu.has("/chargement.json")).toBe(false);
+    // Lecture réseau d'une carte d'un autre build : rendue à la page, jamais enregistrée.
+    let reponse: Promise<Response> | null = null;
+    b.handlers.fetch!({ request: new Request("https://fadi.test/chargement.json"), respondWith: (p: Promise<Response>) => { reponse = p; } });
+    expect(JSON.parse(await (await reponse!).text()).build).toBe("b3");
+    expect(cache.contenu.has("/chargement.json")).toBe(false);
+    // La carte de ce build, elle, est enregistrée.
+    buildServi = "b2";
+    b.handlers.fetch!({ request: new Request("https://fadi.test/chargement.json"), respondWith: (p: Promise<Response>) => { reponse = p; } });
+    await reponse!;
+    expect(JSON.parse(await (await cache.match("/chargement.json"))!.text()).build).toBe("b2");
   });
 
   it("carte des morceaux : réseau d'abord, copie de ce build hors ligne ; API jamais interceptée", async () => {

@@ -42,7 +42,8 @@ describe("A.5-01 — aucun geste n'écrit le document hors du contrat de command
     }
     // `next` vient toujours d'`appliquerBrouillon` (commandes validées par le modèle).
     const ws = STUDIO.find((f) => f.chemin === "VariantWorkspace.tsx")!.texte;
-    expect(ws).toMatch(/const next = appliquerBrouillon\(brouillon, cs\);\s*setBrouillon\(next\);/);
+    // (enveloppe de mesure PERF admise : `mesurerCommandes` ne fait que chronométrer l'appel au modèle.)
+    expect(ws).toMatch(/const next = (?:mesurerCommandes\(cs, \(\) => )?appliquerBrouillon\(brouillon, cs\)\)?;\s*setBrouillon\(next\);/);
   });
 
   it("les panneaux 2D / 3D qui produisent des commandes les remettent tous à `apply`", () => {
