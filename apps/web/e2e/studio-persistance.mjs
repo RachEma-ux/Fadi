@@ -460,6 +460,7 @@ if (PHASE === 'reopen') {
   const replayArchived = await owner('POST', `${variantPath(dv)}/commands`, onDerivedEnvelope);
   check('variante archivée : rejeu d\'un lot déjà accepté rendu tel quel (200, replayed), rien d\'écrit', replayArchived.status === 200 && replayArchived.body?.replayed === true && replayArchived.body.revision.id === onDerived.body?.revision?.id, `${replayArchived.status} ${JSON.stringify(replayArchived.body).slice(0, 200)}`);
   check('variante archivée : renommage refusé 409 archived', (await owner('PATCH', variantPath(dv), { name: 'Interdit' })).body?.error === 'archived');
+  check('variante archivée : nouveau commentaire refusé 409 archived', (await owner('POST', `${variantPath(dv)}/comments`, { body: 'Après archivage' })).body?.error === 'archived');
   check('variante archivée : historique et export toujours lisibles', (await owner('GET', `${variantPath(dv)}/revisions`)).status === 200 && (await owner('GET', `${variantPath(dv)}/export?format=svg`)).status === 200);
   check('variante archivée : dérivation depuis une archive permise (lecture)', (await owner('POST', `${lifePath}/variants`, { name: 'Depuis une archive', fromVariantId: dv.variantId })).status === 201);
   const initialArchive = await owner('POST', `${variantPath(lv)}/archive`);
@@ -471,6 +472,7 @@ if (PHASE === 'reopen') {
   // Archivage de l'étude.
   const archivedStudy = await owner('POST', `${lifePath}/archive`);
   check('archivage d\'étude (200) : archivée, lecture seule, gérable', archivedStudy.status === 200 && archivedStudy.body.study.archived === true && archivedStudy.body.canWrite === false && archivedStudy.body.canManage === true, JSON.stringify(archivedStudy.body).slice(0, 300));
+  check('étude archivée : liens d\'étapes refusés 409 archived', (await owner('PUT', `${lifePath}/steps`, { steps: [2] })).body?.error === 'archived');
   check('étude archivée : masquée de la liste par défaut, listée avec ?archives=1', !(await owner('GET', root)).body?.studies?.some((x) => x.id === lv.studyId) && (await owner('GET', `${root}?archives=1`)).body?.studies?.find((x) => x.id === lv.studyId)?.archived === true);
   const archivedStudyRead = await owner('GET', lifePath);
   check('étude archivée : lecture directe 200, lecture seule', archivedStudyRead.status === 200 && archivedStudyRead.body.study.archived === true && archivedStudyRead.body.canWrite === false);

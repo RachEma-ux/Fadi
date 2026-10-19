@@ -15,7 +15,7 @@ import { db } from "../db/client.js";
 import { studioComments, studioRevisions, studioStudies, studioVariants, users } from "../db/schema.js";
 import { newId } from "./ids.js";
 import { loadProjectAccess, projectAccessRefusal, type ProjectNeed } from "./owned-project.js";
-import { StudioRequestError, studioIdentifierSchema, type StudioScope } from "./studio-commands.js";
+import { StudioRequestError, studioArchivedRefusal, studioIdentifierSchema, type StudioScope } from "./studio-commands.js";
 
 export const STUDIO_COMMENT_MAX_OBJECTS = 200;
 
@@ -62,7 +62,7 @@ const notFound = (message?: string): never => { throw new StudioRequestError(404
 async function scopedVariant(scope: StudioScope, actorId: string, need: ProjectNeed) {
   const refusal = projectAccessRefusal(await loadProjectAccess(scope.projectId, actorId), actorId, need);
   if (refusal) throw new StudioRequestError(refusal.status, refusal.body);
-  const [variant] = await db.select({ id: studioVariants.id, headRevisionId: studioVariants.headRevisionId })
+  const [variant] = await db.select({ id: studioVariants.id, headRevisionId: studioVariants.headRevisionId, archived: studioVariants.archivedAt, studyArchived: studioStudies.archivedAt })
     .from(studioVariants).innerJoin(studioStudies, eq(studioStudies.id, studioVariants.studyId))
     .where(and(eq(studioVariants.id, scope.variantId), eq(studioStudies.id, scope.studyId), eq(studioStudies.projectId, scope.projectId))).limit(1);
   return variant ?? notFound();
@@ -112,6 +112,8 @@ export async function createStudioComment(scope: StudioScope, actorId: string, i
     const previous = await replay(variant.id, input.requestId, actorId, hash);
     if (previous) return previous;
   }
+  // Une archive reste lisible (fils compris) mais ne reçoit plus de nouveau commentaire.
+  if (variant.archived !== null || variant.studyArchived !== null) studioArchivedRefusal();
   let parentId: string | null = null;
   if (input.parentId !== undefined) {
     const [parent] = await db.select({ id: studioComments.id, parentId: studioComments.parentId, deletedAt: studioComments.deletedAt }).from(studioComments)
