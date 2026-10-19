@@ -1,0 +1,33 @@
+# Surcharge du SEUL service « proxy » de la production pour servir aussi preprod.fadimmo.com — phase 4, sur accord.
+# Le fichier docker-compose.yml de la production n'est pas modifié ; cette surcharge s'ajoute à la commande (-f).
+#
+# Préalables : DNS « preprod A 179.237.121.241 » ; `fadi-preprod edge on && fadi-preprod up` (crée fadi-preprod-edge) ;
+# /opt/fadi-preprod/proxy/Caddyfile rempli depuis Caddyfile.template.
+#
+# Validation (aucun effet sur la production) :
+#   docker run --rm -v /opt/fadi-preprod/proxy/Caddyfile:/etc/caddy/Caddyfile:ro caddy:2 \
+#     caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+#   cd /mnt/data/fadi/app && docker compose --env-file .env.deploy -f docker-compose.yml \
+#     -f /opt/fadi-preprod/src/deploy/preprod/proxy/proxy-preprod.override.yml config --no-interpolate proxy
+#
+# Application (recrée le seul conteneur proxy : www.fadimmo.com indisponible quelques secondes, certificats conservés) :
+#   cd /mnt/data/fadi/app && docker compose --env-file .env.deploy -f docker-compose.yml \
+#     -f /opt/fadi-preprod/src/deploy/preprod/proxy/proxy-preprod.override.yml up -d --no-deps proxy
+#
+# Contrôles : curl -fsS https://www.fadimmo.com/health ; curl -s -o /dev/null -w '%{http_code}' https://preprod.fadimmo.com/
+#   (401 attendu) ; avec identifiants : 200.
+#
+# Retour arrière (commande d'origine, même volume de certificats) :
+#   cd /mnt/data/fadi/app && docker compose --env-file .env.deploy -f docker-compose.yml up -d --no-deps proxy
+services:
+  proxy:
+    command: caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+    volumes:
+      - /opt/fadi-preprod/proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      - default
+      - fadi-preprod-edge
+
+networks:
+  fadi-preprod-edge:
+    external: true

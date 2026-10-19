@@ -1,0 +1,10 @@
+# Contexte de l'image de recette : le dépôt complet (docs et scripts compris, utilisés par les tests et la recette),
+# sans dépendances installées, builds, historique git ni fichiers d'environnement.
+node_modules
+**/node_modules
+**/dist
+**/coverage
+.git
+.env
+.env.*
+atelier-captures

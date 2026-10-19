@@ -1,0 +1,12 @@
+# Phase 4 seulement (`fadi-preprod edge on`, sur accord) : rattache l'application de la préproduction au réseau
+# fadi-preprod-edge, que le proxy de production rejoint (proxy/proxy-preprod.override.yml). La base n'y est jamais.
+services:
+  app:
+    networks:
+      edge:
+        aliases:
+          - fadi-preprod-app
+
+networks:
+  edge:
+    name: fadi-preprod-edge
