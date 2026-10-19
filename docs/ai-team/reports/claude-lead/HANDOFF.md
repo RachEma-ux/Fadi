@@ -33,6 +33,7 @@ le registre.
 | #197 | Vague 4 : murs et ouvertures A.4 (REC-A-03 : 3,600 / 0,420 / 3,180 m³), rapport de fidélité des exports E.6-03, index spatial C.1. |
 | #198 | Vague 5 : exigences BIM E.1, visualisation E.5, approbation E.4, tâches de fond D.1–D.3, frontières X.4, sauvegarde et restauration Studio R.1 / R.2 (archives signées). |
 | #199 | Vague 6 : couches du modèle sans exception et contrôle des cycles, propriétés déclarées en IFC, recalage des comptes dans les archives signées, service worker par build. |
+| #200 | Vague 7 : projections versionnées et invalidation minimale C.2, ajustements de métré persistés E.3-05. |
 | #171, #174–#177, #142, #143, #152 | Correctifs Atelier et Planche, frontières Studio ↔ Atelier, garde-fous d'architecture, gabarit pleine largeur. Remis à jour et fusionnés par l'équipe 6. |
 
 PR fermées :
@@ -68,18 +69,23 @@ par motif (`pkill -f`), seulement par son PID.
 
 ## Prochaines actions
 
-1. Vague 7 en cours (équipes C2 et Q1, à partir de `main` 3716e06) :
-   - C.2 : projections versionnées, invalidation minimale par objet et dépendants, tables de picking.
-   - E.3-05 : ajustements de métré persistés et versionnés.
-   - Retrait du chemin indirect `exigences` → `composition`.
-2. Restent connus :
+1. Vague 8 (PR à fusionner, cinq équipes à partir de `main` 9143ae0) :
+   - A5 : contrat de commandes commun (A.5-01 à 11) — conflits signalés et reportés après revalidation, refus atomique, historique hybride ;
+   - B1 : manifeste versionné du catalogue d'outils, filtres, regroupements personnels, droit réel séparé de la visibilité (B.1, B.2) ;
+   - B3 : chargement des moteurs DEC-06 (proposition), états du Tool Manager, précache par classes, contrats de file locale, PERF-01 à 10 en mesure seule (B.3, D.3, X.1-09) ;
+   - E2 : observations (E.2) — liens de domaines, tâches, décisions, clôture motivée ;
+   - E3 : vues identifiées, feuilles composées, dossier de conception, brut / déductions / net, dessin 2D seul (E.3).
+   - Archive Studio : tables `studio-v1/2026-10-19.3` ; `.2` et `2026-10-19` restent relues.
+2. Décisions à soumettre au maître d'ouvrage (choix conservateurs pris en attendant) : DEC-06 (chargement), DEC-13 (seuils de
+   performance), réouverture d'une observation clôturée par son auteur, retrait d'un lien de domaine, publication d'un dossier.
+3. Restent connus :
    - les anciennes clés de GlobalId IFC (`project`, `pset|object|…`) peuvent entrer en collision avec un identifiant d'objet. Les corriger changerait tous les GlobalId déjà exportés.
-3. Hors mandat, sur demande explicite du propriétaire :
+4. Hors mandat, sur demande explicite du propriétaire :
    - DB-3 ;
    - déploiement en production. `ARCHIVE_SIGNING_KEY` doit alors venir d'un gestionnaire de secrets ; à défaut, la clé propre à la base est lisible par quiconque lit la base ;
    - F.2 / F.3, IA et MCP (DEC-15) ;
    - protection de branche, à faire par l'administrateur du dépôt.
-4. Recette locale :
+5. Recette locale :
    - un worktree sous `.claude/` exige `WEB_DIST` hors de ce dossier : `send` refuse les chemins qui traversent un dossier caché ;
    - une base neuve demande `CREATE EXTENSION postgis` par le superutilisateur ;
    - la recette de restauration demande `DATABASE_URL_A`, `DATABASE_URL_B`, `RESTORE_PORT` et `WEB_DIST` ;
