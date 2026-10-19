@@ -200,16 +200,19 @@ export function studioExportAccountIds(tables: StudioArchiveTables, ownerId: str
 
 /**
  * Archive vérifiée : réattribution des comptes cités dans les champs JSON, par la même table de correspondance que les
- * colonnes (`accountMap` : identifiant d'origine → compte de la base cible, identifiant et adresse). Un identifiant
- * absent de la table (compte cité sans adresse dans l'archive) devient `fallback`, le compte qui restaure, et il est
- * déclaré (`unknown`). `parEmail`, quand il est présent, prend l'adresse du compte retenu (jamais une adresse
- * d'origine sous un identifiant de la base cible). Le reste du contenu est inchangé. Pure, sans effet sur l'entrée.
+ * colonnes (`found` : identifiant d'origine → compte RETROUVÉ par son adresse dans la base cible, identifiant et
+ * adresse). `parEmail`, quand il est présent, prend l'adresse du compte retrouvé. Une acceptation dont l'acceptant
+ * n'est pas retrouvé (compte absent de la base cible, ou cité sans adresse dans l'archive) n'est jamais attribuée à
+ * quelqu'un d'autre : elle est retirée, comme pour une archive non vérifiée (`distrustRequirementSets`), la référence
+ * redevient « non acceptée » ; `cleared` compte les acceptations retirées, `clearedAccounts` liste leurs acceptants
+ * d'origine. Le reste du contenu est inchangé. Pure, sans effet sur l'entrée.
  */
 export function remapStudioJsonAccounts(
-  sets: readonly StudioArchiveRow[], accountMap: ReadonlyMap<string, { id: string; email: string }>, fallback: { id: string; email: string },
-): { sets: StudioArchiveRow[]; remapped: number; unknown: string[] } {
+  sets: readonly StudioArchiveRow[], found: ReadonlyMap<string, { id: string; email: string }>,
+): { sets: StudioArchiveRow[]; remapped: number; cleared: number; clearedAccounts: string[] } {
   let remapped = 0;
-  const unknown = new Set<string>();
+  let cleared = 0;
+  const lost = new Set<string>();
   const out = sets.map((s) => {
     if (!Array.isArray(s["requirements"])) return { ...s };
     return {
@@ -218,15 +221,20 @@ export function remapStudioJsonAccounts(
         if (!isRecord(e) || !isRecord(e["origine"]) || !isRecord(e["origine"]["acceptation"])) return e;
         const acc = e["origine"]["acceptation"];
         const source = typeof acc["par"] === "string" ? acc["par"] : "";
-        const target = accountMap.get(source);
-        if (!target) unknown.add(source || "(vide)");
-        const t = target ?? fallback;
+        const target = found.get(source);
+        if (!target) {
+          cleared += 1;
+          lost.add(source || "(vide)");
+          const { acceptation: _retiree, ...origine } = e["origine"];
+          void _retiree;
+          return { ...e, origine };
+        }
         remapped += 1;
-        return { ...e, origine: { ...e["origine"], acceptation: { ...acc, par: t.id, ...(acc["parEmail"] !== undefined ? { parEmail: t.email } : {}) } } };
+        return { ...e, origine: { ...e["origine"], acceptation: { ...acc, par: target.id, ...(acc["parEmail"] !== undefined ? { parEmail: target.email } : {}) } } };
       }),
     };
   });
-  return { sets: out, remapped, unknown: [...unknown].sort() };
+  return { sets: out, remapped, cleared, clearedAccounts: [...lost].sort() };
 }
 
 /** Volumes cités par les paquets diffusés (identifiant = SHA-256 du contenu). */

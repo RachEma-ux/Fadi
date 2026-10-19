@@ -249,15 +249,16 @@ describe("section Studio de l'archive (logique pure)", () => {
     expect(studioExportAccountIds(t, "uOwner")).toEqual(["uGhost", "uOwner", "uPartner"]);
     expect(studioAccountIds(t, "uOwner")).toEqual(["uOwner"]);
     const before = JSON.stringify(t.studio_requirement_sets);
-    const map = new Map([["uOwner", { id: "bOwner", email: "Owner@example.test" }], ["uPartner", { id: "bRestorer", email: "restorer@example.test" }]]);
-    const r = remapStudioJsonAccounts(t.studio_requirement_sets, map, { id: "bRestorer", email: "restorer@example.test" });
+    // Seul le propriétaire est retrouvé dans la base cible ; le partenaire en est absent ; uGhost est cité sans adresse.
+    const found = new Map([["uOwner", { id: "bOwner", email: "Owner@example.test" }]]);
+    const r = remapStudioJsonAccounts(t.studio_requirement_sets, found);
     const list = r.sets[0]!["requirements"] as { origine?: { reference: string; acceptation?: Record<string, unknown> } }[];
     expect(list[0]).toEqual(simple);
-    expect(list[1]!.origine).toEqual({ reference: "R-12", acceptation: { par: "bRestorer", parEmail: "restorer@example.test", le: "2026-10-19T08:00:00.000Z" } });
     expect(list[2]!.origine!.acceptation).toEqual({ par: "bOwner", parEmail: "Owner@example.test", le: "2026-10-19T08:00:00.000Z" });
-    // Compte cité sans adresse : attribué au compte qui restaure, déclaré ; pas d'adresse ajoutée là où il n'y en avait pas.
-    expect(list[3]!.origine!.acceptation).toEqual({ par: "bRestorer", le: "2026-10-19T08:00:00.000Z" });
-    expect(r).toMatchObject({ remapped: 3, unknown: ["uGhost"] });
+    // Acceptant non retrouvé (absent ou sans adresse) : acceptation retirée, jamais attribuée à quelqu'un qui n'a pas accepté.
+    expect(list[1]!.origine).toEqual({ reference: "R-12" });
+    expect(list[3]!.origine).toEqual({ reference: "R-12" });
+    expect(r).toMatchObject({ remapped: 1, cleared: 2, clearedAccounts: ["uGhost", "uPartner"] });
     expect(JSON.stringify(t.studio_requirement_sets)).toBe(before);
   });
 
