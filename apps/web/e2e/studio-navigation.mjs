@@ -1177,16 +1177,16 @@ try {
   await page.locator(`[data-studio-objet="${formesT[0]}"]`).waitFor({ state: "attached" });
   check("transformations : l'actualisation restitue le même dessin", (await empreinte()) === empreinteT && JSON.stringify((await a.api("get", variantePath)).revision) === JSON.stringify(transfo.revision));
 
-  // Murs et ouvertures (A.4, REC-A-03) : famille « Architecture » (Mur W, Ouverture H, Modifier Ctrl+Maj+E, Supprimer
+  // Murs et ouvertures (A.4, REC-A-03) : famille « Architecture » (Mur W, Ouverture H, Modifier J, Supprimer
   // avec cascade Ctrl+Suppr), aucune dimension proposée ; mur 6 × 3 × 0,2 m saisi au clavier, ouverture 1 × 2,1 m posée
   // d'un clic sur le mur ; même identifiant sur la planche et dans la vue 3D ; élargissement à 1,20 m depuis la vue 3D
   // (volume net 3,180 → 3,096 m³) ; mur abaissé sous l'ouverture refusé avec son motif, sans commande ajoutée ;
   // enregistrement en une enveloppe, actualisation identique, export SVG avec le vide de l'ouverture.
   await page.evaluate(() => document.activeElement?.blur());
-  check("architecture : Mur (W), Ouverture (H), Modifier (Ctrl+Maj+E), Supprimer le mur et ses ouvertures (Ctrl+Suppr) dans la famille Architecture, icônes propres",
+  check("architecture : Mur (W), Ouverture (H), Modifier (J), Supprimer le mur et ses ouvertures (Ctrl+Suppr) dans la famille Architecture, icônes propres",
     (await outils.locator('[data-studio-famille="architecture"] [data-studio-outil="studio.architecture.mur"][aria-keyshortcuts="W"] svg path').count()) === 1
     && (await outils.locator('[data-studio-famille="architecture"] [data-studio-outil="studio.architecture.ouverture"][aria-keyshortcuts="H"] svg path').count()) === 1
-    && (await outils.locator('[data-studio-famille="architecture"] [data-studio-outil="studio.architecture.modifier"][aria-keyshortcuts="Control+Shift+E"]').count()) === 1
+    && (await outils.locator('[data-studio-famille="architecture"] [data-studio-outil="studio.architecture.modifier"][aria-keyshortcuts="J"]').count()) === 1
     && (await outils.locator('[data-studio-famille="architecture"] [data-studio-outil="studio.architecture.supprimer"][aria-keyshortcuts="Control+Delete"]').count()) === 1);
   await page.keyboard.press("w");
   const formMur = proprietes.locator("[data-studio-architecture-mur-formulaire]");
@@ -1283,6 +1283,33 @@ try {
     const t = await svgArchi.text();
     check("architecture : l'export SVG dessine le mur interrompu par l'ouverture", t.includes(`<g data-architecture="wall" data-id="${idMur}">`) && t.includes(`<g data-architecture="opening" data-id="${idOuv}" data-host="${idMur}">`));
   }
+  // Le mur se sélectionne sur la planche comme un objet et se copie (Copier, D) : son ouverture est copiée avec lui ;
+  // la copie est enregistrée et relue identique.
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+Z");
+  await page.locator(`svg [data-studio-architecture="${idMur}"] polygon`).first().click();
+  await page.waitForFunction((id) => document.querySelector(`svg [data-studio-architecture="${id}"]`)?.getAttribute("aria-pressed") === "true", idMur);
+  check("architecture : un clic sur le mur le sélectionne sur la planche (et l'ouvre dans le panneau)", (await proprietes.locator(`[data-studio-architecture-choisi="${idMur}"]`).count()) === 1);
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("d");
+  for (const [nom, v] of [["Déplacement X", 0], ["Déplacement Y", 3], ["Copies", 1]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
+  await proprietes.getByRole("button", { name: "Copier la sélection", exact: true }).click();
+  await page.waitForFunction(() => document.querySelectorAll('svg [data-studio-architecture][data-studio-type="wall"]').length === 2);
+  const avantCopie = envois.length;
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Control+s");
+  await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
+  const envoiCopie = envois[envois.length - 1];
+  const copieRelue = (await a.api("get", variantePath)).revision.document.architecture ?? [];
+  const murCopie = copieRelue.find((x) => x.type === "wall" && x.id !== idMur);
+  const ouvCopie = copieRelue.find((x) => x.type === "opening" && x.id !== idOuv);
+  check("architecture : copie du mur enregistrée (studio.dessin.copier), ouverture copiée avec lui, valeurs exactes",
+    envois.length === avantCopie + 1 && JSON.stringify(envoiCopie.commands.map((c) => [c.toolId, c.params.ids])) === JSON.stringify([["studio.dessin.copier", [idMur]]])
+    && copieRelue.length === 4 && JSON.stringify(murCopie?.axis) === JSON.stringify([{ x: 0, y: -27 }, { x: 6, y: -27 }]) && ouvCopie?.hostId === murCopie?.id && ouvCopie?.width === 1.2,
+    JSON.stringify(copieRelue));
+  await page.reload();
+  await page.locator(`svg [data-studio-architecture="${murCopie?.id}"]`).waitFor({ state: "attached" });
+  check("architecture : l'actualisation restitue le mur copié et son ouverture", (await page.locator('svg [data-studio-architecture][data-studio-type="opening"]').count()) === 2);
 
   // Accessibilité de l'accueil Studio.
   await page.goto(`${BASE}/studio`);

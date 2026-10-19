@@ -1,4 +1,4 @@
-import { studioRingSimple, studioSignedArea } from "../courbes.js";
+import { studioRingSimple, studioSegmentsTouch, studioSignedArea } from "../courbes.js";
 import type { StudioPoint } from "../noyau/types.js";
 import type { StudioOpening, StudioWall } from "./types.js";
 
@@ -57,8 +57,64 @@ export type Resultat<T> = { ok: true; valeur: T } | { ok: false; raison: string 
 /** Nombre lisible dans un message (arrondi au nanomètre). */
 export const fmt = (v: number): string => String(Math.round(v * 1e9) / 1e9);
 
+/**
+ * Bornes techniques du mur (pas des valeurs métier) : `axePoints` points d'axe au plus (comme `STUDIO_LIMITS.extrudedRing`,
+ * le contrôle de simplicité de l'emprise reste borné) ; `limiteOnglet` = rapport longueur d'onglet / épaisseur au plus à
+ * un sommet intérieur, la valeur par défaut de `stroke-miterlimit` du SVG (4) : au-delà (déviation de l'axe de plus de
+ * 2·acos(1/4) ≈ 151°), la pointe d'onglet serait démesurée et le mur est refusé — jamais biseauté en silence.
+ */
+export const STUDIO_LIMITES_MUR = Object.freeze({ axePoints: 1024, limiteOnglet: 4 } as const);
+
+const segmentsVoisins = (i: number, j: number, n: number) => Math.abs(i - j) <= 1 || Math.abs(i - j) === n - 1;
+
+/**
+ * Anneau simple, même règle que `studioRingSimple` (aire non nulle, aucun repli, aucun côté ne touche un côté non
+ * voisin), avec une grille de côtés : seules les paires d'une même case sont comparées (quasi linéaire pour un mur).
+ */
+function anneauSimple(ring: readonly StudioPoint[]): boolean {
+  const n = ring.length;
+  if (n <= 16) return studioRingSimple(ring);
+  if (studioSignedArea(ring) === 0) return false;
+  // Replis sur le côté voisin : délégués au contrôle exact sur trois sommets consécutifs.
+  for (let i = 0; i < n; i++) {
+    const a = ring[i]!, b = ring[(i + 1) % n]!, c = ring[(i + 2) % n]!;
+    const cr = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+    if (cr === 0 && (b.x - a.x) * (c.x - b.x) + (b.y - a.y) * (c.y - b.y) < 0) return false;
+  }
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const p of ring) { x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y); }
+  const cote = Math.max(x1 - x0, y1 - y0, 1e-12) / Math.ceil(Math.sqrt(n));
+  const cases = new Map<string, number[]>();
+  for (let i = 0; i < n; i++) {
+    const a = ring[i]!, b = ring[(i + 1) % n]!;
+    const cx0 = Math.floor((Math.min(a.x, b.x) - x0) / cote), cx1 = Math.floor((Math.max(a.x, b.x) - x0) / cote);
+    const cy0 = Math.floor((Math.min(a.y, b.y) - y0) / cote), cy1 = Math.floor((Math.max(a.y, b.y) - y0) / cote);
+    for (let cx = cx0; cx <= cx1; cx++) for (let cy = cy0; cy <= cy1; cy++) {
+      const k = `${cx},${cy}`;
+      const liste = cases.get(k);
+      if (liste) {
+        for (const j of liste) if (!segmentsVoisins(i, j, n) && studioSegmentsTouch(a, b, ring[j]!, ring[(j + 1) % n]!)) return false;
+        liste.push(i);
+      } else cases.set(k, [i]);
+    }
+  }
+  return true;
+}
+
+/** Géométrie mémorisée par objet mur (objets du document immuables : une modification crée un nouvel objet). */
+const GEOMETRIES = new WeakMap<StudioWall, Resultat<GeometrieMur>>();
+
 /** Géométrie d'un mur (déjà validé champ par champ) ; refus motivé si l'emprise n'est pas un contour simple. */
 export function geometrieMur(w: StudioWall): Resultat<GeometrieMur> {
+  let g = GEOMETRIES.get(w);
+  if (!g) {
+    g = calculerGeometrieMur(w);
+    GEOMETRIES.set(w, g);
+  }
+  return g;
+}
+
+function calculerGeometrieMur(w: StudioWall): Resultat<GeometrieMur> {
   const { droite, gauche } = lateraux(w);
   const pts = w.axis;
   const n = pts.length;
@@ -78,12 +134,14 @@ export function geometrieMur(w: StudioWall): Resultat<GeometrieMur> {
     const c = dot(p.d, q.d);
     if (1 + c <= 1e-12) return null;
     const m = { x: (p.nrm.x + q.nrm.x) / (1 + c), y: (p.nrm.y + q.nrm.y) / (1 + c) };
+    // |m| = longueur d'onglet / épaisseur (1 / cos de la demi-déviation).
+    if (Math.hypot(m.x, m.y) > STUDIO_LIMITES_MUR.limiteOnglet) return null;
     return { x: pts[k]!.x + m.x * u, y: pts[k]!.y + m.y * u };
   };
   const gaucheCh: StudioPoint[] = [], droiteCh: StudioPoint[] = [];
   for (let k = 0; k < n; k++) {
     const g = chaine(k, gauche), dr = chaine(k, droite);
-    if (!g || !dr) return { ok: false, raison: `demi-tour de l’axe au sommet ${k + 1} : l’emprise du mur n’est pas définie` };
+    if (!g || !dr) return { ok: false, raison: `angle trop aigu au sommet ${k + 1} de l’axe : l’onglet dépasserait ${STUDIO_LIMITES_MUR.limiteOnglet} fois l’épaisseur (limite d’onglet technique, celle du SVG) ; scindez le mur` };
     gaucheCh.push(g);
     droiteCh.push(dr);
   }
@@ -103,7 +161,7 @@ export function geometrieMur(w: StudioWall): Resultat<GeometrieMur> {
     debut += l;
   }
   const anneau = [...gaucheCh, ...[...droiteCh].reverse()];
-  if (!studioRingSimple(anneau)) return { ok: false, raison: "l’emprise du mur se recoupe (axe trop replié pour son épaisseur)" };
+  if (!anneauSimple(anneau)) return { ok: false, raison: "l’emprise du mur se recoupe (axe trop replié pour son épaisseur)" };
   return { ok: true, valeur: { segments, anneau, longueur: debut, aire: Math.abs(studioSignedArea(anneau)), tolerance: 1e-9 * Math.max(1, debut) } };
 }
 

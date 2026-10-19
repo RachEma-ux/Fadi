@@ -122,8 +122,8 @@ describe("Mur à axe polyligne : onglets, angle et jonctions", () => {
     expect(volumeMaillage(studioMesh3d(ok).architecture![0]!)).toBeCloseTo(valeur(ok, "c", "volume-net")!, 9);
   });
   it("demi-tour ou emprise qui se recoupe : mur refusé", () => {
-    expect(refus(() => avec(newStudioDocument("d"), { toolId: "studio.architecture.mur", params: mur({ axis: [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 1, y: 0 }] }) }))).toMatch(/demi-tour de l’axe au sommet 2/);
-    expect(refus(() => avec(newStudioDocument("d"), { toolId: "studio.architecture.mur", params: mur({ axis: [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 4, y: 2 }, { x: 2, y: -2 }] }) }))).toMatch(/se recoupe/);
+    expect(refus(() => avec(newStudioDocument("d"), { toolId: "studio.architecture.mur", params: mur({ axis: [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 1, y: 0 }] }) }))).toMatch(/angle trop aigu au sommet 2 de l’axe : l’onglet dépasserait 4 fois l’épaisseur/);
+    expect(refus(() => avec(newStudioDocument("d"), { toolId: "studio.architecture.mur", params: mur({ axis: [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 4, y: 2 }, { x: 2, y: 2 }, { x: 2, y: -2 }] }) }))).toMatch(/se recoupe/);
   });
 });
 
@@ -227,8 +227,53 @@ describe("Registre : une icône, une barre, un raccourci par outil architectural
     const outils = STUDIO_TOOLS.filter((t) => t.groupe === "architecture");
     expect(outils.map((t) => [t.toolId, t.raccourci, t.iconeSymbolique])).toEqual([
       ["studio.architecture.mur", "W", "studio-wall"], ["studio.architecture.ouverture", "H", "studio-opening"],
-      ["studio.architecture.modifier", "Ctrl+Shift+E", "studio-architecture-edit"], ["studio.architecture.supprimer", "Ctrl+Delete", "studio-architecture-delete"],
+      ["studio.architecture.modifier", "J", "studio-architecture-edit"], ["studio.architecture.supprimer", "Ctrl+Delete", "studio-architecture-delete"],
     ]);
     for (const t of outils) expect(STUDIO_COMMAND_TOOL_IDS).toContain(t.toolId);
+  });
+});
+
+describe("Limite d'onglet et borne de l'axe (bornes techniques déclarées, aucune norme)", () => {
+  const virage = (deg: number) => {
+    const a = (deg * Math.PI) / 180;
+    return mur({ axis: [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 4 + 4 * Math.cos(a), y: 4 * Math.sin(a) }] });
+  };
+  it("déviation de l'axe jusqu'à 2·acos(1/4) ≈ 151° admise, au-delà refusée (pointe d'onglet > 4 × épaisseur)", () => {
+    expect(refus(() => avec(newStudioDocument("d"), { toolId: "studio.architecture.mur", params: virage(150) }))).toBe("accepté");
+    expect(refus(() => avec(newStudioDocument("d"), { toolId: "studio.architecture.mur", params: virage(152) }))).toMatch(/angle trop aigu au sommet 2/);
+  });
+  it("axe de 1024 points au plus", () => {
+    const axe = (n: number) => Array.from({ length: n }, (_, i) => ({ x: i, y: (i % 2) * 0.5 }));
+    expect(refus(() => avec(newStudioDocument("d"), { toolId: "studio.architecture.mur", params: mur({ axis: axe(1024) }) }))).toBe("accepté");
+    expect(refus(() => avec(newStudioDocument("d"), { toolId: "studio.architecture.mur", params: mur({ axis: axe(1025) }) }))).toMatch(/mur m1 : axe de 1024 points au plus/);
+  });
+});
+
+describe("Coût du contrôle : seuls les murs touchés sont recontrôlés (bornes larges, machine de CI)", () => {
+  it("4 000 murs et 4 000 ouvertures en un lot : moins de 4 s", () => {
+    const cs: unknown[] = [];
+    for (let i = 0; i < 4000; i++) {
+      cs.push({ toolId: "studio.architecture.mur", params: mur({ id: `m${i}`, axis: [{ x: 0, y: i }, { x: 6, y: i }] }) });
+      cs.push({ toolId: "studio.architecture.ouverture", params: ouverture({ id: `o${i}`, hostId: `m${i}` }) });
+    }
+    const t0 = performance.now();
+    const d = avec(newStudioDocument("d"), ...cs);
+    const t = performance.now() - t0;
+    expect(d.architecture).toHaveLength(8000);
+    expect(t).toBeLessThan(4000);
+  });
+  it("mur de 1 024 points d'axe : création, puis vingt commandes et un export, chacun en moins de 500 ms", () => {
+    const axis = Array.from({ length: 1024 }, (_, i) => ({ x: i, y: (i % 2) * 0.5 }));
+    let t0 = performance.now();
+    let d = avec(newStudioDocument("d"), { toolId: "studio.architecture.mur", params: mur({ axis }) }, { toolId: "studio.architecture.mur", params: mur({ id: "m2", axis: [{ x: 0, y: -5 }, { x: 6, y: -5 }] }) });
+    expect(performance.now() - t0).toBeLessThan(500);
+    for (let i = 0; i < 20; i++) {
+      t0 = performance.now();
+      d = avec(d, { toolId: "studio.dessin.ligne", params: { id: `l${i}`, type: "line", start: { x: 0, y: 9 + i }, end: { x: 1, y: 9 + i } } });
+      expect(performance.now() - t0).toBeLessThan(500);
+    }
+    t0 = performance.now();
+    exportStudioSvg(d);
+    expect(performance.now() - t0).toBeLessThan(500);
   });
 });

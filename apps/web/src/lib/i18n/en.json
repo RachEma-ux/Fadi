@@ -9630,7 +9630,6 @@
 "L’hôte {0} n’est pas un mur (une ouverture n’est créée que dans un mur)": "Host {0} is not a wall (an opening is only created in a wall)",
 "Mur {0} : segment {1} de l’axe trop court pour ses jonctions d’angle (l’emprise se recoupe)": "Wall {0}: axis segment {1} too short for its corner joints (the footprint overlaps itself)",
 "Mur {0} : l’emprise du mur se recoupe (axe trop replié pour son épaisseur)": "Wall {0}: the wall footprint overlaps itself (axis too folded for its thickness)",
-"Mur {0} : demi-tour de l’axe au sommet {1} : l’emprise du mur n’est pas définie": "Wall {0}: the axis turns back at vertex {1}: the wall footprint is undefined",
 "Mur {0} : segment {1} de l’axe de longueur nulle": "Wall {0}: axis segment {1} has zero length",
 "Mur hôte introuvable : {0}": "Host wall not found: {0}",
 "Rapport de fidélité": "Fidelity report",
@@ -9669,5 +9668,7 @@
 "Contenu conservé masqué, hors du cadrage": "Content kept hidden, outside the framing",
 "Calque éteint, contenu exporté": "Layer turned off, content exported",
 "Ouverture évidée dans le mur (porte / fenêtre si déclarée)": "Opening voided in the wall (door / window if declared)",
-"Ouverture tracée en lacune du mur, allège non représentée": "Opening drawn as a gap in the wall, sill not shown"
+"Ouverture tracée en lacune du mur, allège non représentée": "Opening drawn as a gap in the wall, sill not shown",
+"Mur {0} : axe de {1} points au plus (borne technique de contrôle du mur)": "Wall {0}: axis of at most {1} points (technical limit of the wall check)",
+"Mur {0} : angle trop aigu au sommet {1} de l’axe : l’onglet dépasserait {2} fois l’épaisseur (limite d’onglet technique, celle du SVG) ; scindez le mur": "Wall {0}: angle too sharp at axis vertex {1}: the miter would exceed {2} times the thickness (technical miter limit, the SVG one); split the wall"
 }
