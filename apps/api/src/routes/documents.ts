@@ -1,6 +1,7 @@
 /**
  * Module Documents — monté sous `/projects/:projectId/documents` :
- *   GET /                 → catalogue des documents productibles, dernière production et actualité (à jour / périmé)
+ *   GET /                 → catalogue des documents productibles, dernière production et actualité (à jour / périmé) ;
+ *                           `studioPackages` : paquets Studio diffusés ou retirés (lecture seule, liens vers les fichiers figés)
  *   GET /plan/:levelId    → plan de lecture SVG d'un niveau (`svgPlan` de flow-v62), pièce jointe
  *   GET /surfaces         → tableau des surfaces par niveau et par zone (CSV)
  *   GET /programme        → programme du projet (CSV, `csv` de building-library)
@@ -27,7 +28,7 @@ import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { BUILDING_LIBRARY } from "../data/parcours.js";
 import { loadDesignContext } from "../lib/design-context.js";
-import { documentCatalogue, documentDescriptors, recordProducedDocument } from "../lib/documents.js";
+import { documentCatalogue, documentDescriptors, recordProducedDocument, studioPackageDocuments } from "../lib/documents.js";
 import { exampleReportFor } from "../lib/example-report.js";
 import { projectOr404, type OwnedProject } from "../lib/owned-project.js";
 
@@ -46,7 +47,10 @@ documentsRouter.get("/", async (req, res) => {
   if (!project) return;
   const now = new Date().toISOString();
   const dctx = await loadDesignContext(db, project, now);
-  res.json({ modelRevision: project.modelRevision, nativeHash: dctx.analysis.nativeHash, computedAt: now, documents: await documentCatalogue(db, project, dctx) });
+  const documents = await documentCatalogue(db, project, dctx);
+  // Groupe Studio, à part du catalogue productible (aucune production ici) : paquets diffusés et retirés.
+  const studioPackages = await studioPackageDocuments(project.id, req.user!.id);
+  res.json({ modelRevision: project.modelRevision, nativeHash: dctx.analysis.nativeHash, computedAt: now, documents, studioPackages });
 });
 
 /** Produit un document du catalogue : le corps par `render`, la trace de production avec la révision et l'empreinte courantes. */
