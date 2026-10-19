@@ -219,7 +219,7 @@ try {
   check('paquet recalculé dans B : empreintes identiques', verif?.identical === true, short(verif));
   const membersB = (await ownerB('GET', `/projects/${pB}/members`)).body;
   check('droits : l\'éditeur est membre éditeur du projet restauré', JSON.stringify(membersB).includes(accounts.editor.email) && /editeur/.test(JSON.stringify(membersB)), short(membersB));
-  check('droits : l\'éditeur lit et écrit dans le projet restauré', (await editorB('GET', `${vPathB(v2)}`)).status === 200);
+  check('droits : l\'éditeur ouvre la variante dérivée du projet restauré', (await editorB('GET', `${vPathB(v2)}`)).status === 200);
   const prefsB = (await ownerB('GET', `${rootB}/preferences/outils`)).body;
   check('préférences d\'outils reprises', prefsB?.profil === 'metier:cotation' && JSON.stringify(prefsB.favoris) === '["studio.dessin.cote","studio.dessin.ligne"]', short(prefsB));
 
