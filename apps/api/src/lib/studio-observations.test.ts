@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { acteurAutorise, echeanceValide, estAncetreOuEgale, OBSERVATION_TRANSITIONS, statutApres } from "./studio-observations.js";
 
-const personne = { estResponsable: false, estAuteur: false, estProprietaire: false };
+const personne = { estResponsable: false, estAuteur: false, estProprietaire: false, peutEcrire: false };
 
 describe("Observations Studio — règles pures", () => {
   it("suit le cycle ouverte → corrigée → recontrôlée → clôturée, et rouvre", () => {
@@ -10,6 +10,12 @@ describe("Observations Studio — règles pures", () => {
     expect(statutApres("recontrolee", "cloturer")).toBe("cloturee");
     expect(statutApres("cloturee", "rouvrir")).toBe("rouverte");
     expect(statutApres("rouverte", "corriger")).toBe("corrigee");
+  });
+
+  it("réattribue sans changer le statut, sauf une observation clôturée", () => {
+    expect(statutApres("ouverte", "reattribuer")).toBe("ouverte");
+    expect(statutApres("corrigee", "reattribuer")).toBe("corrigee");
+    expect(statutApres("cloturee", "reattribuer")).toBeNull();
   });
 
   it("refuse les sauts et les retours non prévus", () => {
@@ -23,7 +29,10 @@ describe("Observations Studio — règles pures", () => {
 
   it("réserve chaque passage à son rôle ; personne d'autre", () => {
     for (const action of OBSERVATION_TRANSITIONS) expect(acteurAutorise(action, personne)).toBe(false);
-    expect(acteurAutorise("corriger", { ...personne, estResponsable: true })).toBe(true);
+    expect(acteurAutorise("corriger", { ...personne, estResponsable: true, peutEcrire: true })).toBe(true);
+    expect(acteurAutorise("corriger", { ...personne, estResponsable: true })).toBe(false);
+    expect(acteurAutorise("reattribuer", { ...personne, estProprietaire: true })).toBe(true);
+    expect(acteurAutorise("reattribuer", { ...personne, estAuteur: true, estResponsable: true, peutEcrire: true })).toBe(false);
     expect(acteurAutorise("corriger", { ...personne, estProprietaire: true })).toBe(false);
     expect(acteurAutorise("recontroler", { ...personne, estAuteur: true })).toBe(true);
     expect(acteurAutorise("recontroler", { ...personne, estResponsable: true })).toBe(false);

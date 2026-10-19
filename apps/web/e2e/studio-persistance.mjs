@@ -602,6 +602,32 @@ if (PHASE === 'reopen') {
   check('archive : promotion refusée 409 archived', (await promote(owner, ownerRemark.body?.id, { responsableId: ids0.owner })).body?.error === 'archived');
   check('archive : journal inchangé', (await editor('GET', obComments)).body?.comments?.find((c) => c.id === remark.body?.id)?.observation?.journal?.length === 6);
   check('désarchivage : passage de nouveau permis', (await owner('POST', `${root}/${ob.studyId}/unarchive`)).status === 200 && (await pass(reader, { action: 'recontroler', revisionId: r3 })).body?.statut === 'recontrolee');
+
+  // Réattribution (propriétaire seul, journalisée) et droit actuel du responsable revérifié à la correction.
+  check('réattribuer : auteur ou responsable → 403', (await pass(reader, { action: 'reattribuer', responsableId: ids0.owner })).status === 403 && (await pass(editor, { action: 'reattribuer', responsableId: ids0.owner })).status === 403);
+  check('réattribuer sans responsable, ou responsable sur un autre passage → 400', (await pass(owner, { action: 'reattribuer' })).status === 400 && (await pass(owner, { action: 'rouvrir', responsableId: ids0.owner })).status === 400);
+  check('réattribuer à un lecteur → 400 responsable_invalide', (await pass(owner, { action: 'reattribuer', responsableId: ids0.reader })).body?.code === 'responsable_invalide');
+  check('réattribuer au responsable actuel → 409 same_responsable', (await pass(owner, { action: 'reattribuer', responsableId: ids0.editor })).body?.error === 'same_responsable');
+  const reassigned = await pass(owner, { action: 'reattribuer', responsableId: ids0.owner, note: 'Reprise par le propriétaire' });
+  const lastEvent = reassigned.body?.journal?.at(-1);
+  check('réattribuer par le propriétaire (200) : statut inchangé, nouveau responsable, passage journalisé',
+    reassigned.status === 200 && reassigned.body.statut === 'recontrolee' && reassigned.body.responsableId === ids0.owner && reassigned.body.assignedToMe === true
+    && lastEvent?.action === 'reattribuer' && lastEvent?.fromStatut === 'recontrolee' && lastEvent?.toStatut === 'recontrolee' && lastEvent?.responsableId === ids0.owner && lastEvent?.actorId === ids0.owner
+    && lastEvent?.seq === reassigned.body.journal.length, JSON.stringify(reassigned.body));
+  check('rouvrir puis réattribuer à l\'éditeur', (await pass(owner, { action: 'rouvrir' })).body?.statut === 'rouverte' && (await pass(owner, { action: 'reattribuer', responsableId: ids0.editor })).body?.responsableId === ids0.editor);
+  check('réattribuer : le nouveau responsable est averti', (await obNotes(editor)).some((n) => n.kind === 'commentaire-studio' && n.text.includes('a réattribué l’observation')));
+  const downgraded = await owner('PATCH', `/projects/${projectId}/members/${ids0.editor}`, { role: 'lecteur' });
+  check('le responsable est rétrogradé lecteur', downgraded.status === 200, `${downgraded.status} ${JSON.stringify(downgraded.body)}`);
+  const stale = (await editor('GET', obComments)).body?.comments?.find((c) => c.id === remark.body?.id)?.observation;
+  check('responsable rétrogradé : « corriger » n\'est plus proposé', stale?.assignedToMe === true && !stale?.possibles?.includes('corriger'), JSON.stringify(stale?.possibles));
+  const staleFix = await pass(editor, { action: 'corriger', revisionId: r3 });
+  check('responsable rétrogradé : corriger → 403, statut inchangé', staleFix.status === 403 && (await owner('GET', obComments)).body?.comments?.find((c) => c.id === remark.body?.id)?.observation?.statut === 'rouverte', `${staleFix.status}`);
+  check('responsable rétrogradé : ne peut plus être désigné → 400 responsable_invalide', (await pass(owner, { action: 'reattribuer', responsableId: ids0.editor })).body?.code === 'responsable_invalide');
+  const unstuck = await pass(owner, { action: 'reattribuer', responsableId: ids0.owner });
+  check('observation débloquée : réattribuée au propriétaire, qui la corrige', unstuck.status === 200 && (await pass(owner, { action: 'corriger', revisionId: r3 })).body?.statut === 'corrigee');
+  check('l\'éditeur retrouve son rôle', (await owner('PATCH', `/projects/${projectId}/members/${ids0.editor}`, { role: 'editeur' })).status === 200);
+  check('suppression d\'un commentaire non promu (transactionnelle) : 204, puis promotion → 404', (await owner('DELETE', `${obComments}/${ownerRemark.body?.id}`)).status === 204
+    && (await promote(owner, ownerRemark.body?.id, { responsableId: ids0.owner })).status === 404);
   }
 
   if (STATE) writeFileSync(STATE, JSON.stringify({ ...s, commentIds, linkedSteps, owner: ownerCredentials, headRevisionId: head.body.revision.id, initialRevisionId: created.body.revision.id, documentSha256: digest(head.body.revision.document), variantIds: expectedOrder, revisionIds: ids, exportStudy: { studyId: ev.studyId, variantId: ev.variantId, svgSha256: digest(svg.text) } }), { mode: 0o600 });

@@ -61,6 +61,7 @@ export function ObservationCommentaire({ c, ctx }: { c: StudioComment; ctx: Cont
       <ol data-studio-observation-journal>{o.journal.map((e) => <li key={e.seq} data-seq={e.seq} data-action={e.action}>
         <strong>{JOURNAL_LIBELLE[e.action]}</strong> <span translate="no">{e.actorEmail}</span> <span translate="no">{date(e.at)}</span>
         {e.revisionId && <> · Révision <span translate="no" title={e.revisionId}>{court(e.revisionId)}</span></>}
+        {e.responsableId && <> · Responsable <span translate="no">{ctx.participants.find((p) => p.id === e.responsableId)?.email ?? e.responsableId}</span></>}
         {e.note && <> · <span translate="no">{e.note}</span></>}
       </li>)}</ol>
     </details>
@@ -125,15 +126,18 @@ function Passage({ c, ctx, action, surFermer }: { c: StudioComment; ctx: Context
     enabled: avecRevision,
   });
   const [revisionId, setRevision] = useState(ctx.revisionId);
+  const reattribuer = action === "reattribuer";
+  const candidats = ctx.participants.filter((p) => p.assignable && p.id !== c.observation?.responsableId);
+  const [responsableId, setResponsable] = useState(candidats[0]?.id ?? "");
   const [note, setNote] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [error, setError] = useState("");
   const demande = useRef<{ cle: string; id: string } | null>(null);
   async function envoyer(e: FormEvent) {
     e.preventDefault();
-    if (envoi) return;
+    if (envoi || (reattribuer && !responsableId)) return;
     setEnvoi(true); setError("");
-    const input = { action, ...(avecRevision ? { revisionId } : {}), ...(note.trim() ? { note: note.trim() } : {}) };
+    const input = { action, ...(avecRevision ? { revisionId } : {}), ...(reattribuer ? { responsableId } : {}), ...(note.trim() ? { note: note.trim() } : {}) };
     try {
       await api.transitionStudioObservation(ctx.projectId, ctx.studyId, ctx.variantId, c.id, { ...input, requestId: demandeId(demande, JSON.stringify(input)) });
       demande.current = null; surFermer(); ctx.surModifie();
@@ -150,11 +154,18 @@ function Passage({ c, ctx, action, surFermer }: { c: StudioComment; ctx: Context
         {liste.map((r) => <option key={r.id} value={r.id} translate="no">{`${court(r.id)} · ${date(r.createdAt)}`}</option>)}
       </select>
     </>}
+    {reattribuer && <>
+      <label htmlFor={`${id}-responsable`}>Nouveau responsable</label>
+      <select id={`${id}-responsable`} required value={responsableId} onChange={(e) => setResponsable(e.target.value)} data-studio-nouveau-responsable>
+        {candidats.map((p) => <option key={p.id} value={p.id} translate="no">{p.email}</option>)}
+      </select>
+      {candidats.length === 0 && <p className="studio-info">Aucun autre membre ne peut être responsable (propriétaire ou éditeur requis).</p>}
+    </>}
     <label htmlFor={`${id}-note`}>Note (facultative)</label>
     <textarea id={`${id}-note`} maxLength={2000} rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
     {error && <p role="alert">{error}</p>}
     <div className="studio-commentaires-actions">
-      <button type="submit" disabled={envoi}>{PASSAGE_LIBELLE[action]}</button>
+      <button type="submit" disabled={envoi || (reattribuer && !responsableId)}>{PASSAGE_LIBELLE[action]}</button>
       <button type="button" onClick={surFermer}>Fermer</button>
     </div>
   </form>;
