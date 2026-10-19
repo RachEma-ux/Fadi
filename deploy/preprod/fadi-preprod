@@ -33,7 +33,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 export PATH
 
 # Scénarios de bout en bout, dans l'ordre de la CI (.github/workflows/ci.yml, jobs e2e).
-E2E_DEFAUT="accueils-design parcours-scenario studio-persistance studio-navigation studio-domaines studio-publication
+E2E_DEFAUT="accueils-design parcours-scenario studio-persistance studio-navigation studio-exemple-p118 studio-domaines studio-espace studio-publication
 studio-observations studio-profils studio-catalogue studio-hors-ligne studio-corpus-s6 studio-corpus-s7 studio-conflits
 studio-chargement studio-mesures-chargement studio-accessibilite studio-quantites studio-dossier studio-echanges
 notifications-preferences atelier-nouveau atelier-documents atelier-echanges atelier-versions atelier-automatisation
