@@ -7,7 +7,7 @@
  *                                                                      révision de tête, rejeu par requestId)
  * Un ajustement n'écrit que sa ligne de journal : jamais le document, jamais la quantité brute.
  */
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { evaluerAjustementsQuantites, quantitesStudio, validateStudioDocument } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
@@ -92,12 +92,14 @@ studioQuantitesRouter.post(chemin, endpoint(async (req, res) => {
         return { ...ajustementDe(previous as LigneAjustement, await emails(tx, [previous.authorId])), replayed: true };
       }
     }
-    const [last] = await tx.select({ seq: studioQuantityAdjustments.seq }).from(studioQuantityAdjustments)
-      .where(eq(studioQuantityAdjustments.variantId, variant.id)).orderBy(desc(studioQuantityAdjustments.seq)).limit(1);
+    // Journal de la variante (borné par STUDIO_LIMITES_AJUSTEMENTS.journal) : dernière séquence et ajustements d'objets en
+    // vigueur sur la tête, repris dans l'état d'un total de calque.
+    const journal = await journalDe(tx, variant.id);
+    const last = journal.at(-1);
     const [revision] = await tx.select({ id: studioRevisions.id, document: studioRevisions.document }).from(studioRevisions)
       .where(and(eq(studioRevisions.id, variant.headRevisionId), eq(studioRevisions.variantId, variant.id))).limit(1);
     if (!revision) return notFound();
-    const d = deciderAjustement(input, { derniereSequence: last?.seq ?? 0, headRevisionId: variant.headRevisionId, document: revision.document });
+    const d = deciderAjustement(input, { derniereSequence: last?.seq ?? 0, headRevisionId: variant.headRevisionId, document: revision.document, journal: journal.map((r) => ajustementDe(r, new Map())) });
     if ("refus" in d) throw new StudioRequestError(d.refus.status, d.refus.body);
     const [row] = await tx.insert(studioQuantityAdjustments).values({
       id: newId("studio_quantity_adjustment"), studyId: study.id, variantId: variant.id, revisionId: revision.id, ...d.ok,

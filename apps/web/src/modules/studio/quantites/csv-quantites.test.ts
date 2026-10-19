@@ -27,6 +27,37 @@ describe("CSV du métré Studio", () => {
     expect(celluleCsv("=SOMME(A1)")).toBe("'=SOMME(A1)");
     expect(celluleCsv("+33;x")).toBe("\"'+33;x\"");
     expect(celluleCsv("@x")).toBe("'@x");
+    expect(celluleCsv("-x")).toBe("'-x");
+    expect(celluleCsv("-1+2")).toBe("'-1+2");
+    expect(celluleCsv("-1e3")).toBe("'-1e3");
+    // Nombres écrits par nombreCsv (négatifs compris) : lisibles comme nombres, jamais préfixés.
+    expect(celluleCsv("-0.05")).toBe("-0.05");
+    expect(celluleCsv("-12")).toBe("-12");
+    expect(celluleCsv("-0,05")).toBe('-0,05');
+  });
+
+  it("total général partiel quand un total de calque non évalué est ajusté (revue M2)", () => {
+    const d: StudioDocument = { ...newStudioDocument("d"), layers: [{ id: "A", name: "A", visible: true, locked: false }, { id: "B", name: "B", visible: true, locked: false }], objects: [
+      { id: "a1", type: "line", layerId: "A", start: { x: 0, y: 0 }, end: { x: 3, y: 0 } },
+      { id: "b1", type: "rectangle", layerId: "B", origin: { x: 0, y: 0 }, width: 1, height: 5, extrusion: { base: 0, height: 1 } },
+    ] };
+    const q = quantitesStudio(d);
+    const de = (id: string, valeur: number, sequence: number): AjustementQuantiteEnregistre => {
+      const e = etatCibleQuantite(d, q, { type: "calque", id }, "volume");
+      if ("refus" in e) throw new Error(e.refus);
+      return { id: `a${sequence}`, sequence, revisionId: "rev-1", cible: { type: "calque", id }, grandeur: "volume", unite: "m3", valeur, motif: "Relevé", derivee: e.derivee, etatCible: e.etat, auteur: "u1", date: "2026-10-19T09:00:00.000Z" };
+    };
+    const l = lignes(csvQuantites(appliquerAjustementsEnregistres(q, evaluerAjustementsQuantites(d, q, [de("A", 10, 1), de("B", 7, 2)])), { decimal: "." }));
+    expect(l.find((x) => x.startsWith(";;TOTAL GÉNÉRAL;;;Volume"))).toBe(";;TOTAL GÉNÉRAL;;;Volume;m³;5;;7;;;;partiel : 1 non évalué(s), 1 ajusté(s), partiel : 1 ajustement(s) sur des valeurs non évaluées, quantités brutes, déductions non déclarées;2;;;");
+  });
+
+  it("écart négatif d'un ajustement exporté comme nombre (revue M1)", () => {
+    const q = quantitesStudio(doc);
+    const e = etatCibleQuantite(doc, q, { type: "objet", id: "l" }, "longueur");
+    if ("refus" in e) throw new Error(e.refus);
+    const a: AjustementQuantiteEnregistre = { id: "a1", sequence: 1, revisionId: "rev-1", cible: { type: "objet", id: "l" }, grandeur: "longueur", unite: "m", valeur: 0.05, motif: "Relevé", derivee: e.derivee, etatCible: e.etat, auteur: "u1", date: "2026-10-19T09:00:00.000Z" };
+    const l = lignes(csvQuantites(appliquerAjustementsEnregistres(q, evaluerAjustementsQuantites(doc, q, [a])), { decimal: "." }));
+    expect(l).toContain("Calque par défaut;non;l;line;Ligne;Longueur;m;0.1;0.05;0.05;Relevé;u1;2026-10-19T09:00:00.000Z;;-0.05;en vigueur;rev-1;");
   });
 
   it("nombres : virgule ou point, 6 décimales au plus, jamais d'entier tronqué", () => {
@@ -83,7 +114,7 @@ describe("CSV du métré Studio", () => {
     expect(l).toContain("Calque par défaut;non;l;line;Ligne;Longueur;m;0.1;0.15;0.15;Relevé;a@b.test;2026-10-19T09:00:00.000Z;;0.05;en vigueur;rev-1;");
     expect(l).toContain('"Murs; ""porteurs""";oui;r;rectangle;Rectangle;Surface;m²;0.03;;0.03;Ancien;a@b.test;2026-10-19T09:00:00.000Z;;;à revoir : cible modifiée depuis sa révision;rev-1;0.03');
     expect(l).toContain('"Murs; ""porteurs""";oui;TOTAL DU CALQUE;;;Volume;m³;2;2.5;2.5;Métré du calque;a@b.test;2026-10-19T09:00:00.000Z;partiel : 1 non évalué(s), 1 ajusté(s);0.5;en vigueur;rev-1;');
-    expect(l.find((x) => x.startsWith(";;TOTAL GÉNÉRAL;;;Volume"))).toBe(";;TOTAL GÉNÉRAL;;;Volume;m³;2;;2.5;;;;partiel : 2 non évalué(s), quantités brutes, déductions non déclarées;0.5;;;");
+    expect(l.find((x) => x.startsWith(";;TOTAL GÉNÉRAL;;;Volume"))).toBe(";;TOTAL GÉNÉRAL;;;Volume;m³;2;;2.5;;;;partiel : 2 non évalué(s), 1 ajusté(s), quantités brutes, déductions non déclarées;0.5;;;");
     // Cible supprimée : l'ajustement à revoir a sa ligne, jamais omis.
     const doc3: StudioDocument = { ...doc, objects: doc.objects.filter((o) => o.id !== "l") };
     const q3 = quantitesStudio(doc3);

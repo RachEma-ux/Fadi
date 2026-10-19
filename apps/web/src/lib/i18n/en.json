@@ -9936,5 +9936,8 @@
 "{0} ajustement(s) du métré repris, attribué(s) au compte qui restaure : valeurs, motifs, dates et révisions d'origine conservés.": "{0} quantity adjustment(s) restored, attributed to the restoring account: original values, reasons, dates and revisions kept.",
 "à revoir : {0} proposé, non appliqué": "to review: {0} proposed, not applied",
 "à revoir : retour à la valeur brute proposé, non appliqué": "to review: revert to the gross value proposed, not applied",
-"à revoir : total du calque proposé, non appliqué": "to review: layer total proposed, not applied"
+"à revoir : total du calque proposé, non appliqué": "to review: layer total proposed, not applied",
+"partiel : {0} ajustement(s) sur des valeurs non évaluées": "partial: {0} adjustment(s) on unevaluated values",
+"Choix prudent : un ajustement d’objet enregistré après celui du total de son calque rend ce total « à revoir » ; une évolution du métré (nouvelle grandeur, motif « non évalué » renommé) rend aussi « à revoir » les ajustements concernés, à reconfirmer.": "Cautious choice: an object adjustment saved after its layer total’s adjustment makes that total “to review”; a change in the take-off (new quantity, renamed “not evaluated” reason) also makes the affected adjustments “to review”, to be confirmed again.",
+"Le journal des ajustements de cette variante est complet ({0} ajustements) : aucun nouvel ajustement n’est accepté.": "This variant’s adjustment log is full ({0} adjustments): no new adjustment is accepted."
 }

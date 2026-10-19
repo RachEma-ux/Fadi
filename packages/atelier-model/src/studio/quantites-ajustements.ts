@@ -19,6 +19,12 @@ import {
  * - Pour une même cible et une même grandeur, seul le dernier ajustement (plus grande séquence) compte : un ajustement
  *   plus ancien est « remplacé », même si le dernier est à revoir (on ne revient jamais en silence à un plus ancien).
  * - `valeur: null` revient explicitement à la valeur brute (retour tracé lui aussi).
+ * - L'état d'un total de calque comprend les ajustements d'objets EN VIGUEUR de ce calque (pour la grandeur) : un
+ *   ajustement d'objet enregistré après celui du total rend le total « à revoir », au lieu d'être masqué par lui.
+ * - Choix conservateur assumé : l'état de la cible reprend la forme du métré (grandeurs présentes, codes de motif
+ *   « non évalué », nature). Une évolution du modèle de métré (nouvelle grandeur, motif renommé…) change donc cet état,
+ *   et TOUS les ajustements concernés passent « à revoir » : ils sont à reconfirmer, jamais réappliqués en silence.
+ * - Le journal d'une variante est borné (`STUDIO_LIMITES_AJUSTEMENTS.journal`) : au-delà, le serveur refuse.
  */
 
 export type CibleAjustementQuantite = { type: "objet"; id: string } | { type: "calque"; id: string };
@@ -75,8 +81,11 @@ function sourceDe(doc: StudioDocument, id: string): unknown {
  * le nombre d'objets non pris en charge. Le nom ou la visibilité d'un calque n'en font pas partie : ils ne changent
  * aucune quantité.
  */
-export function etatCibleQuantite(doc: StudioDocument, q: QuantitesStudio, cible: CibleAjustementQuantite, grandeur: GrandeurQuantite):
-  { etat: unknown; derivee: number | null } | { refus: RefusAjustementEnregistre } {
+export function etatCibleQuantite(
+  doc: StudioDocument, q: QuantitesStudio, cible: CibleAjustementQuantite, grandeur: GrandeurQuantite,
+  /** Ajustements d'objets en vigueur (`evaluerAjustementsQuantites(...).objets`) : repris dans l'état d'un total de calque. */
+  objetsEnVigueur: readonly AjustementQuantiteEnregistre[] = [],
+): { etat: unknown; derivee: number | null } | { refus: RefusAjustementEnregistre } {
   if (cible.type === "objet") {
     const o = q.objets.find((x) => x.objetId === cible.id);
     if (!o) return { refus: "objet-inconnu" };
@@ -92,10 +101,17 @@ export function etatCibleQuantite(doc: StudioDocument, q: QuantitesStudio, cible
   if (!GRANDEUR_CUMULABLE[grandeur]) return { refus: "grandeur-non-cumulable" };
   const t = c.totaux.find((x) => x.grandeur === grandeur);
   if (!t) return { refus: "grandeur-non-applicable" };
+  const ajustes = new Map(objetsEnVigueur.filter((a) => a.cible.type === "objet" && a.grandeur === grandeur).map((a) => [a.cible.id, a]));
   return {
     etat: {
       cible: "calque", calqueId: c.calqueId, grandeur,
-      objets: c.objets.flatMap((o) => { const v = o.valeurs.find((x) => x.grandeur === grandeur); return v ? [{ objetId: o.objetId, valeur: v.valeur, motif: v.motif }] : []; }),
+      objets: c.objets.flatMap((o) => {
+        const v = o.valeurs.find((x) => x.grandeur === grandeur);
+        if (!v) return [];
+        const a = ajustes.get(o.objetId);
+        // Clé `ajustement` présente seulement pour un objet ajusté : un état sans ajustement d'objet reste inchangé.
+        return [{ objetId: o.objetId, valeur: v.valeur, motif: v.motif, ...(a ? { ajustement: { id: a.id, valeur: a.valeur } } : {}) }];
+      }),
       nonPrisEnCharge: c.objets.filter((o) => o.nature === "non-pris-en-charge").map((o) => o.objetId),
     },
     derivee: t.valeur,
@@ -145,12 +161,18 @@ export function evaluerAjustementsQuantites(doc: StudioDocument, q: QuantitesStu
   const dernier = new Map<string, AjustementQuantiteEnregistre>();
   for (const a of ordonne) dernier.set(cleCible(a), a);
   const statut = new Map<AjustementQuantiteEnregistre, { statut: StatutAjustementEnregistre; revue?: MotifRevueAjustement }>();
-  for (const a of dernier.values()) {
-    const e = etatCibleQuantite(doc, q, a.cible, a.grandeur);
+  // Deux passes : les objets d'abord (leur statut ne dépend d'aucun total), puis les totaux de calque, dont l'état
+  // comprend les ajustements d'objets en vigueur.
+  const evaluer = (a: AjustementQuantiteEnregistre, objetsEnVigueur: readonly AjustementQuantiteEnregistre[]) => {
+    const e = etatCibleQuantite(doc, q, a.cible, a.grandeur, objetsEnVigueur);
     if ("refus" in e) statut.set(a, { statut: "a-revoir", revue: "cible-absente" });
     else if (jsonCanoniqueQuantites(e.etat) !== jsonCanoniqueQuantites(a.etatCible)) statut.set(a, { statut: "a-revoir", revue: "cible-modifiee" });
     else statut.set(a, { statut: "en-vigueur" });
-  }
+  };
+  const derniersObjets = [...dernier.values()].filter((a) => a.cible.type === "objet");
+  for (const a of derniersObjets) evaluer(a, []);
+  const objetsEnVigueur = derniersObjets.filter((a) => statut.get(a)?.statut === "en-vigueur");
+  for (const a of dernier.values()) if (a.cible.type === "calque") evaluer(a, objetsEnVigueur);
   const lignes = ordonne.map((ajustement): LigneJournalAjustement => ({ ajustement, ...(statut.get(ajustement) ?? { statut: "remplace" as const }) }));
   const derniers = [...dernier.values()];
   const enVigueur = derniers.filter((a) => statut.get(a)?.statut === "en-vigueur");
@@ -181,6 +203,11 @@ export interface TotalAjusteEnregistre extends TotalAjuste {
   aRevoirCalque?: AjustementQuantiteEnregistre;
   /** Écart retenu − total brut ; null si le total brut n'est pas évalué. */
   ecart?: number | null;
+  /**
+   * Total général : ajustements de calque dont le total retenu n'est pas évalué — leur écart n'est pas calculable, il
+   * n'est pas reporté (aucune valeur inventée) ; le total général est alors partiel.
+   */
+  ajustementsNonReportes?: number;
 }
 export interface ObjetAjusteEnregistre extends Omit<QuantitesAjustees["objets"][number], "valeurs"> { valeurs: ValeurAjusteeEnregistree[] }
 export interface CalqueAjusteEnregistre extends Omit<QuantitesAjustees["calques"][number], "objets" | "totaux"> { objets: ObjetAjusteEnregistre[]; totaux: TotalAjusteEnregistre[] }
@@ -220,7 +247,7 @@ export function appliquerAjustementsEnregistres(q: QuantitesStudio, evaluation: 
   const parId = new Map(objets.map((o) => [o.objetId, o]));
   const calqueEnVigueur = new Map(evaluation.calques.map((a) => [`${a.cible.id}\u0000${a.grandeur}`, a]));
   const calqueARevoir = new Map(evaluation.aRevoir.filter((a) => a.cible.type === "calque").map((a) => [`${a.cible.id}\u0000${a.grandeur}`, a]));
-  const decalage = new Map<GrandeurQuantite, number | null>();
+  const decalage = new Map<GrandeurQuantite, { somme: number; reportes: number; nonReportes: number }>();
   const calques = base.calques.map((c): CalqueAjusteEnregistre => ({
     ...c,
     objets: c.objets.map((o) => parId.get(o.objetId)!),
@@ -231,17 +258,20 @@ export function appliquerAjustementsEnregistres(q: QuantitesStudio, evaluation: 
       if (!a) return { ...t, ...(revoir ? { aRevoirCalque: revoir } : {}) };
       if (a.valeur === null) return { ...t, ajustementCalque: a, ecart: ecartDe(t.retenue, t.valeur) };
       // Le total du calque ajusté remplace le total retenu des objets (ajustements d'objets compris).
-      const d = t.retenue === null ? null : a.valeur - t.retenue;
-      decalage.set(t.grandeur, d === null || decalage.get(t.grandeur) === null ? null : (decalage.get(t.grandeur) ?? 0) + d);
+      // Écarts valables additionnés ; un écart sur un total retenu non évalué n'est pas calculable : compté à part.
+      const cumul = decalage.get(t.grandeur) ?? { somme: 0, reportes: 0, nonReportes: 0 };
+      if (t.retenue === null) cumul.nonReportes += 1;
+      else { cumul.somme += a.valeur - t.retenue; cumul.reportes += 1; }
+      decalage.set(t.grandeur, cumul);
       return { ...t, retenue: a.valeur, ajusteeCalque: a.valeur, ajustementCalque: a, ajustes: t.ajustes + 1, ecart: ecartDe(a.valeur, t.valeur) };
     }),
   }));
   const totaux = base.totaux.map((t): TotalAjusteEnregistre => {
-    if (!decalage.has(t.grandeur)) return t;
     const d = decalage.get(t.grandeur);
-    // Un total de calque ajusté sur un total retenu non évalué ne se reporte pas : le total général reste partiel.
-    const retenue = d === null || d === undefined ? t.retenue : (t.retenue ?? 0) + d;
-    return { ...t, retenue, ecart: ecartDe(retenue, t.valeur) };
+    if (!d) return t;
+    // Une base non évaluée reste non évaluée ; seuls les écarts calculables sont reportés.
+    const retenue = t.retenue === null ? null : t.retenue + d.somme;
+    return { ...t, retenue, ajustes: t.ajustes + d.reportes, ecart: ecartDe(retenue, t.valeur), ...(d.nonReportes ? { ajustementsNonReportes: d.nonReportes } : {}) };
   });
   return { ...base, calques, objets, totaux, evaluation, calquesAppliques: options.calques };
 }
