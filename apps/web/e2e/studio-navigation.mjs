@@ -1227,6 +1227,8 @@ try {
   await mobile.keyboard.press("ArrowDown");
   const listePlus = mobile.locator(`#${await plus.getAttribute("aria-controls")}`.replace(/:/g, "\\:"));
   await listePlus.waitFor();
+  // Le premier élément reçoit le focus à l'image suivante (requestAnimationFrame) : l'attendre, ne pas le supposer.
+  await mobile.waitForFunction((id) => document.getElementById(id)?.contains(document.activeElement), await plus.getAttribute("aria-controls"), { timeout: 5000 }).catch(() => {});
   const focus1 = await mobile.evaluate(() => document.activeElement?.getAttribute("aria-label"));
   await mobile.keyboard.press("ArrowDown");
   const focus2 = await mobile.evaluate(() => document.activeElement?.getAttribute("aria-label"));
