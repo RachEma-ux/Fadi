@@ -7,7 +7,8 @@ import { requireAuth } from "../middleware/require-auth.js";
 import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioRevisionChanges, readStudioStudy, STUDIO_EXPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
 import { createStudioComment, createStudioObservation, deleteStudioComment, listStudioComments, studioCommentSchema, studioObservationSchema, studioObservationTransitionSchema, transitionStudioObservation } from "../lib/studio-commentaires.js";
 import { listStudiesOfStep, listStudioStudySteps, setStudioStudySteps, studioStudyStepsSchema } from "../lib/studio-liens.js";
-import { renameStudioStudy, renameStudioVariant, setStudioStudyArchived, setStudioVariantArchived, studioRenameSchema } from "../lib/studio-variantes.js";
+import { renameStudioStudy, renameStudioVariant, setStudioStudyArchived, setStudioStudyWorkflowPhase, setStudioVariantArchived, studioRenameSchema, studioWorkflowSchema } from "../lib/studio-variantes.js";
+import { etatExempleStudio, installerExempleStudio } from "../lib/studio-exemple.js";
 import { studioExigencesRouter } from "./studio-exigences.js";
 import { studioPublicationsRouter } from "./studio-publications.js";
 import { studioObservationsRouter } from "./studio-observations.js";
@@ -58,7 +59,10 @@ function created(res: Response, body: StudioCreation): void {
 studioRouter.get("/studies", endpoint(async (req, res) => {
   const archives = archivesOf(req);
   if (archives === null) { archivesRefused(res); return; }
-  res.json(await listStudioStudies(scope(req).projectId, req.user!.id, archives));
+  const projectId = scope(req).projectId;
+  const liste = await listStudioStudies(projectId, req.user!.id, archives);
+  // État de l'étude exemple (`absente | partielle | complete`, lu dans son marquage) ; null hors d'un projet de l'exemple.
+  res.json({ ...liste, exemple: await etatExempleStudio(projectId, req.user!.id) });
 }));
 studioRouter.post("/studies", endpoint(async (req, res) => {
   const parsed = studySchema.safeParse(req.body);
@@ -77,6 +81,27 @@ studioRouter.patch("/studies/:studyId", endpoint(async (req, res) => {
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
   const s = scope(req);
   res.json(await renameStudioStudy(s.projectId, s.studyId, req.user!.id, parsed.data.name));
+}));
+/**
+ * Phase déclarée du workflow de conception (REF-01 §06) : `{ phase: "cadrer" | … | "publier" | null }`, droit `modify`
+ * (propriétaire ou éditeur ; lecteur → 403), étude archivée → 409 `archived`. Renvoie l'étude relue.
+ */
+studioRouter.patch("/studies/:studyId/workflow", endpoint(async (req, res) => {
+  const parsed = studioWorkflowSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
+  const s = scope(req);
+  res.json(await setStudioStudyWorkflowPhase(s.projectId, s.studyId, req.user!.id, parsed.data.phase));
+}));
+/**
+ * Étude exemple du projet P.118 (`lib/studio-exemple.ts`), réservée au propriétaire (écriture système du contenu de
+ * l'exemple, même dans la référence protégée) : 201 étude créée (ou reprise), 200 étude déjà complète renvoyée sans
+ * écriture (idempotent, lecture seule : aucun 423 pendant le verrou d'un autre compte), 409 `exemple_indisponible` hors
+ * d'un projet issu de l'exemple P.118, 423 pendant le verrou d'un autre compte si l'installation doit écrire, 409
+ * `exemple_version_changee` pour une installation partielle d'une autre version de la conversion. Corps ignoré.
+ */
+studioRouter.post("/exemple", endpoint(async (req, res) => {
+  const installe = await installerExempleStudio(scope(req).projectId, req.user!.id);
+  res.status(installe.created ? 201 : 200).json(installe);
 }));
 /** Archivage sans suppression (`modify`), idempotent ; l'étude reste lisible par son adresse, en lecture seule. */
 for (const [action, archived] of [["archive", true], ["unarchive", false]] as const) {

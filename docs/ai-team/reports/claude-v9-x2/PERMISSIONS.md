@@ -20,6 +20,8 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `POST /studies` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 |  |
 | `GET /studies/:studyId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `PATCH /studies/:studyId` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 |  |
+| `PATCH /studies/:studyId/workflow` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 | phase déclarée du workflow (REF-01 §06) : propriétaire ou éditeur ; aucune donnée de conception modifiée |
+| `POST /exemple` | proprietaire | 404 | 403 | 403 | 403 | admis | admis | admis | 409 exemple_indisponible | étude exemple P.118 : écriture système du propriétaire, admise dans la référence protégée ; projet hors exemple → 409 exemple_indisponible avant tout verrou ; le verrou d'édition d'un autre compte (423) ne s'oppose qu'à une installation qui écrit, jamais à la lecture d'une étude exemple complète (lib/studio-exemple.test.ts) |
 | `POST /studies/:studyId/archive` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 |  |
 | `POST /studies/:studyId/unarchive` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 |  |
 | `GET /studies/:studyId/compare` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
@@ -98,6 +100,7 @@ réelle ; la liste des fichiers est vérifiée par ce test (tout nouveau fichier
 
 | Fichier | Routes | Données Studio |
 |---|---|---|
+| `routes/examples.ts` | POST /examples/:exampleId/import | étude exemple Studio du P.118 installée après l'import validé (`lib/studio-exemple.ts`, contrat de commandes ; un échec n'annule pas l'import) |
 | `routes/documents.ts` | GET /projects/:projectId/documents | `studioPackages` (paquets diffusés ou retirés), `studioDossiers` (dossiers de conception) |
 | `routes/notifications.ts` | GET /notifications | commentaires Studio des projets du compte, passages des observations, tâches et décisions |
 | `routes/projects.ts` | GET /projects/:projectId/archive, POST /projects/import, POST /projects/:projectId/copies, DELETE /projects/:projectId | section Studio de l'archive (export, import validé), copie sans Studio, suppression refusée si une publication est diffusée ou retirée |

@@ -6,6 +6,7 @@
  */
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import { STUDIO_PHASES_WORKFLOW, type StudioPhaseWorkflow } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { studioStudies, studioVariants } from "../db/schema.js";
 import type { Tx } from "./atelier-validation.js";
@@ -37,6 +38,30 @@ export async function renameStudioStudy(projectId: string, studyId: string, acto
     const study = await managedStudy(tx, projectId, studyId, actorId);
     if (study.archivedAt !== null) return studioArchivedRefusal();
     if (study.name !== name) await tx.update(studioStudies).set({ name, updatedAt: new Date() }).where(eq(studioStudies.id, study.id));
+    return readStudioStudy(tx, projectId, study.id, actorId);
+  });
+}
+
+/**
+ * Corps d'une déclaration de phase du workflow (REF-01 §06) : une phase de `STUDIO_PHASES_WORKFLOW`, ou `null` pour
+ * revenir à « non déclarée ». Aucun autre champ.
+ */
+export const studioWorkflowSchema = z.object({
+  phase: z.enum(STUDIO_PHASES_WORKFLOW.map((p) => p.id) as [StudioPhaseWorkflow, ...StudioPhaseWorkflow[]]).nullable(),
+}).strict();
+
+/**
+ * Déclare la phase du workflow de l'étude (droit `modify` : propriétaire ou éditeur, sous le verrou du projet). La phase
+ * est une déclaration de l'utilisateur, jamais une conséquence du contenu ; elle n'agit sur aucune donnée de conception
+ * ni sur le Parcours. Une étude archivée → 409 `archived`. Répéter la même déclaration ne change rien (`updated_at`
+ * compris). Aucun journal d'étude n'existe dans le schéma : la déclaration n'est pas journalisée (horodatée par
+ * `updated_at` seulement).
+ */
+export async function setStudioStudyWorkflowPhase(projectId: string, studyId: string, actorId: string, phase: StudioPhaseWorkflow | null): Promise<StudioStudyRead> {
+  return db.transaction(async (tx) => {
+    const study = await managedStudy(tx, projectId, studyId, actorId);
+    if (study.archivedAt !== null) return studioArchivedRefusal();
+    if ((study.workflowPhase ?? null) !== phase) await tx.update(studioStudies).set({ workflowPhase: phase, updatedAt: new Date() }).where(eq(studioStudies.id, study.id));
     return readStudioStudy(tx, projectId, study.id, actorId);
   });
 }

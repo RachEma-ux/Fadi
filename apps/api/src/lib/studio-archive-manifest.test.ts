@@ -112,6 +112,29 @@ describe("section Studio de l'archive (logique pure)", () => {
     expect(errorsOf(clone({ ...d.section, manifest: buildStudioManifest(d.tables, IDENT) }))).toContain("studio_studies : clé en double s1");
   });
 
+  it("phase déclarée du workflow (studio_studies.workflow_phase) : archivée et restaurée à l'identique ; archive antérieure sans la colonne acceptée (restaurée à NULL)", () => {
+    const { section } = fixture();
+    const avec = clone(section) as { tables: StudioArchiveTables; manifest: unknown };
+    avec.tables.studio_studies = [{ ...avec.tables.studio_studies[0]!, workflow_phase: "controler" }];
+    avec.manifest = buildStudioManifest(avec.tables, IDENT);
+    const relu = checkStudioArchive(JSON.parse(JSON.stringify(avec)));
+    expect(relu.ok).toBe(true);
+    // Aller-retour : la colonne est relue telle quelle et réinsérée sans changement (seul le projet est réattribué).
+    const restaurees = remapStudioRows("studio_studies", relu.ok ? relu.section.tables.studio_studies : [], "pB", new Map());
+    expect(restaurees[0]).toMatchObject({ workflow_phase: "controler", project_id: "pB", id: "s1" });
+    // Version des tables inchangée : la colonne nullable additive ne crée pas de nouvelle version.
+    expect(STUDIO_ARCHIVE_SCHEMA_VERSION.tables).toBe("studio-v1/2026-10-19.3");
+    // Archive antérieure : ligne sans la colonne, acceptée ; aucune valeur n'est inventée (jsonb_populate_recordset → NULL).
+    const sans = checkStudioArchive(clone(section));
+    expect(sans.ok).toBe(true);
+    const anciennes = remapStudioRows("studio_studies", sans.ok ? sans.section.tables.studio_studies : [], "pB", new Map());
+    expect("workflow_phase" in anciennes[0]!).toBe(false);
+    // Le schéma déclare la colonne nullable (NULL = « non déclarée »), avec une contrainte limitée aux sept phases.
+    const initSql = readFileSync(new URL("../db/init.sql", import.meta.url), "utf8");
+    expect(initSql).toContain("ALTER TABLE studio_studies ADD COLUMN IF NOT EXISTS workflow_phase text;");
+    expect(initSql).toMatch(/CHECK \(workflow_phase IS NULL OR workflow_phase IN \('cadrer', 'explorer', 'concevoir', 'controler', 'coordonner', 'approuver', 'publier'\)\) NOT VALID/);
+  });
+
   it("commentaires insérés parent d'abord ; lignes remappées sans toucher au contenu ni aux empreintes", () => {
     const { tables } = fixture();
     expect(orderCommentsForInsert(tables.studio_comments).map((c) => c["id"])).toEqual(["c1", "c2"]);

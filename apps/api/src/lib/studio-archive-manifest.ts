@@ -135,6 +135,9 @@ export const STUDIO_JSON_ACCOUNT_FIELDS: Readonly<Partial<Record<StudioArchiveTa
  * colonnes (`STUDIO_USER_COLUMNS`). Un test confronte ces deux listes aux colonnes `jsonb` de `init.sql`.
  */
 export const STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS: Readonly<Partial<Record<StudioArchiveTable, readonly string[]>>> = Object.freeze({
+  // Marquage d'une étude exemple (exemple, version, empreinte, préfixe, état, rapport de conversion) : aucun compte.
+  // Colonne nullable additive : une archive antérieure (sans elle) se restaure en NULL, version des tables inchangée.
+  studio_studies: ["example_install"],
   studio_revisions: ["document", "envelope", "response"],
   studio_comments: ["object_ids"],
   studio_requirement_checks: ["result"],

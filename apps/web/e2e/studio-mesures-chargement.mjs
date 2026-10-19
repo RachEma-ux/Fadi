@@ -179,7 +179,7 @@ try {
     }, { cycle: i });
     await activerOutils(page, MODES.slice(1, 6), `cycle ${i}`);
     await etape("cycle : Tool Manager", async () => {
-      await page.getByRole("toolbar", { name: "Outils de dessin" }).getByRole("button", { name: "Outils", exact: true }).click();
+      await page.getByRole("toolbar", { name: "Actions de l’espace" }).getByRole("button", { name: "Outils", exact: true }).click();
       await page.locator("[data-studio-ressources]").waitFor();
       await page.getByRole("dialog").getByRole("button", { name: "Fermer", exact: true }).click();
       await page.locator("[data-studio-ressources]").waitFor({ state: "detached" });

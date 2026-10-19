@@ -12,7 +12,7 @@
  * l'erreur de repères que `docs/architecture.md` interdit.
  */
 import { boolean, customType, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
-import type { ConclusionControle, EtatExecution, ExigenceStudio, GrandeurQuantite, ResultatControle, StudioDocument, StudioEnvelope, StudioFeuilleComposeeDefinition, UniteQuantite } from "@parcours/atelier-model";
+import type { ConclusionControle, EtatExecution, ExigenceStudio, GrandeurQuantite, ResultatControle, StudioDocument, StudioEnvelope, StudioFeuilleComposeeDefinition, StudioPhaseWorkflow, UniteQuantite } from "@parcours/atelier-model";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
 const geography = customType<{ data: string; driverData: string }>({
@@ -631,7 +631,23 @@ export const studioStudies = pgTable("studio_studies", {
   // Cycle de vie : dernier renommage ou (dés)archivage ; archivée = masquée des listes, lisible, non modifiable.
   updatedAt: timestamp("updated_at", { withTimezone: true }),
   archivedAt: timestamp("archived_at", { withTimezone: true }),
+  // Étude exemple installée par le serveur (`lib/studio-exemple.ts`) : marquage explicite ; null = étude ordinaire.
+  exampleInstall: jsonb("example_install").$type<StudioExampleInstall>(),
+  // Phase déclarée du workflow de conception (REF-01 §06) ; null = « non déclarée » (jamais déduite).
+  workflowPhase: text("workflow_phase").$type<StudioPhaseWorkflow>(),
 }, (t) => [index("studio_studies_project_idx").on(t.projectId)]);
+
+/** Marquage d'une étude exemple (`studio_studies.example_install`). `rapport` : rapport de conversion enregistré. */
+export interface StudioExampleInstall {
+  exampleId: string;
+  /** Version du convertisseur et empreinte (SHA-256 tronquée) des commandes produites. */
+  version: number;
+  empreinte: string;
+  /** Préfixe des identifiants de requête de l'installation (étude, variantes, lots). */
+  prefixe: string;
+  complete: boolean;
+  rapport: unknown;
+}
 
 export const studioVariants = pgTable("studio_variants", {
   id: text("id").primaryKey(),

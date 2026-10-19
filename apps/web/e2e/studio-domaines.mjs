@@ -2,23 +2,24 @@
 /**
  * Recette des domaines fonctionnels du Studio (I.4-01, I.4-02, I.4-03 ; NAV-005, NAV-004, NAV-007), par l'interface et
  * l'API réelles (même origine, base migrée). Noms des domaines : Définition officielle du Studio V2.1 (REF-01 §02).
- *   1. adresse antérieure (sans paramètre) : quatre domaines nommés par la référence, Dessin et modélisation actif,
- *      Planche 2D active, adresse inchangée — même après la bascule Maj+D (rétrocompatibilité) ;
- *   2. les deux planches et leur choix n'existent que dans « Dessin et modélisation » ; exigences, scènes, métré,
- *      révisions, feuilles, dossiers et publications sont rangés sous leur domaine ; Visualisation est un aperçu
- *      (l'édition des scènes et du rendu se fait dans la Planche 3D) ; boutons de planche d'au moins 24 px ;
- *   3. clavier : un domaine choisi par Entrée devient actif, reçoit le focus et s'inscrit dans l'adresse
- *      (`?domaine=`), par remplacement (aucune entrée d'historique) ; l'actualisation le restitue ; chaque lien de
- *      domaine a l'adresse de la variante avec ce domaine ; l'ordre de Tab suit l'ordre visuel ;
- *   4. Planche 3D choisie : `?domaine=dessin&planche=3d`, restituée par l'actualisation, nommée par le badge et le
- *      sous-titre ; la bascule Maj+D est suivie ; l'adresse suit l'état réel du panneau des commentaires ;
+ *   1. adresse antérieure (sans paramètre) : quatre domaines nommés par la référence dans la barre de l'espace, Dessin et
+ *      modélisation affiché, Planche 2D active, adresse inchangée — même après la bascule Maj+D (rétrocompatibilité) ;
+ *   2. un domaine affiché à la fois : seule sa région de panneaux est visible ; palette d'outils propre au domaine ;
+ *      planches (2D / 3D / Double vue) seulement dans « Dessin et modélisation » ; exigences sous BIM, scènes et rendus
+ *      (vue 3D, même moteur) sous Visualisation, métré, révisions, feuilles, dossiers et publications sous
+ *      Documentation ; boutons de planche d'au moins 24 px ;
+ *   3. clavier : un domaine choisi par Entrée devient affiché et s'inscrit dans l'adresse (`?domaine=`), par
+ *      remplacement (aucune entrée d'historique), le focus reste sur l'onglet ; l'actualisation le restitue ; chaque lien
+ *      de domaine a l'adresse de la variante avec ce domaine ;
+ *   4. Planche 3D et Double vue choisies : `?domaine=dessin&planche=3d|double`, restituées par l'actualisation, nommées
+ *      par la barre d'état ; la bascule Maj+D est suivie ; ouvrir les commentaires conduit à Documentation et l'adresse
+ *      suit l'état réel du panneau ;
  *   5. combinaison avec `?revision=` (lecture seule) : l'historique et « Revenir à la version courante » gardent le
- *      domaine ; valeur inconnue ou planche hors de « dessin » : adresse non reconnue ;
+ *      domaine ; valeur inconnue, Double vue ou planche hors de « dessin » : adresse non reconnue ;
  *   6. NAV-007 : changer de domaine avec un brouillon non enregistré, ou pendant une sauvegarde en attente, ne demande
  *      rien et ne perd rien ; un Ctrl + clic sur un domaine ouvre son adresse ailleurs, sans garde ;
- *   7. téléphone : navigation des domaines sur une rangée défilante, rendue sous la planche (ordre du document et de
- *      Tab = ordre visuel, aucun `order`), planche dans la moitié haute, échelle affichée, boutons de planche de 44 px,
- *      aucun débordement.
+ *   7. téléphone : barre des domaines compacte EN HAUT de l'espace (menu), avant le canevas dans le document et à
+ *      l'écran (aucun `order`), canevas dans la moitié haute… et maximal, boutons de 44 px, aucun débordement.
  *
  * BASE_URL=http://localhost:3001 node apps/web/e2e/studio-domaines.mjs
  */
@@ -32,7 +33,7 @@ function check(nom, ok, detail = "") {
   console.log(`${ok ? "✓" : "✗"} ${nom}${detail ? ` — ${String(detail).slice(0, 400)}` : ""}`);
   if (!ok) echecs += 1;
 }
-/** REF-01 §02, dans l'ordre (repris de `apps/web/src/modules/studio/domaines/domaines.ts`, contrôlé contre la référence par son test). */
+/** REF-01 §02, dans l'ordre (repris de `apps/web/src/modules/studio/domaines/definitions.ts`, contrôlé contre la référence par son test). */
 const DOMAINES = [
   ["dessin", "Dessin et modélisation"],
   ["bim", "BIM et coordination"],
@@ -69,13 +70,17 @@ try {
   const premiere = etude.revision.id;
   const base = `${BASE}/studio/projets/${projet.id}/etudes/${studyId}/variantes/${variantId}`;
 
-  const pret = async () => {
-    await page.locator("[data-studio-domaines]").waitFor();
-    await page.locator('svg [role="button"]').first().waitFor({ state: "attached" }).catch(() => {});
+  const pret = async (p = page) => {
+    await p.locator("[data-studio-domaines]").waitFor();
+    await p.locator("[data-studio-barre-etat]").waitFor();
   };
-  const actif = () => page.locator("[data-studio-domaines] a[aria-current=true]").getAttribute("data-studio-domaine-lien");
-  const focusDomaine = () => page.evaluate(() => document.activeElement?.closest("[data-studio-domaine]")?.getAttribute("data-studio-domaine") ?? null);
+  const actif = () => page.locator("[data-studio-domaines] a[aria-current=page]").getAttribute("data-studio-domaine-lien");
+  /** L'adresse change avant le rendu : attend (10 s au plus) que la condition devienne vraie, puis rend sa valeur. */
+  const attendreVrai = async (f, ms = 10_000) => { const fin = Date.now() + ms; let v = await f(); while (!v && Date.now() < fin) { await page.waitForTimeout(100); v = await f(); } return v; };
+  const regionsVisibles = () => page.evaluate(() => [...document.querySelectorAll("[data-studio-domaine]")].filter((s) => s.getClientRects().length > 0).map((s) => s.getAttribute("data-studio-domaine")));
   const enDomaine = (sel, id) => page.evaluate(([s, d]) => { const els = [...document.querySelectorAll(s)]; return els.length > 0 && els.every((e) => e.closest("[data-studio-domaine]")?.getAttribute("data-studio-domaine") === d); }, [sel, id]);
+  const enAttente = () => page.locator("[data-studio-annuler-portee]").getAttribute("data-studio-en-attente-nombre");
+  const visible = (sel) => page.locator(sel).first().isVisible().catch(() => false);
 
   // 1. Adresse antérieure : rien à ajouter pour ouvrir la variante comme avant.
   await page.goto(base);
@@ -85,9 +90,15 @@ try {
   check("I.4-01 : quatre domaines, dans l'ordre et sous le nom de la référence (REF-01 §02)", JSON.stringify(liens) === JSON.stringify(DOMAINES.map(([, n]) => n)), liens.join(" · "));
   for (const [id, nom] of DOMAINES) {
     check(`I.4-01 : « ${nom} » accessible par son nom exact`, (await nav.getByRole("link", { name: nom, exact: true }).count()) === 1);
-    check(`I.4-01 : section « ${nom} » nommée`, (await page.getByRole("region", { name: nom, exact: true }).getAttribute("data-studio-domaine")) === id);
+    check(`I.4-01 : région « ${nom} » nommée`, (await page.locator(`[data-studio-domaine="${id}"]`).getAttribute("aria-labelledby")) === `studio-domaine-${id}-titre`
+      && (await page.locator(`#studio-domaine-${id}-titre`).textContent()) === nom);
   }
-  check("adresse antérieure : Dessin et modélisation actif, Planche 2D active", (await actif()) === "dessin"
+  const barre = await page.evaluate(() => {
+    const b = document.querySelector("[data-studio-barre-espace]").getBoundingClientRect(), c = document.querySelector(".studio-canevas").getBoundingClientRect();
+    return { barreAuDessus: b.bottom <= c.top + 1, navDansBarre: !!document.querySelector("[data-studio-barre-espace] [data-studio-domaines]") };
+  });
+  check("P0 : barre des domaines persistante en haut de l'espace, au-dessus du canevas", barre.barreAuDessus && barre.navDansBarre, JSON.stringify(barre));
+  check("adresse antérieure : Dessin et modélisation affiché, Planche 2D active", (await actif()) === "dessin"
     && (await page.locator('[data-studio-planche="2d"]').getAttribute("aria-pressed")) === "true" && (await page.locator("[data-studio-planche-active]").textContent()) === "Planche 2D");
   check("adresse antérieure : aucune réécriture à l'ouverture", page.url() === base, page.url());
   await page.evaluate(() => document.activeElement?.blur());
@@ -97,107 +108,160 @@ try {
   await page.keyboard.press("Shift+D");
   await page.getByRole("group", { name: "Planche de dessin 2D", exact: true }).waitFor();
 
-  // 2. Planches seulement dans Dessin et modélisation ; chaque fonction sous son domaine.
-  check("I.4-02 : Planche 2D dans « Dessin et modélisation »", await enDomaine('[aria-label="Planche de dessin 2D"]', "dessin"));
-  check("I.4-02 : choix des planches (2D, 3D) seulement dans « Dessin et modélisation »", await enDomaine("[data-studio-planches]", "dessin")
-    && (await page.locator("[data-studio-planche]").count()) === 2 && (await page.locator('[data-studio-domaine]:not([data-studio-domaine="dessin"]) :is([data-studio-planches],[aria-label="Planche de dessin 2D"],[data-studio-vue3d])').count()) === 0);
-  check("I.4-02 : barre d'outils de la planche dans « Dessin et modélisation »", await enDomaine('[role="toolbar"][aria-label="Outils de dessin"]', "dessin"));
-  check("exigences et écarts sous « BIM et coordination », avec l'accès à leur commande", await enDomaine("[data-studio-exigences]", "bim")
-    && await enDomaine('[data-studio-domaine-commande="exigences"]', "bim"));
-  check("I-2 : Visualisation est un aperçu ; l'édition des scènes et du rendu se fait dans la Planche 3D",
-    ((await page.locator("[data-studio-visualisation-note]").textContent()) ?? "") === "Aperçu ; l’édition des scènes et du rendu se fait dans la Planche 3D."
-    && ((await page.locator("[data-studio-examiner-3d]").textContent()) ?? "") === "Ouvrir la Planche 3D");
+  // 2. Un domaine affiché à la fois ; chaque fonction sous son domaine ; palette propre au domaine.
+  check("P0 : un seul domaine affiché (Dessin et modélisation)", JSON.stringify(await regionsVisibles()) === JSON.stringify(["dessin"]), JSON.stringify(await regionsVisibles()));
+  check("I.4-02 : choix des planches (2D, 3D, Double vue) seulement dans « Dessin et modélisation »", (await page.locator("[data-studio-planche]").count()) === 3
+    && JSON.stringify(await page.locator("[data-studio-planche]").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")))) === JSON.stringify(["Planche 2D", "Planche 3D", "Double vue (extension proposée)"]));
+  check("I.4-02 : palette « Outils de dessin » du domaine, verticale, outils de dessin présents", (await page.locator('[role="toolbar"][aria-label="Outils de dessin"][aria-orientation="vertical"]').count()) === 1
+    && (await page.locator('[role="toolbar"][aria-label="Outils de dessin"] [data-studio-outil="studio.dessin.ligne"]').count()) === 1
+    && (await page.locator('[role="toolbar"][aria-label="Outils de dessin"] [data-studio-outil="studio.propriete.definir"]').count()) === 0);
   const taillesPlanches = await page.locator("[data-studio-planche]").evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().height)));
-  check("I-5 : boutons Planche 2D / Planche 3D d'au moins 24 px", taillesPlanches.length === 2 && taillesPlanches.every((h) => h >= 24), taillesPlanches.join(","));
-  check("M-3 : raccourci Maj+D annoncé seulement sur la planche inactive", (await page.locator("[data-studio-planche][aria-keyshortcuts]").count()) === 1
+  check("I-5 : boutons de planche d'au moins 24 px", taillesPlanches.length === 3 && taillesPlanches.every((h) => h >= 24), taillesPlanches.join(","));
+  check("M-3 : raccourci Maj+D annoncé seulement sur la planche qu'il activerait", (await page.locator("[data-studio-planche][aria-keyshortcuts]").count()) === 1
     && (await page.locator('[data-studio-planche="3d"]').getAttribute("aria-keyshortcuts")) === "Shift+D");
-  check("scènes et rendus sous « Visualisation, rendu et immersion »", await enDomaine("[data-studio-visualisation-apercu]", "visualisation")
-    && (await page.locator("[data-studio-visualisation-apercu]").getAttribute("data-studio-scenes-nombre")) === "0");
-  for (const [sel, nom] of [["[data-studio-quantites]", "métré"], ["[data-studio-revisions]", "révisions"], ['[data-studio-domaine-commande="feuille"]', "feuilles"], ['[data-studio-domaine-commande="dossier"]', "dossiers"], ["[data-studio-publications-etude]", "publications"]]) {
-    check(`${nom} sous « Documentation, métrés et collaboration »`, await enDomaine(sel, "documentation"));
+  await nav.getByRole("link", { name: "BIM et coordination", exact: true }).click();
+  await page.waitForURL(`${base}?domaine=bim`);
+  await page.waitForSelector('[data-studio-domaine-affiche="bim"]');
+  check("P0 : BIM et coordination seul affiché ; exigences et écarts dans ses panneaux", JSON.stringify(await regionsVisibles()) === JSON.stringify(["bim"]) && await enDomaine("[data-studio-exigences]", "bim") && await visible("[data-studio-exigences]"), JSON.stringify(await regionsVisibles()) + " " + await enDomaine("[data-studio-exigences]", "bim") + " " + await visible("[data-studio-exigences]"));
+  check("BIM : pas de choix de planche ; palette du domaine (propriétés, exigences) sans les outils de dessin", (await page.locator("[data-studio-planches]").count()) === 0
+    && (await page.locator('[role="toolbar"][aria-label="Outils — BIM et coordination"] [data-studio-outil="studio.propriete.definir"]').count()) === 1
+    && (await page.locator('[role="toolbar"][aria-label="Outils — BIM et coordination"] [data-studio-commande="exigences"][aria-keyshortcuts]').count()) === 1
+    && (await page.locator('[role="toolbar"] [data-studio-outil="studio.dessin.ligne"]').count()) === 0);
+  check("BIM : le canevas montre le plan du modèle (sélection possible), sans planche de Dessin", (await page.getByRole("group", { name: "Planche de dessin 2D", exact: true }).count()) === 1 && (await page.locator("[data-studio-vue3d]").count()) === 0);
+  await nav.getByRole("link", { name: "Visualisation, rendu et immersion", exact: true }).click();
+  await page.waitForURL(`${base}?domaine=visualisation`);
+  await page.waitForSelector('[data-studio-domaine-affiche="visualisation"]');
+  await page.locator("[data-studio-vue3d]").waitFor();
+  await page.locator("[data-studio-visualisation-panneaux] [data-studio-scenes]").waitFor();
+  check("P1 : Visualisation — vue 3D (même moteur) et panneau « Scènes, apparence et rendus » dans ses panneaux", JSON.stringify(await regionsVisibles()) === JSON.stringify(["visualisation"])
+    && await enDomaine("[data-studio-scenes]", "visualisation") && (await page.locator("[data-studio-vue3d]").count()) === 1
+    && (await page.locator('[role="toolbar"][aria-label="Outils — Visualisation, rendu et immersion"] [data-studio-outil="studio.scene.creer"]').count()) === 1);
+  await nav.getByRole("link", { name: "Documentation, métrés et collaboration", exact: true }).click();
+  await page.waitForURL(`${base}?domaine=documentation`);
+  await page.waitForSelector('[data-studio-domaine-affiche="documentation"]');
+  for (const [sel, nom] of [["[data-studio-quantites]", "métré"], ["[data-studio-revisions]", "révisions"], ['[role="toolbar"] [data-studio-commande="feuille"]', "feuilles"], ['[role="toolbar"] [data-studio-commande="dossier"]', "dossiers"], ["[data-studio-publications-etude]", "publications"]]) {
+    check(`${nom} sous « Documentation, métrés et collaboration »`, (await enDomaine(sel, "documentation") || sel.startsWith('[role="toolbar"]')) && await visible(sel));
   }
-  check("documentation : « Feuille » et « Feuilles et dossier » gardent le raccourci de leur commande", (await page.locator('[data-studio-domaine-commande="feuille"][aria-keyshortcuts="Shift+P"] svg').count()) === 1
-    && (await page.locator('[data-studio-domaine-commande="dossier"][aria-keyshortcuts="Control+Shift+D"] svg').count()) === 1);
+  check("documentation : « Feuille » et « Feuilles et dossier » gardent le raccourci de leur commande (palette du domaine)", (await page.locator('[role="toolbar"] [data-studio-commande="feuille"][aria-keyshortcuts="Shift+P"] svg').count()) === 1
+    && (await page.locator('[role="toolbar"] [data-studio-commande="dossier"][aria-keyshortcuts="Control+Shift+D"] svg').count()) === 1);
 
-  // 3. Clavier : Entrée sur un domaine, focus porté, adresse remplacée (aucune entrée d'historique).
+  // 3. Clavier : Entrée sur un domaine, adresse remplacée (aucune entrée d'historique).
+  await page.goto(base);
+  await pret();
   const hrefs = await nav.getByRole("link").evaluateAll((els) => els.map((e) => e.getAttribute("href")));
   const chemin = new URL(base).pathname;
   check("I-6 : chaque lien de domaine a l'adresse de la variante avec ce domaine (planche de Dessin comprise)",
     JSON.stringify(hrefs) === JSON.stringify([`${chemin}?domaine=dessin&planche=2d`, `${chemin}?domaine=bim`, `${chemin}?domaine=visualisation`, `${chemin}?domaine=documentation`]), hrefs.join(" "));
-  await page.locator("[data-studio-basculer-commentaires]").focus();
-  await page.keyboard.press("Tab");
-  check("bureau : après le bandeau, Tab mène au premier domaine", await page.evaluate(() => document.activeElement?.getAttribute("data-studio-domaine-lien")) === "dessin");
   const longueur = await page.evaluate(() => history.length);
   await nav.getByRole("link", { name: "BIM et coordination", exact: true }).focus();
   await page.keyboard.press("Enter");
   await page.waitForURL(`${base}?domaine=bim`);
-  check("I.4-03 : domaine choisi au clavier, actif et inscrit dans l'adresse", (await actif()) === "bim");
-  check("clavier : le focus est porté sur le titre du domaine choisi", (await focusDomaine()) === "bim" && await page.evaluate(() => document.activeElement?.id === "studio-domaine-bim-titre"));
+  await page.waitForSelector('[data-studio-domaine-affiche="bim"]');
+  check("I.4-03 : domaine choisi au clavier, affiché et inscrit dans l'adresse", (await actif()) === "bim");
+  check("clavier : le focus reste sur l'onglet choisi (barre persistante)", await page.evaluate(() => document.activeElement?.getAttribute("data-studio-domaine-lien")) === "bim");
   await nav.getByRole("link", { name: "Documentation, métrés et collaboration", exact: true }).focus();
   await page.keyboard.press("Enter");
   await page.waitForURL(`${base}?domaine=documentation`);
-  check("I.4-03 : changement de domaine par remplacement (historique inchangé)", (await page.evaluate(() => history.length)) === longueur);
+  await page.waitForSelector('[data-studio-domaine-affiche="documentation"]');
+  check("I.4-03 : changer de domaine ajoute une entrée d'historique (une par domaine choisi)", (await page.evaluate(() => history.length)) === longueur + 2);
+  await page.goBack();
+  await page.waitForURL(`${base}?domaine=bim`);
+  await page.waitForSelector('[data-studio-domaine-affiche="bim"]');
+  check("historique : le retour arrière revient au domaine précédent, sans quitter la variante ni demander de confirmation", (await actif()) === "bim" && dialogues.length === 0 && JSON.stringify(await regionsVisibles()) === JSON.stringify(["bim"]));
+  await page.goForward();
+  await page.waitForURL(`${base}?domaine=documentation`);
+  await page.waitForSelector('[data-studio-domaine-affiche="documentation"]');
   await page.reload();
   await pret();
-  check("I.4-03 : l'actualisation restitue le domaine actif et y porte le focus", (await actif()) === "documentation" && (await focusDomaine()) === "documentation", String(await focusDomaine()));
-  check("documentation : la commande « Feuille » s'ouvre depuis son domaine", await (async () => {
-    await page.locator('[data-studio-domaine-commande="feuille"]').click();
+  check("I.4-03 : l'actualisation restitue le domaine affiché", (await actif()) === "documentation" && JSON.stringify(await regionsVisibles()) === JSON.stringify(["documentation"]));
+  check("documentation : la commande « Feuille » s'ouvre depuis la palette du domaine", await (async () => {
+    await page.locator('[role="toolbar"] [data-studio-commande="feuille"]').first().click();
     const ok = (await page.locator('[role="dialog"] [data-studio-feuille]').count()) === 1;
     await page.keyboard.press("Escape");
     await page.locator('[role="dialog"] [data-studio-feuille]').waitFor({ state: "detached" });
     return ok;
   })());
 
-  // 4. Planche 3D choisie, restituée, puis suivie par la bascule Maj+D.
+  // 4. Planche 3D, Double vue, restituées, puis suivies par la bascule Maj+D.
+  await nav.getByRole("link", { name: "Dessin et modélisation", exact: true }).click();
+  await page.waitForURL(`${base}?domaine=dessin&planche=2d`);
+  await page.waitForSelector('[data-studio-domaine-affiche="dessin"]');
   await page.locator('[data-studio-planche="3d"]').focus();
   await page.keyboard.press("Enter");
   await page.waitForURL(`${base}?domaine=dessin&planche=3d`);
+  await page.waitForSelector('[data-studio-domaine-affiche="dessin"]');
   await page.locator("[data-studio-vue3d]").waitFor();
-  check("I.4-02/03 : Planche 3D choisie dans Dessin et modélisation, inscrite dans l'adresse", (await actif()) === "dessin" && await enDomaine("[data-studio-vue3d]", "dessin")
+  check("I.4-02/03 : Planche 3D choisie dans Dessin et modélisation, inscrite dans l'adresse", (await actif()) === "dessin"
     && (await page.locator('[data-studio-planche="3d"]').getAttribute("aria-pressed")) === "true" && (await page.locator("[data-studio-planche-active]").textContent()) === "Planche 3D");
-  check("M-4 : le sous-titre de l'en-tête suit la planche active (« Vue 3D »)", (await page.locator("[data-studio-sous-titre]").textContent()) === "Vue 3D · Repère local · Mètres");
+  check("M-4 : le sous-titre de la planche suit la planche active (« Vue 3D »)", await attendreVrai(async () => (await page.locator("[data-studio-sous-titre]").textContent()) === "Vue 3D · Repère local · Mètres"));
   await page.reload();
   await page.locator("[data-studio-vue3d]").waitFor();
   check("I.4-03 : l'actualisation restitue la Planche 3D", (await page.locator('[data-studio-planche="3d"]').getAttribute("aria-pressed")) === "true");
+  await page.locator('[data-studio-planche="double"]').click();
+  await page.waitForURL(`${base}?domaine=dessin&planche=double`);
+  await page.waitForSelector('[data-studio-domaine-affiche="dessin"]');
+  await page.locator("[data-studio-vue3d]").waitFor();
+  const double = await page.evaluate(() => {
+    const p = document.querySelector('[aria-label="Planche de dessin 2D"]')?.getBoundingClientRect(), v = document.querySelector("[data-studio-vue3d]")?.getBoundingClientRect();
+    return p && v ? { coteACote: p.right <= v.left + 1 && Math.abs(p.top - v.top) < 40, largeurs: [Math.round(p.width), Math.round(v.width)] } : null;
+  });
+  check("P0 : Double vue — Planche 2D et Planche 3D côte à côte sur grand écran, adresse `planche=double`", !!double?.coteACote && double.largeurs.every((w) => w > 250)
+    && (await page.locator("[data-studio-planche-active]").textContent()) === "Double vue", JSON.stringify(double));
+  await page.reload();
+  await page.locator("[data-studio-vue3d]").waitFor();
+  check("I.4-03 : l'actualisation restitue la Double vue", (await page.locator('[data-studio-planche="double"]').getAttribute("aria-pressed")) === "true" && (await page.getByRole("group", { name: "Planche de dessin 2D", exact: true }).count()) === 1);
+  await page.locator('[data-studio-planche="3d"]').click();
+  await page.waitForURL(`${base}?domaine=dessin&planche=3d`);
+  await page.waitForSelector('[data-studio-domaine-affiche="dessin"]');
   // Revue Codex #204 : une navigation interne qui retire `planche` (même variante, sans remontage) revient à la
   // Planche 2D, valeur par défaut de la route ; le retour arrière restitue la Planche 3D.
   await page.evaluate((u) => { history.pushState(history.state, "", u); dispatchEvent(new PopStateEvent("popstate", { state: history.state })); }, `${base}?domaine=dessin`);
   await page.waitForFunction(() => document.querySelector('[data-studio-planche="2d"]')?.getAttribute("aria-pressed") === "true");
-  check("I.4-03 : paramètre `planche` retiré par l'adresse → Planche 2D (défaut de la route)", (await page.locator("[data-studio-vue3d]").count()) === 0);
+  check("I.4-03 : paramètre `planche` retiré par l'adresse → Planche 2D (défaut de la route)", await attendreVrai(async () => (await page.locator("[data-studio-vue3d]").count()) === 0));
   await page.goBack();
   await page.waitForURL(`${base}?domaine=dessin&planche=3d`);
+  await page.waitForSelector('[data-studio-domaine-affiche="dessin"]');
   await page.locator("[data-studio-vue3d]").waitFor();
   check("I.4-03 : retour arrière → Planche 3D restituée", (await page.locator('[data-studio-planche="3d"]').getAttribute("aria-pressed")) === "true");
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Shift+D");
   await page.waitForURL(`${base}?domaine=dessin&planche=2d`);
+  await page.waitForSelector('[data-studio-domaine-affiche="dessin"]');
+  // L'adresse change avant le rendu de la planche : on attend l'état affiché (borné), puis on le contrôle.
+  await page.waitForFunction(() => document.querySelector("[data-studio-sous-titre]")?.textContent === "Dessin 2D · Repère local · Mètres", null, { timeout: 10_000 }).catch(() => {});
   check("I.4-03 : la bascule Maj+D est suivie par l'adresse une fois le domaine inscrit", (await page.getByRole("group", { name: "Planche de dessin 2D", exact: true }).count()) === 1
     && (await page.locator("[data-studio-sous-titre]").textContent()) === "Dessin 2D · Repère local · Mètres");
   await page.locator("[data-studio-basculer-commentaires]").click();
-  await page.waitForURL(`${base}?commentaires=ouverts&domaine=dessin&planche=2d`);
-  check("M-2 : l'adresse suit l'état réel du panneau des commentaires (ouvert)", (await page.locator("#studio-commentaires").count()) === 1);
-  await nav.getByRole("link", { name: "BIM et coordination", exact: true }).click();
-  await page.waitForURL(`${base}?commentaires=ouverts&domaine=bim`);
+  await page.waitForURL(`${base}?commentaires=ouverts&domaine=documentation`);
+  await page.waitForSelector('[data-studio-domaine-affiche="documentation"]');
+  check("M-2 : ouvrir les commentaires conduit à leur domaine (Documentation) ; l'adresse suit l'état réel du panneau", (await page.locator("#studio-commentaires").count()) === 1 && (await actif()) === "documentation" && await visible("#studio-commentaires"));
   await page.locator("[data-studio-basculer-commentaires]").click();
-  await page.waitForURL(`${base}?domaine=bim`);
-  check("M-2 : panneau refermé, l'adresse ne le dit plus ouvert", (await page.locator("#studio-commentaires").count()) === 0);
+  await page.waitForURL(`${base}?domaine=documentation`);
+  await page.waitForSelector('[data-studio-domaine-affiche="documentation"]');
+  await page.waitForSelector("#studio-commentaires", { state: "detached", timeout: 10_000 }).catch(() => {});
+  check("M-2 : panneau refermé, l'adresse ne le dit plus ouvert", await attendreVrai(async () => (await page.locator("#studio-commentaires").count()) === 0));
+  await page.goto(`${base}?commentaires=ouverts`);
+  await pret();
+  check("lien de notification (`?commentaires=ouverts`, adresse antérieure) : Documentation affiché, commentaires ouverts, adresse inchangée", (await actif()) === "documentation" && await visible("#studio-commentaires") && page.url() === `${base}?commentaires=ouverts`);
 
   // 5. Combinaison avec une révision historique ; valeurs refusées.
   await page.goto(`${base}?revision=${encodeURIComponent(premiere)}&domaine=visualisation`);
   await page.locator("[data-studio-lecture-seule-revision]").waitFor();
   await pret();
-  check("révision historique + domaine : lecture seule, domaine actif conservé", (await actif()) === "visualisation" && (await focusDomaine()) === "visualisation");
-  await nav.getByRole("link", { name: "BIM et coordination", exact: true }).click();
-  await page.waitForURL(`${base}?revision=${encodeURIComponent(premiere)}&domaine=bim`);
+  check("révision historique + domaine : lecture seule, domaine affiché conservé", (await actif()) === "visualisation" && JSON.stringify(await regionsVisibles()) === JSON.stringify(["visualisation"]));
+  await nav.getByRole("link", { name: "Documentation, métrés et collaboration", exact: true }).click();
+  await page.waitForURL(`${base}?revision=${encodeURIComponent(premiere)}&domaine=documentation`);
+  await page.waitForSelector('[data-studio-domaine-affiche="documentation"]');
   check("révision historique : changer de domaine conserve la révision dans l'adresse", page.url().includes(`revision=${encodeURIComponent(premiere)}`));
   const lienRevision = await page.locator(`[data-studio-revision="${premiere}"] a`).first().getAttribute("href");
   const lienCourante = await page.locator("[data-studio-version-courante]").getAttribute("href");
-  check("M-1 : l'historique et « Revenir à la version courante » gardent le domaine", lienRevision === `${chemin}?revision=${encodeURIComponent(premiere)}&domaine=bim` && lienCourante === `${chemin}?domaine=bim`, `${lienRevision} ${lienCourante}`);
+  check("M-1 : l'historique et « Revenir à la version courante » gardent le domaine", lienRevision === `${chemin}?revision=${encodeURIComponent(premiere)}&domaine=documentation` && lienCourante === `${chemin}?domaine=documentation`, `${lienRevision} ${lienCourante}`);
   await page.locator("[data-studio-version-courante]").click();
-  await page.waitForURL(`${base}?domaine=bim`);
+  await page.waitForURL(`${base}?domaine=documentation`);
+  await page.waitForSelector('[data-studio-domaine-affiche="documentation"]');
   await pret();
-  check("M-1 : revenue à la version courante, le domaine reste actif", (await actif()) === "bim" && (await page.locator("[data-studio-lecture-seule-revision]").count()) === 0);
-  for (const q of ["?domaine=x", "?domaine=dessin&planche=4d", "?domaine=documentation&planche=3d", "?planche=2d", "?domaine=bim&domaine=bim"]) {
+  check("M-1 : revenue à la version courante, le domaine reste affiché", await attendreVrai(async () => (await actif()) === "documentation" && (await page.locator("[data-studio-lecture-seule-revision]").count()) === 0));
+  for (const q of ["?domaine=x", "?domaine=dessin&planche=4d", "?domaine=documentation&planche=3d", "?domaine=bim&planche=double", "?planche=2d", "?planche=double", "?domaine=bim&domaine=bim"]) {
     await page.goto(`${base}${q}`);
     await page.locator("[data-studio-inconnue]").waitFor();
     check(`adresse non reconnue et conservée : ${q}`, page.url().endsWith(q));
@@ -209,17 +273,18 @@ try {
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Control+a");
   await page.keyboard.press("Delete");
-  await page.waitForFunction(() => document.querySelector("[data-studio-annuler-portee]")?.textContent?.includes("(1 commande(s)"));
+  await page.waitForFunction(() => document.querySelector("[data-studio-annuler-portee]")?.getAttribute("data-studio-en-attente-nombre") === "1");
   await nav.getByRole("link", { name: "Visualisation, rendu et immersion", exact: true }).click();
   await page.waitForURL(`${base}?domaine=visualisation`);
+  await page.waitForSelector('[data-studio-domaine-affiche="visualisation"]');
   check("NAV-007 : changer de domaine ne demande rien et garde le brouillon", dialogues.length === 0
-    && ((await page.locator("[data-studio-annuler-portee]").textContent()) ?? "").includes("(1 commande(s)") && (await page.locator("[data-studio-etat]").textContent()) === "Brouillon non enregistré", dialogues.join(" | "));
+    && (await enAttente()) === "1" && (await page.locator("[data-studio-etat]").textContent()) === "Brouillon non enregistré", dialogues.join(" | "));
   // Ctrl + clic : l'adresse du domaine s'ouvre ailleurs ; la variante n'est ni quittée ni gardée.
   const ailleurs = context.waitForEvent("page", { timeout: 10000 }).catch(() => null);
   await nav.getByRole("link", { name: "BIM et coordination", exact: true }).click({ modifiers: ["Control"] });
   const onglet = await ailleurs;
   check("I-6 : Ctrl + clic sur un domaine ouvre son adresse ailleurs, sans garde ni changement ici", !!onglet && dialogues.length === 0 && page.url() === `${base}?domaine=visualisation`
-    && ((await page.locator("[data-studio-annuler-portee]").textContent()) ?? "").includes("(1 commande(s)"), `${onglet?.url() ?? "aucun onglet"} ${page.url()}`);
+    && (await enAttente()) === "1", `${onglet?.url() ?? "aucun onglet"} ${page.url()}`);
   if (onglet) { await onglet.waitForURL(/domaine=bim/).catch(() => {}); check("I-6 : l'onglet ouvert porte l'adresse du domaine", onglet.url() === `${base}?domaine=bim`, onglet.url()); await onglet.close(); }
   // Sauvegarde en attente (M-9) : l'envoi est retenu le temps de changer de domaine.
   let liberer;
@@ -230,6 +295,7 @@ try {
   await page.waitForFunction(() => document.querySelector("[data-studio-etat]")?.textContent === "Sauvegarde en cours…");
   await nav.getByRole("link", { name: "Documentation, métrés et collaboration", exact: true }).click();
   await page.waitForURL(`${base}?domaine=documentation`);
+  await page.waitForSelector('[data-studio-domaine-affiche="documentation"]');
   check("NAV-007 : changer de domaine pendant une sauvegarde en attente ne demande rien et ne l'interrompt pas", dialogues.length === 0
     && (await page.locator("[data-studio-etat]").textContent()) === "Sauvegarde en cours…" && (await actif()) === "documentation", dialogues.join(" | "));
   liberer();
@@ -237,57 +303,42 @@ try {
   await page.unroute("**/variants/*/commands");
   const apres = await api("get", `${racine}/${studyId}/variants/${variantId}`);
   check("NAV-007 : la sauvegarde retenue aboutit (brouillon enregistré, rien de perdu)", apres.status === 200 && apres.body?.revision?.document?.objects?.length === 0
-    && ((await page.locator("[data-studio-annuler-portee]").textContent()) ?? "").includes("(0 commande(s)"), JSON.stringify(apres.body?.revision?.document?.objects ?? apres.status));
+    && (await enAttente()) === "0", JSON.stringify(apres.body?.revision?.document?.objects ?? apres.status));
 
-  // 7. Téléphone.
+  // 7. Téléphone : barre des domaines compacte en haut, canevas maximal.
   const mobile = await context.newPage();
   mobile.on("pageerror", (e) => erreurs.push(`téléphone : ${e.message}`));
   await mobile.setViewportSize({ width: 390, height: 844 });
   await mobile.goto(base);
   await mobile.getByRole("group", { name: "Planche de dessin 2D", exact: true }).waitFor();
   const m = await mobile.evaluate(() => {
-    const n = document.querySelector("[data-studio-domaines]");
-    const tops = new Set([...n.querySelectorAll("a")].map((a) => Math.round(a.getBoundingClientRect().top)));
+    const n = document.querySelector("[data-studio-domaines]"), menu = n.querySelector("[data-studio-domaines-menu]");
     const planche = document.querySelector('[aria-label="Planche de dessin 2D"]').getBoundingClientRect();
-    const editeur = document.querySelector(".studio-editor"), portee = document.querySelector("[data-studio-annuler-portee]");
+    const canevas = document.querySelector(".studio-canevas");
     const ordres = [...document.querySelectorAll(".studio-workspace, .studio-workspace *")].filter((e) => getComputedStyle(e).order !== "0").length;
-    const echelle = [...document.querySelectorAll(".studio-sheet-caption > span")].find((e) => e.textContent === "1 unité = 1 m");
     return {
-      rangees: tops.size, planche: Math.round(planche.top + window.scrollY), navSousPlanche: n.getBoundingClientRect().top >= planche.bottom, debordePage: document.documentElement.scrollWidth > window.innerWidth + 1,
-      domApresEditeur: !!(editeur.compareDocumentPosition(n) & Node.DOCUMENT_POSITION_FOLLOWING), domAvantPortee: !!(n.compareDocumentPosition(portee) & Node.DOCUMENT_POSITION_FOLLOWING), ordres,
-      echelle: !!echelle && echelle.getClientRects().length > 0, planches: [...document.querySelectorAll("[data-studio-planche]")].map((b) => Math.round(b.getBoundingClientRect().height)),
+      menu: !!menu, menuHaut: Math.round(menu.getBoundingClientRect().bottom), plancheHaut: Math.round(planche.top), plancheHauteur: Math.round(planche.height),
+      navAvantCanevas: !!(n.compareDocumentPosition(canevas) & Node.DOCUMENT_POSITION_FOLLOWING), liensMasques: n.querySelector("ol").hidden,
+      debordePage: document.documentElement.scrollWidth > window.innerWidth + 1, ordres,
+      planches: [...document.querySelectorAll("[data-studio-planche]")].map((b) => Math.round(b.getBoundingClientRect().height)),
+      echelle: [...document.querySelectorAll("[data-studio-barre-etat] span")].some((e) => e.textContent === "1 unité = 1 m"),
     };
   });
-  check("téléphone : domaines sur une rangée sous la planche, planche dans la moitié haute, aucun débordement", m.rangees === 1 && m.navSousPlanche && m.planche < 844 / 2 && !m.debordePage, JSON.stringify(m));
-  check("I-4 : téléphone, la navigation est rendue sous la planche dans le document (aucun `order`)", m.domApresEditeur && m.domAvantPortee && m.ordres === 0, JSON.stringify(m));
-  check("M-5 : téléphone, l'échelle reste affichée", m.echelle);
-  check("I-5 : téléphone, boutons de planche de 44 px", m.planches.length === 2 && m.planches.every((h) => h >= 44), m.planches.join(","));
-  // Ordre de Tab : de la planche active, Tab parcourt la planche et ses propriétés, puis les quatre domaines, puis la suite.
-  await mobile.locator('[data-studio-planche="2d"]').focus();
-  const parcours = [];
-  for (let i = 0; i < 120; i += 1) {
-    await mobile.keyboard.press("Tab");
-    const e = await mobile.evaluate(() => {
-      const a = document.activeElement;
-      return { domaine: a?.getAttribute("data-studio-domaine-lien") ?? null, editeur: !!a?.closest(".studio-editor"), section: a?.closest("[data-studio-domaine]")?.getAttribute("data-studio-domaine") ?? null, nav: !!a?.closest("[data-studio-domaines]") };
-    });
-    parcours.push(e);
-    if (parcours.filter((x) => x.domaine).length === 4) { await mobile.keyboard.press("Tab"); parcours.push(await mobile.evaluate(() => ({ editeur: !!document.activeElement?.closest(".studio-editor"), nav: !!document.activeElement?.closest("[data-studio-domaines]"), section: document.activeElement?.closest("[data-studio-domaine]")?.getAttribute("data-studio-domaine") ?? null }))); break; }
-  }
-  const premier = parcours.findIndex((x) => x.domaine);
-  const suivant = parcours[parcours.length - 1];
-  check("I-4 : téléphone, ordre de Tab = ordre visuel (planche, domaines, puis la suite de la section)", premier > 0 && parcours.slice(0, premier).every((x) => x.editeur)
-    && JSON.stringify(parcours.slice(premier, premier + 4).map((x) => x.domaine)) === JSON.stringify(DOMAINES.map(([id]) => id)) && !suivant.editeur && !suivant.nav && suivant.section !== null,
-    JSON.stringify(parcours.slice(Math.max(0, premier - 2))));
+  check("P0 téléphone : barre des domaines compacte (menu) en haut, avant le canevas dans le document et à l'écran", m.menu && m.liensMasques && m.navAvantCanevas && m.menuHaut <= m.plancheHaut && m.ordres === 0, JSON.stringify(m));
+  check("téléphone : canevas dans la moitié haute et d'au moins 280 px, aucun débordement", m.plancheHaut < 844 / 2 && m.plancheHauteur >= 280 && !m.debordePage, JSON.stringify(m));
+  check("I-5 : téléphone, boutons de planche de 44 px ; échelle dans la barre d'état", m.planches.length === 3 && m.planches.every((h) => h >= 44) && m.echelle, m.planches.join(","));
+  const menu = mobile.locator("[data-studio-domaines-menu]");
+  check("téléphone : le menu nomme le domaine affiché", ((await menu.textContent()) ?? "").includes("Dessin et modélisation") && (await menu.getAttribute("aria-expanded")) === "false");
+  await menu.focus();
+  await mobile.keyboard.press("Enter");
+  check("téléphone : le menu déplie les quatre domaines (clavier)", (await menu.getAttribute("aria-expanded")) === "true" && (await mobile.locator("[data-studio-domaines] a:visible").count()) === 4);
+  await mobile.keyboard.press("Tab");
+  check("téléphone : ordre de Tab = ordre visuel (menu, puis le premier domaine)", await mobile.evaluate(() => document.activeElement?.getAttribute("data-studio-domaine-lien")) === "dessin");
   await mobile.getByRole("navigation", { name: "Domaines du Studio" }).getByRole("link", { name: "Documentation, métrés et collaboration", exact: true }).click();
   await mobile.waitForURL(`${base}?domaine=documentation`);
-  check("téléphone : un domaine choisi reçoit le focus", await mobile.evaluate(() => document.activeElement?.id === "studio-domaine-documentation-titre"));
-  await mobile.locator('[data-studio-domaines] a[data-studio-domaine-lien="dessin"]').click();
-  await mobile.waitForURL(`${base}?domaine=dessin&planche=2d`);
-  check("M-6 : téléphone, Dessin et modélisation porte le focus sur un élément visible (la planche active)", await mobile.evaluate(() => {
-    const a = document.activeElement;
-    return a?.getAttribute("data-studio-planche") === "2d" && a.getAttribute("aria-pressed") === "true" && a.getClientRects().length > 0;
-  }));
+  await mobile.waitForSelector('[data-studio-domaine-affiche="documentation"]');
+  check("téléphone : un domaine choisi est affiché, le menu se referme sur son nom", (await menu.getAttribute("aria-expanded")) === "false" && ((await menu.textContent()) ?? "").includes("Documentation, métrés et collaboration")
+    && await mobile.locator("[data-studio-quantites]").isVisible());
   await mobile.close();
 
   check("aucune erreur de page", erreurs.length === 0, erreurs.join(" | "));

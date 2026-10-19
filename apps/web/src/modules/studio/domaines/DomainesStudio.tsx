@@ -1,35 +1,34 @@
 /**
- * Présentation des quatre domaines fonctionnels dans l'espace d'une variante (I.4-01, I.4-02 ; NAV-005) : navigation
- * des domaines, section de chaque domaine, choix de la planche (Planche 2D / Planche 3D, dans « Dessin et
- * modélisation » seulement), accès aux commandes d'un domaine et aperçu du domaine Visualisation. Noms et
- * responsabilités : `domaines.ts` (REF-01 §02) ; le contenu de chaque section est dérivé des tables de `domaines.ts`.
+ * Navigation des quatre domaines fonctionnels dans l'espace d'une variante (I.4-01 à I.4-03 ; NAV-005) : barre des
+ * domaines **persistante en haut de l'espace**, section de chaque domaine (un seul affiché à la fois) et choix du mode
+ * des planches (Planche 2D, Planche 3D ou Double vue, dans « Dessin et modélisation » seulement). Noms et
+ * responsabilités : `definitions.ts` (REF-01 §02).
  *
- * Profil standard (REF-01 §03) : les quatre domaines restent présents l'un sous l'autre ; choisir un domaine le rend
- * actif, l'inscrit dans l'adresse et y porte le focus, sans masquer ni recharger un autre domaine (un geste, un
- * brouillon ou une sauvegarde en cours ne sont jamais abandonnés, NAV-007). Chaque lien de domaine a pour adresse
- * celle de la variante avec ce domaine (`cheminVarianteStudio`) : un clic simple, sans touche de modification, est
- * traité sur place ; Ctrl / Cmd / Maj + clic ou le bouton du milieu ouvrent cette adresse ailleurs. Ces liens portent
- * `data-studio-sans-garde` : la garde de navigation (`variante/useGardeNavigation.ts`) ne les traite pas comme une
- * sortie de la variante.
+ * Un domaine affiché à la fois : choisir un domaine l'affiche (palette d'outils, canevas et panneaux propres), l'inscrit
+ * dans l'adresse (`?domaine=`, par remplacement) ; les autres domaines restent montés mais masqués (`hidden`) : un
+ * geste, un brouillon, une saisie de panneau ou une sauvegarde en cours ne sont jamais abandonnés (NAV-007). Chaque lien
+ * de domaine a pour adresse celle de la variante avec ce domaine (`cheminVarianteStudio`) : un clic simple, sans touche
+ * de modification, est traité sur place ; Ctrl / Cmd / Maj + clic ou le bouton du milieu ouvrent cette adresse ailleurs.
+ * Ces liens portent `data-studio-sans-garde` : la garde de navigation (`variante/useGardeNavigation.ts`) ne les traite
+ * pas comme une sortie de la variante. Téléphone : la barre devient un menu compact (bouton du domaine affiché, liste
+ * des quatre domaines), toujours en haut de l'espace et avant le canevas dans le document.
  *
- * Navigation, pas commande (règle d'or, AGENTS.md ; `planche2d/regle-or.test.ts`) : les liens de domaine et les deux
- * boutons de planche ne créent aucune commande ; le choix de planche exécute la bascule existante « Vue 3D » (Maj+D,
- * icône et barre propres) et les accès d'un domaine lancent les commandes existantes, avec leur icône et leur raccourci.
+ * Navigation, pas commande (règle d'or, AGENTS.md ; `planche2d/regle-or.test.ts`) : les liens de domaine et les boutons
+ * de planche ne créent aucune commande ; le choix de planche n'annonce que le raccourci de la bascule existante
+ * « Vue 3D » (Maj+D, icône et barre propres).
  */
-import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useId, useState, type MouseEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { studioScenes, type StudioDocument } from "@parcours/atelier-model";
-import { Icon } from "../../../components/Icon";
-import { ariaRaccourci, COMMANDES_EDITEUR, libelleRaccourci, type CommandeEditeur, type IdCommandeEditeur } from "../planche2d/raccourcis";
-import { TYPES_RENDU } from "../vue3d/scenes/scenes-ui";
-import { definitionDomaine, DOMAINES_STUDIO, idSectionDomaine, PLANCHES_STUDIO, type DomaineStudio, type PlancheStudio } from "./domaines";
+import { ariaRaccourci, COMMANDES_EDITEUR, libelleRaccourci } from "../planche2d/raccourcis";
+import { definitionDomaine, DOMAINES_STUDIO, MODES_PLANCHE, montre3d, type DomaineStudio, type ModePlanche } from "./definitions";
+import { idSectionDomaine } from "./domaines";
 import "./domaines.css";
 
 /** Un clic simple (bouton principal, sans Ctrl, Cmd, Maj ni Alt) : le seul qui soit traité sur place. */
 export const clicSimple = (e: Pick<MouseEvent, "button" | "ctrlKey" | "metaKey" | "shiftKey" | "altKey" | "defaultPrevented">): boolean =>
   !e.defaultPrevented && e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey;
 
-/** Écran de téléphone (même seuil que les feuilles de style de Studio) : la navigation des domaines se range sous la planche. */
+/** Écran de téléphone (même seuil que les feuilles de style de Studio). */
 export const REQUETE_TELEPHONE = "(max-width: 540px)";
 export function useEcranTelephone(): boolean {
   const lire = () => typeof window !== "undefined" && !!window.matchMedia?.(REQUETE_TELEPHONE).matches;
@@ -45,89 +44,64 @@ export function useEcranTelephone(): boolean {
   return telephone;
 }
 
-export function NavigationDomaines({ actif, adresse, surChoix }: { actif: DomaineStudio; adresse: (id: DomaineStudio) => string; surChoix: (id: DomaineStudio) => void }) {
-  return <nav className="studio-domaines" aria-label="Domaines du Studio" data-studio-domaines>
-    <ol>
-      {DOMAINES_STUDIO.map((d) => <li key={d.id}>
-        <a href={adresse(d.id)} aria-current={d.id === actif ? "true" : undefined} title={d.responsabiliteFR} data-studio-domaine-lien={d.id} data-studio-sans-garde=""
-          onClick={(e) => { if (!clicSimple(e)) return; e.preventDefault(); surChoix(d.id); }}>
-          <span className="studio-domaine-numero" aria-hidden="true">{d.numero}</span><span>{d.libelleFR}</span>
+/**
+ * Barre des domaines. `compacte` (téléphone) : un bouton nomme le domaine affiché et déplie la liste des quatre ; un
+ * choix la referme. Les liens existent toujours une fois dans le document (liste masquée quand le menu est fermé).
+ */
+export function NavigationDomaines({ actif, adresse, surChoix, compacte = false }: { actif: DomaineStudio; adresse: (id: DomaineStudio) => string; surChoix: (id: DomaineStudio) => void; compacte?: boolean }) {
+  const [ouvert, setOuvert] = useState(false);
+  const liste = useId();
+  const d = definitionDomaine(actif);
+  return <nav className="studio-domaines" aria-label="Domaines du Studio" data-studio-domaines data-studio-compacte={compacte ? "" : undefined}
+    onKeyDown={(e) => { if (compacte && ouvert && e.key === "Escape") { e.stopPropagation(); setOuvert(false); (e.currentTarget.querySelector("[data-studio-domaines-menu]") as HTMLElement | null)?.focus(); } }}>
+    {compacte && <button type="button" className="studio-domaines-menu" aria-expanded={ouvert} aria-controls={liste} onClick={() => setOuvert((o) => !o)} data-studio-domaines-menu>
+      <span className="studio-domaine-numero" aria-hidden="true">{d.numero}</span><span>{d.libelleFR}</span><span className="studio-chevron" aria-hidden="true">▾</span>
+    </button>}
+    <ol id={liste} hidden={compacte && !ouvert}>
+      {DOMAINES_STUDIO.map((x) => <li key={x.id}>
+        <a href={adresse(x.id)} aria-current={x.id === actif ? "page" : undefined} title={x.responsabiliteFR} data-studio-domaine-lien={x.id} data-studio-sans-garde=""
+          onClick={(e) => { if (!clicSimple(e)) return; e.preventDefault(); setOuvert(false); surChoix(x.id); }}>
+          <span className="studio-domaine-numero" aria-hidden="true">{x.numero}</span><span>{x.libelleFR}</span>
         </a>
       </li>)}
     </ol>
   </nav>;
 }
 
-/** Identifiant du titre d'un domaine (cible du focus et nom de la section). */
+/** Identifiant du titre (masqué à l'écran) d'un domaine, qui nomme sa région. */
 export const idTitreDomaine = (id: DomaineStudio): string => `${idSectionDomaine(id)}-titre`;
 
 /**
- * Section d'un domaine. `titreVisible` faux (Dessin et modélisation, dont la planche doit rester dans la moitié haute
- * de l'écran) : la section ne rend pas son titre ; il est posé dans la légende de la planche (`TitreLegende`).
+ * Région d'un domaine : ses panneaux latéraux. Un seul domaine est affiché ; les autres restent montés, masqués
+ * (`hidden`), pour ne rien perdre de leur état. Le titre (nom exact du domaine) nomme la région, sans occuper l'écran.
  */
-export function SectionDomaine({ id, actif, titreVisible = true, children }: { id: DomaineStudio; actif: boolean; titreVisible?: boolean; children: ReactNode }) {
+export function SectionDomaine({ id, actif, children }: { id: DomaineStudio; actif: boolean; children: ReactNode }) {
   const d = definitionDomaine(id);
   const titre = idTitreDomaine(id);
-  return <section id={idSectionDomaine(id)} className={`studio-domaine studio-domaine-${id}`} data-studio-domaine={id} data-studio-domaine-actif={actif ? "" : undefined} aria-labelledby={titre}>
-    {titreVisible && <header className="studio-domaine-entete"><h2 id={titre} tabIndex={-1}><span className="studio-domaine-numero" aria-hidden="true">{d.numero}</span><span>{d.libelleFR}</span></h2><p>{d.responsabiliteFR}</p></header>}
+  return <section id={idSectionDomaine(id)} className={`studio-domaine studio-domaine-${id}`} data-studio-domaine={id} data-studio-domaine-actif={actif ? "" : undefined} aria-labelledby={titre} hidden={!actif}>
+    <h2 id={titre} className="studio-masque" tabIndex={-1}>{d.libelleFR}</h2>
     {children}
   </section>;
 }
 
-/** Titre d'un domaine rendu dans la légende de sa planche (visible sur un écran large). */
-export function TitreLegende({ id }: { id: DomaineStudio }) {
-  return <h2 id={idTitreDomaine(id)} className="studio-legende-titre" tabIndex={-1}>{definitionDomaine(id).libelleFR}</h2>;
-}
-
 /**
- * Choix de la planche active : deux boutons enfoncés ou non, qui exécutent la bascule existante « Vue 3D » (Maj+D).
- * Le raccourci n'est annoncé que sur le bouton inactif (celui que Maj+D activerait).
+ * Mode des planches : Planche 2D, Planche 3D ou Double vue (les deux côte à côte). Trois boutons enfoncés ou non ; le
+ * raccourci de la bascule « Vue 3D » (Maj+D) n'est annoncé que sur le bouton qu'il activerait (2D ↔ 3D).
  */
-export function SelecteurPlanche({ active, surChoix }: { active: PlancheStudio; surChoix: (p: PlancheStudio) => void }) {
+export function SelecteurPlanche({ active, surChoix }: { active: ModePlanche; surChoix: (p: ModePlanche) => void }) {
   const bascule = COMMANDES_EDITEUR.find((c) => c.id === "vue-3d")!;
+  const cibleMajD: ModePlanche = montre3d(active) ? "2d" : "3d";
   return <span className="studio-planches" role="group" aria-label="Planches" data-studio-planches>
-    {PLANCHES_STUDIO.map((p) => {
-      const inactif = p.id !== active;
-      return <button key={p.id} type="button" aria-pressed={!inactif} aria-keyshortcuts={inactif ? ariaRaccourci(bascule.raccourci) : undefined}
-        title={inactif ? `Basculer de planche : ${libelleRaccourci(bascule.raccourci)}` : undefined}
-        data-studio-planche={p.id} onClick={() => { if (inactif) surChoix(p.id); }}>{p.libelleFR}</button>;
+    {MODES_PLANCHE.map((p) => {
+      const presse = p.id === active;
+      const annonce = p.id === cibleMajD;
+      // Une extension proposée (Double vue) est étiquetée comme telle, à l'écran et dans son nom accessible.
+      const nom = p.extension ? `${p.libelleFR} (extension proposée)` : p.libelleFR;
+      return <button key={p.id} type="button" aria-pressed={presse} aria-label={nom} aria-keyshortcuts={annonce ? ariaRaccourci(bascule.raccourci) : undefined}
+        title={annonce ? `${nom} — ${libelleRaccourci(bascule.raccourci)}` : nom}
+        data-studio-planche={p.id} data-studio-extension-proposee={p.extension ? "" : undefined} onClick={() => { if (!presse) surChoix(p.id); }}>{p.courtFR}{p.extension && <span className="studio-extension" aria-hidden="true">proposée</span>}</button>;
     })}
   </span>;
-}
-
-/**
- * Domaine Visualisation, rendu et immersion : **aperçu** des scènes enregistrées dans le document et des types de
- * rendu (mêmes données que le panneau « Scènes, apparence et rendus » de la Planche 3D). L'édition des scènes et du
- * rendu se fait dans la Planche 3D ; ce domaine ne la déplace pas.
- */
-export function ApercuVisualisation({ doc, surOuvrir3d }: { doc: StudioDocument; surOuvrir3d: () => void }) {
-  const scenes = studioScenes(doc);
-  return <div className="studio-domaine-corps" data-studio-visualisation-apercu data-studio-scenes-nombre={scenes.length}>
-    <p className="studio-hint" data-studio-visualisation-note>Aperçu ; l’édition des scènes et du rendu se fait dans la Planche 3D.</p>
-    <h3>Scènes enregistrées</h3>
-    {scenes.length ? <ul className="studio-domaine-liste">{scenes.map((s) => <li key={s.id} translate="no" data-studio-apercu-scene={s.id}>{s.name}</li>)}</ul> : <p>Aucune scène enregistrée.</p>}
-    <h3>Rendus</h3>
-    <ul className="studio-domaine-liste">{TYPES_RENDU.map((r) => <li key={r.id} data-studio-apercu-rendu={r.id} data-studio-disponible={r.disponible ? "oui" : "non"}><span>{r.libelle}</span> <small>{r.disponible ? "Disponible" : "Non disponible"}</small></li>)}</ul>
-    <button type="button" onClick={surOuvrir3d} data-studio-examiner-3d>Ouvrir la Planche 3D</button>
-  </div>;
-}
-
-/** Accès d'un domaine : ses commandes existantes (`commandesDuDomaine`), avec l'icône et le raccourci de la barre. */
-export function AccesDomaine({ domaine, commandes, disponible, surCommande }: {
-  domaine: DomaineStudio;
-  commandes: readonly IdCommandeEditeur[];
-  disponible: (c: CommandeEditeur) => boolean;
-  surCommande: (id: IdCommandeEditeur) => void;
-}) {
-  if (!commandes.length) return null;
-  return <div className="studio-domaine-acces" data-studio-domaine-acces={domaine}>
-    {commandes.map((id) => {
-      const c = COMMANDES_EDITEUR.find((x) => x.id === id)!;
-      return <button key={id} type="button" disabled={!disponible(c)} aria-keyshortcuts={ariaRaccourci(c.raccourci)} onClick={() => surCommande(id)} data-studio-domaine-commande={id}>
-        <Icon name={c.iconeSymbolique} size={16} /> <span>{c.libelleFR}</span> <kbd aria-hidden="true">{libelleRaccourci(c.raccourci)}</kbd>
-      </button>;
-    })}
-  </div>;
 }
 
 /** Publications de l'étude (manifeste, approbation, diffusion), dans le domaine Documentation. */

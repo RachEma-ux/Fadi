@@ -8,18 +8,25 @@
  * confirmation (jamais de suppression) ; les archives s'affichent sur demande (`?archives=1`).
  * Chargement (B.3-02, B.3-03) : la coquille porte le catalogue léger et lit le profil d'outils ; la planche (éditeur
  * de variante) n'est chargée qu'à l'ouverture d'une variante (`chargement/`).
+ * Contexte (NAV-006) : l'en-tête de Fadi nomme le projet (résolu depuis `/studio/projets/:projectId…`) ; le fil
+ * d'Ariane de Studio nomme l'étude, la variante et la révision affichée, sans répéter le projet. Accueil : suggestion de
+ * reprise (jamais de redirection), choix explicite, nouvelle étude (`accueil/AccueilStudio.tsx`).
  */
 import { Component, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import type { StudioPhaseWorkflow } from "@parcours/atelier-model";
 import { api, ApiError, ROLE_LABEL, type StudioVariantSummary } from "../../lib/api";
+import type { DomaineStudio } from "./domaines/definitions";
 import { LOCALE } from "../../lib/i18n";
-import { cheminComparaisonStudio, cheminEtudeStudio, cheminProjetStudio, cheminVarianteStudio, lireRouteStudio, RACINE_STUDIO } from "./routes-studio";
+import { cheminAccueilStudio, cheminComparaisonStudio, cheminEtudeStudio, cheminProjetStudio, cheminVarianteStudio, lireRouteStudio } from "./routes-studio";
 import { StudioRefus } from "./studio-ecrans";
 import { DemarrageStudio, PlancheDifferee } from "./chargement/DemarrageStudio";
 import { PageComparaison } from "./comparaison/PageComparaison";
 import { EtapesParcoursEtude } from "./liens/EtapesLiees";
 import { PanneauPublications } from "./publication/PanneauPublications";
+import { NouvelleEtude, StudioAccueil } from "./accueil/AccueilStudio";
+import { libellePhase, PastilleWorkflow } from "./espace/EspaceStudio";
 import "./studio.css";
 
 /** Une création non confirmée (réseau, 5xx) se rejoue avec le même requestId : le serveur rend la même étude ou variante, sans doublon. */
@@ -62,27 +69,28 @@ export function StudioShell() {
       <StudioErrorBoundary cle={pathname + search}>
         {route.vue !== "accueil" && (
           <nav className="studio-fil" aria-label="Fil d’Ariane Studio">
-            <Link to={RACINE_STUDIO}>Studio</Link>
+            <Link to={cheminAccueilStudio()} data-studio-fil-accueil>Studio</Link>
             {route.vue !== "inconnue" && <FilProjet projectId={route.projectId} lien={route.vue !== "projet"} />}
             {(route.vue === "etude" || route.vue === "variante" || route.vue === "comparer") && <FilEtude projectId={route.projectId} studyId={route.studyId} lien={route.vue !== "etude"} />}
             {route.vue === "comparer" && <span aria-current="page"> / {"Comparer"}</span>}
-            {route.vue === "variante" && <FilVariante projectId={route.projectId} studyId={route.studyId} variantId={route.variantId} />}
+            {route.vue === "variante" && <FilVariante projectId={route.projectId} studyId={route.studyId} variantId={route.variantId} revisionId={route.revisionId} />}
+            {(route.vue === "etude" || route.vue === "variante") && <PastilleEtude projectId={route.projectId} studyId={route.studyId} variantId={route.vue === "variante" ? route.variantId : null} revisionId={route.vue === "variante" ? route.revisionId : null} />}
             {route.vue !== "inconnue" && <BadgeRole projectId={route.projectId} />}
           </nav>
         )}
-        {route.vue === "accueil" && <StudioAccueil />}
+        {route.vue === "accueil" && <StudioAccueil key={search} domaine={route.domaine} />}
         {route.vue === "projet" && <StudioProjet projectId={route.projectId} archives={route.archives} />}
         {route.vue === "etude" && <StudioEtude projectId={route.projectId} studyId={route.studyId} archives={route.archives} />}
-        {/* Domaine et planche (I.4-03) hors de la clé : les changer ne recharge pas la planche ; l'adresse est remplacée, sans entrée d'historique. */}
+        {/* Domaine et planche (I.4-03) hors de la clé : les changer ne recharge ni ne décharge la variante (brouillon, geste, sauvegarde gardés). Changer de domaine ajoute une entrée d'historique ; changer de planche la remplace. */}
         {route.vue === "variante" && <PlancheDifferee key={`${route.projectId}/${route.studyId}/${route.variantId}/${route.revisionId ?? ""}`} projectId={route.projectId} studyId={route.studyId} variantId={route.variantId} revisionId={route.revisionId} commentairesOuverts={route.commentaires}
           domaine={route.domaine} planche={route.planche}
-          surAdresse={({ domaine, planche, commentaires }) => navigate(cheminVarianteStudio(route.projectId, route.studyId, route.variantId, route.revisionId, { commentaires, domaine, planche }), { replace: true })} />}
+          surAdresse={({ domaine, planche, commentaires }, { remplacer }) => navigate(cheminVarianteStudio(route.projectId, route.studyId, route.variantId, route.revisionId, { commentaires, domaine, planche }), { replace: remplacer })} />}
         {route.vue === "comparer" && <PageComparaison projectId={route.projectId} studyId={route.studyId} de={route.de} a={route.a} />}
         {route.vue === "inconnue" && (
           <section className="studio-welcome" role="alert" data-studio-inconnue>
             <h1>Adresse Studio non reconnue</h1>
             <p>Cette adresse ne correspond à aucun écran de Studio. Rien n’a été ouvert ni créé.</p>
-            <Link to={RACINE_STUDIO}>Revenir à l’accueil de Studio</Link>
+            <Link to={cheminAccueilStudio()}>Revenir à l’accueil de Studio</Link>
           </section>
         )}
       </StudioErrorBoundary>
@@ -94,11 +102,15 @@ const useProjet = (projectId: string) => useQuery({ queryKey: ["project", projec
 // Fil d'Ariane : archives comprises, pour nommer aussi une variante archivée ouverte par son adresse.
 const useEtude = (projectId: string, studyId: string) => useQuery({ queryKey: ["studio-study", projectId, studyId, { archives: true }], queryFn: () => api.studioStudy(projectId, studyId, true), staleTime: 30_000, retry });
 
+/**
+ * Étape « projet » du fil : les études du projet. Le projet lui-même est nommé par l'en-tête de Fadi (NAV-006, sans
+ * doublon) ; le code reste dans le nom accessible du lien, une fois l'accès confirmé.
+ */
 function FilProjet({ projectId, lien }: { projectId: string; lien: boolean }) {
   const projet = useProjet(projectId);
-  // Tant que l'accès n'est pas confirmé, le fil ne nomme pas le projet.
-  const nom = projet.data && !refused(projet.error) ? <span translate="no">{projet.data.code}</span> : "Projet";
-  return <span> / {lien ? <Link to={cheminProjetStudio(projectId)}>{nom}</Link> : <span aria-current="page">{nom}</span>}</span>;
+  const code = projet.data && !refused(projet.error) ? projet.data.code : null;
+  const texte = <span data-studio-fil-projet>Études</span>;
+  return <span> / {lien ? <Link to={cheminProjetStudio(projectId)} title={code ? `Études du projet ${code}` : undefined}>{texte}</Link> : <span aria-current="page">{texte}</span>}</span>;
 }
 
 /** Rôle de l'utilisateur sur le projet, tel que le serveur le renvoie avec le projet (jamais déduit côté client). */
@@ -115,39 +127,36 @@ function FilEtude({ projectId, studyId, lien }: { projectId: string; studyId: st
   return <span> / {lien ? <Link to={cheminEtudeStudio(projectId, studyId)}>{nom}</Link> : <span aria-current="page">{nom}</span>}</span>;
 }
 
-function FilVariante({ projectId, studyId, variantId }: { projectId: string; studyId: string; variantId: string }) {
+/**
+ * Phase déclarée de l'étude (workflow REF-01 §06), dans la barre de contexte en haut de l'espace : pastille et menu ;
+ * déclaration réservée au propriétaire et aux éditeurs (droit relu par le serveur), jamais sur une révision historique ;
+ * suggestions = liens vers les domaines de la variante affichée (ou de la variante initiale, depuis l'étude).
+ */
+function PastilleEtude({ projectId, studyId, variantId, revisionId }: { projectId: string; studyId: string; variantId: string | null; revisionId: string | null }) {
   const etude = useEtude(projectId, studyId);
-  const variante = !refused(etude.error) ? etude.data?.variants.find((v) => v.id === variantId) : undefined;
-  return <span aria-current="page"> / {variante ? <span translate="no">{variante.name}</span> : "Variante"}</span>;
+  const client = useQueryClient();
+  const navigate = useNavigate();
+  if (refused(etude.error)) return null;
+  const d = etude.data;
+  const variante = variantId ?? d?.study.initialVariantId ?? null;
+  const adresse = (domaine: DomaineStudio) => (variante ? cheminVarianteStudio(projectId, studyId, variante, variantId ? revisionId : null, { domaine }) : cheminEtudeStudio(projectId, studyId));
+  async function declarer(phase: StudioPhaseWorkflow | null) {
+    const lu = await api.setStudioStudyWorkflowPhase(projectId, studyId, phase);
+    client.setQueryData(["studio-study", projectId, studyId, { archives: true }], (prev: typeof d) => (prev ? { ...prev, study: { ...prev.study, workflowPhase: lu.study.workflowPhase ?? null } } : prev));
+    await Promise.all([client.invalidateQueries({ queryKey: ["studio-studies", projectId] }), client.invalidateQueries({ queryKey: ["studio-study", projectId, studyId, { archives: false }] })]);
+  }
+  return <PastilleWorkflow phase={etude.isError ? null : d ? d.study.workflowPhase ?? null : undefined} declarer={d?.canWrite && !revisionId ? declarer : undefined}
+    adresses={{ domaine: adresse, etude: cheminEtudeStudio(projectId, studyId), comparer: cheminComparaisonStudio(projectId, studyId) }} surDomaine={(x) => navigate(adresse(x), { replace: !!variantId })} />;
 }
 
-function StudioAccueil() {
-  const projets = useQuery({ queryKey: ["projects"], queryFn: api.listProjects, staleTime: 30_000 });
-  return (
-    <section className="studio-welcome" aria-labelledby="studio-choisir">
-      <p className="studio-eyebrow">FADI / STUDIO</p>
-      <h2 id="studio-choisir">Choisir un projet</h2>
-      <p>Studio s’ouvre sur un projet que vous êtes autorisé à consulter ; rien n’est créé à l’ouverture.</p>
-      {projets.isPending && <p role="status">{projets.fetchStatus === "paused" ? "En attente de connexion" : "Chargement des projets…"}</p>}
-      {projets.isError && <p role="alert">Impossible de charger vos projets. <button type="button" onClick={() => void projets.refetch()}>Réessayer</button></p>}
-      {projets.data?.length === 0 && <p>Aucun projet disponible. <Link to="/projets">Créez un projet dans Projets.</Link></p>}
-      {!!projets.data?.length && (
-        <ul className="studio-projects" data-studio-projets>
-          {projets.data.map((p) => (
-            <li key={p.id}>
-              <Link to={cheminProjetStudio(p.id)}>
-                <span className="studio-project-icon" aria-hidden="true">▱</span>
-                <strong translate="no">{p.code}</strong>
-                <span translate="no">{p.name}</span>
-                <small>{ROLE_LABEL[p.role ?? "proprietaire"]}</small>
-                <span>Ouvrir les études →</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
+/** Variante et révision affichée (tête, ou révision historique de l'adresse). */
+function FilVariante({ projectId, studyId, variantId, revisionId }: { projectId: string; studyId: string; variantId: string; revisionId: string | null }) {
+  const etude = useEtude(projectId, studyId);
+  const variante = !refused(etude.error) ? etude.data?.variants.find((v) => v.id === variantId) : undefined;
+  const revision = revisionId ?? variante?.headRevisionId ?? null;
+  return <span aria-current="page"> / {variante ? <span translate="no">{variante.name}</span> : "Variante"}
+    {revision && <span className="studio-fil-revision" data-studio-fil-revision={revision}>{" · "}{revisionId ? "Révision historique" : "Révision"} <span translate="no" title={revision}>{revision.slice(-8)}</span></span>}
+  </span>;
 }
 
 /** Message d'échec d'une action de cycle de vie, selon la réponse du serveur (seul juge). */
@@ -218,6 +227,7 @@ const actions = { display: "flex", flexWrap: "wrap", gap: 6 } as const;
 
 function StudioProjet({ projectId, archives }: { projectId: string; archives: boolean }) {
   const projet = useProjet(projectId);
+  const [creation, setCreation] = useState(false);
   const accessible = !!projet.data && !refused(projet.error);
   const client = useQueryClient();
   const etudes = useQuery({ queryKey: ["studio-studies", projectId, { archives }], queryFn: () => api.studioStudies(projectId, archives), enabled: accessible, retry,
@@ -232,11 +242,13 @@ function StudioProjet({ projectId, archives }: { projectId: string; archives: bo
   const p = projet.data!;
   const lecteur = p.role === "lecteur";
   return (
-    <section className="studio-welcome" data-studio-projet={p.id}>
-      <p className="studio-eyebrow">FADI / STUDIO</p>
-      <h1><span translate="no">{p.code}</span> — <span translate="no">{p.name}</span></h1>
-      <p>Votre rôle : {ROLE_LABEL[p.role ?? "proprietaire"]}.</p>
-      <h2>Études du projet</h2>
+    <section className="studio-welcome studio-page" data-studio-projet={p.id}>
+      <header className="studio-page-entete">
+        <h1>Études du projet</h1>
+        {!lecteur && <button type="button" className="studio-bouton-principal" aria-expanded={creation} onClick={() => setCreation((c) => !c)} disabled={etudes.isError} data-studio-nouvelle-etude>Nouvelle étude</button>}
+      </header>
+      {!lecteur && creation && <NouvelleEtude projectId={p.id} surAnnuler={() => setCreation(false)} />}
+      {lecteur && <p data-studio-lecture-seule>Lecture seule : la création d’études est réservée au propriétaire et aux éditeurs.</p>}
       <BasculeArchives archives={archives} vers={(a) => cheminProjetStudio(p.id, { archives: a })} />
       {etudes.isPending && <p role="status">Chargement des études…</p>}
       {etudes.isError && <><p role="alert">Études indisponibles ou accès refusé.</p><button type="button" onClick={() => void etudes.refetch()}>Réessayer</button></>}
@@ -248,8 +260,9 @@ function StudioProjet({ projectId, archives }: { projectId: string; archives: bo
               <Link to={cheminEtudeStudio(p.id, s.id)}>
                 <strong translate="no">{s.name}</strong>
                 {s.archived && <BadgeArchive />}
-                <span>Ouvrir l’étude →</span>
+                <small data-studio-etude-phase={s.workflowPhase ?? "non-declaree"}>{`Phase : ${libellePhase(s.workflowPhase)}`}</small>
               </Link>
+              {!s.archived && <Link to={cheminVarianteStudio(p.id, s.id, s.initialVariantId)} className="studio-bouton-principal" data-studio-ouvrir-espace={s.id}>Ouvrir l’espace de travail</Link>}
               {!lecteur && (
                 <div style={actions}>
                   {!s.archived && <RenommerEnLigne nom={s.name} attribut={s.id} enregistrer={async (nom) => { await api.renameStudioStudy(p.id, s.id, nom); await relire(s.id); }} />}
@@ -262,45 +275,83 @@ function StudioProjet({ projectId, archives }: { projectId: string; archives: bo
           ))}
         </ul>
       )}
-      {lecteur
-        ? <p data-studio-lecture-seule>Ce projet vous est partagé en lecture : la création d’études est réservée à son propriétaire et à ses éditeurs.</p>
-        : <CreerEtude projectId={p.id} indisponible={etudes.isError} />}
+      {p.role === "proprietaire" && etudes.data?.exemple && <ChargerExempleP118 key={p.id} projectId={p.id} etat={etudes.data.exemple.etat} />}
     </section>
   );
 }
 
-function CreerEtude({ projectId, indisponible }: { projectId: string; indisponible: boolean }) {
-  const [name, setName] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [error, setError] = useState("");
-  const enCours = useRef(false);
-  const demande = useRef<{ nom: string; id: string } | null>(null);
-  const navigate = useNavigate();
+/** Motif d'un refus de l'installation de l'exemple, restitué en clair (statut et code du serveur). */
+function echecExemple(err: unknown): string {
+  if (!(err instanceof ApiError) || err.status >= 500) return "Chargement non confirmé. Réessayez : l’installation reprend sans doublon.";
+  if (err.status === 423) return "Chargement refusé : un autre compte modifie ce projet en ce moment. Réessayez quand il aura terminé.";
+  if (err.status === 403) return "Chargement refusé : seul le propriétaire du projet peut installer l’étude exemple.";
+  if (err.status === 409 && err.code === "exemple_version_changee") return "Chargement refusé : l’installation interrompue vient d’une autre version de l’exemple. Archivez cette étude pour installer la version actuelle.";
+  if (err.status === 409) return "Chargement refusé : ce projet ne vient pas de l’exemple P.118.";
+  return "Chargement refusé par le serveur.";
+}
+
+type RapportExemple = Awaited<ReturnType<typeof api.installStudioExample>>;
+
+/**
+ * « Charger l’exemple Studio P.118 » : ACTION DE PAGE (comme « Créer l’étude »), pas un outil d’éditeur — elle ne
+ * figure donc ni au registre des outils, ni dans une barre, et n’a pas de raccourci (la règle d’or porte sur les outils
+ * et commandes de l’éditeur). Propriétaire seulement, projet issu de l’exemple (le serveur le dit : `exemple` de la
+ * liste des études) tant que l’étude exemple n’est pas complète ; « Reprendre l’installation de l’exemple » si elle est
+ * partielle. Le serveur installe l’étude (une variante par niveau, par le contrat de commandes), de façon idempotente ;
+ * la page garde ensuite le lien vers l’étude et le rapport des éléments déclarés absents (replié).
+ */
+function ChargerExempleP118({ projectId, etat }: { projectId: string; etat: "absente" | "partielle" | "complete" }) {
+  const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState("");
+  const [resultat, setResultat] = useState<RapportExemple | null>(null);
   const client = useQueryClient();
-  async function create(e: FormEvent) {
-    e.preventDefault();
-    if (!name.trim() || enCours.current) return;
-    enCours.current = true; setCreating(true); setError("");
+  async function charger() {
+    if (enCours) return;
+    setEnCours(true); setErreur("");
+    let r: RapportExemple | null = null;
     try {
-      const c = await api.createStudioStudy(projectId, name.trim(), demandeId(demande, name.trim()));
-      demande.current = null;
-      navigate(cheminVarianteStudio(projectId, c.study.id, c.variant.id));
+      r = await api.installStudioExample(projectId);
     } catch (err) {
-      setError(err instanceof ApiError && err.status < 500 ? "Création refusée par le serveur." : "Création non confirmée. Réessayez : la même demande sera rejouée sans doublon.");
-    } finally {
-      enCours.current = false; setCreating(false);
-      void client.invalidateQueries({ queryKey: ["studio-studies", projectId] });
+      setErreur(echecExemple(err));
     }
+    // Résultat et fin du chargement dans le même rendu (aria-busy retombe avec l'annonce), puis relecture de la liste.
+    if (r) setResultat(r);
+    setEnCours(false);
+    if (r) await client.invalidateQueries({ queryKey: ["studio-studies", projectId] });
   }
+  if (etat === "complete" && !resultat) return null;
+  // Nombre d’éléments absents (une entrée peut en regrouper plusieurs : son `nombre`), pas le nombre de lignes du rapport.
+  const absents = resultat?.rapport.niveaux.reduce((n, x) => n + x.rapport.absents.reduce((m, a) => m + a.nombre, 0), 0) ?? 0;
   return (
-    <form className="studio-create" onSubmit={(e) => void create(e)} data-studio-creer-etude>
-      <h3>Nouvelle étude</h3>
-      <label htmlFor="studio-etude-nom">Nom de l’étude</label>
-      <input id="studio-etude-nom" required maxLength={160} value={name} onChange={(e) => setName(e.target.value)} />
-      {error && <p role="alert">{error}</p>}
-      <button disabled={creating || !name.trim() || indisponible}>Créer l’étude et sa variante initiale</button>
-      <p>Une action explicite crée une étude vide et sa première variante.</p>
-    </form>
+    <div className="studio-create" data-studio-exemple-p118 data-studio-exemple-etat={resultat ? "complete" : etat} aria-busy={enCours}>
+      <h3>Exemple Studio</h3>
+      {!resultat && (
+        <button type="button" disabled={enCours} aria-busy={enCours} onClick={() => void charger()} data-studio-charger-exemple>
+          {enCours ? "Chargement de l’exemple…" : etat === "partielle" ? "Reprendre l’installation de l’exemple" : "Charger l’exemple Studio P.118"}
+        </button>
+      )}
+      <p role="status" aria-live="polite" data-studio-exemple-statut>
+        {enCours ? "Installation de l’étude exemple en cours : chaque niveau est dessiné par lots de commandes." : resultat ? "Étude exemple installée." : ""}
+      </p>
+      {erreur && <p role="alert">{erreur}</p>}
+      {resultat && (
+        <>
+          <Link to={cheminEtudeStudio(projectId, resultat.etude.study.id)} data-studio-ouvrir-exemple>Ouvrir l’étude exemple →</Link>
+          <details data-studio-exemple-rapport>
+            <summary>{`Rapport de conversion : éléments déclarés absents (${absents})`}</summary>
+            {resultat.rapport.niveaux.map((n) => (
+              <section key={n.niveauId} data-studio-exemple-niveau={n.niveauId}>
+                <h4 translate="no">{n.nom}</h4>
+                {n.rapport.absents.length ? (
+                  <ul translate="no">{n.rapport.absents.map((a, i) => <li key={`${i}-${a.famille}`}><code>{a.famille}</code> × {a.nombre} — {a.raison}</li>)}</ul>
+                ) : <p>Aucun élément déclaré absent.</p>}
+                {n.rapport.refus.length > 0 && <p>{`Éléments refusés : ${n.rapport.refus.length}.`}</p>}
+              </section>
+            ))}
+          </details>
+        </>
+      )}
+    </div>
   );
 }
 

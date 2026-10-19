@@ -79,8 +79,9 @@ try {
   check("journal vide au départ (aucun ajustement fourni)", vide.status === 200 && vide.body.sequence === 0 && vide.body.ajustements.length === 0 && vide.body.peutAjuster === true && vide.body.headRevisionId === rev1, JSON.stringify(vide.body));
 
   const ouvrir = async () => {
-    await page.goto(`${BASE}/studio/projets/${projet.id}/etudes/${studyId}/variantes/${variantId}`);
-    await page.getByRole("toolbar", { name: /^(Outils de dessin|Drawing tools)$/ }).waitFor();
+    // Le métré appartient à « Documentation, métrés et collaboration » : ouvert dans ce domaine.
+    await page.goto(`${BASE}/studio/projets/${projet.id}/etudes/${studyId}/variantes/${variantId}?domaine=documentation`);
+    await page.getByRole("toolbar", { name: /^(Outils — Documentation, métrés et collaboration|Tools — Documentation, quantity take-offs and collaboration)$/ }).waitFor();
     const panneau = page.locator("[data-studio-quantites]");
     await panneau.waitFor();
     await panneau.locator('[data-studio-quantites-objet="l1"]').waitFor();

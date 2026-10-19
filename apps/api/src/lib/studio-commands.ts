@@ -2,9 +2,9 @@
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope } from "@parcours/atelier-model";
+import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope, type StudioPhaseWorkflow } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
-import { projectMembers, studioRevisions, studioStudies, studioVariants, type StudioContext, type StudioProvenance } from "../db/schema.js";
+import { projectMembers, studioRevisions, studioStudies, studioVariants, type StudioContext, type StudioExampleInstall, type StudioProvenance } from "../db/schema.js";
 import { newId } from "./ids.js";
 import { loadProjectAccess, projectAccessRefusal, type AccessibleProject, type ProjectNeed } from "./owned-project.js";
 import { orchestrerCommandesDansTransaction, type Tx } from "./atelier-validation.js";
@@ -58,6 +58,32 @@ export function assertAccess(access: AccessibleProject | null, actorId: string, 
   return access!;
 }
 
+/**
+ * Droit d'écriture d'une création ou d'un lot Studio. `modify` : règle commune (propriétaire ou éditeur, verrou
+ * d'édition d'un autre compte refusé, référence protégée de l'exemple refusée). `installation-exemple` : écriture
+ * SYSTÈME du contenu de l'exemple dans une étude dédiée (`lib/studio-exemple.ts`), réservée au PROPRIÉTAIRE ; elle passe
+ * par le même contrat de commandes et la même orchestration, respecte le verrou d'édition d'un autre compte, mais
+ * n'oppose pas la protection de la référence (le contenu installé est celui de l'exemple, pas une modification de
+ * l'utilisateur). Aucune route ne la reçoit du client : seule `lib/studio-exemple.ts` la passe.
+ */
+export type StudioEcriture = "modify" | "installation-exemple";
+
+/**
+ * Préfixe RÉSERVÉ des identifiants de requête de l'installation d'une étude exemple (`lib/studio-exemple.ts`). Un
+ * identifiant client (étude, variante, lot de commandes) qui commence par lui est refusé (400) : il ne peut ni rejouer
+ * ni préempter une étape de l'installation. Comparaison sans casse.
+ */
+export const STUDIO_PREFIXE_EXEMPLE = "exemple-studio-";
+function refuserPrefixeReserve(requestId: string | undefined, ecriture: StudioEcriture): void {
+  if (ecriture !== "modify" || requestId === undefined || !requestId.toLowerCase().startsWith(STUDIO_PREFIXE_EXEMPLE)) return;
+  throw new StudioRequestError(400, { error: "invalid_input", code: "request_id_reserve", message: `Identifiant de requête réservé à l'installation de l'exemple Studio (préfixe « ${STUDIO_PREFIXE_EXEMPLE} »).` });
+}
+function assertEcriture(access: AccessibleProject, actorId: string, ecriture: StudioEcriture): void {
+  if (ecriture === "modify") { assertAccess(access, actorId, "modify"); return; }
+  assertAccess(access, actorId, "owner");
+  assertAccess(access, actorId, "write");
+}
+
 /** Verrouille également le membre : une révocation concurrente ne traverse pas le commit. */
 export async function lockedAccess(tx: Tx, projectId: string, actorId: string): Promise<AccessibleProject> {
   await lockProject(tx, projectId);
@@ -95,7 +121,7 @@ export async function readStudioContext(q: Querier, scope: StudioScope, actorId:
 /** Études du projet ; les archivées seulement avec `includeArchived` (`?archives=1`). */
 export async function listStudioStudies(projectId: string, actorId: string, includeArchived = false) {
   assertAccess(await loadProjectAccess(projectId, actorId), actorId, "read");
-  const rows = await db.select({ id: studioStudies.id, name: studioStudies.name, initialVariantId: studioStudies.initialVariantId, createdAt: studioStudies.createdAt, updatedAt: studioStudies.updatedAt, archivedAt: studioStudies.archivedAt })
+  const rows = await db.select({ id: studioStudies.id, name: studioStudies.name, initialVariantId: studioStudies.initialVariantId, createdAt: studioStudies.createdAt, updatedAt: studioStudies.updatedAt, archivedAt: studioStudies.archivedAt, workflowPhase: studioStudies.workflowPhase })
     .from(studioStudies).where(includeArchived ? eq(studioStudies.projectId, projectId) : and(eq(studioStudies.projectId, projectId), isNull(studioStudies.archivedAt)))
     .orderBy(asc(studioStudies.createdAt), asc(studioStudies.id));
   return { studies: rows.map(({ archivedAt, ...row }) => ({ ...row, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt?.toISOString() ?? null, archived: archivedAt !== null })) };
@@ -103,7 +129,8 @@ export async function listStudioStudies(projectId: string, actorId: string, incl
 
 export interface StudioVariantSummary { id: string; name: string; headRevisionId: string; archived: boolean; derivedFrom: StudioProvenance | null }
 export interface StudioStudyRead {
-  study: { id: string; name: string; projectId: string; initialVariantId: string; createdAt: string; updatedAt: string | null; archived: boolean };
+  /** `workflowPhase` : phase DÉCLARÉE du workflow de conception (REF-01 §06), `null` = non déclarée. */
+  study: { id: string; name: string; projectId: string; initialVariantId: string; createdAt: string; updatedAt: string | null; archived: boolean; workflowPhase: StudioPhaseWorkflow | null };
   variants: StudioVariantSummary[];
   /** Écriture dans l'étude (droit `modify` et étude active). */
   canWrite: boolean;
@@ -143,7 +170,7 @@ export async function readStudioStudy(q: Querier, projectId: string, studyId: st
   return {
     study: {
       id: study.id, name: study.name, projectId: study.projectId, initialVariantId: study.initialVariantId, createdAt: study.createdAt.toISOString(),
-      updatedAt: study.updatedAt?.toISOString() ?? null, archived: study.archivedAt !== null,
+      updatedAt: study.updatedAt?.toISOString() ?? null, archived: study.archivedAt !== null, workflowPhase: study.workflowPhase ?? null,
     },
     variants: await variantsOf(q, study, includeArchived),
     canWrite: canManage && study.archivedAt === null, canManage,
@@ -224,10 +251,17 @@ async function replayCreation(tx: Tx, variantId: string, sources: InitialSource[
   return { ...structuredClone(initial.response), replayed: true };
 }
 
-export async function createStudioStudy(projectId: string, actorId: string, name: string, requestId?: string): Promise<StudioCreation> {
+/**
+ * Options internes d'une création (jamais lues du corps d'une requête) : droit d'écriture, nom de la variante initiale,
+ * marquage d'étude exemple (`example_install`, écrit dans la même transaction que l'étude).
+ */
+export interface StudioCreationOptions { ecriture?: StudioEcriture; nomVarianteInitiale?: string; exampleInstall?: StudioExampleInstall }
+
+export async function createStudioStudy(projectId: string, actorId: string, name: string, requestId?: string, options: StudioCreationOptions = {}): Promise<StudioCreation> {
+  refuserPrefixeReserve(requestId, options.ecriture ?? "modify");
   return db.transaction(async (tx) => {
     // Verrou du projet avant la recherche du rejeu : deux créations concurrentes du même requestId sont sérialisées.
-    assertAccess(await lockedAccess(tx, projectId, actorId), actorId, "modify");
+    assertEcriture(await lockedAccess(tx, projectId, actorId), actorId, options.ecriture ?? "modify");
     if (requestId !== undefined) {
       const [previous] = await tx.select({ initialVariantId: studioStudies.initialVariantId }).from(studioStudies)
         .where(and(eq(studioStudies.projectId, projectId), eq(studioStudies.creationRequestId, requestId))).limit(1);
@@ -236,10 +270,10 @@ export async function createStudioStudy(projectId: string, actorId: string, name
     const studyId = newId("studio_study"), variantId = newId("studio_variant"), revisionId = newId("studio_revision");
     const response: StudioContext = {
       study: { id: studyId, name, projectId },
-      variant: { id: variantId, name: "Variante initiale", studyId, headRevisionId: revisionId },
+      variant: { id: variantId, name: options.nomVarianteInitiale ?? "Variante initiale", studyId, headRevisionId: revisionId },
       revision: { id: revisionId, parentRevisionId: null, document: newStudioDocument(newId("studio_document")) }, canWrite: true,
     };
-    await tx.insert(studioStudies).values({ id: studyId, projectId, name, initialVariantId: variantId, creationRequestId: requestId ?? null });
+    await tx.insert(studioStudies).values({ id: studyId, projectId, name, initialVariantId: variantId, creationRequestId: requestId ?? null, exampleInstall: options.exampleInstall ?? null });
     await tx.insert(studioVariants).values({ id: variantId, studyId, name: response.variant.name, headRevisionId: revisionId });
     await tx.insert(studioRevisions).values({
       id: revisionId, variantId, parentRevisionId: null, document: response.revision.document, envelope: null,
@@ -259,11 +293,12 @@ export interface StudioDerivationSource { variantId: string; revisionId?: string
  * la provenance est enregistrée sur la variante et renvoyée (`derivedFrom`). Rejeu par `requestId` : même auteur, même
  * nom et même source, sinon 409 request_conflict ; une étude archivée refuse toute nouvelle variante (409 archived).
  */
-export async function createStudioVariant(projectId: string, studyId: string, actorId: string, name: string, requestId?: string, from?: StudioDerivationSource): Promise<StudioCreation> {
+export async function createStudioVariant(projectId: string, studyId: string, actorId: string, name: string, requestId?: string, from?: StudioDerivationSource, ecriture: StudioEcriture = "modify"): Promise<StudioCreation> {
+  refuserPrefixeReserve(requestId, ecriture);
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
-    assertAccess(access, actorId, "modify");
+    assertEcriture(access, actorId, ecriture);
     if (requestId !== undefined) {
       const [previous] = await tx.select({ id: studioVariants.id }).from(studioVariants)
         .where(and(eq(studioVariants.studyId, study.id), eq(studioVariants.creationRequestId, requestId))).limit(1);
@@ -405,10 +440,11 @@ async function staleRevisionBody(tx: Tx, variantId: string, envelope: StudioEnve
   };
 }
 
-export async function submitStudioCommands(scope: StudioScope, actorId: string, input: unknown): Promise<StudioContext & { replayed: boolean }> {
+export async function submitStudioCommands(scope: StudioScope, actorId: string, input: unknown, ecriture: StudioEcriture = "modify"): Promise<StudioContext & { replayed: boolean }> {
   // Capture avant le premier await : aucun changement du payload durant les verrous/rejeu.
   scope = Object.freeze({ projectId: scope.projectId, studyId: scope.studyId, variantId: scope.variantId });
   const envelope = parseStudioEnvelope(input);
+  refuserPrefixeReserve(envelope.requestId, ecriture);
   const payloadHash = studioPayloadHash(envelope);
   return db.transaction(async (tx) => {
     let current: StudioRead | undefined;
@@ -421,7 +457,7 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
         const [variant] = await transaction.select({ id: studioVariants.id }).from(studioVariants)
           .where(and(eq(studioVariants.id, scope.variantId), eq(studioVariants.studyId, study.id))).for("update");
         if (!variant) return notFound();
-        assertAccess(access, actorId, "modify");
+        assertEcriture(access, actorId, ecriture);
         current = await readStudioContext(transaction, scope, actorId);
       },
       replay: async (transaction) => {

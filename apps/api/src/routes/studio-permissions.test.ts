@@ -104,6 +104,11 @@ export const ROUTES: Route[] = [
   { route: "POST /studies", besoin: "modification", url: () => `${S}/studies`, body: { name: "Nouvelle" } },
   { route: "GET /studies/:studyId", besoin: "lecture", url: () => `${S}/studies/s` },
   { route: "PATCH /studies/:studyId", besoin: "modification", url: () => `${S}/studies/s`, body: { name: "Renommée" } },
+  { route: "PATCH /studies/:studyId/workflow", besoin: "modification", url: () => `${S}/studies/s/workflow`, body: { phase: "controler" }, note: "phase déclarée du workflow (REF-01 §06) : propriétaire ou éditeur ; aucune donnée de conception modifiée" },
+  {
+    route: "POST /exemple", besoin: "proprietaire", url: () => `${S}/exemple`, acteurs: { "proprietaire-verrou": "admis" },
+    note: "étude exemple P.118 : écriture système du propriétaire, admise dans la référence protégée ; projet hors exemple → 409 exemple_indisponible avant tout verrou ; le verrou d'édition d'un autre compte (423) ne s'oppose qu'à une installation qui écrit, jamais à la lecture d'une étude exemple complète (lib/studio-exemple.test.ts)",
+  },
   { route: "POST /studies/:studyId/archive", besoin: "modification", url: () => `${S}/studies/s/archive` },
   { route: "POST /studies/:studyId/unarchive", besoin: "modification", url: () => `${S}/studies/s/unarchive` },
   { route: "GET /studies/:studyId/compare", besoin: "lecture", url: () => `${S}/studies/s/compare?from=v&to=v` },
@@ -230,6 +235,7 @@ export const ROUTES: Route[] = [
  */
 const REPONSES: Readonly<Record<string, string>> = {
   "POST /studies": "201", "POST /studies/:studyId/variants": "201",
+  "POST /exemple": "409 exemple_indisponible",
   "POST /studies/:studyId/variants/:variantId/archive": "400 initial_variant",
   "POST /studies/:studyId/variants/:variantId/comments": "201", "POST /studies/:studyId/variants/:variantId/comments/:commentId/observation": "201",
   "POST /studies/:studyId/variants/:variantId/comments/:commentId/observation/transitions": "403 forbidden",
@@ -336,6 +342,16 @@ describe("X.2-02 — matrice rôle × route Studio × attendu (routeur réel, ba
     }
   });
 
+  it("phase déclarée du workflow : une phase inconnue, un champ en plus ou une valeur absente sont refusés (400) avant tout accès", async () => {
+    for (const corps of [{ phase: "inconnue" }, { phase: "Contrôler" }, { phase: "controler", autre: 1 }, {}, { phase: 3 }]) {
+      verdicts.length = 0;
+      const res = await comme("proprietaire")(request(app).patch(`${S}/studies/s/workflow`)).send(corps);
+      expect(res.status, JSON.stringify(corps)).toBe(400);
+      expect(res.body.error).toBe("invalid_input");
+      expect(verdicts).toEqual([]);
+    }
+  });
+
   it("la matrice publiée est celle que ce test vérifie (régénérée, comparée à l'octet près)", () => {
     const md = matriceMarkdown();
     if (process.env["STUDIO_TRACABILITE_ECRIRE"] === "1") writeFileSync(FICHIER_MATRICE, md);
@@ -392,6 +408,7 @@ function routesDeclareesDans(dossier: string): string[] {
  * de leur routeur, contrôlés par leurs propres suites, base réelle) — suites DB-3. La liste des fichiers est vérifiée.
  */
 export const HORS_MATRICE: { fichier: string; routes: string; donnees: string }[] = [
+  { fichier: "routes/examples.ts", routes: "POST /examples/:exampleId/import", donnees: "étude exemple Studio du P.118 installée après l'import validé (`lib/studio-exemple.ts`, contrat de commandes ; un échec n'annule pas l'import)" },
   { fichier: "routes/documents.ts", routes: "GET /projects/:projectId/documents", donnees: "`studioPackages` (paquets diffusés ou retirés), `studioDossiers` (dossiers de conception)" },
   { fichier: "routes/notifications.ts", routes: "GET /notifications", donnees: "commentaires Studio des projets du compte, passages des observations, tâches et décisions" },
   { fichier: "routes/projects.ts", routes: "GET /projects/:projectId/archive, POST /projects/import, POST /projects/:projectId/copies, DELETE /projects/:projectId", donnees: "section Studio de l'archive (export, import validé), copie sans Studio, suppression refusée si une publication est diffusée ou retirée" },

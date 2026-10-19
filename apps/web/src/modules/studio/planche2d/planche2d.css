@@ -86,3 +86,13 @@
 .studio-menu kbd{font-size:10px;opacity:.65;border:1px solid currentColor;padding:1px 4px;border-radius:3px}
 @media(max-width:540px){.studio-menu kbd{display:none}.studio-tools{padding:4px 6px}}
 .studio-tools[data-studio-mode=tactile] [data-studio-ligne]{min-height:44px;height:44px}
+/* Palette verticale de l'espace (à gauche du canevas, comme un logiciel de CAO) : icônes seules, familles empilées,
+   menus ouverts à droite de leur bouton ; la disposition suit la hauteur disponible. */
+.studio-tools.studio-tools-verticale{flex-direction:column;align-items:center;width:52px;box-sizing:border-box;border-radius:10px;padding:6px 5px;overflow:clip;min-height:0;height:100%}
+.studio-tools-verticale .studio-famille{flex-direction:column;gap:4px}
+.studio-tools-verticale .studio-famille-sep{width:26px;height:1px;margin:4px 0}
+:is(.studio-shell,.studio-workspace) .studio-tools-verticale [data-studio-ligne]{width:40px;height:40px;min-height:40px;padding:0;justify-content:center}
+:is(.studio-shell,.studio-workspace) .studio-tools-verticale .studio-famille-bouton{width:40px;padding:0;position:relative}
+.studio-tools-verticale .studio-famille-bouton .studio-chevron{position:absolute;right:2px;bottom:1px;font-size:9px;transform:rotate(-90deg)}
+.studio-tools-verticale [data-studio-ligne]>span:not(.studio-chevron),.studio-tools-verticale [data-studio-ligne]>kbd{display:none}
+.studio-tools-verticale a.studio-lien-bouton[data-studio-ligne]{width:40px;padding:0;justify-content:center}

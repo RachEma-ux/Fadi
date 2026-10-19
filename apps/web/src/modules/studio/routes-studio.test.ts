@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cheminComparaisonStudio, cheminEtudeStudio, cheminProjetStudio, cheminVarianteStudio, estRouteStudio, lireRouteStudio, valeurCoteStudio } from "./routes-studio";
+import { cheminAccueilStudio, cheminComparaisonStudio, cheminEtudeStudio, cheminProjetStudio, cheminVarianteStudio, estRouteStudio, lireRouteStudio, valeurCoteStudio } from "./routes-studio";
 
 const lire = (chemin: string) => {
   const [p, q = ""] = chemin.split("?");
@@ -8,8 +8,22 @@ const lire = (chemin: string) => {
 
 describe("adresses de Studio", () => {
   it("accueil : /studio, avec ou sans barre finale", () => {
-    expect(lireRouteStudio("/studio")).toEqual({ vue: "accueil" });
-    expect(lireRouteStudio("/studio/")).toEqual({ vue: "accueil" });
+    expect(lireRouteStudio("/studio")).toEqual({ vue: "accueil", domaine: null });
+    expect(lireRouteStudio("/studio/")).toEqual({ vue: "accueil", domaine: null });
+  });
+
+  it("accueil : domaine à ouvrir (domaine=…), aller-retour exact ; le reste est refusé (aucun paramètre de redirection)", () => {
+    expect(cheminAccueilStudio()).toBe("/studio");
+    expect(cheminAccueilStudio({ domaine: "bim" })).toBe("/studio?domaine=bim");
+    expect(lire(cheminAccueilStudio({ domaine: "documentation" }))).toEqual({ vue: "accueil", domaine: "documentation" });
+    for (const q of ["?lanceur=1", "?domaine=x", "?domaine=bim&domaine=bim", "?planche=2d", "?autre=1"]) expect(lireRouteStudio("/studio", q).vue, q).toBe("inconnue");
+  });
+
+  it("variante : planche=double (Double vue), seulement avec domaine=dessin", () => {
+    expect(cheminVarianteStudio("p", "s", "v", null, { domaine: "dessin", planche: "double" })).toBe("/studio/projets/p/etudes/s/variantes/v?domaine=dessin&planche=double");
+    expect(lire("/studio/projets/p/etudes/s/variantes/v?domaine=dessin&planche=double")).toMatchObject({ vue: "variante", domaine: "dessin", planche: "double" });
+    expect(lire("/studio/projets/p/etudes/s/variantes/v?domaine=bim&planche=double").vue).toBe("inconnue");
+    expect(lire("/studio/projets/p/etudes/s/variantes/v?planche=double").vue).toBe("inconnue");
   });
 
   it("projet : identifiant opaque, aller-retour exact", () => {
