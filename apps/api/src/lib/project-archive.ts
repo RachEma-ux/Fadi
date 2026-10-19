@@ -260,7 +260,7 @@ export async function importProjectArchive(tx: Tx, ownerId: string, archive: Pro
   // (liens d'étapes du Parcours) ; une section altérée annule tout l'import (StudioArchiveError).
   // Signature vérifiée par une clé de ce serveur : auteurs et approbations conservés ; sinon rien n'est cru (réserves).
   let studio: StudioImportOutcome | null = null;
-  if (archive.studio) {
+  if (archive.studio !== undefined) {
     studio = await importStudioArchive(tx, id, ownerId, archive.studio);
     warnings.push(...studio.warnings);
   }

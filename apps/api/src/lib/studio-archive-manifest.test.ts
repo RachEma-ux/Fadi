@@ -242,3 +242,16 @@ describe("section Studio de l'archive (logique pure)", () => {
     expect(packageVolumeIds([{ package: null }])).toEqual([]);
   });
 });
+
+describe("section Studio : versions et forme (revue #198)", () => {
+  it("une autre version des tables est refusée, jamais devinée", () => {
+    const { section } = fixture();
+    const autre = clone(section) as unknown as { schemaVersion: { tables: string } };
+    autre.schemaVersion.tables = "studio-v1/2099-01-01";
+    expect(errorsOf(autre)).toContain("version des tables Studio non prise en charge");
+    expect(errorsOf(section)).toEqual([]);
+  });
+  it("une section présente mais mal formée (null, tableau, texte) est refusée", () => {
+    for (const v of [null, [], "tronqué"]) expect(errorsOf(v).length).toBeGreaterThan(0);
+  });
+});

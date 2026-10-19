@@ -7,6 +7,8 @@ import type { ExigenceStudio, JeuExigences, ResultatControle } from "@parcours/a
 export interface JeuLu extends JeuExigences { auteurEmail: string | null }
 export interface LectureExigences {
   studyId: string;
+  /** Le compte connecté peut accepter une référence partenaire (propriétaire, étude non archivée). */
+  peutAccepter?: boolean;
   courante: JeuLu | null;
   versions: { version: number; nombre: number; auteur: string; auteurEmail: string | null; creeLe: string; motif: string | null }[];
 }

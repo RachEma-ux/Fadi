@@ -186,6 +186,8 @@ export function checkStudioArchive(raw: unknown): { ok: true; section: StudioArc
   if (raw["schema"] !== STUDIO_ARCHIVE_SCHEMA) return { ok: false, errors: [`schéma de section Studio non pris en charge : ${String(raw["schema"])}`] };
   const sv = raw["schemaVersion"];
   if (!isRecord(sv) || sv["document"] !== STUDIO_ARCHIVE_SCHEMA_VERSION.document) errors.push("version du document Studio non prise en charge");
+  // Disposition des lignes lue par `jsonb_populate_recordset` : une autre version des tables est refusée, jamais devinée.
+  if (!isRecord(sv) || sv["tables"] !== STUDIO_ARCHIVE_SCHEMA_VERSION.tables) errors.push("version des tables Studio non prise en charge");
   if (!isId(raw["sourceProjectId"]) || !isId(raw["ownerId"])) errors.push("projet ou propriétaire d'origine absent");
   const accounts = Array.isArray(raw["accounts"]) ? raw["accounts"] : null;
   if (!accounts || accounts.some((a) => !isRecord(a) || !isId(a["id"]) || typeof a["email"] !== "string")) errors.push("comptes cités illisibles");

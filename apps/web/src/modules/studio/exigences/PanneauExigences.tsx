@@ -238,7 +238,7 @@ export function PanneauExigences(props: PanneauExigencesProps) {
               {ecriture && <div className="studio-exigences-actions">
                 <button type="button" className="studio-exigences-bouton" disabled={occupe} onClick={() => { setEditee(x.id); setSaisie(saisieDe(x)); }} data-studio-exigence-modifier={x.id}>Modifier</button>
                 <button type="button" className="studio-exigences-bouton" disabled={occupe} onClick={() => void enregistrer(listeSans(exigences, x.id), "Exigence retirée : nouvelle version enregistrée.")} data-studio-exigence-retirer={x.id}>Retirer</button>
-                {x.origine && !x.origine.acceptation && <button type="button" className="studio-exigences-bouton" disabled={occupe}
+                {x.origine && !x.origine.acceptation && jeu.data.peutAccepter === true && <button type="button" className="studio-exigences-bouton" disabled={occupe}
                   onClick={() => void envoyer(() => apiExigences.accepter(projectId, studyId, { baseVersion: courante.version, exigenceId: x.id, requestId: crypto.randomUUID() }), "Référence partenaire acceptée : nouvelle version enregistrée.")}
                   data-studio-exigence-accepter={x.id}>Accepter la référence (propriétaire)</button>}
               </div>}

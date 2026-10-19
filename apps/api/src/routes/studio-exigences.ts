@@ -78,6 +78,8 @@ studioExigencesRouter.get("/studies/:studyId/exigences", endpoint(async (req, re
   res.setHeader("Cache-Control", "private, no-store");
   res.json({
     studyId: study.id,
+    // Acceptation d'une référence partenaire : réservée au propriétaire (même règle que la route d'acceptation).
+    peutAccepter: access.role === "proprietaire" && study.archivedAt === null,
     courante: rows[0] ? jeuDe(rows[0], email) : null,
     versions: rows.map((r) => ({ version: r.version, nombre: r.requirements.length, auteur: r.authorId, auteurEmail: email.get(r.authorId) ?? null, creeLe: r.createdAt.toISOString(), motif: r.motif })),
   });

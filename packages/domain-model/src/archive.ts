@@ -151,7 +151,7 @@ export interface ProjectArchive {
    * (schéma, effectifs, empreintes). Opaque ici : revérifiée en entier par le serveur à l'import ; absente des
    * archives antérieures et des projets sans donnée Studio.
    */
-  studio?: Record<string, unknown> | null;
+  studio?: unknown;
   warnings: string[];
 }
 
@@ -582,7 +582,9 @@ function fromFadiArchive(raw: Record<string, unknown>, definitions: readonly Par
     natif,
     manifeste: manifesteOf(raw["manifeste"]),
     planning: archivePlanningOf(raw["planning"]),
-    ...(isRecord(raw["studio"]) ? { studio: raw["studio"] } : {}),
+    // Une section Studio présente est toujours transmise, même mal formée : sa relecture (`checkStudioArchive`) la
+    // refuse en 422 plutôt que de la perdre en silence.
+    ...(raw["studio"] !== undefined ? { studio: raw["studio"] } : {}),
     stageAttachments: attachmentsOf(raw["stageAttachments"], (f) => (validStep(Number(f["stepNumber"]), definitions.length) ? Number(f["stepNumber"]) : null)),
     warnings: Array.isArray(raw["warnings"]) ? raw["warnings"].filter((w): w is string => typeof w === "string") : [],
   };
