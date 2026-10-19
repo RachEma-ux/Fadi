@@ -225,6 +225,8 @@ try {
   await page.keyboard.press("Shift+D");
   await page.waitForURL(`${base}?domaine=dessin&planche=2d`);
   await page.waitForSelector('[data-studio-domaine-affiche="dessin"]');
+  // L'adresse change avant le rendu de la planche : on attend l'état affiché (borné), puis on le contrôle.
+  await page.waitForFunction(() => document.querySelector("[data-studio-sous-titre]")?.textContent === "Dessin 2D · Repère local · Mètres", null, { timeout: 10_000 }).catch(() => {});
   check("I.4-03 : la bascule Maj+D est suivie par l'adresse une fois le domaine inscrit", (await page.getByRole("group", { name: "Planche de dessin 2D", exact: true }).count()) === 1
     && (await page.locator("[data-studio-sous-titre]").textContent()) === "Dessin 2D · Repère local · Mètres");
   await page.locator("[data-studio-basculer-commentaires]").click();
@@ -234,6 +236,7 @@ try {
   await page.locator("[data-studio-basculer-commentaires]").click();
   await page.waitForURL(`${base}?domaine=documentation`);
   await page.waitForSelector('[data-studio-domaine-affiche="documentation"]');
+  await page.waitForSelector("#studio-commentaires", { state: "detached", timeout: 10_000 }).catch(() => {});
   check("M-2 : panneau refermé, l'adresse ne le dit plus ouvert", (await page.locator("#studio-commentaires").count()) === 0);
   await page.goto(`${base}?commentaires=ouverts`);
   await pret();
