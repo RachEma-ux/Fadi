@@ -130,7 +130,7 @@ export function PanneauQuantites({ doc, lectureSeule, ajustementsInitiaux, surAj
     {vue.calques.length === 0 && <p role="status">Aucun objet à métrer.</p>}
     {vue.calques.map((c) => <div key={c.calqueId} className="studio-quantites-calque" data-studio-quantites-calque={c.calqueId} data-masque={c.masque || undefined}>
       <h3>{c.implicite ? "Calque par défaut" : <span translate="no">{c.nom}</span>}{c.masque && <> <span className="studio-quantites-masque">(calque masqué : compté)</span></>}</h3>
-      <div className="studio-quantites-defile">
+      <div className="studio-quantites-defile" tabIndex={0} role="region" aria-label="Tableau défilant des quantités">
         <table>
           <thead><tr><th scope="col">Objet</th><th scope="col">Nature</th>{grandeurs.map((g) => <th key={g} scope="col">{LIBELLE_GRANDEUR[g]} <span translate="no">({SYMBOLE_UNITE[UNITE_GRANDEUR[g]]})</span></th>)}</tr></thead>
           <tbody>
@@ -147,7 +147,7 @@ export function PanneauQuantites({ doc, lectureSeule, ajustementsInitiaux, surAj
         </table>
       </div>
     </div>)}
-    {vue.calques.length > 0 && <div className="studio-quantites-defile" data-studio-quantites-total>
+    {vue.calques.length > 0 && <div className="studio-quantites-defile" tabIndex={0} role="region" aria-label="Tableau défilant du total général" data-studio-quantites-total>
       <table>
         <thead><tr><td />{grandeurs.map((g) => <th key={g} scope="col">{LIBELLE_GRANDEUR[g]} <span translate="no">({SYMBOLE_UNITE[UNITE_GRANDEUR[g]]})</span></th>)}</tr></thead>
         <tbody><tr><th scope="row">Total général</th>{grandeurs.map((g) => <CelluleTotal key={g} t={vue.totaux.find((t) => t.grandeur === g)} />)}</tr></tbody>

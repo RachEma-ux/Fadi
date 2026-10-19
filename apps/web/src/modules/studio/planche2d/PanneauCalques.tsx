@@ -3,7 +3,7 @@
  * par `studio.calque.modifier`), renommage du calque actif. Les noms de calques sont des données du projet : jamais
  * traduits, sauf le calque implicite nommé par l'interface.
  */
-import type { Ref } from "react";
+import { useEffect, useRef, useState, type Ref } from "react";
 import type { StudioDocument, StudioLayer } from "@parcours/atelier-model";
 import { Icon } from "../../../components/Icon";
 import { listeCalques } from "./calques";
@@ -23,6 +23,19 @@ export interface PanneauCalquesProps {
 
 export function PanneauCalques({ doc, actif, modifiable, nom, nomRef, surActif, surNom, surReglage, surRenommer }: PanneauCalquesProps) {
   const calques = listeCalques(doc);
+  // Repli (I.5-02) : si le calque actif disparaît (annulation, version serveur rechargée), le premier calque devient
+  // actif ; le changement est annoncé, jamais silencieux.
+  const [annonce, setAnnonce] = useState("");
+  const avant = useRef<{ actif: string; ids: string[] } | null>(null);
+  const ids = calques.map((c) => c.id);
+  const cle = ids.join("|");
+  useEffect(() => {
+    const p = avant.current;
+    avant.current = { actif, ids };
+    if (!p || p.actif === actif || ids.includes(p.actif) || !p.ids.includes(p.actif)) return;
+    const c = calques.find((x) => x.id === actif);
+    if (c) setAnnonce(`Le calque actif a disparu : « ${c.name} » est désormais le calque actif.`);
+  }, [actif, cle]);
   const compte = (id: string) => [...doc.objects, ...(doc.dimensions ?? [])].filter((o) => (o.layerId ?? "default") === id).length;
   return (
     <section className="studio-calques" aria-labelledby="studio-calques-titre" data-studio-calques>
@@ -46,6 +59,7 @@ export function PanneauCalques({ doc, actif, modifiable, nom, nomRef, surActif, 
           <button type="submit" data-studio-renommer-calque><Icon name="studio-layer-edit" size={18} /> Renommer le calque</button>
         </fieldset>
       </form>
+      <p className="sr-only" role="status" aria-live="polite" data-studio-calque-repli>{annonce}</p>
       <p className="studio-calques-aide">Un calque masqué n’est pas dessiné ; un calque verrouillé reste visible mais ne se sélectionne ni ne se modifie.</p>
     </section>
   );

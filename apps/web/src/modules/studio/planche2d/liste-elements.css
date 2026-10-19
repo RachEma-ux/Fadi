@@ -1,0 +1,23 @@
+/* « Éléments du dessin » (I.5-02) et avis de révision plus récente : lignes de 44 px au moins (toucher), aucun débordement horizontal. */
+.studio-elements{margin-top:24px;padding:18px 22px;background:#fff;border:1px solid #d5e1e4;border-radius:12px;min-width:0}
+.studio-elements h3{font-size:17px;margin:0 0 6px}
+.studio-elements-aide,.studio-elements-vide{font-size:12px;color:#4f666d;margin:0 0 10px}
+.studio-elements-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.studio-elements-actions button{display:inline-flex;align-items:center;gap:6px}
+.studio-elements-liste{display:flex;flex-direction:column;gap:10px;max-height:360px;overflow:auto}
+.studio-elements-calque{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;font-size:13px;font-weight:600;margin:0 0 4px;overflow-wrap:anywhere}
+.studio-elements-calque small{font-weight:400;color:#4f666d}
+.studio-element{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;min-height:44px;box-sizing:border-box;padding:6px 10px;border:1px solid #e3eaec;border-radius:8px;font-size:13px;cursor:pointer;overflow-wrap:anywhere}
+.studio-element[aria-selected=true]{border-color:#c3722f;background:#fbefe2}
+.studio-element[aria-disabled=true]{color:#4f666d;cursor:not-allowed}
+.studio-element:focus-visible{outline:3px solid #c77b35;outline-offset:2px}
+.studio-element-type{font-weight:600;min-width:6em}
+.studio-element-calque,.studio-element-id{color:#4f666d;font-family:ui-monospace,monospace;font-size:12px}
+.studio-element-calque{font-family:inherit}
+.studio-avis-revision{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 12px}
+.studio-avis-revision-zone:focus{outline:none}
+/* Contraste WCAG AA (axe-core, I.5-02) de l'espace de travail de la variante : textes secondaires à 4,5:1 au moins, raccourcis
+   des barres lus en pleine opacité. Règles plus spécifiques que celles d'origine, rien d'autre ne change. */
+.studio-workspace .studio-heading p,.studio-workspace .studio-sheet-caption,.studio-workspace .studio-properties p,.studio-workspace .studio-note p,
+.studio-workspace .studio-revisions-sub,.studio-workspace .studio-calques-aide,.studio-workspace .studio-calques .studio-calque-nom small{color:#4a5f66}
+.studio-workspace .studio-tools kbd{opacity:1}
