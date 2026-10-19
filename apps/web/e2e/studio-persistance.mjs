@@ -630,6 +630,39 @@ if (PHASE === 'reopen') {
     && (await promote(owner, ownerRemark.body?.id, { responsableId: ids0.owner })).status === 404);
   }
 
+  // Murs et ouvertures (A.4, REC-A-03) par l'API réelle : mur 6 × 3 × 0,2 m et ouverture déclarée 1 × 2,1 m (données
+  // synthétiques sources du registre), puis élargie à 1,20 m par Modifier ; refus atomique d'une ouverture devenue
+  // incompatible (aucune révision créée), cascade explicite exigée, exports SVG (vide), DXF et IFC (IfcOpeningElement).
+  {
+    const archi = await owner('POST', root, { name: 'Étude architecture A.4' });
+    check('A.4 : étude créée', archi.status === 201, String(archi.status));
+    const av = { projectId, studyId: archi.body?.study?.id, variantId: archi.body?.variant?.id };
+    const envoyer = (base, commands) => owner('POST', `${variantPath(av)}/commands`, { contractVersion: 'studio-commands/1', requestId: `recette-${randomUUID()}`, baseRevisionId: base, commands });
+    const mur = { id: 'mur-a4', type: 'wall', axis: [{ x: 0, y: 0 }, { x: 6, y: 0 }], thickness: 0.2, height: 3, base: 0, justification: 'center' };
+    const ouverture = { id: 'ouv-a4', type: 'opening', hostId: 'mur-a4', position: 2.5, width: 1, height: 2.1, sill: 0 };
+    const r1 = await envoyer(archi.body?.revision?.id, [{ toolId: 'studio.architecture.mur', params: mur }, { toolId: 'studio.architecture.ouverture', params: ouverture }]);
+    check('A.4 : mur et ouverture enregistrés (tableau architecture, objets 2D inchangés)', r1.status === 200 && r1.body.revision.document.objects.length === 0 && JSON.stringify(r1.body.revision.document.architecture?.map((x) => x.id)) === '["mur-a4","ouv-a4"]', JSON.stringify(r1.body).slice(0, 300));
+    const r2 = await envoyer(r1.body?.revision?.id, [{ toolId: 'studio.architecture.modifier', params: { ...ouverture, width: 1.2 } }]);
+    check('A.4 : ouverture élargie à 1,20 m, même identité', r2.status === 200 && r2.body.revision.document.architecture?.find((x) => x.id === 'ouv-a4')?.width === 1.2 && r2.body.revision.parentRevisionId === r1.body.revision.id, JSON.stringify(r2.body).slice(0, 300));
+    const refuse = await envoyer(r2.body?.revision?.id, [{ toolId: 'studio.dessin.ligne', params: { id: 'temoin-a4', type: 'line', start: { x: 0, y: 5 }, end: { x: 1, y: 5 } } }, { toolId: 'studio.architecture.modifier', params: { ...mur, height: 2 } }]);
+    check('A.4 : mur abaissé sous son ouverture → 400, motif clair, lot entier refusé', refuse.status === 400 && refuse.body?.error === 'invalid_commands' && /ouverture ouv-a4 incompatible avec son mur : plus haute que le mur hôte mur-a4/.test(refuse.body?.message ?? ''), JSON.stringify(refuse.body));
+    const sansCascade = await envoyer(r2.body?.revision?.id, [{ toolId: 'studio.dessin.supprimer', params: { ids: ['mur-a4'] } }]);
+    check('A.4 : supprimer le mur porteur sans cascade → 400', sansCascade.status === 400 && /le mur mur-a4 porte 1 ouverture/.test(sansCascade.body?.message ?? ''), JSON.stringify(sansCascade.body));
+    const tete = await owner('GET', variantPath(av));
+    check('A.4 : aucun refus n\'a créé de révision (tête = élargissement)', tete.status === 200 && tete.body.revision.id === r2.body.revision.id && tete.body.revision.document.objects.length === 0);
+    const ax = `${variantPath(av)}/export`;
+    const svgA = await owner('GET', `${ax}?format=svg`);
+    check('A.4 : export SVG — mur en deux parties pleines autour du vide, montants de l\'ouverture', svgA.status === 200 && count(svgA.text, /<g data-architecture="wall" data-id="mur-a4">/g) === 1 && count(svgA.text, /<polygon /g) === 2 && svgA.text.includes('<g data-architecture="opening" data-id="ouv-a4" data-host="mur-a4">'), String(svgA.text).slice(0, 400));
+    const dxfA = await owner('GET', `${ax}?format=dxf`);
+    check('A.4 : export DXF — deux POLYLINE fermées et deux LINE', dxfA.status === 200 && count(dxfA.text, /\r\nPOLYLINE\r\n/g) === 2 && count(dxfA.text, /\r\nLINE\r\n/g) === 2);
+    const ifcA = await owner('GET', `${ax}?format=ifc`);
+    check('A.4 : export IFC — IfcWall, IfcOpeningElement, IfcRelVoidsElement ; aucun IfcDoor sans type déclaré', ifcA.status === 200 && count(ifcA.text, /=IFCWALL\(/g) === 1 && count(ifcA.text, /=IFCOPENINGELEMENT\(/g) === 1 && count(ifcA.text, /=IFCRELVOIDSELEMENT\(/g) === 1 && !ifcA.text.includes('IFCDOOR') && !ifcA.text.includes('IFCWINDOW'), String(ifcA.text).slice(0, 300));
+    const r3 = await envoyer(r2.body?.revision?.id, [{ toolId: 'studio.architecture.supprimer', params: { ids: ['mur-a4'], cascade: true } }]);
+    check('A.4 : cascade explicite — mur et ouverture supprimés ensemble', r3.status === 200 && r3.body.revision.document.architecture === undefined, JSON.stringify(r3.body).slice(0, 300));
+    const ancienne = await owner('GET', `${variantPath(av)}/revisions/${r2.body?.revision?.id}`);
+    check('A.4 : la révision de l\'élargissement reste lisible et identique', ancienne.status === 200 && digest(ancienne.body.revision.document) === digest(r2.body.revision.document));
+  }
+
   if (STATE) writeFileSync(STATE, JSON.stringify({ ...s, commentIds, linkedSteps, owner: ownerCredentials, headRevisionId: head.body.revision.id, initialRevisionId: created.body.revision.id, documentSha256: digest(head.body.revision.document), variantIds: expectedOrder, revisionIds: ids, exportStudy: { studyId: ev.studyId, variantId: ev.variantId, svgSha256: digest(svg.text) } }), { mode: 0o600 });
 }
 if (failures) { console.log(`${failures} vérification(s) en échec`); process.exit(1); }

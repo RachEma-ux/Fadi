@@ -1,0 +1,35 @@
+/**
+ * Outils au pointeur de la famille Architecture (A.4) :
+ * - Mur (W) : deux clics posent l'axe (début, fin) d'un mur droit avec l'épaisseur, la hauteur, la base et la
+ *   justification saisies dans le panneau « Architecture » (un axe en plusieurs segments se saisit au clavier) ;
+ * - Ouverture (H) : un clic sur un mur crée l'ouverture centrée sur le point désigné, avec la largeur, la hauteur,
+ *   l'allège et le type saisis ; si elle ne tient pas dans le mur, le modèle refuse avec son motif (rien n'est rogné).
+ * Pur : ni React ni DOM.
+ */
+import { commandeMur, commandeOuverture, PARAMETRES_ARCHITECTURE_VIDES, murSousPoint } from "../architecture/architecture-ui";
+import { ERREUR_POINTS_CONFONDUS, memePoint, type ActionOutil, type OutilPlanche } from "./type";
+
+const action = (r: ReturnType<typeof commandeMur>): ActionOutil => ("erreur" in r ? { type: "erreur", message: r.erreur } : { type: "commandes", commandes: r.commandes, apres: "fin-trace" });
+
+export const OUTIL_MUR: OutilPlanche = {
+  ids: ["studio.architecture.mur"],
+  clic(e, p, c) {
+    if (memePoint(e.trace.point, p.point)) return { type: "erreur", message: ERREUR_POINTS_CONFONDUS };
+    return action(commandeMur(c, [e.trace.point, p.point], (c.architecture ?? PARAMETRES_ARCHITECTURE_VIDES).mur));
+  },
+  apercu: (e, fin) => (memePoint(e.trace.point, fin) ? null : { id: "apercu-mur", type: "line", start: e.trace.point, end: fin }),
+  aideTrace: () => "Début de l’axe placé. Cliquez la fin de l’axe du mur. Échap pour annuler.",
+  aideRepos: () => "Mur : cliquez le début puis la fin de l’axe ; épaisseur, hauteur, base et justification se saisissent dans le panneau Architecture.",
+};
+
+export const OUTIL_OUVERTURE: OutilPlanche = {
+  ids: ["studio.architecture.ouverture"],
+  premierClic(p, c) {
+    const cible = c.document ? murSousPoint(c.document, p.point, c.tolerance) : null;
+    if (!cible) return { type: "erreur", message: "Cliquez sur un mur : une ouverture n’existe que dans un mur." };
+    const o = (c.architecture ?? PARAMETRES_ARCHITECTURE_VIDES).ouverture;
+    return action(commandeOuverture(c, cible.mur.id, cible.abscisse - o.largeur / 2, o));
+  },
+  clic: () => ({ type: "erreur", message: "Cliquez sur un mur." }),
+  aideRepos: () => "Ouverture : cliquez sur un mur ; l’ouverture est centrée sur le point désigné, avec les dimensions saisies dans le panneau Architecture.",
+};

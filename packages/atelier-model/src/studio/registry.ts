@@ -1,4 +1,5 @@
 import type { StudioCommandToolId } from "./document-2d.js";
+import { OUTILS_ARCHITECTURE } from "./registre/architecture.js";
 import { OUTILS_CALQUES } from "./registre/calques.js";
 import { freezeTree, type StudioToolDescriptor } from "./registre/communs.js";
 import { OUTILS_DESSIN } from "./registre/dessin.js";
@@ -21,6 +22,7 @@ export const STUDIO_TOOLS = freezeTree([
   ...OUTILS_CALQUES,
   ...OUTILS_VOLUME,
   ...OUTILS_VOLUME_LIBRE,
+  ...OUTILS_ARCHITECTURE,
 ] as const) satisfies readonly StudioToolDescriptor[];
 
 type ToolIdsOf<T extends readonly { readonly toolId: string }[]> = { readonly [K in keyof T]: T[K] extends { readonly toolId: infer I } ? I : never };

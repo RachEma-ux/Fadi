@@ -3,6 +3,7 @@ import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument,
 import { bool, ref, refs, Step, studioIfcGuid, studioStepReal, studioStepString, type IfcConstruit, type IfcContexte, type StudioIfcSummary } from "./exporteurs/ifc-step.js";
 import { typeObjet } from "./objets/index.js";
 import { studioIfcSolide } from "./objets-3d/ifc.js";
+import { studioIfcArchitecture } from "./architecture/ifc.js";
 
 export { studioIfcGuid, studioStepReal, studioStepString, type StudioIfcSummary } from "./exporteurs/ifc-step.js";
 
@@ -180,7 +181,15 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
     if (hiddenLayers.has(b.layerId)) summary.onHiddenLayers++;
     built.push(b);
   }
-  if (built.length) s.add(`IFCRELCONTAINEDINSPATIALSTRUCTURE(${gid("rel-storey-elements")},$,$,$,${refs(built.map((b) => b.element))},${ref(storey)})`);
+  // Objets architecturaux (A.4) : `IfcWall`, `IfcOpeningElement` + `IfcRelVoidsElement`, `IfcDoor` / `IfcWindow` déclarés.
+  const remplissages: number[] = [];
+  if (doc.architecture?.length) {
+    const a = studioIfcArchitecture(doc.architecture, contexte, { pset, prop, length, label });
+    for (const b of a.construits) { if (hiddenLayers.has(b.layerId)) summary.onHiddenLayers++; built.push(b); }
+    remplissages.push(...a.remplissages);
+    summary.architecture = { walls: a.murs, openings: a.ouvertures, doors: a.portes, windows: a.fenetres };
+  }
+  if (built.length) s.add(`IFCRELCONTAINEDINSPATIALSTRUCTURE(${gid("rel-storey-elements")},$,$,$,${refs([...built.map((b) => b.element), ...remplissages])},${ref(storey)})`);
 
   // Calques : ordre du document, le calque implicite d'abord s'il n'est pas matérialisé ; un calque vide n'est pas écrit.
   const ordered = [
@@ -206,6 +215,10 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
     prop("ObjectsOnHiddenLayers", integer(summary.onHiddenLayers)),
     ...(solides.length ? [prop("FreeSolids", integer(solides.length))] : []),
     ...(summary.annotations !== undefined ? [prop("AnnotationsNotExported", integer(summary.annotations))] : []),
+    ...(summary.architecture ? [
+      prop("ArchitecturalWalls", integer(summary.architecture.walls)), prop("Openings", integer(summary.architecture.openings)),
+      prop("DeclaredDoors", integer(summary.architecture.doors)), prop("DeclaredWindows", integer(summary.architecture.windows)),
+    ] : []),
   ]);
 
   const header = [

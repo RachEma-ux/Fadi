@@ -1,6 +1,7 @@
 /**
  * Corpus IFC de Studio : un document `studio-document/1` construit par commandes (mur diagonal avec épaisseur, ligne
- * extrudée sans épaisseur, rectangle extrudé, ligne plate, cote, calque masqué et calque verrouillé), exporté par
+ * extrudée sans épaisseur, rectangle extrudé, ligne plate, cote, calque masqué et calque verrouillé ; mur architectural
+ * coudé avec une porte déclarée et une ouverture sans type, A.4), exporté par
  * `exportStudioIfc` et comparé octet pour octet à la référence commitée (`studio.attendu.ifc`) ; effectifs attendus
  * dans `studio.attendus.json`, relus par `valider.py` (conformité testée avec IfcOpenShell, jamais « certifiée »).
  *
@@ -31,11 +32,15 @@ const doc = applyStudioCommands(newStudioDocument("corpus-studio"), [
   { toolId: "studio.objet.extruder", params: { ids: ["s1"], base: 0.5, height: 2 } },
   { toolId: "studio.objet.extruder", params: { ids: ["r1"], base: 0, height: 0.9 } },
   { toolId: "studio.objet.extruder", params: { ids: ["r2"], base: -0.3, height: 0.3 } },
+  // Architecture (A.4) : mur créé comme mur (axe coudé, justification gauche), une porte déclarée et une ouverture sans type.
+  { toolId: "studio.architecture.mur", params: { id: "ma", type: "wall", axis: [{ x: 0, y: 8 }, { x: 6, y: 8 }, { x: 6, y: 12 }], thickness: 0.2, height: 3, base: 0, justification: "left" } },
+  { toolId: "studio.architecture.ouverture", params: { id: "oa", type: "opening", hostId: "ma", position: 2.5, width: 1, height: 2.1, sill: 0, kind: "porte" } },
+  { toolId: "studio.architecture.ouverture", params: { id: "ob", type: "opening", hostId: "ma", position: 7, width: 1.2, height: 1, sill: 1 } },
   { toolId: "studio.calque.modifier", params: { id: "murs", name: "Murs", visible: true, locked: true } },
 ]);
 const contenu = exportStudioIfc(doc, { studyName: "Corpus Studio", variantName: "Variante A", revisionId: "corpus-1", timestamp: "2026-10-18T00:00:00" });
 writeFileSync(join(sortie, "studio.ifc"), contenu);
-writeFileSync(join(sortie, "studio.attendus.json"), JSON.stringify({ IfcBuildingStorey: 1, IfcWall: 2, IfcBuildingElementProxy: 3, IfcSlab: 0, IfcColumn: 0, IfcMapConversion: 0 }));
+writeFileSync(join(sortie, "studio.attendus.json"), JSON.stringify({ IfcBuildingStorey: 1, IfcWall: 3, IfcOpeningElement: 2, IfcDoor: 1, IfcWindow: 0, IfcBuildingElementProxy: 3, IfcSlab: 0, IfcColumn: 0, IfcMapConversion: 0 }));
 const reference = join(ici, "studio.attendu.ifc");
 if (mettreAJour) writeFileSync(reference, contenu);
 else if (readFileSync(reference, "utf8") !== contenu) {

@@ -14,7 +14,7 @@ import { STUDIO_TOOLS } from "@parcours/atelier-model";
 import { COMMANDES_EDITEUR, type BarreStudio, type IdCommandeEditeur, type StudioToolId } from "./raccourcis";
 
 export type IdFamille =
-  | "selection" | "dessin" | "courbes" | "annotation" | "modification" | "calques" | "volume"
+  | "selection" | "dessin" | "courbes" | "annotation" | "modification" | "calques" | "volume" | "architecture"
   | "vue" | "presentation" | "echanges" | "edition" | "catalogue";
 
 export type ElementBarre = { type: "outil"; id: StudioToolId } | { type: "commande"; id: IdCommandeEditeur };
@@ -35,6 +35,8 @@ export const FAMILLES_STUDIO: readonly FamilleStudio[] = Object.freeze([
   { id: "modification", libelleFR: "Modification", trace: "M14 4l6 6-9 9H5v-6ZM12 6l6 6M3 21h18" },
   { id: "calques", libelleFR: "Calques", trace: "M12 3l9 5-9 5-9-5ZM3 13l9 5 9-5M3 17.5l9 4.5 9-4.5" },
   { id: "volume", libelleFR: "Volume", trace: "M12 3l8 4.5v9L12 21l-8-4.5v-9ZM12 12l8-4.5M12 12v9M12 12 4 7.5" },
+  // Architecture (A.4) : plan d'angle de deux murs avec une baie.
+  { id: "architecture", libelleFR: "Architecture", trace: "M3 3h4v18H3ZM7 17h14v4H7ZM12 17v4M17 17v4" },
   { id: "vue", libelleFR: "Vue / Accrochage", trace: "M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12ZM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5" },
   { id: "presentation", libelleFR: "Présentation", trace: "M4 4h16v12H4ZM12 16v4M8 20h8M7 8h6M7 11h10" },
   { id: "echanges", libelleFR: "Importer / Exporter", trace: "M7 3v12M3 11l4 4 4-4M17 21V9M13 13l4-4 4 4" },
@@ -58,7 +60,7 @@ const PLACEMENT: Readonly<Record<string, IdFamille>> = Object.freeze({
   "studio.dessin.texte": "annotation",
 });
 const DEPUIS_BARRE: Readonly<Record<BarreStudio, IdFamille>> = Object.freeze({
-  dessin: "dessin", modification: "modification", calques: "calques", volume: "volume", "volume-libre": "volume",
+  dessin: "dessin", modification: "modification", calques: "calques", volume: "volume", "volume-libre": "volume", architecture: "architecture",
   edition: "edition", vue: "vue", accrochage: "vue", reperage: "vue", import: "echanges", export: "echanges", presentation: "presentation", catalogue: "catalogue",
 });
 
@@ -82,7 +84,7 @@ export const familleDeOutil = (toolId: StudioToolId): IdFamille => {
  * (annuler, enregistrer), puis les familles les plus utilisées. Les dernières passent les premières dans « Plus ».
  */
 export const PRIORITE_FAMILLES: readonly IdFamille[] = Object.freeze([
-  "catalogue", "edition", "selection", "dessin", "courbes", "modification", "annotation", "vue", "calques", "volume", "presentation", "echanges",
+  "catalogue", "edition", "selection", "dessin", "courbes", "modification", "annotation", "vue", "calques", "volume", "architecture", "presentation", "echanges",
 ]);
 /** Familles jamais envoyées dans « Plus » (leur bouton reste dans la rangée, quitte à être replié). */
 export const FAMILLES_EPINGLEES: ReadonlySet<IdFamille> = new Set<IdFamille>(["catalogue", "edition"]);

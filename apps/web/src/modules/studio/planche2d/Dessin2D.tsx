@@ -12,6 +12,7 @@ import { viewBox, type Cadre, type PointAccroche } from "./geometrie-2d";
 import type { StudioToolId } from "./raccourcis";
 import type { ModeRectangle } from "./selection";
 import { Annotation } from "./rendus/annotations";
+import { Architecture2D } from "./rendus/architecture";
 import { Apercu } from "./rendus/apercu";
 import { Cote } from "./rendus/cote";
 import { Forme } from "./rendus/formes";
@@ -50,9 +51,11 @@ export interface Dessin2DProps {
   surClicCapture: (e: MouseEvent<SVGSVGElement>) => void;
   /** `ajouter` : Maj tenue (bascule de l'objet dans la sélection). */
   surSelection: (id: string, ajouter: boolean) => void;
+  /** Murs et ouvertures (A.4) : objet architectural sélectionné, sa désignation, clics vers la planche (outil Ouverture). */
+  architecture?: { selection: string | null; surSelection: (id: string) => void; versPlanche: boolean };
 }
 
-export function Dessin2D({ svgRef, doc, cadre, pas, outil, selection, trace, survol, rectangle, glissement, apercuForme, sommetsPoses = [], clicsVersPlanche, surPlanche, surSurvol, surPointeurBas, surPointeurHaut, surClicCapture, surSelection }: Dessin2DProps) {
+export function Dessin2D({ svgRef, doc, cadre, pas, outil, selection, trace, survol, rectangle, glissement, apercuForme, sommetsPoses = [], clicsVersPlanche, surPlanche, surSurvol, surPointeurBas, surPointeurHaut, surClicCapture, surSelection, architecture }: Dessin2DProps) {
   const visible = (layerId: string | undefined) => estVisible(doc, layerId);
   return (
     <svg ref={svgRef} viewBox={viewBox(cadre)} role="group" aria-label="Planche de dessin 2D" data-studio-outil-actif={outil} data-studio-glissement={glissement || undefined}
@@ -60,6 +63,7 @@ export function Dessin2D({ svgRef, doc, cadre, pas, outil, selection, trace, sur
       onAuxClick={(e) => e.preventDefault()}>
       <defs><pattern id="studio-grid" width={pas} height={pas} patternUnits="userSpaceOnUse"><path d={`M ${pas} 0 L 0 0 0 ${pas}`} fill="none" stroke="#dbe5eb" strokeWidth={pas * 0.025} /></pattern></defs>
       <rect x={cadre.x} y={cadre.y} width={cadre.w} height={cadre.h} fill="url(#studio-grid)" data-studio-grille={pas} />
+      {architecture && <Architecture2D doc={doc} selection={architecture.selection} surSelection={architecture.surSelection} versPlanche={architecture.versPlanche} />}
       {doc.objects.filter((o) => visible(o.layerId)).map((o) => (
         <Forme key={o.id} o={o} choisie={selection.has(o.id)} selectionnable={estSelectionnable(doc, o.layerId)} surSelection={surSelection} versPlanche={clicsVersPlanche(o)} />
       ))}

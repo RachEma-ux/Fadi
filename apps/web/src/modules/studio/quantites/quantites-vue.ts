@@ -9,6 +9,7 @@ import {
 export const LIBELLE_GRANDEUR: Readonly<Record<GrandeurQuantite, string>> = {
   longueur: "Longueur", perimetre: "Périmètre", surface: "Surface", hauteur: "Hauteur",
   "surface-laterale": "Surface latérale (deux faces)", "surface-verticale": "Surface verticale", volume: "Volume",
+  "volume-deduit": "Volume déduit (ouvertures déclarées)", "volume-net": "Volume net", "surface-ouverture": "Surface d’ouverture",
 };
 export const SYMBOLE_UNITE: Readonly<Record<UniteQuantite, string>> = { m: "m", m2: "m²", m3: "m³" };
 export const LIBELLE_NATURE: Readonly<Record<NatureQuantite, string>> = {
@@ -18,6 +19,7 @@ export const LIBELLE_NATURE: Readonly<Record<NatureQuantite, string>> = {
   "arc-extrude": "Arc extrudé sans épaisseur", "polyligne-ouverte": "Polyligne ouverte",
   "polyligne-ouverte-extrudee": "Polyligne ouverte extrudée", "polyligne-fermee": "Polyligne fermée",
   "prisme-polyligne": "Prisme (polyligne fermée extrudée)", "non-pris-en-charge": "Type non pris en charge",
+  "mur-architectural": "Mur (objet architectural)", ouverture: "Ouverture (objet architectural)",
 };
 export const LIBELLE_MOTIF: Readonly<Record<MotifNonEvalue, string>> = {
   "non-extrude": "non extrudé", "epaisseur-non-declaree": "épaisseur non déclarée",

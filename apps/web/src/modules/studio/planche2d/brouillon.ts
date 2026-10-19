@@ -63,6 +63,9 @@ export function enveloppeBrouillon(b: Brouillon, baseRevisionId: string, request
 /** Message d'interface (français source) pour un refus du modèle ; jamais le message technique brut. */
 export function messageRefus(e: unknown): string {
   const m = e instanceof StudioValidationError ? e.message : "";
+  // Architecture (A.4) : le motif du modèle nomme déjà les objets et les valeurs en cause ; il est montré tel quel.
+  const archi = /^[^:]* : ((?:ouvertures? |l’ouverture |le mur |mur |l’hôte ).*mur.*)$/.exec(m)?.[1];
+  if (archi) return archi[0]!.toUpperCase() + archi.slice(1);
   if (m.includes("calque cible verrouillé")) return "Le calque actif est verrouillé : rien n’y est placé.";
   if (m.includes("calque verrouillé")) return "Calque verrouillé : modification refusée.";
   if (m.includes("ne se déplace pas seule")) return "Une cote liée suit ses objets : déplacez l’objet coté.";

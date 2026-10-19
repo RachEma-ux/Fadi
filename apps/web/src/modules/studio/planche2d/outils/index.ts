@@ -6,12 +6,13 @@
 import type { StudioPoint, StudioShape } from "@parcours/atelier-model";
 import type { StudioToolId } from "../raccourcis";
 import { OUTIL_COTE_ANGULAIRE, OUTIL_TEXTE } from "./annotations";
+import { OUTIL_MUR, OUTIL_OUVERTURE } from "./architecture";
 import { OUTIL_ARC, OUTIL_CERCLE, OUTIL_POLYLIGNE } from "./courbes";
 import { AIDE_DECALER, OUTIL_COPIER, OUTIL_DEPLACER, OUTIL_TRANSFORMATIONS } from "./modification";
 import { OUTILS_TRACE_DEUX_POINTS } from "./trace";
 import { AIDE_DEFAUT, type EtatAide, type EtatTrace, type OutilPlanche } from "./type";
 
-export const OUTILS_PLANCHE: readonly OutilPlanche[] = [OUTILS_TRACE_DEUX_POINTS, OUTIL_CERCLE, OUTIL_ARC, OUTIL_POLYLIGNE, OUTIL_DEPLACER, OUTIL_COPIER, OUTIL_TRANSFORMATIONS, OUTIL_COTE_ANGULAIRE, OUTIL_TEXTE];
+export const OUTILS_PLANCHE: readonly OutilPlanche[] = [OUTILS_TRACE_DEUX_POINTS, OUTIL_CERCLE, OUTIL_ARC, OUTIL_POLYLIGNE, OUTIL_DEPLACER, OUTIL_COPIER, OUTIL_TRANSFORMATIONS, OUTIL_COTE_ANGULAIRE, OUTIL_TEXTE, OUTIL_MUR, OUTIL_OUVERTURE];
 
 const PAR_ID: ReadonlyMap<StudioToolId, OutilPlanche> = new Map(OUTILS_PLANCHE.flatMap((o) => o.ids.map((id) => [id, o] as const)));
 
