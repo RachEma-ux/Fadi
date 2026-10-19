@@ -16,6 +16,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { couperStudio, studioMesh3d, studioVolumeSolide, type StudioCommand, type StudioCoupe, type StudioDocument, type StudioMesh3d } from "@parcours/atelier-model";
 import { Icon } from "../../../components/Icon";
+import { estSelectionnable } from "../planche2d/calques";
 import { LOCALE } from "../../../lib/i18n";
 import {
   auCentimetre, BOITE_VIDE, commandeBoite, commandeDeplacementSolide, commandePrisme, DEPLACEMENT_VIDE, descriptionSolide, PRISME_VIDE, profilsFermes,
@@ -209,7 +210,9 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     }
     const touche = rayon.intersectObjects(m.libres.children, false).find((h) => typeof h.object.userData.solide === "string");
     // Mur ou ouverture (A.4) : l'ouverture, boîte du vide, l'emporte sur le mur qu'elle traverse.
-    const touches = rayon.intersectObjects(m.architecture.children, false).filter((h) => h.object instanceof THREE.Mesh && typeof h.object.userData.architecture === "string");
+    // Seuls les murs et ouvertures d'un calque affiché et déverrouillé se désignent (comme sur la planche 2D).
+    const designables = new Set((mesh.architecture ?? []).filter((a) => estSelectionnable(doc, a.layerId)).map((a) => a.id));
+    const touches = rayon.intersectObjects(m.architecture.children, false).filter((h) => h.object instanceof THREE.Mesh && designables.has(h.object.userData.architecture as string));
     const archi = touches.find((h) => mesh.architecture?.some((a) => a.id === h.object.userData.architecture && a.type === "opening")) ?? touches[0];
     if (archi && (!touche || archi.distance <= touche.distance)) { surSelectionArchitecture?.(archi.object.userData.architecture as string); return; }
     surSelection?.((touche?.object.userData.solide as string | undefined) ?? null);
@@ -407,7 +410,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         <ul>
           {architecture.map((a) => (
             <li key={a.id}>
-              <button type="button" aria-pressed={a.id === selectionArchitecture} onClick={() => surSelectionArchitecture?.(a.id === selectionArchitecture ? null : a.id)} data-studio-architecture-3d-objet={a.id} data-studio-type={a.type}>
+              <button type="button" aria-pressed={a.id === selectionArchitecture} disabled={!estSelectionnable(doc, a.layerId)} onClick={() => surSelectionArchitecture?.(a.id === selectionArchitecture ? null : a.id)} data-studio-architecture-3d-objet={a.id} data-studio-type={a.type}>
                 <Icon name={a.type === "wall" ? "studio-wall" : "studio-opening"} size={16} /> {a.type === "wall" ? "Mur" : "Ouverture"} <span translate="no">{a.id.slice(0, 8)}</span>
               </button>
             </li>
