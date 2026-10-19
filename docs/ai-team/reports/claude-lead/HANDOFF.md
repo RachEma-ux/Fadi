@@ -34,6 +34,8 @@ le registre.
 | #198 | Vague 5 : exigences BIM E.1, visualisation E.5, approbation E.4, tâches de fond D.1–D.3, frontières X.4, sauvegarde et restauration Studio R.1 / R.2 (archives signées). |
 | #199 | Vague 6 : couches du modèle sans exception et contrôle des cycles, propriétés déclarées en IFC, recalage des comptes dans les archives signées, service worker par build. |
 | #200 | Vague 7 : projections versionnées et invalidation minimale C.2, ajustements de métré persistés E.3-05. |
+| #201 | Vague 8 : contrat de commandes A.5, catalogue B.1/B.2 et chargement B.3/D.3 des outils, observations E.2, production documentaire E.3. |
+| #204 | Vague 9 : domaines I.4 (contrat d'URL proposé), invariants et permissions X.2 (bogue INV-013 corrigé), matrice d'échanges E.6, corpus S1–S7 X.1, simulation de migration MIG en lecture seule. |
 | #171, #174–#177, #142, #143, #152 | Correctifs Atelier et Planche, frontières Studio ↔ Atelier, garde-fous d'architecture, gabarit pleine largeur. Remis à jour et fusionnés par l'équipe 6. |
 
 PR fermées :
@@ -69,15 +71,13 @@ par motif (`pkill -f`), seulement par son PID.
 
 ## Prochaines actions
 
-1. Vague 8 (PR à fusionner, cinq équipes à partir de `main` 9143ae0) :
-   - A5 : contrat de commandes commun (A.5-01 à 11) — conflits signalés et reportés après revalidation, refus atomique, historique hybride ;
-   - B1 : manifeste versionné du catalogue d'outils, filtres, regroupements personnels, droit réel séparé de la visibilité (B.1, B.2) ;
-   - B3 : chargement des moteurs DEC-06 (proposition), états du Tool Manager, précache par classes, contrats de file locale, PERF-01 à 10 en mesure seule (B.3, D.3, X.1-09) ;
-   - E2 : observations (E.2) — liens de domaines, tâches, décisions, clôture motivée ;
-   - E3 : vues identifiées, feuilles composées, dossier de conception, brut / déductions / net, dessin 2D seul (E.3).
-   - Archive Studio : tables `studio-v1/2026-10-19.3` ; `.2` et `2026-10-19` restent relues.
-2. Décisions à soumettre au maître d'ouvrage (choix conservateurs pris en attendant) : DEC-06 (chargement), DEC-13 (seuils de
-   performance), réouverture d'une observation clôturée par son auteur, retrait d'un lien de domaine, publication d'un dossier.
+1. Les lots de code non bloqués du registre sont traités (vagues 1 à 9, `main` cf09271). La suite dépend de décisions du
+   maître d'ouvrage, soumises dans #166 :
+   - I.4-03 (contrat d'URL), domaine des neuf commandes « à définir », DWG pour Studio, licence du corpus ;
+   - acceptation des exigences pendant un verrou ou sur un projet de référence (« à arbitrer », PERMISSIONS.md) ;
+   - DEC-03, MIG-COEX-02 et MIG-COEX-05 avant toute bascule de migration ; DEC-06 (chargement), DEC-13 (seuils) ;
+   - réouverture d'une observation clôturée, retrait d'un lien de domaine, publication d'un dossier par E.4.
+2. Jalons J0 à J8 et statuts du registre : déclarés seulement sur acceptation explicite (Codex tient le registre).
 3. Restent connus :
    - les anciennes clés de GlobalId IFC (`project`, `pset|object|…`) peuvent entrer en collision avec un identifiant d'objet. Les corriger changerait tous les GlobalId déjà exportés.
 4. Hors mandat, sur demande explicite du propriétaire :
