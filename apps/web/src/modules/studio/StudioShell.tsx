@@ -54,6 +54,7 @@ class StudioErrorBoundary extends Component<{ cle: string; children: ReactNode }
 
 export function StudioShell() {
   const { pathname, search } = useLocation();
+  const navigate = useNavigate();
   const route = lireRouteStudio(pathname, search);
   return (
     <div className="studio-shell" data-studio={route.vue}>
@@ -72,7 +73,10 @@ export function StudioShell() {
         {route.vue === "accueil" && <StudioAccueil />}
         {route.vue === "projet" && <StudioProjet projectId={route.projectId} archives={route.archives} />}
         {route.vue === "etude" && <StudioEtude projectId={route.projectId} studyId={route.studyId} archives={route.archives} />}
-        {route.vue === "variante" && <PlancheDifferee key={`${route.projectId}/${route.studyId}/${route.variantId}/${route.revisionId ?? ""}`} projectId={route.projectId} studyId={route.studyId} variantId={route.variantId} revisionId={route.revisionId} commentairesOuverts={route.commentaires} />}
+        {/* Domaine et planche (I.4-03) hors de la clé : les changer ne recharge pas la planche ; l'adresse est remplacée, sans entrée d'historique. */}
+        {route.vue === "variante" && <PlancheDifferee key={`${route.projectId}/${route.studyId}/${route.variantId}/${route.revisionId ?? ""}`} projectId={route.projectId} studyId={route.studyId} variantId={route.variantId} revisionId={route.revisionId} commentairesOuverts={route.commentaires}
+          domaine={route.domaine} planche={route.planche}
+          surAdresse={({ domaine, planche }) => navigate(cheminVarianteStudio(route.projectId, route.studyId, route.variantId, route.revisionId, { commentaires: route.commentaires, domaine, planche }), { replace: true })} />}
         {route.vue === "comparer" && <PageComparaison projectId={route.projectId} studyId={route.studyId} de={route.de} a={route.a} />}
         {route.vue === "inconnue" && (
           <section className="studio-welcome" role="alert" data-studio-inconnue>

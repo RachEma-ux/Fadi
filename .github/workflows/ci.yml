@@ -361,6 +361,11 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/studio-navigation.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des domaines Studio — quatre domaines de la référence, planches seulement dans Dessin et modélisation, domaine et planche dans l'adresse (proposition I.4-03), clavier, téléphone (apps/web/e2e/studio-domaines.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-domaines.mjs 2>&1 | tee -a e2e.log
       - name: Recette des publications Studio — cycle, approbation liée, approbation périmée 409, paquet figé, retrait journalisé, droits (apps/web/e2e/studio-publication.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |

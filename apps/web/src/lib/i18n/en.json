@@ -10235,5 +10235,21 @@
 "La file locale a changé depuis son téléchargement (autre onglet) : rien n’a été abandonné. Téléchargez-la de nouveau avant de l’abandonner.": "The local queue changed since it was downloaded (another tab): nothing was discarded. Download it again before discarding it.",
 "La file locale n’est plus sur cet appareil : rien à télécharger.": "The local queue is no longer on this device: nothing to download.",
 "Abandonner la file locale conservée sur cet appareil ? Ses commandes non synchronisées seront perdues pour Studio (le fichier téléchargé reste le vôtre).": "Discard the local queue kept on this device? Its unsynchronised commands will be lost to Studio (the downloaded file remains yours).",
-"{0} Mo (tas)": "{0} MB (heap)"
+"{0} Mo (tas)": "{0} MB (heap)",
+"Domaines du Studio": "Studio domains",
+"BIM et coordination": "BIM and coordination",
+"Visualisation, rendu et immersion": "Visualisation, rendering and immersion",
+"Documentation, métrés et collaboration": "Documentation, quantity take-offs and collaboration",
+"Concevoir et modifier dans Planche 2D ⇄ Planche 3D.": "Design and modify in the 2D board ⇄ 3D board.",
+"Structurer les informations et contrôler la cohérence des modèles.": "Structure information and check the consistency of models.",
+"Examiner et présenter les solutions architecturales.": "Examine and present architectural solutions.",
+"Produire les documents, quantités, observations, revues et publications.": "Produce documents, quantities, observations, reviews and publications.",
+"Planche 3D": "3D board",
+"Planches": "Boards",
+"Basculer de planche": "Switch board",
+"Scènes enregistrées": "Saved scenes",
+"Les scènes, l’apparence et le rendu du modèle se règlent sur la vue 3D du modèle.": "Scenes, appearance and the model render are set in the 3D view of the model.",
+"Examiner sur la vue 3D": "Examine in the 3D view",
+"Publications de l’étude": "Study publications",
+"Ctrl+Maj+D": "Ctrl+Shift+D"
 }
