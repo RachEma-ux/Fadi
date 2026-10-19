@@ -10,10 +10,11 @@ import { GestionnaireOutils, PaletteCommandes } from "../planche2d/CatalogueOuti
 import { PanneauFeuille } from "../feuille/PanneauFeuille";
 import { DialogueImportDxf } from "../import/DialogueImportDxf";
 import { PanneauDossier } from "../dossier/PanneauDossier";
+import { PanneauEchanges } from "../echanges/PanneauEchanges";
 import { appartientAuDialogue, focalisables, suivantDansLePiege } from "./piege-focus";
 import type { RaisonIndisponible } from "./droits";
 
-export type DialogueStudio = "outils" | "palette" | "feuille" | "import-dxf" | "dossier" | null;
+export type DialogueStudio = "outils" | "palette" | "feuille" | "import-dxf" | "dossier" | "echanges" | null;
 
 export interface PropsDialoguesStudio {
   dialogue: DialogueStudio;
@@ -110,5 +111,6 @@ export function DialoguesStudio({ dialogue, surFermer, disponible, raison, surEx
     {dialogue === "import-dxf" && <DialogueImportDxf doc={drawing} modifiable={modifiable} surFermer={surFermer} surAjouter={surImporter} />}
     {dialogue === "feuille" && <PanneauFeuille doc={revision} brouillonNonEnregistre={brouillonNonEnregistre} surFermer={surFermer} cartouche={cartouche()} />}
     {dialogue === "dossier" && <PanneauDossier {...portee} revision={revision} brouillonNonEnregistre={brouillonNonEnregistre} surFermer={surFermer} />}
+    {dialogue === "echanges" && <PanneauEchanges surFermer={surFermer} />}
   </div>;
 }

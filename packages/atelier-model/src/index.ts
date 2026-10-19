@@ -18,6 +18,7 @@ export * from "./studio/bilan-quantites.js";
 export * from "./studio/empreinte-sha256.js";
 export * from "./studio/dossier-conception.js";
 export * from "./studio/echanges/rapport-fidelite.js";
+export * from "./studio/echanges/matrice-echanges.js";
 export * from "./studio/solides-libres.js";
 export * from "./studio/architecture/index.js";
 export * from "./studio/facade-exigences.js";

@@ -227,7 +227,8 @@ describe("Planche 2D de Studio — règle d'or", () => {
     expect(combinaison({ key: "z", ctrlKey: false, metaKey: true, shiftKey: false, altKey: false })).toBe("Ctrl+Z");
     expect(combinaison({ key: "F9", ctrlKey: false, metaKey: false, shiftKey: false, altKey: false })).toBe("F9");
     expect(cibleRaccourci("Ctrl+Shift+Z")).toEqual({ type: "commande", id: "retablir" });
-    expect(cibleRaccourci("Q")).toBeNull();
+    expect(cibleRaccourci("Q")).toEqual({ type: "commande", id: "echanges" });
+    expect(cibleRaccourci("Ctrl+Shift+9")).toBeNull();
     expect(libelleRaccourci("Ctrl+Shift+F")).toBe("Ctrl+Maj+F");
     expect(libelleRaccourci("Delete")).toBe("Suppr");
   });

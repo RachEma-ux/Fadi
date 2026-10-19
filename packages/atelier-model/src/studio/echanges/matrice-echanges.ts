@@ -1,0 +1,619 @@
+import { STUDIO_CAPACITES_EXPORT, STUDIO_RAISONS_FIDELITE, type StudioFormatEchange, type StudioRaisonFidelite, type StudioStatutFidelite } from "./rapport-fidelite.js";
+
+/**
+ * Matrice d'échanges de Studio (E.6-01 à E.6-05) : donnée versionnée du modèle, une entrée par format × sens × objet
+ * échangé, avec la version du format écrite ou lue, les entités couvertes et leur limite, le statut (livré, non livré,
+ * renoncé) et, pour une entrée livrée, ses preuves (code, test, route, interface).
+ *
+ * Règles (Plan §5.7, E.6) :
+ * - aucune entrée n'est déclarée **conforme** : la conformité d'un format reste « non évaluée » ; une entrée livrée
+ *   dit seulement ce que le code écrit ou lit, et le contrôle qui le vérifie (test, validation IfcOpenShell en CI) ;
+ * - SVG, DXF et IFC exportés : la couverture par entité est **celle du rapport de fidélité** (`rapport-fidelite.ts`,
+ *   E.6-03) — la matrice déclare, par type d'élément, les raisons que le juge peut rendre ; un test les recoupe avec
+ *   `STUDIO_CAPACITES_EXPORT` (mêmes types, raisons observées toutes déclarées, raisons déclarées toutes observées) ;
+ * - un format reporté (DWG, DGN, BCF, STEP, OBJ, STL, glTF…) est inscrit « non livré » avec sa raison et sa source
+ *   (E.6-04, E.6-05) ; « renoncé » exige une décision citée — aucune décision Studio n'en prend aujourd'hui (D-179
+ *   renonce à DWG / DGN pour l'Atelier P2 seulement) ;
+ * - un test relit le dépôt : chaque preuve citée existe (symbole exporté, motif présent dans le test, la route, la
+ *   page), et chaque écrivain, chaque route de fichier et chaque téléchargement de l'interface Studio a son entrée.
+ *
+ * Pur, gelé et déterministe ; le document `docs/ai-team/reports/claude-v9-e6/MATRICE-ECHANGES.md` en est généré
+ * (`studioMatriceEchangesMarkdown`, test anti-dérive).
+ */
+
+export const STUDIO_MATRICE_ECHANGES_SCHEMA = "studio-matrice-echanges/1" as const;
+/** Révision de la matrice : à incrémenter avec toute modification d'une entrée. */
+export const STUDIO_MATRICE_ECHANGES_REVISION = 1 as const;
+/** Date de l'audit qui a établi la révision courante. */
+export const STUDIO_MATRICE_ECHANGES_DATE = "2026-10-19" as const;
+
+export type StudioSensEchange = "import" | "export";
+export type StudioStatutEchange = "livre" | "non-livre" | "renonce";
+export const STUDIO_STATUTS_ECHANGE: readonly StudioStatutEchange[] = Object.freeze(["livre", "non-livre", "renonce"] as const);
+/** Famille de l'objet échangé (E.6-02 : natif, vues / feuilles, tableaux ; E.6-03 : dessin et maquette). */
+export type StudioFamilleEchange = "natif" | "dessin" | "maquette" | "feuille" | "dossier" | "tableau" | "rendu" | "paquet" | "rapport" | "diagnostic" | "coordination";
+export type StudioTacheEchange = "E.6-02" | "E.6-03" | "E.6-04" | "E.6-05";
+/** Couverture d'une entité : portée telle quelle, portée en partie (ou transformée), ou absente du fichier. */
+export type StudioCouvertureEntite = "portee" | "partielle" | "absente";
+
+export interface StudioEntiteEchange {
+  entite: string;
+  couverture: StudioCouvertureEntite;
+  detail: string;
+}
+
+/** Preuve d'une entrée livrée : chemin depuis la racine du dépôt et motif littéral qui doit y figurer. */
+export interface StudioPreuveEchange {
+  fichier: string;
+  /** Code : nom du symbole exporté ; test, route ou interface : texte présent dans le fichier. */
+  motif: string;
+}
+
+export interface StudioEntreeEchange {
+  id: string;
+  format: string;
+  /** Version du format écrite ou acceptée, telle que le fichier la porte (ou « sans objet »). */
+  versionFormat: string;
+  sens: StudioSensEchange;
+  famille: StudioFamilleEchange;
+  objet: string;
+  taches: readonly StudioTacheEchange[];
+  statut: StudioStatutEchange;
+  /** Limite de couverture, dite en clair (jamais une conformité). */
+  limite: string;
+  entites: readonly StudioEntiteEchange[];
+  /** Export SVG, DXF ou IFC du document : couverture par type = rapport de fidélité de ce format. */
+  fidelite?: StudioFormatEchange;
+  /** Contrôle effectivement exécuté (tests, recette, validation externe) ; absent = aucun contrôle propre. */
+  controle?: string;
+  route?: string;
+  preuves?: {
+    code: readonly StudioPreuveEchange[];
+    tests: readonly StudioPreuveEchange[];
+    routes?: readonly StudioPreuveEchange[];
+    interfaces?: readonly StudioPreuveEchange[];
+  };
+  /** Non livré ou renoncé : pourquoi. */
+  raison?: string;
+  /** Sources : plan, liste d'exécution, décisions. */
+  sources: readonly string[];
+}
+
+/** Statut de chaque raison du rapport de fidélité (une raison n'a qu'un statut). */
+export const STUDIO_STATUT_DE_RAISON: Readonly<Record<StudioRaisonFidelite, StudioStatutFidelite>> = Object.freeze({
+  "trace-exact": "exact", "arcs-exacts": "exact", "renflements-exacts": "exact", "cote-tracee": "exact", "texte-exact": "exact",
+  "extrusion-exacte": "exact", "profil-exact": "exact", "ouverture-evidee": "exact", "propriete-en-pset": "exact",
+  "extrusion-non-portee": "approche", "arcs-discretises": "approche", "cote-eclatee": "approche", "texte-police-generique": "approche",
+  "texte-ascii-echappe": "approche", "texte-remplace": "approche", "texte-tronque": "approche", "ouverture-en-lacune": "approche",
+  "non-extrude": "non-couvert", "cote-hors-ifc": "non-couvert", "annotation-hors-ifc": "non-couvert", "solide-hors-2d": "non-couvert",
+  "visualisation-hors-export": "non-couvert", "type-sans-capacite": "non-couvert", "propriete-non-exportee": "non-couvert",
+  "propriete-non-evaluee": "non-couvert",
+});
+
+type Categorie = keyof typeof STUDIO_CAPACITES_EXPORT;
+type ParType = { readonly [C in Categorie]: { readonly [T in keyof (typeof STUDIO_CAPACITES_EXPORT)[C]]: readonly StudioRaisonFidelite[] } };
+
+const TRACE_2D = ["trace-exact", "extrusion-non-portee"] as const;
+const VISU = ["visualisation-hors-export"] as const;
+/**
+ * Couverture par type et par format des exports SVG, DXF et IFC : raisons que le juge de `STUDIO_CAPACITES_EXPORT`
+ * peut rendre pour ce type. Recoupée par test avec la table des capacités (aucune raison de plus, aucune de moins).
+ */
+export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: ParType } = Object.freeze({
+  svg: {
+    objets: { line: TRACE_2D, rectangle: TRACE_2D, circle: TRACE_2D, arc: ["arcs-exacts", "extrusion-non-portee"], polyline: ["trace-exact", "arcs-exacts", "extrusion-non-portee"] },
+    cotes: { dimension: ["cote-tracee"] },
+    annotations: { "angular-dimension": ["cote-tracee"], text: ["texte-police-generique"] },
+    solides: { box: ["solide-hors-2d"], prism: ["solide-hors-2d"] },
+    architecture: { wall: ["extrusion-non-portee"], opening: ["ouverture-en-lacune"] },
+    proprietes: { propriete: ["propriete-non-exportee"] },
+    scenes: { scene: VISU, appearance: VISU },
+  },
+  dxf: {
+    objets: { line: TRACE_2D, rectangle: TRACE_2D, circle: TRACE_2D, arc: ["arcs-exacts", "extrusion-non-portee"], polyline: ["trace-exact", "renflements-exacts", "extrusion-non-portee"] },
+    cotes: { dimension: ["cote-eclatee"] },
+    annotations: { "angular-dimension": ["cote-eclatee"], text: ["texte-exact", "texte-ascii-echappe", "texte-remplace", "texte-tronque"] },
+    solides: { box: ["solide-hors-2d"], prism: ["solide-hors-2d"] },
+    architecture: { wall: ["extrusion-non-portee"], opening: ["ouverture-en-lacune"] },
+    proprietes: { propriete: ["propriete-non-exportee"] },
+    scenes: { scene: VISU, appearance: VISU },
+  },
+  ifc: {
+    objets: {
+      line: ["extrusion-exacte", "non-extrude"], rectangle: ["extrusion-exacte", "non-extrude"], circle: ["profil-exact", "non-extrude"],
+      arc: ["arcs-discretises", "non-extrude"], polyline: ["extrusion-exacte", "arcs-discretises", "non-extrude"],
+    },
+    cotes: { dimension: ["cote-hors-ifc"] },
+    annotations: { "angular-dimension": ["annotation-hors-ifc"], text: ["annotation-hors-ifc"] },
+    solides: { box: ["profil-exact"], prism: ["profil-exact"] },
+    architecture: { wall: ["extrusion-exacte"], opening: ["ouverture-evidee"] },
+    proprietes: { propriete: ["propriete-en-pset", "propriete-non-evaluee"] },
+    scenes: { scene: VISU, appearance: VISU },
+  },
+});
+
+const S_PLAN = "Plan d’implémentation Studio V1.0, §5.7 (E.6 — Interopérabilité)";
+const S_LISTE = (id: string) => `Liste d’exécution Studio V1.0, ${id}`;
+const S_D179 = "docs/atelier/decisions.md, D-179 (DWG et DGN renoncés pour l’Atelier P2 seulement)";
+const S_FRONTIERE = "scripts/frontieres.json (ADR-STUDIO-NAV-01 : Studio n’importe pas l’Atelier)";
+const NON_EVALUEE = "Conformité non évaluée.";
+
+const p = (fichier: string, motif: string): StudioPreuveEchange => ({ fichier, motif });
+const M = "packages/atelier-model/src/studio/";
+const API = "apps/api/src/";
+const WEB = "apps/web/src/modules/studio/";
+const E2E = "apps/web/e2e/";
+const ROUTE_VARIANTE = "/projects/:projectId/studio/studies/:studyId/variants/:variantId";
+
+/** Entrées livrées : ce que le code écrit ou lit aujourd'hui, et ce qui le contrôle. */
+const LIVREES: readonly StudioEntreeEchange[] = [
+  {
+    id: "natif-commandes", format: "Enveloppe de commandes Studio (JSON)", versionFormat: "studio-commands/1", sens: "import", famille: "natif",
+    objet: "Commandes de document appliquées à une variante (seule écriture du modèle)", taches: ["E.6-02"], statut: "livre",
+    limite: "500 commandes et 1 Mo par enveloppe ; chaque commande est revalidée par le serveur, qui fait seul autorité ; rejeu idempotent par requestId.",
+    entites: [{ entite: "Toutes les entités du document", couverture: "portee", detail: "Formes, cotes, annotations, solides, architecture, propriétés, scènes : par leurs outils du registre." }],
+    controle: "Recette studio-persistance.mjs (rejeu, conflits, droits).", route: `POST ${ROUTE_VARIANTE}/commands`,
+    preuves: {
+      code: [p(`${API}lib/studio-commands.ts`, "submitStudioCommands")],
+      tests: [p(`${E2E}studio-persistance.mjs`, "/commands")],
+      routes: [p(`${API}routes/studio.ts`, "/studies/:studyId/variants/:variantId/commands")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-02")],
+  },
+  {
+    id: "natif-archive-export", format: "Archive de projet (section Studio, JSON)", versionFormat: "fadi-studio-archive/1 (document studio-document/1)", sens: "export", famille: "natif",
+    objet: "Études, variantes, révisions immuables, commentaires, observations, publications et leurs fichiers figés, exigences, journal du métré", taches: ["E.6-02"], statut: "livre",
+    limite: "Section signée (HMAC-SHA256 du manifeste, clé du serveur) ; empreintes de contenu conservées ; rien n’est recalculé.",
+    entites: [{ entite: "Tables Studio du projet", couverture: "portee", detail: "Lignes exportées telles quelles, manifeste et empreinte globale." }],
+    controle: "Tests du manifeste d’archive ; recette studio-restauration.mjs (base neuve, comparaison avant / après).", route: "GET /projects/:projectId/archive",
+    preuves: {
+      code: [p(`${API}lib/studio-archive.ts`, "exportStudioArchive")],
+      tests: [p(`${API}lib/studio-archive-manifest.test.ts`, "STUDIO_ARCHIVE_SCHEMA"), p(`${E2E}studio-restauration.mjs`, "archive")],
+      routes: [p(`${API}routes/projects.ts`, "/:projectId/archive")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-02"), "Liste d’exécution Studio V1.0, R.1-02"],
+  },
+  {
+    id: "natif-archive-import", format: "Archive de projet (section Studio, JSON)", versionFormat: "fadi-studio-archive/1 (document studio-document/1)", sens: "import", famille: "natif",
+    objet: "Restauration de la section Studio dans un nouveau projet", taches: ["E.6-02"], statut: "livre",
+    limite: "Manifeste et empreintes contrôlés (refus 422) ; sans signature vérifiée par ce serveur, auteurs et approbations ne sont pas crus ; identifiant déjà présent : partie Studio non restaurée, réserve signalée.",
+    entites: [{ entite: "Tables Studio du projet", couverture: "portee", detail: "Réinsérées telles quelles ; révisions et journaux insérés, jamais réécrits." }],
+    controle: "Recette studio-restauration.mjs.", route: "POST /projects/import",
+    preuves: {
+      code: [p(`${API}lib/studio-archive.ts`, "importStudioArchive")],
+      tests: [p(`${API}lib/studio-archive-manifest.test.ts`, "checkStudioArchive"), p(`${E2E}studio-restauration.mjs`, "import")],
+      routes: [p(`${API}routes/projects.ts`, "\"/import\"")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-02"), "Liste d’exécution Studio V1.0, R.1-02"],
+  },
+  {
+    id: "natif-file-locale", format: "File locale hors ligne (JSON)", versionFormat: "fadi-studio-file-locale/1", sens: "export", famille: "natif",
+    objet: "Copie de secours d’une file locale de commandes non synchronisée", taches: ["E.6-02"], statut: "livre",
+    limite: "Export de secours seulement : Studio ne relit pas ce fichier ; la ligne exportée est relue du stockage, jamais de la mémoire.",
+    entites: [{ entite: "Brouillon local (commandes non envoyées)", couverture: "portee", detail: "Ligne conservée telle quelle, avec la raison du blocage et la date d’export." }],
+    controle: "Tests de la file locale.",
+    preuves: {
+      code: [p(`${WEB}hors-ligne/AvisFileLocale.tsx`, "preparerExportFileLocale")],
+      tests: [p(`${WEB}hors-ligne/file-locale.test.ts`, "preparerExportFileLocale")],
+      interfaces: [p(`${WEB}hors-ligne/AvisFileLocale.tsx`, "studio-file-locale.json")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-02")],
+  },
+  {
+    id: "dessin-svg", format: "SVG", versionFormat: "SVG (espace de noms W3C, aucune version déclarée dans le fichier)", sens: "export", famille: "dessin",
+    objet: "Document d’une révision de variante (plan 2D)", taches: ["E.6-03"], statut: "livre", fidelite: "svg",
+    limite: "Plan 2D seulement : solides et hauteurs absents ; calques masqués conservés sous display=\"none\" ; aucun script ni ressource externe.",
+    entites: [], controle: "Tests de l’export ; recette studio-persistance.mjs ; rapport de fidélité servi à côté du fichier.",
+    route: `GET ${ROUTE_VARIANTE}/export?format=svg`,
+    preuves: {
+      code: [p(`${M}export.ts`, "exportStudioSvg"), p(`${API}lib/studio-commands.ts`, "exportStudioVariant")],
+      tests: [p(`${M}export.test.ts`, "exportStudioSvg"), p(`${E2E}studio-persistance.mjs`, "format=svg")],
+      routes: [p(`${API}routes/studio.ts`, "/studies/:studyId/variants/:variantId/export")],
+      interfaces: [p(`${WEB}planche2d/BarreOutils.tsx`, "download=")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-03")],
+  },
+  {
+    id: "dessin-dxf", format: "DXF ASCII", versionFormat: "R12 (AC1009), CRLF, $INSUNITS = 6 (mètre)", sens: "export", famille: "dessin",
+    objet: "Document d’une révision de variante (plan 2D)", taches: ["E.6-03"], statut: "livre", fidelite: "dxf",
+    limite: "R12 seulement ; ASCII strict (texte échappé, 250 caractères) ; cotes non associatives ; noms de calque réécrits (31 caractères ASCII) ; solides absents.",
+    entites: [], controle: "Tests de l’export ; recette studio-persistance.mjs ; rapport de fidélité servi à côté du fichier.",
+    route: `GET ${ROUTE_VARIANTE}/export?format=dxf`,
+    preuves: {
+      code: [p(`${M}export.ts`, "exportStudioDxf"), p(`${API}lib/studio-commands.ts`, "exportStudioVariant")],
+      tests: [p(`${M}export.test.ts`, "exportStudioDxf"), p(`${E2E}studio-persistance.mjs`, "format=dxf")],
+      routes: [p(`${API}routes/studio.ts`, "/studies/:studyId/variants/:variantId/export")],
+      interfaces: [p(`${WEB}planche2d/BarreOutils.tsx`, "download=")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-03")],
+  },
+  {
+    id: "maquette-ifc", format: "IFC (STEP physique, ISO 10303-21)", versionFormat: "IFC4X3_ADD2, ViewDefinition [ReferenceView]", sens: "export", famille: "maquette",
+    objet: "Objets extrudés, solides libres, murs et ouvertures, propriétés déclarées d’une révision", taches: ["E.6-03"], statut: "livre", fidelite: "ifc",
+    limite: "Seuls les éléments 3D sont écrits ; arcs discrétisés ; cotes, annotations et réglages de visualisation absents ; IfcDoor / IfcWindow seulement si le type est déclaré.",
+    entites: [], controle: "Tests de l’export ; corpus validé par IfcOpenShell 0.9.0 en CI (schéma, règles EXPRESS, effectifs, propriétés) — testé, jamais certifié.",
+    route: `GET ${ROUTE_VARIANTE}/export?format=ifc`,
+    preuves: {
+      code: [p(`${M}ifc.ts`, "exportStudioIfc"), p(`${API}lib/studio-commands.ts`, "exportStudioVariant")],
+      tests: [p(`${M}ifc.test.ts`, "exportStudioIfc"), p("apps/api/test-corpus/ifc/generer-studio.ts", "exportStudioIfc"), p(".github/workflows/ci.yml", "generer-studio.ts")],
+      routes: [p(`${API}routes/studio.ts`, "/studies/:studyId/variants/:variantId/export")],
+      interfaces: [p(`${WEB}planche2d/BarreOutils.tsx`, "download=")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-03")],
+  },
+  {
+    id: "dessin-dxf-import", format: "DXF ASCII", versionFormat: "R12 et suivantes (codes de groupe), CRLF ou LF ; DXF binaire refusé", sens: "import", famille: "dessin",
+    objet: "Plan 2D ajouté au brouillon d’une variante, par commandes", taches: ["E.6-03"], statut: "livre",
+    limite: "5 Mo au plus ; unité lue dans $INSUNITS, sinon choisie par l’utilisateur (jamais devinée) ; Z ignoré (compté) ; tout le reste compté par type dans le rapport d’import, jamais écarté en silence.",
+    entites: [
+      { entite: "LINE", couverture: "portee", detail: "Ligne." },
+      { entite: "CIRCLE", couverture: "portee", detail: "Cercle." },
+      { entite: "ARC", couverture: "portee", detail: "Arc (angles ramenés en radians), cercle si ses angles se confondent." },
+      { entite: "LWPOLYLINE / POLYLINE 2D", couverture: "partielle", detail: "Polyligne à renflements ; rectangle si fermée à 4 sommets parallèles aux axes ; sinon un segment droit par ligne." },
+      { entite: "Calques (table LAYER)", couverture: "portee", detail: "Repris par nom ou créés, visibilité et verrouillage du fichier." },
+      { entite: "TEXT, INSERT, SPLINE, HATCH, DIMENSION, ELLIPSE…", couverture: "absente", detail: "Non importés, comptés par type." },
+      { entite: "Polylignes 3D ou lissées, espace papier", couverture: "absente", detail: "Non importées, comptées." },
+    ],
+    controle: "Tests de l’import (modèle et interface) ; rapport d’import à l’aperçu.",
+    preuves: {
+      code: [p(`${M}import-dxf.ts`, "lireDxfStudio")],
+      tests: [p(`${M}import-dxf.test.ts`, "lireDxfStudio"), p(`${WEB}import/import-dxf.test.ts`, "lireDxfStudio")],
+      interfaces: [p(`${WEB}import/DialogueImportDxf.tsx`, "DialogueImportDxf")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-03")],
+  },
+  {
+    id: "feuille-svg", format: "SVG", versionFormat: "studio-sheet/1 (SVG en millimètres)", sens: "export", famille: "feuille",
+    objet: "Feuille de présentation d’une révision (format, échelle, cartouche)", taches: ["E.6-02"], statut: "livre",
+    limite: "A4 à A1 ; échelle choisie ou ajustée ; dessin découpé au cadre ; valeur absente du cartouche imprimée « non évalué ».",
+    entites: [
+      { entite: "Dessin 2D par calque", couverture: "partielle", detail: "Mêmes primitives que l’export SVG, découpées au cadre ; solides absents." },
+      { entite: "Cartouche, échelle graphique, nord", couverture: "portee", detail: "Tracés sur la feuille." },
+    ],
+    controle: "Tests de la feuille.",
+    preuves: {
+      code: [p(`${M}feuille.ts`, "exportStudioSheetSvg"), p(`${M}feuille.ts`, "studioSheetSvg")],
+      tests: [p(`${M}feuille.test.ts`, "exportStudioSheetSvg")],
+      interfaces: [p(`${WEB}feuille/PanneauFeuille.tsx`, "data-studio-feuille-svg")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-02")],
+  },
+  {
+    id: "feuille-pdf", format: "PDF", versionFormat: "PDF 1.4 (une page)", sens: "export", famille: "feuille",
+    objet: "Feuille de présentation d’une révision", taches: ["E.6-02"], statut: "livre",
+    limite: "Mêmes primitives que la feuille SVG ; aucune conformité PDF/A déclarée.",
+    entites: [{ entite: "Feuille composée", couverture: "portee", detail: "Primitives de la feuille SVG." }],
+    controle: "Tests de la feuille.",
+    preuves: {
+      code: [p(`${M}feuille.ts`, "studioSheetPdf")],
+      tests: [p(`${M}feuille.test.ts`, "studioSheetPdf")],
+      interfaces: [p(`${WEB}feuille/PanneauFeuille.tsx`, "data-studio-feuille-pdf")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-02")],
+  },
+  {
+    id: "feuille-composee-svg", format: "SVG", versionFormat: "studio-feuille-composee/1 (feuille studio-sheet/1 avec ligne de provenance)", sens: "export", famille: "feuille",
+    objet: "Feuille composée enregistrée (vue source, révision épinglée)", taches: ["E.6-02"], statut: "livre",
+    limite: "Lit une révision enregistrée, jamais le brouillon ; provenance recalculée par le serveur (révision, empreintes du document et de la vue).",
+    entites: [{ entite: "Vue documentaire (calques retenus)", couverture: "partielle", detail: "Calques exclus listés ; solides absents." }],
+    controle: "Tests du dossier de conception ; recette studio-dossier.mjs.",
+    route: "GET /projects/:projectId/studio/studies/:studyId/sheets/:sheetId/files/svg",
+    preuves: {
+      code: [p(`${M}dossier-conception.ts`, "studioFeuilleComposeeSvg"), p(`${API}lib/studio-dossiers.ts`, "readStudioSheetFile")],
+      tests: [p(`${M}dossier-conception.test.ts`, "studioFeuilleComposeeSvg"), p(`${E2E}studio-dossier.mjs`, "files/")],
+      routes: [p(`${API}routes/studio-dossiers.ts`, "${sheet}/files/:format")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-02"), S_LISTE("E.3-02")],
+  },
+  {
+    id: "feuille-composee-pdf", format: "PDF", versionFormat: "PDF 1.4 (une page)", sens: "export", famille: "feuille",
+    objet: "Feuille composée enregistrée", taches: ["E.6-02"], statut: "livre",
+    limite: "Mêmes primitives que la feuille composée SVG ; aucune conformité PDF/A déclarée.",
+    entites: [{ entite: "Feuille composée", couverture: "portee", detail: "Primitives de la feuille SVG." }],
+    controle: "Recette studio-dossier.mjs.",
+    route: "GET /projects/:projectId/studio/studies/:studyId/sheets/:sheetId/files/pdf",
+    preuves: {
+      code: [p(`${M}feuille.ts`, "studioSheetPdf"), p(`${API}lib/studio-dossiers.ts`, "readStudioSheetFile")],
+      tests: [p(`${E2E}studio-dossier.mjs`, "files/")],
+      routes: [p(`${API}routes/studio-dossiers.ts`, "${sheet}/files/:format")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-02"), S_LISTE("E.3-02")],
+  },
+  {
+    id: "dossier-pdf", format: "PDF", versionFormat: "PDF 1.4 (plusieurs pages)", sens: "export", famille: "dossier",
+    objet: "Dossier de conception : feuilles ordonnées, métré, rapport de fidélité", taches: ["E.6-02"], statut: "livre",
+    limite: "Quantités brutes, déductions et nettes séparées ; valeur absente « non évalué » ; aucune conformité PDF/A déclarée.",
+    entites: [
+      { entite: "Feuilles composées", couverture: "portee", detail: "Dans l’ordre du dossier." },
+      { entite: "Métré (brut, déductions, net)", couverture: "portee", detail: "Épinglé sur une révision." },
+      { entite: "Rapport de fidélité", couverture: "portee", detail: "Totaux par format, raisons." },
+    ],
+    controle: "Tests du dossier de conception ; recette studio-dossier.mjs.",
+    route: "GET /projects/:projectId/studio/studies/:studyId/dossiers/:dossierId/files/pdf",
+    preuves: {
+      code: [p(`${M}dossier-conception.ts`, "pdfDossierConception"), p(`${API}lib/studio-dossiers.ts`, "readStudioDossierFile")],
+      tests: [p(`${M}dossier-conception.test.ts`, "pdfDossierConception"), p(`${E2E}studio-dossier.mjs`, "files/pdf")],
+      routes: [p(`${API}routes/studio-dossiers.ts`, "${dossier}/files/:format")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-02"), S_LISTE("E.3-03")],
+  },
+  {
+    id: "dossier-json", format: "JSON", versionFormat: "studio-dossier-conception/1", sens: "export", famille: "dossier",
+    objet: "Dossier de conception (données natives du dossier)", taches: ["E.6-02"], statut: "livre",
+    limite: "Export seulement : aucun import de dossier ; empreinte du dossier portée en en-tête.",
+    entites: [{ entite: "Dossier (feuilles, métré, fidélité, empreintes)", couverture: "portee", detail: "Objet du dossier tel qu’assemblé." }],
+    controle: "Tests du dossier de conception ; recette studio-dossier.mjs.",
+    route: "GET /projects/:projectId/studio/studies/:studyId/dossiers/:dossierId/files/json",
+    preuves: {
+      code: [p(`${M}dossier-conception.ts`, "assemblerDossierConception"), p(`${API}lib/studio-dossiers.ts`, "readStudioDossierFile")],
+      tests: [p(`${M}dossier-conception.test.ts`, "assemblerDossierConception"), p(`${E2E}studio-dossier.mjs`, "dossiers")],
+      routes: [p(`${API}routes/studio-dossiers.ts`, "${dossier}/files/:format")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-02"), S_LISTE("E.3-03")],
+  },
+  {
+    id: "tableau-metre-csv", format: "CSV", versionFormat: "UTF-8 avec BOM, séparateur « ; », décimale « , » ou « . »", sens: "export", famille: "tableau",
+    objet: "Tableau du métré d’une révision (brut, déductions, net, ajustements)", taches: ["E.6-02"], statut: "livre",
+    limite: "Export seulement ; statut de chaque ajustement écrit en clair ; refusé tant que le métré n’est pas à jour.",
+    entites: [{ entite: "Lignes du métré", couverture: "portee", detail: "Quantité dérivée, ajustement, auteur, statut." }],
+    controle: "Tests du CSV ; recette studio-quantites.mjs.",
+    preuves: {
+      code: [p(`${WEB}quantites/csv-quantites.ts`, "csvQuantites")],
+      tests: [p(`${WEB}quantites/csv-quantites.test.ts`, "csvQuantites"), p(`${E2E}studio-quantites.mjs`, "CSV")],
+      interfaces: [p(`${WEB}quantites/PanneauQuantites.tsx`, "data-studio-quantites-csv")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-02"), S_LISTE("E.3-04")],
+  },
+  {
+    id: "rendu-png", format: "PNG", versionFormat: "PNG (bloc iTXt « fadi:rendu » de provenance)", sens: "export", famille: "rendu",
+    objet: "Rendu du modèle depuis la vue 3D d’une révision enregistrée", taches: ["E.6-02"], statut: "livre",
+    limite: "Image du canevas, pixels non modifiés ; refusé sur un brouillon non enregistré ou un maillage en cours ; provenance : étude, variante, révision, scène, caméra, date.",
+    entites: [{ entite: "Vue 3D affichée", couverture: "partielle", detail: "Image seulement : aucune donnée du modèle n’est relisible." }],
+    controle: "Tests du bloc de provenance ; recette studio-visualisation.mjs.",
+    preuves: {
+      code: [p(`${WEB}vue3d/scenes/png.ts`, "insererTextePng")],
+      tests: [p(`${WEB}vue3d/scenes/scenes.test.ts`, "insererTextePng"), p(`${E2E}studio-visualisation.mjs`, "png")],
+      interfaces: [p(`${WEB}vue3d/Vue3DStudio.tsx`, "image/png")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-02"), S_LISTE("E.5-03")],
+  },
+  {
+    id: "paquet-publication", format: "Paquet de publication (SVG, DXF, IFC, feuille PDF)", versionFormat: "studio-publication-manifest/1", sens: "export", famille: "paquet",
+    objet: "Fichiers figés d’une publication approuvée et diffusée", taches: ["E.6-02"], statut: "livre",
+    limite: "Fichiers du manifeste approuvé, identifiés par SHA-256 et vérifiables ; dessin 2D indépendant : sans IFC ; mêmes limites que chaque export.",
+    entites: [{ entite: "Fichiers du paquet", couverture: "portee", detail: "SVG, DXF, IFC et feuille PDF calculés par les exporteurs du modèle." }],
+    controle: "Recettes studio-publication.mjs et studio-dossier.mjs (empreintes recalculées).",
+    route: "GET /projects/:projectId/studio/studies/:studyId/publications/:publicationId/files/:format",
+    preuves: {
+      code: [p(`${API}lib/studio-publications.ts`, "studioPackageFiles"), p(`${API}lib/studio-publications.ts`, "readStudioPackageFile")],
+      tests: [p(`${E2E}studio-publication.mjs`, "files/")],
+      routes: [p(`${API}routes/studio-publications.ts`, "${base}/files/:format")],
+      interfaces: [p(`${WEB}publication/PanneauPublications.tsx`, "data-studio-publication-fichier")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-02"), S_LISTE("E.4-03")],
+  },
+  {
+    id: "rapport-fidelite-json", format: "JSON", versionFormat: "studio-rapport-fidelite/1", sens: "export", famille: "rapport",
+    objet: "Rapport de fidélité d’un export SVG, DXF ou IFC (même révision)", taches: ["E.6-03"], statut: "livre",
+    limite: "Décrit le fichier, jamais une certification : exact, approché, non couvert, par type et par raison ; calques masqués et noms réécrits.",
+    entites: [{ entite: "Éléments du document", couverture: "portee", detail: "Chacun compté une fois ; liste inconnue comptée « non couverte »." }],
+    controle: "Tests du rapport de fidélité.",
+    route: `GET ${ROUTE_VARIANTE}/export/rapport?format=svg|dxf|ifc`,
+    preuves: {
+      code: [p(`${M}echanges/rapport-fidelite.ts`, "studioRapportFidelite")],
+      tests: [p(`${M}echanges/rapport-fidelite.test.ts`, "studioRapportFidelite"), p(`${WEB}variante/rapport-export.test.ts`, "rapport")],
+      routes: [p(`${API}routes/studio.ts`, "/studies/:studyId/variants/:variantId/export/rapport")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-03")],
+  },
+  {
+    id: "diagnostic-releve-perf", format: "JSON", versionFormat: "Relevé de performances Studio (sans schéma versionné)", sens: "export", famille: "diagnostic",
+    objet: "Mesures de chargement et d’exécution de la session (hors modèle)", taches: ["E.6-02"], statut: "livre",
+    limite: "Diagnostic seulement : aucune donnée du projet ; non relu par Studio.",
+    entites: [{ entite: "Mesures de la session", couverture: "portee", detail: "Définitions, contexte, synthèse, journal." }],
+    controle: "Tests du relevé.",
+    preuves: {
+      code: [p(`${WEB}chargement/perf.ts`, "perfStudio")],
+      tests: [p(`${WEB}chargement/perf.test.ts`, "releve")],
+      interfaces: [p(`${WEB}chargement/PanneauRessources.tsx`, "studio-releve-perf.json")],
+    },
+    sources: [S_LISTE("X.1-09")],
+  },
+];
+
+interface Report { id: string; format: string; versionFormat: string; sens: readonly StudioSensEchange[]; famille: StudioFamilleEchange; objet: string; taches: readonly StudioTacheEchange[]; raison: string; sources: readonly string[]; limite?: string }
+const RAISON_SANS_CONTRAT = "Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ni déclaré conforme.";
+
+/** Formats reportés (E.6-04, E.6-05) : un sens par entrée. Aucune n'est « renoncée » faute de décision Studio. */
+const REPORTS: readonly Report[] = [
+  {
+    id: "dwg", format: "DWG", versionFormat: "non évaluée", sens: ["import", "export"], famille: "dessin", objet: "Dessin 2D", taches: ["E.6-04", "E.6-05"],
+    raison: `${RAISON_SANS_CONTRAT} D-179 renonce au DWG pour l’Atelier P2 (libredwg GPL, ODA SDK commercial) ; elle ne vaut pas pour Studio, dont le choix reste au maître d’ouvrage.`,
+    sources: [S_PLAN, S_LISTE("E.6-04"), S_D179],
+  },
+  {
+    id: "dgn", format: "DGN", versionFormat: "non évaluée", sens: ["import", "export"], famille: "dessin", objet: "Dessin 2D", taches: ["E.6-04", "E.6-05"],
+    raison: `${RAISON_SANS_CONTRAT} D-179 renonce au DGN pour l’Atelier P2 seulement.`,
+    sources: [S_PLAN, S_LISTE("E.6-04"), S_D179],
+  },
+  {
+    id: "bcf", format: "BCF", versionFormat: "non évaluée (2.1 / 3.0)", sens: ["import", "export"], famille: "coordination", objet: "Observations et sujets de coordination", taches: ["E.6-04", "E.6-05"],
+    raison: `${RAISON_SANS_CONTRAT} Les observations Studio (E.2) n’ont pas de contrat BCF ; règle d’identité à tenir : un même identifiant BCF reçu dans un autre contexte n’écrase ni ne clôt une observation.`,
+    sources: [S_PLAN, S_LISTE("E.6-04"), "docs/workstreams/studio/task-register.json (cas négatif « Même BCF-ID »)"],
+  },
+  {
+    id: "step", format: "STEP (ISO 10303-21, AP203 / AP214 / AP242)", versionFormat: "non évaluée", sens: ["import", "export"], famille: "maquette", objet: "Solides exacts (brep)", taches: ["E.6-04", "E.6-05"],
+    raison: `${RAISON_SANS_CONTRAT} Studio n’a pas de noyau exact ; l’échange STEP de l’Atelier (OCCT, P2-1, D-182) lui reste interdit par la frontière des modules.`,
+    sources: [S_PLAN, S_LISTE("E.6-04"), S_FRONTIERE],
+  },
+  {
+    id: "obj", format: "OBJ (Wavefront)", versionFormat: "non évaluée", sens: ["import", "export"], famille: "maquette", objet: "Maillage 3D", taches: ["E.6-04", "E.6-05"],
+    raison: `${RAISON_SANS_CONTRAT} Le maillage de la vue 3D (studioMesh3d) existe, aucun écrivain ni lecteur OBJ.`,
+    sources: [S_PLAN, S_LISTE("E.6-04")],
+  },
+  {
+    id: "stl", format: "STL", versionFormat: "non évaluée (ASCII / binaire)", sens: ["import", "export"], famille: "maquette", objet: "Maillage 3D", taches: ["E.6-04", "E.6-05"],
+    raison: `${RAISON_SANS_CONTRAT} Aucun écrivain ni lecteur STL.`,
+    sources: [S_PLAN, S_LISTE("E.6-04")],
+  },
+  {
+    id: "gltf", format: "glTF", versionFormat: "non évaluée (2.0)", sens: ["export"], famille: "maquette", objet: "Maillage 3D et apparences d’affichage", taches: ["E.6-04", "E.6-05"],
+    raison: `${RAISON_SANS_CONTRAT} Aucun écrivain glTF.`,
+    sources: [S_PLAN, S_LISTE("E.6-04")],
+  },
+  {
+    id: "ifc-lecture", format: "IFC", versionFormat: "non évaluée (IFC2X3, IFC4, IFC4X3)", sens: ["import"], famille: "maquette", objet: "Maquette d’un autre logiciel", taches: ["E.6-04", "E.6-05"],
+    raison: `${RAISON_SANS_CONTRAT} La lecture IFC de l’Atelier (web-ifc) n’est pas un échange Studio.`,
+    sources: [S_PLAN, S_LISTE("E.6-04"), S_FRONTIERE],
+  },
+  {
+    id: "ifc-autres-versions", format: "IFC", versionFormat: "IFC2X3, IFC4", sens: ["export"], famille: "maquette", objet: "Document d’une révision", taches: ["E.6-05"],
+    raison: `${RAISON_SANS_CONTRAT} Seul IFC4X3_ADD2 est écrit.`,
+    sources: [S_PLAN, S_LISTE("E.6-05")],
+  },
+  {
+    id: "dxf-autres-versions", format: "DXF ASCII", versionFormat: "AC1015 (2000) et suivantes", sens: ["export"], famille: "dessin", objet: "Document d’une révision", taches: ["E.6-05"],
+    raison: `${RAISON_SANS_CONTRAT} Seul R12 (AC1009) est écrit ; les fichiers récents sont lus à l’import.`,
+    sources: [S_PLAN, S_LISTE("E.6-05")],
+  },
+  {
+    id: "dxf-binaire", format: "DXF binaire", versionFormat: "non évaluée", sens: ["import"], famille: "dessin", objet: "Plan 2D", taches: ["E.6-05"],
+    raison: "Refusé à l’import avec un message (« enregistrez le fichier en DXF ASCII ») ; aucun lecteur binaire.",
+    sources: [S_LISTE("E.6-05"), `${M}import-dxf.ts`],
+  },
+  {
+    id: "svg-lecture", format: "SVG", versionFormat: "non évaluée", sens: ["import"], famille: "dessin", objet: "Dessin 2D", taches: ["E.6-05"],
+    raison: `${RAISON_SANS_CONTRAT} Aucun lecteur SVG.`,
+    sources: [S_PLAN, S_LISTE("E.6-05")],
+  },
+  {
+    id: "pdf-lecture", format: "PDF", versionFormat: "non évaluée", sens: ["import"], famille: "dessin", objet: "Fond de plan", taches: ["E.6-05"],
+    raison: `${RAISON_SANS_CONTRAT} Aucun lecteur PDF.`,
+    sources: [S_PLAN, S_LISTE("E.6-05")],
+  },
+  {
+    id: "nuage-points", format: "Nuage de points (LAS, E57, LAZ)", versionFormat: "non évaluée", sens: ["import"], famille: "maquette", objet: "Relevé", taches: ["E.6-04", "E.6-05"],
+    raison: `${RAISON_SANS_CONTRAT} La lecture LAS / XYZ / PTS de l’Atelier (P2-7) n’est pas un échange Studio.`,
+    sources: [S_PLAN, S_LISTE("E.6-04"), S_FRONTIERE],
+  },
+];
+
+const deReport = (r: Report): StudioEntreeEchange[] => r.sens.map((sens) => ({
+  id: `${r.id}-${sens}`, format: r.format, versionFormat: r.versionFormat, sens, famille: r.famille, objet: r.objet, taches: r.taches,
+  statut: "non-livre" as const, limite: r.limite ?? `Non livré. ${NON_EVALUEE}`, entites: [], raison: r.raison, sources: r.sources,
+}));
+
+function geler<T>(v: T): T {
+  if (v && typeof v === "object" && !Object.isFrozen(v)) { Object.freeze(v); for (const x of Object.values(v)) geler(x); }
+  return v;
+}
+
+export interface StudioMatriceEchanges {
+  schema: typeof STUDIO_MATRICE_ECHANGES_SCHEMA;
+  revision: typeof STUDIO_MATRICE_ECHANGES_REVISION;
+  etablieLe: typeof STUDIO_MATRICE_ECHANGES_DATE;
+  /** Rappel : aucune entrée n'est une déclaration de conformité. */
+  conformite: "non-evaluee";
+  entrees: readonly StudioEntreeEchange[];
+}
+
+export const STUDIO_MATRICE_ECHANGES: StudioMatriceEchanges = geler({
+  schema: STUDIO_MATRICE_ECHANGES_SCHEMA, revision: STUDIO_MATRICE_ECHANGES_REVISION, etablieLe: STUDIO_MATRICE_ECHANGES_DATE, conformite: "non-evaluee",
+  entrees: [...LIVREES, ...REPORTS.flatMap(deReport)],
+});
+
+/** Ligne de couverture par type d'un export SVG, DXF ou IFC (dérivée de `STUDIO_COUVERTURE_EXPORT`). */
+export interface StudioCouvertureType {
+  categorie: Categorie;
+  type: string;
+  raisons: readonly { raison: StudioRaisonFidelite; statut: StudioStatutFidelite }[];
+}
+
+export function studioCouvertureFormat(format: StudioFormatEchange): StudioCouvertureType[] {
+  const table = STUDIO_COUVERTURE_EXPORT[format] as unknown as Record<Categorie, Record<string, readonly StudioRaisonFidelite[]>>;
+  return (Object.keys(table) as Categorie[]).flatMap((categorie) => Object.entries(table[categorie]).map(([type, raisons]) => ({
+    categorie, type, raisons: raisons.map((raison) => ({ raison, statut: STUDIO_STATUT_DE_RAISON[raison] })),
+  })));
+}
+
+/** Problèmes de cohérence interne de la matrice (vide = valide) ; le test du dépôt vérifie en plus les preuves. */
+export function controlerMatriceEchanges(m: StudioMatriceEchanges = STUDIO_MATRICE_ECHANGES): string[] {
+  const pbs: string[] = [];
+  const ids = new Set<string>();
+  for (const e of m.entrees) {
+    if (ids.has(e.id)) pbs.push(`identifiant en double : ${e.id}`);
+    ids.add(e.id);
+    if (!e.limite.trim()) pbs.push(`${e.id} : limite absente`);
+    if (e.sources.length === 0) pbs.push(`${e.id} : source absente`);
+    // Une limite ou un contrôle ne déclare jamais une conformité ni une certification (seulement leur absence).
+    const dit = `${e.limite} ${e.controle ?? ""}`;
+    if (/conforme|certifi/i.test(dit) && !/(non|jamais|ni|aucune)\s[\p{L}\s/]{0,24}(conforme|conformité|certifi)/iu.test(dit)) pbs.push(`${e.id} : conformité déclarée`);
+    if (e.statut === "livre") {
+      if (!e.preuves || e.preuves.code.length === 0 || e.preuves.tests.length === 0) pbs.push(`${e.id} : entrée livrée sans code ou sans test`);
+      if (e.raison) pbs.push(`${e.id} : entrée livrée avec une raison de report`);
+      if (!e.fidelite && e.entites.length === 0) pbs.push(`${e.id} : entrée livrée sans entité`);
+      if (e.fidelite && e.entites.length > 0) pbs.push(`${e.id} : entités déclarées en plus du rapport de fidélité`);
+    } else {
+      if (!e.raison?.trim()) pbs.push(`${e.id} : report sans raison`);
+      if (e.preuves) pbs.push(`${e.id} : report avec des preuves de livraison`);
+      if (e.fidelite) pbs.push(`${e.id} : report lié à un rapport de fidélité`);
+      if (!e.taches.some((t) => t === "E.6-04" || t === "E.6-05")) pbs.push(`${e.id} : report hors E.6-04 / E.6-05`);
+    }
+    if (e.statut === "renonce" && !e.sources.some((s) => /\bD-\d+\b/.test(s))) pbs.push(`${e.id} : renoncé sans décision citée`);
+  }
+  for (const f of ["svg", "dxf", "ifc"] as const) {
+    const n = m.entrees.filter((e) => e.fidelite === f && e.statut === "livre" && e.sens === "export").length;
+    if (n !== 1) pbs.push(`format ${f} : ${n} entrée(s) d'export liée(s) au rapport de fidélité (1 attendue)`);
+  }
+  for (const r of STUDIO_RAISONS_FIDELITE) if (!(r in STUDIO_STATUT_DE_RAISON)) pbs.push(`raison sans statut : ${r}`);
+  return pbs;
+}
+
+const LIBELLE_STATUT: Readonly<Record<StudioStatutEchange, string>> = Object.freeze({ livre: "livré", "non-livre": "non livré", renonce: "renoncé" });
+const LIBELLE_COUVERTURE: Readonly<Record<StudioCouvertureEntite, string>> = Object.freeze({ portee: "portée", partielle: "partielle", absente: "absente" });
+const cellule = (s: string): string => s.replace(/\|/g, "\\|").replace(/\n/g, " ");
+
+/** Document Markdown généré depuis la matrice (copie lisible, jamais éditée à la main). */
+export function studioMatriceEchangesMarkdown(m: StudioMatriceEchanges = STUDIO_MATRICE_ECHANGES): string {
+  const l: string[] = [];
+  l.push("# Matrice d’échanges de Studio", "");
+  l.push(`<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (${m.schema}, révision ${m.revision}) : ne pas éditer à la main. -->`, "");
+  l.push(`Établie le ${m.etablieLe} (révision ${m.revision}, schéma \`${m.schema}\`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).`, "");
+  l.push("**Aucune entrée n’est une déclaration de conformité** : « livré » dit ce que le code écrit ou lit et le contrôle qui le vérifie ; la conformité d’un format reste non évaluée. Un format reporté est inscrit « non livré » avec sa raison et sa source ; « renoncé » exige une décision citée.", "");
+  const nb = (s: StudioStatutEchange) => m.entrees.filter((e) => e.statut === s).length;
+  l.push(`Entrées : ${m.entrees.length} — livrées : ${nb("livre")}, non livrées : ${nb("non-livre")}, renoncées : ${nb("renonce")}.`, "");
+  l.push("## Formats × sens", "");
+  l.push("| Identifiant | Format | Version du format | Sens | Famille | Objet | Statut | Tâches | Limite de couverture |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+  for (const e of m.entrees) {
+    l.push(`| \`${e.id}\` | ${cellule(e.format)} | ${cellule(e.versionFormat)} | ${e.sens} | ${e.famille} | ${cellule(e.objet)} | ${LIBELLE_STATUT[e.statut]} | ${e.taches.join(", ")} | ${cellule(e.limite)} |`);
+  }
+  l.push("", "## Entrées livrées : entités, contrôles et preuves", "");
+  for (const e of m.entrees.filter((x) => x.statut === "livre")) {
+    l.push(`### \`${e.id}\` — ${e.format} (${e.sens})`, "");
+    l.push(`- Version : ${e.versionFormat}`, `- Objet : ${e.objet}`, `- Limite : ${e.limite}`);
+    if (e.route) l.push(`- Route : \`${e.route}\``);
+    if (e.controle) l.push(`- Contrôle : ${e.controle}`);
+    if (e.fidelite) l.push(`- Couverture par entité : rapport de fidélité \`${e.fidelite}\` (tableau ci-dessous).`);
+    for (const x of e.entites) l.push(`- Entité ${x.entite} : ${LIBELLE_COUVERTURE[x.couverture]} — ${x.detail}`);
+    const pr = e.preuves!;
+    const liste = (titre: string, xs: readonly StudioPreuveEchange[] | undefined) => { if (xs?.length) l.push(`- ${titre} : ${xs.map((x) => `\`${x.fichier}\` (\`${x.motif}\`)`).join(" ; ")}`); };
+    liste("Code", pr.code); liste("Tests", pr.tests); liste("Routes", pr.routes); liste("Interface", pr.interfaces);
+    l.push(`- Sources : ${e.sources.join(" ; ")}`, "");
+  }
+  l.push("## Sous-ensemble SVG / DXF / IFC retenu (E.6-03) : couverture par type", "");
+  l.push("Raisons possibles du rapport de fidélité (`studioRapportFidelite`) pour chaque type d’élément du document ; statut entre parenthèses.", "");
+  l.push("| Catégorie | Type | SVG | DXF R12 | IFC4X3_ADD2 |", "| --- | --- | --- | --- | --- |");
+  const parFormat = Object.fromEntries((["svg", "dxf", "ifc"] as const).map((f) => [f, new Map(studioCouvertureFormat(f).map((c) => [`${c.categorie}.${c.type}`, c]))]));
+  for (const c of studioCouvertureFormat("svg")) {
+    const cle = `${c.categorie}.${c.type}`;
+    const cel = (f: StudioFormatEchange) => parFormat[f]!.get(cle)!.raisons.map((r) => `\`${r.raison}\` (${r.statut})`).join(", ");
+    l.push(`| ${c.categorie} | ${c.type} | ${cel("svg")} | ${cel("dxf")} | ${cel("ifc")} |`);
+  }
+  l.push("", "## Formats reportés (E.6-04, E.6-05)", "");
+  l.push("| Identifiant | Format | Sens | Statut | Raison | Sources |", "| --- | --- | --- | --- | --- | --- |");
+  for (const e of m.entrees.filter((x) => x.statut !== "livre")) {
+    l.push(`| \`${e.id}\` | ${cellule(e.format)} | ${e.sens} | ${LIBELLE_STATUT[e.statut]} | ${cellule(e.raison ?? "")} | ${cellule(e.sources.join(" ; "))} |`);
+  }
+  l.push("");
+  return l.join("\n");
+}
