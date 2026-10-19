@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "mesure:recherches-spatiales": "STUDIO_MESURE_SPATIALE=1 vitest run src/modules/studio/planche2d/mesure-spatiale.test.ts"
   },
   "dependencies": {
     "@parcours/atelier-model": "0.1.0",
