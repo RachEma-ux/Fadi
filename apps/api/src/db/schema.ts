@@ -12,7 +12,7 @@
  * l'erreur de repères que `docs/architecture.md` interdit.
  */
 import { boolean, customType, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
-import type { StudioDocument, StudioEnvelope } from "@parcours/atelier-model";
+import type { ConclusionControle, EtatExecution, ExigenceStudio, ResultatControle, StudioDocument, StudioEnvelope } from "@parcours/atelier-model";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
 const geography = customType<{ data: string; driverData: string }>({
@@ -817,3 +817,35 @@ export const studioToolPreferences = pgTable("studio_tool_preferences", {
   personal: jsonb("personal").$type<string[]>().notNull().default([]),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+/**
+ * Exigences Studio (E.1-02 à E.1-06, lib/studio-exigences.ts) : versions append-only d'un jeu d'exigences par étude
+ * (UPDATE refusée par déclencheur, init.sql) et résultats de contrôle liés à la révision et à la version examinées
+ * (FK composites et contrôles dans init.sql). Aucune exigence n'est fournie par Fadi.
+ */
+export const studioRequirementSets = pgTable("studio_requirement_sets", {
+  id: text("id").primaryKey(),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  version: integer("version").notNull(),
+  requirements: jsonb("requirements").$type<ExigenceStudio[]>().notNull(),
+  motif: text("motif"),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [uniqueIndex("studio_requirement_sets_version_unique").on(t.studyId, t.version)]);
+
+export const studioRequirementChecks = pgTable("studio_requirement_checks", {
+  id: text("id").primaryKey(),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  variantId: text("variant_id").notNull(),
+  revisionId: text("revision_id").notNull(),
+  setVersion: integer("set_version"),
+  execution: text("execution").$type<EtatExecution>().notNull(),
+  conclusion: text("conclusion").$type<ConclusionControle | null>(),
+  result: jsonb("result").$type<ResultatControle>().notNull(),
+  documentHash: text("document_hash").notNull(),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  requestId: text("request_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_requirement_checks_variant_idx").on(t.variantId, t.createdAt)]);

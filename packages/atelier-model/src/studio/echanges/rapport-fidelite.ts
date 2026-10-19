@@ -5,6 +5,7 @@ import type { StudioAnnotation, StudioDocument, StudioShape } from "../noyau/typ
 import type { StudioDimension } from "../objets/cote.js";
 import type { StudioSolid } from "../objets-3d/solides.js";
 import type { StudioArchitectureItem } from "../architecture/types.js";
+import type { StudioPropriete } from "../exigences/proprietes.js";
 
 /**
  * Rapport de fidélité d'un export Studio (E.6-03) : pour un document et un format (SVG, DXF, IFC), ce qui est exporté
@@ -35,13 +36,15 @@ export const STUDIO_RAISONS_FIDELITE = Object.freeze([
   "ouverture-en-lacune",
   // Non couvert
   "non-extrude", "cote-hors-ifc", "annotation-hors-ifc", "solide-hors-2d", "type-sans-capacite",
+  // Propriétés BIM déclarées (E.1-01) : aucun écrivain ne les porte encore.
+  "propriete-non-exportee",
 ] as const);
 export type StudioRaisonFidelite = (typeof STUDIO_RAISONS_FIDELITE)[number];
 
 /** Catégorie = liste du document qui porte l'élément. */
-export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "architecture" | "inconnue";
+export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "architecture" | "proprietes" | "inconnue";
 /** Liste du document de chaque catégorie connue (clé de `StudioDocument`). */
-export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", architecture: "architecture" } as const);
+export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", architecture: "architecture", proprietes: "proprietes" } as const);
 
 export interface StudioJugementFidelite { statut: StudioStatutFidelite; raison: StudioRaisonFidelite }
 type Juge<T> = (item: T) => StudioJugementFidelite;
@@ -93,6 +96,8 @@ export const STUDIO_CAPACITES_EXPORT: {
   readonly annotations: { readonly [K in StudioAnnotation["type"]]: ParFormat<Extract<StudioAnnotation, { type: K }>> };
   readonly solides: { readonly [K in StudioSolid["type"]]: ParFormat<Extract<StudioSolid, { type: K }>> };
   readonly architecture: { readonly [K in StudioArchitectureItem["type"]]: ParFormat<Extract<StudioArchitectureItem, { type: K }>> };
+  /** Propriétés déclarées (E.1-01) : sans discriminant de type, un seul type « propriete ». */
+  readonly proprietes: { readonly propriete: ParFormat<StudioPropriete> };
 } = Object.freeze({
   objets: {
     line: { svg: trace2d("trace-exact"), dxf: trace2d("trace-exact"), ifc: ifc3d(() => exact("extrusion-exacte")) },
@@ -119,6 +124,10 @@ export const STUDIO_CAPACITES_EXPORT: {
   architecture: {
     wall: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
     opening: { svg: () => approche("ouverture-en-lacune"), dxf: () => approche("ouverture-en-lacune"), ifc: () => exact("ouverture-evidee") },
+  },
+  // Propriétés déclarées : ni le SVG, ni le DXF, ni l'IFC (aucun jeu de propriétés écrit) ne les portent.
+  proprietes: {
+    propriete: { svg: () => nonCouvert("propriete-non-exportee"), dxf: () => nonCouvert("propriete-non-exportee"), ifc: () => nonCouvert("propriete-non-exportee") },
   },
 });
 
@@ -194,6 +203,8 @@ export function studioRapportFidelite(input: StudioDocument, format: StudioForma
   const avecCalque = (layerId: string | undefined): { layerId?: string } => (layerId === undefined ? {} : { layerId });
   const calqueMur = new Map((doc.architecture ?? []).filter((e) => e.type === "wall").map((m) => [m.id, (m as { layerId?: string }).layerId]));
   parcourir("architecture", (doc.architecture ?? []).map((e) => (e.type === "opening" ? { ...e, ...avecCalque(calqueMur.get(e.hostId)) } : e)));
+  // Propriétés déclarées : identifiées par « cible#nom » ; elles n'ont pas de calque propre (non comptées sur les calques).
+  for (const p of doc.proprietes ?? []) poser("proprietes", "propriete", STUDIO_CAPACITES_EXPORT.proprietes.propriete[format](p), `${p.cibleId}#${p.nom}`);
   // Liste du document qu'aucune catégorie ne connaît : comptée non couverte, jamais omise.
   for (const [cle, valeur] of Object.entries(doc as unknown as Record<string, unknown>)) {
     if (CLES_CONNUES.has(cle) || !Array.isArray(valeur)) continue;
