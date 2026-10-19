@@ -884,7 +884,8 @@ export interface StudioPublicationManifest {
 }
 export type StudioManifestDrift =
   | { type: "source"; role: "principale" | "coordonnee"; variantId: string; revisionFigee: string; revisionCourante: string | null }
-  | { type: "meta"; champ: string; figee: string; courante: string };
+  | { type: "meta"; champ: string; figee: string; courante: string }
+  | { type: "documents"; formats: string[] };
 export interface StudioPublicationEvent {
   id: string; action: "creer" | "remplacer" | StudioPublicationTransition; fromStatus: StudioPublicationStatus | null; toStatus: StudioPublicationStatus;
   workStatus?: StudioPublicationWorkStatus | null; diffusionStatus?: StudioPublicationDiffusionStatus | null; manifestHash?: string | null; relatedPublicationId?: string | null;

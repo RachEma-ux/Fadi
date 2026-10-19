@@ -9712,6 +9712,7 @@
 "Variante publiée introuvable (révision {0} figée).": "Published variant not found (revision {0} frozen).",
 "Variante coordonnée introuvable (révision {0} figée).": "Coordinated variant not found (revision {0} frozen).",
 "Métadonnée modifiée : {0}.": "Metadata changed: {0}.",
+"Documents régénérés : {0}.": "Documents regenerated: {0}.",
 "code du projet": "project code",
 "nom du projet": "project name",
 "nom de l’étude": "study name",
