@@ -69,7 +69,9 @@ export type IconName =
   | "studio-polyline"
   | "studio-offset"
   | "studio-polyline-finish"
-  | "studio-polyline-close";
+  | "studio-polyline-close"
+  | "studio-angular-dimension"
+  | "studio-text";
 
 const PATHS: Record<IconName, string> = {
   search: "M10.5 3.5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 5 5",
@@ -144,6 +146,9 @@ const PATHS: Record<IconName, string> = {
   // Fin de polyligne : tracé ouvert et marque de validation ; fermeture : tracé refermé sur son premier sommet.
   "studio-polyline-finish": "M3 17 8 9l5 6M14 15l3 3 5-6",
   "studio-polyline-close": "M4 18 8 6l8 3 4 9ZM2 16h4v4H2Z",
+  // Annotations : cote angulaire (deux rayons depuis un sommet, arc de cote fléché) ; texte (lettre T et ligne de base).
+  "studio-angular-dimension": "M4 20h16M4 20 15 6M11 20a7 7 0 0 0-2.3-5.2M7.5 13.5l1.2 1.3-1.6.6",
+  "studio-text": "M5 5h14M12 5v13M9 18h6M4 21h16",
 };
 
 export function Icon({ name, size = 20, className }: { name: IconName; size?: number; className?: string }) {

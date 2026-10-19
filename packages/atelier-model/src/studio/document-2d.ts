@@ -31,3 +31,11 @@ export type { StudioCircle } from "./objets/cercle.js";
 export type { StudioArc } from "./objets/arc.js";
 export { studioExtrudedRingVertices, type StudioPolyline } from "./objets/polyligne.js";
 export type { StudioDimension, StudioDimensionLink } from "./objets/cote.js";
+// Annotations (extension additive `annotations`) : cote angulaire et texte.
+export type { StudioAnnotation } from "./noyau/types.js";
+export { measureStudioAngularDimension, type StudioAngularMeasure } from "./noyau/document.js";
+export {
+  dessinerCoteAngulaire, formatStudioAngle, studioAngularFromSegments, studioAngularValue, studioStraightSegment,
+  type DessinCoteAngulaire, type StudioAngularDimension, type StudioAngularLink,
+} from "./objets/cote-angulaire.js";
+export { STUDIO_TEXT_JUSTIFICATIONS, STUDIO_TEXT_MAX, studioTextBox, studioTextRotationDegrees, type StudioText, type StudioTextJustification } from "./objets/texte.js";

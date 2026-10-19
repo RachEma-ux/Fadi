@@ -4,7 +4,7 @@
  * de création, ne touche ni au brouillon ni au DOM ; l'espace de travail applique l'action rendue. Le premier clic pose
  * toujours le point de départ (`trace`) ; `clic` reçoit le second et les suivants.
  */
-import type { StudioCommand, StudioPoint, StudioShape } from "@parcours/atelier-model";
+import type { StudioCommand, StudioDocument, StudioPoint, StudioShape, StudioTextJustification } from "@parcours/atelier-model";
 import type { PointPose } from "../Dessin2D";
 import type { StudioToolId } from "../raccourcis";
 
@@ -21,6 +21,14 @@ export interface EtatTrace {
   modeArc: ModeArc;
 }
 
+/** Texte saisi pour l'outil Texte : contenu (donnée du projet), hauteur (m), rotation (degrés), justification. */
+export interface SaisieTexte {
+  contenu: string;
+  hauteur: number;
+  rotation: number;
+  justification: StudioTextJustification;
+}
+
 /** Contexte de création d'un objet : identifiant neuf, calque actif, décalage saisi pour une cote. */
 export interface ContexteCreation {
   nouvelId: () => string;
@@ -28,6 +36,10 @@ export interface ContexteCreation {
   layerId: string | undefined;
   /** Décalage de cote saisi (mètres). */
   decalageCote: number;
+  /** Rayon d'arc saisi pour une cote angulaire (mètres). */
+  rayonAngulaire?: number;
+  /** Texte saisi (outil Texte). */
+  texte?: SaisieTexte;
 }
 
 /**
@@ -44,12 +56,16 @@ export type ActionOutil =
 /** Contexte d'un clic : tolérance d'accrochage (mètres), pour fermer une polyligne sur son premier sommet. */
 export interface ContexteClic extends ContexteCreation {
   tolerance: number;
+  /** Document affiché (segments visés par la cote angulaire liée). */
+  document?: StudioDocument | null;
 }
 
 export interface OutilPlanche {
   readonly ids: readonly StudioToolId[];
   /** Le point accroché exclut la sélection une fois le premier point posé (déplacement). */
   readonly horsSelection?: boolean;
+  /** Outil à un clic (Texte) : le premier clic agit aussitôt au lieu de poser le point de départ. */
+  premierClic?(p: PointPose, c: ContexteClic): ActionOutil;
   /** Second clic et suivants (`e.trace` est posé). */
   clic(e: EtatTrace & { trace: PointPose }, p: PointPose, c: ContexteClic): ActionOutil;
   /** Aperçu d'une courbe en cours de tracé, jamais une donnée du document. */

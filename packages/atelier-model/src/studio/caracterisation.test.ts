@@ -292,16 +292,42 @@ function commandOutputs(): Record<string, unknown> {
   return out;
 }
 
+/**
+ * Ajouts délibérés, postérieurs à la base et consignés (annotations : cote angulaire et texte, champ facultatif
+ * `annotations` du document) : retirés des sorties du registre et du paquet avant la comparaison, pour que la
+ * caractérisation reste exactement celle de la base. Leur comportement a ses propres tests (`annotations.test.ts`).
+ */
+const AJOUTS = {
+  outils: new Set(["studio.dessin.cote-angulaire", "studio.dessin.texte"]),
+  types: new Set(["angular-dimension", "text"]),
+  exports: new Set([
+    "dessinerCoteAngulaire", "formatStudioAngle", "measureStudioAngularDimension", "STUDIO_TEXT_JUSTIFICATIONS", "STUDIO_TEXT_MAX",
+    "studioAngularFromSegments", "studioAngularValue", "studioStraightSegment", "studioTextBox", "studioTextRotationDegrees",
+  ]),
+};
+function sansAjouts(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.filter((v) => !(typeof v === "string" && AJOUTS.outils.has(v))
+      && !(v && typeof v === "object" && (AJOUTS.outils.has((v as { toolId?: string }).toolId ?? "") || AJOUTS.types.has((v as { properties?: { type?: { const?: string } } }).properties?.type?.const ?? ""))))
+      .map(sansAjouts);
+  }
+  if (!value || typeof value !== "object") return value;
+  const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
+  const props = out.properties as Record<string, unknown> | undefined;
+  if (props && "schemaVersion" in props) delete props.annotations;
+  return out;
+}
+
 function registryOutputs(): Record<string, unknown> {
   const deepFrozen = (v: unknown): boolean => !v || typeof v !== "object" || (Object.isFrozen(v) && Object.values(v).every(deepFrozen));
   return {
-    "registre/outils": JSON.stringify(STUDIO_TOOLS),
-    "registre/schema": JSON.stringify(STUDIO_DOCUMENT_SCHEMA),
-    "registre/ids": [...STUDIO_TOOL_IDS],
-    "registre/mutations": [...STUDIO_COMMAND_TOOL_IDS],
-    "registre/appliques": [...STUDIO_APPLIED_TOOL_IDS],
+    "registre/outils": JSON.stringify(sansAjouts(STUDIO_TOOLS)),
+    "registre/schema": JSON.stringify(sansAjouts(STUDIO_DOCUMENT_SCHEMA)),
+    "registre/ids": sansAjouts([...STUDIO_TOOL_IDS]),
+    "registre/mutations": sansAjouts([...STUDIO_COMMAND_TOOL_IDS]),
+    "registre/appliques": sansAjouts([...STUDIO_APPLIED_TOOL_IDS]),
     "registre/gele": [deepFrozen(STUDIO_TOOLS), deepFrozen(STUDIO_DOCUMENT_SCHEMA), Object.isFrozen(STUDIO_TOOL_IDS), Object.isFrozen(STUDIO_COMMAND_TOOL_IDS), Object.isFrozen(STUDIO_APPLIED_TOOL_IDS)],
-    "paquet/exports": Object.keys(paquet).sort().map((k) => `${k}:${typeof (paquet as Record<string, unknown>)[k]}`),
+    "paquet/exports": Object.keys(paquet).filter((k) => !AJOUTS.exports.has(k)).sort().map((k) => `${k}:${typeof (paquet as Record<string, unknown>)[k]}`),
   };
 }
 

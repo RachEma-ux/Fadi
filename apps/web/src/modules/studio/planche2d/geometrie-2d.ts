@@ -4,7 +4,7 @@
  * ne modifie le document. Pur : ni React ni DOM.
  */
 import {
-  studioAnchorPoint, studioShapeAnchors, studioShapeBoundPoints, type StudioAnchor, type StudioDimension, type StudioDimensionLink,
+  studioAnchorPoint, studioShapeAnchors, studioShapeBoundPoints, studioTextBox, type StudioAnchor, type StudioDimension, type StudioDimensionLink,
   type StudioDocument, type StudioPoint, type StudioShape,
 } from "@parcours/atelier-model";
 
@@ -30,6 +30,10 @@ export function emprise(doc: StudioDocument, visible: (layerId: string | undefin
     if (!visible(d.layerId)) continue;
     const g = traceCote(d);
     points.push(d.start, d.end, g.a, g.b);
+  }
+  for (const a of doc.annotations ?? []) {
+    if (!visible(a.layerId)) continue;
+    points.push(...(a.type === "text" ? studioTextBox(a) : [a.vertex, a.first, a.second]));
   }
   if (!points.length) return null;
   return {

@@ -116,10 +116,10 @@ describe("Studio : document 2D natif", () => {
 });
 
 describe("Registry Studio minimal", () => {
-  it("publie seize identités, icônes et raccourcis propres, sans agent", () => {
-    expect(STUDIO_TOOLS).toHaveLength(16);
+  it("publie dix-huit identités, icônes et raccourcis propres, sans agent", () => {
+    expect(STUDIO_TOOLS).toHaveLength(18);
     for (const key of ["toolId", "iconeSymbolique", "raccourci"] as const) {
-      expect(new Set(STUDIO_TOOLS.map((tool) => tool[key])).size).toBe(16);
+      expect(new Set(STUDIO_TOOLS.map((tool) => tool[key])).size).toBe(18);
     }
     for (const tool of STUDIO_TOOLS) {
       expect(tool.agentExposure).toBe("none");

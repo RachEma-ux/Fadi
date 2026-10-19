@@ -41,7 +41,8 @@ const pp = (x: number, y: number): PointPose => ({ point: { x, y }, accroche: nu
 const ctx = (): ContexteClic => { let n = 0; return { nouvelId: () => `id-${++n}`, layerId: undefined, decalageCote: 0.5, tolerance: 0.1 }; };
 
 describe("Outils de la planche : aide et aperçu identiques à l'ancien espace de travail", () => {
-  const tools = STUDIO_TOOLS.map((t) => t.toolId);
+  // Les outils d'annotation (postérieurs à l'ancien espace de travail) ont leur aide propre, contrôlée dans `annotations.test.ts`.
+  const tools = STUDIO_TOOLS.map((t) => t.toolId).filter((id) => id !== "studio.dessin.cote-angulaire" && id !== "studio.dessin.texte");
   const traces = [null, pp(0, 0)];
   const suites: StudioPoint[][] = [[], [{ x: 1, y: 1 }], [{ x: 1, y: 1 }, { x: 2, y: 0 }]];
   it("aide : tous outils × tracé × suite × mode × droits", () => {
