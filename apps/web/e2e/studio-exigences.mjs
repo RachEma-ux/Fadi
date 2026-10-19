@@ -3,12 +3,12 @@
  * Recette Studio — propriétés BIM, exigences versionnées et écarts (lot E.1, E.1-01 à E.1-06), par l'interface et
  * l'API réelles (même origine, base migrée : tables `studio_requirement_*` dans init.sql). Comptes et projet
  * synthétiques créés par les vraies routes ; le mur et son ouverture sont posés par une enveloppe de commandes.
- *   1. une propriété est déclarée sur un mur (raccourci K), enregistrée avec la révision et relue après rechargement ;
+ *   1. une propriété est déclarée sur un mur (raccourci K ; G retire), enregistrée avec la révision et relue après rechargement ;
  *   2. une exigence (volume net des murs ≤ 1 m³, source déclarée) crée la version 1 du jeu ; aucun jeu n'existait ;
  *   3. le contrôle de la révision affichée est enregistré : exécuté, non conforme, écart affiché ;
  *   4. modifier l'exigence crée la version 2 (la version 1 reste lisible, inchangée) ; un nouveau contrôle conclut
  *      conforme, et l'ancien résultat reste lié à la version 1 et à la même révision ;
- *   5. une référence partenaire n'est utilisée qu'après acceptation (qui, quand) ; V amène le panneau.
+ *   5. une référence partenaire n'est utilisée qu'après acceptation (qui, quand) ; F amène le panneau.
  *
  * BASE_URL=http://localhost:3001 node apps/web/e2e/studio-exigences.mjs
  */
@@ -171,10 +171,10 @@ try {
   const perimee = await api("post", `${racine}/${studyId}/exigences`, { baseVersion: 1, exigences: [], requestId: `recette-${randomUUID()}` });
   check("une édition sur une version périmée est refusée (409)", perimee.status === 409 && perimee.body.error === "version_perimee");
 
-  // Raccourci V : amène le panneau « Propriétés et exigences ».
+  // Raccourci F : amène le panneau « Propriétés et exigences ».
   await page.evaluate(() => document.activeElement?.blur());
-  await page.keyboard.press("v");
-  check("V amène le panneau des exigences", await page.evaluate(() => document.activeElement?.hasAttribute("data-studio-exigences") ?? false));
+  await page.keyboard.press("f");
+  check("F amène le panneau des exigences", await page.evaluate(() => document.activeElement?.hasAttribute("data-studio-exigences") ?? false));
 
   // Rechargement : la propriété est relue depuis la révision enregistrée.
   await page.reload();

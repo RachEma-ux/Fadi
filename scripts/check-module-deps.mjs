@@ -14,24 +14,24 @@ const bare = (s) => s.startsWith('node:') ? 'node:' : s.startsWith('@') ? s.spli
 const literal = (n) => n && (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) ? n.text : null;
 
 /**
- * Frontières Studio ↔ Atelier (ADR-STUDIO-NAV-01, #173), sur le chemin RÉSOLU de chaque import de `apps/web/src` :
- * `modules/studio/` n'importe ni l'Atelier, ni le Parcours, ni `routes/ProjectShell`, ni le mode immersif
- * (`lib/use-immersive`) ; l'Atelier n'importe pas Studio. Les paquets purs (`@parcours/*`) restent la voie commune.
+ * Table des frontières (lot X.4) : `scripts/frontieres.json`, seule source des règles Studio ↔ Atelier (web), des couches
+ * du modèle Studio, du modèle pur et du Studio de l'API. Le contrôle applique la table ; il n'en contient aucune.
  */
-const FRONTIERES_WEB = [
-  {
-    de: 'modules/studio',
-    interdits: ['modules/atelier', 'modules/parcours', 'routes/ProjectShell', 'lib/use-immersive'],
-    motif: "Studio n'importe ni l'Atelier, ni le Parcours, ni ProjectShell, ni le mode immersif (ADR-STUDIO-NAV-01)",
-  },
-  { de: 'modules/atelier', interdits: ['modules/studio'], motif: "l'Atelier ne dépend pas de Studio (ADR-STUDIO-NAV-01)" },
-];
-// Interfaces publiques de l'Atelier ouvertes à Studio : aucune n'est décidée ; une exception s'ajoute ici avec sa décision.
-const INTERFACES_PUBLIQUES = [];
+const DEFAULT_FRONTIERES = path.join(path.dirname(fileURLToPath(import.meta.url)), 'frontieres.json');
+export function lireFrontieres(fichier = DEFAULT_FRONTIERES) { return JSON.parse(fs.readFileSync(fichier, 'utf8')); }
 const sous = (chemin, prefixe) => chemin === prefixe || chemin.startsWith(`${prefixe}/`) || chemin.startsWith(`${prefixe}.`);
+// `paquet/*` couvre les sous-chemins (et, pour un scope `@x/*`, tous ses paquets) ; sinon nom de paquet exact.
+const paquetVise = (spec, motifs) => motifs.find((m) => m.endsWith('/*') ? spec.startsWith(m.slice(0, -1)) || (!m.startsWith('@') && spec === m.slice(0, -2)) : bare(spec) === m && (spec === m || !m.includes('/')));
+const local = (spec) => spec.startsWith('.') || path.isAbsolute(spec) || spec.startsWith('#');
 
-export function checkModuleDependencies(root = DEFAULT_ROOT) {
+export function checkModuleDependencies(root = DEFAULT_ROOT, { frontieres = lireFrontieres() } = {}) {
   root = fs.realpathSync(root);
+  const FRONTIERES_WEB = frontieres.web?.regles ?? [];
+  const INTERFACES_PUBLIQUES = frontieres.web?.interfacesPubliques?.liste ?? [];
+  const STUDIO = frontieres.studioModele ?? null;
+  const PUR = frontieres.modelePur ?? null;
+  const API_STUDIO = frontieres.apiStudio ?? null;
+  const exceptionsUtilisees = new Set();
   const errors = [], units = [], optionsCache = new Map(), graph = new Map();
   let filesChecked = 0, importsChecked = 0;
   const relative = (file) => path.relative(root, file).split(path.sep).join('/');
@@ -109,9 +109,33 @@ export function checkModuleDependencies(root = DEFAULT_ROOT) {
     return fs.existsSync(target) ? fs.realpathSync(target) : path.resolve(target);
   }
   const ontology = (file) => /\/src\/ontologies\/([^/]+)\//.exec(relative(file))?.[1];
-  function examine(spec, file, unit, test) {
+  const apiStudio = (file) => {
+    if (!API_STUDIO) return false;
+    const depuis = path.relative(path.join(root, API_STUDIO.racine), file).split(path.sep).join('/');
+    return !depuis.startsWith('..') && API_STUDIO.de.some((p) => depuis.startsWith(p));
+  };
+  function couchesStudio(file, target, spec, typeOnly) {
+    const base = path.join(root, STUDIO.racine);
+    if (!inside(base, file) || !inside(base, target)) return;
+    const depuis = path.relative(base, file).split(path.sep).join('/');
+    const cible = path.relative(base, target).split(path.sep).join('/');
+    for (const regle of STUDIO.regles.filter((r) => sous(depuis, r.de))) {
+      const interdit = regle.interdits.find((x) => sous(cible, x));
+      if (!interdit || (regle.sauf ?? []).some((x) => sous(cible, x))) continue;
+      const exception = (STUDIO.exceptions ?? []).findIndex((e) => e.fichier === depuis && sous(cible, e.cible) && (e.nature === 'valeur' || typeOnly));
+      if (exception >= 0) { exceptionsUtilisees.add(exception); continue; }
+      fail(file, 'STUDIO_LAYER', `couche ${regle.de} → ${interdit} interdite (${spec}${typeOnly ? ', type' : ''}) — ${regle.motif}`);
+    }
+  }
+  function examine(spec, file, unit, test, typeOnly = false) {
     importsChecked++;
     if (/^(?:https?:|data:|file:)/i.test(spec)) { fail(file, 'REMOTE_IMPORT', spec); return; }
+    if (!local(spec)) {
+      const pur = unit.kind === 'packages' && PUR ? paquetVise(spec, PUR.paquetsInterdits) : null;
+      if (pur) fail(file, 'PURE_MODEL', `${spec} — ${PUR.motif}`);
+      const api = apiStudio(file) ? paquetVise(spec, API_STUDIO.paquetsInterdits) : null;
+      if (api) fail(file, 'API_STUDIO_BOUNDARY', `${spec} — ${API_STUDIO.motif}`);
+    }
     const target = resolveFile(spec, file, unit);
     const peer = target && !target.includes(path.sep + 'node_modules' + path.sep) ? owner(target) : null;
     if (target && target.includes(path.sep + 'node_modules' + path.sep) && !peer) {
@@ -122,8 +146,12 @@ export function checkModuleDependencies(root = DEFAULT_ROOT) {
       if (peer !== unit) {
         if (!test) edge(unit.name, peer.name);
         if (peer.kind === 'apps') fail(file, 'FORBIDDEN_BOUNDARY', `${unit.name} -> ${peer.name} (${spec})`);
+        const cheminCible = relative(target);
+        const viseApi = apiStudio(file) ? API_STUDIO.cheminsInterdits.find((c) => sous(cheminCible, c)) : null;
+        if (viseApi) fail(file, 'API_STUDIO_BOUNDARY', `${viseApi} (${spec}) — ${API_STUDIO.motif}`);
         if (unit.kind === 'packages' && !unit.allowed.has(peer.name)) fail(file, 'UNDECLARED_PACKAGE', `${peer.name} (${spec})`);
       }
+      if (STUDIO && peer === unit) couchesStudio(file, target, spec, typeOnly);
       const a = ontology(file), b = ontology(target);
       if (a && b && a !== b) fail(file, 'ONTOLOGY_BOUNDARY', `${a} -> ${b} (${spec})`);
       const webSrc = path.join(root, 'apps', 'web', 'src');
@@ -141,7 +169,7 @@ export function checkModuleDependencies(root = DEFAULT_ROOT) {
     } else if (target && inside(root, target) && !target.includes(path.sep + 'node_modules' + path.sep)) {
       fail(file, 'UNMANAGED_SOURCE', spec); return;
     }
-    if (spec.startsWith('.') || path.isAbsolute(spec) || spec.startsWith('#')) {
+    if (local(spec)) {
       fail(file, 'UNRESOLVED_LOCAL_IMPORT', spec); return;
     }
     const name = bare(spec);
@@ -154,12 +182,26 @@ export function checkModuleDependencies(root = DEFAULT_ROOT) {
     const sf = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
     const test = TEST.test(file);
     for (const d of sf.parseDiagnostics) fail(file, 'PARSE_ERROR', ts.flattenDiagnosticMessageText(d.messageText, ' '));
+    function typeSeulement(n) {
+      if (ts.isImportTypeNode(n)) return true;
+      if (ts.isImportDeclaration(n)) {
+        const c = n.importClause;
+        if (!c) return false;
+        if (c.isTypeOnly) return true;
+        return !c.name && !!c.namedBindings && ts.isNamedImports(c.namedBindings) && c.namedBindings.elements.length > 0 && c.namedBindings.elements.every((e) => e.isTypeOnly);
+      }
+      if (ts.isExportDeclaration(n)) {
+        if (n.isTypeOnly) return true;
+        return !!n.exportClause && ts.isNamedExports(n.exportClause) && n.exportClause.elements.length > 0 && n.exportClause.elements.every((e) => e.isTypeOnly);
+      }
+      return false;
+    }
     function importNode(n, arg) {
       const value = literal(arg);
       if (value === null) {
         const { line } = sf.getLineAndCharacterOfPosition(n.getStart(sf));
         fail(file, 'NON_LITERAL_IMPORT', `ligne ${line + 1} : cible calculée non analysable ; utiliser des imports littéraux explicites`);
-      } else examine(value, file, unit, test);
+      } else examine(value, file, unit, test, typeSeulement(n));
     }
     function visit(n) {
       if ((ts.isImportDeclaration(n) || ts.isExportDeclaration(n)) && n.moduleSpecifier) importNode(n, n.moduleSpecifier);
@@ -186,6 +228,25 @@ export function checkModuleDependencies(root = DEFAULT_ROOT) {
     }
   }
   for (const u of units) if (u.kind === 'packages' || fs.existsSync(path.join(u.dir, 'src'))) walk(path.join(u.dir, 'src'), u);
+  if (STUDIO && fs.existsSync(path.join(root, STUDIO.racine))) {
+    (STUDIO.exceptions ?? []).forEach((e, i) => {
+      if (!exceptionsUtilisees.has(i)) fail(path.join(root, STUDIO.racine, e.fichier), 'EXCEPTION_PERIMEE', `exception ${e.fichier} → ${e.cible} (${e.nature}) sans import correspondant : la retirer de scripts/frontieres.json`);
+    });
+  }
+  if (PUR?.libDom) {
+    const permis = new Set((PUR.libDom.exceptions ?? []).map((e) => e.paquet));
+    for (const u of units.filter((x) => x.kind === 'packages')) {
+      const config = path.join(u.dir, 'tsconfig.json');
+      if (!fs.existsSync(config)) continue;
+      // Options résolues (héritage `extends` compris) : `lib` y figure sous la forme `lib.dom.d.ts`.
+      const loaded = ts.readConfigFile(config, ts.sys.readFile);
+      const parsed = ts.parseJsonConfigFileContent(loaded.config || {}, ts.sys, path.dirname(config));
+      const libs = (parsed.options.lib ?? []).map((l) => String(l).toLowerCase().replace(/^lib\./, '').replace(/\.d\.ts$/, ''));
+      const rel = relative(u.dir);
+      if (libs.some((l) => l === 'dom' || l.startsWith('dom.'))) { if (!permis.has(rel)) fail(config, 'PURE_MODEL', `lib DOM déclarée dans le tsconfig d'un paquet pur — ${PUR.motif}`); }
+      else if (permis.has(rel)) fail(config, 'EXCEPTION_PERIMEE', `exception lib DOM de ${rel} sans objet : la retirer de scripts/frontieres.json`);
+    }
+  }
   const done = new Set(), visiting = new Set();
   function cycles(name, chain = []) {
     if (visiting.has(name)) { fail(root, 'DEPENDENCY_CYCLE', [...chain.slice(chain.indexOf(name)), name].join(' -> ')); return; }
@@ -202,7 +263,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   try {
     // `--root=<dossier>` contrôle un autre arbre (tests du script) ; par défaut, le dépôt qui contient ce script.
     const optionRacine = process.argv.find((a) => a.startsWith('--root='));
-    const result = checkModuleDependencies(optionRacine ? path.resolve(optionRacine.slice('--root='.length)) : undefined);
+    const optionFrontieres = process.argv.find((a) => a.startsWith('--frontieres='));
+    const frontieres = lireFrontieres(optionFrontieres ? path.resolve(optionFrontieres.slice('--frontieres='.length)) : undefined);
+    const result = checkModuleDependencies(optionRacine ? path.resolve(optionRacine.slice('--root='.length)) : undefined, { frontieres });
     if (result.errors.length) { console.error(`check-module-deps : ${result.errors.length} violation(s)\n- ${result.errors.join('\n- ')}`); process.exitCode = 1; }
     else console.log(`check-module-deps : ${result.filesChecked} fichiers, ${result.importsChecked} imports ; frontières et graphes de paquets conformes.`);
   } catch (error) { console.error('check-module-deps : audit impossible : ' + error.message); process.exitCode = 2; }

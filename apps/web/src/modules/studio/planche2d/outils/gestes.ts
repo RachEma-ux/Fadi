@@ -7,6 +7,7 @@
  * grille, sinon le centimètre ; saisie directe d'une longueur et d'un angle (champ « Mesures »). Les candidats ne sont
  * cherchés que dans la vue, à la tolérance du pointeur. La vue n'est jamais une commande ni une donnée du document.
  */
+import { contoursMurs } from "../architecture/architecture-ui";
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import type { StudioDocument, StudioPoint } from "@parcours/atelier-model";
 import {
@@ -67,7 +68,8 @@ export function useGestesPlanche(o: OptionsGestes) {
   // Index des objets accrochables affichés, recalculé quand le document change (pas à chaque mouvement du pointeur).
   const index = useMemo(() => {
     const d = o.drawing;
-    return d ? indexAccrochage(d.objects.filter((x) => estVisible(d, x.layerId))) : null;
+    // Murs (A.4) : le contour de leur emprise s'accroche comme une polyligne fermée, sous l'identifiant du mur.
+    return d ? indexAccrochage([...d.objects.filter((x) => estVisible(d, x.layerId)), ...contoursMurs(d, (l) => estVisible(d, l))]) : null;
   }, [o.drawing]);
   const [rectangle, setRectangle] = useState<RectangleSelection | null>(null);
   const [apercu, setApercu] = useState<{ ids: string[]; dx: number; dy: number } | null>(null);

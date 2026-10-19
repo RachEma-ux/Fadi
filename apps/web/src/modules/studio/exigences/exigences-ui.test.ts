@@ -61,7 +61,7 @@ describe("Exigences — interface (E.1-02)", () => {
     expect(listeSans([acceptee], "e1")).toEqual([]);
   });
 
-  it("le panneau se rend sans jeu (aucune exigence fournie) et range la commande « Exigences et écarts » (V)", () => {
+  it("le panneau se rend sans jeu (aucune exigence fournie) et range la commande « Exigences et écarts » (F)", () => {
     const html = renderToStaticMarkup(createElement(QueryClientProvider, { client: new QueryClient() }, createElement(PanneauExigences, {
       projectId: "p", studyId: "s", variantId: "v", revisionId: "r", doc: doc(), cibleId: "m1", modifiable: true, ecriture: true, nonEnregistre: false, surCommandes: () => true, surErreur: () => {},
     })));
@@ -69,9 +69,9 @@ describe("Exigences — interface (E.1-02)", () => {
     expect(html).toContain('data-studio-propriete-action="studio.propriete.definir"');
     expect(html).toContain('data-studio-propriete-action="studio.propriete.retirer"');
     expect(html).toContain("Aucune propriété déclarée.");
-    expect(cibleRaccourci("V")).toEqual({ type: "commande", id: "exigences" });
+    expect(cibleRaccourci("F")).toEqual({ type: "commande", id: "exigences" });
     expect(cibleRaccourci("K")).toEqual({ type: "outil", toolId: "studio.propriete.definir" });
-    expect(cibleRaccourci("J")).toEqual({ type: "outil", toolId: "studio.propriete.retirer" });
+    expect(cibleRaccourci("G")).toEqual({ type: "outil", toolId: "studio.propriete.retirer" });
     expect(COMMANDES_EDITEUR.find((c) => c.id === "exigences")).toMatchObject({ groupe: "exigences", ecrit: false, iconeSymbolique: "studio-requirements" });
     expect(familleDe("exigences", "exigences")).toBe("architecture");
     expect(familleDe("studio.propriete.definir", "proprietes")).toBe("architecture");

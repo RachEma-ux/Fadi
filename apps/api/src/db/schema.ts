@@ -751,7 +751,17 @@ export const studioStudySteps = pgTable("studio_study_steps", {
 
 /** Statuts d'une publication Studio : travail → soumis → approuve | refuse → diffuse ; retire (jamais supprimée). */
 export type StudioPublicationStatus = "travail" | "soumis" | "approuve" | "refuse" | "diffuse" | "retire";
-export type StudioPublicationAction = "creer" | "soumettre" | "approuver" | "refuser" | "diffuser" | "retirer";
+export type StudioPublicationAction = "creer" | "soumettre" | "approuver" | "refuser" | "diffuser" | "retirer" | "actualiser" | "remplacer";
+/** Dimensions distinctes du lot E.4 (lib/studio-publication-statuts.ts) ; NULL sur une ligne antérieure (déduites du statut combiné). */
+export type StudioPublicationWorkStatus = "brouillon" | "en-revue" | "approuve" | "refuse";
+export type StudioPublicationDiffusionStatus = "non-diffuse" | "diffuse" | "retire" | "remplace";
+/** Manifeste figé multi-sources d'un dossier (E.4-03) : sources coordonnées, métadonnées gelées, documents du paquet. */
+export interface StudioPublicationManifest {
+  schema: "studio-publication-manifest/1";
+  sources: { role: "principale" | "coordonnee"; variantId: string; revisionId: string; documentHash: string }[];
+  meta: { projectCode: string; projectName: string; studyName: string; variantName: string; revisionCreatedAt: string };
+  documents: { format: string; fileName: string; mime: string; size: number; sha256: string }[];
+}
 export type StudioPackageFormat = "svg" | "dxf" | "ifc" | "pdf";
 /** Fichier figé d'un paquet diffusé : contenu dans `volumes` (identifiant = SHA-256 du contenu). */
 export interface StudioPackageFile { format: StudioPackageFormat; fileName: string; mime: string; size: number; sha256: string }
@@ -762,6 +772,8 @@ export interface StudioPublicationPackage {
   documentHash: string;
   meta: { projectCode: string; projectName: string; studyName: string; variantName: string; revisionCreatedAt: string };
   files: StudioPackageFile[];
+  /** Empreinte du manifeste approuvé dont le paquet est issu (lot E.4 ; absente des paquets antérieurs). */
+  manifestHash?: string;
 }
 
 /** Publication d'une révision de variante Studio (FK composites « même étude / même variante » dans init.sql). */
@@ -782,6 +794,15 @@ export const studioPublications = pgTable("studio_publications", {
   packageHash: text("package_hash"),
   diffusedBy: text("diffused_by").references(() => users.id, { onDelete: "restrict" }),
   diffusedAt: timestamp("diffused_at", { withTimezone: true }),
+  workStatus: text("work_status").$type<StudioPublicationWorkStatus | null>(),
+  diffusionStatus: text("diffusion_status").$type<StudioPublicationDiffusionStatus | null>(),
+  manifest: jsonb("manifest").$type<StudioPublicationManifest | null>(),
+  manifestHash: text("manifest_hash"),
+  manifestBuiltAt: timestamp("manifest_built_at", { withTimezone: true }),
+  approvedManifestHash: text("approved_manifest_hash"),
+  replacedByPublicationId: text("replaced_by_publication_id"),
+  replacedBy: text("replaced_by").references(() => users.id, { onDelete: "restrict" }),
+  replacedAt: timestamp("replaced_at", { withTimezone: true }),
   requestId: text("request_id"),
   createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -803,6 +824,10 @@ export const studioPublicationEvents = pgTable("studio_publication_events", {
   revisionId: text("revision_id").notNull(),
   documentHash: text("document_hash").notNull(),
   headRevisionId: text("head_revision_id").notNull(),
+  manifestHash: text("manifest_hash"),
+  workStatus: text("work_status").$type<StudioPublicationWorkStatus | null>(),
+  diffusionStatus: text("diffusion_status").$type<StudioPublicationDiffusionStatus | null>(),
+  relatedPublicationId: text("related_publication_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("studio_publication_events_publication_idx").on(t.publicationId, t.createdAt)]);
 /**

@@ -153,6 +153,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const selectionSet = new Set(selectionIds);
   const itemDe = (id: string | undefined) => (id && drawing ? elements(drawing).find(e => e.id === id) ?? null : null);
   const selected = selectionIds.length === 1 ? itemDe(selectionIds[0]) : null;
+  // Objet du panneau Architecture : l'ouverture ou le mur désigné, ou le seul mur de la sélection.
+  const panneauArchi = elementArchitectural(drawing, selectionArchi) ? selectionArchi
+    : selectionIds.length === 1 && elementArchitectural(drawing, selectionIds[0]!)?.type === "wall" ? selectionIds[0]! : null;
   const calques = drawing ? listeCalques(drawing) : [];
   const { calque: actif, repli: calqueReplie } = calqueActifOuPremier(calques, calqueActif);
   // Le calque actif a disparu : le premier calque devient réellement actif (il ne reviendra pas seul après un rétablir).
@@ -189,6 +192,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   }
   function select(ids: string[]) {
     setSelection(ids);
+    setSelectionArchi(null);
     const o = ids.length === 1 ? itemDe(ids[0]) : null;
     if (o) properties(o);
     else if (ids.length > 1) {
@@ -196,6 +200,18 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       const valeurs = ids.map((id) => { const x = itemDe(id); return x && estForme(x) ? JSON.stringify(valeursDe(x)) : "null"; });
       setExtrusion(new Set(valeurs).size === 1 && valeurs[0] !== "null" ? JSON.parse(valeurs[0]!) as ValeursExtrusion : VALEURS_VIDES);
     }
+  }
+
+  /**
+   * Désignation d'un mur ou d'une ouverture (planche, vue 3D, panneau) : un mur entre dans la sélection de la planche
+   * (transformations, suppression, calque) ; une ouverture, qui suit son mur, n'est désignée que pour être modifiée.
+   */
+  function choisirArchitecture(id: string, ajouter: boolean) {
+    const it = elementArchitectural(drawing, id);
+    if (!it) return;
+    if (it.type === "wall") select(ajouter ? basculer(selectionIds, id) : [id]);
+    else select([]);
+    if (!ajouter) setSelectionArchi(id);
   }
 
   /** Applique un lot localement (un pas d'historique) ; rien n'est envoyé avant « Enregistrer ». */
@@ -296,14 +312,14 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       return;
     }
     if (toolId === "studio.architecture.modifier") {
-      if (!elementArchitectural(drawing, selectionArchi)) { setInfo("Sélectionnez d’abord, sur la planche ou dans la vue 3D, le mur ou l’ouverture à modifier."); return; }
+      if (!panneauArchi) { setInfo("Sélectionnez d’abord, sur la planche ou dans la vue 3D, le mur ou l’ouverture à modifier."); return; }
       shell.current?.querySelector<HTMLButtonElement>("[data-studio-modifier-architecture]")?.click();
       return;
     }
     if (toolId === "studio.architecture.supprimer") {
-      const it = elementArchitectural(drawing, selectionArchi);
-      if (it?.type !== "wall") { setInfo("Sélectionnez d’abord le mur à supprimer avec ses ouvertures."); return; }
-      if (apply([{ toolId: "studio.architecture.supprimer", params: { ids: [it.id], cascade: true } }])) setSelectionArchi(null);
+      const ids = [...new Set([...selectionIds, ...(panneauArchi ? [panneauArchi] : [])])].filter((id) => elementArchitectural(drawing, id)?.type === "wall");
+      if (!ids.length) { setInfo("Sélectionnez d’abord le mur à supprimer avec ses ouvertures."); return; }
+      if (apply([{ toolId: "studio.architecture.supprimer", params: { ids, cascade: true } }])) select([]);
       return;
     }
     if (toolId === "studio.dessin.supprimer" && !selectionIds.length && elementArchitectural(drawing, selectionArchi)) {
@@ -449,12 +465,12 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     <p className="studio-undo-scope" data-studio-annuler-portee>{`Annuler et Rétablir ne portent que sur les modifications non enregistrées (${commands.length} commande(s) en attente) ; une révision enregistrée ne s’annule pas ici.`}</p>
     <div className="studio-editor"><div className="studio-sheet"><div className="studio-sheet-caption"><span>Dessin et modélisation</span><span data-studio-pas-grille={pas}>{`Grille ${pasAffiche} m`}</span><span>1 unité = 1 m</span></div>
       {vue3d && <Vue3D doc={drawing} outil={tool} modifiable={writable} navigation={navigation3d} coupe={coupe3d} selection={solide3d} layerId={actif?.id ?? STUDIO_DEFAULT_LAYER_ID}
-        surSelection={setSolide3d} surCommandes={apply} selectionArchitecture={selectionArchi} surSelectionArchitecture={setSelectionArchi} />}
+        surSelection={setSolide3d} surCommandes={apply} selectionArchitecture={panneauArchi} surSelectionArchitecture={(id) => (id ? choisirArchitecture(id, false) : setSelectionArchi(null))} />}
       {!vue3d && <Dessin2D svgRef={gestes.refPlanche} doc={apercuDoc ?? apercuTransformation ?? drawing} cadre={cadre} pas={pas} outil={tool} selection={selectionSet} trace={trace} survol={survol} rectangle={gestes.rectangle} glissement={!!gestes.apercu}
         apercuForme={apercuForme} sommetsPoses={suite}
         clicsVersPlanche={o => OUTILS_TRACE.has(tool) || (moveWithPointer && (!!trace || selectionSet.has(o.id)))}
         surPlanche={board} surSurvol={gestes.pointerMove} surPointeurBas={gestes.pointerDown} surPointeurHaut={gestes.pointerUp} surClicCapture={gestes.clickCapture} surSelection={(id, plus) => select(plus ? basculer(selectionIds, id) : [id])}
-        architecture={{ selection: selectionArchi, surSelection: (id) => { setSelectionArchi(id); select([]); }, versPlanche: OUTILS_TRACE.has(tool) }} />}
+        architecture={{ selection: new Set([...selectionIds, ...(selectionArchi ? [selectionArchi] : [])]), surSelection: choisirArchitecture, versPlanche: OUTILS_TRACE.has(tool) }} />}
       {!vue3d && trace && pointsActifs && <ChampMesures base={suite[suite.length - 1] ?? trace.point} survol={survol?.point ?? null} direction={gestes.directionCourante()} verrou={gestes.verrouAngle}
         pasPolaire={gestes.bascules.pasPolaire} surPasPolaire={gestes.poserPasPolaire} desactive={!writable}
         surSaisie={(texte) => { const r = gestes.saisir(texte); if (r.type === "erreur") return r.message; if (r.type === "point") poser({ point: r.point, accroche: null }); return null; }} />}
@@ -467,8 +483,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     </div>
     <PanneauProprietes titre={toolEntry?.libelleFR} drawing={drawing} selectionIds={selectionIds} selected={selected} writable={writable} formesChoisies={formesChoisies} extrusion={extrusion}
       surExtrusion={setExtrusion} surExtruder={extrude} surAplatir={() => runTool("studio.objet.aplatir")} surSupprimer={() => runTool("studio.dessin.supprimer")}
-      architecture={<PanneauArchitecture doc={drawing} outil={tool} selection={elementArchitectural(drawing, selectionArchi) ? selectionArchi : null} modifiable={writable} parametres={parametresArchi} surParametres={setParametresArchi}
-        contexte={() => ({ nouvelId: () => crypto.randomUUID(), layerId: layerId() })} surCommandes={apply} surErreur={setError} surSelection={setSelectionArchi} />}
+      architecture={<PanneauArchitecture doc={drawing} outil={tool} selection={panneauArchi} modifiable={writable} parametres={parametresArchi} surParametres={setParametresArchi}
+        contexte={() => ({ nouvelId: () => crypto.randomUUID(), layerId: layerId() })} surCommandes={apply} surErreur={setError} surSelection={(id) => (id ? choisirArchitecture(id, false) : select([]))} />}
       formulaire={tool !== "studio.dessin.selection" && !OUTILS_VOLUME_LIBRE.has(tool) && !tool.startsWith("studio.architecture.") && <FormulaireValeurs tool={tool} selected={selected} desactive={!writable || formulaireInactif(tool, selectionIds, selected) || (tool === "studio.dessin.modifier" && (selected?.type === "dimension" || selected?.type === "angular-dimension") && selected.toResolve)}
         values={values} surValeur={(k, v) => setValues(x => ({ ...x, [k]: v }))} modeArc={modeArc} surModeArc={m => { setModeArc(m); cancelTrace(); }}
         sommetsTexte={sommetsTexte} surSommets={setSommetsTexte} fermee={fermee} surFermee={setFermee} surSoumettre={numeric} texte={texteSaisi} surTexte={setTexteSaisi} />}

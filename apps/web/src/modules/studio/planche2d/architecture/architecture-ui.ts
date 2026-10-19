@@ -5,8 +5,8 @@
  * d'ouverture sont choisis explicitement (le type peut rester « non déclaré »).
  */
 import {
-  geometrieMur, type StudioArchitectureItem, type StudioCommand, type StudioDocument, type StudioOpening, type StudioOpeningKind, type StudioPoint,
-  type StudioWall, type StudioWallJustification,
+  geometrieMur, lateraux, type StudioArchitectureItem, type StudioCommand, type StudioDocument, type StudioOpening, type StudioOpeningKind, type StudioPoint,
+  type StudioPolyline, type StudioWall, type StudioWallJustification,
 } from "@parcours/atelier-model";
 
 export interface ParametresMur { epaisseur: number; hauteur: number; base: number; justification: StudioWallJustification | "" }
@@ -53,12 +53,25 @@ export function commandeOuverture(c: ContexteArchitecture, hostId: string, posit
   return { commandes: [{ toolId: "studio.architecture.ouverture", params }] };
 }
 
+/** Contours d'emprise des murs affichés, comme polylignes fermées portant l'identifiant du mur (accrochage). */
+export function contoursMurs(doc: StudioDocument, visible: (layerId: string | undefined) => boolean): StudioPolyline[] {
+  const out: StudioPolyline[] = [];
+  for (const w of mursDu(doc)) {
+    if (!visible(w.layerId)) continue;
+    const g = geometrieMur(w);
+    if (g.ok) out.push({ id: w.id, type: "polyline", points: g.valeur.anneau, closed: true });
+  }
+  return out;
+}
+
 export const mursDu = (doc: StudioDocument | null): StudioWall[] => (doc?.architecture ?? []).filter((x): x is StudioWall => x.type === "wall");
 export const elementArchitectural = (doc: StudioDocument | null, id: string | null): StudioArchitectureItem | null => (id && doc?.architecture?.find((x) => x.id === id)) || null;
 
 /**
- * Mur désigné au point `p` : le plus proche dont l'axe passe à moins de max(épaisseur, tolérance) ; `abscisse` = distance
- * le long de l'axe du pied de la perpendiculaire. `visible` filtre les calques affichés et modifiables.
+ * Mur désigné au point `p` : un mur dont le **corps** contient le point, à la tolérance près — décalage signé du point
+ * (normale à gauche) dans [côté droit ; côté gauche] de `lateraux` : un mur justifié à gauche n'est pas désigné à droite
+ * de son axe. Le plus proche du milieu du corps l'emporte ; `abscisse` = distance le long de l'axe du pied de la
+ * perpendiculaire. `visible` filtre les calques (affichés et modifiables pour l'outil Ouverture).
  */
 export function murSousPoint(doc: StudioDocument, p: StudioPoint, tolerance: number, visible: (layerId: string | undefined) => boolean = () => true): { mur: StudioWall; abscisse: number } | null {
   let meilleur: { mur: StudioWall; abscisse: number; distance: number } | null = null;
@@ -66,11 +79,15 @@ export function murSousPoint(doc: StudioDocument, p: StudioPoint, tolerance: num
     if (!visible(w.layerId)) continue;
     const g = geometrieMur(w);
     if (!g.ok) continue;
+    const cotes = lateraux(w);
     for (const s of g.valeur.segments) {
       const t = Math.max(0, Math.min(s.longueur, (p.x - s.a.x) * s.d.x + (p.y - s.a.y) * s.d.y));
       const q = { x: s.a.x + s.d.x * t, y: s.a.y + s.d.y * t };
-      const distance = Math.hypot(p.x - q.x, p.y - q.y);
-      if (distance <= Math.max(w.thickness, tolerance) && (!meilleur || distance < meilleur.distance)) meilleur = { mur: w, abscisse: s.debut + t, distance };
+      const u = (p.x - q.x) * s.n.x + (p.y - q.y) * s.n.y;
+      const leLong = Math.abs((p.x - q.x) * s.d.x + (p.y - q.y) * s.d.y);
+      if (leLong > tolerance || u < cotes.droite - tolerance || u > cotes.gauche + tolerance) continue;
+      const distance = Math.abs(u - (cotes.droite + cotes.gauche) / 2);
+      if (!meilleur || distance < meilleur.distance) meilleur = { mur: w, abscisse: s.debut + t, distance };
     }
   }
   return meilleur && { mur: meilleur.mur, abscisse: meilleur.abscisse };

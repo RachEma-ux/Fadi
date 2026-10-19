@@ -751,6 +751,47 @@ END;
 $$;
 CREATE OR REPLACE TRIGGER studio_publications_no_delete BEFORE DELETE ON studio_publications
   FOR EACH ROW EXECUTE FUNCTION studio_publication_no_delete();
+-- Publications Studio, lot E.4 (E.4-01 à E.4-06) : trois dimensions distinctes — travail (brouillon, en-revue,
+-- approuve, refuse), diffusion (non-diffuse, diffuse, retire, remplace) et actualité (calculée, jamais stockée) —,
+-- manifeste figé multi-sources (révisions et empreintes des variantes sources, empreintes des documents du paquet),
+-- approbation liée à l'empreinte exacte du manifeste examiné, remplacement d'une diffusion journalisé. Le statut
+-- combiné `status` reste tenu pour les lecteurs existants. Colonnes nullables ajoutées sans réécrire les lignes
+-- existantes (dimensions déduites du statut combiné, manifeste à actualiser) ; contraintes recréées, NOT VALID.
+ALTER TABLE studio_publications ADD COLUMN IF NOT EXISTS work_status text;
+ALTER TABLE studio_publications ADD COLUMN IF NOT EXISTS diffusion_status text;
+ALTER TABLE studio_publications ADD COLUMN IF NOT EXISTS manifest jsonb;
+ALTER TABLE studio_publications ADD COLUMN IF NOT EXISTS manifest_hash text;
+ALTER TABLE studio_publications ADD COLUMN IF NOT EXISTS manifest_built_at timestamptz;
+ALTER TABLE studio_publications ADD COLUMN IF NOT EXISTS approved_manifest_hash text;
+ALTER TABLE studio_publications ADD COLUMN IF NOT EXISTS replaced_by_publication_id text REFERENCES studio_publications(id);
+ALTER TABLE studio_publications ADD COLUMN IF NOT EXISTS replaced_by text REFERENCES users(id) ON DELETE RESTRICT;
+ALTER TABLE studio_publications ADD COLUMN IF NOT EXISTS replaced_at timestamptz;
+ALTER TABLE studio_publications DROP CONSTRAINT IF EXISTS studio_publications_work_status_check,
+  ADD CONSTRAINT studio_publications_work_status_check
+  CHECK (work_status IS NULL OR work_status IN ('brouillon', 'en-revue', 'approuve', 'refuse')) NOT VALID;
+ALTER TABLE studio_publications DROP CONSTRAINT IF EXISTS studio_publications_diffusion_status_check,
+  ADD CONSTRAINT studio_publications_diffusion_status_check
+  CHECK (diffusion_status IS NULL OR diffusion_status IN ('non-diffuse', 'diffuse', 'retire', 'remplace')) NOT VALID;
+ALTER TABLE studio_publications DROP CONSTRAINT IF EXISTS studio_publications_manifest_complete,
+  ADD CONSTRAINT studio_publications_manifest_complete
+  CHECK ((manifest IS NULL) = (manifest_hash IS NULL) AND (manifest_hash IS NULL OR manifest_hash ~ '^[0-9a-f]{64}$')) NOT VALID;
+ALTER TABLE studio_publications DROP CONSTRAINT IF EXISTS studio_publications_approved_manifest_check,
+  ADD CONSTRAINT studio_publications_approved_manifest_check
+  CHECK (approved_manifest_hash IS NULL OR (approved_manifest_hash ~ '^[0-9a-f]{64}$' AND approved_revision_id IS NOT NULL)) NOT VALID;
+ALTER TABLE studio_publications DROP CONSTRAINT IF EXISTS studio_publications_replacement_complete,
+  ADD CONSTRAINT studio_publications_replacement_complete
+  CHECK ((replaced_by_publication_id IS NULL) = (replaced_at IS NULL) AND (replaced_by_publication_id IS NULL OR replaced_by_publication_id <> id)) NOT VALID;
+ALTER TABLE studio_publication_events ADD COLUMN IF NOT EXISTS manifest_hash text;
+ALTER TABLE studio_publication_events ADD COLUMN IF NOT EXISTS work_status text;
+ALTER TABLE studio_publication_events ADD COLUMN IF NOT EXISTS diffusion_status text;
+ALTER TABLE studio_publication_events ADD COLUMN IF NOT EXISTS related_publication_id text;
+ALTER TABLE studio_publication_events DROP CONSTRAINT IF EXISTS studio_publication_events_action_check,
+  ADD CONSTRAINT studio_publication_events_action_check
+  CHECK (action IN ('creer', 'soumettre', 'approuver', 'refuser', 'diffuser', 'retirer', 'actualiser', 'remplacer')) NOT VALID;
+ALTER TABLE studio_publication_events DROP CONSTRAINT IF EXISTS studio_publication_events_manifest_hash_check,
+  ADD CONSTRAINT studio_publication_events_manifest_hash_check
+  CHECK (manifest_hash IS NULL OR manifest_hash ~ '^[0-9a-f]{64}$') NOT VALID;
+CREATE INDEX IF NOT EXISTS studio_publications_variant_idx ON studio_publications(variant_id, diffused_at);
 -- Exigences Studio (E.1-02 à E.1-06) : un jeu d'exigences versionné par étude, rangé à part des révisions dessinées.
 -- Chaque modification crée la version suivante (append-only : UPDATE refusée par déclencheur) ; aucune exigence n'est
 -- fournie par Fadi (aucune ligne insérée ici). Les contrôles enregistrent leur résultat calculé, lié à la révision et à la

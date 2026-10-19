@@ -100,8 +100,8 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "feuille", libelleFR: "Feuille", raccourci: "Shift+P", iconeSymbolique: "studio-sheet", groupe: "presentation", ecrit: false },
   { id: "outils", libelleFR: "Outils", raccourci: "Shift+O", iconeSymbolique: "studio-catalog", groupe: "catalogue", ecrit: false },
   { id: "palette", libelleFR: "Palette de commandes", raccourci: "Ctrl+K", iconeSymbolique: "studio-palette", groupe: "catalogue", ecrit: false, dansUnChamp: true },
-  // Exigences et écarts (E.1) : V comme « vérifier » (lettre seule libre et non réservée) ; lecture admise.
-  { id: "exigences", libelleFR: "Exigences et écarts", raccourci: "V", iconeSymbolique: "studio-requirements", groupe: "exigences", ecrit: false },
+  // Exigences et écarts (E.1) : F comme « fiche d’exigences » (lettre seule libre et non réservée ; V appartient à la Visualisation) ; lecture admise.
+  { id: "exigences", libelleFR: "Exigences et écarts", raccourci: "F", iconeSymbolique: "studio-requirements", groupe: "exigences", ecrit: false },
 ] as const);
 
 /** Ordre et nom des barres, toutes rangées dans la barre « Outils de dessin ». */
@@ -131,7 +131,9 @@ export const BARRES_STUDIO: readonly { id: BarreStudio; libelleFR: string }[] = 
 export const RACCOURCIS_RESERVES: readonly string[] = Object.freeze([
   "Ctrl+N", "Ctrl+T", "Ctrl+W", "Ctrl+Shift+N", "Ctrl+Shift+T", "Ctrl+Shift+W", "Ctrl+Q", "Ctrl+Tab", "Ctrl+Shift+Tab",
   "Ctrl+L", "Ctrl+R", "Ctrl+Shift+R", "Ctrl+P", "Ctrl+F", "Ctrl+G", "Ctrl+H", "Ctrl+J", "Ctrl+D", "Ctrl+U", "Ctrl+O",
-  "Ctrl+Shift+I", "Ctrl+Shift+J", "Ctrl+Shift+C", "Ctrl+Shift+Delete", "Ctrl+=", "Ctrl+-", "Ctrl+0",
+  "Ctrl+Shift+I", "Ctrl+Shift+J", "Ctrl+Shift+C", "Ctrl+Shift+Delete",
+  // Outils de développement de Firefox : réseau (Ctrl+Maj+E) et console (Ctrl+Maj+K).
+  "Ctrl+Shift+E", "Ctrl+Shift+K", "Ctrl+=", "Ctrl+-", "Ctrl+0",
   "F1", "F3", "F5", "F6", "F7", "F11", "F12",
 ]);
 

@@ -3,7 +3,7 @@
  *
  * - Propriétés BIM de l'objet choisi (mur, ouverture, objet extrudé) : liste des propriétés déclarées, saisie (nom,
  *   valeur nombre / texte / non évaluée, unité, source) par `studio.propriete.definir` (K), retrait par
- *   `studio.propriete.retirer` (J) ; ajoutées au brouillon comme toute commande, enregistrées avec la révision.
+ *   `studio.propriete.retirer` (G) ; ajoutées au brouillon comme toute commande, enregistrées avec la révision.
  * - Exigences de l'étude : jeu versionné rangé par le serveur, à part du dessin ; toute modification crée la version
  *   suivante (les versions passées restent lisibles). Aucune exigence n'est fournie. Une exigence reprise d'une
  *   référence partenaire n'est utilisée qu'acceptée (qui, quand), par le propriétaire du projet.

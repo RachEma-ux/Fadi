@@ -7,6 +7,7 @@
  * Pur : ni React ni DOM.
  */
 import { commandeMur, commandeOuverture, PARAMETRES_ARCHITECTURE_VIDES, murSousPoint } from "../architecture/architecture-ui";
+import { estSelectionnable } from "../calques";
 import { ERREUR_POINTS_CONFONDUS, memePoint, type ActionOutil, type OutilPlanche } from "./type";
 
 const action = (r: ReturnType<typeof commandeMur>): ActionOutil => ("erreur" in r ? { type: "erreur", message: r.erreur } : { type: "commandes", commandes: r.commandes, apres: "fin-trace" });
@@ -25,7 +26,9 @@ export const OUTIL_MUR: OutilPlanche = {
 export const OUTIL_OUVERTURE: OutilPlanche = {
   ids: ["studio.architecture.ouverture"],
   premierClic(p, c) {
-    const cible = c.document ? murSousPoint(c.document, p.point, c.tolerance) : null;
+    // Seul un mur affiché et déverrouillé peut recevoir une ouverture (un mur masqué n'est jamais désigné).
+    const doc = c.document;
+    const cible = doc ? murSousPoint(doc, p.point, c.tolerance, (l) => estSelectionnable(doc, l)) : null;
     if (!cible) return { type: "erreur", message: "Cliquez sur un mur : une ouverture n’existe que dans un mur." };
     const o = (c.architecture ?? PARAMETRES_ARCHITECTURE_VIDES).ouverture;
     return action(commandeOuverture(c, cible.mur.id, cible.abscisse - o.largeur / 2, o));

@@ -80,7 +80,7 @@ describe("Propriétés BIM déclarées (E.1-01)", () => {
   it("registre : deux commandes de mutation, famille propre, schéma du document additif", () => {
     const outils = STUDIO_TOOLS.filter((t) => t.groupe === "proprietes");
     expect(outils.map((t) => [t.toolId, t.raccourci, t.iconeSymbolique])).toEqual([
-      ["studio.propriete.definir", "K", "studio-property-set"], ["studio.propriete.retirer", "J", "studio-property-remove"],
+      ["studio.propriete.definir", "K", "studio-property-set"], ["studio.propriete.retirer", "G", "studio-property-remove"],
     ]);
     expect(STUDIO_COMMAND_TOOL_IDS).toContain("studio.propriete.definir");
     expect(STUDIO_DOCUMENT_SCHEMA.properties.proprietes.type).toBe("array");
