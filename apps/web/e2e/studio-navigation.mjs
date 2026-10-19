@@ -1237,6 +1237,31 @@ try {
   check("menu « Plus » : Échap referme et rend le focus au bouton",
     (await plus.getAttribute("aria-expanded")) === "false" && (await mobile.evaluate(() => document.activeElement?.getAttribute("data-studio-menu"))) === "plus" && !(await listePlus.isVisible()));
 
+  // E.6-03 : rapport de fidélité de l'export. Le raccourci Maj+X lance le téléchargement DXF puis ouvre une petite boîte
+  // non modale (exact / approché / non couvert par type et raison) ; ses totaux sont ceux du rapport servi par l'API.
+  await page.goto(base);
+  await outils.waitFor();
+  await page.locator("svg [data-studio-objet]").first().waitFor({ state: "attached" });
+  await page.evaluate(() => document.activeElement?.blur());
+  const telechargementDxf = page.waitForEvent("download");
+  await page.keyboard.press("Shift+X");
+  const fichierDxf = await telechargementDxf;
+  const boiteRapport = page.locator('[data-studio-rapport-export="dxf"]');
+  await boiteRapport.locator("[data-studio-rapport-totaux]").waitFor();
+  const rapportApi = await a.api("get", `${variantePath}/export/rapport?format=dxf`);
+  const totauxUi = Object.fromEntries(await boiteRapport.locator("[data-total]").evaluateAll((d) => d.map((x) => [x.getAttribute("data-total"), Number(x.textContent)])));
+  const lignesUi = await boiteRapport.locator("tbody tr").count();
+  check("rapport de fidélité : téléchargement DXF lancé, boîte non modale ouverte sans prendre le focus",
+    fichierDxf.suggestedFilename().endsWith(".dxf") && (await boiteRapport.getAttribute("aria-modal")) === "false" && !(await boiteRapport.evaluate((b) => b.contains(document.activeElement))));
+  check("rapport de fidélité : totaux et lignes identiques au rapport de l'API (cotes éclatées en DXF comprises)",
+    rapportApi.schema === "studio-rapport-fidelite/1" && totauxUi.elements === rapportApi.totaux.elements && totauxUi.exact === rapportApi.totaux.exact && totauxUi.approche === rapportApi.totaux.approche
+    && totauxUi["non-couvert"] === rapportApi.totaux.nonCouvert && lignesUi === rapportApi.lignes.length && rapportApi.totaux.elements > 0
+    && rapportApi.totaux.exact + rapportApi.totaux.approche + rapportApi.totaux.nonCouvert === rapportApi.totaux.elements, JSON.stringify({ totauxUi, totaux: rapportApi.totaux }));
+  await page.screenshot({ path: join(OUT, "studio-rapport-fidelite-dxf.png") });
+  await boiteRapport.locator("[data-studio-rapport-fermer]").click();
+  await boiteRapport.waitFor({ state: "detached" });
+  check("rapport de fidélité : « Fermer » referme la boîte", (await boiteRapport.count()) === 0);
+
   // NAV-009 : les parcours existants restent atteignables.
   await page.goto(`${BASE}/projets/${pA.id}?module=atelier`);
   await page.locator(".module-content").waitFor();

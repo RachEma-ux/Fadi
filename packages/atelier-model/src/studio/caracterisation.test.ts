@@ -307,6 +307,9 @@ const AJOUTS = {
   exports: new Set([
     "dessinerCoteAngulaire", "formatStudioAngle", "measureStudioAngularDimension", "STUDIO_TEXT_JUSTIFICATIONS", "STUDIO_TEXT_MAX",
     "studioAngularFromSegments", "studioAngularValue", "studioStraightSegment", "studioTextBox", "studioTextRotationDegrees",
+    // Rapport de fidélité des exports (E.6-03, `echanges/rapport-fidelite.ts`).
+    "STUDIO_CAPACITES_EXPORT", "STUDIO_FORMATS_ECHANGE", "STUDIO_LISTES_ECHANGE", "STUDIO_RAISONS_FIDELITE", "STUDIO_RAPPORT_FIDELITE_SCHEMA",
+    "STUDIO_STATUTS_FIDELITE", "studioRapportFidelite",
   ]),
 };
 function sansAjouts(value: unknown): unknown {

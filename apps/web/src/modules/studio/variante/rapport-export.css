@@ -1,0 +1,17 @@
+/* Rapport de fidélité d'un export (E.6-03) : petite boîte non modale, en bas à droite, défilante sur petit écran. */
+.studio-rapport-export{position:fixed;right:16px;bottom:16px;z-index:40;width:min(460px,calc(100vw - 32px));max-height:min(70vh,560px);overflow:auto;box-sizing:border-box;padding:14px 16px;background:#fff;color:var(--studio-ink,#173b43);border:1px solid #c9dadd;border-radius:12px;box-shadow:0 10px 30px #153b4326;font-size:13px}
+.studio-rapport-export header{display:flex;align-items:center;gap:10px}
+.studio-rapport-export h2{font-size:15px;margin:0}
+.studio-rapport-export header button{margin-left:auto}
+.studio-rapport-export-format{font-size:11px;font-weight:700;letter-spacing:1px;border:1px solid #b5d1ce;background:#eaf4f1;border-radius:20px;padding:2px 9px}
+.studio-rapport-export p{color:#577079;margin:8px 0}
+.studio-rapport-export dl{display:flex;flex-wrap:wrap;gap:6px 18px;margin:8px 0}
+.studio-rapport-export dl div{display:flex;gap:6px;align-items:baseline}
+.studio-rapport-export dt{color:#577079}
+.studio-rapport-export dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+.studio-rapport-export dd ul{margin:0;padding-left:16px;font-weight:400}
+.studio-rapport-export table{width:100%;border-collapse:collapse;margin:6px 0}
+.studio-rapport-export th,.studio-rapport-export td{text-align:left;padding:5px 6px;border-bottom:1px solid #e3eaec;vertical-align:top}
+.studio-rapport-export td:last-child,.studio-rapport-export th:last-child{text-align:right}
+.studio-rapport-export tr[data-statut=non-couvert] td:nth-child(2){color:#9a3b1c;font-weight:600}
+.studio-rapport-export tr[data-statut=approche] td:nth-child(2){color:#8a5a12;font-weight:600}

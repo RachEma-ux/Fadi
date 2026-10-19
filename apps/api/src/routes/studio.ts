@@ -1,6 +1,7 @@
 /** Module Studio autonome : aucun rattachement au modèle Atelier ; lien de lecture facultatif vers des étapes du Parcours (studio-liens). */
 import { Router, json, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
+import { studioRapportFidelite } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioStudy, STUDIO_EXPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
@@ -138,6 +139,17 @@ studioRouter.get("/studies/:studyId/variants/:variantId/export", endpoint(async 
   if (file.format === "svg") res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
   // Tampon : Express n'ajoute pas de charset au type déclaré (le DXF et l'IFC sont de l'ASCII strict).
   res.status(200).send(Buffer.from(file.body, "utf8"));
+}));
+/**
+ * Rapport de fidélité de l'export (E.6-03) : ce que le fichier `format` porte exactement, approché ou pas, par type et par
+ * raison, pour la même révision (tête par défaut) ; JSON, mêmes droits et refus que l'export.
+ */
+studioRouter.get("/studies/:studyId/variants/:variantId/export/rapport", endpoint(async (req, res) => {
+  const parsed = exportSchema.safeParse(req.query);
+  if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
+  const context = await readStudioContext(db, scope(req), req.user!.id, parsed.data.revision);
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json({ revisionId: context.revision.id, ...studioRapportFidelite(context.revision.document, parsed.data.format) });
 }));
 studioRouter.post("/studies/:studyId/variants/:variantId/commands", endpoint(async (req, res) => {
   res.json(await submitStudioCommands(scope(req), req.user!.id, req.body));

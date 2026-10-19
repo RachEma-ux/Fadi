@@ -289,6 +289,21 @@ if (PHASE === 'reopen') {
   const oldIfc = await owner('GET', `${exportPath}?format=ifc&revision=${drawn.body.revision.id}`);
   check('export IFC d\'une révision sans extrusion : aucun élément 3D', oldIfc.status === 200 && count(oldIfc.text, /=IFCWALL\(/g) === 0 && count(oldIfc.text, /=IFCBUILDINGELEMENTPROXY\(/g) === 0 && oldIfc.text.includes("IFCPROPERTYSINGLEVALUE('NonExtrudedObjects',$,IFCINTEGER(2),$)"));
 
+  // E.6-03 : rapport de fidélité de l'export (JSON), même révision et mêmes droits que l'export ; concordant avec le
+  // fichier (IFC : la cote est non couverte, les deux extrusions exactes ; DXF : extrusions non portées, cote éclatée,
+  // calque « Murs » réécrit « MURS » ; SVG d'une révision sans extrusion : tout exact).
+  const rapportPath = `${exportPath}/rapport`;
+  const rIfc = await owner('GET', `${rapportPath}?format=ifc`);
+  const ligneDe = (r, type, raison) => r.body?.lignes?.find((l) => l.type === type && l.raison === raison);
+  check('rapport IFC : 200 JSON, tête exportée, non mis en cache', rIfc.status === 200 && rIfc.headers.get('content-type')?.startsWith('application/json') && rIfc.body?.schema === 'studio-rapport-fidelite/1' && rIfc.body?.revisionId === extruded.body?.revision?.id && rIfc.headers.get('cache-control') === 'private, no-store', `${rIfc.status} ${JSON.stringify(rIfc.body).slice(0, 300)}`);
+  check('rapport IFC : 2 exacts (mur, prisme), cote non couverte, concordance avec Fadi_StudioExport', JSON.stringify(rIfc.body?.totaux) === JSON.stringify({ elements: 3, exact: 2, approche: 0, nonCouvert: 1 }) && ligneDe(rIfc, 'dimension', 'cote-hors-ifc')?.ids?.[0] === 'c-export' && ifc.text.includes("IFCPROPERTYSINGLEVALUE('DimensionsNotExported',$,IFCINTEGER(1),$)"), JSON.stringify(rIfc.body?.totaux));
+  const rDxf = await owner('GET', `${rapportPath}?format=dxf`);
+  check('rapport DXF : extrusions non portées, cote éclatée, calque renommé, calques masqués éteints', rDxf.status === 200 && rDxf.body?.totaux?.approche === 3 && ligneDe(rDxf, 'dimension', 'cote-eclatee')?.nombre === 1 && ligneDe(rDxf, 'line', 'extrusion-non-portee')?.ids?.[0] === 'l-export' && JSON.stringify(rDxf.body?.calques?.renommes) === JSON.stringify([{ id: 'murs', nom: 'Murs', nomExporte: 'MURS' }]) && rDxf.body?.calques?.traitementMasques === 'calque-eteint', JSON.stringify(rDxf.body).slice(0, 400));
+  const rSvgOld = await owner('GET', `${rapportPath}?format=svg&revision=${drawn.body.revision.id}`);
+  check('rapport SVG d\'une révision antérieure : tout exact', rSvgOld.status === 200 && rSvgOld.body?.revisionId === drawn.body.revision.id && JSON.stringify(rSvgOld.body?.totaux) === JSON.stringify({ elements: 3, exact: 3, approche: 0, nonCouvert: 0 }), JSON.stringify(rSvgOld.body?.totaux));
+  check('rapport : format inconnu ou absent 400, révision inconnue 404', (await owner('GET', `${rapportPath}?format=pdf`)).status === 400 && (await owner('GET', rapportPath)).status === 400 && (await owner('GET', `${rapportPath}?format=svg&revision=studio_revision_inconnue`)).status === 404);
+  check('rapport : éditeur autorisé, autre compte refusé (403/404), anonyme 401', (await editor('GET', `${rapportPath}?format=dxf`)).status === 200 && [403, 404].includes((await foreign('GET', `${rapportPath}?format=svg`)).status) && (await anonymous('GET', `${rapportPath}?format=svg`)).status === 401);
+
   // Commentaires d'une variante : règles de la Collaboration (tout membre commente, lecteur compris ; l'auteur seul
   // supprime, ici en suppression douce), ancrage à une révision et à des objets, réponses en fil, rejeu idempotent.
   const commentsPath = `${variantPath(s)}/comments`;
