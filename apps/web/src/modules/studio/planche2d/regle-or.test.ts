@@ -260,7 +260,7 @@ describe("Catalogue « Outils » et palette (#166, Registry)", () => {
     const html = renderToStaticMarkup(createElement(GestionnaireOutils, { disponible: (e) => e.nature !== "mutation", surExecuter: () => {}, surFermer: () => {} }));
     expect(html).toContain('role="dialog"');
     for (const e of CATALOGUE) {
-      const ligne = new RegExp(`<li data-studio-catalogue-entree="${echapper(e.identifiant)}" data-studio-disponible="(oui|non)">(.*?)</li>`).exec(html);
+      const ligne = new RegExp(`<li data-studio-catalogue-entree="${echapper(e.identifiant)}" data-studio-disponible="(oui|non)"[^>]*>(.*?)</li>`).exec(html);
       expect(ligne, e.identifiant).not.toBeNull();
       // Lecture seule simulée : les mutations sont indisponibles, leur bouton « Utiliser » désactivé.
       expect(ligne![1]).toBe(e.nature === "mutation" ? "non" : "oui");

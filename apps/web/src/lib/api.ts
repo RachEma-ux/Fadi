@@ -914,11 +914,22 @@ export function studioPackageFileUrl(p: string, s: string, id: string, format: S
   return `${studioPublicationPath(p, s, id)}/files/${format}`;
 }
 /** Préférences d'outils Studio du compte : visibilité dans les barres seulement, jamais un droit (B.2-06). */
-export interface StudioToolPreferencesInput { profil: string; favoris: string[]; personnel: string[] }
+export interface StudioGroupeOutilsVue { id: string; nom: string; outils: string[] }
+export interface StudioToolPreferencesInput { profil: string; favoris: string[]; personnel: string[]; groupes?: StudioGroupeOutilsVue[] }
 export interface StudioToolPreferences extends StudioToolPreferencesInput {
+  groupes: StudioGroupeOutilsVue[];
   /** Outils enregistrés puis retirés du registre (écartés à la lecture). */
   retires: string[];
+  /** Version du manifeste du catalogue d'outils du serveur. */
+  manifeste: string;
   updatedAt: string | null;
+}
+/** Catalogue autorisé : droit réel d'exécution de chaque outil pour le compte dans ce projet (B.2-06). */
+export interface StudioCatalogueAutorise {
+  manifeste: string;
+  role: string;
+  droits: { lecture: true; ecriture: boolean; motif: "role" | "reference-protegee" | "verrou" | null };
+  entrees: { toolId: string; droit: "lecture" | "ecriture"; autorise: boolean }[];
 }
 export const api = {
   /** Études du projet ; `archives` : archivées comprises. */
@@ -969,6 +980,8 @@ export const api = {
   studioToolPreferences: (p: string) => request<StudioToolPreferences>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils`),
   /** Remplace les préférences d'outils du compte ; un outil hors registre → 400 `unknown_tool`. */
   setStudioToolPreferences: (p: string, prefs: StudioToolPreferencesInput) => request<StudioToolPreferences>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils`, { method: "PUT", body: JSON.stringify(prefs) }),
+  /** Catalogue autorisé : droit réel d'exécution de chaque outil du manifeste pour le compte (lecture seule). */
+  studioCatalogueOutils: (p: string) => request<StudioCatalogueAutorise>(`/projects/${encodeURIComponent(p)}/studio/preferences/catalogue`),
   register: (email: string, password: string) =>
     request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
   login: (email: string, password: string) =>

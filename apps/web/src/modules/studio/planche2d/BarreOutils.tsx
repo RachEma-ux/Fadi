@@ -26,14 +26,20 @@ import {
 } from "./barre-compacte";
 import {
   ariaRaccourci, COMMANDES_EDITEUR, libelleRaccourci, OUTILS_MODES,
-  type CommandeEditeur, type IdCommandeEditeur, type StudioToolEntry, type StudioToolId,
+  type CibleRaccourci, type CommandeEditeur, type IdCommandeEditeur, type StudioToolEntry, type StudioToolId,
 } from "./raccourcis";
+import { LIBELLES_RAISON, type RaisonIndisponible } from "../variante/droits";
 
 export interface BarreOutilsProps {
   outil: StudioToolId;
   /** Disponibilité de chaque outil ou commande (lecture seule, sélection, historique…). */
   outilDisponible: (t: StudioToolEntry) => boolean;
   commandeDisponible: (c: CommandeEditeur) => boolean;
+  /**
+   * Raison d'un bouton désactivé (droit réel refusé, révision historique, enregistrement, contexte) : le bouton reste
+   * montré — la visibilité est l'affaire du profil — et l'infobulle dit pourquoi il ne peut pas être lancé (B.2-06).
+   */
+  raison?: (cible: CibleRaccourci) => RaisonIndisponible | null;
   /** Libellé courant d'une commande quand il change (« Réessayer la sauvegarde »). */
   libelleCommande?: Partial<Record<IdCommandeEditeur, string>>;
   /** État des bascules (accrochages). */
@@ -77,21 +83,27 @@ function Contenu({ libelle, icone, raccourci }: { libelle: string; icone: NomIco
   </>;
 }
 
-interface PropsElement { libelle: string; icone: NomIcone; raccourci: string; disponible: boolean; onClick: () => void; data: Record<string, string | undefined> }
+interface PropsElement { libelle: string; icone: NomIcone; raccourci: string; disponible: boolean; onClick: () => void; data: Record<string, string | undefined>; raison?: RaisonIndisponible | null }
 
-function Bouton({ libelle, icone, raccourci, presse, disponible, onClick, data }: PropsElement & { presse?: boolean }) {
+/** Infobulle : nom, raccourci et, pour un bouton désactivé, sa raison (droit refusé, contexte…). */
+const bulle = (libelle: string, raccourci: string, raison: RaisonIndisponible | null | undefined) =>
+  `${libelle} — ${libelleRaccourci(raccourci)}${raison ? ` — ${LIBELLES_RAISON[raison]}` : ""}`;
+
+function Bouton({ libelle, icone, raccourci, presse, disponible, onClick, data, raison }: PropsElement & { presse?: boolean }) {
+  const r = disponible ? null : raison ?? null;
   return (
-    <button type="button" aria-label={libelle} title={`${libelle} — ${libelleRaccourci(raccourci)}`} aria-keyshortcuts={ariaRaccourci(raccourci)} aria-pressed={presse} disabled={!disponible} onClick={onClick} {...data}>
+    <button type="button" aria-label={libelle} title={bulle(libelle, raccourci, r)} aria-keyshortcuts={ariaRaccourci(raccourci)} aria-pressed={presse} disabled={!disponible} onClick={onClick}
+      data-studio-raison={r ?? undefined} {...data}>
       <Contenu libelle={libelle} icone={icone} raccourci={raccourci} />
     </button>
   );
 }
 
 /** Lien de téléchargement présenté comme un bouton ; indisponible, il n'a pas d'adresse (`aria-disabled`). */
-function Lien({ libelle, icone, raccourci, href, disponible, onClick, data }: PropsElement & { href: string | undefined }) {
+function Lien({ libelle, icone, raccourci, href, disponible, onClick, data, raison }: PropsElement & { href: string | undefined }) {
   const actif = disponible && !!href;
   return (
-    <a className="studio-lien-bouton" aria-label={libelle} title={`${libelle} — ${libelleRaccourci(raccourci)}`} aria-keyshortcuts={ariaRaccourci(raccourci)}
+    <a className="studio-lien-bouton" aria-label={libelle} title={bulle(libelle, raccourci, disponible ? null : raison)} aria-keyshortcuts={ariaRaccourci(raccourci)}
       aria-disabled={actif ? undefined : true} href={actif ? href : undefined} download={actif ? "" : undefined} onClick={(e) => { if (!actif) e.preventDefault(); else onClick(); }} {...data}>
       <Contenu libelle={libelle} icone={icone} raccourci={raccourci} />
     </a>
@@ -118,7 +130,7 @@ function useModeTactile(): Mode {
 const navigables = (racine: Element | null, attribut: string) =>
   Array.from(racine?.querySelectorAll<HTMLElement>(`[${attribut}]`) ?? []).filter((e) => !(e as HTMLButtonElement).disabled && e.getAttribute("aria-disabled") !== "true" && e.offsetParent !== null);
 
-export function BarreOutils({ outil, outilDisponible, commandeDisponible, libelleCommande, basculeActive, lienCommande, surOutil, surCommande, surLien, projectId, largeurInitiale }: BarreOutilsProps) {
+export function BarreOutils({ outil, outilDisponible, commandeDisponible, raison, libelleCommande, basculeActive, lienCommande, surOutil, surCommande, surLien, projectId, largeurInitiale }: BarreOutilsProps) {
   const { visible } = useProfilOutils(projectId);
   const mode = useModeTactile();
   const racine = useRef<HTMLDivElement | null>(null);
@@ -220,13 +232,14 @@ export function BarreOutils({ outil, outilDisponible, commandeDisponible, libell
     const apres = (f: () => void) => () => { f(); if (ou === "menu") fermer(true); };
     if (e.type === "outil") {
       const t = OUTILS.get(e.id)!;
-      return <Bouton key={cle(e)} libelle={t.libelleFR} icone={t.iconeSymbolique} raccourci={t.raccourci} presse={OUTILS_MODES.has(t.toolId) ? outil === t.toolId : undefined} disponible={outilDisponible(t)} onClick={apres(() => surOutil(t.toolId))} data={{ ...data, "data-studio-outil": t.toolId }} />;
+      return <Bouton key={cle(e)} libelle={t.libelleFR} icone={t.iconeSymbolique} raccourci={t.raccourci} presse={OUTILS_MODES.has(t.toolId) ? outil === t.toolId : undefined} disponible={outilDisponible(t)} onClick={apres(() => surOutil(t.toolId))} data={{ ...data, "data-studio-outil": t.toolId }} raison={raison?.({ type: "outil", toolId: t.toolId })} />;
     }
     const c = COMMANDES.get(e.id)!;
     const libelle = libelleCommande?.[c.id] ?? c.libelleFR;
+    const r = raison?.({ type: "commande", id: c.id });
     return c.telechargement
-      ? <Lien key={cle(e)} libelle={libelle} icone={c.iconeSymbolique} raccourci={c.raccourci} href={lienCommande?.[c.id]} disponible={commandeDisponible(c)} onClick={apres(() => surLien?.(c.id))} data={{ ...data, "data-studio-commande": c.id }} />
-      : <Bouton key={cle(e)} libelle={libelle} icone={c.iconeSymbolique} raccourci={c.raccourci} presse={c.bascule ? basculeActive?.[c.id] === true : undefined} disponible={commandeDisponible(c)} onClick={apres(() => surCommande(c.id))} data={{ ...data, "data-studio-commande": c.id }} />;
+      ? <Lien key={cle(e)} libelle={libelle} icone={c.iconeSymbolique} raccourci={c.raccourci} href={lienCommande?.[c.id]} disponible={commandeDisponible(c)} onClick={apres(() => surLien?.(c.id))} data={{ ...data, "data-studio-commande": c.id }} raison={r} />
+      : <Bouton key={cle(e)} libelle={libelle} icone={c.iconeSymbolique} raccourci={c.raccourci} presse={c.bascule ? basculeActive?.[c.id] === true : undefined} disponible={commandeDisponible(c)} onClick={apres(() => surCommande(c.id))} data={{ ...data, "data-studio-commande": c.id }} raison={r} />;
   };
 
   const surClavierMenu = (e: ClavierReact<HTMLDivElement>) => {

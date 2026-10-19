@@ -109,7 +109,7 @@ export const STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS: Readonly<Partial<Record<Studio
   // État de la cible d'un ajustement du métré (objet du document, quantités brutes) : aucun compte.
   studio_quantity_adjustments: ["target_state"],
   studio_publications: ["package", "manifest"],
-  studio_tool_preferences: ["favorites", "personal"],
+  studio_tool_preferences: ["favorites", "personal", "groups"],
 });
 
 /** Colonnes qui portent l'identifiant du projet (remplacé par celui du projet restauré). */

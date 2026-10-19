@@ -10,6 +10,7 @@ import { GestionnaireOutils, PaletteCommandes } from "../planche2d/CatalogueOuti
 import { PanneauFeuille } from "../feuille/PanneauFeuille";
 import { DialogueImportDxf } from "../import/DialogueImportDxf";
 import { appartientAuDialogue, focalisables, suivantDansLePiege } from "./piege-focus";
+import type { RaisonIndisponible } from "./droits";
 
 export type DialogueStudio = "outils" | "palette" | "feuille" | "import-dxf" | null;
 
@@ -17,6 +18,8 @@ export interface PropsDialoguesStudio {
   dialogue: DialogueStudio;
   surFermer: () => void;
   disponible: (e: EntreeCatalogue) => boolean;
+  /** Raison d'une entrée non lançable (droit réel, révision, enregistrement, contexte), `variante/droits.ts`. */
+  raison?: (e: EntreeCatalogue) => RaisonIndisponible | null;
   surExecuter: (e: EntreeCatalogue) => void;
   drawing: StudioDocument;
   modifiable: boolean;
@@ -96,11 +99,11 @@ function usePiegeFocus(dialogue: DialogueStudio, surFermer: () => void) {
   return { zone, tabulation };
 }
 
-export function DialoguesStudio({ dialogue, surFermer, disponible, surExecuter, drawing, modifiable, surImporter, revision, brouillonNonEnregistre, cartouche }: PropsDialoguesStudio) {
+export function DialoguesStudio({ dialogue, surFermer, disponible, raison, surExecuter, drawing, modifiable, surImporter, revision, brouillonNonEnregistre, cartouche }: PropsDialoguesStudio) {
   const { zone, tabulation } = usePiegeFocus(dialogue, surFermer);
   return <div ref={zone} onKeyDown={tabulation} data-studio-dialogues={dialogue ?? undefined}>
-    {dialogue === "outils" && <GestionnaireOutils disponible={disponible} surExecuter={surExecuter} surFermer={surFermer} />}
-    {dialogue === "palette" && <PaletteCommandes disponible={disponible} surExecuter={surExecuter} surFermer={surFermer} />}
+    {dialogue === "outils" && <GestionnaireOutils disponible={disponible} raison={raison} surExecuter={surExecuter} surFermer={surFermer} />}
+    {dialogue === "palette" && <PaletteCommandes disponible={disponible} raison={raison} surExecuter={surExecuter} surFermer={surFermer} />}
     {dialogue === "import-dxf" && <DialogueImportDxf doc={drawing} modifiable={modifiable} surFermer={surFermer} surAjouter={surImporter} />}
     {dialogue === "feuille" && <PanneauFeuille doc={revision} brouillonNonEnregistre={brouillonNonEnregistre} surFermer={surFermer} cartouche={cartouche()} />}
   </div>;

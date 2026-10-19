@@ -10,21 +10,34 @@
  * `profils.ts`), enregistrés sur le serveur pour le compte. Le profil ne règle que la visibilité dans les barres :
  * le catalogue, la palette et les raccourcis clavier gardent tous les outils, et le serveur reste seul juge du droit
  * d'exécution.
+ *
+ * Catalogue autorisé (B.2-01, B.2-06) : filtres par barre, contexte, nature, regroupement personnel, favoris et droit
+ * réel ; chaque entrée montre ses contextes, le droit qu'elle requiert et, si elle ne peut être lancée, sa raison
+ * (droit refusé par le serveur, révision historique, enregistrement, contexte — `variante/droits.ts`). Regroupements
+ * personnels (B.2-02) : créés, composés et supprimés ici, enregistrés avec les préférences du compte.
  */
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 import { Icon } from "../../../components/Icon";
 import { api } from "../../../lib/api";
 import { useAuth } from "../../../lib/auth-context";
 import { lireRouteStudio } from "../routes-studio";
-import { CATALOGUE, groupesCatalogue, rechercher, separerFavoris, type EntreeCatalogue } from "./catalogue";
+import { STUDIO_CONTEXTES_OUTILS, STUDIO_MANIFESTE_OUTILS_VERSION, type StudioContexteOutil } from "@parcours/atelier-model";
+import { LIBELLES_RAISON, estRefusDeDroit, type RaisonIndisponible } from "../variante/droits";
+import { CATALOGUE, filtrerCatalogue, groupesCatalogue, rechercher, separerFavoris, type EntreeCatalogue, type FiltresCatalogue } from "./catalogue";
 import {
-  basculerFavori, basculerPersonnel, CHOIX_PROFILS, choisirProfil, filtreBarres, normaliserPreferences, OUTIL_TOUJOURS_VISIBLE, PREFERENCES_DEFAUT,
+  basculerDansGroupe, basculerFavori, basculerPersonnel, CHOIX_PROFILS, choisirProfil, corpsPreferences, creerGroupe, filtreBarres, LIMITES_GROUPES, normaliserPreferences,
+  OUTIL_TOUJOURS_VISIBLE, PREFERENCES_DEFAUT, refusNomGroupe, supprimerGroupe,
   type IdProfil, type PreferencesOutils,
 } from "./profils";
-import { ariaRaccourci, libelleRaccourci, type StudioToolId } from "./raccourcis";
+import { ariaRaccourci, BARRES_STUDIO, libelleRaccourci, type BarreStudio, type StudioToolId } from "./raccourcis";
 
 export interface CatalogueProps {
   disponible: (e: EntreeCatalogue) => boolean;
+  /**
+   * Raison d'une entrée non lançable (droit réel, révision, enregistrement, contexte), ou null ; absente : seule la
+   * disponibilité est connue (« Indisponible »).
+   */
+  raison?: (e: EntreeCatalogue) => RaisonIndisponible | null;
   surExecuter: (e: EntreeCatalogue) => void;
   surFermer: () => void;
   /** Projet de l'adresse des préférences ; lu dans l'adresse Studio courante s'il n'est pas donné. */
@@ -49,7 +62,7 @@ export interface EtatPreferences {
 }
 export interface ApiPreferencesOutils {
   studioToolPreferences: (projectId: string) => Promise<unknown>;
-  setStudioToolPreferences: (projectId: string, corps: { profil: string; favoris: string[]; personnel: string[] }) => Promise<unknown>;
+  setStudioToolPreferences: (projectId: string, corps: ReturnType<typeof corpsPreferences>) => Promise<unknown>;
 }
 const etatVierge = (compte: string | null): EtatPreferences => ({ compte, prefs: PREFERENCES_DEFAUT, etat: "initial", enregistrement: "aucun", erreur: null });
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -94,7 +107,7 @@ export function creerMagasinPreferences(source: ApiPreferencesOutils) {
     const suivant = f(etat.prefs);
     publier({ prefs: suivant, enregistrement: "en-cours", erreur: null });
     enVol += 1;
-    const corps = { profil: suivant.profil, favoris: [...suivant.favoris], personnel: [...suivant.personnel] };
+    const corps = corpsPreferences(suivant);
     file = file.then(() => (g === generation ? source.setStudioToolPreferences(projectId, corps) : null))
       .then((r) => {
         if (g !== generation) return;
@@ -163,6 +176,10 @@ export function useProfilOutils(projectId?: string | null) {
     choisirProfil: (profil: IdProfil) => modifier((p) => choisirProfil(p, profil)),
     basculerFavori: (id: StudioToolId) => modifier((p) => basculerFavori(p, id)),
     basculerPersonnel: (id: StudioToolId) => modifier((p) => basculerPersonnel(p, id)),
+    groupes: etat.prefs.groupes,
+    creerGroupe: (nom: string) => modifier((p) => creerGroupe(p, nom)),
+    supprimerGroupe: (id: string) => modifier((p) => supprimerGroupe(p, id)),
+    basculerDansGroupe: (id: string, outil: StudioToolId) => modifier((p) => basculerDansGroupe(p, id, outil)),
   };
 }
 
@@ -235,23 +252,118 @@ function ChoixProfil({ profil }: { profil: ReturnType<typeof useProfilOutils> })
   );
 }
 
-export function GestionnaireOutils({ disponible, surExecuter, surFermer, projectId }: CatalogueProps) {
+const LIBELLE_CONTEXTE: Record<StudioContexteOutil, string> = { "planche-2d": "Planche 2D", "vue-3d": "Vue 3D", feuille: "Feuille" };
+const REFUS_NOM: Record<NonNullable<ReturnType<typeof refusNomGroupe>>, string> = {
+  vide: "Donnez un nom au regroupement.",
+  long: `Nom trop long (${LIMITES_GROUPES.nom} caractères au plus).`,
+  pris: "Un regroupement porte déjà ce nom.",
+  nombre: `${LIMITES_GROUPES.groupes} regroupements au plus.`,
+};
+
+/** Filtres du catalogue (B.2-01) : barre, contexte, nature, regroupement, favoris, exécutables par le compte. */
+function FiltresOutils({ filtres, surFiltres, groupes }: { filtres: FiltresCatalogue; surFiltres: (f: FiltresCatalogue) => void; groupes: readonly { id: string; nom: string }[] }) {
+  const poser = <K extends keyof FiltresCatalogue>(k: K, v: FiltresCatalogue[K] | "") => {
+    const suivant = { ...filtres };
+    if (v === "" || v === false) delete suivant[k]; else suivant[k] = v as FiltresCatalogue[K];
+    surFiltres(suivant);
+  };
+  return (
+    <fieldset className="studio-filtres-outils" data-studio-filtres-outils>
+      <legend>Filtres</legend>
+      <label>Barre
+        <select value={filtres.barre ?? ""} onChange={(e) => poser("barre", e.target.value as BarreStudio | "")} data-studio-filtre="barre">
+          <option value="">Toutes les barres</option>
+          {BARRES_STUDIO.map((b) => <option key={b.id} value={b.id}>{b.libelleFR}</option>)}
+        </select>
+      </label>
+      <label>Contexte
+        <select value={filtres.contexte ?? ""} onChange={(e) => poser("contexte", e.target.value as StudioContexteOutil | "")} data-studio-filtre="contexte">
+          <option value="">Tous les contextes</option>
+          {STUDIO_CONTEXTES_OUTILS.map((c) => <option key={c} value={c}>{LIBELLE_CONTEXTE[c]}</option>)}
+        </select>
+      </label>
+      <label>Nature
+        <select value={filtres.nature ?? ""} onChange={(e) => poser("nature", e.target.value as EntreeCatalogue["nature"] | "")} data-studio-filtre="nature">
+          <option value="">Toutes les natures</option>
+          {(Object.keys(NATURE) as EntreeCatalogue["nature"][]).map((n) => <option key={n} value={n}>{NATURE[n]}</option>)}
+        </select>
+      </label>
+      <label>Regroupement
+        <select value={filtres.groupe ?? ""} onChange={(e) => poser("groupe", e.target.value)} data-studio-filtre="groupe">
+          <option value="">Tous les outils</option>
+          {groupes.map((g) => <option key={g.id} value={g.id}>{g.nom}</option>)}
+        </select>
+      </label>
+      <label><input type="checkbox" checked={!!filtres.favoris} onChange={(e) => poser("favoris", e.target.checked)} data-studio-filtre="favoris" />Favoris seulement</label>
+      <label><input type="checkbox" checked={!!filtres.executables} onChange={(e) => poser("executables", e.target.checked)} data-studio-filtre="executables" />Autorisés pour moi seulement</label>
+    </fieldset>
+  );
+}
+
+/** Regroupements personnels (B.2-02) : création, suppression ; l'appartenance se règle sur chaque outil. */
+function Regroupements({ profil, compose, surComposer }: { profil: ReturnType<typeof useProfilOutils>; compose: string | null; surComposer: (id: string | null) => void }) {
+  const [nom, setNom] = useState("");
+  const refus = refusNomGroupe(profil.preferences, nom);
+  const creer = () => { if (refus === null) { profil.creerGroupe(nom); setNom(""); } };
+  return (
+    <fieldset className="studio-regroupements" data-studio-regroupements>
+      <legend>Mes regroupements</legend>
+      <p className="studio-dialogue-aide">Listes d’outils à vous, enregistrées sur le serveur ; elles filtrent ce catalogue sans changer les barres.</p>
+      <label>Nom du regroupement
+        <input type="text" value={nom} maxLength={LIMITES_GROUPES.nom + 1} disabled={!profil.modifiable} onChange={(e) => setNom(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); creer(); } }} data-studio-nom-groupe />
+      </label>
+      <button type="button" disabled={!profil.modifiable || refus !== null} onClick={creer} data-studio-creer-groupe>Créer le regroupement</button>
+      {nom.trim() !== "" && refus !== null && <p className="studio-dialogue-aide" role="status" data-studio-refus-groupe={refus}>{REFUS_NOM[refus]}</p>}
+      {profil.groupes.length === 0
+        ? <p className="studio-dialogue-aide">Aucun regroupement.</p>
+        : (
+          <ul className="studio-regroupements-liste">
+            {profil.groupes.map((g) => (
+              <li key={g.id} data-studio-groupe={g.id}>
+                <span>{g.nom}</span>
+                <span className="studio-catalogue-meta" data-studio-groupe-taille={g.outils.length}>{`${g.outils.length} outil(s)`}</span>
+                <button type="button" aria-pressed={compose === g.id} disabled={!profil.modifiable} aria-label={`Composer le regroupement : ${g.nom}`}
+                  onClick={() => surComposer(compose === g.id ? null : g.id)} data-studio-composer-groupe={g.id}>{compose === g.id ? "Terminer" : "Composer"}</button>
+                <button type="button" disabled={!profil.modifiable} aria-label={`Supprimer le regroupement : ${g.nom}`} onClick={() => profil.supprimerGroupe(g.id)} data-studio-supprimer-groupe={g.id}>Supprimer</button>
+              </li>
+            ))}
+          </ul>
+        )}
+    </fieldset>
+  );
+}
+
+export function GestionnaireOutils({ disponible, raison, surExecuter, surFermer, projectId }: CatalogueProps) {
   const [recherche, setRecherche] = useState("");
+  const [filtres, setFiltres] = useState<FiltresCatalogue>({});
   const champ = useFocusDialogue();
   const noms = useNomsAffiches();
   const profil = useProfilOutils(projectId);
   const personnel = profil.preferences.profil === "personnel";
-  const trouvees = rechercher(recherche, noms.autres);
+  const raisonDe = (e: EntreeCatalogue): RaisonIndisponible | null => (raison ? raison(e) : disponible(e) ? null : "contexte");
+  // Un regroupement supprimé ne filtre plus (filtre retiré à l'affichage).
+  const { groupe: groupeChoisi, ...sansGroupe } = filtres;
+  const filtresActifs: FiltresCatalogue = groupeChoisi !== undefined && !profil.groupes.some((g) => g.id === groupeChoisi) ? sansGroupe : filtres;
+  // Regroupement en cours de composition : une case « Dans ce regroupement » sur chaque outil du registre.
+  const [compose, setCompose] = useState<string | null>(null);
+  const groupeCompose = profil.groupes.find((g) => g.id === compose) ?? null;
+  const trouvees = filtrerCatalogue(rechercher(recherche, noms.autres), filtresActifs, {
+    favoris: profil.favoris, groupes: profil.groupes, autorise: (e) => !estRefusDeDroit(raisonDe(e)),
+  });
   const retenues = new Set(trouvees);
-  // Le gestionnaire garde l'ordre du catalogue, rangé par barre ; la recherche ne fait que filtrer.
+  // Le gestionnaire garde l'ordre du catalogue, rangé par barre ; la recherche et les filtres ne font que filtrer.
   const groupes = groupesCatalogue(CATALOGUE.filter((e) => retenues.has(e)));
   return (
     <Dialogue titre="Outils" id="studio-outils-titre" classe="studio-gestionnaire" surFermer={surFermer}>
-      <div data-studio-gestionnaire-outils>
+      <div data-studio-gestionnaire-outils data-studio-manifeste={STUDIO_MANIFESTE_OUTILS_VERSION}>
         <p className="studio-dialogue-aide">Catalogue des outils et des commandes de la planche, lu dans le registre de Studio.</p>
+        <p className="studio-dialogue-aide">Manifeste du catalogue : <code translate="no">{STUDIO_MANIFESTE_OUTILS_VERSION}</code></p>
         <ChoixProfil profil={profil} />
+        <Regroupements profil={profil} compose={groupeCompose?.id ?? null} surComposer={setCompose} />
         <label>Rechercher un outil<input ref={champ} type="search" value={recherche} placeholder="Nom, raccourci ou identifiant" onChange={(e) => setRecherche(e.target.value)} data-studio-recherche-outils /></label>
-        <p role="status" className="studio-dialogue-aide">{`${trouvees.length} entrée(s)`}</p>
+        <FiltresOutils filtres={filtresActifs} surFiltres={setFiltres} groupes={profil.groupes} />
+        <p role="status" className="studio-dialogue-aide" data-studio-nombre-entrees={trouvees.length}>{`${trouvees.length} entrée(s)`}</p>
         {!trouvees.length && <p>Aucun outil ne correspond à la recherche.</p>}
         {groupes.map((g) => (
           <section key={g.barre.id} aria-labelledby={`studio-outils-${g.barre.id}`} data-studio-catalogue-barre={g.barre.id}>
@@ -259,17 +371,21 @@ export function GestionnaireOutils({ disponible, surExecuter, surFermer, project
             <ul className="studio-catalogue">
               {g.entrees.map((e) => {
                 const ok = disponible(e);
+                const r = ok ? null : raisonDe(e) ?? "contexte";
                 const outil = e.outil?.toolId ?? null;
                 const favori = outil !== null && profil.favoris.includes(outil);
                 const dansLesBarres = outil === null || profil.visible(outil);
                 return (
-                  <li key={e.identifiant} data-studio-catalogue-entree={e.identifiant} data-studio-disponible={ok ? "oui" : "non"}>
+                  <li key={e.identifiant} data-studio-catalogue-entree={e.identifiant} data-studio-disponible={ok ? "oui" : "non"}
+                    data-studio-autorise={estRefusDeDroit(r) ? "non" : "oui"} data-studio-raison={r ?? undefined}>
                     <Icon name={e.icone} size={20} />
                     <span className="studio-catalogue-nom" ref={noms.poser(e.identifiant)}>{e.libelleFR}</span>
                     <Raccourcis e={e} />
                     <code translate="no">{e.identifiant}</code>
                     <span className="studio-catalogue-meta">{NATURE[e.nature]}</span>
-                    <span className="studio-catalogue-meta" data-studio-disponibilite>{ok ? "Disponible" : "Indisponible"}</span>
+                    <span className="studio-catalogue-meta" data-studio-contextes={e.contextes.join(" ")}>{e.contextes.map((c) => LIBELLE_CONTEXTE[c]).join(" · ")}</span>
+                    <span className="studio-catalogue-meta" data-studio-droit={e.droit}>{e.droit === "ecriture" ? "Droit requis : écriture" : "Droit requis : lecture"}</span>
+                    <span className="studio-catalogue-meta" data-studio-disponibilite>{r === null ? "Disponible" : raison ? LIBELLES_RAISON[r] : "Indisponible"}</span>
                     {e.agentExposure === null
                       ? <span className="studio-catalogue-meta" data-studio-exposition="hors-registre">Hors registre (commande locale)</span>
                       : <span className="studio-catalogue-meta" data-studio-exposition={e.agentExposure}>Exposition aux agents : <code translate="no">{e.agentExposure}</code></span>}
@@ -283,6 +399,13 @@ export function GestionnaireOutils({ disponible, surExecuter, surFermer, project
                         <input type="checkbox" checked={dansLesBarres} disabled={!profil.modifiable || outil === OUTIL_TOUJOURS_VISIBLE}
                           onChange={() => profil.basculerPersonnel(outil)} data-studio-personnel={outil} />
                         Dans mon profil
+                      </label>
+                    )}
+                    {outil !== null && groupeCompose !== null && (
+                      <label className="studio-catalogue-meta">
+                        <input type="checkbox" checked={groupeCompose.outils.includes(outil)} disabled={!profil.modifiable}
+                          onChange={() => profil.basculerDansGroupe(groupeCompose.id, outil)} data-studio-groupe-membre={outil} />
+                        Dans ce regroupement
                       </label>
                     )}
                     {outil !== null && (
@@ -305,7 +428,7 @@ export function GestionnaireOutils({ disponible, surExecuter, surFermer, project
 
 const GROUPE_STYLE = { display: "block", border: 0, padding: 0 } as const;
 
-export function PaletteCommandes({ disponible, surExecuter, surFermer, projectId }: CatalogueProps) {
+export function PaletteCommandes({ disponible, raison, surExecuter, surFermer, projectId }: CatalogueProps) {
   const [recherche, setRecherche] = useState("");
   const [actif, setActif] = useState(0);
   const champ = useFocusDialogue();
@@ -324,13 +447,14 @@ export function PaletteCommandes({ disponible, surExecuter, surFermer, projectId
   const idOption = (e: EntreeCatalogue) => `studio-palette-${e.identifiant.replace(/[^a-z0-9-]/gi, "-")}`;
   const option = (e: EntreeCatalogue, i: number) => {
     const ok = disponible(e);
+    const r = ok ? null : raison?.(e) ?? null;
     return (
       <li key={e.identifiant} id={idOption(e)} role="option" aria-selected={i === index} aria-disabled={ok ? undefined : true}
-        data-studio-palette-entree={e.identifiant} data-studio-disponible={ok ? "oui" : "non"} onMouseEnter={() => setActif(i)} onClick={() => lancer(e)}>
+        data-studio-palette-entree={e.identifiant} data-studio-disponible={ok ? "oui" : "non"} data-studio-raison={r ?? undefined} onMouseEnter={() => setActif(i)} onClick={() => lancer(e)}>
         <Icon name={e.icone} size={20} />
         <span className="studio-catalogue-nom" ref={noms.poser(e.identifiant)}>{e.libelleFR}</span>
         <Raccourcis e={e} />
-        {!ok && <span className="studio-catalogue-meta">Indisponible</span>}
+        {!ok && <span className="studio-catalogue-meta">{r ? LIBELLES_RAISON[r] : "Indisponible"}</span>}
       </li>
     );
   };
