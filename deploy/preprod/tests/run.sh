@@ -27,6 +27,7 @@ dispo() {
   git -C "$B/src" add -A
   git -C "$B/src" -c user.name=test -c user.email=test@invalid commit -qm dispo
   git -C "$B/src" rev-parse HEAD > "$B/approved-commit"
+  chmod -R u=rwX,go=rX "$B/src"   # comme `sync` : code lisible par l'image, BASE reste en 0700
   printf 'PREPROD_POSTGRES_PASSWORD=test-a\nPREPROD_ARCHIVE_SIGNING_KEY=test-b\n' > "$B/env/.env.preprod"
   chmod 0600 "$B/env/.env.preprod"
   echo "$B"
@@ -34,7 +35,8 @@ dispo() {
 # Lance fadi-preprod sur la disposition $B en opérateur.
 fp() { env FADI_PREPROD_BASE="$B" FADI_PREPROD_TEST_BIN="$ICI/doubles" SUDO_USER=claude-fadi "$SCRIPT" "$@"; }
 # Idem avec une variable de double (MOCK_…=valeur) ; fpa : administrateur (SUDO_USER vide).
-fpe() { local v=$1; shift; env "$v" FADI_PREPROD_BASE="$B" FADI_PREPROD_TEST_BIN="$ICI/doubles" SUDO_USER=claude-fadi "$SCRIPT" "$@"; }
+fpe() { local vars=(); while [[ ${1:-} =~ ^[A-Z_]+= ]]; do vars+=("$1"); shift; done
+  env "${vars[@]}" FADI_PREPROD_BASE="$B" FADI_PREPROD_TEST_BIN="$ICI/doubles" SUDO_USER=claude-fadi "$SCRIPT" "$@"; }
 fpa() { env FADI_PREPROD_BASE="$B" FADI_PREPROD_TEST_BIN="$ICI/doubles" SUDO_USER= "$SCRIPT" "$@"; }
 
 # attendu <0|nz> <libellé> [motif attendu dans la sortie] -- commande…
@@ -99,6 +101,17 @@ attendu 0  "restore-check réussi" -- fp restore-check
 attendu nz "restore-check en échec → code non nul" "échec simulé (restore)" -- fpe MOCK_FAIL=run-restore restore-check
 attendu 0  "migrate réussi" "tables publiques" -- fp migrate
 attendu nz "migrate sans « Schema applied » → code non nul" "Schema applied" -- fpe MOCK_LOGS= migrate
+: > "$T/trace-ko"
+attendu nz "migrate en échec : application rétablie en MIGRATE_ON_START=0" "laissée arrêtée" -- fpe MOCK_LOGS= MOCK_TRACE="$T/trace-ko" migrate
+tail -1 "$T/trace-ko" | grep -q '^MIGRATE_ON_START=0 .* up --no-start --no-deps --force-recreate app$' \
+  && { ok=$((ok + 1)); echo "✓ dernier appel Docker : recréation de app en MIGRATE_ON_START=0, sans démarrage"; } \
+  || { ko=$((ko + 1)); echo "✗ rétablissement absent :"; tail -3 "$T/trace-ko" | sed 's/^/    /'; }
+: > "$T/trace-ok"
+attendu 0 "migrate réussi : retour à MIGRATE_ON_START=0" -- fpe MOCK_TRACE="$T/trace-ok" migrate
+grep -q -- '--no-start' "$T/trace-ok" && { ko=$((ko + 1)); echo "✗ rétablissement déclenché sur un succès"; } \
+  || { grep 'force-recreate app' "$T/trace-ok" | tail -1 | grep -q '^MIGRATE_ON_START=0 ' \
+       && { ok=$((ok + 1)); echo "✓ migration réussie : application finale en MIGRATE_ON_START=0, aucun rétablissement"; } \
+       || { ko=$((ko + 1)); echo "✗ application finale pas en MIGRATE_ON_START=0"; }; }
 attendu nz "up en échec → code non nul" -- fpe MOCK_FAIL=up up
 attendu 0  "e2e réussi (2 scénarios)" "2 réussi(s)" -- fp e2e accueils-design parcours-scenario
 attendu nz "e2e avec un scénario en échec → code non nul" "échecs : parcours-scenario" -- fpe MOCK_FAIL=e2e-parcours-scenario e2e accueils-design parcours-scenario
@@ -183,9 +196,32 @@ attendu nz "secrets en lien symbolique refusés" "lien symbolique" -- fp up
 B=$(dispo srcg)
 chmod g+w "$B/src"
 attendu nz "src modifiable par le groupe refusée" "modifiable par le groupe" -- fp build
+B=$(dispo envmigrate)
+echo 'MIGRATE_ON_START=1' >> "$B/env/.env.preprod"; : > "$T/trace-env"
+attendu 0 "MIGRATE_ON_START=1 dans les secrets : sans effet" -- fpe MOCK_TRACE="$T/trace-env" up
+grep 'up -d db app' "$T/trace-env" | grep -q '^MIGRATE_ON_START=0 ' \
+  && { ok=$((ok + 1)); echo "✓ up impose MIGRATE_ON_START=0 malgré le fichier d'environnement"; } \
+  || { ko=$((ko + 1)); echo "✗ MIGRATE_ON_START non imposé : $(grep 'up -d' "$T/trace-env")"; }
+B=$(dispo illisible)
+chmod 0600 "$B/src/deploy/preprod/compose.edge.yml"
+attendu nz "code illisible par l'image (EACCES) refusé" "code illisible par l'image" -- fp build
 B=$(dispo sansapprob)
 rm "$B/approved-commit"
 attendu nz "sans commit approuvé : refus" "approved-commit absent" -- fp build
+
+echo "== sync (administrateur) : code approuvé lisible par l'image"
+B=$(dispo source)
+git clone -q --bare "$B/src" "$T/depot.git"
+SHA=$(git -C "$B/src" rev-parse HEAD)
+B=$T/sync; mkdir -m 0700 "$B" "$B/env"
+printf 'PREPROD_POSTGRES_PASSWORD=test-a\nPREPROD_ARCHIVE_SIGNING_KEY=test-b\n' > "$B/env/.env.preprod"; chmod 0600 "$B/env/.env.preprod"
+attendu 0 "sync d'un commit (dépôt local de test)" "commit approuvé et figé" -- env FADI_PREPROD_REPO="$T/depot.git" FADI_PREPROD_BASE="$B" FADI_PREPROD_TEST_BIN="$ICI/doubles" SUDO_USER= "$SCRIPT" sync "$SHA"
+[ "$(stat -c %a "$B/src/deploy/preprod/compose.yml")" = 644 ] && [ "$(stat -c %a "$B/src/deploy/preprod/fadi-preprod")" = 755 ] \
+  && [ "$(stat -c %a "$B")" = 700 ] && [ "$(cat "$B/approved-commit")" = "$SHA" ] \
+  && { ok=$((ok + 1)); echo "✓ après sync : code en 0644 / 0755, BASE en 0700, commit approuvé enregistré"; } \
+  || { ko=$((ko + 1)); echo "✗ droits après sync : $(stat -c '%a %n' "$B/src/deploy/preprod/compose.yml" "$B")"; }
+attendu 0 "build sur le code synchronisé" -- fp build
+attendu nz "sync d'un commit inexistant refusé" "introuvable" -- env FADI_PREPROD_REPO="$T/depot.git" FADI_PREPROD_BASE="$B" FADI_PREPROD_TEST_BIN="$ICI/doubles" SUDO_USER= "$SCRIPT" sync 0123456789abcdef0123456789abcdef01234567
 
 echo "== Liste e2e identique à la CI"
 python3 -I - "$REPO/.github/workflows/ci.yml" "$SCRIPT" <<'PY' && { ok=$((ok + 1)); echo "✓ E2E_DEFAUT = scénarios de la CI, même ordre"; } || { ko=$((ko + 1)); echo "✗ E2E_DEFAUT ≠ CI"; }

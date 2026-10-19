@@ -1,8 +1,10 @@
 #!/bin/bash
 # Double de docker pour les tests de fadi-preprod : `compose config` est rendu par le vrai docker (sans démon) ; les
 # autres verbes réussissent ou échouent selon MOCK_FAIL (liste de mots : build up run-check run-backup run-restore
-# e2e-<scénario>). MOCK_LOGS remplace le journal de l'application, MOCK_TAR l'archive des rapports.
+# e2e-<scénario>). MOCK_LOGS remplace le journal de l'application, MOCK_TAR l'archive des rapports ; MOCK_TRACE reçoit
+# chaque appel (avec MIGRATE_ON_START).
 orig=("$@")
+[ -n "${MOCK_TRACE:-}" ] && echo "MIGRATE_ON_START=${MIGRATE_ON_START:-} $*" >> "$MOCK_TRACE"
 has() { [[ " ${MOCK_FAIL:-} " == *" $1 "* ]]; }
 fail() { echo "double docker : échec simulé ($1)" >&2; exit 3; }
 if [ "${1:-}" != compose ]; then
