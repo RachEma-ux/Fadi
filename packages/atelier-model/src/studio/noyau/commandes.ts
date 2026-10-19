@@ -5,6 +5,7 @@ import { decaler, deplacer, modifier, supprimer } from "../commandes/modificatio
 import { copier, echelle, rotation, symetrie } from "../commandes/modification.js";
 import { aplatir, extruder } from "../commandes/volume.js";
 import { creerBoite, creerPrisme, deplacerSolide, supprimerSolides } from "../commandes/volume-libre.js";
+import { definirPropriete, elaguerProprietes, retirerPropriete, type StudioPropriete } from "../exigences/proprietes.js";
 import { studioExtrudedRingVertices } from "../objets/polyligne.js";
 import { sortie, validateStudioDocument } from "./document.js";
 import { STUDIO_LIMITS } from "./limites.js";
@@ -50,6 +51,9 @@ const HANDLERS: Record<StudioCommandToolId, Gestionnaire> = {
   "studio.architecture.ouverture": creerOuverture,
   "studio.architecture.modifier": modifierArchitecture,
   "studio.architecture.supprimer": supprimerArchitecture,
+  // Propriétés BIM déclarées (E.1-01), rangées dans `StudioDocument.proprietes`.
+  "studio.propriete.definir": definirPropriete,
+  "studio.propriete.retirer": retirerPropriete,
 };
 
 /** Identifiants réellement acceptés par `applyStudioCommands` (contrôlés contre le registre par test). */
@@ -60,7 +64,8 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
   const current = validateStudioDocument(document);
   // Charge avant le lot, relevée avant toute mutation (l'état partage les tableaux de `current`).
   const avant = studioExtrudedRingVertices(current.objects);
-  const state: Etat = {
+  const state: Etat & { proprietes?: StudioPropriete[] } = {
+    proprietes: current.proprietes ?? [],
     id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [], solides: current.solides ?? [], annotations: current.annotations ?? [], architecture: current.architecture ?? [],
     ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id), ...(current.solides ?? []).map((s) => s.id), ...(current.annotations ?? []).map((a) => a.id), ...(current.architecture ?? []).map((a) => a.id)]),
   };
@@ -74,7 +79,10 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
     HANDLERS[toolId as StudioCommandToolId](state, c.params, path);
   }
   // Contrôle final : limites, unicité et liens sur le document entier, avant de rendre la copie.
-  const result = validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions, state.solides, state.annotations, state.architecture));
+  // Les propriétés d'un objet disparu (supprimé, mur supprimé avec ses ouvertures) disparaissent avec lui.
+  const presents = new Set([...state.objects.map((o) => o.id), ...state.architecture.map((a) => a.id)]);
+  const proprietes = elaguerProprietes(state.proprietes ?? [], (id) => presents.has(id));
+  const result = validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions, state.solides, state.annotations, state.architecture, proprietes));
   // Budget d'écriture des extrusions de polylignes fermées : un lot ne peut pas le dépasser ni l'aggraver une fois
   // dépassé ; une révision enregistrée reste toujours lisible (le budget ne s'applique qu'aux écritures).
   const apres = studioExtrudedRingVertices(result.objects);

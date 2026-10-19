@@ -102,6 +102,8 @@ export interface ExecutionDemandee {
   /** Interrompu par `annuler()` ou par la garde du délai. */
   signal: AbortSignal;
   delaiMs: number;
+  /** Tentative de reprise après un plantage : son propre échec ne doit pas être compté une seconde fois par l'hôte. */
+  reprise: boolean;
   surProgression: (p: Progression) => void;
 }
 export type Executeur = (e: ExecutionDemandee) => Promise<unknown>;
@@ -175,6 +177,9 @@ export class Ordonnanceur {
     if (existante && memeEmpreinte(existante.vue.empreinte, d.empreinte) && (existante.vue.etat === "queued" || existante.vue.etat === "running")) {
       return existante.poignee as PoigneeTache<R>;
     }
+    // Une tâche remplacée encore en file cède sa place à la nouvelle (même classe) : sans cela, une clé modifiée à
+    // chaque frappe repasserait toujours devant les autres tâches de fond, qui ne tourneraient jamais.
+    const place = existante && existante.vue.classe === d.classe ? this.files[d.classe].indexOf(existante) : -1;
     if (existante) this.abandonner(existante);
     let resoudre!: (i: IssueTache<unknown>) => void;
     const issue = new Promise<IssueTache<unknown>>((r) => { resoudre = r; });
@@ -190,7 +195,7 @@ export class Ordonnanceur {
       job.detacher = () => d.signal?.removeEventListener("abort", surAbandon);
     }
     this.courantes.set(d.cle, job);
-    this.files[d.classe].push(job);
+    if (place >= 0) this.files[d.classe].splice(place, 0, job); else this.files[d.classe].push(job);
     this.noter(job, "queued");
     this.pomper();
     return job.poignee as PoigneeTache<R>;
@@ -272,7 +277,7 @@ export class Ordonnanceur {
     let promesse: Promise<unknown>;
     try {
       promesse = Promise.resolve(this.options.executer({
-        nature: job.demande.nature, charge: job.demande.charge, emplacement, signal: e.ctrl.signal, delaiMs: job.delaiMs,
+        nature: job.demande.nature, charge: job.demande.charge, emplacement, signal: e.ctrl.signal, delaiMs: job.delaiMs, reprise: e.tentative > 1,
         surProgression: (p) => { if (!e.perimee && !job.rendue && job.execution === e) job.demande.surProgression?.(p); },
       }));
     } catch (err) {

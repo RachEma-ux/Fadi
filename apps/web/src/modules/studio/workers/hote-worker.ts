@@ -76,6 +76,11 @@ export interface OptionsDemande {
   /** Une demande plus récente sur le même canal écarte celle-ci. */
   canal?: string;
   surProgression?: (p: Progression) => void;
+  /**
+   * Faux : un échec du Worker pendant cette demande ne compte pas dans les `echecsMax` (reprise d'une demande déjà
+   * comptée par l'ordonnanceur : un document qui fait toujours planter le Worker ne coûte qu'un échec par soumission).
+   */
+  compterEchec?: boolean;
 }
 
 interface Attente {
@@ -84,6 +89,7 @@ interface Attente {
   delai: number;
   canal: string | undefined;
   surProgression: ((p: Progression) => void) | undefined;
+  compterEchec: boolean;
   resoudre: (v: unknown) => void;
   rejeter: (e: Error) => void;
   minuteur: ReturnType<typeof setTimeout> | undefined;
@@ -138,7 +144,7 @@ export class HoteWorker {
       const surAbandon = () => this.annuler(id);
       o.signal?.addEventListener("abort", surAbandon, { once: true });
       this.enAttente.set(id, {
-        nature, charge, delai: o.delaiMs ?? this.options.delaiMs, canal: o.canal, surProgression: o.surProgression,
+        nature, charge, delai: o.delaiMs ?? this.options.delaiMs, canal: o.canal, surProgression: o.surProgression, compterEchec: o.compterEchec !== false,
         resoudre: resoudre as (v: unknown) => void, rejeter, minuteur: undefined, detacher: () => o.signal?.removeEventListener("abort", surAbandon),
       });
       this.poster(w, id);
@@ -215,9 +221,12 @@ export class HoteWorker {
 
   /** Échec du Worker : toutes les demandes sont rejetées, le Worker est arrêté et recréé à la demande suivante. */
   private abandonner(code: "delai" | "interrompu" | "illisible"): void {
+    // Échec non compté seulement si toutes les demandes touchées sont des reprises (`compterEchec: false`).
+    const touchees = [...this.enAttente.values()];
+    const compter = touchees.length === 0 || touchees.some((a) => a.compterEchec);
     for (const id of [...this.enAttente.keys()]) this.ecarter(id, erreur(code));
     this.fil?.terminate();
-    this.echecs += 1;
+    if (compter) this.echecs += 1;
     this.fil = this.echecs >= (this.options.echecsMax ?? 3) ? null : undefined;
   }
 

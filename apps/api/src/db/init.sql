@@ -800,3 +800,80 @@ CREATE TABLE IF NOT EXISTS archive_signing_keys (
   secret text NOT NULL CONSTRAINT archive_signing_keys_secret_length CHECK (length(secret) >= 32),
   created_at timestamptz NOT NULL DEFAULT now()
 );
+-- Exigences Studio (E.1-02 à E.1-06) : un jeu d'exigences versionné par étude, rangé à part des révisions dessinées.
+-- Chaque modification crée la version suivante (append-only : UPDATE refusée par déclencheur) ; aucune exigence n'est
+-- fournie par Fadi (aucune ligne insérée ici). Les contrôles enregistrent leur résultat calculé, lié à la révision et à la
+-- version du jeu examinées ; l'état d'exécution (execute / non-execute / erreur) est distinct de la conclusion, qui
+-- n'existe que pour un contrôle exécuté. Un résultat n'est jamais réécrit dans l'exigence ni dans le document.
+-- Additif et idempotent : tables nouvelles, contraintes recréées à chaque application (DROP … IF EXISTS puis ADD, NOT VALID).
+CREATE TABLE IF NOT EXISTS studio_requirement_sets (
+  id text PRIMARY KEY,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  version integer NOT NULL,
+  requirements jsonb NOT NULL,
+  motif text,
+  author_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  request_id text,
+  payload_hash text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_requirement_sets_version_unique ON studio_requirement_sets(study_id, version);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_requirement_sets_request_unique ON studio_requirement_sets(study_id, request_id)
+  WHERE request_id IS NOT NULL;
+ALTER TABLE studio_requirement_sets DROP CONSTRAINT IF EXISTS studio_requirement_sets_version_check,
+  ADD CONSTRAINT studio_requirement_sets_version_check CHECK (version >= 1) NOT VALID;
+ALTER TABLE studio_requirement_sets DROP CONSTRAINT IF EXISTS studio_requirement_sets_requirements_array,
+  ADD CONSTRAINT studio_requirement_sets_requirements_array CHECK (jsonb_typeof(requirements) = 'array') NOT VALID;
+ALTER TABLE studio_requirement_sets DROP CONSTRAINT IF EXISTS studio_requirement_sets_motif_length,
+  ADD CONSTRAINT studio_requirement_sets_motif_length CHECK (motif IS NULL OR length(motif) BETWEEN 1 AND 2000) NOT VALID;
+ALTER TABLE studio_requirement_sets DROP CONSTRAINT IF EXISTS studio_requirement_sets_payload_hash_check,
+  ADD CONSTRAINT studio_requirement_sets_payload_hash_check CHECK (payload_hash IS NULL OR payload_hash ~ '^[0-9a-f]{64}$') NOT VALID;
+CREATE OR REPLACE FUNCTION studio_requirement_set_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_requirement_set_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_requirement_sets_no_update BEFORE UPDATE ON studio_requirement_sets
+  FOR EACH ROW EXECUTE FUNCTION studio_requirement_set_immutable();
+CREATE TABLE IF NOT EXISTS studio_requirement_checks (
+  id text PRIMARY KEY,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  variant_id text NOT NULL,
+  revision_id text NOT NULL,
+  set_version integer,
+  execution text NOT NULL,
+  conclusion text,
+  result jsonb NOT NULL,
+  document_hash text NOT NULL,
+  author_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  request_id text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_requirement_checks_variant_idx ON studio_requirement_checks(variant_id, created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_requirement_checks_request_unique ON studio_requirement_checks(variant_id, request_id)
+  WHERE request_id IS NOT NULL;
+ALTER TABLE studio_requirement_checks DROP CONSTRAINT IF EXISTS studio_requirement_checks_variant_of_study,
+  ADD CONSTRAINT studio_requirement_checks_variant_of_study FOREIGN KEY(study_id, variant_id)
+  REFERENCES studio_variants(study_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_requirement_checks DROP CONSTRAINT IF EXISTS studio_requirement_checks_revision_of_variant,
+  ADD CONSTRAINT studio_requirement_checks_revision_of_variant FOREIGN KEY(variant_id, revision_id)
+  REFERENCES studio_revisions(variant_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_requirement_checks DROP CONSTRAINT IF EXISTS studio_requirement_checks_set_version,
+  ADD CONSTRAINT studio_requirement_checks_set_version FOREIGN KEY(study_id, set_version)
+  REFERENCES studio_requirement_sets(study_id, version) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_requirement_checks DROP CONSTRAINT IF EXISTS studio_requirement_checks_execution_check,
+  ADD CONSTRAINT studio_requirement_checks_execution_check CHECK (execution IN ('execute', 'non-execute', 'erreur')) NOT VALID;
+ALTER TABLE studio_requirement_checks DROP CONSTRAINT IF EXISTS studio_requirement_checks_conclusion_check,
+  ADD CONSTRAINT studio_requirement_checks_conclusion_check
+  CHECK ((conclusion IS NULL OR conclusion IN ('satisfaite', 'non-satisfaite', 'non-evaluee')) AND ((execution = 'execute') = (conclusion IS NOT NULL))) NOT VALID;
+ALTER TABLE studio_requirement_checks DROP CONSTRAINT IF EXISTS studio_requirement_checks_document_hash_check,
+  ADD CONSTRAINT studio_requirement_checks_document_hash_check CHECK (document_hash ~ '^[0-9a-f]{64}$') NOT VALID;
+ALTER TABLE studio_requirement_checks DROP CONSTRAINT IF EXISTS studio_requirement_checks_result_object,
+  ADD CONSTRAINT studio_requirement_checks_result_object CHECK (jsonb_typeof(result) = 'object') NOT VALID;
+CREATE OR REPLACE FUNCTION studio_requirement_check_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_requirement_check_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_requirement_checks_no_update BEFORE UPDATE ON studio_requirement_checks
+  FOR EACH ROW EXECUTE FUNCTION studio_requirement_check_immutable();
