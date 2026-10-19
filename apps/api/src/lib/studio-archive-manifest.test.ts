@@ -443,6 +443,31 @@ describe("section Studio : feuilles composées et dossiers de conception (E.3-02
     ]));
   });
 
+  it("définition de chaque feuille contrôlée par le modèle : refus clair, jamais un échec plus tard (M-5)", () => {
+    const { tables } = avecDossier();
+    tables.studio_sheets[0]!["definition"] = { ...(tables.studio_sheets[0]!["definition"] as object), format: "A9" };
+    tables.studio_sheets[1]!["definition"] = { ...(tables.studio_sheets[1]!["definition"] as object), numero: "B-200" };
+    const section = { schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: STUDIO_ARCHIVE_SCHEMA_VERSION, sourceProjectId: "pA", ownerId: "uOwner", accounts: ACCOUNTS, tables, manifest: buildStudioManifest(tables, IDENT) };
+    const errors = errorsOf(section);
+    expect(errors.some((e) => e.startsWith("feuille sh1 : définition invalide (feuille.format"))).toBe(true);
+    expect(errors).toContain("feuille sh2 : numéro différent de sa définition");
+  });
+
+  it("borne des ajustements du métré (I-2) : colonne absente ou nulle acceptée (lignes antérieures) ; entier ≥ 1 avec métré seulement", () => {
+    const ok = avecDossier();
+    ok.tables.studio_dossiers[0]!["quantities_adjustment_seq"] = 3;
+    expect(errorsOf({ ...ok.section, manifest: buildStudioManifest(ok.tables, IDENT) })).toEqual([]);
+    ok.tables.studio_dossiers[0]!["quantities_adjustment_seq"] = null;
+    expect(errorsOf({ ...ok.section, manifest: buildStudioManifest(ok.tables, IDENT) })).toEqual([]);
+    for (const [seq, metre] of [[0, true], [1.5, true], [2, false]] as const) {
+      const { tables } = avecDossier();
+      tables.studio_dossiers[0]!["quantities_adjustment_seq"] = seq;
+      if (!metre) Object.assign(tables.studio_dossiers[0]!, { quantities_variant_id: null, quantities_revision_id: null });
+      const section = { schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: STUDIO_ARCHIVE_SCHEMA_VERSION, sourceProjectId: "pA", ownerId: "uOwner", accounts: ACCOUNTS, tables, manifest: buildStudioManifest(tables, IDENT) };
+      expect(errorsOf(section), String(seq)).toContain("dossier d1 : borne des ajustements du métré invalide");
+    }
+  });
+
   it("archive de la version précédente (avec ajustements, sans feuilles ni dossiers) : relue sans ces tables", () => {
     const { tables } = fixture();
     const anterieures = STUDIO_ARCHIVE_TABLES_BY_VERSION[STUDIO_ARCHIVE_LEGACY_TABLES_VERSION]!;

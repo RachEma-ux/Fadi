@@ -12,6 +12,7 @@
  * changent (réattribution déclarée dans les réserves).
  */
 import { createHash } from "node:crypto";
+import { StudioValidationError, validerFeuilleComposee, type StudioFeuilleComposeeDefinition } from "@parcours/atelier-model";
 import { dimensionsDe, statutCombine, type Dimensions, type StatutCombine, type StatutDiffusion, type StatutTravail } from "./studio-publication-statuts.js";
 
 export const STUDIO_ARCHIVE_SCHEMA = "fadi-studio-archive/1";
@@ -438,7 +439,17 @@ export function checkStudioArchive(raw: unknown): { ok: true; section: StudioArc
   for (const r of tables.studio_sheets) {
     if (variantStudy.get(r["variant_id"] as string) !== r["study_id"]) errors.push(`feuille ${String(r["id"])} : variante absente`);
     if (revisionVariant.get(r["revision_id"] as string) !== r["variant_id"]) errors.push(`feuille ${String(r["id"])} : révision absente`);
+    // Définition contrôlée par le modèle (M-5) : refus clair à la relecture plutôt qu'un échec plus tard à la composition.
     if (!isRecord(r["definition"])) errors.push(`feuille ${String(r["id"])} : définition illisible`);
+    else {
+      try {
+        const def = validerFeuilleComposee(r["definition"] as unknown as StudioFeuilleComposeeDefinition);
+        if (def.numero !== r["number"]) errors.push(`feuille ${String(r["id"])} : numéro différent de sa définition`);
+      } catch (e) {
+        if (!(e instanceof StudioValidationError)) throw e;
+        errors.push(`feuille ${String(r["id"])} : définition invalide (${e.message})`);
+      }
+    }
     const k = `${String(r["study_id"])}|${String(r["number"])}`;
     if (numeros.has(k)) errors.push(`feuille ${String(r["id"])} : numéro en double`);
     numeros.add(k);
@@ -451,6 +462,10 @@ export function checkStudioArchive(raw: unknown): { ok: true; section: StudioArc
     const qv = r["quantities_variant_id"], qr = r["quantities_revision_id"];
     if ((qv === null || qv === undefined) !== (qr === null || qr === undefined)) errors.push(`dossier ${String(r["id"])} : métré incomplet`);
     else if (qv !== null && qv !== undefined && (variantStudy.get(qv as string) !== r["study_id"] || revisionVariant.get(qr as string) !== qv)) errors.push(`dossier ${String(r["id"])} : révision du métré absente`);
+    // Borne du journal des ajustements (I-2) : colonne nullable, absente des sections antérieures (null : aucun
+    // ajustement pris en compte) ; sinon entier ≥ 1, avec un métré.
+    const seq = r["quantities_adjustment_seq"];
+    if (seq !== null && seq !== undefined && (!Number.isInteger(seq) || (seq as number) < 1 || qv === null || qv === undefined)) errors.push(`dossier ${String(r["id"])} : borne des ajustements du métré invalide`);
   }
   for (const r of tables.volumes) {
     const bytes = volumeBytes(r["content"]);

@@ -51,8 +51,13 @@ documentsRouter.get("/", async (req, res) => {
   // Groupe Studio, à part du catalogue productible (aucune production ici) : paquets diffusés et retirés.
   const studioPackages = await studioPackageDocuments(project.id, req.user!.id);
   // Dossiers de conception Studio (E.3-03, E.3-06) : livrables recalculés depuis des révisions immuables.
-  const studioDossiers = await studioDossierDocuments(project.id, req.user!.id);
-  res.json({ modelRevision: project.modelRevision, nativeHash: dctx.analysis.nativeHash, computedAt: now, documents, studioPackages, studioDossiers });
+  // Chaque dossier en échec devient une entrée en erreur (code traduit côté client) ; un échec du groupe entier ne
+  // casse pas les autres groupes du catalogue (M-4) : le groupe est vide et son code d'erreur est rapporté.
+  let studioDossiers: Awaited<ReturnType<typeof studioDossierDocuments>> = [];
+  let studioDossiersError: string | null = null;
+  try { studioDossiers = await studioDossierDocuments(project.id, req.user!.id); }
+  catch (e) { console.error("studio_dossiers_catalogue", project.id, e); studioDossiersError = "dossier_unavailable"; }
+  res.json({ modelRevision: project.modelRevision, nativeHash: dctx.analysis.nativeHash, computedAt: now, documents, studioPackages, studioDossiers, studioDossiersError });
 });
 
 /** Produit un document du catalogue : le corps par `render`, la trace de production avec la révision et l'empreinte courantes. */

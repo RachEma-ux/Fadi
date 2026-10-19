@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   actualiteDe, actualiteParEmpreinte, actualiteVue, besoinTransition, CacheRegeneration, canonicalJson, cleRegeneration, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition, diffusionPlusRecente, documentsRegeneres,
-  dimensionsDe, ecartsManifeste, empreinteManifeste, REGLES_TRANSITION, ROLES_CAPACITE, sha256, statutCombine, STUDIO_PUBLICATION_ACTIONS,
+  dimensionsDe, ecartsManifeste, empreinteManifeste, memeContenu, REGLES_TRANSITION, ROLES_CAPACITE, sha256, statutCombine, STUDIO_PUBLICATION_ACTIONS,
   type EtatPublication, type ManifesteMeta, type ManifesteSource,
 } from "./studio-publication-statuts.js";
 
@@ -196,6 +196,22 @@ describe("Publications Studio — manifeste figé multi-sources (E.4-03 à E.4-0
     const row = { status: "diffuse" as const, workStatus: null, diffusionStatus: null, approvedRevisionId: "r" };
     expect(dimensionsDe({ ...row, replacedAt: t(2) }).diffusion).toBe("remplace");
     expect(statutCombine(dimensionsDe({ ...row, replacedAt: t(2) }))).toBe("diffuse");
+  });
+
+  it("une diffusion ne remplace que les paquets de même contenu : dessin 2D et paquet complet coexistent (I-1)", () => {
+    const t = (n: number) => new Date(Date.UTC(2026, 9, 1, n));
+    const pubs = [
+      { id: "complet-ancien", variantId: "v", diffusedAt: t(1), status: "diffuse" as const, manifest: { schema: "m" }, package: null },
+      { id: "dessin-ancien", variantId: "v", diffusedAt: t(2), status: "diffuse" as const, manifest: { contenu: "dessin-2d" }, package: null },
+      { id: "complet-paquet", variantId: "v", diffusedAt: t(3), status: "diffuse" as const, manifest: null, package: { schema: "p" } },
+      { id: "dessin-paquet", variantId: "v", diffusedAt: t(4), status: "diffuse" as const, manifest: null, package: { contenu: "dessin-2d" } },
+    ];
+    expect(memeContenu("dessin-2d", pubs).map((p) => p.id)).toEqual(["dessin-ancien", "dessin-paquet"]);
+    expect(memeContenu("complet", pubs).map((p) => p.id)).toEqual(["complet-ancien", "complet-paquet"]);
+    // Remplacement déduit (dossier antérieur au lot E.4) : le complet n'est pas remplacé par un dessin plus récent.
+    expect(diffusionPlusRecente(pubs[0]!, memeContenu("complet", pubs))).toBe("complet-paquet");
+    expect(diffusionPlusRecente(pubs[2]!, memeContenu("complet", pubs))).toBeNull();
+    expect(diffusionPlusRecente(pubs[2]!, pubs)).toBe("dessin-paquet");
   });
 
   it("l'approbation porte l'empreinte du manifeste examiné ; un autre ensemble est refusé (409 revision_mismatch)", () => {

@@ -92,6 +92,41 @@ export const empreinteSaisie = (input: Record<string, unknown>): string => {
   void _r;
   return sha256(canonicalJson(reste));
 };
+/**
+ * Borne du journal des ajustements du métré (I-2) : l'empreinte d'un dossier ne doit changer que si ses sources épinglées
+ * changent. Le métré épingle une révision ET la séquence maximale du journal de la variante au moment de l'épinglage ;
+ * un ajustement ajouté ensuite n'entre pas dans le dossier tant que le métré n'est pas réépinglé.
+ *
+ * - métré retiré : null ;
+ * - même variante et même révision qu'avant (modification du titre, de l'ordre…, ou renvoi du même métré) : borne conservée ;
+ * - nouvel épinglage (création, autre variante ou autre révision, métré ajouté) : séquence maximale courante (null si le
+ *   journal est vide).
+ * Une borne nulle signifie « aucun ajustement pris en compte ».
+ */
+export function borneAjustements(
+  ancien: { variantId: string | null; revisionId: string | null; seq: number | null } | null,
+  nouveau: { variantId: string | null; revisionId: string | null },
+  seqMaxCourante: number | null,
+): number | null {
+  if (!nouveau.variantId || !nouveau.revisionId) return null;
+  if (ancien && ancien.variantId === nouveau.variantId && ancien.revisionId === nouveau.revisionId) return ancien.seq;
+  return seqMaxCourante;
+}
+/** Journal lu par le dossier : lignes de séquence ≤ borne seulement ; borne nulle : aucune ligne. */
+export function journalBorne<T extends { seq: number }>(journal: readonly T[], borne: number | null): T[] {
+  return borne === null ? [] : journal.filter((l) => l.seq <= borne);
+}
+/**
+ * Code d'erreur d'un dossier du catalogue des Documents (M-4, M-7) : jamais le texte du serveur, un code que le client
+ * traduit. Toute exception d'assemblage devient « dossier_unavailable » (le catalogue n'échoue jamais pour un dossier).
+ */
+export const STUDIO_DOSSIER_ERREURS = ["dossier_sheet_missing", "dossier_invalid", "sheet_view_invalid", "not_found", "dossier_unavailable"] as const;
+export type StudioDossierErreur = (typeof STUDIO_DOSSIER_ERREURS)[number];
+export function codeErreurDossier(e: unknown): StudioDossierErreur {
+  const body = e && typeof e === "object" && "body" in e ? (e as { body: unknown }).body : null;
+  const code = body && typeof body === "object" ? (body as Record<string, unknown>)["error"] : null;
+  return (STUDIO_DOSSIER_ERREURS as readonly unknown[]).includes(code) ? (code as StudioDossierErreur) : "dossier_unavailable";
+}
 /** Feuilles d'un dossier : distinctes et toutes connues de l'étude, sinon refus 400. */
 export function controleFeuillesDossier(ids: readonly string[], connues: ReadonlySet<string>): RefusDossier | null {
   if (new Set(ids).size !== ids.length) return { status: 400, body: { error: "invalid_input", code: "dossier_sheet_duplicate", message: "Une feuille ne figure qu'une fois dans un dossier." } };

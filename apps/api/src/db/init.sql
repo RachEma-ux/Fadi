@@ -1119,3 +1119,9 @@ ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_sheet_ids_
   ADD CONSTRAINT studio_dossiers_sheet_ids_array CHECK (jsonb_typeof(sheet_ids) = 'array') NOT VALID;
 ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_payload_hash_check,
   ADD CONSTRAINT studio_dossiers_payload_hash_check CHECK (payload_hash IS NULL OR payload_hash ~ '^[0-9a-f]{64}$') NOT VALID;
+-- Borne du journal des ajustements du métré (E.3-05) lue par le dossier : séquence maximale du journal de la variante
+-- au moment où le métré est épinglé. Null : aucun ajustement pris en compte (journal vide à l'épinglage, ou pas de métré).
+ALTER TABLE studio_dossiers ADD COLUMN IF NOT EXISTS quantities_adjustment_seq integer;
+ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_quantities_adjustment_seq_check,
+  ADD CONSTRAINT studio_dossiers_quantities_adjustment_seq_check
+  CHECK (quantities_adjustment_seq IS NULL OR (quantities_adjustment_seq >= 1 AND quantities_variant_id IS NOT NULL)) NOT VALID;

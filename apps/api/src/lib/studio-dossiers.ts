@@ -7,12 +7,16 @@
  *
  * Droits (mêmes correspondances que le reste de Studio) : lecture `read` (propriétaire, éditeur, lecteur) ; création,
  * modification, réépinglage et suppression `modify` (propriétaire, éditeur), réservation d'édition respectée (423).
- * Étude ou variante archivée : lecture seule (409 `archived`).
+ * Étude ou variante archivée : lecture seule (409 `archived`) — création, modification et suppression d'une feuille.
+ *
+ * Stabilité de l'empreinte (I-2) : le métré d'un dossier épingle une révision et la borne du journal des ajustements
+ * (`quantities_adjustment_seq`, séquence maximale à l'épinglage ; null : aucun ajustement pris en compte). Un ajustement
+ * ajouté ensuite ne change ni le dossier ni son empreinte tant que le métré n'est pas réépinglé (`borneAjustements`).
  *
  * Catalogue des Documents (E.3-06) : `listProjectStudioDossiers` est lu par `lib/documents.ts` (groupe « Studio —
  * dossiers de conception »), avec les liens de téléchargement du PDF et du JSON de chaque dossier.
  */
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lte, max } from "drizzle-orm";
 import {
   assemblerDossierConception, composerFeuilleComposee, evaluerAjustementsQuantites, pdfDossierConception, quantitesStudio, studioFeuilleComposeeSvg,
   studioSheetPdf, StudioValidationError, validateStudioDocument,
@@ -25,7 +29,7 @@ import { loadProjectAccess, projectAccessRefusal, type AccessibleProject } from 
 import type { Querier } from "./step-rows.js";
 import { assertAccess, lockedAccess, notFound, StudioRequestError, studioArchivedRefusal, studioFileSegment, studyOf } from "./studio-commands.js";
 import {
-  controleFeuillesDossier, definitionDeSaisie as definitionControlee, empreinteSaisie, saisieModifiee, type SaisieFeuille,
+  borneAjustements, codeErreurDossier, controleFeuillesDossier, definitionDeSaisie as definitionControlee, journalBorne, type StudioDossierErreur, empreinteSaisie, saisieModifiee, type SaisieFeuille,
   type StudioDossierCreateInput, type StudioDossierUpdateInput, type StudioSheetCreateInput, type StudioSheetUpdateInput,
 } from "./studio-dossiers-regles.js";
 import { rejeuAdmis } from "./studio-exigences.js";
@@ -60,6 +64,8 @@ export interface StudioSheetView {
 export interface StudioDossierView {
   id: string; studyId: string; title: string; sheetIds: string[];
   quantities: { variantId: string; revisionId: string } | null; includeFidelity: boolean;
+  /** Borne du journal des ajustements lue par le métré (séquence max à l'épinglage) ; null : aucun ajustement pris en compte. */
+  quantitiesAdjustmentSeq: number | null;
   createdBy: Who; createdAt: string; updatedAt: string;
   files: { pdf: string; json: string };
 }
@@ -217,7 +223,9 @@ export async function deleteStudioSheet(projectId: string, studyId: string, shee
     const study = await studyOf(tx, projectId, studyId);
     assertAccess(access, actorId, "modify");
     const row = await sheetRow(tx, study.id, sheetId);
-    if (study.archivedAt !== null) return studioArchivedRefusal();
+    // Étude ou variante archivée : lecture seule (M-3), comme la création et la modification d'une feuille.
+    const variant = await variantOf(tx, study.id, row.variantId);
+    if (study.archivedAt !== null || variant.archivedAt !== null) return studioArchivedRefusal();
     const dossiers = await tx.select({ id: studioDossiers.id, sheetIds: studioDossiers.sheetIds }).from(studioDossiers).where(eq(studioDossiers.studyId, study.id));
     const cites = dossiers.filter((d) => d.sheetIds.includes(row.id)).map((d) => d.id);
     if (cites.length) throw new StudioRequestError(409, { error: "sheet_in_dossier", dossierIds: cites, message: "Cette feuille fait partie d'un dossier de conception : retirez-la du dossier d'abord." });
@@ -251,7 +259,7 @@ function dossierView(projectId: string, row: DossierRow, mails: Map<string, stri
   return {
     id: row.id, studyId: row.studyId, title: row.title, sheetIds: row.sheetIds,
     quantities: row.quantitiesVariantId && row.quantitiesRevisionId ? { variantId: row.quantitiesVariantId, revisionId: row.quantitiesRevisionId } : null,
-    includeFidelity: row.includeFidelity,
+    includeFidelity: row.includeFidelity, quantitiesAdjustmentSeq: row.quantitiesAdjustmentSeq,
     createdBy: { id: row.createdBy, email: mails.get(row.createdBy) ?? "" }, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(),
     files: { pdf: `${href}/pdf`, json: `${href}/json` },
   };
@@ -261,6 +269,18 @@ async function controlerFeuilles(q: Querier, studyId: string, ids: readonly stri
   const rows = await q.select({ id: studioSheets.id }).from(studioSheets).where(and(eq(studioSheets.studyId, studyId), inArray(studioSheets.id, [...new Set(ids)])));
   const refus = controleFeuillesDossier(ids, new Set(rows.map((r) => r.id)));
   if (refus) throw new StudioRequestError(refus.status, refus.body);
+}
+/** Séquence maximale du journal des ajustements de la variante (null : journal vide). */
+async function seqMaxAjustements(q: Querier, variantId: string): Promise<number | null> {
+  const [r] = await q.select({ seq: max(studioQuantityAdjustments.seq) }).from(studioQuantityAdjustments).where(eq(studioQuantityAdjustments.variantId, variantId));
+  return r?.seq ?? null;
+}
+/** Métré épinglé : variante, révision et borne du journal des ajustements (`borneAjustements`). */
+async function metreEpingle(q: Querier, studyId: string, quantities: { variantId: string; revisionId?: string | undefined } | null | undefined, ancien: DossierRow | null) {
+  const m = await metreDe(q, studyId, quantities);
+  const seqMax = m.variantId ? await seqMaxAjustements(q, m.variantId) : null;
+  const seq = borneAjustements(ancien ? { variantId: ancien.quantitiesVariantId, revisionId: ancien.quantitiesRevisionId, seq: ancien.quantitiesAdjustmentSeq } : null, m, seqMax);
+  return { quantitiesVariantId: m.variantId, quantitiesRevisionId: m.revisionId, quantitiesAdjustmentSeq: seq };
 }
 async function metreDe(q: Querier, studyId: string, quantities: { variantId: string; revisionId?: string | undefined } | null | undefined): Promise<{ variantId: string | null; revisionId: string | null }> {
   if (!quantities) return { variantId: null, revisionId: null };
@@ -297,11 +317,11 @@ export async function createStudioDossier(projectId: string, studyId: string, ac
     }
     if (study.archivedAt !== null) return studioArchivedRefusal();
     await controlerFeuilles(tx, study.id, input.sheetIds);
-    const metre = await metreDe(tx, study.id, input.quantities);
+    const metre = await metreEpingle(tx, study.id, input.quantities, null);
     const now = new Date();
     const [row] = await tx.insert(studioDossiers).values({
       id: newId("studio_dossier"), studyId: study.id, title: input.title, sheetIds: input.sheetIds,
-      quantitiesVariantId: metre.variantId, quantitiesRevisionId: metre.revisionId, includeFidelity: input.includeFidelity ?? true,
+      ...metre, includeFidelity: input.includeFidelity ?? true,
       requestId: input.requestId ?? null, payloadHash: hash, createdBy: actorId, createdAt: now, updatedAt: now,
     }).returning();
     return { ...dossierView(projectId, row!, await emails(tx, [actorId])), replayed: false };
@@ -319,10 +339,7 @@ export async function updateStudioDossier(projectId: string, studyId: string, do
     const patch: Partial<typeof studioDossiers.$inferInsert> = { updatedAt: new Date() };
     if (input.title !== undefined) patch.title = input.title;
     if (input.sheetIds !== undefined) { await controlerFeuilles(tx, study.id, input.sheetIds); patch.sheetIds = input.sheetIds; }
-    if (input.quantities !== undefined) {
-      const m = await metreDe(tx, study.id, input.quantities);
-      patch.quantitiesVariantId = m.variantId; patch.quantitiesRevisionId = m.revisionId;
-    }
+    if (input.quantities !== undefined) Object.assign(patch, await metreEpingle(tx, study.id, input.quantities, row));
     if (input.includeFidelity !== undefined) patch.includeFidelity = input.includeFidelity;
     const [stored] = await tx.update(studioDossiers).set(patch).where(eq(studioDossiers.id, row.id)).returning();
     return dossierView(projectId, stored!, await emails(tx, [stored!.createdBy]));
@@ -341,10 +358,14 @@ async function assembler(q: Querier, access: AccessibleProject, study: Study, ro
     const variant = await variantOf(q, study.id, row.quantitiesVariantId);
     const revision = await revisionOf(q, variant.id, row.quantitiesRevisionId);
     const document = validateStudioDocument(revision.document);
-    // Ajustements manuels du journal de la variante (E.3-05), évalués pour la révision du métré : rapportés à part.
-    const journal = await q.select().from(studioQuantityAdjustments).where(eq(studioQuantityAdjustments.variantId, variant.id)).orderBy(asc(studioQuantityAdjustments.seq)) as LigneAjustement[];
-    const ajustements = evaluerAjustementsQuantites(document, quantitesStudio(document), journal.map((r) => ajustementDe(r, new Map())));
-    metre = { document, source: sourceDe(study, variant, revision), ajustements };
+    // Ajustements manuels du journal de la variante (E.3-05), évalués pour la révision du métré : rapportés à part. Seules
+    // les lignes de séquence ≤ borne épinglée sont lues (I-2) : un ajustement ajouté après l'épinglage ne change pas
+    // l'empreinte du dossier ; borne nulle : aucun ajustement pris en compte.
+    const borne = row.quantitiesAdjustmentSeq;
+    const journal = borne === null ? [] : await q.select().from(studioQuantityAdjustments)
+      .where(and(eq(studioQuantityAdjustments.variantId, variant.id), lte(studioQuantityAdjustments.seq, borne))).orderBy(asc(studioQuantityAdjustments.seq)) as LigneAjustement[];
+    const ajustements = evaluerAjustementsQuantites(document, quantitesStudio(document), journalBorne(journal, borne).map((r) => ajustementDe(r, new Map())));
+    metre = { document, source: sourceDe(study, variant, revision), ajustements, borneAjustements: borne };
   }
   try {
     const { dossier, rendus } = assemblerDossierConception({
@@ -396,9 +417,14 @@ export async function listProjectStudioDossiers(projectId: string, actorId: stri
   const out = [];
   for (const row of rows) {
     const study = byStudy.get(row.studyId)!;
-    let empreinte: string | null = null, sources: StudioSourceDocumentaire[] = [], error: string | null = null;
+    // Toute exception d'assemblage d'un dossier (feuille retirée, vue impossible, donnée illisible…) devient une entrée en
+    // erreur, sous un code que le client traduit (M-4, M-7) : le catalogue des Documents n'échoue jamais pour un dossier.
+    let empreinte: string | null = null, sources: StudioSourceDocumentaire[] = [], error: StudioDossierErreur | null = null;
     try { const a = (await assembler(db, access, study, row)).dossier; empreinte = a.empreinte; sources = a.sources; }
-    catch (e) { if (!(e instanceof StudioRequestError)) throw e; error = String(e.body["message"] ?? e.body["error"]); }
+    catch (e) {
+      if (!(e instanceof StudioRequestError)) console.error("studio_dossier_catalogue", row.id, e);
+      error = codeErreurDossier(e);
+    }
     out.push({ ...dossierView(projectId, row, mails), studyName: study.name, sheetCount: row.sheetIds.length, empreinte, sources, error });
   }
   return { dossiers: out };

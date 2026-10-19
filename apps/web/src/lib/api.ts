@@ -589,6 +589,8 @@ export interface DocumentsView {
   studioPackages?: StudioPackageDocument[];
   /** Dossiers de conception Studio (E.3-03, E.3-06), recalculés depuis des révisions immuables. */
   studioDossiers?: StudioDossierDocument[];
+  /** Code d'erreur du groupe des dossiers Studio quand il n'a pas pu être lu (les autres groupes restent servis). */
+  studioDossiersError?: string | null;
 }
 
 /** Dossier de conception Studio tel que le module Documents le liste (`lib/documents.ts` côté API). */
@@ -601,6 +603,7 @@ export interface StudioDossierDocument {
   studyName: string;
   sheetCount: number;
   hash: string | null;
+  /** Code d'erreur (jamais un texte du serveur) : libellé traduit par `libelleErreurDossier`. */
   error: string | null;
   sources: { variantId: string; variantName: string | null; revisionId: string; revisionShort: string }[];
   updatedAt: string;
@@ -958,6 +961,8 @@ export interface StudioDossierInput {
 export interface StudioDossier {
   id: string; studyId: string; title: string; sheetIds: string[];
   quantities: { variantId: string; revisionId: string } | null; includeFidelity: boolean;
+  /** Borne du journal des ajustements lue par le métré (séquence max à l'épinglage) ; null : aucun ajustement pris en compte. */
+  quantitiesAdjustmentSeq: number | null;
   createdBy: { id: string; email: string }; createdAt: string; updatedAt: string;
   files: { pdf: string; json: string };
 }

@@ -1016,6 +1016,8 @@ export const studioDossiers = pgTable("studio_dossiers", {
   sheetIds: jsonb("sheet_ids").$type<string[]>().notNull(),
   quantitiesVariantId: text("quantities_variant_id"),
   quantitiesRevisionId: text("quantities_revision_id"),
+  /** Borne du journal des ajustements du métré lue par le dossier (séquence max à l'épinglage) ; null : aucun ajustement. */
+  quantitiesAdjustmentSeq: integer("quantities_adjustment_seq"),
   includeFidelity: boolean("include_fidelity").notNull().default(true),
   requestId: text("request_id"),
   payloadHash: text("payload_hash"),

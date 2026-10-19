@@ -32,7 +32,7 @@
  * diffusion), un dessin sans modèle 3D — SVG, DXF et feuille PDF, sans IFC ni variante coordonnée. Le manifeste porte
  * `contenu` (absent pour un dossier complet : empreintes historiques inchangées), le paquet aussi.
  */
-import { and, asc, desc, eq, inArray, isNull, ne, or } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { composerFeuilleStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, studioSheetPdf, validateStudioDocument, type StudioDocument } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
@@ -48,7 +48,7 @@ import type { Querier } from "./step-rows.js";
 import { assertAccess, lockedAccess, notFound, StudioRequestError, studioArchivedRefusal, studioFileSegment, studioIdentifierSchema, studyOf } from "./studio-commands.js";
 import {
   actualiteDe, actualiteParEmpreinte, actualiteVue, besoinTransition, CacheRegeneration, cleRegeneration, type ContenuPublication, contenuDe, formatsDuContenu, type ControleDocuments, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition,
-  diffusionPlusRecente, dimensionsDe, ecartsManifeste, empreinteManifeste, sha256, statutCombine, STUDIO_PUBLICATION_ACTIONS,
+  diffusionPlusRecente, dimensionsDe, ecartsManifeste, memeContenu, empreinteManifeste, sha256, statutCombine, STUDIO_PUBLICATION_ACTIONS,
   type Actualite, type Dimensions, type EcartManifeste, type ManifesteDocument, type ManifesteMeta, type ManifesteSource, type StudioPublicationTransition,
 } from "./studio-publication-statuts.js";
 
@@ -238,8 +238,11 @@ async function views(q: Querier, access: AccessibleProject, actorId: string, row
   // Remplacement d'un dossier antérieur au lot E.4 (sans colonne de remplacement) : diffusion plus récente de la même variante.
   const legacy = rows.some((r) => r.diffusionStatus === null && r.diffusedAt);
   const diffused = legacy
-    ? await q.select({ id: studioPublications.id, variantId: studioPublications.variantId, diffusedAt: studioPublications.diffusedAt, status: studioPublications.status })
-      .from(studioPublications).where(inArray(studioPublications.variantId, variantIds))
+    ? await q.select({
+      id: studioPublications.id, variantId: studioPublications.variantId, diffusedAt: studioPublications.diffusedAt, status: studioPublications.status,
+      // Contenu seul (pas le manifeste entier) : la diffusion déduite ne compare que des dossiers de même contenu.
+      manifest: sql<{ contenu?: string } | null>`jsonb_build_object('contenu', coalesce(${studioPublications.manifest}->>'contenu', ${studioPublications.package}->>'contenu'))`,
+    }).from(studioPublications).where(inArray(studioPublications.variantId, variantIds))
     : [];
   const eventsRows = await q.select().from(studioPublicationEvents).where(inArray(studioPublicationEvents.publicationId, rows.map((r) => r.id)))
     .orderBy(asc(studioPublicationEvents.createdAt), asc(studioPublicationEvents.id));
@@ -254,7 +257,7 @@ async function views(q: Querier, access: AccessibleProject, actorId: string, row
     const freshness = vue ? vue.actualite : actualiteDe(drift);
     const documentsCheck: ControleDocuments = vue ? vue.documents : "non-verifiee";
     // Dossier antérieur au lot E.4 : remplacement déduit de la diffusion plus récente (statut combiné inchangé).
-    const later = row.replacedByPublicationId === null && row.diffusionStatus === null ? diffusionPlusRecente(row, diffused) : null;
+    const later = row.replacedByPublicationId === null && row.diffusionStatus === null ? diffusionPlusRecente(row, memeContenu(contenuDe(row.manifest ?? row.package), diffused)) : null;
     const derived = dimensionsDe(row);
     const dims: Dimensions = later && derived.diffusion === "diffuse" ? { ...derived, diffusion: "remplace" } : derived;
     const replacedBy = row.replacedByPublicationId ?? later;
@@ -495,11 +498,12 @@ export async function transitionStudioPublication(projectId: string, studyId: st
       }
       const pkg: StudioPublicationPackage = { schema: "studio-publication-package/1", ...(current.manifest.contenu ? { contenu: current.manifest.contenu } : {}), revisionId: row.revisionId, documentHash: actualHash, meta: current.meta, files, manifestHash: current.manifestHash };
       Object.assign(patch, { package: pkg, packageHash: studioPackageHash(pkg), diffusedBy: actorId, diffusedAt: now });
-      // Remplacement (E.4-06) : les diffusions encore en vigueur de la même variante sont marquées remplacées et journalisées.
+      // Remplacement (E.4-06) : les diffusions encore en vigueur de la même variante ET du même contenu (`memeContenu` :
+      // un dessin 2D ne remplace pas un paquet complet, ni l'inverse) sont marquées remplacées et journalisées.
       const previous = await tx.select().from(studioPublications).where(and(
         eq(studioPublications.variantId, row.variantId), ne(studioPublications.id, row.id),
         or(eq(studioPublications.diffusionStatus, "diffuse"), and(isNull(studioPublications.diffusionStatus), eq(studioPublications.status, "diffuse"), isNull(studioPublications.replacedAt))),
-      )).for("update");
+      )).for("update").then((rows) => memeContenu(contenuDe(row.manifest), rows));
       for (const old of previous) {
         // Dossier antérieur au lot E.4 déjà remplacé par une diffusion plus récente : son remplacement (déduit) est conservé.
         if (old.diffusionStatus === null && diffusionPlusRecente(old, previous) !== null) continue;

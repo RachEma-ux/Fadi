@@ -339,7 +339,7 @@ const AJOUTS = {
     // Concurrence des écritures (A.5-06, A.5-08, `concurrence.ts`).
     "studioChevauchements", "studioElementsModifies",
     // Production documentaire (lot E.3 : vues, feuilles composées, dossier de conception, bilan brut / déductions / net).
-    "STUDIO_BILAN_QUANTITES_SCHEMA", "bilanQuantitesStudio", "studioSha256", "studioSha256Octets", "studioUtf8", "pdfPages",
+    "STUDIO_BILAN_QUANTITES_SCHEMA", "bilanQuantitesStudio", "sousTotauxAvecNet", "studioTexteTronque", "largeurHelvetica","studioSha256", "studioSha256Octets", "studioUtf8", "pdfPages",
     "STUDIO_VUE_DOCUMENTAIRE_SCHEMA", "STUDIO_FEUILLE_COMPOSEE_SCHEMA", "STUDIO_DOSSIER_CONCEPTION_SCHEMA", "STUDIO_NON_EVALUE", "STUDIO_LIMITES_DOSSIER",
     "studioDonneesVue", "produireVueDocumentaire", "validerFeuilleComposee", "studioLigneProvenance", "composerFeuilleComposee", "studioFeuilleComposeeSvg",
     "assemblerDossierConception", "pdfDossierConception",

@@ -257,6 +257,9 @@ try {
   const brut = n(await boite.locator("[data-studio-dossier-brut]").textContent()), deduit = n(await boite.locator("[data-studio-dossier-deduit]").textContent()), net = n(await boite.locator("[data-studio-dossier-net]").textContent());
   check("E.3-04 (interface) : brut 3,600 m³, déductions 0,420 m³ (une ouverture), net 3,180 m³, totaux partiels déclarés",
     brut.startsWith("3,600 m³ (partiel") && deduit.startsWith("0,420 m³") && deduit.includes("1 ouverture(s)") && net.startsWith("3,180 m³"), `${brut} | ${deduit} | ${net}`);
+  const brutNet = n(await boite.locator("[data-studio-dossier-brut-avec-net]").textContent()), deduitNet = n(await boite.locator("[data-studio-dossier-deduit-avec-net]").textContent());
+  check("M-1 (interface) : totaux cohérents — sous-total brut 3,600 et déductions 0,420 des lignes qui ont un net (3,600 − 0,420 = 3,180)",
+    brutNet === "3,600 m³" && deduitNet === "0,420 m³", `${brutNet} | ${deduitNet}`);
   const dossiers = (await api("get", `${racine}/studies/${studyId}/dossiers`)).body.dossiers;
   const dos = dossiers[0];
   const lu = (await api("get", `${racine}/studies/${studyId}/dossiers/${dos.id}`)).body;
@@ -274,6 +277,25 @@ try {
   check("E.3-03 : JSON et PDF du dossier — empreinte en en-tête, octets stables, PDF de plusieurs pages (sommaire, feuilles, métré, fidélité)",
     json1.status === 200 && json1.headers["x-studio-dossier-hash"] === lu.assembly.empreinte && json1.octets.equals(json2.octets) && JSON.parse(json1.octets.toString("utf8")).empreinte === lu.assembly.empreinte
       && pdfD.status === 200 && pdfD.octets.subarray(0, 8).toString("latin1") === "%PDF-1.4" && pages >= 5, `${pages} pages`);
+
+  // Stabilité (I-2) : un ajustement du métré ajouté APRÈS l'épinglage ne change ni le dossier ni son empreinte ; le
+  // métré réépinglé explicitement (retiré puis rejoint) lit le journal jusqu'à la nouvelle borne.
+  const ajout = await api("post", `${variante}/ajustements-quantites`, {
+    baseSequence: 0, revisionId: revB, cible: { type: "objet", id: "m1" }, grandeur: "volume", unite: "m3", valeur: 3.5, motif: "Relevé sur site (recette)",
+  });
+  const luAj = (await api("get", `${racine}/studies/${studyId}/dossiers/${dos.id}`)).body;
+  const jsonAj = await fichier(dos.files.json);
+  check("I-2 : ajustement ajouté après l'épinglage — empreinte et octets du dossier inchangés, journal non lu (borne nulle)",
+    ajout.status === 201 && luAj.assembly.empreinte === lu.assembly.empreinte && jsonAj.octets.equals(json1.octets) && luAj.quantitiesAdjustmentSeq === null
+      && JSON.stringify(luAj.assembly.metre.ajustements) === JSON.stringify({ enVigueur: 0, aRevoir: 0 }), `${ajout.status} ${court(ajout.body)} ${luAj.quantitiesAdjustmentSeq}`);
+  const renomme = await api("patch", `${racine}/studies/${studyId}/dossiers/${dos.id}`, { quantities: { variantId, revisionId: revB } });
+  check("I-2 : même métré renvoyé (même variante, même révision) — borne conservée", renomme.status === 200 && renomme.body.quantitiesAdjustmentSeq === null, court(renomme.body));
+  await api("patch", `${racine}/studies/${studyId}/dossiers/${dos.id}`, { quantities: null });
+  const repin = await api("patch", `${racine}/studies/${studyId}/dossiers/${dos.id}`, { quantities: { variantId, revisionId: revB } });
+  const luRepin = (await api("get", `${racine}/studies/${studyId}/dossiers/${dos.id}`)).body;
+  check("I-2 : métré réépinglé — borne = séquence max (1), ajustement pris en compte, empreinte changée",
+    repin.status === 200 && repin.body.quantitiesAdjustmentSeq === 1 && luRepin.assembly.metre.borneAjustements === 1 && luRepin.assembly.metre.ajustements.enVigueur === 1
+      && luRepin.assembly.empreinte !== lu.assembly.empreinte, court(luRepin.assembly?.metre?.ajustements));
 
   // Réépinglage explicite : la variante avance, la feuille est périmée ; « Actualiser » la réépingle.
   const deplacement = await api("post", `${variante}/commands`, { contractVersion: "studio-commands/1", requestId: `dossier-${randomUUID()}`, baseRevisionId: revB, commands: [{ toolId: "studio.dessin.deplacer", params: { id: docA.objects[0].id, dx: 0, dy: 1 } }] });
@@ -313,6 +335,19 @@ try {
   check("rejeu : même requestId, même feuille, sans doublon ; contenu différent refusé (409)",
     r1.status === 201 && r2.status === 201 && r2.body.replayed === true && r2.body.id === r1.body.id && (await api("post", feuillesUrl, { ...rejeu, title: "Autre" })).status === 409);
   check("suppression d'une feuille hors dossier", (await api("delete", `${racine}/studies/${studyId}/sheets/${r1.body.id}`)).status === 200);
+  // M-3 : variante archivée = lecture seule, suppression de feuille comprise (409 archived), comme l'écriture.
+  // (La variante initiale ne s'archive qu'avec son étude : une seconde variante porte la feuille.)
+  const seconde = (await api("post", `${racine}/studies/${studyId}/variants`, { name: "Variante à archiver" })).body?.variant?.id;
+  const varianteB = `${racine}/studies/${studyId}/variants/${seconde}`;
+  const f4 = await api("post", `${varianteB}/sheets`, { ...base, number: "F-04", title: "Archivée" });
+  const archivage = await api("post", `${varianteB}/archive`, {});
+  const supprArchivee = await api("delete", `${racine}/studies/${studyId}/sheets/${f4.body?.id}`);
+  const ecritArchivee = await api("patch", `${racine}/studies/${studyId}/sheets/${f4.body?.id}`, { title: "Autre" });
+  await api("post", `${varianteB}/unarchive`, {});
+  check("M-3 : variante archivée — suppression et modification d'une feuille refusées (409 archived)",
+    f4.status === 201 && archivage.status === 200 && supprArchivee.status === 409 && supprArchivee.body?.error === "archived" && ecritArchivee.status === 409 && ecritArchivee.body?.error === "archived",
+    `${f4.status} ${archivage.status} ${supprArchivee.status} ${court(supprArchivee.body)}`);
+  check("M-3 : désarchivée, la feuille se supprime", (await api("delete", `${racine}/studies/${studyId}/sheets/${f4.body?.id}`)).status === 200);
 
   // ——— D. Catalogue des Documents ———
   const docs = (await api("get", `/projects/${projet.id}/documents`)).body;

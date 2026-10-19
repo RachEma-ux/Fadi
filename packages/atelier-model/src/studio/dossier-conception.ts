@@ -1,6 +1,6 @@
 import type { Primitive } from "../documents/dessin.js";
-import { pdfPages } from "../documents/rendu-pdf.js";
-import { bilanQuantitesStudio, type BilanQuantitesStudio, type LigneBilanQuantites, type TotalBilan } from "./bilan-quantites.js";
+import { largeurHelvetica, pdfPages } from "../documents/rendu-pdf.js";
+import { bilanQuantitesStudio, sousTotauxAvecNet, type BilanQuantitesStudio, type LigneBilanQuantites, type TotalBilan } from "./bilan-quantites.js";
 import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument, type StudioDocument } from "./document-2d.js";
 import { studioRapportFidelite, type StudioRapportFidelite } from "./echanges/rapport-fidelite.js";
 import { studioSha256 } from "./empreinte-sha256.js";
@@ -264,7 +264,14 @@ export interface StudioDossierEntree {
   /** Feuilles dans l'ordre du dossier. */
   feuilles: StudioDossierFeuilleEntree[];
   /** Métré d'une révision identifiée ; absent : le métré n'est pas joint (et le dossier le dit). */
-  metre?: { document: StudioDocument; source: StudioSourceDocumentaire; ajustements?: EvaluationAjustementsQuantites } | null;
+  metre?: {
+    document: StudioDocument; source: StudioSourceDocumentaire; ajustements?: EvaluationAjustementsQuantites;
+    /**
+     * Borne du journal des ajustements lue (séquence maximale à l'épinglage du métré) ; null : aucun ajustement pris en
+     * compte ; absente : non déclarée (le dossier ne la rapporte pas).
+     */
+    borneAjustements?: number | null;
+  } | null;
   /** Joindre le rapport de fidélité de chaque feuille. */
   fidelite?: boolean;
 }
@@ -288,6 +295,8 @@ export interface StudioDossierConception {
     bilan: BilanQuantitesStudio;
     /** Ajustements manuels (E.3-05), rapportés à part ; le bilan reste celui des valeurs calculées. */
     ajustements: { enVigueur: number; aRevoir: number } | typeof STUDIO_NON_EVALUE;
+    /** Borne du journal lue (seules les séquences ≤ borne) ; null : aucun ajustement pris en compte ; absente : non déclarée. */
+    borneAjustements?: number | null;
   };
   fidelite: null | StudioDossierFidelite[];
   /** Sources distinctes des feuilles et du métré. */
@@ -323,7 +332,12 @@ export function assemblerDossierConception(e: StudioDossierEntree): { dossier: S
     const source = validerSource(e.metre.source);
     const doc = validateStudioDocument(e.metre.document);
     const aj = e.metre.ajustements;
-    metre = { source, bilan: bilanQuantitesStudio(doc), ajustements: aj ? { enVigueur: aj.objets.length + aj.calques.length, aRevoir: aj.aRevoir.length } : STUDIO_NON_EVALUE };
+    const borne = e.metre.borneAjustements;
+    if (borne !== undefined && borne !== null && (!Number.isInteger(borne) || borne < 1)) throw new StudioValidationError("dossier.metre.borneAjustements", "entier ≥ 1 ou null attendu");
+    metre = {
+      source, bilan: bilanQuantitesStudio(doc), ajustements: aj ? { enVigueur: aj.objets.length + aj.calques.length, aRevoir: aj.aRevoir.length } : STUDIO_NON_EVALUE,
+      ...(borne !== undefined ? { borneAjustements: borne } : {}),
+    };
   }
   const cle = (s: StudioSourceDocumentaire) => `${s.variantId}\u0000${s.revisionId}`;
   const sources = new Map<string, StudioSourceDocumentaire>();
@@ -345,7 +359,24 @@ const TEXTE_MM = 2.8;
 const fmt = (v: number | null): string => (v === null ? STUDIO_NON_EVALUE : new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 3, maximumFractionDigits: 3, useGrouping: false }).format(v));
 const fmtTotal = (t: TotalBilan): string => `${fmt(t.valeur)}${t.nonEvalues ? ` (partiel : ${t.nonEvalues} non évalué${t.nonEvalues > 1 ? "s" : ""})` : ""}`;
 
-/** Pages de texte A4 : titre, puis lignes à colonnes (positions en mm), paginées. */
+/**
+ * Texte tronqué à une largeur (mm) pour un corps donné (mm), d'après la largeur Helvetica approchée du PDF : coupé et
+ * terminé par « … » s'il dépasse, inchangé sinon (M-8 : un titre long ne chevauche pas la colonne suivante).
+ */
+export function studioTexteTronque(texte: string, largeurMm: number, corpsMm: number): string {
+  if (largeurHelvetica(texte) * corpsMm <= largeurMm) return texte;
+  const points = [...texte];
+  const max = largeurMm / corpsMm - largeurHelvetica("…");
+  let w = 0, n = 0;
+  while (n < points.length && w + largeurHelvetica(points[n]!) <= max) { w += largeurHelvetica(points[n]!); n++; }
+  return `${points.slice(0, n).join("").trimEnd()}…`;
+}
+
+/**
+ * Pages de texte A4 : titre, puis lignes à colonnes (positions en mm), paginées. Chaque cellule est tronquée à la
+ * largeur de sa colonne (jusqu'à la colonne suivante, ou la marge droite) ; une ligne à une seule cellule non vide,
+ * dernière de sa ligne, peut courir jusqu'à la marge droite.
+ */
 function pagesTexte(titre: string, entete: string[], colonnes: number[], lignes: string[][]): { largeurMm: number; hauteurMm: number; primitives: Primitive[] }[] {
   const parPage = Math.floor((A4.hauteur - 60) / LIGNE_MM);
   const pages: { largeurMm: number; hauteurMm: number; primitives: Primitive[] }[] = [];
@@ -355,7 +386,13 @@ function pagesTexte(titre: string, entete: string[], colonnes: number[], lignes:
       { type: "poly", points: [{ x: 0, y: 0 }, { x: A4.largeur, y: 0 }, { x: A4.largeur, y: A4.hauteur }, { x: 0, y: A4.hauteur }], ferme: true, trait: null, remplissage: "blanc", objetId: null },
       { type: "texte", position: { x: 20, y: A4.hauteur - 25 }, texte: titre, hauteurMm: 5, ancre: "debut", angle: 0, trait: "annotation", objetId: "titre" },
     ];
-    const ligne = (cells: string[], y: number, trait: "fin" | "annotation") => cells.forEach((c, i) => p.push({ type: "texte", position: { x: colonnes[i] ?? 20, y }, texte: c, hauteurMm: TEXTE_MM, ancre: "debut", angle: 0, trait, objetId: null }));
+    const ligne = (cells: string[], y: number, trait: "fin" | "annotation") => cells.forEach((c, i) => {
+      const x = colonnes[i] ?? 20;
+      // Largeur : jusqu'à la colonne suivante si une cellule non vide l'occupe, sinon jusqu'à la marge droite.
+      const suivante = cells.findIndex((s, j) => j > i && s !== "");
+      const fin = suivante >= 0 ? (colonnes[suivante] ?? A4.largeur - 10) - 2 : A4.largeur - 10;
+      if (c) p.push({ type: "texte", position: { x, y }, texte: studioTexteTronque(c, fin - x, TEXTE_MM), hauteurMm: TEXTE_MM, ancre: "debut", angle: 0, trait, objetId: null });
+    });
     let y = A4.hauteur - 38;
     ligne(entete, y, "fin");
     p.push({ type: "ligne", a: { x: 20, y: y - 1.5 }, b: { x: A4.largeur - 10, y: y - 1.5 }, trait: "fin", objetId: null });
@@ -384,14 +421,21 @@ export function pdfDossierConception(d: StudioDossierConception, rendus: readonl
   const pages = [...sommaire, ...feuilles];
   if (d.metre) {
     const b = d.metre.bilan;
+    const s = sousTotauxAvecNet(b);
+    const borne = d.metre.borneAjustements;
+    const journal = borne === undefined ? "" : borne === null ? " · aucun ajustement pris en compte" : ` · journal lu jusqu'au n° ${borne}`;
     pages.push(...pagesTexte(`Métré — volumes (m³), révision ${d.metre.source.revisionId.slice(-8)}`, ["Objet", "Type", "Brut", "Déductions (sources)", "Net"], [20, 60, 95, 120, 175], [
       ...b.lignes.map(ligneMetre),
       [],
-      ["Total brut", "", fmtTotal(b.totaux.brut)],
-      ["Total des déductions", "", fmtTotal(b.totaux.deduit)],
-      ["Total net", "", fmtTotal(b.totaux.net)],
-      ["Contrôle net = brut − déductions", "", b.controle.coherent ? "cohérent" : "INCOHÉRENT"],
-      ["Ajustements manuels", "", typeof d.metre.ajustements === "string" ? d.metre.ajustements : `${d.metre.ajustements.enVigueur} en vigueur, ${d.metre.ajustements.aRevoir} à revoir (hors bilan)`],
+      ["Total brut (toutes les lignes)", "", fmtTotal(b.totaux.brut)],
+      // Totaux cohérents (M-1) : sous-total brut et déductions des seules lignes qui ont un net, puis le net.
+      ["Sous-total brut (lignes avec net)", "", fmtTotal(s.brut)],
+      ["Déductions (lignes avec net)", "", "", fmtTotal(s.deduit)],
+      ["Total net", "", "", "", fmtTotal(b.totaux.net)],
+      ["Total des déductions (toutes les lignes)", "", "", fmtTotal(b.totaux.deduit)],
+      // Contrôle d'arithmétique sur la même source (M-2), pas une vérification indépendante.
+      ["Contrôle d'arithmétique (même source, pas une vérification indépendante) : net = brut - déductions", "", "", "", b.controle.coherent ? "cohérent" : "INCOHÉRENT"],
+      ["Ajustements manuels", "", typeof d.metre.ajustements === "string" ? `${d.metre.ajustements}${journal}` : `${d.metre.ajustements.enVigueur} en vigueur, ${d.metre.ajustements.aRevoir} à revoir (hors bilan)${journal}`],
     ]));
   }
   if (d.fidelite) {
