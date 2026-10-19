@@ -864,6 +864,7 @@ const studioPublicationPath = (p: string, s: string, id: string) => `${studioStu
 /** Fichier figé d'un paquet diffusé (téléchargement direct). */
 export function studioPackageFileUrl(p: string, s: string, id: string, format: StudioPackageFile["format"]): string {
   return `${studioPublicationPath(p, s, id)}/files/${format}`;
+}
 /** Préférences d'outils Studio du compte : visibilité dans les barres seulement, jamais un droit (B.2-06). */
 export interface StudioToolPreferencesInput { profil: string; favoris: string[]; personnel: string[] }
 export interface StudioToolPreferences extends StudioToolPreferencesInput {
