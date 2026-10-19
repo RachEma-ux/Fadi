@@ -120,7 +120,12 @@ const r5 = await send(editorA, v1, [{ toolId: 'studio.dessin.deplacer', params: 
 check('A : révision 4 de la variante initiale — rectangle décalé', r5.status === 200, short(r5.body));
 const fixed = await editorA('POST', `${comments}/${remark.body.id}/observation/transitions`, { action: 'corriger', revisionId: r5.body.revision.id, note: 'Corrigé' });
 check('A : observation corrigée (journal à deux passages)', fixed.status === 200 && fixed.body.journal?.length === 2, short(fixed.body));
-check('A : étude liée aux étapes 3 et 7 du Parcours', (await ownerA('PUT', `${root}/studies/${studyId}/steps`, { steps: [3, 7] })).status === 200);
+// Lot E.1 : un jeu d'exigences (version 1, saisi et sourcé pour la recette) et un contrôle de la tête de la variante.
+const exigenceObjets = { id: 'ex-objets', libelle: 'Nombre d\'objets dessinés', metrique: { type: 'nombre' }, comparaison: '>=', valeur: 1, unite: 'u', source: 'Programme de recette, saisi' };
+const setA = await ownerA('POST', `${root}/studies/${studyId}/exigences`, { baseVersion: 0, exigences: [exigenceObjets], motif: 'Jeu de recette' });
+const checkA = await editorA('POST', `${vPath(v1)}/controles`, {});
+check('A : jeu d\'exigences (version 1) et contrôle de la tête enregistrés', setA.status === 201 && setA.body.version === 1 && checkA.status === 201 && checkA.body.version === 1 && checkA.body.revisionId === heads[v1] && /^[0-9a-f]{64}$/.test(checkA.body.documentHash ?? ''), short([setA.body, checkA.body]));
+check('A : étude liée aux étapes 3 et 7 du Parcours',(await ownerA('PUT', `${root}/studies/${studyId}/steps`, { steps: [3, 7] })).status === 200);
 
 const pubs = `${root}/studies/${studyId}/publications`;
 const pub = await editorA('POST', `${vPath(v1)}/publications`, { title: 'Dossier restauré' });
@@ -155,6 +160,11 @@ const f1 = await editorA('POST', `${v2Path}/commands`, { contractVersion: 'studi
 const fRemark = await editorA('POST', `${v2Path}/comments`, { body: 'Remarque de l\'éditeur', objectIds: ['ligne-f'], revisionId: f1.body?.revision?.id });
 const editorIdA2 = ((await ownerA('GET', `${v2Path}/comments`)).body?.participants ?? []).find((p) => p.email === accounts.editor.email)?.id;
 const fObs = await editorA('POST', `${v2Path}/comments/${fRemark.body?.id}/observation`, { responsableId: editorIdA2 });
+// Exigence reprise d'une référence partenaire, acceptée par le propriétaire (qui, quand : version 2), puis contrôlée.
+const set2 = await ownerA('POST', `/projects/${p2}/studio/studies/${s2}/exigences`, { baseVersion: 0, exigences: [{ ...exigenceObjets, id: 'ex-partenaire', source: 'Référence partenaire de recette', origine: { reference: 'Partenaire R-12' } }] });
+const acc2 = await ownerA('POST', `/projects/${p2}/studio/studies/${s2}/exigences/acceptations`, { baseVersion: 1, exigenceId: 'ex-partenaire' });
+const check2 = await editorA('POST', `${v2Path}/controles`, {});
+check('A : second projet — référence partenaire acceptée (version 2, qui et quand) et contrôlée', set2.status === 201 && acc2.status === 201 && acc2.body.version === 2 && acc2.body.exigences?.[0]?.origine?.acceptation?.parEmail === accounts.owner.email && check2.status === 201 && check2.body.version === 2, short([set2.body, acc2.body, check2.body]));
 const pubs2 = `/projects/${p2}/studio/studies/${s2}/publications`;
 const fPub = await editorA('POST', `${v2Path}/publications`, { title: 'Dossier falsifié' });
 await editorA('POST', `${pubs2}/${fPub.body?.id}/soumettre`, {});
@@ -192,9 +202,9 @@ fs.writeFileSync(path.join(OUT, 'archive.json'), archiveText);
 const st = archive.studio;
 const counts = st ? Object.fromEntries(Object.entries(st.manifest.tables).map(([t, m]) => [t, m.count])) : {};
 check('sauvegarde : section Studio présente (schéma, version, manifeste)', archiveRes.status === 200 && st?.schema === 'fadi-studio-archive/1' && st.schemaVersion?.document === 'studio-document/1' && /^[0-9a-f]{64}$/.test(st.manifest?.hash ?? ''), short(st?.manifest ?? archive).slice(0, 200));
-check('sauvegarde : effectifs du manifeste (1 étude, 2 variantes, 7 révisions, 2 commentaires, 1 observation, 2 passages, 2 liens, 3 publications, 11 évènements, au moins 4 volumes, 1 membre, 1 préférence)',
+check('sauvegarde : effectifs du manifeste (1 étude, 2 variantes, 7 révisions, 2 commentaires, 1 observation, 2 passages, 2 liens, 3 publications, 11 évènements, au moins 4 volumes, 1 jeu d\x27exigences, 1 contrôle, 1 membre, 1 préférence)',
   counts.studio_studies === 1 && counts.studio_variants === 2 && counts.studio_revisions === 7 && counts.studio_comments === 2 && counts.studio_observations === 1 && counts.studio_observation_events === 2
-  && counts.studio_study_steps === 2 && counts.studio_publications === 3 && counts.studio_publication_events === 11 && counts.volumes >= 4 && counts.project_members === 1 && counts.studio_tool_preferences === 1, JSON.stringify(counts));
+  && counts.studio_study_steps === 2 && counts.studio_requirement_sets === 1 && counts.studio_requirement_checks === 1 && counts.studio_publications === 3 && counts.studio_publication_events === 11 && counts.volumes >= 4 && counts.project_members === 1 && counts.studio_tool_preferences === 1, JSON.stringify(counts));
 check('sauvegarde : empreintes des documents de la publication et du paquet conformes', st?.tables.studio_publications[0]?.document_hash === pub.body.documentHash && st?.tables.studio_publications[0]?.package_hash === diffused.body.diffusion.packageHash);
 
 check('sauvegarde : archive signée (HMAC-SHA256, clé de l\'environnement désignée par son identifiant, clé absente du fichier)', st?.signature?.algorithm === 'HMAC-SHA256' && /^env-[0-9a-f]{16}$/.test(st.signature.keyId ?? '') && /^[0-9a-f]{64}$/.test(st.signature.value ?? '') && !archiveText.includes(SIGNING_KEY), short(st?.signature));
@@ -288,6 +298,15 @@ try {
   check('commentaires, réponse et journal d\'observation identiques', ca.length === 2 && JSON.stringify(cview(ca)) === JSON.stringify(cview(cb)), short({ a: cview(ca), b: cview(cb) }));
   const sb = (await ownerB('GET', `${rootB}/studies/${studyId}/steps`)).body;
   check('liens vers les étapes 3 et 7 du Parcours repris', JSON.stringify(sb?.steps?.map((x) => x.number)) === '[3,7]', short(sb));
+  {
+    const ea = (await ownerA('GET', `${root}/studies/${studyId}/exigences`)).body;
+    const eb = (await ownerB('GET', `${rootB}/studies/${studyId}/exigences`)).body;
+    const ca1 = (await ownerA('GET', `${vPath(v1)}/controles`)).body?.controles ?? [];
+    const cb1 = (await ownerB('GET', `${vPathB(v1)}/controles`)).body?.controles ?? [];
+    const strip = (x) => ({ ...x, studyId: undefined, auteur: undefined });
+    check('exigences (version, contenu, auteur, date) et contrôle (révision, version, conclusion, empreinte, résultat) identiques',
+      ea?.courante?.version === 1 && JSON.stringify(strip(ea.courante)) === JSON.stringify(strip(eb?.courante ?? {})) && ca1.length === 1 && JSON.stringify(ca1.map(strip)) === JSON.stringify(cb1.map(strip)), short({ ea: ea?.courante, eb: eb?.courante, ca1, cb1 }));
+  }
   const pa = (await ownerA('GET', `${pubs}/${pub.body.id}`)).body;
   const pbv = (await ownerB('GET', `${rootB}/studies/${studyId}/publications/${pub.body.id}`)).body;
   const pview = (p) => ({ status: p?.status, workStatus: p?.workStatus, diffusionStatus: p?.diffusionStatus, manifestHash: p?.manifestHash, manifest: p?.manifest,
@@ -383,7 +402,7 @@ try {
     pForged = new URL(pageE.url()).pathname.split('/').pop();
     const toast = (await pageE.locator('.h7-toast').first().textContent({ timeout: 10000 }).catch(() => '')) ?? '';
     check('navigateur : archive falsifiée importée, réserve claire affichée (signature invalide, rien n\'en est cru, « à relire », auteurs d\'origine déclarés)',
-      /Signature de l'archive invalide/.test(toast) && /rien n'en est cru/.test(toast) && /« à relire »/.test(toast) && toast.includes(accounts.owner.email), toast.slice(0, 400));
+      /Signature de l'archive invalide/.test(toast) && /rien n'en est cru/.test(toast) && /« à relire »/.test(toast) && /acceptation\(s\) de référence partenaire non reprise/.test(toast) && toast.includes(accounts.owner.email), toast.slice(0, 400));
     await pageE.screenshot({ path: path.join(OUT, 'import-archive-falsifiee.png') });
     await ctxE.close();
   } finally {
@@ -413,6 +432,20 @@ try {
     }
     check('archive falsifiée : contenu du paquet conservé et lisible (4/4 fichiers identiques)', readable === 4, `${readable}/4`);
     const membersF = (await editorB('GET', `/projects/${pForged}/members`)).body;
+    {
+      const exF = (await editorB('GET', `/projects/${pForged}/studio/studies/${s2}/exigences`)).body;
+      const v1F = (await editorB('GET', `/projects/${pForged}/studio/studies/${s2}/exigences/versions/1`)).body;
+      const ctlF = (await editorB('GET', `${vF}/controles`)).body?.controles ?? [];
+      const ref = exF?.courante?.exigences?.[0];
+      check('archive falsifiée : exigences reprises (2 versions, auteur = compte qui restaure), acceptation partenaire retirée (référence « non acceptée »), contrôle attribué au compte qui restaure',
+        exF?.courante?.version === 2 && exF.versions.length === 2 && exF.versions.every((v) => v.auteurEmail === accounts.editor.email) && ref?.origine?.reference === 'Partenaire R-12' && ref.origine.acceptation === undefined
+        && v1F?.version === 1 && ctlF.length === 1 && ctlF[0].auteurEmail === accounts.editor.email && ctlF[0].version === 2, short({ exF, ctlF }));
+      const reaccept = await editorB('POST', `/projects/${pForged}/studio/studies/${s2}/exigences/acceptations`, { baseVersion: 2, exigenceId: 'ex-partenaire' });
+      check('archive falsifiée : la référence est acceptée à nouveau par le propriétaire du projet restauré (version 3, qui et quand)', reaccept.status === 201 && reaccept.body.version === 3 && reaccept.body.exigences?.[0]?.origine?.acceptation?.parEmail === accounts.editor.email, short(reaccept.body));
+      let immutableSet = '';
+      try { await pgB.query('UPDATE studio_requirement_sets SET motif = motif WHERE study_id = $1', [s2]); immutableSet = 'acceptée'; } catch (e) { immutableSet = e.message; }
+      check('archive falsifiée : versions du jeu restaurées toujours immuables (studio_requirement_set_immutable)', /studio_requirement_set_immutable/.test(immutableSet), immutableSet);
+    }
     check('archive falsifiée : droits non repris (aucun membre ; le propriétaire d\'origine n\'a pas accès)', !JSON.stringify(membersF).includes(accounts.owner.email) && [403, 404].includes((await ownerB('GET', `/projects/${pForged}`)).status), short(membersF));
     check('archive falsifiée : diffusion refusée tant qu\'une nouvelle approbation manque (409 invalid_transition)', (await editorB('POST', `${rootF}/publications/${fPub.body.id}/diffuser`, {})).body?.error === 'invalid_transition');
     // Le nom du projet restauré (« · import ») périme le manifeste figé : le circuit E.4 complet est exigé.

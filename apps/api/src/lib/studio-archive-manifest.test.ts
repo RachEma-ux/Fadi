@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   STUDIO_ARCHIVE_SCHEMA, STUDIO_ARCHIVE_SCHEMA_VERSION, STUDIO_ARCHIVE_TABLES, buildStudioManifest, canonicalJson, checkStudioArchive,
-  STUDIO_DOWNGRADE_COMMENT, distrustStudioPublications, orderPublicationsForInsert, emptyStudioTables, mapStudioAccounts, orderCommentsForInsert, packageVolumeIds, remapStudioRows, studioAccountIds,
+  STUDIO_DOWNGRADE_COMMENT, distrustRequirementSets, distrustStudioPublications, orderPublicationsForInsert, emptyStudioTables, mapStudioAccounts, orderCommentsForInsert, packageVolumeIds, remapStudioRows, studioAccountIds,
   studioArchiveDocumentHash, studioTableHash, type StudioArchiveTables,
 } from "./studio-archive-manifest.js";
 
@@ -205,6 +205,36 @@ describe("section Studio de l'archive (logique pure)", () => {
     src.tables.studio_publications[0] = { ...src.tables.studio_publications[0]!, manifest: m2, manifest_hash: sha(canonicalJson(m2)) };
     src.section["manifest"] = buildStudioManifest(src.tables, IDENT);
     expect(errorsOf(clone(src.section))).toContain("publication p1 : empreinte d'une source du manifeste différente");
+  });
+
+  it("E.1 : jeux d'exigences et contrôles archivés, contrôlés ; acceptation partenaire retirée si l'archive n'est pas vérifiée", () => {
+    const f = fixture();
+    const acceptee = { id: "x1", libelle: "Surface", metrique: { type: "total", grandeur: "surface" }, comparaison: "<=", valeur: 10, unite: "m2", source: "Partenaire", origine: { reference: "R-12", acceptation: { par: "uOwner", parEmail: "owner@example.test", le: "2026-10-19T08:00:00.000Z" } } };
+    const simple = { id: "x2", libelle: "Objets", metrique: { type: "nombre" }, comparaison: ">=", valeur: 1, unite: "u", source: "Programme" };
+    f.tables.studio_requirement_sets = [
+      { id: "rs1", study_id: "s1", version: 1, requirements: [simple], motif: null, author_id: "uEditor", request_id: null, payload_hash: null },
+      { id: "rs2", study_id: "s1", version: 2, requirements: [simple, acceptee], motif: "Acceptation", author_id: "uOwner", request_id: null, payload_hash: null },
+    ];
+    f.tables.studio_requirement_checks = [{ id: "rc1", study_id: "s1", variant_id: "v1", revision_id: "r2", set_version: 2, execution: "execute", conclusion: "satisfaite", result: {}, document_hash: studioArchiveDocumentHash(doc(1)), author_id: "uEditor" }];
+    f.section["manifest"] = buildStudioManifest(f.tables, IDENT);
+    expect(errorsOf(clone(f.section))).toEqual([]);
+    expect(buildStudioManifest(f.tables, IDENT).tables.studio_requirement_sets.count).toBe(2);
+    expect(remapStudioRows("studio_requirement_checks", f.tables.studio_requirement_checks, "pB", new Map([["uEditor", "uR"]]))[0]).toMatchObject({ author_id: "uR", document_hash: studioArchiveDocumentHash(doc(1)) });
+
+    const bad = fixture();
+    bad.tables.studio_requirement_sets = [{ id: "rs1", study_id: "autre", version: 1, requirements: {}, author_id: "uEditor" }];
+    bad.tables.studio_requirement_checks = [{ id: "rc1", study_id: "s1", variant_id: "v1", revision_id: "r2", set_version: 9, document_hash: "0".repeat(64), author_id: "uEditor" }];
+    bad.section["manifest"] = buildStudioManifest(bad.tables, IDENT);
+    expect(errorsOf(clone(bad.section))).toEqual(expect.arrayContaining([
+      "jeu d'exigences rs1 : étude absente", "jeu d'exigences rs1 : exigences illisibles", "contrôle rc1 : empreinte du document différente de la révision", "contrôle rc1 : version du jeu absente",
+    ]));
+
+    const { sets, cleared } = distrustRequirementSets(f.tables.studio_requirement_sets);
+    expect(cleared).toBe(1);
+    expect((sets[1]!["requirements"] as { origine?: Record<string, unknown> }[])[1]!.origine).toEqual({ reference: "R-12" });
+    expect((sets[1]!["requirements"] as unknown[])[0]).toEqual(simple);
+    expect(sets[0]).toEqual(f.tables.studio_requirement_sets[0]);
+    expect((f.tables.studio_requirement_sets[1]!["requirements"] as { origine?: Record<string, unknown> }[])[1]!.origine!["acceptation"]).toBeDefined();
   });
 
   it("volumes cités par les paquets", () => {

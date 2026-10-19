@@ -94,3 +94,22 @@ test('lot E.4 : colonnes nouvelles comparées, remplaçant compté comme compte,
   assert.ok(details.includes('B : approbation d\'un autre manifeste'));
   assert.ok(details.includes('B : dossier remplaçant absent'));
 });
+
+test('lot E.1 : jeux d\'exigences et contrôles comparés et contrôlés', () => {
+  const withE1 = (projectId, owner, editor, valeur = 10) => {
+    const t = side(projectId, owner, editor);
+    t.studio_requirement_sets = [{ id: 'rs1', study_id: 's1', version: 1, requirements: [{ id: 'x1', valeur }], author_id: editor }];
+    t.studio_requirement_checks = [{ id: 'rc1', study_id: 's1', variant_id: 'v1', revision_id: 'r1', set_version: 1, document_hash: sha(canonicalJson(doc)), author_id: owner }];
+    return t;
+  };
+  assert.deepEqual(integrityAnomalies(withE1('pA', 'uA1', 'uA2'), 'A'), []);
+  const a = normalizeTables(withE1('pA', 'uA1', 'uA2'), { projectId: 'pA', emails: emailsA });
+  assert.deepEqual(compareTables(a, normalizeTables(withE1('pB', 'uB1', 'uB2'), { projectId: 'pB', emails: emailsB })).anomalies, []);
+  assert.ok(compareTables(a, normalizeTables(withE1('pB', 'uB1', 'uB2', 11), { projectId: 'pB', emails: emailsB })).anomalies.some((x) => x.table === 'studio_requirement_sets' && /requirements/.test(x.detail)));
+  const bad = withE1('pA', 'uA1', 'uA2');
+  bad.studio_requirement_checks[0].set_version = 7;
+  bad.studio_requirement_checks[0].document_hash = '0'.repeat(64);
+  const details = integrityAnomalies(bad, 'B').map((x) => x.detail);
+  assert.ok(details.includes('B : version du jeu absente'));
+  assert.ok(details.includes('B : empreinte du document différente de la révision'));
+});

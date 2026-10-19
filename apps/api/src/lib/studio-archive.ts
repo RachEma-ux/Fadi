@@ -24,7 +24,7 @@ import { signManifestHash, verifyArchiveSignature, type ArchiveTrust } from "./a
 import { currentSigningKey, verificationKeys } from "./archive-signing-key.js";
 import {
   STUDIO_ARCHIVE_SCHEMA, STUDIO_ARCHIVE_SCHEMA_VERSION, STUDIO_ARCHIVE_TABLES, STUDIO_IDENTITY_TABLES, STUDIO_TABLE_KEYS,
-  buildStudioManifest, checkStudioArchive, distrustStudioPublications, emptyStudioTables, mapStudioAccounts, packageVolumeIds, remapStudioRows, studioAccountIds,
+  buildStudioManifest, checkStudioArchive, distrustRequirementSets, distrustStudioPublications,emptyStudioTables, mapStudioAccounts, packageVolumeIds, remapStudioRows, studioAccountIds,
   type StudioArchiveRow, type StudioArchiveSection, type StudioArchiveTable,
 } from "./studio-archive-manifest.js";
 
@@ -53,6 +53,8 @@ export async function loadStudioTables(q: Querier, projectId: string, ownerId: s
   tables.studio_observations = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_observations t WHERE variant_id IN ${inVariants} ORDER BY comment_id`);
   tables.studio_observation_events = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_observation_events t WHERE observation_id IN (SELECT comment_id FROM studio_observations WHERE variant_id IN ${inVariants}) ORDER BY id`);
   tables.studio_study_steps = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_study_steps t WHERE study_id IN ${inStudies} ORDER BY study_id, step_number`);
+  tables.studio_requirement_sets = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_requirement_sets t WHERE study_id IN ${inStudies} ORDER BY id`);
+  tables.studio_requirement_checks = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_requirement_checks t WHERE study_id IN ${inStudies} ORDER BY id`);
   tables.studio_publications = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_publications t WHERE project_id = ${projectId} ORDER BY id`);
   tables.studio_publication_events = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_publication_events t WHERE publication_id IN (SELECT id FROM studio_publications WHERE project_id = ${projectId}) ORDER BY id`);
   const volumeIds = packageVolumeIds(tables.studio_publications);
@@ -152,12 +154,19 @@ export async function importStudioArchive(tx: Tx, projectId: string, importerId:
   } else if (studioCount || tables.studio_publications.length) {
     let publications = tables.studio_publications;
     let extraEvents: StudioArchiveRow[] = [];
+    let requirementSets = tables.studio_requirement_sets;
+    let clearedAcceptances = 0;
     if (!trusted) {
       const d = distrustStudioPublications(publications, tables.studio_variants, importerId, new Date().toISOString(), () => newId("studio_publication_event"));
       ({ publications, downgraded } = d);
       extraEvents = d.events;
+      ({ sets: requirementSets, cleared: clearedAcceptances } = distrustRequirementSets(requirementSets));
     }
     for (const t of ["studio_studies", "studio_variants", "studio_revisions", "studio_comments", "studio_observations", "studio_observation_events", "studio_study_steps"] as const) await insertRows(tx, t, tables[t]);
+    // Exigences (lot E.1) : versions insérées (append-only, déclencheur UPDATE intact), puis contrôles qui les citent.
+    await insertRows(tx, "studio_requirement_sets", requirementSets);
+    await insertRows(tx, "studio_requirement_checks", tables.studio_requirement_checks);
+    if (clearedAcceptances) warnings.push(`${clearedAcceptances} acceptation(s) de référence partenaire non reprise(s) : les références redeviennent « non acceptées » et doivent être acceptées à nouveau.`);
     // Volumes adressés par leur contenu : un volume déjà présent est le même fichier (même SHA-256).
     await insertRows(tx, "volumes", tables.volumes, "ignore");
     await insertRows(tx, "studio_publications", publications);

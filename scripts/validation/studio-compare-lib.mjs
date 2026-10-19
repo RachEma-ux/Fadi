@@ -9,19 +9,20 @@ import { createHash } from 'node:crypto';
 
 export const TABLES = Object.freeze([
   'studio_studies', 'studio_variants', 'studio_revisions', 'studio_comments', 'studio_observations',
-  'studio_observation_events', 'studio_study_steps', 'volumes', 'studio_publications', 'studio_publication_events',
+  'studio_observation_events', 'studio_study_steps', 'studio_requirement_sets', 'studio_requirement_checks', 'volumes', 'studio_publications', 'studio_publication_events',
   'project_members', 'studio_tool_preferences',
 ]);
 export const KEYS = Object.freeze({
   studio_studies: ['id'], studio_variants: ['id'], studio_revisions: ['id'], studio_comments: ['id'],
   studio_observations: ['comment_id'], studio_observation_events: ['id'], studio_study_steps: ['study_id', 'step_number'],
+  studio_requirement_sets: ['id'], studio_requirement_checks: ['id'],
   volumes: ['id'], studio_publications: ['id'], studio_publication_events: ['id'], project_members: ['project_id', 'user_id'],
   studio_tool_preferences: ['user_id'],
 });
 export const USER_COLUMNS = Object.freeze({
   studio_studies: [], studio_variants: [], studio_revisions: ['author_id'], studio_comments: ['author_id'],
   studio_observations: ['responsable_id', 'created_by'], studio_observation_events: ['actor_id', 'responsable_id'],
-  studio_study_steps: ['created_by'], volumes: [], studio_publications: ['approved_by', 'diffused_by', 'created_by', 'replaced_by'],
+  studio_study_steps: ['created_by'], studio_requirement_sets: ['author_id'], studio_requirement_checks: ['author_id'], volumes: [], studio_publications: ['approved_by', 'diffused_by', 'created_by', 'replaced_by'],
   // `invited_by` est l'adresse de l'invitant (texte), comparée telle quelle.
   studio_publication_events: ['author_id'], project_members: ['user_id'], studio_tool_preferences: ['user_id'],
 });
@@ -33,6 +34,8 @@ export const IMMUTABILITY_TRIGGERS = Object.freeze([
   { table: 'studio_publication_events', trigger: 'studio_publication_events_no_update' },
   { table: 'studio_publication_events', trigger: 'studio_publication_events_no_delete' },
   { table: 'studio_publications', trigger: 'studio_publications_no_delete' },
+  { table: 'studio_requirement_sets', trigger: 'studio_requirement_sets_no_update' },
+  { table: 'studio_requirement_checks', trigger: 'studio_requirement_checks_no_update' },
 ]);
 
 export function canonicalJson(value) {
@@ -96,6 +99,14 @@ export function integrityAnomalies(tables, side) {
     if (!/^[0-9a-f]{64}$/.test(String(r.payload_hash))) push('studio_revisions', r.id, 'empreinte de requête invalide');
   }
   for (const v of tables.studio_variants ?? []) if (revisions.get(v.head_revision_id)?.variant_id !== v.id) push('studio_variants', v.id, 'tête absente');
+  // Lot E.1 : contrôle lié à une révision (empreinte de son document) et à une version existante du jeu d'exigences.
+  const versions = new Set((tables.studio_requirement_sets ?? []).map((s) => `${s.study_id}|${s.version}`));
+  for (const c of tables.studio_requirement_checks ?? []) {
+    const rev = revisions.get(c.revision_id);
+    if (!rev || rev.variant_id !== c.variant_id) push('studio_requirement_checks', c.id, 'révision contrôlée absente');
+    else if (sha256(canonicalJson(rev.document)) !== c.document_hash) push('studio_requirement_checks', c.id, 'empreinte du document différente de la révision');
+    if (c.set_version !== null && c.set_version !== undefined && !versions.has(`${c.study_id}|${c.set_version}`)) push('studio_requirement_checks', c.id, 'version du jeu absente');
+  }
   const vols = new Map((tables.volumes ?? []).map((v) => [v.id, v]));
   for (const v of vols.values()) {
     const hex = typeof v.content === 'string' && v.content.startsWith('\\x') ? v.content.slice(2) : null;

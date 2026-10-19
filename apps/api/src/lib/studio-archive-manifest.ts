@@ -27,6 +27,8 @@ export const STUDIO_ARCHIVE_TABLES = [
   "studio_observations",
   "studio_observation_events",
   "studio_study_steps",
+  "studio_requirement_sets",
+  "studio_requirement_checks",
   "volumes",
   "studio_publications",
   "studio_publication_events",
@@ -46,6 +48,8 @@ export const STUDIO_TABLE_KEYS: Readonly<Record<StudioArchiveTable, readonly str
   studio_observations: ["comment_id"],
   studio_observation_events: ["id"],
   studio_study_steps: ["study_id", "step_number"],
+  studio_requirement_sets: ["id"],
+  studio_requirement_checks: ["id"],
   volumes: ["id"],
   studio_publications: ["id"],
   studio_publication_events: ["id"],
@@ -62,6 +66,8 @@ export const STUDIO_USER_COLUMNS: Readonly<Record<StudioArchiveTable, readonly s
   studio_observations: ["responsable_id", "created_by"],
   studio_observation_events: ["actor_id", "responsable_id"],
   studio_study_steps: ["created_by"],
+  studio_requirement_sets: ["author_id"],
+  studio_requirement_checks: ["author_id"],
   volumes: [],
   studio_publications: ["approved_by", "diffused_by", "created_by", "replaced_by"],
   studio_publication_events: ["author_id"],
@@ -80,7 +86,7 @@ export const STUDIO_PROJECT_COLUMNS: Readonly<Partial<Record<StudioArchiveTable,
 /** Tables dont les identifiants sont globaux : une collision dans la base cible empêche la restauration Studio. */
 export const STUDIO_IDENTITY_TABLES: readonly StudioArchiveTable[] = [
   "studio_studies", "studio_variants", "studio_revisions", "studio_comments", "studio_observations",
-  "studio_observation_events", "studio_publications", "studio_publication_events",
+  "studio_observation_events", "studio_requirement_sets", "studio_requirement_checks", "studio_publications", "studio_publication_events",
 ];
 
 export interface StudioArchiveAccount { id: string; email: string }
@@ -246,6 +252,23 @@ export function checkStudioArchive(raw: unknown): { ok: true; section: StudioArc
   }
   for (const r of tables.studio_observation_events) if (!observations.has(r["observation_id"] as string)) errors.push(`passage ${String(r["id"])} : observation absente`);
   for (const r of tables.studio_study_steps) if (!studies.has(r["study_id"] as string)) errors.push(`lien d'étape : étude ${String(r["study_id"])} absente`);
+  // Lot E.1 : jeux d'exigences versionnés (append-only) et contrôles liés à une révision et à une version du jeu.
+  const setVersions = new Set<string>();
+  for (const r of tables.studio_requirement_sets) {
+    if (!studies.has(r["study_id"] as string)) errors.push(`jeu d'exigences ${String(r["id"])} : étude absente`);
+    if (!Array.isArray(r["requirements"])) errors.push(`jeu d'exigences ${String(r["id"])} : exigences illisibles`);
+    const k = `${String(r["study_id"])}|${String(r["version"])}`;
+    if (setVersions.has(k)) errors.push(`jeu d'exigences ${String(r["id"])} : version en double`);
+    setVersions.add(k);
+  }
+  const variantStudy = new Map(tables.studio_variants.map((v) => [v["id"] as string, v["study_id"] as string]));
+  const revisionDocuments = new Map(tables.studio_revisions.map((r) => [r["id"] as string, r["document"]]));
+  for (const r of tables.studio_requirement_checks) {
+    if (variantStudy.get(r["variant_id"] as string) !== r["study_id"]) errors.push(`contrôle ${String(r["id"])} : variante absente`);
+    if (revisionVariant.get(r["revision_id"] as string) !== r["variant_id"]) errors.push(`contrôle ${String(r["id"])} : révision absente`);
+    else if (studioArchiveDocumentHash(revisionDocuments.get(r["revision_id"] as string)) !== r["document_hash"]) errors.push(`contrôle ${String(r["id"])} : empreinte du document différente de la révision`);
+    if (r["set_version"] !== null && r["set_version"] !== undefined && !setVersions.has(`${String(r["study_id"])}|${String(r["set_version"])}`)) errors.push(`contrôle ${String(r["id"])} : version du jeu absente`);
+  }
   for (const r of tables.volumes) {
     const bytes = volumeBytes(r["content"]);
     if (!bytes || sha256(bytes) !== r["id"]) errors.push(`volume ${String(r["id"])} : contenu différent de son empreinte`);
@@ -393,4 +416,29 @@ export function distrustStudioPublications(
     return row;
   });
   return { publications: out, events, downgraded };
+}
+
+/**
+ * Archive non vérifiée, lot E.1 : l'acceptation d'une référence partenaire (qui, quand) n'est pas crue. Elle est retirée
+ * de chaque version du jeu d'exigences réinsérée (lignes INSÉRÉES, jamais mises à jour : le jeu reste append-only) ;
+ * la référence redevient « non acceptée » et doit être acceptée à nouveau dans le projet restauré. Le reste du contenu
+ * (exigences, sources déclarées, motifs, empreintes de requête) est inchangé. Pure.
+ */
+export function distrustRequirementSets(sets: readonly StudioArchiveRow[]): { sets: StudioArchiveRow[]; cleared: number } {
+  let cleared = 0;
+  const out = sets.map((s) => {
+    const list = Array.isArray(s["requirements"]) ? (s["requirements"] as unknown[]) : null;
+    if (!list) return { ...s };
+    return {
+      ...s,
+      requirements: list.map((e) => {
+        if (!isRecord(e) || !isRecord(e["origine"]) || !("acceptation" in e["origine"])) return e;
+        cleared += 1;
+        const { acceptation: _retiree, ...origine } = e["origine"];
+        void _retiree;
+        return { ...e, origine };
+      }),
+    };
+  });
+  return { sets: out, cleared };
 }
