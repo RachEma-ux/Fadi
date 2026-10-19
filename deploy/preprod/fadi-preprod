@@ -148,11 +148,11 @@ nouveau_run() {
 }
 # Exécute une commande en journalisant sa sortie ; le code de sortie est celui de la commande (ou de tee), jamais masqué.
 journal() {  # $1 = fichier du journal, puis la commande
-  local f=$RUN/$1; shift
+  local nom=$1 f=$RUN/$1; shift
   local rc=0
   set +e; "$@" 2>&1 | tee -a "$f"; local st=("${PIPESTATUS[@]}"); set -e
   rc=${st[0]}; [ "$rc" -eq 0 ] && rc=${st[1]}
-  [ "$rc" -eq 0 ] || echo "❌ échec (code $rc) — journal : $1" | tee -a "$f" >&2
+  [ "$rc" -eq 0 ] || echo "❌ échec (code $rc) — journal : $nom (fadi-preprod show $RUNID $nom)" | tee -a "$f" >&2
   return "$rc"
 }
 
@@ -397,7 +397,16 @@ case "$cmd" in
     journal smoke.log smoke ;;
   check)
     verifier_disposition; nouveau_run check; garde 0; app_demarree
-    RECETTE_CMD='node -v; npm run typecheck; npm test; npm run test:db-guard; npm run test:scripts'
+    # Même découpage que la CI (job validate) : les suites API qui exigent une base attestée (DB-3, #157) sont
+    # refusées par la garde ; check-api-tests-db3 exige que seules celles de la liste fermée le soient et que tout le
+    # reste passe. Elles ne sont ni contournées ni déclarées réussies.
+    RECETTE_CMD='node -v; npm run typecheck
+npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
+npm run test:db-guard
+npx --workspace=@fadi/api vitest run --reporter=default --reporter=json --outputFile=/tmp/api-vitest.json || true
+node --test scripts/check-api-tests-db3.test.mjs
+node scripts/check-api-tests-db3.mjs /tmp/api-vitest.json
+npm run test:scripts'
     journal check.log recette ;;
   e2e)
     verifier_disposition; nouveau_run e2e; garde 0; app_demarree

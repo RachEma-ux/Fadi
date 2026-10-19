@@ -94,7 +94,7 @@ B=$(dispo codes)
 attendu 0  "build réussi" -- fp build
 attendu nz "build en échec → code non nul" "échec simulé (build)" -- fpe MOCK_FAIL=build build
 attendu 0  "check réussi" -- fp check
-attendu nz "check en échec → code non nul" "échec simulé (check)" -- fpe MOCK_FAIL=run-check check
+attendu nz "check en échec → code non nul, journal nommé" "journal : check.log" -- fpe MOCK_FAIL=run-check check
 attendu 0  "backup réussi" -- fp backup
 attendu nz "backup en échec → code non nul" "échec simulé (backup)" -- fpe MOCK_FAIL=run-backup backup
 attendu 0  "restore-check réussi" -- fp restore-check
