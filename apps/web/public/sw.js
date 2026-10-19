@@ -36,6 +36,11 @@ const STATIC = /^\/(assets|parcelle)\//;
 const HASHED = /^\/assets\//;
 const API = /^\/(auth|projects|examples|library|notifications|preferences|health)(\/|$)/;
 const MARQUE = `<meta name="fadi-build" content="${BUILD}">`;
+const LISTE = Array.isArray(PRECACHE) ? PRECACHE : [];
+/** Fichiers non empreints de la liste anticipée de CE build (Parcelle) : seuls admis dans le cache après l'installation. */
+const NON_EMPREINTS = new Set(LISTE.filter((path) => path !== SHELL && !HASHED.test(path)));
+/** Fichier admis dans le cache de ce build après l'installation : empreint, ou non empreint de la liste anticipée. */
+const admis = (url) => HASHED.test(url.pathname) || (NON_EMPREINTS.has(url.pathname) && url.search === "");
 
 /** La réponse est-elle la page de l'application de CE build ? (HTML, réussie, balise du même identifiant) */
 async function coquilleDeCeBuild(response) {
@@ -50,14 +55,15 @@ async function coquilleDeCeBuild(response) {
 self.addEventListener("install", (event) =>
   event.waitUntil(
     (async () => {
-      // Mise en cache anticipée, fichier par fichier (un fichier manquant n'empêche pas l'installation), sans passer
-      // par le cache HTTP du navigateur (`reload`) : rien d'un build antérieur ne s'y glisse.
+      // Mise en cache anticipée, fichier par fichier (un fichier manquant n'empêche pas l'installation ; un fichier non
+      // empreint manqué est réparé à sa première lecture réussie, voir `admis`). La coquille et les fichiers non
+      // empreints contournent le cache HTTP du navigateur (`reload`) : rien d'un build antérieur ne s'y glisse. Les
+      // morceaux empreints sont immuables (nom = contenu) : le cache HTTP peut les fournir sans nouveau téléchargement.
       const cache = await caches.open(CACHE);
-      const list = Array.isArray(PRECACHE) ? PRECACHE : [];
       await Promise.all(
-        list.map(async (path) => {
+        LISTE.map(async (path) => {
           try {
-            const response = await fetch(new Request(path, { cache: "reload" }));
+            const response = await fetch(HASHED.test(path) ? path : new Request(path, { cache: "reload" }));
             if (!response.ok) return;
             // Le serveur sert déjà un autre build : sa page n'est pas la coquille de celui-ci.
             if (path === SHELL && !(await coquilleDeCeBuild(response))) return;
@@ -97,9 +103,9 @@ async function cacheFirst(request, url) {
     if (ancien) return ancien;
   }
   const response = await fetch(request);
-  // Seul un fichier empreint est ajouté après l'installation : un fichier non empreint reçu maintenant peut venir d'un
-  // déploiement plus récent et n'entre pas dans le cache de ce build.
-  if (response.ok && HASHED.test(url.pathname)) cache.put(request, response.clone());
+  // Après l'installation, n'entrent dans le cache de ce build qu'un fichier empreint ou un fichier non empreint de sa
+  // liste anticipée (réparation d'une mise en cache manquée à l'installation, ex. Parcelle) ; aucun autre fichier.
+  if (response.ok && admis(url)) await cache.put(url.search ? request : url.pathname, response.clone());
   return response;
 }
 
@@ -119,9 +125,12 @@ async function shell(request) {
 }
 
 /** Page statique ouverte en navigation (Parcelle dans son cadre) : réseau d'abord, sinon sa copie de ce build. */
-async function staticPage(request) {
+async function staticPage(request, url) {
   try {
-    return await fetch(request);
+    const response = await fetch(request);
+    // Page de la liste anticipée reçue du réseau : elle répare une mise en cache manquée à l'installation.
+    if (response.ok && admis(url)) await (await caches.open(CACHE)).put(url.pathname, response.clone());
+    return response;
   } catch (err) {
     const cached = await (await caches.open(CACHE)).match(request, { ignoreSearch: true });
     if (cached) return cached;
@@ -137,7 +146,7 @@ self.addEventListener("fetch", (event) => {
   // API : jamais interceptée, jamais mise en cache.
   if (API.test(url.pathname)) return;
   if (request.mode === "navigate") {
-    event.respondWith(STATIC.test(url.pathname) ? staticPage(request) : shell(request));
+    event.respondWith(STATIC.test(url.pathname) ? staticPage(request, url) : shell(request));
     return;
   }
   if (STATIC.test(url.pathname) || url.pathname === "/favicon.svg") event.respondWith(cacheFirst(request, url));

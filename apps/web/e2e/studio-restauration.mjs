@@ -14,7 +14,8 @@
  * Projets → import permis, réserve affichée, tout acteur = compte qui restaure, publication diffusée remise « à relire »,
  * droits non repris, nouvelle approbation exigée ; API B relancée sans clé d'environnement → clé propre à la base,
  * archive de A « clé inconnue ». Comptes cités dans les champs JSON : un troisième projet (référence partenaire
- * acceptée) restauré par son archive signée → l'acceptant (`par`) désigne le compte de B retrouvé par son adresse.
+ * acceptée) restauré par son archive signée → l'acceptant (`par`) désigne le compte de B retrouvé par son adresse ; un
+ * quatrième, accepté par un compte absent de B → acceptation retirée (référence à accepter à nouveau), réserve.
  *
  *   ARCHIVE_SIGNING_KEY=… (la même que l'API A) BASE_URL=http://localhost:3001 DATABASE_URL_A=postgresql://… DATABASE_URL_B=postgresql://… \
  *   [RESTORE_PORT=3002] [WEB_DIST=apps/web/dist] [OUT=dossier] node apps/web/e2e/studio-restauration.mjs
@@ -189,6 +190,20 @@ check('A : troisième projet — référence partenaire acceptée par le propri�
 const archive3 = (await ownerA('GET', `/projects/${p3}/archive`)).body;
 check('sauvegarde (troisième projet) : l\'acceptant figure parmi les comptes cités, avec son adresse', archive3?.studio?.accounts?.some((a) => a.id === parA3 && a.email === accounts.owner.email), short(archive3?.studio?.accounts));
 
+// Quatrième projet (archive intacte, signée) : référence acceptée par un compte « tiers » qui n'existera pas dans B.
+// Restauré dans B, l'acceptation est retirée (jamais attribuée au compte qui restaure, qui n'a pas accepté).
+accounts.tiers = credentials('tiers');
+const tiersA = client(BASE);
+check('A : compte tiers inscrit (absent de B)', (await tiersA('POST', '/auth/register', accounts.tiers)).status === 201);
+const project4 = await tiersA('POST', '/projects', { code: `RSK_${randomUUID().slice(0, 8)}`, name: 'Studio — acceptant absent (recette synthétique)' });
+const p4 = project4.body?.id;
+const study4 = await tiersA('POST', `/projects/${p4}/studio/studies`, { name: 'Étude acceptant absent' });
+const s4 = study4.body?.study?.id;
+await tiersA('POST', `/projects/${p4}/studio/studies/${s4}/exigences`, { baseVersion: 0, exigences: [{ ...exigenceObjets, id: 'ex-partenaire-4', source: 'Référence partenaire de recette', origine: { reference: 'Partenaire R-14' } }] });
+const acc4 = await tiersA('POST', `/projects/${p4}/studio/studies/${s4}/exigences/acceptations`, { baseVersion: 1, exigenceId: 'ex-partenaire-4' });
+check('A : quatrième projet — référence acceptée par le compte tiers', acc4.status === 201 && acc4.body.exigences?.[0]?.origine?.acceptation?.parEmail === accounts.tiers.email, short(acc4.body));
+const archive4 = (await tiersA('GET', `/projects/${p4}/archive`)).body;
+
 /**
  * Archive falsifiée « proprement » : contenu modifié (texte d'un commentaire, auteur de la révision attribué au
  * propriétaire) puis manifeste recalculé selon la règle publique — l'intégrité passe, seule la signature échoue.
@@ -300,6 +315,25 @@ try {
       short({ status: imp3.status, studio: imp3.body?.projects?.[0]?.studio, warnings: imp3.body?.projects?.[0]?.warnings, a3, ownerIdB, parA3 }));
     const ctl3 = await ownerB('POST', `/projects/${p3B}/studio/studies/${s3}/variants/${study3.body?.variant?.id}/controles`, {});
     check('B (signée) : la référence acceptée reste utilisée par un nouveau contrôle (version 2)', ctl3.status === 201 && ctl3.body.version === 2 && ['satisfaite', 'non-satisfaite'].includes(ctl3.body.resultat?.ecarts?.[0]?.statut), short(ctl3.body));
+  }
+  // Archive signée du quatrième projet : l'acceptant (compte tiers) est absent de B → acceptation retirée, réserve.
+  {
+    const imp4 = await ownerB('POST', '/projects/import', JSON.stringify(archive4));
+    const p4B = imp4.body?.projects?.[0]?.id;
+    const w4 = imp4.body?.projects?.[0]?.warnings ?? [];
+    const ex4 = (await ownerB('GET', `/projects/${p4B}/studio/studies/${s4}/exigences`)).body;
+    const restorerB = (await pgB.query('SELECT id FROM users WHERE lower(email) = lower($1)', [accounts.owner.email])).rows[0]?.id;
+    const dbSets4 = (await pgB.query("SELECT requirements::text AS r FROM studio_requirement_sets WHERE study_id = $1 ORDER BY version", [s4])).rows;
+    check('B (signée) : acceptant absent de B — acceptation retirée de chaque version (référence « non acceptée »), jamais attribuée au compte qui restaure, réserve explicite',
+      imp4.status === 201 && imp4.body.projects[0].studio?.trust === 'verifiee' && imp4.body.projects[0].studio.restored === true
+      && ex4?.courante?.version === 2 && ex4.courante.exigences?.[0]?.origine?.reference === 'Partenaire R-14' && ex4.courante.exigences[0].origine.acceptation === undefined
+      && dbSets4.length === 2 && dbSets4.every((x) => !x.r.includes('"acceptation"') && !x.r.includes(restorerB))
+      && w4.some((w) => /Exigences : 1 acceptation\(s\) de référence partenaire non reprise\(s\)/.test(w) && w.includes(accounts.tiers.email) && /acceptées à nouveau/.test(w)),
+      short({ status: imp4.status, warnings: w4, courante: ex4?.courante }));
+    const ctl4 = await ownerB('POST', `/projects/${p4B}/studio/studies/${s4}/variants/${study4.body?.variant?.id}/controles`, {});
+    check('B (signée) : la référence non acceptée n\'est pas utilisée par un nouveau contrôle', ctl4.status === 201 && ctl4.body.resultat?.ecarts?.[0]?.statut === 'non-utilisee', short(ctl4.body));
+    const reaccept4 = await ownerB('POST', `/projects/${p4B}/studio/studies/${s4}/exigences/acceptations`, { baseVersion: 2, exigenceId: 'ex-partenaire-4' });
+    check('B (signée) : la référence est acceptée à nouveau par le propriétaire du projet restauré (version 3)', reaccept4.status === 201 && reaccept4.body.version === 3 && reaccept4.body.exigences?.[0]?.origine?.acceptation?.par === restorerB, short(reaccept4.body));
   }
   {
     const histB = (await ownerB('GET', `/projects/${pB}/studio/studies/${studyId}/variants/${v1}/revisions`)).body?.revisions ?? [];

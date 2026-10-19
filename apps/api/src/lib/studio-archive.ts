@@ -164,15 +164,17 @@ export async function importStudioArchive(tx: Tx, projectId: string, importerId:
     if (trusted) {
       // Comptes cités dans les champs JSON (STUDIO_JSON_ACCOUNT_FIELDS) : même correspondance que les colonnes. L'archive
       // a déjà été vérifiée telle qu'écrite (manifeste, empreintes, signature) : la réattribution vient après.
-      const accountMap = new Map([...map].map(([source, target]) => [source, { id: target, email: targetEmails.get(target) ?? "" }]));
-      const importer = { id: importerId, email: targetEmails.get(importerId) ?? "" };
+      // Seuls les comptes RETROUVÉS par leur adresse sont repris : une acceptation d'un compte absent de cette base est
+      // retirée (jamais attribuée au compte qui restaure, qui n'a pas accepté).
       const reassignedIds = new Set(section.accounts.filter((a) => reassigned.includes(a.email || a.id)).map((a) => a.id));
-      const lost = requirementSets.flatMap((s) => (Array.isArray(s["requirements"]) ? s["requirements"] as { origine?: { acceptation?: { par?: unknown } } }[] : []))
-        .filter((e) => typeof e?.origine?.acceptation?.par === "string" && reassignedIds.has(e.origine.acceptation.par as string)).length;
-      const j = remapStudioJsonAccounts(requirementSets, accountMap, importer);
+      const found = new Map([...map].filter(([source]) => !reassignedIds.has(source)).map(([source, target]) => [source, { id: target, email: targetEmails.get(target) ?? "" }]));
+      const j = remapStudioJsonAccounts(requirementSets, found);
       requirementSets = j.sets;
-      if (j.unknown.length) warnings.push(`Exigences : ${j.unknown.length} compte(s) d'acceptation sans adresse dans l'archive (${j.unknown.join(", ")}) ; acceptation(s) attribuée(s) au compte qui restaure.`);
-      if (lost) warnings.push(`Exigences : ${lost} acceptation(s) de référence partenaire attribuée(s) au compte qui restaure (compte d'origine absent de cette base).`);
+      if (j.cleared) {
+        const emailOf = new Map(section.accounts.map((a) => [a.id, a.email]));
+        const who = j.clearedAccounts.map((id) => emailOf.get(id) || id).join(", ");
+        warnings.push(`Exigences : ${j.cleared} acceptation(s) de référence partenaire non reprise(s) (acceptant absent de cette base : ${who}) : les références redeviennent « non acceptées » et doivent être acceptées à nouveau.`);
+      }
     } else {
       const d = distrustStudioPublications(publications, tables.studio_variants, importerId, new Date().toISOString(), () => newId("studio_publication_event"));
       ({ publications, downgraded } = d);
