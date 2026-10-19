@@ -82,6 +82,8 @@ async function reopen(s) {
   await page.screenshot({ path: resolve(OUT, `studio-${phase}.png`) });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('group', { name: 'Planche de dessin 2D', exact: true }).waitFor();
+  // The phone layout settles a few frames after the resize: wait (bounded) for it, then measure; a real overflow still fails.
+  await page.waitForFunction(() => document.documentElement.scrollWidth <= window.innerWidth + 1, null, { timeout: 5000 }).catch(() => {});
   const fitsMobile = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
   check('mobile layout does not overflow the document', () => assert(fitsMobile, 'Mobile document must fit viewport'));
   await page.screenshot({ path: resolve(OUT, `studio-${phase}-mobile-fr.png`) });
