@@ -303,7 +303,7 @@ export async function observationViews(variantId: string, commentId: string | nu
       correctionRevisionId: o.correctionRevisionId, recontroleRevisionId: o.recontroleRevisionId, createdBy: o.createdBy,
       createdAt: o.createdAt.toISOString(), updatedAt: o.updatedAt.toISOString(), journal: journal.get(o.commentId) ?? [],
       assignedToMe: acteur.estResponsable,
-      possibles: lecteur.archived ? [] : OBSERVATION_TRANSITIONS.filter((a) => acteurAutorise(a, acteur) && statutApres(o.statut, a) !== null),
+      possibles: lecteur.archived ? [] : OBSERVATION_TRANSITIONS.filter((a) => acteurAutorise(a, acteur, o.statut) && statutApres(o.statut, a) !== null),
       vue: o.vueMode ? { mode: o.vueMode, ref: o.vueRef } : null,
       liens: liens.get(o.commentId) ?? [], taches: taches.get(o.commentId) ?? [], decisions: decisions.get(o.commentId) ?? [],
       peut: {
@@ -438,7 +438,7 @@ export async function transitionStudioObservation(scope: StudioScope, actorId: s
     if (lecteur.archived) studioArchivedRefusal();
     // Rôle relu sous le verrou du projet : un responsable rétrogradé lecteur ne déclare plus la correction.
     const acteur = acteurDe(lecteur, o.responsableId, row.authorId);
-    if (!acteurAutorise(action, acteur)) throw new StudioRequestError(403, { error: "forbidden", message: REFUS_ACTEUR[action] });
+    if (!acteurAutorise(action, acteur, o.statut)) throw new StudioRequestError(403, { error: "forbidden", message: REFUS_ACTEUR[action] });
     const vers = statutApres(o.statut, action);
     if (vers === null) conflict("invalid_transition", "Ce passage n'est pas permis depuis le statut actuel.", { statut: o.statut, action });
     if (REVISION_EXIGEE[action] && input.revisionId === undefined) {

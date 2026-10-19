@@ -286,6 +286,9 @@ export async function openStudioObservation(scope: StudioScope, actorId: string,
       const unknown = objectIds.filter((id) => !known.has(id));
       if (unknown.length) throw new StudioRequestError(400, { error: "invalid_input", code: "unknown_objects", objectIds: unknown, revisionId, message: "Objet(s) absent(s) de la révision citée." });
     }
+    if ((input.liens?.length ?? 0) > 0 && !roleAllows(v.lecteur.role, "write")) {
+      throw new StudioRequestError(403, { error: "forbidden", message: "Lier une observation à un domaine exige le droit d'écriture (propriétaire ou éditeur)." });
+    }
     const liens = [];
     const vus = new Set<string>();
     for (const l of input.liens ?? []) {
@@ -323,7 +326,7 @@ function rejeu(prev: { actorId: string; payloadHash: string | null } | undefined
 export async function addStudioObservationLink(scope: StudioScope, actorId: string, observationId: string, input: z.infer<typeof studioObservationLienAjoutSchema>): Promise<StudioObservationDetail & { replayed: boolean }> {
   const { requestId, ...lien } = input;
   const hash = hashOf({ action: "lier", ...lien });
-  const r = await db.transaction(async (tx) => {
+  const run = () => db.transaction(async (tx) => {
     const v = await varianteEcrite(tx, scope, actorId);
     const { o, authorId } = await observationVerrouillee(tx, v.id, observationId);
     const done = (replayed: boolean) => ({ variantId: v.id, lecteur: v.lecteur, replayed });
@@ -341,10 +344,15 @@ export async function addStudioObservationLink(scope: StudioScope, actorId: stri
     await refuserDoublon(tx, v.id, ok, o.commentId);
     await tx.insert(studioObservationLinks).values({ id: newId("studio_observation_link"), observationId: o.commentId, variantId: v.id, ...ok, createdBy: actorId, requestId: requestId ?? null, payloadHash: hash });
     return done(false);
-  }).catch((error: unknown) => {
-    if (isUniqueViolation(error)) conflict("deja_suivie", "Cet élément vient d'être lié à une observation de la variante : relisez-la.", { domaine: lien.domaine, ref: lien.ref });
-    throw error;
   });
+  // Envoi concurrent : même requestId (rejeu relu) ou même élément pris par une autre observation (409 `deja_suivie`
+  // avec l'identifiant à réemployer, par `refuserDoublon`) — la seconde exécution relit l'état engagé.
+  let r: Awaited<ReturnType<typeof run>>;
+  try { r = await run(); }
+  catch (error) {
+    if (!isUniqueViolation(error)) throw error;
+    r = await run();
+  }
   return resultat(scope, r.variantId, r.lecteur, observationId, r.replayed);
 }
 
