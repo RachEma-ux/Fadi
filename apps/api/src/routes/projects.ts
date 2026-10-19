@@ -141,7 +141,7 @@ projectsRouter.post("/import", archiveBody, archiveBodyError, async (req: Reques
       const out = [];
       for (const { origin, archive } of imports) {
         const r = await importProjectArchive(tx, req.user!.id, archive, now);
-        out.push({ id: r.project.id, code: r.project.code, name: r.project.name, origin, warnings: r.warnings });
+        out.push({ id: r.project.id, code: r.project.code, name: r.project.name, origin, warnings: r.warnings, studio: r.studio });
       }
       return out;
     });

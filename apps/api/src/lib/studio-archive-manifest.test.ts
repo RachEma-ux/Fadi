@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   STUDIO_ARCHIVE_SCHEMA, STUDIO_ARCHIVE_SCHEMA_VERSION, STUDIO_ARCHIVE_TABLES, buildStudioManifest, canonicalJson, checkStudioArchive,
-  emptyStudioTables, mapStudioAccounts, orderCommentsForInsert, packageVolumeIds, remapStudioRows, studioAccountIds,
+  STUDIO_DOWNGRADE_COMMENT, distrustStudioPublications, emptyStudioTables, mapStudioAccounts, orderCommentsForInsert, packageVolumeIds, remapStudioRows, studioAccountIds,
   studioArchiveDocumentHash, studioTableHash, type StudioArchiveTables,
 } from "./studio-archive-manifest.js";
 
@@ -10,6 +10,8 @@ const sha = (s: string | Buffer) => createHash("sha256").update(s).digest("hex")
 const doc = (n: number) => ({ id: "doc", schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects: Array.from({ length: n }, (_, i) => ({ id: `l${i}`, type: "line", start: { x: 0, y: 0 }, end: { x: i + 1, y: 1 } })) });
 const pdf = Buffer.from("%PDF-1.4 recette");
 const pdfId = sha(pdf);
+const ACCOUNTS = [{ id: "uEditor", email: "Editeur@example.test" }, { id: "uOwner", email: "owner@example.test" }];
+const IDENT = { sourceProjectId: "pA", ownerId: "uOwner", accounts: ACCOUNTS };
 
 /** Petit projet Studio cohérent : une étude, deux variantes, trois révisions, un fil de commentaires, une observation, un lien d'étape, une publication diffusée. */
 function fixture(): { tables: StudioArchiveTables; section: Record<string, unknown> } {
@@ -33,14 +35,14 @@ function fixture(): { tables: StudioArchiveTables; section: Record<string, unkno
   t.studio_study_steps = [{ study_id: "s1", step_number: 3, created_by: "uOwner" }];
   t.volumes = [{ id: pdfId, mime: "application/pdf", size: pdf.length, content: `\\x${pdf.toString("hex")}` }];
   const pkg = { schema: "studio-publication-package/1", revisionId: "r2", documentHash: studioArchiveDocumentHash(doc(1)), files: [{ format: "pdf", sha256: pdfId }] };
-  t.studio_publications = [{ id: "p1", project_id: "pA", study_id: "s1", variant_id: "v1", revision_id: "r2", document_hash: studioArchiveDocumentHash(doc(1)), package: pkg, package_hash: sha(canonicalJson(pkg)), created_by: "uEditor", approved_by: "uOwner", diffused_by: "uEditor" }];
+  t.studio_publications = [{ id: "p1", project_id: "pA", status: "diffuse", study_id: "s1", variant_id: "v1", revision_id: "r2", document_hash: studioArchiveDocumentHash(doc(1)), package: pkg, package_hash: sha(canonicalJson(pkg)), created_by: "uEditor", approved_by: "uOwner", diffused_by: "uEditor" }];
   t.studio_publication_events = [{ id: "pe1", publication_id: "p1", author_id: "uEditor" }];
   t.project_members = [{ project_id: "pA", user_id: "uEditor", role: "editeur", invited_by: "owner@example.test" }];
   t.studio_tool_preferences = [{ user_id: "uEditor", profile: "standard", favorites: [], personal: [] }];
   const section = {
     schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: STUDIO_ARCHIVE_SCHEMA_VERSION, sourceProjectId: "pA", ownerId: "uOwner",
-    accounts: [{ id: "uEditor", email: "Editeur@example.test" }, { id: "uOwner", email: "owner@example.test" }],
-    tables: t, manifest: buildStudioManifest(t),
+    accounts: ACCOUNTS,
+    tables: t, manifest: buildStudioManifest(t, IDENT),
   };
   return { tables: t, section };
 }
@@ -55,14 +57,14 @@ describe("section Studio de l'archive (logique pure)", () => {
 
   it("manifeste : version de schéma, effectif et empreinte par table, indépendants de l'ordre de lecture", () => {
     const { tables } = fixture();
-    const m = buildStudioManifest(tables);
+    const m = buildStudioManifest(tables, IDENT);
     expect(m.schema).toBe(STUDIO_ARCHIVE_SCHEMA);
     expect(m.schemaVersion.document).toBe("studio-document/1");
     expect(Object.keys(m.tables)).toEqual([...STUDIO_ARCHIVE_TABLES]);
     expect(m.tables.studio_revisions.count).toBe(3);
     expect(m.tables.studio_comments.count).toBe(2);
     const reversed = { ...tables, studio_revisions: [...tables.studio_revisions].reverse() };
-    expect(buildStudioManifest(reversed)).toEqual(m);
+    expect(buildStudioManifest(reversed, IDENT)).toEqual(m);
     expect(studioTableHash("studio_revisions", tables.studio_revisions)).toMatch(/^[0-9a-f]{64}$/);
   });
 
@@ -77,12 +79,12 @@ describe("section Studio de l'archive (logique pure)", () => {
 
     const b = fixture();
     b.tables.volumes[0]!["content"] = `\\x${Buffer.from("autre").toString("hex")}`;
-    b.section["manifest"] = buildStudioManifest(b.tables);
+    b.section["manifest"] = buildStudioManifest(b.tables, IDENT);
     expect(errorsOf(clone(b.section)).some((e) => e.includes("contenu différent de son empreinte"))).toBe(true);
 
     const c = fixture();
     c.tables.studio_publications[0]!["document_hash"] = "f".repeat(64);
-    c.section["manifest"] = buildStudioManifest(c.tables);
+    c.section["manifest"] = buildStudioManifest(c.tables, IDENT);
     expect(errorsOf(clone(c.section)).some((e) => e.includes("empreinte du document différente"))).toBe(true);
   });
 
@@ -91,7 +93,7 @@ describe("section Studio de l'archive (logique pure)", () => {
     f.tables.studio_variants.push({ id: "v9", study_id: "autre", name: "x", head_revision_id: "r1" });
     f.tables.studio_comments.push({ id: "c9", variant_id: "v1", revision_id: null, parent_id: "inconnu", author_id: "uX" });
     f.tables.studio_publications[0]!["project_id"] = "pB";
-    f.section["manifest"] = buildStudioManifest(f.tables);
+    f.section["manifest"] = buildStudioManifest(f.tables, IDENT);
     const errors = errorsOf(clone(f.section));
     expect(errors).toEqual(expect.arrayContaining([
       "variante v9 : étude absente", "variante v9 : tête absente", "commentaire c9 : parent absent", "publication p1 : autre projet", "compte uX cité sans adresse",
@@ -105,7 +107,7 @@ describe("section Studio de l'archive (logique pure)", () => {
     expect(errorsOf(t)).toContain("table studio_comments illisible");
     const d = fixture();
     d.tables.studio_studies.push({ ...d.tables.studio_studies[0]! });
-    expect(errorsOf(clone({ ...d.section, manifest: buildStudioManifest(d.tables) }))).toContain("studio_studies : clé en double s1");
+    expect(errorsOf(clone({ ...d.section, manifest: buildStudioManifest(d.tables, IDENT) }))).toContain("studio_studies : clé en double s1");
   });
 
   it("commentaires insérés parent d'abord ; lignes remappées sans toucher au contenu ni aux empreintes", () => {
@@ -129,6 +131,43 @@ describe("section Studio de l'archive (logique pure)", () => {
     expect(map.get("uEditor")).toBe("uB1");
     expect(reassigned).toEqual(["Editeur@example.test"]);
     expect(mapStudioAccounts([{ id: "uEditor", email: "Editeur@example.test" }], new Map([["editeur@example.test", "uB2"]]), "uB1").map.get("uEditor")).toBe("uB2");
+  });
+
+  it("empreinte globale : couvre les adresses des comptes, le projet et le propriétaire (pas seulement les lignes)", () => {
+    const { tables } = fixture();
+    const base = buildStudioManifest(tables, IDENT).hash;
+    expect(buildStudioManifest(tables, { ...IDENT, accounts: [...ACCOUNTS].reverse() }).hash).toBe(base);
+    expect(buildStudioManifest(tables, { ...IDENT, accounts: [{ id: "uEditor", email: "autre@example.test" }, ACCOUNTS[1]!] }).hash).not.toBe(base);
+    expect(buildStudioManifest(tables, { ...IDENT, ownerId: "uEditor" }).hash).not.toBe(base);
+    expect(buildStudioManifest(tables, { ...IDENT, sourceProjectId: "pZ" }).hash).not.toBe(base);
+    // Adresse réécrite sans recalcul du manifeste : refusée (intégrité, 422).
+    const s = clone(fixture().section) as { accounts: { id: string; email: string }[] };
+    s.accounts[0]!.email = "pirate@example.test";
+    expect(errorsOf(s)).toContain("empreinte globale différente du manifeste");
+  });
+
+  it("archive non vérifiée : approbations retirées, publication approuvée ou diffusée remise « à relire », journal complété", () => {
+    const { tables } = fixture();
+    const pubs = [
+      ...remapStudioRows("studio_publications", tables.studio_publications, "pB", new Map([["uOwner", "uR"], ["uEditor", "uR"]])),
+      { id: "p2", variant_id: "v1", revision_id: "r2", document_hash: "d".repeat(64), status: "approuve", approved_revision_id: "r2", approved_document_hash: "d".repeat(64), approved_by: "uR", approved_at: "2026-10-19T08:00:00+00:00", package: null, package_hash: null },
+      { id: "p3", variant_id: "v2", revision_id: "r3", document_hash: "e".repeat(64), status: "travail", approved_revision_id: null, package: null },
+      { id: "p4", variant_id: "v1", revision_id: "r2", document_hash: "f".repeat(64), status: "retire", approved_revision_id: "r2", approved_document_hash: "f".repeat(64), approved_by: "uR" },
+    ];
+    let n = 0;
+    const out = distrustStudioPublications(pubs, tables.studio_variants, "uR", "2026-10-19T10:00:00.000Z", () => `ev${++n}`);
+    expect(out.downgraded).toBe(2);
+    expect(out.publications.map((p) => p["status"])).toEqual(["soumis", "soumis", "travail", "retire"]);
+    expect(out.publications.every((p) => p["approved_revision_id"] === null && p["approved_document_hash"] === null && p["approved_by"] === null && p["approved_at"] === null)).toBe(true);
+    // Contenu conservé et lisible : paquet, empreintes et fichiers inchangés.
+    expect(out.publications[0]!["package"]).toEqual(tables.studio_publications[0]!["package"]);
+    expect(out.publications[0]!["package_hash"]).toBe(tables.studio_publications[0]!["package_hash"]);
+    expect(out.publications[0]!["document_hash"]).toBe(tables.studio_publications[0]!["document_hash"]);
+    expect(out.events).toEqual([
+      expect.objectContaining({ id: "ev1", publication_id: "p1", action: "soumettre", from_status: "diffuse", to_status: "soumis", author_id: "uR", revision_id: "r2", head_revision_id: "r2", comment: STUDIO_DOWNGRADE_COMMENT }),
+      expect.objectContaining({ id: "ev2", publication_id: "p2", from_status: "approuve", to_status: "soumis" }),
+    ]);
+    expect(pubs[1]!["status"]).toBe("approuve");
   });
 
   it("volumes cités par les paquets", () => {

@@ -9,11 +9,16 @@
  * déclencheur d'immuabilité toujours actif dans B, réouverture dans le navigateur ; puis lance l'outil de comparaison
  * (scripts/validation/studio-compare-restore.mjs) et exige 0 anomalie. Contrôles négatifs : archive altérée refusée
  * sans rien créer (422 archive_studio), réimport dans la base d'origine sans écrasement (réserve).
+ * Signature (décision du développeur principal) : archive intacte signée par la clé partagée → auteurs et approbations
+ * conservés ; archive d'un second projet falsifiée avec manifeste recalculé, importée par l'éditeur depuis la page
+ * Projets → import permis, réserve affichée, tout acteur = compte qui restaure, publication diffusée remise « à relire »,
+ * droits non repris, nouvelle approbation exigée ; API B relancée sans clé d'environnement → clé propre à la base,
+ * archive de A « clé inconnue ».
  *
- *   BASE_URL=http://localhost:3001 DATABASE_URL_A=postgresql://… DATABASE_URL_B=postgresql://… \
+ *   ARCHIVE_SIGNING_KEY=… (la même que l'API A) BASE_URL=http://localhost:3001 DATABASE_URL_A=postgresql://… DATABASE_URL_B=postgresql://… \
  *   [RESTORE_PORT=3002] [WEB_DIST=apps/web/dist] [OUT=dossier] node apps/web/e2e/studio-restauration.mjs
  * La base B doit être migrée (npm run db:migrate) et vide de comptes de la recette ; l'API B est démarrée puis arrêtée
- * par la recette (par son PID), sauf si RESTORE_BASE_URL désigne une API déjà lancée sur la base B.
+ * par la recette (par son PID), deux fois (avec puis sans ARCHIVE_SIGNING_KEY).
  */
 import { spawn, execFileSync } from 'node:child_process';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
@@ -22,6 +27,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { chromium } from 'playwright';
+import { TABLES, canonicalJson, keyOf, sha256 } from '../../../scripts/validation/studio-compare-lib.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const BASE = (process.env.BASE_URL ?? 'http://localhost:3001').replace(/\/$/, '');
@@ -29,6 +35,10 @@ const DB_A = process.env.DATABASE_URL_A ?? process.env.DATABASE_URL;
 const DB_B = process.env.DATABASE_URL_B;
 const OUT = process.env.OUT ?? path.join(ROOT, 'atelier-captures', 'studio-restauration');
 if (!DB_A || !DB_B) { console.error('DATABASE_URL_A (ou DATABASE_URL) et DATABASE_URL_B sont requis.'); process.exit(2); }
+// Même clé de signature pour l'API A (lancée hors de la recette) et l'API B (lancée ici) : « ce serveur » au sens de
+// la vérification. Jamais affichée.
+const SIGNING_KEY = process.env.ARCHIVE_SIGNING_KEY ?? '';
+if (!SIGNING_KEY) { console.error('ARCHIVE_SIGNING_KEY est requise (la même que celle de l\'API A).'); process.exit(2); }
 fs.mkdirSync(OUT, { recursive: true });
 
 let failures = 0;
@@ -121,6 +131,47 @@ check('A : publication diffusée, paquet de quatre fichiers', diffused.status ==
 const filesA = {};
 for (const f of diffused.body.diffusion.files) filesA[f.format] = (await ownerA('GET', `${pubs}/${pub.body.id}/files/${f.format}`, undefined, true)).bytes;
 
+// Second projet (archive falsifiée plus bas) : révision et commentaire de l'éditeur, observation confiée à l'éditeur,
+// publication préparée par l'éditeur, approuvée par le propriétaire, diffusée par l'éditeur.
+const project2 = await ownerA('POST', '/projects', { code: `RSF_${randomUUID().slice(0, 8)}`, name: 'Studio — archive falsifiée (recette synthétique)' });
+const p2 = project2.body?.id;
+await ownerA('POST', `/projects/${p2}/members`, { email: accounts.editor.email, role: 'editeur' });
+const study2 = await ownerA('POST', `/projects/${p2}/studio/studies`, { name: 'Étude falsifiée' });
+const s2 = study2.body?.study?.id, w2 = study2.body?.variant?.id;
+const v2Path = `/projects/${p2}/studio/studies/${s2}/variants/${w2}`;
+const f1 = await editorA('POST', `${v2Path}/commands`, { contractVersion: 'studio-commands/1', requestId: `rst-${randomUUID()}`, baseRevisionId: study2.body?.revision?.id, commands: [{ toolId: 'studio.architecture.mur', params: mur }, { toolId: 'studio.dessin.ligne', params: { id: 'ligne-f', type: 'line', start: { x: 0, y: 2 }, end: { x: 3, y: 2 } } }] });
+const fRemark = await editorA('POST', `${v2Path}/comments`, { body: 'Remarque de l\'éditeur', objectIds: ['ligne-f'], revisionId: f1.body?.revision?.id });
+const editorIdA2 = ((await ownerA('GET', `${v2Path}/comments`)).body?.participants ?? []).find((p) => p.email === accounts.editor.email)?.id;
+const fObs = await editorA('POST', `${v2Path}/comments/${fRemark.body?.id}/observation`, { responsableId: editorIdA2 });
+const pubs2 = `/projects/${p2}/studio/studies/${s2}/publications`;
+const fPub = await editorA('POST', `${v2Path}/publications`, { title: 'Dossier falsifié' });
+await editorA('POST', `${pubs2}/${fPub.body?.id}/soumettre`, {});
+await ownerA('POST', `${pubs2}/${fPub.body?.id}/approuver`, { revisionId: fPub.body?.revisionId, documentHash: fPub.body?.documentHash });
+const fDiff = await editorA('POST', `${pubs2}/${fPub.body?.id}/diffuser`, {});
+check('A : second projet — révision, commentaire et observation de l\'éditeur, publication approuvée par le propriétaire et diffusée', f1.status === 200 && fRemark.status === 201 && fObs.status === 201 && fDiff.status === 200 && fDiff.body.status === 'diffuse', short([f1.status, fRemark.status, fObs.status, fDiff.body]));
+const files2 = {};
+for (const f of fDiff.body?.diffusion?.files ?? []) files2[f.format] = (await ownerA('GET', `${pubs2}/${fPub.body.id}/files/${f.format}`, undefined, true)).bytes;
+const archive2 = (await ownerA('GET', `/projects/${p2}/archive`)).body;
+
+/**
+ * Archive falsifiée « proprement » : contenu modifié (texte d'un commentaire, auteur de la révision attribué au
+ * propriétaire) puis manifeste recalculé selon la règle publique — l'intégrité passe, seule la signature échoue.
+ */
+function forge(raw) {
+  const a = JSON.parse(JSON.stringify(raw));
+  const t = a.studio.tables;
+  t.studio_comments[0].body = 'Remarque réécrite hors de Fadi';
+  for (const r of t.studio_revisions) r.author_id = a.studio.ownerId;
+  const sorted = (name) => [...t[name]].sort((x, y) => (keyOf(name, x) < keyOf(name, y) ? -1 : keyOf(name, x) > keyOf(name, y) ? 1 : 0));
+  const perTable = Object.fromEntries(TABLES.map((name) => [name, { count: t[name].length, hash: sha256(canonicalJson(sorted(name))) }]));
+  const accountsSorted = [...a.studio.accounts].map((x) => ({ id: x.id, email: x.email })).sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0));
+  a.studio.manifest.tables = perTable;
+  a.studio.manifest.hash = sha256(canonicalJson({ tables: perTable, sourceProjectId: a.studio.sourceProjectId, ownerId: a.studio.ownerId, accounts: accountsSorted }));
+  return a;
+}
+const forged = forge(archive2);
+fs.writeFileSync(path.join(OUT, 'archive-falsifiee.json'), JSON.stringify(forged));
+
 // --- Sauvegarde ------------------------------------------------------------------------------------------------
 const archiveRes = await ownerA('GET', `/projects/${pA}/archive`, undefined, true);
 const archiveText = archiveRes.bytes.toString('utf8');
@@ -134,30 +185,38 @@ check('sauvegarde : effectifs du manifeste (1 étude, 2 variantes, 7 révisions,
   && counts.studio_study_steps === 2 && counts.studio_publications === 1 && counts.studio_publication_events === 4 && counts.volumes === 4 && counts.project_members === 1 && counts.studio_tool_preferences === 1, JSON.stringify(counts));
 check('sauvegarde : empreintes des documents de la publication et du paquet conformes', st?.tables.studio_publications[0]?.document_hash === pub.body.documentHash && st?.tables.studio_publications[0]?.package_hash === diffused.body.diffusion.packageHash);
 
+check('sauvegarde : archive signée (HMAC-SHA256, clé de l\'environnement désignée par son identifiant, clé absente du fichier)', st?.signature?.algorithm === 'HMAC-SHA256' && /^env-[0-9a-f]{16}$/.test(st.signature.keyId ?? '') && /^[0-9a-f]{64}$/.test(st.signature.value ?? '') && !archiveText.includes(SIGNING_KEY), short(st?.signature));
+
 // --- Base B : API neuve, comptes recréés, restauration --------------------------------------------------------
 const RESTORE_PORT = Number(process.env.RESTORE_PORT ?? 3002);
-let BASE_B = (process.env.RESTORE_BASE_URL ?? '').replace(/\/$/, '');
+const BASE_B = `http://localhost:${RESTORE_PORT}`;
 let apiB = null;
-if (!BASE_B) {
-  BASE_B = `http://localhost:${RESTORE_PORT}`;
-  const log = fs.openSync(path.join(OUT, 'api-b.log'), 'w');
-  apiB = spawn(process.execPath, [path.join(ROOT, 'apps/api/dist/server.js')], {
-    cwd: ROOT, stdio: ['ignore', log, log],
-    env: { ...process.env, PORT: String(RESTORE_PORT), DATABASE_URL: DB_B, WEB_ORIGIN: BASE_B, AUTH_RATE_LIMIT: process.env.AUTH_RATE_LIMIT ?? '500', API_RATE_LIMIT: process.env.API_RATE_LIMIT ?? '5000' },
-  });
+/** API B sur la base B, avec la clé partagée (même « serveur » que A) ou sans (clé propre à la base B). */
+async function startB(withKey) {
+  const log = fs.openSync(path.join(OUT, withKey ? 'api-b.log' : 'api-b-sans-cle.log'), 'w');
+  const env = { ...process.env, PORT: String(RESTORE_PORT), DATABASE_URL: DB_B, WEB_ORIGIN: BASE_B, AUTH_RATE_LIMIT: process.env.AUTH_RATE_LIMIT ?? '500', API_RATE_LIMIT: process.env.API_RATE_LIMIT ?? '5000' };
+  if (!withKey) delete env.ARCHIVE_SIGNING_KEY;
+  apiB = spawn(process.execPath, [path.join(ROOT, 'apps/api/dist/server.js')], { cwd: ROOT, stdio: ['ignore', log, log], env });
   let ready = false;
   for (let i = 0; i < 60 && !ready; i += 1) {
     await new Promise((r) => setTimeout(r, 500));
     ready = await fetch(`${BASE_B}/health`).then((r) => r.ok, () => false);
   }
-  check(`B : API de restauration démarrée (PID ${apiB.pid}, port ${RESTORE_PORT})`, ready);
+  check(`B : API de restauration démarrée ${withKey ? 'avec la clé partagée' : 'sans ARCHIVE_SIGNING_KEY'} (PID ${apiB.pid}, port ${RESTORE_PORT})`, ready);
 }
-const stopB = () => { if (apiB && apiB.exitCode === null) { process.kill(apiB.pid, 'SIGTERM'); } };
+async function stopB() {
+  if (!apiB || apiB.exitCode !== null) return;
+  const exited = new Promise((r) => apiB.once('exit', r));
+  process.kill(apiB.pid, 'SIGTERM');
+  await exited;
+}
+await startB(true);
 
 const pgA = new pg.Client({ connectionString: DB_A });
 const pgB = new pg.Client({ connectionString: DB_B });
 await pgA.connect(); await pgB.connect();
 let pB = null;
+let pForged = null;
 let compareExit = null;
 try {
   const ownerB = client(BASE_B), editorB = client(BASE_B);
@@ -176,7 +235,18 @@ try {
   check('B : restauration par « Importer projet JSON » (201)', imported.status === 201 && imported.body.projects?.length === 1, `${imported.status} ${short(imported.body)}`);
   pB = imported.body.projects?.[0]?.id;
   const warnings = imported.body.projects?.[0]?.warnings ?? [];
-  check('B : aucune réserve Studio (comptes retrouvés par adresse, aucun écrasement)', !warnings.some((w) => /Studio|Droits/.test(w)), JSON.stringify(warnings));
+  check('B : aucune réserve Studio (comptes retrouvés par adresse, aucun écrasement)', !warnings.some((w) => /Studio|Droits|rien n'en est cru/.test(w)), JSON.stringify(warnings));
+  check('B : archive intacte signée par la clé partagée → signature vérifiée', imported.body.projects?.[0]?.studio?.trust === 'verifiee' && imported.body.projects[0].studio.restored === true && imported.body.projects[0].studio.downgraded === 0, short(imported.body.projects?.[0]?.studio));
+  {
+    const histB = (await ownerB('GET', `/projects/${pB}/studio/studies/${studyId}/variants/${v1}/revisions`)).body?.revisions ?? [];
+    const partsB = (await ownerB('GET', `/projects/${pB}/studio/studies/${studyId}/variants/${v1}/comments`)).body?.participants ?? [];
+    const idB = (email) => partsB.find((p) => p.email === email)?.id;
+    const authorOf = (id) => histB.find((x) => x.id === id)?.authorId;
+    const pubB = (await ownerB('GET', `/projects/${pB}/studio/studies/${studyId}/publications/${pub.body.id}`)).body;
+    check('B (signée) : auteurs conservés — révision 1 du propriétaire, révision 2 de l\'éditeur ; approbation du propriétaire, diffusion de l\'éditeur',
+      authorOf(r1.body.revision.id) === idB(accounts.owner.email) && authorOf(r2.body.revision.id) === idB(accounts.editor.email) && idB(accounts.owner.email) !== idB(accounts.editor.email)
+      && pubB?.status === 'diffuse' && pubB.approval?.by?.email === accounts.owner.email && pubB.diffusion?.by?.email === accounts.editor.email, short({ histB, pub: pubB?.approval }));
+  }
 
   // Documents de révision : identiques octet pour octet (JSON canonique via l'API, texte jsonb dans la base).
   const rootB = `/projects/${pB}/studio`;
@@ -280,8 +350,57 @@ try {
     await page.locator(`[data-studio-etude="${studyId}"]`).waitFor();
     check('navigateur : page de l\'étude restaurée, deux variantes', (await page.locator('[data-studio-variantes] li').count()) === 2);
     check('navigateur : aucune erreur de page', errors.length === 0, errors.join(' | '));
+
+    // Archive falsifiée (manifeste recalculé) importée par l'éditeur, depuis la page Projets : import permis, réserve
+    // affichée, rien n'est cru.
+    const ctxE = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const pageE = await ctxE.newPage();
+    pageE.setDefaultTimeout(20000);
+    await pageE.goto(`${BASE_B}/connexion`);
+    await pageE.fill('input[name="email"]', accounts.editor.email);
+    await pageE.fill('input[name="password"]', accounts.editor.password);
+    await pageE.click('button[type="submit"]');
+    await pageE.waitForURL(/\/(accueil|projets)$/);
+    await pageE.goto(`${BASE_B}/projets`);
+    await pageE.locator('.projects-heading input[type="file"]').setInputFiles({ name: 'archive-falsifiee.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(forged)) });
+    await pageE.waitForURL(/\/projets\/proj_[^/?]+\?module=parcours/);
+    pForged = new URL(pageE.url()).pathname.split('/').pop();
+    const toast = (await pageE.locator('.h7-toast').first().textContent({ timeout: 10000 }).catch(() => '')) ?? '';
+    check('navigateur : archive falsifiée importée, réserve claire affichée (signature invalide, rien n\'en est cru, « à relire », auteurs d\'origine déclarés)',
+      /Signature de l'archive invalide/.test(toast) && /rien n'en est cru/.test(toast) && /« à relire »/.test(toast) && toast.includes(accounts.owner.email), toast.slice(0, 400));
+    await pageE.screenshot({ path: path.join(OUT, 'import-archive-falsifiee.png') });
+    await ctxE.close();
   } finally {
     await browser.close();
+  }
+
+  // Archive falsifiée restaurée : tout acteur est le compte qui restaure (l'éditeur), approbations retirées.
+  {
+    check('archive falsifiée : un projet restauré', typeof pForged === 'string' && pForged.startsWith('proj_'), String(pForged));
+    const rootF = `/projects/${pForged}/studio/studies/${s2}`;
+    const vF = `${rootF}/variants/${w2}`;
+    const partsF = (await editorB('GET', `${vF}/comments`)).body;
+    const editorIdB = partsF?.me?.id;
+    const histF = (await editorB('GET', `${vF}/revisions`)).body?.revisions ?? [];
+    check('archive falsifiée : toutes les révisions attribuées au compte qui restaure (y compris la révision « attribuée » au propriétaire par la falsification)', histF.length === 2 && histF.every((x) => x.authorId === editorIdB), short(histF));
+    const commentsF = partsF?.comments ?? [];
+    check('archive falsifiée : commentaire restauré (contenu tel quel), auteur = compte qui restaure, observation confiée au compte qui restaure', commentsF.length === 1 && commentsF[0].body === 'Remarque réécrite hors de Fadi' && commentsF.every((c) => c.authorEmail === accounts.editor.email) && commentsF[0].observation?.responsableId === editorIdB && commentsF[0].observation.journal.every((j) => j.actorId === editorIdB), short(commentsF));
+    const pubF = (await editorB('GET', `${rootF}/publications/${fPub.body.id}`)).body;
+    const evF = pubF?.events ?? [];
+    check('archive falsifiée : publication diffusée remise « à relire » (soumise), approbation retirée, journal complété d\'un passage daté de la restauration',
+      pubF?.status === 'soumis' && pubF.approval === null && evF.length === 5 && evF.every((e) => e.author.email === accounts.editor.email) && evF.at(-1)?.action === 'soumettre' && evF.at(-1)?.fromStatus === 'diffuse' && /archive non vérifiée/.test(evF.at(-1)?.comment ?? ''), short({ status: pubF?.status, approval: pubF?.approval, ev: evF.map((e) => [e.action, e.fromStatus, e.toStatus, e.author.email]) }));
+    let readable = 0;
+    for (const f of fDiff.body.diffusion.files) {
+      const got = await editorB('GET', `${rootF}/publications/${fPub.body.id}/files/${f.format}`, undefined, true);
+      if (got.status === 200 && Buffer.compare(got.bytes, files2[f.format]) === 0) readable += 1;
+    }
+    check('archive falsifiée : contenu du paquet conservé et lisible (4/4 fichiers identiques)', readable === 4, `${readable}/4`);
+    const membersF = (await editorB('GET', `/projects/${pForged}/members`)).body;
+    check('archive falsifiée : droits non repris (aucun membre ; le propriétaire d\'origine n\'a pas accès)', !JSON.stringify(membersF).includes(accounts.owner.email) && [403, 404].includes((await ownerB('GET', `/projects/${pForged}`)).status), short(membersF));
+    check('archive falsifiée : diffusion refusée tant qu\'une nouvelle approbation manque (409 invalid_transition)', (await editorB('POST', `${rootF}/publications/${fPub.body.id}/diffuser`, {})).body?.error === 'invalid_transition');
+    const reapproved = await editorB('POST', `${rootF}/publications/${fPub.body.id}/approuver`, { revisionId: pubF?.revisionId, documentHash: pubF?.documentHash, comment: 'Relue après restauration' });
+    const rediffused = await editorB('POST', `${rootF}/publications/${fPub.body.id}/diffuser`, {});
+    check('archive falsifiée : nouvelle approbation par le propriétaire du projet restauré, puis nouvelle diffusion', reapproved.status === 200 && reapproved.body.approval?.by?.email === accounts.editor.email && rediffused.status === 200 && rediffused.body.status === 'diffuse', short([reapproved.body, rediffused.body]));
   }
 
   // Contrôle négatif : réimport dans la base d'origine (identifiants déjà présents) → Studio non écrasé, réserve.
@@ -290,9 +409,26 @@ try {
   const copyId = again.body?.projects?.[0]?.id;
   const studiesOfCopy = copyId ? (await ownerA('GET', `/projects/${copyId}/studio/studies`)).body?.studies ?? null : null;
   check('A : réimport dans la base d\'origine — projet créé sans Studio, réserve explicite, original intact', again.status === 201 && againWarnings.some((w) => /Données Studio non restaurées/.test(w)) && Array.isArray(studiesOfCopy) && studiesOfCopy.length === 0 && (await ownerA('GET', vPath(v1))).body?.revision?.id === r5.body.revision.id, short(again.body));
+  check('A : son propre export y est vérifié (même clé)', again.body?.projects?.[0]?.studio?.trust === 'verifiee', short(again.body?.projects?.[0]?.studio));
+
+  // Sans ARCHIVE_SIGNING_KEY : clé propre à la base B, créée à la première signature ; une archive signée par la clé
+  // de l'environnement y devient « clé inconnue », une archive signée par la base B y est vérifiée.
+  await stopB();
+  check('B : clé propre à la base absente avant le premier export sans clé d\'environnement', (await pgB.query('SELECT count(*)::int AS n FROM archive_signing_keys')).rows[0].n === 0);
+  await startB(false);
+  const archiveB = (await ownerB('GET', `/projects/${pB}/archive`)).body;
+  const keyRows = (await pgB.query('SELECT id, length(secret) AS n FROM archive_signing_keys')).rows;
+  const logB = fs.readFileSync(path.join(OUT, 'api-b-sans-cle.log'), 'utf8');
+  const secretB = (await pgB.query('SELECT secret FROM archive_signing_keys')).rows[0]?.secret ?? '';
+  check('B sans clé d\'environnement : archive signée par une clé propre à la base (identifiant db-…), clé créée une fois, jamais écrite dans l\'archive ni dans le journal',
+    /^db-[0-9a-f]{16}$/.test(archiveB?.studio?.signature?.keyId ?? '') && keyRows.length === 1 && keyRows[0].n === 64 && !JSON.stringify(archiveB).includes(secretB) && !logB.includes(secretB) && !logB.includes(SIGNING_KEY), short({ keyId: archiveB?.studio?.signature?.keyId, keyRows }));
+  const withDbKey = await ownerB('POST', '/projects/import', JSON.stringify(archiveB));
+  check('B sans clé d\'environnement : sa propre archive est vérifiée (Studio non réimporté : identifiants présents)', withDbKey.status === 201 && withDbKey.body.projects[0].studio?.trust === 'verifiee' && withDbKey.body.projects[0].studio.restored === false, short(withDbKey.body));
+  const withEnvKey = await ownerB('POST', '/projects/import', archiveText);
+  check('B sans clé d\'environnement : l\'archive signée par la clé de A y est « clé inconnue » — rien n\'en est cru', withEnvKey.status === 201 && withEnvKey.body.projects[0].studio?.trust === 'inconnue' && withEnvKey.body.projects[0].warnings.some((w) => /clé inconnue de ce serveur/.test(w)), short(withEnvKey.body));
 } finally {
   await pgA.end(); await pgB.end();
-  stopB();
+  await stopB();
 }
 
 fs.writeFileSync(path.join(OUT, 'resume.json'), JSON.stringify({ date: new Date().toISOString(), projetA: pA, projetB: pB, etude: studyId, variantes: [v1, v2], comparaison: compareExit, echecs: failures }, null, 2));

@@ -317,6 +317,13 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run db:migrate
       - run: npm run build
+      # Clé de signature des archives propre à l'exécution (jamais écrite dans le dépôt, masquée dans les journaux) :
+      # partagée par l'API et la seconde API de la recette de restauration Studio (même « serveur »).
+      - name: Clé de signature des archives de l'exécution
+        run: |
+          k="$(openssl rand -hex 32)"
+          echo "::add-mask::$k"
+          echo "ARCHIVE_SIGNING_KEY=$k" >> "$GITHUB_ENV"
       - name: Démarrer l'API qui sert aussi l'application (WEB_DIST)
         run: |
           nohup node apps/api/dist/server.js > api.log 2>&1 &

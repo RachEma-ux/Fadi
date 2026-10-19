@@ -751,3 +751,11 @@ END;
 $$;
 CREATE OR REPLACE TRIGGER studio_publications_no_delete BEFORE DELETE ON studio_publications
   FOR EACH ROW EXECUTE FUNCTION studio_publication_no_delete();
+-- Clé de signature des archives de projet propre à la base (lib/archive-signing-key.ts) : utilisée seulement quand
+-- ARCHIVE_SIGNING_KEY n'est pas fournie, créée à la première signature (une ligne, id 'local'). La clé ne sort jamais
+-- du serveur : l'archive ne porte que son identifiant. Table nouvelle, additive.
+CREATE TABLE IF NOT EXISTS archive_signing_keys (
+  id text PRIMARY KEY,
+  secret text NOT NULL CONSTRAINT archive_signing_keys_secret_length CHECK (length(secret) >= 32),
+  created_at timestamptz NOT NULL DEFAULT now()
+);

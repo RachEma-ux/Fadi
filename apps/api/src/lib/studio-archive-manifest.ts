@@ -101,6 +101,8 @@ export interface StudioArchiveSection {
   accounts: StudioArchiveAccount[];
   tables: StudioArchiveTables;
   manifest: StudioArchiveManifest;
+  /** HMAC-SHA256 de `manifest.hash` par une clé du serveur exportateur (`archive-signature.ts`) ; absente des archives antérieures. */
+  signature?: { algorithm: string; keyId: string; value: string };
 }
 
 /** JSON canonique (clés triées, valeurs indéfinies omises) — même règle que `studioDocumentHash` (studio-publications.ts). */
@@ -127,9 +129,18 @@ export function emptyStudioTables(): StudioArchiveTables {
   return Object.fromEntries(STUDIO_ARCHIVE_TABLES.map((t) => [t, []])) as unknown as StudioArchiveTables;
 }
 
-export function buildStudioManifest(tables: StudioArchiveTables): StudioArchiveManifest {
+/** Identité couverte par l'empreinte globale (et donc par la signature) en plus des lignes. */
+export interface StudioArchiveIdentity { sourceProjectId: string; ownerId: string; accounts: readonly StudioArchiveAccount[] }
+
+/**
+ * Manifeste : effectif et empreinte par table ; l'empreinte globale couvre aussi le projet, le propriétaire et les
+ * comptes cités (identifiant → adresse) — une adresse réécrite change l'empreinte, donc invalide la signature.
+ */
+export function buildStudioManifest(tables: StudioArchiveTables, identity: StudioArchiveIdentity): StudioArchiveManifest {
   const perTable = Object.fromEntries(STUDIO_ARCHIVE_TABLES.map((t) => [t, { count: tables[t].length, hash: studioTableHash(t, tables[t]) }])) as Record<StudioArchiveTable, StudioTableManifest>;
-  return { schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: STUDIO_ARCHIVE_SCHEMA_VERSION, tables: perTable, hash: sha256(canonicalJson(perTable)) };
+  const accounts = [...identity.accounts].map((a) => ({ id: a.id, email: a.email })).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const hash = sha256(canonicalJson({ tables: perTable, sourceProjectId: identity.sourceProjectId, ownerId: identity.ownerId, accounts }));
+  return { schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: STUDIO_ARCHIVE_SCHEMA_VERSION, tables: perTable, hash };
 }
 
 /** Identifiants de compte cités par les lignes (et le propriétaire), triés. */
@@ -190,7 +201,7 @@ export function checkStudioArchive(raw: unknown): { ok: true; section: StudioArc
 
   // Manifeste : effectifs et empreintes recalculés depuis les lignes reçues.
   const manifest = raw["manifest"];
-  const expected = buildStudioManifest(tables);
+  const expected = buildStudioManifest(tables, { sourceProjectId: raw["sourceProjectId"] as string, ownerId: raw["ownerId"] as string, accounts: accounts as StudioArchiveAccount[] });
   if (!isRecord(manifest) || !isRecord(manifest["tables"])) errors.push("manifeste Studio absent");
   else {
     for (const t of STUDIO_ARCHIVE_TABLES) {
@@ -302,4 +313,37 @@ export function mapStudioAccounts(accounts: readonly StudioArchiveAccount[], fou
     else { map.set(a.id, importerId); reassigned.push(a.email || a.id); }
   }
   return { map, reassigned: reassigned.sort() };
+}
+
+/** Statuts dont l'approbation est retirée quand l'archive n'est pas vérifiée : ils reviennent « à relire » (soumis). */
+export const STUDIO_APPROVED_STATUSES: readonly string[] = ["approuve", "diffuse"];
+export const STUDIO_DOWNGRADE_COMMENT = "Restauration d'une archive non vérifiée : approbation d'origine non reprise, nouvelle approbation exigée.";
+
+/**
+ * Archive non vérifiée (signature absente, inconnue ou invalide) : rien n'en est cru. Les lignes déjà remappées (tous
+ * les comptes → le compte qui restaure) perdent leurs approbations : une publication approuvée ou diffusée revient
+ * `soumis` (« à relire »), son paquet et son contenu restent lisibles, et un passage `soumettre` daté de la restauration
+ * l'inscrit au journal (append-only : les évènements d'origine ne sont pas réécrits). Pure : identifiants et date fournis.
+ */
+export function distrustStudioPublications(
+  publications: readonly StudioArchiveRow[], variants: readonly StudioArchiveRow[], importerId: string, now: string, newEventId: () => string,
+): { publications: StudioArchiveRow[]; events: StudioArchiveRow[]; downgraded: number } {
+  const heads = new Map(variants.map((v) => [v["id"] as string, v["head_revision_id"] as string]));
+  const events: StudioArchiveRow[] = [];
+  let downgraded = 0;
+  const out = publications.map((p) => {
+    const row: StudioArchiveRow = { ...p, approved_revision_id: null, approved_document_hash: null, approved_by: null, approved_at: null };
+    if (STUDIO_APPROVED_STATUSES.includes(p["status"] as string)) {
+      downgraded += 1;
+      row["status"] = "soumis";
+      row["updated_at"] = now;
+      events.push({
+        id: newEventId(), publication_id: p["id"], action: "soumettre", from_status: p["status"], to_status: "soumis", author_id: importerId,
+        comment: STUDIO_DOWNGRADE_COMMENT, revision_id: p["revision_id"], document_hash: p["document_hash"],
+        head_revision_id: heads.get(p["variant_id"] as string) ?? p["revision_id"], created_at: now,
+      });
+    }
+    return row;
+  });
+  return { publications: out, events, downgraded };
 }
