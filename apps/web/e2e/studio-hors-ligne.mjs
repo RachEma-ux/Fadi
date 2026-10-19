@@ -76,16 +76,26 @@ let context;
 async function atteindre(barre, selecteur) {
   const el = barre.locator(selecteur).first();
   await el.waitFor({ state: "attached" });
-  if (!(await el.isVisible())) {
+  // Le menu se place après son ouverture : on ne clique sur son bouton que s'il est fermé (un second clic le
+  // refermerait), et on recommence au plus trois fois si un rendu l'a refermé entre-temps (runner lent).
+  for (let essai = 0; essai < 3 && !(await el.isVisible()); essai++) {
     const menu = await el.evaluate((n) => n.closest("[data-studio-menu-liste]")?.id ?? null);
-    if (menu) await barre.locator(`[aria-controls="${menu}"]`).click();
-    await el.waitFor({ state: "visible" });
+    if (menu) {
+      const bouton = barre.locator(`[aria-controls="${menu}"]`);
+      if ((await bouton.getAttribute("aria-expanded")) !== "true") await bouton.click();
+    }
+    await el.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
   }
+  await el.waitFor({ state: "visible" });
   return el;
 }
 /** Bouton (ou lien) de la barre par son nom exact, qu'il soit dans la rangée ou dans un menu. */
 const element = (barre, nom) => barre.locator(`:is(button,a)[aria-label="${nom}"]`);
-const cliquerBouton = async (barre, nom) => (await atteindre(barre, `:is(button,a)[aria-label="${nom}"]`)).click();
+const cliquerBouton = async (barre, nom) => {
+  const sel = `:is(button,a)[aria-label="${nom}"]`;
+  // Un rendu peut refermer le menu entre l'ouverture et le clic : une seconde tentative le rouvre.
+  try { await (await atteindre(barre, sel)).click({ timeout: 5000 }); } catch { await (await atteindre(barre, sel)).click(); }
+};
 
 try {
   context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
