@@ -10,6 +10,16 @@
  *   révision), pour ouvrir l'Atelier sans réseau (lecture et dessin,
  *   synchronisation différée).
  * - `keyValue` : le cache des requêtes déshydraté (`query-persister`).
+ * - `studioBrouillons` (Studio, versions 5–6) : par utilisateur et par variante, le brouillon hors ligne (révision de base, pas de commandes
+ *   non enregistrés) et les enveloppes non confirmées avec leurs `requestId` et `baseRevisionId`, rejouées telles
+ *   quelles au retour du réseau (`modules/studio/hors-ligne/`). Rien ne l'efface hormis un enregistrement confirmé
+ *   ou un abandon explicite ; une mise à jour du service worker ne touche jamais IndexedDB.
+ * - `studioContextes` (Studio, versions 5–6) : la dernière version lue de chaque variante, par utilisateur, pour
+ *   rouvrir la planche sans réseau.
+ *   Les deux tables Studio sont vidées à la déconnexion et quand un autre utilisateur se connecte sur l'appareil
+ *   (`auth-context`) ; chaque clé commence par l'identifiant de l'utilisateur. La version 6 ajoute ce propriétaire :
+ *   les lignes de la version 5, sans propriétaire, ne peuvent être attribuées à personne et sont supprimées (elles ne
+ *   sont jamais rejouées sous un autre compte).
  *
  * Les caches de lecture restent facultatifs. La file d'écriture, elle,
  * expose tout échec : le brouillon reste en mémoire et peut être enregistré
@@ -48,10 +58,34 @@ export interface LotEntry {
   ordre: number;
 }
 
+/** Studio : brouillon hors ligne d'une variante (JSON validé par `modules/studio/hors-ligne/persistance.ts`). */
+export interface StudioBrouillonEntry {
+  /** `${userId}|${projectId}|${studyId}|${variantId}` */
+  cle: string;
+  /** Propriétaire : seul cet utilisateur relit ou rejoue ce brouillon. */
+  userId: string;
+  projectId: string;
+  /** Jeton d'écriture (comparer-puis-écrire) : un autre onglet qui écrit le change. */
+  stamp: string;
+  donnees: string;
+  majA: string;
+}
+
+/** Studio : dernière version lue d'une variante (contexte serveur sérialisé). */
+export interface StudioContexteEntry {
+  cle: string;
+  userId: string;
+  projectId: string;
+  contexte: string;
+  luA: string;
+}
+
 class FadiLocalDb extends Dexie {
   modelCache!: EntityTable<ModelCacheEntry, "projectId">;
   keyValue!: EntityTable<KeyValueEntry, "key">;
   lots!: EntityTable<LotEntry, "id">;
+  studioBrouillons!: EntityTable<StudioBrouillonEntry, "cle">;
+  studioContextes!: EntityTable<StudioContexteEntry, "cle">;
 
   constructor() {
     super("fadi-local");
@@ -62,6 +96,12 @@ class FadiLocalDb extends Dexie {
     this.version(4)
       .stores({ outbox: null, modelCache: "projectId", keyValue: "key", lots: "id, projectId, ordre" })
       .upgrade((tx) => tx.table("modelCache").clear());
+    // Studio hors ligne : deux tables ajoutées, aucune table existante modifiée (les lots de l'Atelier sont intacts).
+    this.version(5).stores({ modelCache: "projectId", keyValue: "key", lots: "id, projectId, ordre", studioBrouillons: "cle, projectId", studioContextes: "cle, projectId" });
+    // Studio : propriétaire dans chaque clé ; les lignes v5 sans propriétaire ne sont attribuables à personne (supprimées).
+    this.version(6)
+      .stores({ modelCache: "projectId", keyValue: "key", lots: "id, projectId, ordre", studioBrouillons: "cle, userId, projectId", studioContextes: "cle, userId, projectId" })
+      .upgrade(async (tx) => { await tx.table("studioBrouillons").clear(); await tx.table("studioContextes").clear(); });
   }
 }
 
@@ -222,5 +262,31 @@ export const localStore = {
   removeLot,
   retryLots,
   memoryLots: (projectId: string): LotEntry[] => [...queueMemoryFor(projectId).values()].sort((a, b) => a.ordre - b.ordre),
+  // --- Studio hors ligne (brouillons et dernières versions lues, par variante) ---
+  /** `null` quand absent ; une lecture impossible lève `LocalPersistenceError` (rien n'est supposé perdu). */
+  studioBrouillon: (cle: string, userId: string) => checked((d) => d.studioBrouillons.get(cle).then((v) => (v && v.userId === userId ? v : null))),
+  /**
+   * Comparer-puis-écrire : écrit seulement si le jeton présent est `attendu` (ou si la ligne a disparu). Rend faux
+   * quand un autre onglet a écrit depuis la dernière lecture : rien n'est écrasé.
+   */
+  studioEcrireBrouillonSi: (entry: StudioBrouillonEntry, attendu: string | null) => checked((d) => d.transaction("rw", d.studioBrouillons, async () => {
+    const present = await d.studioBrouillons.get(entry.cle);
+    if (present && present.stamp !== attendu) return false;
+    await d.studioBrouillons.put(entry);
+    return true;
+  })),
+  /** Retrait comparé : rend faux (et ne retire rien) si un autre onglet a écrit depuis. */
+  studioSupprimerBrouillonSi: (cle: string, attendu: string | null) => checked((d) => d.transaction("rw", d.studioBrouillons, async () => {
+    const present = await d.studioBrouillons.get(cle);
+    if (present && present.stamp !== attendu) return false;
+    if (present) await d.studioBrouillons.delete(cle);
+    return true;
+  })),
+  /** Abandon explicite (après confirmation de l'utilisateur), quel que soit l'onglet qui a écrit. */
+  studioSupprimerBrouillon: (cle: string) => checked((d) => d.studioBrouillons.delete(cle)),
+  studioContexte: (cle: string, userId: string) => safe((d) => d.studioContextes.get(cle).then((v) => (v && v.userId === userId ? v : null)), null as StudioContexteEntry | null),
+  studioMemoriserContexte: (entry: StudioContexteEntry) => safe((d) => d.studioContextes.put(entry).then(() => undefined), undefined),
+  /** Déconnexion ou changement d'utilisateur : brouillons et versions lues de Studio oubliés sur cet appareil. */
+  studioOublierTout: () => checked((d) => d.transaction("rw", d.studioBrouillons, d.studioContextes, async () => { await d.studioBrouillons.clear(); await d.studioContextes.clear(); })),
   lotsCount: async (projectId: string): Promise<number | null> => { try { return (await readLots(projectId)).length; } catch { return null; } },
 };

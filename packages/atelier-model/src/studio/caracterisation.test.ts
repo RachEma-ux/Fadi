@@ -292,16 +292,46 @@ function commandOutputs(): Record<string, unknown> {
   return out;
 }
 
+/**
+ * Ajouts délibérés, postérieurs à la base et consignés — transformations (Copier, Rotation, Symétrie, Échelle :
+ * `transformations.test.ts`) et annotations (cote angulaire et texte, champ facultatif `annotations` du document :
+ * `annotations.test.ts`) : retirés des sorties du registre et du paquet avant la comparaison, pour que la
+ * caractérisation reste exactement celle de la base. Le volume libre est contrôlé plus bas (`ADDITIFS`).
+ */
+const AJOUTS = {
+  outils: new Set([
+    "studio.dessin.copier", "studio.dessin.rotation", "studio.dessin.symetrie", "studio.dessin.echelle",
+    "studio.dessin.cote-angulaire", "studio.dessin.texte",
+  ]),
+  types: new Set(["angular-dimension", "text"]),
+  exports: new Set([
+    "dessinerCoteAngulaire", "formatStudioAngle", "measureStudioAngularDimension", "STUDIO_TEXT_JUSTIFICATIONS", "STUDIO_TEXT_MAX",
+    "studioAngularFromSegments", "studioAngularValue", "studioStraightSegment", "studioTextBox", "studioTextRotationDegrees",
+  ]),
+};
+function sansAjouts(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.filter((v) => !(typeof v === "string" && AJOUTS.outils.has(v))
+      && !(v && typeof v === "object" && (AJOUTS.outils.has((v as { toolId?: string }).toolId ?? "") || AJOUTS.types.has((v as { properties?: { type?: { const?: string } } }).properties?.type?.const ?? ""))))
+      .map(sansAjouts);
+  }
+  if (!value || typeof value !== "object") return value;
+  const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
+  const props = out.properties as Record<string, unknown> | undefined;
+  if (props && "schemaVersion" in props) delete props.annotations;
+  return out;
+}
+
 function registryOutputs(): Record<string, unknown> {
   const deepFrozen = (v: unknown): boolean => !v || typeof v !== "object" || (Object.isFrozen(v) && Object.values(v).every(deepFrozen));
   return {
-    "registre/outils": JSON.stringify(STUDIO_TOOLS),
-    "registre/schema": JSON.stringify(STUDIO_DOCUMENT_SCHEMA),
-    "registre/ids": [...STUDIO_TOOL_IDS],
-    "registre/mutations": [...STUDIO_COMMAND_TOOL_IDS],
-    "registre/appliques": [...STUDIO_APPLIED_TOOL_IDS],
+    "registre/outils": JSON.stringify(sansAjouts(STUDIO_TOOLS)),
+    "registre/schema": JSON.stringify(sansAjouts(STUDIO_DOCUMENT_SCHEMA)),
+    "registre/ids": sansAjouts([...STUDIO_TOOL_IDS]),
+    "registre/mutations": sansAjouts([...STUDIO_COMMAND_TOOL_IDS]),
+    "registre/appliques": sansAjouts([...STUDIO_APPLIED_TOOL_IDS]),
     "registre/gele": [deepFrozen(STUDIO_TOOLS), deepFrozen(STUDIO_DOCUMENT_SCHEMA), Object.isFrozen(STUDIO_TOOL_IDS), Object.isFrozen(STUDIO_COMMAND_TOOL_IDS), Object.isFrozen(STUDIO_APPLIED_TOOL_IDS)],
-    "paquet/exports": Object.keys(paquet).sort().map((k) => `${k}:${typeof (paquet as Record<string, unknown>)[k]}`),
+    "paquet/exports": Object.keys(paquet).filter((k) => !AJOUTS.exports.has(k)).sort().map((k) => `${k}:${typeof (paquet as Record<string, unknown>)[k]}`),
   };
 }
 
@@ -322,8 +352,54 @@ describe("Studio : caractérisation du découpage (sorties identiques à la base
     expect(Object.keys(actual)).toEqual(Object.keys(expected));
     expect(Object.keys(actual).length).toBeGreaterThan(500);
   });
+  /**
+   * Extension additive consignée (volume libre, A.3-02, fixtures inchangées) : le registre et la liste des exports du
+   * paquet gardent leurs entrées de référence à l'identique, en tête ; seuls s'y ajoutent les outils `studio.solide.*`,
+   * le tableau `solides` du schéma et les exports nommés ici. Tout autre écart reste un échec.
+   */
+  const AJOUTS_PAQUET = [
+    "SCHEMA_BOITE:object", "SCHEMA_PRISME:object", "SCHEMA_SOLIDE:object", "STUDIO_FRAME_SOLIDES:string", "STUDIO_LIMITES_SOLIDES:object",
+    "aireProfil:function", "cotesSolide:function", "couperStudio:function", "empriseSolide:function", "profilLocal:function",
+    "studioMaillageSolide:function", "studioQuantitesSolides:function", "studioSolideVers3d:function", "studioVolumeSolide:function", "validerSolide:function",
+  ];
+  const ADDITIFS: Record<string, (a: unknown, e: unknown) => void> = {
+    "registre/outils": (a, e) => {
+      const [aa, ee] = [JSON.parse(a as string) as { toolId: string; groupe: string; outputSchema: { properties?: Record<string, unknown> } }[], JSON.parse(e as string) as unknown[]];
+      // Le schéma de sortie des mutations est le schéma du document : seul son tableau `solides` s'ajoute.
+      const reference = aa.slice(0, ee.length).map((t) => {
+        if (!t.outputSchema.properties?.solides) return t;
+        const { solides: _ajout, ...properties } = t.outputSchema.properties;
+        return { ...t, outputSchema: { ...t.outputSchema, properties } };
+      });
+      expect(reference).toEqual(ee);
+      expect(aa.slice(ee.length).map((t) => [t.toolId, t.groupe])).toEqual(["boite", "prisme", "deplacer", "supprimer"].map((x) => [`studio.solide.${x}`, "volume-libre"]));
+    },
+    "registre/schema": (a, e) => {
+      const s = JSON.parse(a as string) as { properties: Record<string, unknown> };
+      expect(s.properties.solides).toBeDefined();
+      delete s.properties.solides;
+      expect(s).toEqual(JSON.parse(e as string));
+    },
+    "paquet/exports": (a, e) => {
+      expect((a as string[]).filter((x) => !(e as string[]).includes(x))).toEqual(AJOUTS_PAQUET);
+      expect((e as string[]).filter((x) => !(a as string[]).includes(x))).toEqual([]);
+    },
+  };
+  for (const k of ["registre/ids", "registre/mutations", "registre/appliques"]) {
+    ADDITIFS[k] = (a, e) => {
+      expect((a as string[]).slice(0, (e as string[]).length)).toEqual(e);
+      expect((a as string[]).slice((e as string[]).length)).toEqual(["boite", "prisme", "deplacer", "supprimer"].map((x) => `studio.solide.${x}`));
+    };
+  }
   const groupes = [...new Set(Object.keys(expected).map((k) => k.split("/")[0]!))];
   it.each(groupes)("%s", (groupe) => {
+    if (groupe === "registre" || groupe === "paquet") {
+      for (const k of Object.keys(expected).filter((x) => x.split("/")[0] === groupe)) {
+        if (ADDITIFS[k]) ADDITIFS[k](actual[k], expected[k]);
+        else expect(actual[k], k).toEqual(expected[k]);
+      }
+      return;
+    }
     // Chaînes (SVG, DXF, IFC) : égalité exacte, CRLF compris.
     const pick = (o: Record<string, unknown>) => Object.fromEntries(Object.entries(o).filter(([k]) => k.split("/")[0] === groupe));
     expect(pick(actual)).toEqual(pick(expected));

@@ -1,0 +1,9 @@
+/* État de connexion de la variante Studio (en ligne, hors ligne, en attente, conflit). */
+.studio-connexion { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 0.85rem; }
+div.studio-connexion { display: flex; margin: 4px 0; }
+.studio-connexion [data-studio-connexion] { font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; }
+.studio-connexion-en-ligne [data-studio-connexion] { color: #2f6b3a; }
+.studio-connexion-hors-ligne [data-studio-connexion], .studio-connexion-en-attente [data-studio-connexion] { color: #8a5a00; }
+.studio-connexion-conflit [data-studio-connexion] { color: #a12b2b; }
+.studio-connexion-detail { opacity: 0.85; }
+.studio-connexion-choix { display: inline-flex; flex-wrap: wrap; gap: 6px; }

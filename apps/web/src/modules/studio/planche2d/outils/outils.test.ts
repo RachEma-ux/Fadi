@@ -8,6 +8,7 @@ import type { PointPose } from "../Dessin2D";
 import type { StudioToolId } from "../raccourcis";
 import { aidePlanche, apercuPlanche, outilPlanche } from "./index";
 import type { ContexteClic, ModeArc } from "./type";
+import { OUTILS_TRANSFORMATION } from "./modification";
 
 /** Chaîne d'aide de VariantWorkspace avant le découpage (0f02cb3), recopiée telle quelle. */
 function aideAvant(o: { writable: boolean; historical: boolean; canWrite: boolean | undefined; trace: PointPose | null; tool: StudioToolId; suite: StudioPoint[]; modeArc: ModeArc; moveWithPointer: boolean }): string {
@@ -41,7 +42,9 @@ const pp = (x: number, y: number): PointPose => ({ point: { x, y }, accroche: nu
 const ctx = (): ContexteClic => { let n = 0; return { nouvelId: () => `id-${++n}`, layerId: undefined, decalageCote: 0.5, tolerance: 0.1 }; };
 
 describe("Outils de la planche : aide et aperçu identiques à l'ancien espace de travail", () => {
-  const tools = STUDIO_TOOLS.map((t) => t.toolId);
+  // Les transformations (Copier, Rotation, Symétrie, Échelle) et les outils d'annotation, postérieurs au découpage, ont
+  // leurs propres tests (`annotations.test.ts` pour la cote angulaire et le texte).
+  const tools = STUDIO_TOOLS.map((t) => t.toolId).filter((t) => !OUTILS_TRANSFORMATION.has(t) && t !== "studio.dessin.cote-angulaire" && t !== "studio.dessin.texte");
   const traces = [null, pp(0, 0)];
   const suites: StudioPoint[][] = [[], [{ x: 1, y: 1 }], [{ x: 1, y: 1 }, { x: 2, y: 0 }]];
   it("aide : tous outils × tracé × suite × mode × droits", () => {

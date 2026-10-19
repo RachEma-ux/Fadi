@@ -11,17 +11,23 @@ export type StudioToolId = StudioToolEntry["toolId"];
 export type IdCommandeEditeur =
   | "annuler" | "retablir" | "annuler-trace" | "enregistrer" | "tout-selectionner"
   | "terminer-polyligne" | "fermer-polyligne"
-  | "zoom-avant" | "zoom-arriere" | "cadrer" | "plein-ecran" | "vue-3d"
+  | "zoom-avant" | "zoom-arriere" | "cadrer" | "plein-ecran" | "vue-3d" | "navigation-3d" | "coupe-3d"
   | "accrochage-sommets" | "accrochage-grille"
+  | "accrochage-milieu" | "accrochage-centre" | "accrochage-quadrant" | "accrochage-intersection"
+  | "accrochage-perpendiculaire" | "accrochage-tangente" | "accrochage-proche"
+  | "reperage-orthogonal" | "reperage-polaire" | "pas-polaire"
   | "importer-dxf" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille"
   | "outils" | "palette";
-export type GroupeCommande = "edition" | "vue" | "accrochage" | "import" | "export" | "presentation" | "catalogue";
+export type GroupeCommande = "edition" | "vue" | "accrochage" | "reperage" | "import" | "export" | "presentation" | "catalogue";
 export type BarreStudio = StudioToolGroup | GroupeCommande;
 export type IconeCommande =
   | "studio-undo" | "studio-redo" | "studio-cancel" | "studio-save" | "studio-select-all"
   | "studio-polyline-finish" | "studio-polyline-close"
-  | "studio-zoom-in" | "studio-zoom-out" | "studio-frame" | "studio-fullscreen" | "studio-view-3d"
+  | "studio-zoom-in" | "studio-zoom-out" | "studio-frame" | "studio-fullscreen" | "studio-view-3d" | "studio-nav-plan" | "studio-section-plane"
   | "studio-snap-vertex" | "studio-snap-grid"
+  | "studio-snap-midpoint" | "studio-snap-center" | "studio-snap-quadrant" | "studio-snap-intersection"
+  | "studio-snap-perpendicular" | "studio-snap-tangent" | "studio-snap-nearest"
+  | "studio-track-ortho" | "studio-track-polar" | "studio-track-polar-step"
   | "studio-import-dxf" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet"
   | "studio-catalog" | "studio-palette";
 
@@ -60,8 +66,28 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "plein-ecran", libelleFR: "Plein écran / Quitter", raccourci: "Ctrl+Shift+F", iconeSymbolique: "studio-fullscreen", groupe: "vue", ecrit: false },
   // F3 est réservé (recherche du navigateur) et Maj+3 dépend de la disposition du clavier : Maj+D (« 3D »).
   { id: "vue-3d", libelleFR: "Vue 3D", raccourci: "Shift+D", iconeSymbolique: "studio-view-3d", groupe: "vue", ecrit: false, bascule: true },
+  // Vue 3D : navigation en plan (vue de dessus, panoramique) ou en orbite (Maj+G) ; coupe horizontale dérivée (Maj+K).
+  { id: "navigation-3d", libelleFR: "Vue en plan (3D)", raccourci: "Shift+G", iconeSymbolique: "studio-nav-plan", groupe: "vue", ecrit: false, bascule: true },
+  { id: "coupe-3d", libelleFR: "Coupe horizontale (3D)", raccourci: "Shift+K", iconeSymbolique: "studio-section-plane", groupe: "vue", ecrit: false, bascule: true },
   { id: "accrochage-sommets", libelleFR: "Accrocher aux sommets", raccourci: "Shift+S", iconeSymbolique: "studio-snap-vertex", groupe: "accrochage", ecrit: false, bascule: true },
   { id: "accrochage-grille", libelleFR: "Accrocher à la grille", raccourci: "F9", iconeSymbolique: "studio-snap-grid", groupe: "accrochage", ecrit: false, bascule: true },
+  // Modes d'accrochage aux objets (moteur `accrochage/`), actifs quand « Accrocher aux sommets » l'est. Raccourcis Fadi
+  // (aucun relevé SketchUp pour ces modes) : Maj+H (« half », milieu), Maj+Q (quadrant), Maj+J (« juste à côté », plus
+  // proche) ; Maj+R, Maj+T, Maj+A et Maj+G appartenant à Rotation, Texte, Cote angulaire et Vue en plan (3D), les autres
+  // modes prennent une lettre seule libre, hors des lettres d'outils SketchUp (Q reste libre) : Y (centre), X (croix :
+  // intersection), N (normale : perpendiculaire), U (tangente).
+  { id: "accrochage-milieu", libelleFR: "Accrocher aux milieux", raccourci: "Shift+H", iconeSymbolique: "studio-snap-midpoint", groupe: "accrochage", ecrit: false, bascule: true },
+  { id: "accrochage-centre", libelleFR: "Accrocher aux centres", raccourci: "Y", iconeSymbolique: "studio-snap-center", groupe: "accrochage", ecrit: false, bascule: true },
+  { id: "accrochage-quadrant", libelleFR: "Accrocher aux quadrants", raccourci: "Shift+Q", iconeSymbolique: "studio-snap-quadrant", groupe: "accrochage", ecrit: false, bascule: true },
+  { id: "accrochage-intersection", libelleFR: "Accrocher aux intersections", raccourci: "X", iconeSymbolique: "studio-snap-intersection", groupe: "accrochage", ecrit: false, bascule: true },
+  { id: "accrochage-perpendiculaire", libelleFR: "Accrocher en perpendiculaire", raccourci: "N", iconeSymbolique: "studio-snap-perpendicular", groupe: "accrochage", ecrit: false, bascule: true },
+  { id: "accrochage-tangente", libelleFR: "Accrocher en tangente", raccourci: "U", iconeSymbolique: "studio-snap-tangent", groupe: "accrochage", ecrit: false, bascule: true },
+  { id: "accrochage-proche", libelleFR: "Accrocher au plus proche", raccourci: "Shift+J", iconeSymbolique: "studio-snap-nearest", groupe: "accrochage", ecrit: false, bascule: true },
+  // Repérage depuis le dernier point : orthogonal (F8, comme les logiciels de DAO ; Maj tenue l'impose le temps du
+  // geste), polaire (F10) et son pas 15° / 30° / 45° / 90° (Maj+Y le fait tourner).
+  { id: "reperage-orthogonal", libelleFR: "Mode orthogonal", raccourci: "F8", iconeSymbolique: "studio-track-ortho", groupe: "reperage", ecrit: false, bascule: true },
+  { id: "reperage-polaire", libelleFR: "Repérage polaire", raccourci: "F10", iconeSymbolique: "studio-track-polar", groupe: "reperage", ecrit: false, bascule: true },
+  { id: "pas-polaire", libelleFR: "Pas polaire suivant", raccourci: "Shift+Y", iconeSymbolique: "studio-track-polar-step", groupe: "reperage", ecrit: false },
   // Import DXF vers le brouillon (aperçu, unité, entités non prises) : Maj+U (U comme « upload »), libre et non réservé.
   { id: "importer-dxf", libelleFR: "Importer DXF", raccourci: "Shift+U", iconeSymbolique: "studio-import-dxf", groupe: "import", ecrit: true },
   { id: "exporter-svg", libelleFR: "Exporter SVG", raccourci: "Shift+V", iconeSymbolique: "studio-export-svg", groupe: "export", ecrit: false, telechargement: "svg" },
@@ -80,9 +106,11 @@ export const BARRES_STUDIO: readonly { id: BarreStudio; libelleFR: string }[] = 
   { id: "modification", libelleFR: "Modification" },
   { id: "calques", libelleFR: "Calques" },
   { id: "volume", libelleFR: "Volume" },
+  { id: "volume-libre", libelleFR: "Volume libre" },
   { id: "edition", libelleFR: "Édition" },
   { id: "vue", libelleFR: "Vue" },
   { id: "accrochage", libelleFR: "Accrochage" },
+  { id: "reperage", libelleFR: "Repérage" },
   { id: "import", libelleFR: "Importer" },
   { id: "export", libelleFR: "Exporter" },
   { id: "presentation", libelleFR: "Présentation" },
@@ -104,9 +132,15 @@ export const RACCOURCIS_RESERVES: readonly string[] = Object.freeze([
 export const OUTILS_MODES: ReadonlySet<StudioToolId> = new Set<StudioToolId>([
   "studio.dessin.selection", "studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne",
   "studio.dessin.cote", "studio.dessin.deplacer", "studio.dessin.modifier", "studio.dessin.decaler",
+  // Volume libre : modes de la vue 3D (poser une boîte, un prisme sur profil, déplacer un solide).
+  "studio.solide.boite", "studio.solide.prisme", "studio.solide.deplacer",
+  "studio.dessin.copier", "studio.dessin.rotation", "studio.dessin.symetrie", "studio.dessin.echelle",
+  "studio.dessin.cote-angulaire", "studio.dessin.texte",
 ]);
+/** Outils du volume libre : ils agissent dans la vue 3D, qu'ils ouvrent. */
+export const OUTILS_VOLUME_LIBRE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.solide.boite", "studio.solide.prisme", "studio.solide.deplacer", "studio.solide.supprimer"]);
 /** Outils qui posent des points sur la planche. */
-export const OUTILS_TRACE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote"]);
+export const OUTILS_TRACE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte"]);
 
 export const outilsDeBarre = (barre: BarreStudio): StudioToolEntry[] => STUDIO_TOOLS.filter((t) => t.groupe === barre);
 export const commandesDeBarre = (barre: BarreStudio): CommandeEditeur[] => COMMANDES_EDITEUR.filter((c) => c.groupe === barre);

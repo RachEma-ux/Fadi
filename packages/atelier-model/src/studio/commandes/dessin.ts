@@ -2,8 +2,13 @@ import { STUDIO_TYPES_OBJETS, validerForme } from "../objets/index.js";
 import { editable, enteredDimension, freeId, type Gestionnaire } from "../noyau/etat.js";
 import type { StudioShape } from "../noyau/types.js";
 import { fail } from "../noyau/validation.js";
+import { validerTexte } from "../objets/texte.js";
+import { coteAngulaireSaisie } from "./annotations.js";
 
-/** Commandes de création (famille `dessin`) : une par type de forme (table `STUDIO_TYPES_OBJETS`), et la cote. */
+/**
+ * Commandes de création (famille `dessin`) : une par type de forme (table `STUDIO_TYPES_OBJETS`), la cote, puis les
+ * annotations (cote angulaire, texte).
+ */
 
 function createShape(type: StudioShape["type"]): Gestionnaire {
   return (state, params, path) => {
@@ -26,4 +31,21 @@ export const creerCote: Gestionnaire = (state, params, path) => {
   freeId(state, d.id, path);
   state.dimensions.push(d);
   state.ids.add(d.id);
+};
+
+/** Cote angulaire : deux rayons libres depuis un sommet, ou liée à deux segments droits (ligne, polyligne). */
+export const creerCoteAngulaire: Gestionnaire = (state, params, path) => {
+  const d = coteAngulaireSaisie(state, params, path);
+  freeId(state, d.id, path);
+  state.annotations.push(d);
+  state.ids.add(d.id);
+};
+
+/** Texte posé sur un calque (contenu : donnée du projet, jamais traduite). */
+export const creerTexte: Gestionnaire = (state, params, path) => {
+  const t = validerTexte(params, `${path}.params`);
+  editable(state, t, path);
+  freeId(state, t.id, path);
+  state.annotations.push(t);
+  state.ids.add(t.id);
 };

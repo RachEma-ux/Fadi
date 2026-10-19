@@ -32,13 +32,26 @@ export const placerSurCalque: Gestionnaire = (state, params, path) => {
   };
   const objectIndex = new Map(state.objects.map((o, i) => [o.id, i]));
   const dimensionIndex = new Map(state.dimensions.map((o, i) => [o.id, i]));
+  const annotationIndex = new Map(state.annotations.map((o, i) => [o.id, i]));
+  const solideIndex = new Map(state.solides.map((o, i) => [o.id, i]));
   for (const id of ids) {
     const index = objectIndex.get(id) ?? -1;
     const dIndex = dimensionIndex.get(id) ?? -1;
-    const o = state.objects[index] ?? state.dimensions[dIndex];
+    const aIndex = annotationIndex.get(id) ?? -1;
+    const sIndex = solideIndex.get(id);
+    // Solide libre : même règle (calques source et cible déverrouillés).
+    if (sIndex !== undefined) {
+      const s = state.solides[sIndex]!;
+      editable(state, s, path);
+      const { layerId: _avant, ...reste } = s;
+      state.solides[sIndex] = target === undefined ? reste : { ...reste, layerId: target };
+      continue;
+    }
+    const o = state.objects[index] ?? state.dimensions[dIndex] ?? state.annotations[aIndex];
     if (!o) fail(path, `objet introuvable : ${id}`);
     editable(state, o, path);
     if (o.type === "dimension") state.dimensions[dIndex] = move(o);
+    else if (o.type === "angular-dimension" || o.type === "text") state.annotations[aIndex] = move(o);
     else state.objects[index] = move(o);
   }
 };

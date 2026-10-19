@@ -28,7 +28,7 @@ describe("Courbes : outils, raccourcis et barres", () => {
     expect(cibleRaccourci("P")).toEqual({ type: "outil", toolId: "studio.dessin.polyligne" });
     expect(cibleRaccourci("O")).toEqual({ type: "outil", toolId: "studio.dessin.decaler" });
     expect(cibleRaccourci("Shift+O")).toEqual({ type: "commande", id: "outils" });
-    expect(outilsDeBarre("dessin").map((t) => t.toolId)).toEqual(["studio.dessin.selection", "studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote"]);
+    expect(outilsDeBarre("dessin").map((t) => t.toolId)).toEqual(["studio.dessin.selection", "studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte"]);
     expect(outilsDeBarre("modification").map((t) => t.toolId)).toContain("studio.dessin.decaler");
     for (const t of ["studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne"] as const) expect(OUTILS_TRACE.has(t) && OUTILS_MODES.has(t), t).toBe(true);
     expect(OUTILS_MODES.has("studio.dessin.decaler") && !OUTILS_TRACE.has("studio.dessin.decaler")).toBe(true);

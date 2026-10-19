@@ -1,4 +1,6 @@
-import { STUDIO_DEFAULT_LAYER_ID, type StudioDimension, type StudioDocument, type StudioLayer, type StudioPoint, type StudioShape } from "./document-2d.js";
+import {
+  STUDIO_DEFAULT_LAYER_ID, type StudioAngularLink, type StudioAnnotation, type StudioDimension, type StudioDocument, type StudioLayer, type StudioPoint, type StudioShape,
+} from "./document-2d.js";
 
 /**
  * Comparaison de deux documents Studio (`studio-document/1`), par identifiant : ajouté, supprimé, modifié (avec les
@@ -45,13 +47,26 @@ export interface StudioDifferenceCote {
   proprietes: StudioProprieteCote[];
   deplacement: StudioDeplacement | null;
 }
+/** Propriétés comparées d'une annotation (cote angulaire, texte) : géométrie, calque, liens, contenu et mise en forme. */
+export type StudioProprieteAnnotation = "geometrie" | "calque" | "liens" | "contenu";
+export interface StudioDifferenceAnnotation {
+  id: string;
+  etat: StudioEtatDifference;
+  type: StudioAnnotation["type"];
+  avant: StudioAnnotation | null;
+  apres: StudioAnnotation | null;
+  proprietes: StudioProprieteAnnotation[];
+  deplacement: StudioDeplacement | null;
+}
 export interface StudioCompteDifferences { ajoute: number; supprime: number; modifie: number; identique: number; deplace: number }
 export interface StudioDifferenceDocuments {
   objets: StudioDifferenceObjet[];
   calques: StudioDifferenceCalque[];
   cotes: StudioDifferenceCote[];
-  resume: { objets: StudioCompteDifferences; calques: StudioCompteDifferences; cotes: StudioCompteDifferences };
-  /** Vrai si aucun ajout, suppression ni modification, sur aucune des trois familles. */
+  /** Annotations : présent seulement quand l'un des deux documents en contient (extension additive). */
+  annotations?: StudioDifferenceAnnotation[];
+  resume: { objets: StudioCompteDifferences; calques: StudioCompteDifferences; cotes: StudioCompteDifferences; annotations?: StudioCompteDifferences };
+  /** Vrai si aucun ajout, suppression ni modification, sur aucune des familles. */
   identiques: boolean;
 }
 
@@ -178,10 +193,45 @@ function compareDimensions(from: StudioDocument, to: StudioDocument): StudioDiff
   });
 }
 
+/** Points de la géométrie d'une annotation, dans un ordre fixe par type. */
+const annotationPoints = (o: StudioAnnotation): StudioPoint[] => (o.type === "text" ? [o.position] : [o.vertex, o.first, o.second]);
+const sameAngularLink = (a: StudioAngularLink | null, b: StudioAngularLink | null): boolean =>
+  a === null || b === null ? a === b : a.objectId === b.objectId && a.segment === b.segment;
+
+function compareAnnotations(from: StudioDocument, to: StudioDocument): StudioDifferenceAnnotation[] {
+  const a = byId(from.annotations), b = byId(to.annotations);
+  const out: StudioDifferenceAnnotation[] = [];
+  for (const id of sortedIds(a, b)) {
+    const avant = a.get(id) ?? null, apres = b.get(id) ?? null;
+    if (avant && (!apres || apres.type !== avant.type)) out.push({ id, etat: "supprime", type: avant.type, avant: structuredClone(avant), apres: null, proprietes: [], deplacement: null });
+    if (apres && (!avant || apres.type !== avant.type)) out.push({ id, etat: "ajoute", type: apres.type, avant: null, apres: structuredClone(apres), proprietes: [], deplacement: null });
+    if (!avant || !apres || avant.type !== apres.type) continue;
+    const proprietes: StudioProprieteAnnotation[] = [];
+    const pa = annotationPoints(avant), pb = annotationPoints(apres);
+    // Grandeurs non ponctuelles : rayon de l'arc d'une cote angulaire ; hauteur et rotation d'un texte.
+    const forme = avant.type === "text" && apres.type === "text" ? avant.height === apres.height && avant.rotation === apres.rotation
+      : avant.type === "angular-dimension" && apres.type === "angular-dimension" && avant.radius === apres.radius;
+    if (!forme || !pa.every((p, i) => samePoint(p, pb[i]!))) proprietes.push("geometrie");
+    if (layerOf(avant) !== layerOf(apres)) proprietes.push("calque");
+    if (avant.type === "angular-dimension" && apres.type === "angular-dimension"
+      && (!sameAngularLink(avant.links.first, apres.links.first) || !sameAngularLink(avant.links.second, apres.links.second) || avant.toResolve !== apres.toResolve)) proprietes.push("liens");
+    if (avant.type === "text" && apres.type === "text" && (avant.content !== apres.content || avant.justification !== apres.justification)) proprietes.push("contenu");
+    const deplacement = proprietes.length === 1 && proprietes[0] === "geometrie" && forme ? translation(pa, pb) : null;
+    out.push({ id, etat: proprietes.length ? "modifie" : "identique", type: apres.type, avant: structuredClone(avant), apres: structuredClone(apres), proprietes, deplacement });
+  }
+  return out;
+}
+
 /** Différence de `a` (avant) vers `b` (après). Les documents sont supposés valides (`validateStudioDocument`). */
 export function comparerDocumentsStudio(a: StudioDocument, b: StudioDocument): StudioDifferenceDocuments {
   const objets = compareObjects(a, b), calques = compareLayers(a, b), cotes = compareDimensions(a, b);
   const resume = { objets: count(objets), calques: count(calques), cotes: count(cotes) };
-  const identiques = [resume.objets, resume.calques, resume.cotes].every((c) => c.ajoute + c.supprime + c.modifie === 0);
-  return { objets, calques, cotes, resume, identiques };
+  if (!a.annotations?.length && !b.annotations?.length) {
+    const identiques = [resume.objets, resume.calques, resume.cotes].every((c) => c.ajoute + c.supprime + c.modifie === 0);
+    return { objets, calques, cotes, resume, identiques };
+  }
+  const annotations = compareAnnotations(a, b);
+  const resumeComplet = { ...resume, annotations: count(annotations) };
+  const identiques = Object.values(resumeComplet).every((c) => c.ajoute + c.supprime + c.modifie === 0);
+  return { objets, calques, cotes, annotations, resume: resumeComplet, identiques };
 }

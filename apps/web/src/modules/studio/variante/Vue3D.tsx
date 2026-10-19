@@ -1,6 +1,6 @@
 /** Vue 3D (three.js) chargée à la demande : le code 3D n'alourdit pas l'éditeur 2D. */
 import { Component, lazy, Suspense, type ReactNode } from "react";
-import type { StudioDocument } from "@parcours/atelier-model";
+import type { Vue3DStudioProps } from "../vue3d/Vue3DStudio";
 
 const chargerVue3D = () => import("../vue3d/Vue3DStudio").then((m) => ({ default: m.Vue3DStudio }));
 let Vue3DStudio = lazy(chargerVue3D);
@@ -14,6 +14,10 @@ class LimiteVue3D extends Component<{ children: ReactNode }, { erreur: boolean }
   render() { return this.state.erreur ? <p role="alert">Vue 3D indisponible. Le dessin et ses modifications non enregistrées sont conservés ; refermez puis rouvrez la vue 3D pour réessayer.</p> : this.props.children; }
 }
 
-export function Vue3D({ doc }: { doc: StudioDocument }) {
-  return <LimiteVue3D><Suspense fallback={<p role="status">Chargement de la vue 3D…</p>}><Vue3DStudio doc={doc} /></Suspense></LimiteVue3D>;
+/**
+ * Vue 3D du brouillon : navigation orbite ou plan, volume libre (outils `studio.solide.*`, commandes passées à
+ * `surCommandes`) et coupe horizontale dérivée. Sans `surCommandes`, la vue reste une lecture.
+ */
+export function Vue3D(props: Vue3DStudioProps) {
+  return <LimiteVue3D><Suspense fallback={<p role="status">Chargement de la vue 3D…</p>}><Vue3DStudio {...props} /></Suspense></LimiteVue3D>;
 }

@@ -51,6 +51,16 @@ export type IconName =
   | "studio-zoom-out"
   | "studio-snap-vertex"
   | "studio-snap-grid"
+  | "studio-snap-midpoint"
+  | "studio-snap-center"
+  | "studio-snap-quadrant"
+  | "studio-snap-intersection"
+  | "studio-snap-perpendicular"
+  | "studio-snap-tangent"
+  | "studio-snap-nearest"
+  | "studio-track-ortho"
+  | "studio-track-polar"
+  | "studio-track-polar-step"
   | "studio-import-dxf"
   | "studio-export-svg"
   | "studio-export-dxf"
@@ -69,7 +79,19 @@ export type IconName =
   | "studio-polyline"
   | "studio-offset"
   | "studio-polyline-finish"
-  | "studio-polyline-close";
+  | "studio-polyline-close"
+  | "studio-solid-box"
+  | "studio-solid-prism"
+  | "studio-solid-move"
+  | "studio-solid-delete"
+  | "studio-nav-plan"
+  | "studio-section-plane"
+  | "studio-copy"
+  | "studio-rotate"
+  | "studio-mirror"
+  | "studio-scale"
+  | "studio-angular-dimension"
+  | "studio-text";
 
 const PATHS: Record<IconName, string> = {
   search: "M10.5 3.5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 5 5",
@@ -120,6 +142,19 @@ const PATHS: Record<IconName, string> = {
   "studio-zoom-out": "M10.5 3.5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 5 5M7.5 10.5h6",
   "studio-snap-vertex": "M4 20 12 6l8 14M9 3h6v6H9ZM12 9v2",
   "studio-snap-grid": "M3 3h18v18H3ZM9 3v18M15 3v18M3 9h18M3 15h18M13 13h4v4h-4Z",
+  // Modes d'accrochage : le repère affiché sur la planche (triangle du milieu, rond du centre, losange du quadrant,
+  // croix de l'intersection, équerre de la perpendiculaire, cercle et droite tangente, sablier du plus proche).
+  "studio-snap-midpoint": "M3 19h18M12 9l4 7H8ZM3 17v4M21 17v4",
+  "studio-snap-center": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM10 12h4M12 10v4",
+  "studio-snap-quadrant": "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16ZM20 9l3 3-3 3-3-3Z",
+  "studio-snap-intersection": "M3 3l18 18M21 3 3 21M9 9h6v6H9Z",
+  "studio-snap-perpendicular": "M3 20h18M12 20V4M12 15h5v5",
+  "studio-snap-tangent": "M10 8a6 6 0 1 0 0 12 6 6 0 0 0 0-12ZM2 8h20M10 6v4",
+  "studio-snap-nearest": "M4 20 20 6M9 9h6l-6 6h6Z",
+  // Repérage : équerre orthogonale ; rayons polaires depuis un point ; pas polaire (rayons et flèche de rotation).
+  "studio-track-ortho": "M5 19h15M5 19V4M5 19l-2-2M9 15h2v2",
+  "studio-track-polar": "M4 20h16M4 20 18 6M4 20l8-14M4 20A9 9 0 0 1 13 11",
+  "studio-track-polar-step": "M4 20h16M4 20 16 8M8 20a4 4 0 0 0-1.2-2.8M14 20a10 10 0 0 0-3-7M18 3l2 3-3 1",
   // Fichier entré par la gauche (flèche vers le fichier) : import DXF dans le brouillon.
   "studio-import-dxf": "M9 3h7l4 4v14H9v-5M16 3v4h4M9 3v5M2 12h9M8 9l3 3-3 3M13 10h4M14 13h3M13 16h4",
   "studio-export-svg": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M8 11c2-3 6 3 8 0M17 15v6M14 18l3 3 3-3",
@@ -144,6 +179,23 @@ const PATHS: Record<IconName, string> = {
   // Fin de polyligne : tracé ouvert et marque de validation ; fermeture : tracé refermé sur son premier sommet.
   "studio-polyline-finish": "M3 17 8 9l5 6M14 15l3 3 5-6",
   "studio-polyline-close": "M4 18 8 6l8 3 4 9ZM2 16h4v4H2Z",
+  // Volume libre (vue 3D) : boîte posée sur la grille ; prisme d'un profil en L ; solide et flèche de translation ;
+  // solide barré ; vue de dessus (œil au-dessus d'un plan) ; plan de coupe horizontal traversant un volume.
+  "studio-solid-box": "M4 9l6-4 10 2v9l-6 4-10-2ZM4 9l10 2 6-4M14 11v9M2 22h20",
+  "studio-solid-prism": "M4 8h7v4h5v8H4ZM4 8l3-3h7l-3 3M11 12l3-3h5l-3 3M16 20l3-3V9",
+  "studio-solid-move": "M3 10l5-3 6 2v7l-5 3-6-2ZM3 10l6 2 5-3M9 12v7M16 6h6M19 3l3 3-3 3",
+  "studio-solid-delete": "M3 9l6-3 8 2v8l-6 3-8-2ZM3 9l8 2 6-3M11 11v8M16 16l6 6M22 16l-6 6",
+  "studio-nav-plan": "M3 17l9 4 9-4-9-4ZM12 3v7M9 7l3 3 3-3M7 3h10",
+  "studio-section-plane": "M8 3h8v18H8ZM2 13l4-3h16l-4 3ZM2 13h16",
+  // Transformations : deux carrés décalés (copier), flèche circulaire (rotation), axe et deux triangles opposés
+  // (symétrie), petit carré et flèche diagonale vers un coin agrandi (échelle).
+  "studio-copy": "M9 9h11v11H9ZM5 15H4V4h11v1",
+  "studio-rotate": "M20 12a8 8 0 1 1-2.34-5.66M20 3v4h-4",
+  "studio-mirror": "M12 2v3M12 9v6M12 19v3M9 6 3 18h6ZM15 6l6 12h-6Z",
+  "studio-scale": "M3 21h7v-7H3ZM10 14l10-10M14 4h6v6",
+  // Annotations : cote angulaire (deux rayons depuis un sommet, arc de cote fléché) ; texte (lettre T et ligne de base).
+  "studio-angular-dimension": "M4 20h16M4 20 15 6M11 20a7 7 0 0 0-2.3-5.2M7.5 13.5l1.2 1.3-1.6.6",
+  "studio-text": "M5 5h14M12 5v13M9 18h6M4 21h16",
 };
 
 export function Icon({ name, size = 20, className }: { name: IconName; size?: number; className?: string }) {

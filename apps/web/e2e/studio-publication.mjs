@@ -3,6 +3,8 @@
  * travail → soumis → approuvé / refusé → diffusé → retiré, approbation liée à la révision et à l'empreinte examinées,
  * approbation périmée refusée (409 avec les deux révisions), paquet figé (SVG, DXF, IFC, PDF) vérifié par empreintes,
  * journal append-only, droits (éditeur, lecteur, compte étranger, anonyme). Comptes et projet synthétiques.
+ * Module Documents : groupe « Studio — paquets diffusés » (API, et interface quand l'API sert l'application web),
+ * liens de téléchargement vérifiés par empreinte, paquet retiré listé et marqué.
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/studio-publication.mjs
  */
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
@@ -15,7 +17,7 @@ function check(label, ok, detail = '') {
 }
 function client() {
   let cookie = '';
-  return async (method, path, body, raw = false) => {
+  const call = async (method, path, body, raw = false) => {
     const res = await fetch(`${BASE}${path}`, {
       method, headers: { 'content-type': 'application/json', origin: BASE, ...(cookie ? { cookie } : {}) },
       body: body === undefined ? undefined : JSON.stringify(body),
@@ -28,6 +30,8 @@ function client() {
     try { json = text ? JSON.parse(text) : null; } catch { json = text; }
     return { status: res.status, body: json, headers: res.headers };
   };
+  call.cookie = () => cookie;
+  return call;
 }
 const sha = (b) => createHash('sha256').update(b).digest('hex');
 const credentials = () => ({ email: `pub-${randomUUID().replaceAll('-', '')}@example.test`, password: randomBytes(24).toString('hex') });
@@ -124,6 +128,19 @@ const listed = await reader('GET', `${root}/publications`);
 check('liste des paquets du projet (module Documents) : paquet diffusé présent', listed.status === 200 && listed.body.packages.some((p) => p.id === id3 && p.status === 'diffuse' && p.studyName === 'Étude publiée'), short(listed.body));
 check('liste des paquets : les publications non diffusées n\'y sont pas', !listed.body.packages.some((p) => p.id === id1 || p.id === id2));
 
+// --- Module Documents : groupe « Studio — paquets diffusés » (lecture seule) ---------------------------------------
+const docs = await reader('GET', `/projects/${projectId}/documents`);
+const docPkg = (docs.body?.studioPackages ?? []).find((p) => p.publicationId === id3);
+check('Documents (lecteur) : paquet diffusé listé (étude, variante, révision courte, statut, date, empreintes)', docs.status === 200 && docPkg?.group === 'studio' && docPkg.status === 'diffuse' && docPkg.studyName === 'Étude publiée' && docPkg.variantName === d3.body.variantName && docPkg.revisionShort === d3.body.revisionId.slice(-8) && docPkg.packageHash === d3.body.diffusion.packageHash && docPkg.documentHash === d3.body.documentHash && !Number.isNaN(Date.parse(docPkg.diffusedAt)), short(docPkg ?? docs.body));
+check('Documents : paquets hors du catalogue productible (aucune action de production)', !(docs.body?.documents ?? []).some((d) => String(d.kind).startsWith('studio:')) && !(docs.body?.studioPackages ?? []).some((p) => p.publicationId === id1 || p.publicationId === id2));
+check('Documents : quatre liens SVG, DXF, IFC, PDF', JSON.stringify((docPkg?.files ?? []).map((f) => f.format)) === JSON.stringify(['svg', 'dxf', 'ifc', 'pdf']));
+for (const f of docPkg?.files ?? []) {
+  const file = await reader('GET', f.href, undefined, true);
+  check(`Documents : lien ${f.format} téléchargeable, empreinte conforme`, file.status === 200 && sha(file.bytes) === f.sha256 && /attachment/.test(file.headers.get('content-disposition') ?? ''), `${file.status}`);
+}
+check('Documents : compte étranger refusé (404)', (await foreign('GET', `/projects/${projectId}/documents`)).status === 404);
+check('Documents : lien de fichier refusé au compte étranger (404)', docPkg ? (await foreign('GET', docPkg.files[0].href, undefined, true)).status === 404 : false);
+
 // --- Remplacement, retrait journalisé, actualité --------------------------------------------------------------------
 const p4 = await editor('POST', `${variantPath}/publications`, { title: 'Dossier D' });
 const id4 = p4.body.id;
@@ -146,6 +163,30 @@ const journal1 = (await owner('GET', `${pubs}/${id1}`)).body?.events ?? [];
 check('journal du refus : commentaire conservé', journal1.at(-1)?.action === 'refuser' && journal1.at(-1)?.comment === 'Cotes manquantes');
 const listedAfter = await owner('GET', `${root}/publications`);
 check('liste du projet : paquet retiré conservé et marqué', listedAfter.body?.packages?.some((p) => p.id === id3 && p.status === 'retire'));
+const docsAfter = (await reader('GET', `/projects/${projectId}/documents`)).body?.studioPackages ?? [];
+const docRetire = docsAfter.find((p) => p.publicationId === id3);
+check('Documents : paquet retiré toujours listé, marqué retiré (date du retrait), jamais masqué', docRetire?.status === 'retire' && !Number.isNaN(Date.parse(docRetire.withdrawnAt)) && docRetire.replacedBy === id4 && docsAfter.some((p) => p.publicationId === id4 && p.status === 'diffuse'), short(docsAfter));
+const retireFile = docRetire ? await reader('GET', docRetire.files[3].href, undefined, true) : null;
+check('Documents : lien du paquet retiré toujours téléchargeable', retireFile?.status === 200 && sha(retireFile.bytes) === docRetire.files[3].sha256);
+// Interface : le module Documents rend le groupe Studio (si l'API sert l'application web et que Playwright est là).
+const shell = await fetch(`${BASE}/projets/${projectId}`).then((r) => r.text()).catch(() => '');
+let chromium = null;
+try { ({ chromium } = await import('playwright')); } catch { /* Playwright absent : contrôle d'interface déclaré non exécuté */ }
+if (chromium && /<div id="root"/.test(shell)) {
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? undefined });
+  const ctx = await browser.newContext();
+  await ctx.addCookies(reader.cookie().split('; ').filter(Boolean).map((c) => ({ name: c.slice(0, c.indexOf('=')), value: c.slice(c.indexOf('=') + 1), url: BASE })));
+  const page = await ctx.newPage();
+  await page.goto(`${BASE}/projets/${projectId}?module=documents`);
+  const row = page.locator(`tr[data-studio-package="${id3}"]`);
+  const seen = await row.waitFor({ timeout: 30000 }).then(() => true, () => false);
+  const links = seen ? await row.locator('a[data-studio-file]').evaluateAll((as) => as.map((a) => a.getAttribute('href'))) : [];
+  check('Documents (interface) : groupe « Studio — paquets diffusés », paquet retiré marqué, quatre liens', seen && (await row.getAttribute('data-status')) === 'retire' && (await page.locator('#documents-studio').textContent())?.trim() === 'Studio — paquets diffusés' && JSON.stringify(links) === JSON.stringify(docRetire.files.map((f) => f.href)) && (await page.locator(`tr[data-studio-package="${id4}"][data-status="diffuse"]`).count()) === 1, JSON.stringify({ seen, links }));
+  const dl = seen ? await Promise.all([page.waitForEvent('download'), row.locator('a[data-studio-file="pdf"]').click()]).then(([d]) => d) : null;
+  const dlPath = dl ? await dl.path() : null;
+  check('Documents (interface) : clic sur PDF → fichier figé téléchargé', !!dlPath && sha((await import('node:fs')).readFileSync(dlPath)) === docRetire.files[3].sha256, dl?.suggestedFilename() ?? '');
+  await browser.close();
+} else console.log(`– Documents (interface) : non exécuté (${chromium ? "l'API ne sert pas l'application web" : 'Playwright absent'})`);
 check('actualité : publication diffusée à jour tant que la tête n\'a pas bougé', (await owner('GET', `${pubs}/${id4}`)).body?.freshness === 'a-jour');
 await draw('l3', 8);
 check('actualité : périmée après une nouvelle révision', (await owner('GET', `${pubs}/${id4}`)).body?.freshness === 'perimee');

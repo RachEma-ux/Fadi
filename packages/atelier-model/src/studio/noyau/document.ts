@@ -1,35 +1,44 @@
 import { controlerLiens, validerCote, type StudioDimension } from "../objets/cote.js";
 import { validerForme } from "../objets/index.js";
+import { validerSolide, type StudioSolid } from "../objets-3d/solides.js";
+import { controlerLiensAnnotation, validerAnnotation } from "../objets/annotation.js";
+import { studioAngularValue } from "../objets/cote-angulaire.js";
 import { validerCalque } from "./calques.js";
 import { STUDIO_LIMITS } from "./limites.js";
-import type { StudioDocument, StudioLayer, StudioShape } from "./types.js";
+import type { StudioAnnotation, StudioDocument, StudioLayer, StudioShape } from "./types.js";
 import { array, fail, identifier, record } from "./validation.js";
 
 /** Document Studio : forme canonique, validation complète, création, lectures (sélection, mesure d'une cote). */
 
-/** Forme canonique : `layers` et `dimensions` vides sont omis. */
-export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[]): StudioDocument {
+/** Forme canonique : `layers`, `dimensions`, `solides` et `annotations` vides sont omis. */
+export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[], solides: StudioSolid[] = [], annotations: StudioAnnotation[] = []): StudioDocument {
   return {
     id, schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects,
     ...(layers.length ? { layers } : {}),
     ...(dimensions.length ? { dimensions } : {}),
+    ...(solides.length ? { solides } : {}),
+    ...(annotations.length ? { annotations } : {}),
   };
 }
 
-/** Returns a private, canonical copy (empty `layers` / `dimensions` omitted) or throws `StudioValidationError`. */
+/** Returns a private, canonical copy (empty `layers` / `dimensions` / `annotations` omitted) or throws `StudioValidationError`. */
 export function validateStudioDocument(value: unknown): StudioDocument {
-  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions"]);
+  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions", "solides", "annotations"]);
   if (d.schemaVersion !== "studio-document/1") fail("studioDocument.schemaVersion", "version non prise en charge");
   if (d.units !== "m") fail("studioDocument.units", "unité m attendue");
   if (d.frame !== "local-2d") fail("studioDocument.frame", "repère local-2d attendu");
   const rawObjects = array(d.objects, "studioDocument.objects");
   const rawLayers = Object.hasOwn(d, "layers") ? array(d.layers, "studioDocument.layers") : [];
   const rawDimensions = Object.hasOwn(d, "dimensions") ? array(d.dimensions, "studioDocument.dimensions") : [];
+  const rawSolides = Object.hasOwn(d, "solides") ? array(d.solides, "studioDocument.solides") : [];
   if (rawLayers.length > STUDIO_LIMITS.layers) fail("studioDocument.layers", `${STUDIO_LIMITS.layers} calques au plus`);
-  if (rawObjects.length + rawDimensions.length > STUDIO_LIMITS.objects) fail("studioDocument.objects", `${STUDIO_LIMITS.objects} objets au plus`);
+  const rawAnnotations = Object.hasOwn(d, "annotations") ? array(d.annotations, "studioDocument.annotations") : [];
+  if (rawObjects.length + rawDimensions.length + rawAnnotations.length > STUDIO_LIMITS.objects) fail("studioDocument.objects", `${STUDIO_LIMITS.objects} objets au plus`);
+  if (rawObjects.length + rawDimensions.length + rawAnnotations.length + rawSolides.length > STUDIO_LIMITS.objects) fail("studioDocument.solides", `${STUDIO_LIMITS.objects} objets au plus, solides compris`);
   const layers = rawLayers.map((l, i) => validerCalque(l, `studioDocument.layers[${i}]`));
   const objects = rawObjects.map((o, i) => validerForme(o, `studioDocument.objects[${i}]`));
   const dimensions = rawDimensions.map((o, i) => validerCote(o, `studioDocument.dimensions[${i}]`));
+  const solides = rawSolides.map((o, i) => validerSolide(o, `studioDocument.solides[${i}]`));
   const layerIds = new Set<string>();
   for (const l of layers) {
     if (layerIds.has(l.id)) fail("studioDocument.layers", "identifiant de calque dupliqué");
@@ -49,7 +58,37 @@ export function validateStudioDocument(value: unknown): StudioDocument {
   for (const o of [...objects, ...dimensions]) {
     if (o.layerId !== undefined && !layerIds.has(o.layerId)) fail(`studioDocument.${o.type === "dimension" ? "dimensions" : "objects"}`, "calque inconnu");
   }
-  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions);
+  for (const s of solides) {
+    if (shapes.has(s.id) || dimensionIds.has(s.id)) fail("studioDocument.solides", "identifiant dupliqué");
+    dimensionIds.add(s.id);
+    if (s.layerId !== undefined && !layerIds.has(s.layerId)) fail("studioDocument.solides", "calque inconnu");
+  }
+  const annotations = rawAnnotations.map((o, i) => validerAnnotation(o, `studioDocument.annotations[${i}]`));
+  const annotationIds = new Set<string>();
+  annotations.forEach((o, i) => {
+    if (shapes.has(o.id) || dimensionIds.has(o.id) || annotationIds.has(o.id)) fail("studioDocument.annotations", "identifiant dupliqué");
+    annotationIds.add(o.id);
+    controlerLiensAnnotation(o, shapes, `studioDocument.annotations[${i}]`);
+    if (o.layerId !== undefined && !layerIds.has(o.layerId)) fail("studioDocument.annotations", "calque inconnu");
+  });
+  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions, solides, annotations);
+}
+
+/** Valeur mesurée d'une cote angulaire (degrés), dérivée ; « non évaluée » (null) tant qu'elle est à résoudre. */
+export interface StudioAngularMeasure {
+  id: string;
+  status: "resolved" | "to-resolve";
+  value: number | null;
+  unit: "deg";
+  frame: "local-2d";
+}
+export function measureStudioAngularDimension(document: StudioDocument, id: string): StudioAngularMeasure | null {
+  const d = validateStudioDocument(document);
+  identifier(id, "measure.id");
+  const found = d.annotations?.find((o) => o.id === id);
+  if (!found || found.type !== "angular-dimension") return null;
+  const value = studioAngularValue(found);
+  return { id, status: value === null ? "to-resolve" : "resolved", value, unit: "deg", frame: "local-2d" };
 }
 
 export function newStudioDocument(id: string): StudioDocument {

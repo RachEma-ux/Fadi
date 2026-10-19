@@ -10,7 +10,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { api, type DocumentDescriptor, type DocumentsView } from "../../lib/api";
+import { api, type DocumentDescriptor, type DocumentsView, type StudioPackageDocument } from "../../lib/api";
 import { LOCALE } from "../../lib/i18n";
 
 const GROUPS: { id: DocumentDescriptor["group"]; title: string; note: string }[] = [
@@ -71,6 +71,90 @@ function DocumentRow({ projectId, d, onProduced }: { projectId: string; d: Docum
         )}
       </td>
     </tr>
+  );
+}
+
+const courte = (hash: string) => hash.slice(0, 12);
+
+/**
+ * Groupe « Studio — paquets diffusés » : paquets figés des publications Studio, en lecture seule (ils sont produits par
+ * le flux de publication, jamais ici). Un paquet retiré reste listé et téléchargeable, marqué « Retiré ».
+ */
+function StudioPackages({ packages }: { packages: StudioPackageDocument[] }) {
+  return (
+    <section className="biz-card" aria-labelledby="documents-studio" data-studio-packages={packages.length}>
+      <h2 id="documents-studio">Studio — paquets diffusés</h2>
+      <p className="biz-sub">
+        Paquets figés des publications Studio (SVG, DXF, IFC et feuille PDF), produits à la diffusion d'une révision approuvée et vérifiés par leurs empreintes SHA-256. Lecture seule : un paquet retiré reste
+        consultable, il n'est jamais supprimé.
+      </p>
+      <div className="table-scroll" tabIndex={0}>
+        <table className="programme-table studio-packages-table">
+          <thead>
+            <tr>
+              <th>Paquet</th>
+              <th>Statut</th>
+              <th>Diffusion</th>
+              <th>Empreintes</th>
+              <th>Fichiers</th>
+            </tr>
+          </thead>
+          <tbody>
+            {packages.map((p) => (
+              <tr key={p.kind} data-studio-package={p.publicationId} data-status={p.status} data-package-hash={p.packageHash}>
+                <td>
+                  <b translate="no">{p.title}</b>
+                  <br />
+                  <small>
+                    Étude <span translate="no">{p.studyName}</span> · variante <span translate="no">{p.variantName}</span> · révision <code translate="no">{p.revisionShort}</code>
+                  </small>
+                </td>
+                <td>
+                  {p.status === "retire" ? <span className="h7-chip warn">Retiré</span> : <span className="h7-chip ok">Diffusé</span>}
+                  <br />
+                  <small>{p.freshness === "a-jour" ? "Révision encore en tête de la variante" : "La variante a changé depuis"}</small>
+                  {p.replacedBy && (
+                    <>
+                      <br />
+                      <small>Remplacé par une diffusion plus récente</small>
+                    </>
+                  )}
+                </td>
+                <td>
+                  {p.diffusedAt ? new Date(p.diffusedAt).toLocaleString(LOCALE) : "—"}
+                  {p.diffusedBy && (
+                    <>
+                      <br />
+                      <small translate="no">{p.diffusedBy}</small>
+                    </>
+                  )}
+                  {p.withdrawnAt && (
+                    <>
+                      <br />
+                      <small>Retiré le</small> <small>{new Date(p.withdrawnAt).toLocaleString(LOCALE)}</small>
+                    </>
+                  )}
+                </td>
+                <td>
+                  <small>Document</small> <code translate="no" title={p.documentHash}>{courte(p.documentHash)}</code>
+                  <br />
+                  <small>Paquet</small> <code translate="no" title={p.packageHash}>{courte(p.packageHash)}</code>
+                </td>
+                <td>
+                  {p.files.map((f) => (
+                    <span key={f.format} className="studio-package-file">
+                      <a className="button-secondary" href={f.href} download={f.fileName} data-studio-file={f.format} title={`${f.fileName} · SHA-256 ${f.sha256}`} translate="no">
+                        {f.format.toUpperCase()} ↓
+                      </a>{" "}
+                    </span>
+                  ))}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
@@ -154,6 +238,7 @@ export function DocumentsModule({ projectId }: { projectId: string }) {
           </section>
         );
       })}
+      {(v.studioPackages?.length ?? 0) > 0 && <StudioPackages packages={v.studioPackages!} />}
     </div>
   );
 }

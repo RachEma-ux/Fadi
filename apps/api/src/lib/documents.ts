@@ -5,7 +5,9 @@
  * (révision du modèle + empreinte des entrées) et calcul de l'actualité
  * « à jour / périmé » (docs/architecture.md, « Document produit »). Les
  * fichiers sont régénérés à la demande par leurs routes ; seule la trace
- * de production est conservée (`produced_documents`).
+ * de production est conservée (`produced_documents`). Groupe « Studio —
+ * paquets diffusés » (`studioPackageDocuments`) : paquets figés des
+ * publications Studio, en lecture seule, diffusés ou retirés.
  */
 import { desc, eq, sql } from "drizzle-orm";
 import { PARCOURS_STEPS } from "../data/parcours.js";
@@ -18,8 +20,9 @@ import type { OwnedProject } from "./owned-project.js";
 import { ownsExampleDossier } from "./example-report.js";
 import { contentOf, type StepContext } from "./step-context.js";
 import type { Querier } from "./step-rows.js";
+import { listProjectStudioPackages } from "./studio-publications.js";
 
-export type DocumentGroup = "harmonie" | "bilan" | "atelier" | "dessins" | "tableaux" | "exemple" | "archive";
+export type DocumentGroup = "harmonie" | "bilan" | "atelier" | "dessins" | "tableaux" | "exemple" | "archive" | "studio";
 
 export interface DocumentDescriptor {
   kind: string;
@@ -218,6 +221,67 @@ export async function drawingExportDescriptors(q: Querier, project: OwnedProject
       produced,
       freshness: documentFreshness(current, produced),
     };
+  });
+}
+
+// --- Groupe « Studio — paquets diffusés » (E.3-06) ---------------------------------------------------------------
+
+/**
+ * Paquet Studio diffusé (ou retiré : jamais masqué) : lecture seule, produit par le flux de publication — aucune action
+ * de production ici. Les liens pointent vers les fichiers figés du paquet (droit `read`, contenu vérifié par empreinte).
+ */
+export interface StudioPackageDocument {
+  kind: string;
+  group: "studio";
+  publicationId: string;
+  title: string;
+  studyId: string;
+  studyName: string;
+  variantId: string;
+  variantName: string;
+  revisionId: string;
+  /** Huit derniers caractères de la révision (comme dans les noms de fichiers du paquet). */
+  revisionShort: string;
+  status: "diffuse" | "retire";
+  diffusedAt: string | null;
+  diffusedBy: string | null;
+  /** Date du retrait (dernière transition d'un paquet retiré), sinon null. */
+  withdrawnAt: string | null;
+  documentHash: string;
+  packageHash: string;
+  /** Actualité Studio : la tête de la variante est-elle encore la révision diffusée ? */
+  freshness: "a-jour" | "perimee";
+  replacedBy: string | null;
+  files: { format: string; fileName: string; mime: string; size: number; sha256: string; href: string }[];
+}
+
+/** Paquets diffusés et retirés du projet, pour un compte qui a le droit de lecture (vérifié par `listProjectStudioPackages`). */
+export async function studioPackageDocuments(projectId: string, actorId: string): Promise<StudioPackageDocument[]> {
+  const { packages } = await listProjectStudioPackages(projectId, actorId);
+  return packages.flatMap((p) => {
+    if (!p.diffusion || (p.status !== "diffuse" && p.status !== "retire")) return [];
+    const base = `/projects/${projectId}/studio/studies/${encodeURIComponent(p.studyId)}/publications/${encodeURIComponent(p.id)}/files`;
+    return [{
+      kind: `studio:${p.id}`,
+      group: "studio" as const,
+      publicationId: p.id,
+      title: p.title,
+      studyId: p.studyId,
+      studyName: p.studyName,
+      variantId: p.variantId,
+      variantName: p.variantName,
+      revisionId: p.revisionId,
+      revisionShort: p.revisionId.slice(-8),
+      status: p.status,
+      diffusedAt: p.diffusion.at,
+      diffusedBy: p.diffusion.by?.email ?? null,
+      withdrawnAt: p.status === "retire" ? p.updatedAt : null,
+      documentHash: p.documentHash,
+      packageHash: p.diffusion.packageHash,
+      freshness: p.freshness,
+      replacedBy: p.replacedBy,
+      files: p.diffusion.files.map((f) => ({ format: f.format, fileName: f.fileName, mime: f.mime, size: f.size, sha256: f.sha256, href: `${base}/${f.format}` })),
+    }];
   });
 }
 
