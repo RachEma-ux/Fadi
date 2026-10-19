@@ -59,6 +59,9 @@ describe("Propriétés BIM déclarées (E.1-01)", () => {
     expect(() => applyStudioCommands(base(), unchecked([definir({ cibleId: "zz", nom: "x" })]))).toThrow(/objet introuvable : zz/);
     expect(() => applyStudioCommands(base(), unchecked([definir({ cibleId: "m1", nom: "x", valeur: 2 })]))).toThrow(/unité déclarée attendue/);
     expect(() => applyStudioCommands(base(), unchecked([definir({ cibleId: "m1", nom: "x", valeur: Number.NaN, unite: "m" })]))).toThrow(/nombre fini/);
+    for (const v of [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+      expect(() => applyStudioCommands(base(), unchecked([definir({ cibleId: "m1", nom: "x", valeur: v, unite: "m" })]))).toThrow(/nombre fini/);
+    }
     expect(() => applyStudioCommands(base(), unchecked([definir({ cibleId: "m1", nom: " x" })]))).toThrow(/espace de bord/);
     expect(() => applyStudioCommands(base(), unchecked([definir({ cibleId: "m1", nom: "x", defaut: 1 })]))).toThrow(/champs absents ou inconnus/);
   });
@@ -145,6 +148,31 @@ describe("Propriétés BIM déclarées (E.1-01)", () => {
     expect(studioIfcSummary(doc).proprietes).toEqual({ exported: 6, notEvaluated: 1 });
     expect(studioIfcSummary(base()).proprietes).toBeUndefined();
     expect(exportStudioIfc(base(), meta)).not.toMatch(/DeclaredProperties|Fadi_ProprietesDeclarees/);
+  });
+
+  it("IFC : valeurs extrêmes écrites sans arrondi (aller-retour exact), STEP valide", () => {
+    const extremes = [1e300, -1.7976931348623157e308, 2.5e-10, 5e-324, 1e21, 123456.789, 0.1 + 0.2, -0];
+    const doc = applyStudioCommands(base(), unchecked(extremes.map((valeur, i) => definir({ cibleId: "r1", nom: `v${i}`, valeur, unite: i % 2 ? "m" : "kg" }))));
+    const lignes = exportStudioIfc(doc, meta).split("\n");
+    const ecrits = extremes.map((_, i) => lignes.find((l) => l.includes(`IFCPROPERTYSINGLEVALUE('v${i}',`))!.match(/IFC(?:REAL|LENGTHMEASURE)\(([^)]*)\)/)![1]!);
+    expect(ecrits).toEqual(["1.E300", "-1.7976931348623157E308", "2.5E-10", "5.E-324", "1.E21", "123456.789", "0.30000000000000004", "0."]);
+    // Grammaire STEP d'un réel, et relecture du même nombre.
+    for (const [i, e] of ecrits.entries()) {
+      expect(e).toMatch(/^-?\d+\.\d*(E-?\d+)?$/);
+      expect(Number(e)).toBe(Object.is(extremes[i], -0) ? 0 : extremes[i]);
+    }
+    expect(lignes.join("\n")).not.toMatch(/Infinity|NaN/);
+  });
+
+  it("IFC : un identifiant d'objet ne peut pas reproduire le GlobalId du jeu d'un autre objet", () => {
+    const doc = applyStudioCommands(base(), unchecked([
+      { toolId: "studio.dessin.rectangle", params: { id: "pset|declared|r1", type: "rectangle", origin: { x: 5, y: 5 }, width: 1, height: 1 } },
+      { toolId: "studio.objet.extruder", params: { ids: ["pset|declared|r1"], base: 0, height: 1 } },
+      definir({ cibleId: "r1", nom: "Code", valeur: "R-01" }),
+    ]));
+    const ids = exportStudioIfc(doc, meta).split("\n").flatMap((l) => (/^#\d+=IFC\w+\('([0-9A-Za-z_$]{22})'/.exec(l) ?? []).slice(1));
+    expect(ids.length).toBeGreaterThan(10);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it("IFC : une ouverture sans type déclaré porte ses propriétés sur son IfcOpeningElement", () => {

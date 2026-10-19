@@ -6,7 +6,12 @@ import type { StudioPoint, StudioShapeBase } from "../noyau/types.js";
  * entités, et contexte d'écriture partagé par les écrivains par type d'objet (`objets/`).
  */
 
-/** Chaîne STEP : apostrophes et barres obliques inverses doublées, hors ASCII imprimable en `\X2\…\X0\`. */
+/**
+ * Chaîne STEP : apostrophes et barres obliques inverses doublées ; hors ASCII imprimable en `\X2\…\X0\` (plan
+ * multilingue de base, tabulation et fins de ligne LF / CR comprises : `\X2\000A\X0\`, `\X2\000D\X0\`) ; au-delà de
+ * U+FFFF, un point de code en `\X4\00XXXXXX\X0\`, jamais une paire de substitution. Les autres caractères de contrôle
+ * sont retirés.
+ */
 export function studioStepString(t: string): string {
   let out = "";
   let ext = "";
@@ -16,13 +21,15 @@ export function studioStepString(t: string): string {
       ext = "";
     }
   };
-  for (let i = 0; i < t.length; i++) {
-    const c = t.charCodeAt(i);
+  for (const ch of t) {
+    const c = ch.codePointAt(0)!;
     if (c >= 0x20 && c <= 0x7e) {
       flush();
-      out += c === 0x27 ? "''" : c === 0x5c ? "\\\\" : t[i];
-    } else if (c >= 0x20 || c === 0x09) ext += c.toString(16).toUpperCase().padStart(4, "0");
-    // Les autres contrôles (fins de ligne comprises) sont retirés.
+      out += c === 0x27 ? "''" : c === 0x5c ? "\\\\" : ch;
+    } else if (c > 0xffff) {
+      flush();
+      out += `\\X4\\${c.toString(16).toUpperCase().padStart(8, "0")}\\X0\\`;
+    } else if (c >= 0x20 || c === 0x09 || c === 0x0a || c === 0x0d) ext += c.toString(16).toUpperCase().padStart(4, "0");
   }
   flush();
   return `'${out}'`;
@@ -40,6 +47,19 @@ export function studioStepReal(v: number): string {
     return `${m!.includes(".") ? m : `${m}.`}E${e}`;
   }
   return s;
+}
+
+/**
+ * Réel STEP d'une valeur **déclarée** (propriétés E.1-01) : la représentation la plus courte qui relit le même nombre
+ * (aller-retour exact), toujours un point décimal, exposant `E` ; aucun arrondi, à la différence de `studioStepReal`
+ * (coordonnées et dimensions, au nanomètre).
+ */
+export function studioStepRealDeclare(v: number): string {
+  if (!Number.isFinite(v)) throw new StudioValidationError("ifc", "nombre fini attendu");
+  if (v === 0) return "0.";
+  const [m, e] = String(v).split("e");
+  const mantisse = m!.includes(".") ? m! : `${m}.`;
+  return e === undefined ? mantisse : `${mantisse}E${e.replace("+", "")}`;
 }
 
 /** FNV-1a 64 bits (deux moitiés de 32 bits), en hexadécimal sur 16 caractères. */
