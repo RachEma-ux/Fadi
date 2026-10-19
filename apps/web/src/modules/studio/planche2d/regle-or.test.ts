@@ -155,6 +155,38 @@ describe("Planche 2D de Studio — règle d'or", () => {
     expect(inactif).toMatch(/aria-disabled="true"[^>]*data-studio-commande="exporter-svg"/);
   });
 
+  it("accrochage et repérage : chaque mode est une bascule propre (icône, barre, raccourci), boutons visibles", () => {
+    const attendus: [string, string, string, string][] = [
+      ["accrochage-milieu", "Shift+H", "accrochage", "studio-snap-midpoint"],
+      ["accrochage-centre", "Shift+R", "accrochage", "studio-snap-center"],
+      ["accrochage-quadrant", "Shift+Q", "accrochage", "studio-snap-quadrant"],
+      ["accrochage-intersection", "Shift+T", "accrochage", "studio-snap-intersection"],
+      ["accrochage-perpendiculaire", "Shift+A", "accrochage", "studio-snap-perpendicular"],
+      ["accrochage-tangente", "Shift+G", "accrochage", "studio-snap-tangent"],
+      ["accrochage-proche", "Shift+J", "accrochage", "studio-snap-nearest"],
+      ["reperage-orthogonal", "F8", "reperage", "studio-track-ortho"],
+      ["reperage-polaire", "F10", "reperage", "studio-track-polar"],
+      ["pas-polaire", "Shift+Y", "reperage", "studio-track-polar-step"],
+    ];
+    for (const [id, raccourci, groupe, icone] of attendus) {
+      expect(cibleRaccourci(raccourci), id).toEqual({ type: "commande", id });
+      expect(COMMANDES_EDITEUR.find((c) => c.id === id), id).toMatchObject({ groupe, iconeSymbolique: icone, ecrit: false, raccourci });
+      expect(RACCOURCIS_RESERVES, id).not.toContain(raccourci);
+    }
+    // Les modes et le repérage sont des bascules ; le pas polaire est une commande (il fait tourner 15/30/45/90°).
+    for (const [id] of attendus) expect(COMMANDES_EDITEUR.find((c) => c.id === id)?.bascule === true, id).toBe(id !== "pas-polaire");
+    expect(commandesDeBarre("reperage").map((c) => c.id)).toEqual(["reperage-orthogonal", "reperage-polaire", "pas-polaire"]);
+    expect(BARRES_STUDIO.map((b) => b.id).indexOf("reperage")).toBe(BARRES_STUDIO.map((b) => b.id).indexOf("accrochage") + 1);
+    // Écrans tactiles : un bouton nommé visible (icône, nom, raccourci affiché) pour chaque bascule, état enfoncé lu.
+    const html = renderToStaticMarkup(createElement(BarreOutils, {
+      outil: "studio.dessin.ligne", outilDisponible: () => true, commandeDisponible: () => true, surOutil: () => {}, surCommande: () => {},
+      basculeActive: { "reperage-polaire": true, "accrochage-proche": false },
+    }));
+    expect(html).toMatch(/aria-pressed="true"[^>]*data-studio-commande="reperage-polaire"/);
+    expect(html).toMatch(/aria-pressed="false"[^>]*data-studio-commande="accrochage-proche"/);
+    expect(html).toContain("<span>Repérage polaire</span>");
+  });
+
   it("lecture du clavier : modificateur seul ou Alt ignorés, Cmd vaut Ctrl", () => {
     expect(combinaison({ key: "Shift", ctrlKey: false, metaKey: false, shiftKey: true, altKey: false })).toBeNull();
     expect(combinaison({ key: "l", ctrlKey: false, metaKey: false, shiftKey: false, altKey: true })).toBeNull();

@@ -1,15 +1,22 @@
 /**
  * Gestes de la planche 2D (outil Sélection et vue) : zoom à la molette centré sur le pointeur, panoramique (bouton du
  * milieu, Espace + glisser, deux doigts, pincement), rectangle fenêtre / capture, glisser de la sélection (aperçu
- * pendant le geste, une commande `studio.dessin.deplacer` par objet au relâchement), et point posé (accrochage aux
- * sommets, à la grille, sinon au centimètre). La vue n'est jamais une commande ni une donnée du document.
+ * pendant le geste, une commande `studio.dessin.deplacer` par objet au relâchement), et point posé : moteur
+ * d'accrochage (`../accrochage/`, règles de priorité déterministes : sommets nommés, intersections, perpendiculaire et
+ * tangente depuis le dernier point, repérage orthogonal — bascule ou Maj tenue — et polaire, plus proche), sinon la
+ * grille, sinon le centimètre ; saisie directe d'une longueur et d'un angle (champ « Mesures »). Les candidats ne sont
+ * cherchés que dans la vue, à la tolérance du pointeur. La vue n'est jamais une commande ni une donnée du document.
  */
-import { useCallback, useRef, useState, type MouseEvent, type PointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import type { StudioDocument, StudioPoint } from "@parcours/atelier-model";
+import {
+  appliquerSaisie, basculerAccrochage, basculesActives, BASCULES_INITIALES, direction, indexLineaire, resoudre,
+  type Boite, type EtatBascules, type PointRepere, type ResultatSaisie,
+} from "../accrochage";
 import { estVisible } from "../calques";
 import type { PointPose, RectangleSelection } from "../Dessin2D";
-import { accrocher, auCentimetre, CADRE_INITIAL, pointsAccroche, type Cadre } from "../geometrie-2d";
-import type { StudioToolId } from "../raccourcis";
+import { auCentimetre, CADRE_INITIAL, type Cadre } from "../geometrie-2d";
+import type { IdCommandeEditeur, StudioToolId } from "../raccourcis";
 import { ajouter, modeRectangle, selectionParRectangle } from "../selection";
 import { ecranVersPlanche, facteurMolette, glisserVue, pasGrille, pincer, surGrille, zoomer, type Rect } from "../vue";
 import { ecart } from "./type";
@@ -43,13 +50,25 @@ export interface OptionsGestes {
   pointsActifs: boolean;
   /** Objets exclus de l'accrochage au survol (sélection pendant un déplacement). */
   exclureAuSurvol: ReadonlySet<string> | undefined;
+  /** Dernier point posé du tracé en cours (perpendiculaire, tangente, repérage, saisie directe) ; null au repos. */
+  base?: StudioPoint | null;
   select: (ids: string[]) => void;
   moveSelection: (ids: readonly string[], dx: number, dy: number) => boolean;
 }
 
 export function useGestesPlanche(o: OptionsGestes) {
   const [cadre, setCadre] = useState<Cadre>(CADRE_INITIAL);
-  const [survol, setSurvol] = useState<PointPose | null>(null);
+  const [survol, setSurvol] = useState<PointRepere | null>(null);
+  const [bascules, setBascules] = useState<EtatBascules>(BASCULES_INITIALES);
+  // Angle imposé par la saisie (« <45 », degrés) : il vaut pour le point suivant, puis s'efface.
+  const [verrouAngle, setVerrouAngle] = useState<number | null>(null);
+  const base = o.base ?? null;
+  useEffect(() => { setVerrouAngle(null); }, [base?.x, base?.y, base === null]);
+  // Index des objets accrochables affichés, recalculé quand le document change (pas à chaque mouvement du pointeur).
+  const index = useMemo(() => {
+    const d = o.drawing;
+    return d ? indexLineaire(d.objects.filter((x) => estVisible(d, x.layerId))) : null;
+  }, [o.drawing]);
   const [rectangle, setRectangle] = useState<RectangleSelection | null>(null);
   const [apercu, setApercu] = useState<{ ids: string[]; dx: number; dy: number } | null>(null);
   const sheet = useRef<SVGSVGElement | null>(null);
@@ -93,16 +112,44 @@ export function useGestesPlanche(o: OptionsGestes) {
     const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix.inverse());
     return { x: p.x, y: p.y };
   }
-  /** Point posé : sommet accroché (hors `exclure`), sinon nœud de grille, sinon arrondi au centimètre. */
-  function pose(e: { clientX: number; clientY: number }, exclure?: ReadonlySet<string>): PointPose | null {
+  /** Partie du document visible à l'écran (la planche peut montrer plus que le cadre selon son rapport). */
+  function vueVisible(matrix: DOMMatrix): Boite | undefined {
+    const svg = sheet.current; if (!svg) return undefined;
+    const r = rectContenu(svg), inv = matrix.inverse();
+    const a = new DOMPoint(r.left, r.top).matrixTransform(inv), b = new DOMPoint(r.left + r.width, r.top + r.height).matrixTransform(inv);
+    if (![a.x, a.y, b.x, b.y].every(Number.isFinite) || r.width <= 0 || r.height <= 0) return undefined;
+    return { min: { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y) }, max: { x: Math.max(a.x, b.x), y: Math.max(a.y, b.y) } };
+  }
+  /**
+   * Point posé : repère du moteur d'accrochage (objets hors `exclure`, repérage depuis le dernier point ; Maj tenue
+   * impose l'orthogonal), sinon nœud de grille, sinon arrondi au centimètre. Un sommet nommé reste lié (cote associative).
+   */
+  function pose(e: { clientX: number; clientY: number; shiftKey?: boolean }, exclure?: ReadonlySet<string>): PointRepere | null {
     const { drawing } = o;
-    const matrix = sheet.current?.getScreenCTM(); if (!matrix || !drawing) return null;
+    const matrix = sheet.current?.getScreenCTM(); if (!matrix || !drawing || !index) return null;
     const raw = new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix.inverse());
     const tol = ACCROCHE_PX / Math.max(Math.abs(matrix.a), 1e-9);
-    const visible = (l: string | undefined) => estVisible(drawing, l);
-    const sources = exclure ? drawing.objects.filter(x => !exclure.has(x.id)) : drawing.objects;
-    const accroche = o.accrocheSommets ? accrocher(pointsAccroche(sources, visible), raw, tol) : null;
-    return { point: accroche ? { ...accroche.point } : o.accrocheGrille ? surGrille(raw, pas) : auCentimetre(raw), accroche };
+    const repere = resoudre(index, { curseur: { x: raw.x, y: raw.y }, tolerance: tol, base, vue: vueVisible(matrix), exclure, verrouAngle, pasLongueur: o.accrocheGrille ? pas : 0.01 },
+      { objets: o.accrocheSommets, modes: bascules.modes, orthogonal: bascules.orthogonal || e.shiftKey === true, polaire: bascules.polaire, pasPolaire: bascules.pasPolaire });
+    if (repere) return { point: repere.ancre ? { ...repere.ancre.point } : { ...repere.point }, accroche: repere.ancre, repere };
+    return { point: o.accrocheGrille ? surGrille(raw, pas) : auCentimetre(raw), accroche: null, repere: null };
+  }
+  /** Bascule d'accrochage ou de repérage ; false si `id` n'en est pas une. */
+  function commandeAccrochage(id: IdCommandeEditeur): boolean {
+    const suivant = basculerAccrochage(bascules, id);
+    if (!suivant) return false;
+    setBascules(suivant);
+    return true;
+  }
+  /** Direction courante du tracé (radians) : celle du repérage suivi, sinon du point survolé, depuis le dernier point. */
+  const directionCourante = (): number | null => (base && survol ? survol.repere?.angle ?? direction(base, survol.point) : null);
+  /** Saisie directe (champ « Mesures ») : point à poser, angle imposé (retenu ici) ou refus. */
+  function saisir(texte: string): ResultatSaisie {
+    if (!base) return { type: "erreur", message: "Posez d’abord le premier point." };
+    const r = appliquerSaisie(texte, base, directionCourante(), verrouAngle);
+    if (r.type === "angle") setVerrouAngle(r.angle);
+    else if (r.type === "point") setVerrouAngle(null);
+    return r;
   }
   function hover(e: PointerEvent<SVGSVGElement>) {
     if (!o.pointsActifs) { if (survol) setSurvol(null); return; }
@@ -139,6 +186,8 @@ export function useGestesPlanche(o: OptionsGestes) {
     if (e.pointerType !== "touch" && e.buttons === 0) {
       pointeurs.current.delete(e.pointerId);
       if (geste.current && "id" in geste.current && geste.current.id === e.pointerId && !("actif" in geste.current && geste.current.actif)) geste.current = null;
+      // Survol sans bouton : le point suivi et son repère d'accrochage restent affichés.
+      if (!geste.current) hover(e);
       return;
     }
     if (pointeurs.current.has(e.pointerId)) pointeurs.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -205,5 +254,8 @@ export function useGestesPlanche(o: OptionsGestes) {
     /** Un geste (vue, rectangle, glisser) est en attente ou en cours. */
     enGeste: () => geste.current !== null,
     annulerGeste, tolerance, pose, pointerDown, pointerMove, pointerUp, clickCapture,
+    /** Accrochage et repérage : réglages, état des boutons de bascule, commande, saisie directe. */
+    bascules, basculesActives: basculesActives(bascules), commandeAccrochage, verrouAngle, directionCourante, saisir,
+    poserPasPolaire: (pasPolaire: number) => setBascules((b) => ({ ...b, pasPolaire })),
   };
 }

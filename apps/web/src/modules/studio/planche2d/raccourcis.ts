@@ -13,15 +13,21 @@ export type IdCommandeEditeur =
   | "terminer-polyligne" | "fermer-polyligne"
   | "zoom-avant" | "zoom-arriere" | "cadrer" | "plein-ecran" | "vue-3d" | "navigation-3d" | "coupe-3d"
   | "accrochage-sommets" | "accrochage-grille"
+  | "accrochage-milieu" | "accrochage-centre" | "accrochage-quadrant" | "accrochage-intersection"
+  | "accrochage-perpendiculaire" | "accrochage-tangente" | "accrochage-proche"
+  | "reperage-orthogonal" | "reperage-polaire" | "pas-polaire"
   | "importer-dxf" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille"
   | "outils" | "palette";
-export type GroupeCommande = "edition" | "vue" | "accrochage" | "import" | "export" | "presentation" | "catalogue";
+export type GroupeCommande = "edition" | "vue" | "accrochage" | "reperage" | "import" | "export" | "presentation" | "catalogue";
 export type BarreStudio = StudioToolGroup | GroupeCommande;
 export type IconeCommande =
   | "studio-undo" | "studio-redo" | "studio-cancel" | "studio-save" | "studio-select-all"
   | "studio-polyline-finish" | "studio-polyline-close"
   | "studio-zoom-in" | "studio-zoom-out" | "studio-frame" | "studio-fullscreen" | "studio-view-3d" | "studio-nav-plan" | "studio-section-plane"
   | "studio-snap-vertex" | "studio-snap-grid"
+  | "studio-snap-midpoint" | "studio-snap-center" | "studio-snap-quadrant" | "studio-snap-intersection"
+  | "studio-snap-perpendicular" | "studio-snap-tangent" | "studio-snap-nearest"
+  | "studio-track-ortho" | "studio-track-polar" | "studio-track-polar-step"
   | "studio-import-dxf" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet"
   | "studio-catalog" | "studio-palette";
 
@@ -65,6 +71,21 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "coupe-3d", libelleFR: "Coupe horizontale (3D)", raccourci: "Shift+K", iconeSymbolique: "studio-section-plane", groupe: "vue", ecrit: false, bascule: true },
   { id: "accrochage-sommets", libelleFR: "Accrocher aux sommets", raccourci: "Shift+S", iconeSymbolique: "studio-snap-vertex", groupe: "accrochage", ecrit: false, bascule: true },
   { id: "accrochage-grille", libelleFR: "Accrocher à la grille", raccourci: "F9", iconeSymbolique: "studio-snap-grid", groupe: "accrochage", ecrit: false, bascule: true },
+  // Modes d'accrochage aux objets (moteur `accrochage/`), actifs quand « Accrocher aux sommets » l'est. Raccourcis Fadi
+  // (aucun relevé SketchUp pour ces modes), Maj + une lettre libre : H (« half », milieu), R (rayon → centre),
+  // Q (quadrant), T (inTersection), A (« à angle droit »), G (tanGente), J (« juste à côté », plus proche).
+  { id: "accrochage-milieu", libelleFR: "Accrocher aux milieux", raccourci: "Shift+H", iconeSymbolique: "studio-snap-midpoint", groupe: "accrochage", ecrit: false, bascule: true },
+  { id: "accrochage-centre", libelleFR: "Accrocher aux centres", raccourci: "Shift+R", iconeSymbolique: "studio-snap-center", groupe: "accrochage", ecrit: false, bascule: true },
+  { id: "accrochage-quadrant", libelleFR: "Accrocher aux quadrants", raccourci: "Shift+Q", iconeSymbolique: "studio-snap-quadrant", groupe: "accrochage", ecrit: false, bascule: true },
+  { id: "accrochage-intersection", libelleFR: "Accrocher aux intersections", raccourci: "Shift+T", iconeSymbolique: "studio-snap-intersection", groupe: "accrochage", ecrit: false, bascule: true },
+  { id: "accrochage-perpendiculaire", libelleFR: "Accrocher en perpendiculaire", raccourci: "Shift+A", iconeSymbolique: "studio-snap-perpendicular", groupe: "accrochage", ecrit: false, bascule: true },
+  { id: "accrochage-tangente", libelleFR: "Accrocher en tangente", raccourci: "Shift+G", iconeSymbolique: "studio-snap-tangent", groupe: "accrochage", ecrit: false, bascule: true },
+  { id: "accrochage-proche", libelleFR: "Accrocher au plus proche", raccourci: "Shift+J", iconeSymbolique: "studio-snap-nearest", groupe: "accrochage", ecrit: false, bascule: true },
+  // Repérage depuis le dernier point : orthogonal (F8, comme les logiciels de DAO ; Maj tenue l'impose le temps du
+  // geste), polaire (F10) et son pas 15° / 30° / 45° / 90° (Maj+Y le fait tourner).
+  { id: "reperage-orthogonal", libelleFR: "Mode orthogonal", raccourci: "F8", iconeSymbolique: "studio-track-ortho", groupe: "reperage", ecrit: false, bascule: true },
+  { id: "reperage-polaire", libelleFR: "Repérage polaire", raccourci: "F10", iconeSymbolique: "studio-track-polar", groupe: "reperage", ecrit: false, bascule: true },
+  { id: "pas-polaire", libelleFR: "Pas polaire suivant", raccourci: "Shift+Y", iconeSymbolique: "studio-track-polar-step", groupe: "reperage", ecrit: false },
   // Import DXF vers le brouillon (aperçu, unité, entités non prises) : Maj+U (U comme « upload »), libre et non réservé.
   { id: "importer-dxf", libelleFR: "Importer DXF", raccourci: "Shift+U", iconeSymbolique: "studio-import-dxf", groupe: "import", ecrit: true },
   { id: "exporter-svg", libelleFR: "Exporter SVG", raccourci: "Shift+V", iconeSymbolique: "studio-export-svg", groupe: "export", ecrit: false, telechargement: "svg" },
@@ -87,6 +108,7 @@ export const BARRES_STUDIO: readonly { id: BarreStudio; libelleFR: string }[] = 
   { id: "edition", libelleFR: "Édition" },
   { id: "vue", libelleFR: "Vue" },
   { id: "accrochage", libelleFR: "Accrochage" },
+  { id: "reperage", libelleFR: "Repérage" },
   { id: "import", libelleFR: "Importer" },
   { id: "export", libelleFR: "Exporter" },
   { id: "presentation", libelleFR: "Présentation" },

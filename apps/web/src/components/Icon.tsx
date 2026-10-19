@@ -51,6 +51,16 @@ export type IconName =
   | "studio-zoom-out"
   | "studio-snap-vertex"
   | "studio-snap-grid"
+  | "studio-snap-midpoint"
+  | "studio-snap-center"
+  | "studio-snap-quadrant"
+  | "studio-snap-intersection"
+  | "studio-snap-perpendicular"
+  | "studio-snap-tangent"
+  | "studio-snap-nearest"
+  | "studio-track-ortho"
+  | "studio-track-polar"
+  | "studio-track-polar-step"
   | "studio-import-dxf"
   | "studio-export-svg"
   | "studio-export-dxf"
@@ -126,6 +136,19 @@ const PATHS: Record<IconName, string> = {
   "studio-zoom-out": "M10.5 3.5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 5 5M7.5 10.5h6",
   "studio-snap-vertex": "M4 20 12 6l8 14M9 3h6v6H9ZM12 9v2",
   "studio-snap-grid": "M3 3h18v18H3ZM9 3v18M15 3v18M3 9h18M3 15h18M13 13h4v4h-4Z",
+  // Modes d'accrochage : le repère affiché sur la planche (triangle du milieu, rond du centre, losange du quadrant,
+  // croix de l'intersection, équerre de la perpendiculaire, cercle et droite tangente, sablier du plus proche).
+  "studio-snap-midpoint": "M3 19h18M12 9l4 7H8ZM3 17v4M21 17v4",
+  "studio-snap-center": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM10 12h4M12 10v4",
+  "studio-snap-quadrant": "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16ZM20 9l3 3-3 3-3-3Z",
+  "studio-snap-intersection": "M3 3l18 18M21 3 3 21M9 9h6v6H9Z",
+  "studio-snap-perpendicular": "M3 20h18M12 20V4M12 15h5v5",
+  "studio-snap-tangent": "M10 8a6 6 0 1 0 0 12 6 6 0 0 0 0-12ZM2 8h20M10 6v4",
+  "studio-snap-nearest": "M4 20 20 6M9 9h6l-6 6h6Z",
+  // Repérage : équerre orthogonale ; rayons polaires depuis un point ; pas polaire (rayons et flèche de rotation).
+  "studio-track-ortho": "M5 19h15M5 19V4M5 19l-2-2M9 15h2v2",
+  "studio-track-polar": "M4 20h16M4 20 18 6M4 20l8-14M4 20A9 9 0 0 1 13 11",
+  "studio-track-polar-step": "M4 20h16M4 20 16 8M8 20a4 4 0 0 0-1.2-2.8M14 20a10 10 0 0 0-3-7M18 3l2 3-3 1",
   // Fichier entré par la gauche (flèche vers le fichier) : import DXF dans le brouillon.
   "studio-import-dxf": "M9 3h7l4 4v14H9v-5M16 3v4h4M9 3v5M2 12h9M8 9l3 3-3 3M13 10h4M14 13h3M13 16h4",
   "studio-export-svg": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M8 11c2-3 6 3 8 0M17 15v6M14 18l3 3 3-3",

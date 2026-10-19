@@ -879,6 +879,100 @@ try {
     && grandRelu.revision.parentRevisionId === apresPremier.revision.id && grandRelu.revision.document.objects.length === teteInitiale.document.objects.length + 600,
     lotsGrand.map((e) => `${e.commands.length}@${e.baseRevisionId}`).join(" "));
 
+  // Accrochage et saisie de précision (moteur `planche2d/accrochage/`) : sur une variante neuve portant deux lignes
+  // sécantes, une ligne part exactement de leur intersection ; une ligne menée d'un point tombe au pied de la
+  // perpendiculaire ; repérage polaire 45° et longueur tapée 3 : coordonnées exactes ; enregistrement, relecture identique.
+  {
+    const accVariante = await a.api("post", `/projects/${pA.id}/studio/studies/${studyId}/variants`, { name: "Accrochages" });
+    const accChemin = `/projects/${pA.id}/studio/studies/${studyId}/variants/${accVariante.variant.id}`;
+    await a.api("post", `${accChemin}/commands`, { contractVersion: "studio-commands/1", requestId: `acc-${Date.now()}`, baseRevisionId: accVariante.revision.id, commands: [
+      { toolId: "studio.dessin.ligne", params: { id: "acc-l1", type: "line", start: { x: 2, y: 2 }, end: { x: 9, y: 9 } } },
+      // Milieux (5,5 ; 5,5) et (6 ; 4) : seule l'intersection (5 ; 5) est au croisement.
+      { toolId: "studio.dessin.ligne", params: { id: "acc-l2", type: "line", start: { x: 2, y: 8 }, end: { x: 10, y: 0 } } },
+    ] });
+    await page.goto(`${BASE}/studio/projets/${pA.id}/etudes/${studyId}/variantes/${accVariante.variant.id}`);
+    await page.locator('svg [data-studio-objet="acc-l2"]').waitFor({ state: "attached" });
+    const net = (v) => Math.round(v * 1e9) / 1e9;
+    const ecran = (x, y) => planche.evaluate((svg, w) => {
+      const versEcran = () => new DOMPoint(w.x, w.y).matrixTransform(svg.getScreenCTM());
+      const s = versEcran();
+      if (s.y < 40 || s.y > window.innerHeight - 40) window.scrollBy(0, s.y - window.innerHeight / 2);
+      const t = versEcran();
+      return { x: t.x, y: t.y };
+    }, { x, y });
+    const survoler = async (x, y) => { const p = await ecran(x, y); await page.mouse.move(p.x, p.y); };
+    const repere = page.locator("svg [data-studio-accroche-mode]");
+    const lignesAcc = async () => (await a.api("get", accChemin)).revision.document.objects.filter((o) => o.type === "line" && !o.id.startsWith("acc-"));
+    const nouvelles = () => page.locator('svg [data-studio-type="line"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-objet")).filter((id) => !id.startsWith("acc-")));
+    const geometrieDe = (id) => page.locator(`[data-studio-objet="${id}"] line`).evaluate((l) => ["x1", "y1", "x2", "y2"].map((k) => Number(l.getAttribute(k))));
+
+    check("accrochage : barres Accrochage et Repérage, une bascule par mode avec son icône et son raccourci",
+      (await outils.locator('[data-studio-barre="accrochage"] [data-studio-commande="accrochage-intersection"][aria-keyshortcuts="Shift+T"][aria-pressed="true"] svg path').count()) === 1
+      && (await outils.locator('[data-studio-barre="accrochage"] [data-studio-commande="accrochage-perpendiculaire"][aria-keyshortcuts="Shift+A"][aria-pressed="false"]').count()) === 1
+      && (await outils.locator('[data-studio-barre="reperage"] [data-studio-commande="reperage-polaire"][aria-keyshortcuts="F10"][aria-pressed="false"]').count()) === 1
+      && (await outils.locator('[data-studio-barre="reperage"] [data-studio-commande="reperage-orthogonal"][aria-keyshortcuts="F8"]').count()) === 1);
+
+    // 1. Intersection : le repère « Intersection » s'affiche près du croisement ; le premier point en est exactement.
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.keyboard.press("l");
+    await survoler(5.06, 4.95);
+    await repere.waitFor();
+    check("accrochage : repère « Intersection » au croisement des deux lignes", (await repere.getAttribute("data-studio-accroche-mode")) === "intersection"
+      && (await repere.getAttribute("data-studio-accroche-point")) === "5 5" && (await repere.locator("text").textContent()) === "Intersection");
+    await cliquer(5.06, 4.95);
+    await page.locator("[data-studio-mesures]").waitFor();
+    await cliquer(11, 3.5);
+    const [idInter] = await nouvelles();
+    const inter = await geometrieDe(idInter);
+    check("accrochage : la ligne part exactement de l'intersection (5 ; 5)", inter[0] === 5 && inter[1] === 5, inter.join(" "));
+
+    // 2. Perpendiculaire depuis un point posé : pied exact sur la ligne y = x.
+    await page.keyboard.press("Shift+A");
+    check("accrochage : Maj+A active l'accrochage en perpendiculaire", (await outils.getByRole("button", { name: "Accrocher en perpendiculaire", exact: true }).getAttribute("aria-pressed")) === "true");
+    await cliquer(12, 2);
+    const depart = await page.locator("svg .studio-point-pose").first().evaluate((c) => [Number(c.getAttribute("cx")), Number(c.getAttribute("cy"))]);
+    const pied = net((depart[0] + depart[1]) / 2);
+    await survoler(pied + 0.08, pied - 0.05);
+    await page.locator('svg [data-studio-accroche-mode="perpendiculaire"]').waitFor();
+    await cliquer(pied + 0.08, pied - 0.05);
+    const idPerp = (await nouvelles()).find((id) => id !== idInter);
+    const perp = await geometrieDe(idPerp);
+    const produit = (perp[2] - perp[0]) * 6 + (perp[3] - perp[1]) * 6;
+    check("accrochage : la ligne menée du point tombe au pied de la perpendiculaire", perp[2] === pied && perp[3] === pied && Math.abs(produit) < 1e-9, perp.join(" "));
+    await page.keyboard.press("Shift+A");
+
+    // 3. Repérage polaire 45° (F10) et longueur tapée « 3 » : extrémité exacte.
+    await page.keyboard.press("F10");
+    check("repérage : F10 active le repérage polaire", (await outils.getByRole("button", { name: "Repérage polaire", exact: true }).getAttribute("aria-pressed")) === "true");
+    await cliquer(3, 11);
+    const debutPolaire = await page.locator("svg .studio-point-pose").first().evaluate((c) => [Number(c.getAttribute("cx")), Number(c.getAttribute("cy"))]);
+    await survoler(debutPolaire[0] + 2, debutPolaire[1] + 2.03);
+    await page.locator('svg [data-studio-accroche-mode="polaire"]').waitFor();
+    check("repérage : repère « Polaire 45° », angle affiché dans le champ Mesures", (await page.locator('svg [data-studio-accroche-mode="polaire"] text').textContent()) === "Polaire 45°"
+      && (await page.locator("[data-studio-mesures-angle]").getAttribute("data-studio-mesures-angle")) === "45");
+    await page.keyboard.press("3");
+    check("saisie : taper un chiffre ouvre le champ Mesures", (await page.locator("[data-studio-mesures-saisie]").inputValue()) === "3" && (await page.evaluate(() => document.activeElement?.hasAttribute("data-studio-mesures-saisie"))));
+    await page.keyboard.press("Enter");
+    await page.locator("[data-studio-mesures]").waitFor({ state: "detached" });
+    const idPolaire = (await nouvelles()).find((id) => id !== idInter && id !== idPerp);
+    const polaire = await geometrieDe(idPolaire);
+    const attendu = [net(debutPolaire[0] + 3 * Math.cos(Math.PI / 4)), net(debutPolaire[1] + 3 * Math.sin(Math.PI / 4))];
+    check("saisie : polaire 45° et longueur 3 → extrémité exacte", polaire[2] === attendu[0] && polaire[3] === attendu[1] && Math.abs(Math.hypot(polaire[2] - polaire[0], polaire[3] - polaire[1]) - 3) < 1e-8, `${polaire.join(" ")} / ${attendu.join(" ")}`);
+    await page.keyboard.press("F10");
+
+    // Enregistrement puis relecture identique.
+    await page.keyboard.press("Control+s");
+    await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
+    const enregistrees = await lignesAcc();
+    const parId = Object.fromEntries(enregistrees.map((o) => [o.id, [o.start.x, o.start.y, o.end.x, o.end.y]]));
+    check("accrochage : trois lignes enregistrées avec les coordonnées exactes", enregistrees.length === 3
+      && JSON.stringify(parId[idInter]) === JSON.stringify(inter) && JSON.stringify(parId[idPerp]) === JSON.stringify(perp) && JSON.stringify(parId[idPolaire]) === JSON.stringify(polaire), JSON.stringify(parId));
+    const avantRelecture = await empreinte();
+    await page.reload();
+    await page.locator(`svg [data-studio-objet="${idPolaire}"]`).waitFor({ state: "attached" });
+    check("accrochage : l'actualisation restitue le même dessin", (await empreinte()) === avantRelecture && JSON.stringify(await lignesAcc()) === JSON.stringify(enregistrees));
+  }
+
   // Accessibilité de l'accueil Studio.
   await page.goto(`${BASE}/studio`);
   await page.locator("[data-studio-projets]").waitFor();
