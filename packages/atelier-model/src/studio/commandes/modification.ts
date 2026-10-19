@@ -135,7 +135,14 @@ function transformerSurPlace(state: Etat, ids: readonly string[], t: StudioTrans
     transformes.set(o.id, image);
     return image;
   });
-  // Les cotes angulaires liées (annotations) suivent les segments transformés, comme après Déplacer ou Modifier.
+  // Les cotes angulaires liées (annotations) suivent les segments transformés, comme après Déplacer ou Modifier. Une
+  // symétrie renverse l'orientation : quand ses deux segments sont réfléchis, la cote échange ses deux rayons pour
+  // mesurer le même angle (sinon elle mesurerait son complément à 360°).
+  if (t.miroir) {
+    state.annotations = state.annotations.map((a) => a.type === "angular-dimension" && !a.toResolve && a.links.first && a.links.second
+      && transformes.has(a.links.first.objectId) && transformes.has(a.links.second.objectId)
+      ? { ...a, first: a.second, second: a.first, links: { first: a.links.second, second: a.links.first } } : a);
+  }
   for (const id of transformes.keys()) suivreAnnotations(state, id, path);
   state.dimensions = state.dimensions.map((d) => {
     const choisie = choisis.has(d.id);

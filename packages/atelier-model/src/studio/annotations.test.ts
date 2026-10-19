@@ -144,6 +144,18 @@ describe("Annotations — cote angulaire", () => {
     expect(refus(() => apply(d, [{ toolId: "studio.dessin.deplacer", params: { id: "ang", dx: 1, dy: 0 } }]))).toBe("commands[0] : une cote angulaire liée suit ses segments et ne se déplace pas seule");
   });
 
+  it("intégration avec les transformations : Rotation, Symétrie et Échelle sur place font suivre la cote liée", () => {
+    const d = avecLiee();
+    const tourne = apply(d, [{ toolId: "studio.dessin.rotation", params: { ids: ["l2"], center: { x: 0, y: 0 }, angle: -Math.PI / 4 } }]);
+    expect(measureStudioAngularDimension(tourne, "ang")!.value).toBeCloseTo(45, 9);
+    const miroir = apply(d, [{ toolId: "studio.dessin.symetrie", params: { ids: ["l1", "l2"], axisStart: { x: 5, y: 0 }, axisEnd: { x: 5, y: 1 }, keepSource: false } }]);
+    expect(ann(miroir, "ang")).toMatchObject({ vertex: { x: 10, y: 0 } });
+    expect(measureStudioAngularDimension(miroir, "ang")!.value).toBeCloseTo(90, 9);
+    const agrandi = apply(d, [{ toolId: "studio.dessin.echelle", params: { ids: ["l1", "l2"], center: { x: 1, y: 1 }, factor: 2, includeVolumes: false } }]);
+    expect(ann(agrandi, "ang")).toMatchObject({ vertex: { x: -1, y: -1 } });
+    expect(validateStudioDocument(JSON.parse(JSON.stringify(agrandi)))).toEqual(agrandi);
+  });
+
   it("la ligne liée est supprimée : la cote passe « à résoudre », garde sa géométrie, valeur non évaluée", () => {
     const avant = avecLiee();
     const d = apply(avant, [{ toolId: "studio.dessin.supprimer", params: { ids: ["l2"] } }]);
