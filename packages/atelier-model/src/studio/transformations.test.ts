@@ -131,7 +131,8 @@ describe("Échelle", () => {
     expect(objet(d, "c")).toEqual({ id: "c", type: "circle", center: { x: 10, y: 10 }, radius: 2 });
     expect(objet(d, "a")).toMatchObject({ radius: 4, startAngle: 0, endAngle: H, extrusion: { base: 0, height: 3, thickness: 0.5 } });
     expect(objet(d, "p")).toMatchObject({ points: [{ x: 20, y: 0 }, { x: 24, y: 0 }, { x: 24, y: 4 }], bulges: [0, 0, 0.4] });
-    expect(cote(d, "d1")).toMatchObject({ end: { x: 8, y: 0 }, offset: 0.5 });
+    // Cote non choisie dont les deux extrémités suivent des formes mises à l'échelle : décalage multiplié aussi.
+    expect(cote(d, "d1")).toMatchObject({ end: { x: 8, y: 0 }, offset: 1 });
     expect(cote(d, "d2")).toMatchObject({ start: { x: 2, y: 2 }, end: { x: 6, y: 4 }, links: { start: { anchor: "corner-origin" }, end: { anchor: "corner-opposite" } } });
     expect(cote(d, "dc")).toMatchObject({ start: { x: 10, y: 10 }, end: { x: 12, y: 10 } });
   });

@@ -2,6 +2,9 @@ import { studioAngleNormal, studioShapeAnchors } from "./courbes.js";
 import type { StudioAnchor } from "./noyau/ancres.js";
 import type { StudioPoint, StudioShape } from "./noyau/types.js";
 import type { StudioDimension } from "./objets/cote.js";
+import type { StudioAngularDimension } from "./objets/cote-angulaire.js";
+import type { StudioText } from "./objets/texte.js";
+import type { StudioSolid } from "./objets-3d/solides.js";
 import { studioAnchorPoint } from "./objets/index.js";
 
 /**
@@ -149,3 +152,46 @@ export function studioAncreImage(cible: StudioShape, ancien: StudioAnchor, q: St
 
 /** Décalage d'une cote transformée avec sa sélection : signe inversé par une symétrie, multiplié par le facteur. */
 export const studioDecalageImage = (d: StudioDimension, t: StudioTransformation): number => pur((t.miroir ? -d.offset : d.offset) * t.facteur);
+
+// ——— Annotations et solides libres ———
+
+/**
+ * Image d'un texte : point d'insertion transformé, rotation tournée avec la sélection, hauteur multipliée par le facteur.
+ * Une symétrie ne retourne pas l'écriture (comme MIRRTEXT = 0 en DAO) : seul le point d'insertion est réfléchi, la
+ * rotation est conservée pour que le texte reste lisible.
+ */
+export function studioTransformerTexte(o: StudioText, t: StudioTransformation, id: string = o.id): StudioText {
+  return { ...o, id, position: t.point(o.position), height: o.height * t.facteur, rotation: t.miroir ? o.rotation : studioAngleNormal(t.angle(o.rotation)) };
+}
+
+/**
+ * Image libre d'une cote angulaire (points transformés, rayon d'arc multiplié par le facteur). Une symétrie renverse
+ * l'orientation : les deux rayons (et leurs liens) sont échangés pour mesurer le même angle, pas son complément.
+ */
+export function studioTransformerCoteAngulaire(o: StudioAngularDimension, t: StudioTransformation, id: string = o.id): StudioAngularDimension {
+  const first = t.point(o.first), second = t.point(o.second);
+  return {
+    ...o, id, vertex: t.point(o.vertex), radius: o.radius * t.facteur,
+    ...(t.miroir ? { first: second, second: first, links: { first: o.links.second, second: o.links.first } } : { first, second }),
+  };
+}
+
+/**
+ * Image d'un solide libre (repère `local-3d`, plan xy transformé, z inchangé) : origine transformée, rotation autour de
+ * +z tournée. Symétrie : une boîte reste une boîte (origine prise au coin opposé en y local, rotation 2φ − θ) ; un
+ * prisme garde son origine réfléchie et son profil retourné (y local opposé). Échelle : seule l'origine se déplace,
+ * sauf « volumes aussi » qui multiplie dimensions, profil, hauteur et cote z de l'origine par le facteur.
+ */
+export function studioTransformerSolide(s: StudioSolid, t: StudioTransformation, id: string = s.id): StudioSolid {
+  const k = t.volumes ? t.facteur : 1;
+  const { origin, rotation } = s.placement;
+  const z = pur(origin.z * k);
+  const rot = studioAngleNormal(t.angle(rotation));
+  const place = (p: StudioPoint) => { const q = t.point(p); return { x: q.x, y: q.y, z }; };
+  if (s.type === "box") {
+    const depart = t.miroir ? { x: origin.x - Math.sin(rotation) * s.depth, y: origin.y + Math.cos(rotation) * s.depth } : origin;
+    return { ...s, id, placement: { origin: place(depart), rotation: rot }, width: s.width * k, depth: s.depth * k, height: s.height * k };
+  }
+  const profile = s.profile.map((p) => P(p.x * k, (t.miroir ? -p.y : p.y) * k));
+  return { ...s, id, placement: { origin: place(origin), rotation: rot }, profile, height: s.height * k };
+}
