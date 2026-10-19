@@ -8,3 +8,13 @@
 /* Espace de travail compact : la planche commence au-dessus de la ligne de flottaison (1440×1000, 1280×720, 390×844). */
 .studio-shell:has(.studio-workspace){padding-top:10px;padding-bottom:20px}.studio-shell:has(.studio-workspace) .studio-fil{margin-bottom:6px}.studio-workspace .studio-heading{margin-bottom:4px;gap:8px 12px}.studio-workspace .studio-heading>div{display:flex;align-items:baseline;gap:2px 12px;flex-wrap:wrap;min-width:0;flex:1}.studio-workspace .studio-heading h1{font-size:clamp(18px,2vw,24px);letter-spacing:-.3px;margin:0}.studio-workspace .studio-heading p{margin:0;font-size:12px}.studio-workspace .studio-badge{padding:4px 10px;font-size:12px}.studio-workspace .studio-context{padding:2px 0;gap:4px 16px}.studio-workspace .studio-context button{min-height:32px;padding:4px 10px;font-size:12px}.studio-workspace .studio-sheet{padding:10px}.studio-workspace .studio-sheet-caption{padding:0 0 6px;gap:8px}
 @media(max-width:540px){.studio-shell:has(.studio-workspace){padding:6px 10px 16px}.studio-workspace .studio-heading .studio-eyebrow,.studio-workspace .studio-badge{display:none}.studio-workspace .studio-heading p{font-size:11px}.studio-workspace .studio-context{flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;gap:12px}.studio-workspace .studio-context [role=status]{width:auto;margin-left:auto}.studio-workspace .studio-sheet{padding:6px}.studio-workspace .studio-sheet-caption{font-size:10px;letter-spacing:0;padding-bottom:4px}.studio-shell:has(.studio-workspace) .studio-fil{flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;margin-bottom:4px;font-size:12px}.studio-shell .studio-workspace{display:flex;flex-direction:column}.studio-workspace>.studio-undo-scope{order:1}.studio-workspace>.studio-editor~*{order:2}}
+
+/* Aperçu des domaines et des outils (page d'un projet) */
+.studio-apercu-domaines { margin: 16px 0; border: 1px solid var(--line, #d9e1dc); border-radius: 10px; padding: 12px 14px; background: var(--surface, #fff); }
+.studio-apercu-domaines > summary { cursor: pointer; font-weight: 600; min-height: 24px; }
+.studio-apercu-grille { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.studio-apercu-grille > li { border: 1px solid var(--line, #d9e1dc); border-radius: 8px; padding: 10px 12px; }
+.studio-apercu-grille h3, [data-studio-apercu-domaine="a-definir"] h3 { font-size: 1rem; margin: 0 0 4px; }
+.studio-apercu-liste h4 { font-size: .85rem; margin: 8px 0 4px; }
+.studio-apercu-liste ul { display: flex; flex-wrap: wrap; gap: 4px 6px; list-style: none; padding: 0; margin: 0; }
+.studio-apercu-liste li { font-size: .8rem; padding: 2px 8px; border-radius: 999px; background: var(--chip, #eef3ef); }
