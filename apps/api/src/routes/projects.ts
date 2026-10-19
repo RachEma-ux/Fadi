@@ -200,7 +200,7 @@ projectsRouter.post("/:projectId/copies", async (req, res) => {
   const created = await db.transaction(async (tx) => {
     const archive = await exportProjectArchive(tx, project, now);
     // La copie reprend le dossier, pas le Studio ni les droits de l'original (identifiants Studio globaux, membres choisis par le propriétaire).
-    return importProjectArchive(tx, req.user!.id, { ...archive, studio: null, project: { ...archive.project, name, exampleMode: project.exampleMode ? "editable" : null } }, now);
+    return importProjectArchive(tx, req.user!.id, { ...archive, studio: undefined, project: { ...archive.project, name, exampleMode: project.exampleMode ? "editable" : null } }, now);
   });
   res.status(201).json({ id: created.project.id, code: created.project.code, name: created.project.name, warnings: created.warnings });
 });
