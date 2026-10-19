@@ -21,7 +21,7 @@
     }
   },
   "studioModele": {
-    "$commentaire": "Couches du modèle Studio (packages/atelier-model/src/studio), dérivées du code au 19 octobre 2026. Socle : noyau (types du socle — point, extrusion, calque, forme minimale —, limites, validation, calques, ancres), qui n'importe aucune autre couche. Primitives d'écriture : exporteurs (texte, maillage, ifc-step, dxf) et registre/schemas-base. Objets 2D (objets, unions StudioShape / StudioAnnotation / StudioItem comprises), solides (objets-3d) et architecture se branchent sur le socle et les primitives. registre décrit les outils à partir des schémas d'objets ; commandes les exécute (état d'un lot compris, commandes/etat.ts) ; composition rassemble le document (StudioDocument, StudioCommand), sa validation, l'aiguillage applyStudioCommands et les lectures du document entier (coupe, quantités des solides) ; echanges est une feuille. Les fichiers à la racine de studio/ (façades document-2d, solides-libres, export, registry…) ne sont pas contraints. Les imports « type » (import type, export type) sont distingués des imports de valeur dans les exceptions.",
+    "$commentaire": "Couches du modèle Studio (packages/atelier-model/src/studio), dérivées du code au 19 octobre 2026. Socle : noyau (types du socle — point, extrusion, calque, forme minimale —, limites, validation, calques, ancres), qui n'importe aucune autre couche. Primitives d'écriture : exporteurs (texte, maillage, ifc-step, dxf) et registre/schemas-base. Objets 2D (objets, unions StudioShape / StudioAnnotation / StudioItem comprises), solides (objets-3d) et architecture se branchent sur le socle et les primitives. registre décrit les outils à partir des schémas d'objets ; commandes les exécute (état d'un lot compris, commandes/etat.ts) ; exigences (propriétés, exigences) et scenes (scènes, apparences) décrivent leurs données ; composition rassemble le document (StudioDocument, StudioCommand), sa validation, l'aiguillage applyStudioCommands et les lectures du document entier (coupe et quantités des solides, écarts aux exigences, affichage des scènes) ; echanges est une feuille. Les fichiers à la racine de studio/ (façades document-2d, solides-libres, facade-exigences, facade-scenes, export, registry…) ne sont pas contraints. Les imports « type » (import type, export type) sont distingués des imports de valeur dans les exceptions.",
     "racine": "packages/atelier-model/src/studio",
     "regles": [
       {
@@ -63,12 +63,28 @@
         "motif": "les commandes valident elles-mêmes leurs paramètres : elles ne s'appuient pas sur le registre déclaratif (X.2-03) ; l'aiguillage qui les compose vit au-dessus (composition)"
       },
       {
+        "de": "exigences",
+        "interdits": ["composition", "registre", "echanges"],
+        "sauf": ["registre/schemas-base"],
+        "motif": "les propriétés et exigences se décrivent avec le socle, les objets, l'architecture, l'état des commandes et les schémas de base ; les écarts, lecture du document entier, vivent dans composition (composition/ecarts.ts)"
+      },
+      {
+        "de": "scenes",
+        "interdits": ["composition", "registre", "echanges", "commandes"],
+        "sauf": ["registre/schemas-base"],
+        "motif": "les scènes et apparences se décrivent avec le socle, les primitives d'écriture et les schémas de base ; leurs commandes vivent dans commandes/scenes.ts, leur registre dans registre/scenes.ts, leurs lectures du document entier dans composition/affichage-scenes.ts"
+      },
+      {
         "de": "composition",
-        "interdits": ["registre", "exporteurs", "echanges"],
-        "motif": "la composition assemble le socle, les objets, les solides, l'architecture, les exigences, les scènes et les commandes en un document validé ; elle ne dépend ni du registre déclaratif, ni des exporteurs, ni des échanges"
+        "interdits": ["registre", "echanges"],
+        "motif": "la composition assemble le socle, les primitives d'écriture, les objets, les solides, l'architecture, les exigences, les scènes et les commandes en un document validé ; elle ne dépend ni du registre déclaratif, ni des échanges"
       }
     ],
-    "exceptions": []
+    "exceptions": [],
+    "cycles": {
+      "$commentaire": "Aucun cycle entre dossiers de studio/ (imports hors tests ; les fichiers de la racine, façades, ne sont pas des nœuds). Une primitive déclarée ici forme son propre nœud : registre/schemas-base (schémas de base) est importée par les objets, les solides, l'architecture, les exigences et les scènes, que le reste du registre importe.",
+      "noeudsDistincts": ["registre/schemas-base"]
+    }
   },
   "modelePur": {
     "$commentaire": "Le modèle pur (packages/*) n'importe ni React, ni le DOM, ni three, ni apps/*, même si un manifeste venait à le déclarer. Les globals du navigateur sont refusés par BROWSER_API ; apps/* par FORBIDDEN_BOUNDARY (tous deux déjà en place).",

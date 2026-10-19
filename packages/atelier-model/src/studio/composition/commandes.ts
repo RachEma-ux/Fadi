@@ -7,7 +7,7 @@ import { aplatir, extruder } from "../commandes/volume.js";
 import { creerBoite, creerPrisme, deplacerSolide, supprimerSolides } from "../commandes/volume-libre.js";
 import { definirPropriete, elaguerProprietes, retirerPropriete, type StudioPropriete } from "../exigences/proprietes.js";
 import { studioExtrudedRingVertices } from "../objets/polyligne.js";
-import { creerScene, definirApparence, modifierScene, retirerApparences, retirerApparencesOrphelines, supprimerScenes } from "../scenes/commandes.js";
+import { creerScene, definirApparence, modifierScene, retirerApparences, retirerApparencesOrphelines, supprimerScenes } from "../commandes/scenes.js";
 import { sortie, validateStudioDocument } from "./document.js";
 import type { Etat, Gestionnaire } from "../commandes/etat.js";
 import { STUDIO_LIMITS } from "../noyau/limites.js";

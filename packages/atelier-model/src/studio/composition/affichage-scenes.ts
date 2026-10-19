@@ -1,10 +1,10 @@
 import { STUDIO_DEFAULT_LAYER_ID } from "../noyau/limites.js";
-import { validateStudioDocument } from "../composition/document.js";
-import type { StudioDocument } from "../composition/types.js";
+import { validateStudioDocument } from "./document.js";
+import type { StudioDocument } from "./types.js";
 import { identifier } from "../noyau/validation.js";
 import { studioMesh3d, type StudioMesh3d } from "../mesh-3d.js";
 import type { StudioPoint3 } from "../exporteurs/maillage.js";
-import type { StudioApparence, StudioFinitionAffichage, StudioScene } from "./scenes.js";
+import type { StudioApparence, StudioFinitionAffichage, StudioScene } from "../scenes/scenes.js";
 
 /**
  * Lectures de la visualisation (lot E.5) : rappel d'une scène, apparence résolue d'un objet, maillage montré par une

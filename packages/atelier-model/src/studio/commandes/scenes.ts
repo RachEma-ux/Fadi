@@ -1,6 +1,6 @@
-import type { Etat, Gestionnaire } from "../commandes/etat.js";
+import type { Etat, Gestionnaire } from "./etat.js";
 import { fail, idList, record } from "../noyau/validation.js";
-import { validerElementVisualisation, type StudioApparence, type StudioElementVisualisation, type StudioScene } from "./scenes.js";
+import { validerElementVisualisation, type StudioApparence, type StudioElementVisualisation, type StudioScene } from "../scenes/scenes.js";
 
 /**
  * Commandes de la visualisation (lot E.5) : créer, mettre à jour et supprimer une scène ; définir (créer ou remplacer)
