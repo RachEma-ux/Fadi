@@ -92,6 +92,8 @@ export interface StudioIfcSummary {
    * `IfcAnnotation` n'est écrit). Présent seulement quand le document en compte, pour ne rien changer aux autres exports.
    */
   annotations?: number;
+  /** Objets architecturaux (A.4), présents seulement quand le document en compte : murs, ouvertures, portes, fenêtres. */
+  architecture?: { walls: number; openings: number; doors: number; windows: number };
 }
 
 /** Élément IFC produit pour un objet extrudé : l'élément, l'item de représentation (calques) et le calque Studio. */

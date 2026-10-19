@@ -43,8 +43,9 @@ const ctx = (): ContexteClic => { let n = 0; return { nouvelId: () => `id-${++n}
 
 describe("Outils de la planche : aide et aperçu identiques à l'ancien espace de travail", () => {
   // Les transformations (Copier, Rotation, Symétrie, Échelle) et les outils d'annotation, postérieurs au découpage, ont
-  // leurs propres tests (`annotations.test.ts` pour la cote angulaire et le texte).
-  const tools = STUDIO_TOOLS.map((t) => t.toolId).filter((t) => !OUTILS_TRANSFORMATION.has(t) && t !== "studio.dessin.cote-angulaire" && t !== "studio.dessin.texte");
+  // leurs propres tests (`annotations.test.ts` pour la cote angulaire et le texte, `architecture.test.ts` pour le mur et
+  // l'ouverture, A.4).
+  const tools = STUDIO_TOOLS.map((t) => t.toolId).filter((t) => !OUTILS_TRANSFORMATION.has(t) && t !== "studio.dessin.cote-angulaire" && t !== "studio.dessin.texte" && !t.startsWith("studio.architecture."));
   const traces = [null, pp(0, 0)];
   const suites: StudioPoint[][] = [[], [{ x: 1, y: 1 }], [{ x: 1, y: 1 }, { x: 2, y: 0 }]];
   it("aide : tous outils × tracé × suite × mode × droits", () => {

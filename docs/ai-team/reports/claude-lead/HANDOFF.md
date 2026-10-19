@@ -1,6 +1,6 @@
 # Reprise — Lead Claude Code (développement Fadi)
 
-Mis à jour le 18/10/2026 (UTC). Ce fichier remplace, pour le code, les checkpoints Codex. Codex garde la documentation et
+Mis à jour le 19/10/2026 (UTC). Ce fichier remplace, pour le code, les checkpoints Codex. Codex garde la documentation et
 le registre.
 
 ## Mandat
@@ -27,6 +27,9 @@ le registre.
 | #191 | Feuille de présentation (ISO, échelle, cartouche sans donnée inventée, impression / SVG / PDF), comparaison de révisions et de variantes, commentaires de variante. |
 | #192 | Recettes intermittentes corrigées dans le produit : liste d'outils sur téléphone, commentaire d'étape publié pendant le premier chargement. |
 | #193 | Import DXF (unités explicites, entités non prises listées, envoi par lots chaînés), liens étude ↔ étapes du Parcours, notifications de commentaires Studio. |
+| #194 | Recette Docker du profil Studio V1 (`studio-v1-functional.py`) en CI sur les PR Studio et sur `main`. |
+| #195 | Vagues 1–2 et découpage S0 du modèle Studio (noyau, objets, commandes, registre, exporteurs). |
+| #196 | Vague 3 + E2b : transformations, accrochages, annotations, hors ligne (brouillons par utilisateur, comparer-puis-écrire entre onglets), accessibilité clavier, paquets diffusés dans Documents. |
 | #171, #174–#177, #142, #143, #152 | Correctifs Atelier et Planche, frontières Studio ↔ Atelier, garde-fous d'architecture, gabarit pleine largeur. Remis à jour et fusionnés par l'équipe 6. |
 
 PR fermées :
@@ -62,11 +65,12 @@ par motif (`pkill -f`), seulement par son PID.
 
 ## Prochaines actions
 
-1. Vérifier que #193 est fusionnée ; sinon, mener sa CI au vert puis la fusionner.
-2. Pistes suivantes, dans l'ordre recommandé :
-   - outils de dessin supplémentaires (arc, cercle, polyligne, décalage), pour que l'import DXF reprenne aussi ARC et CIRCLE ;
-   - cotation angulaire ;
-   - Studio hors ligne (le service worker et Dexie existent déjà pour le Parcours) ;
-   - préférences de notification.
-3. DB-3 reste fermé. Il faut une demande explicite du propriétaire pour l'ouvrir.
-4. La recette du profil A6 (`scripts/validation/studio-v1-functional.py`) demande Docker. Elle n'a pas été rejouée depuis l'intégration du schéma dans `init.sql` ; à rejouer sur un hôte qui a Docker.
+1. Vague 4 (branche locale `lead-vague4`, PR à ouvrir après #196) : murs et ouvertures (A.4, REC-A-03 vérifié :
+   3,600 m³ brut, 0,420 déduit, 3,180 net), rapport de fidélité des exports (E.6-03), index spatial de la planche (C.1).
+   Revue indépendante faite ; correctifs en cours (validation incrémentale de l'architecture, transformations des murs
+   depuis l'interface, ouverture refusée sur mur masqué, sélection du mur du côté de son corps).
+2. Restent connus : repli du service worker sur un cache périmé, ajustements de métré (E.3-05) non persistés.
+3. DB-3 reste fermé ; exiger le job Studio dans la protection de branche demande l'administrateur du dépôt.
+4. Recette locale dans un worktree sous `.claude/` : copier `apps/web/dist` hors de ce dossier pour `WEB_DIST`
+   (`send` refuse les chemins qui traversent un dossier caché). Une base neuve demande `CREATE EXTENSION postgis` par
+   le superutilisateur avant `db:migrate`.

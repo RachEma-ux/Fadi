@@ -1,0 +1,14 @@
+.studio-architecture{cursor:pointer}
+.studio-architecture>*{vector-effect:non-scaling-stroke;stroke-width:2px}
+.studio-architecture-wall polygon{fill:#d8d2c4;stroke:#3e3a33}
+.studio-architecture-opening line{stroke:#3e3a33}
+.studio-architecture-opening .studio-architecture-vide{fill:#fff;fill-opacity:.01;stroke:#8a6a3a;stroke-dasharray:.08 .06;stroke-width:1px}
+.studio-architecture.selected polygon,.studio-architecture.selected line{stroke:#c3722f;stroke-width:3.5px}
+.studio-architecture.verrouille>*{stroke:#9fb0b5}
+.studio-architecture:focus-visible{outline:2px solid #c3722f}
+.studio-architecture-panneau fieldset{display:grid;gap:.4rem;border:0;padding:0;margin:0 0 .6rem}
+.studio-architecture-panneau h3{display:flex;align-items:center;gap:.35rem;font-size:1rem;margin:.6rem 0 .3rem}
+.studio-architecture-panneau ul{list-style:none;padding:0;margin:0;display:grid;gap:.25rem}
+.studio-architecture-panneau .studio-architecture-actions{display:flex;flex-wrap:wrap;gap:.35rem}
+.studio-architecture-panneau dl{display:grid;grid-template-columns:auto auto;gap:.15rem .6rem;margin:.3rem 0}
+.studio-architecture-panneau dd{margin:0;text-align:right}

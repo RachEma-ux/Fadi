@@ -2,7 +2,9 @@
  * Sélection multiple de la planche 2D : bascule (Maj + clic), tout sélectionner, sélection par rectangle à la manière
  * des logiciels de DAO (de gauche à droite : fenêtre, l'objet entièrement dedans ; de droite à gauche : capture, l'objet
  * touché suffit) et commandes de déplacement d'une sélection. Seuls les objets et les cotes affichés et déverrouillés
- * se sélectionnent. Pur : ni React ni DOM.
+ * se sélectionnent. Au-delà de `SEUIL_INDEX_SPATIAL` éléments, la sélection par rectangle n'examine que les éléments
+ * dont l'emprise du tracé recoupe le rectangle (`index-spatial.ts`) : même résultat que le parcours linéaire (test de
+ * propriété). Pur : ni React ni DOM.
  */
 import {
   dessinerCoteAngulaire, studioArcPoints, studioShapeSegments, studioTextBox, type StudioAnnotation, type StudioCommand, type StudioDimension, type StudioDocument,
@@ -10,6 +12,7 @@ import {
 } from "@parcours/atelier-model";
 import { estSelectionnable } from "./calques";
 import { traceCote } from "./geometrie-2d";
+import { indexGrille, SEUIL_INDEX_SPATIAL, type Boite2D, type IndexSpatial } from "./index-spatial";
 
 export type Element2D = StudioShape | StudioDimension | StudioAnnotation;
 export type ModeRectangle = "fenetre" | "capture";
@@ -84,10 +87,50 @@ export function retenu(e: Element2D, r: Rectangle2D, mode: ModeRectangle): boole
   return mode === "fenetre" ? s.every(([a, b]) => dedans(r, a) && dedans(r, b)) : s.some((x) => segmentTouche(r, x));
 }
 
-/** Sélection par rectangle : éléments sélectionnables retenus, dans l'ordre du document. */
-export function selectionParRectangle(doc: StudioDocument, a: StudioPoint, b: StudioPoint): string[] {
+/** Sélection par rectangle, parcours linéaire de tous les éléments (référence de l'index, et règle sous le seuil). */
+export function selectionParRectangleLineaire(doc: StudioDocument, a: StudioPoint, b: StudioPoint): string[] {
   const r = rectangleEntre(a, b), mode = modeRectangle(a, b);
   return elements(doc).filter((e) => estSelectionnable(doc, e.layerId) && retenu(e, r, mode)).map((e) => e.id);
+}
+
+/** Tracé mémorisé d'un élément (objet immuable du document) et son emprise ; emprise infinie s'il n'a aucun segment. */
+interface Trace { e: Element2D; segments: Segment[]; boite: Boite2D }
+const TRACES = new WeakMap<Element2D, Trace>();
+function trace(e: Element2D): Trace {
+  let t = TRACES.get(e);
+  if (!t) {
+    const s = segments(e);
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const [p, q] of s) for (const v of [p, q]) { if (v.x < x0) x0 = v.x; if (v.x > x1) x1 = v.x; if (v.y < y0) y0 = v.y; if (v.y > y1) y1 = v.y; }
+    // Sans segment (jamais pour un document valide), l'élément reste toujours examiné : il n'est jamais écarté par l'index.
+    const boite = s.length ? { min: { x: x0, y: y0 }, max: { x: x1, y: y1 } } : { min: { x: -Infinity, y: -Infinity }, max: { x: Infinity, y: Infinity } };
+    t = { e, segments: s, boite };
+    TRACES.set(e, t);
+  }
+  return t;
+}
+const INDEX_SELECTION = new WeakMap<StudioDocument, IndexSpatial<Trace>>();
+
+/**
+ * Sélection par rectangle : éléments sélectionnables retenus, dans l'ordre du document. Au-dessus du seuil, seuls les
+ * éléments dont l'emprise recoupe le rectangle (élargi d'une marge de l'ordre de l'arrondi flottant : l'index ne peut
+ * qu'examiner trop, jamais écarter à tort) passent le contrôle exact.
+ */
+export function selectionParRectangle(doc: StudioDocument, a: StudioPoint, b: StudioPoint, seuil = SEUIL_INDEX_SPATIAL): string[] {
+  const n = doc.objects.length + (doc.dimensions?.length ?? 0) + (doc.annotations?.length ?? 0);
+  if (n < seuil) return selectionParRectangleLineaire(doc, a, b);
+  let index = INDEX_SELECTION.get(doc);
+  if (!index) {
+    index = indexGrille(elements(doc).map(trace), (t) => t.boite);
+    INDEX_SELECTION.set(doc, index);
+  }
+  const r = rectangleEntre(a, b), mode = modeRectangle(a, b);
+  const m = 1e-9 * (1 + Math.max(Math.abs(r.min.x), Math.abs(r.min.y), Math.abs(r.max.x), Math.abs(r.max.y)));
+  const zone = { min: { x: r.min.x - m, y: r.min.y - m }, max: { x: r.max.x + m, y: r.max.y + m } };
+  return index.chercher(zone)
+    .filter(({ e, segments: s }) => estSelectionnable(doc, e.layerId)
+      && (mode === "fenetre" ? s.every(([p, q]) => dedans(r, p) && dedans(r, q)) : s.some((x) => segmentTouche(r, x))))
+    .map((t) => t.e.id);
 }
 
 /** Union ordonnée (Maj + rectangle : ajoute à la sélection). */

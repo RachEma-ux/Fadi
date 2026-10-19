@@ -73,7 +73,7 @@ describe("Planche 2D de Studio — règle d'or", () => {
     for (const f of FAMILLES_STUDIO) expect(ELEMENTS_FAMILLE.get(f.id)?.length ?? 0, f.id).toBeGreaterThan(0);
     // Familles demandées : Sélection, Dessin, Courbes, Annotation, Modification, Calques, Volume, Vue / Accrochage,
     // Présentation, Importer / Exporter, Édition (et Catalogue, porte du gestionnaire et de la palette).
-    expect(FAMILLES_STUDIO.map((f) => f.libelleFR)).toEqual(["Sélection", "Dessin", "Courbes", "Annotation", "Modification", "Calques", "Volume", "Vue / Accrochage", "Présentation", "Importer / Exporter", "Édition", "Catalogue"]);
+    expect(FAMILLES_STUDIO.map((f) => f.libelleFR)).toEqual(["Sélection", "Dessin", "Courbes", "Annotation", "Modification", "Calques", "Volume", "Architecture", "Vue / Accrochage", "Présentation", "Importer / Exporter", "Édition", "Catalogue"]);
     const icones = [...FAMILLES_STUDIO.map((f) => f.trace), TRACE_PLUS];
     expect(new Set(icones).size, "icône de famille partagée").toBe(icones.length);
     for (const d of entrees.map((e) => trace(e.icone))) expect(icones, "icône de famille reprise d'un outil").not.toContain(d);

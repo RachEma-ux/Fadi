@@ -1,0 +1,40 @@
+Notifications : 0 non lue(s), 1 alerte(s) du dossier	accueil-projet,accueil-projet-recherche,accueil-projet-historique,accueil-projet-etat,accueil-reprise,accueil-reprise-recherche,accueil-reprise-historique,accueil-reprise-etat,parcours,etape-03,programmation,analyses,documents,collaboration,atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+Accueil du projet	accueil-projet,accueil-projet-recherche,accueil-projet-historique,accueil-projet-etat,parcours,etape-03,programmation,analyses,documents,collaboration,atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+Aucune écriture en attente sur cet appareil	parcours,etape-03,programmation,analyses,documents,collaboration,atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+Paramètre niveauId : niveau	atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+Paramètre nx : entier	atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+Paramètre ny : entier	atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+Paramètre px : longueur	atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+Paramètre py : longueur	atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+Paramètre ox : count	atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+Paramètre oy : count	atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+Paramètre section : longueur	atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+Paramètre hauteur : longueur	atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+Règle section < px	atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+Règle section < py	atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+Règle nombre <= 400	atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+Série i de 0 à nx - 1	atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+Série j de 0 à ny - 1	atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+{ "id": "mon-script", "nom": "…", "parametres": [], "pour": [], "commandes": [] }	atelier,atelier-instructeur,atelier-outliner,atelier-affichage,atelier-materiaux,atelier-modele,atelier-navigation,atelier-raccourcis,atelier-menu,atelier-3d,atelier-documents
+Baseline schedule · Exemple illustratif sur 12 semaines	accueil-projet,accueil-projet-recherche,accueil-projet-historique,accueil-projet-etat,accueil-reprise,accueil-reprise-recherche,accueil-reprise-historique,accueil-reprise-etat
+Terminé	accueil-projet,accueil-projet-recherche,accueil-projet-historique,accueil-projet-etat,accueil-reprise,accueil-reprise-recherche,accueil-reprise-historique,accueil-reprise-etat
+Bloqué	accueil-projet,accueil-projet-recherche,accueil-projet-historique,accueil-projet-etat,accueil-reprise,accueil-reprise-recherche,accueil-reprise-historique,accueil-reprise-etat
+Ouvrir la feuille de route	accueil-projet,accueil-projet-recherche,accueil-projet-historique,accueil-projet-etat,accueil-reprise,accueil-reprise-recherche,accueil-reprise-historique,accueil-reprise-etat
+Légende de l’avancement	accueil-projet,accueil-projet-recherche,accueil-projet-historique,accueil-projet-etat,accueil-reprise,accueil-reprise-recherche,accueil-reprise-historique,accueil-reprise-etat
+Understand the site · S1–S2. 3 steps completed out of 3. Statut : Terminé.	accueil-projet,accueil-projet-recherche,accueil-projet-historique,accueil-projet-etat,accueil-reprise,accueil-reprise-recherche,accueil-reprise-historique,accueil-reprise-etat
+Design / Test · S5–S8. 4 steps completed out of 4. Statut : Terminé.	accueil-projet,accueil-projet-recherche,accueil-projet-historique,accueil-projet-etat,accueil-reprise,accueil-reprise-recherche,accueil-reprise-historique,accueil-reprise-etat
+Prove feasibility · S8–S10. 4 steps completed out of 4. Statut : Terminé.	accueil-projet,accueil-projet-recherche,accueil-projet-historique,accueil-projet-etat,accueil-reprise,accueil-reprise-recherche,accueil-reprise-historique,accueil-reprise-etat
+Decide · S10–S11. 3 steps completed out of 3. Statut : Terminé.	accueil-projet,accueil-projet-recherche,accueil-projet-historique,accueil-projet-etat,accueil-reprise,accueil-reprise-recherche,accueil-reprise-historique,accueil-reprise-etat
+Commit · S11–S12. 2 steps completed out of 2. Statut : Terminé.	accueil-projet,accueil-projet-recherche,accueil-projet-historique,accueil-projet-etat,accueil-reprise,accueil-reprise-recherche,accueil-reprise-historique,accueil-reprise-etat
+Pour	atelier-raccourcis,atelier-menu,atelier-3d
+Shortcut for Pour	atelier-raccourcis,atelier-menu,atelier-3d
+Règlement de la zone I — secteur I5 (source des réponses de l'étape 02) · source of step 02	parcours
+Conserver une arrivée dégagée côté B.265–B.266 ; protéger un espace extérieur de pause ; étudier une desserte latérale séparée. Le schéma porte uniquement sur le terrain.	etape-03
+Façade computed from the model; source north and declination / magnetic measurement not confirmed. Ba Zhai remains a scenario reading, not a validation of sectors.	analyses
+Épaisseur BET non définie ; 0.25 m conservé uniquement pour la représentation	analyses
+Revue de conception conservée	collaboration
+niveauId : niveau	atelier
+i de 0 à nx - 1	atelier
+j de 0 à ny - 1	atelier
+Variables lisibles sur «	atelier
+commandes[0].niveauId : « Niveau » requis	atelier

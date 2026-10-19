@@ -302,11 +302,20 @@ const AJOUTS = {
   outils: new Set([
     "studio.dessin.copier", "studio.dessin.rotation", "studio.dessin.symetrie", "studio.dessin.echelle",
     "studio.dessin.cote-angulaire", "studio.dessin.texte",
+    // Architecture (A.4, extension additive consignée) : murs et ouvertures.
+    "studio.architecture.mur", "studio.architecture.ouverture", "studio.architecture.modifier", "studio.architecture.supprimer",
   ]),
-  types: new Set(["angular-dimension", "text"]),
+  types: new Set(["angular-dimension", "text", "wall", "opening"]),
   exports: new Set([
     "dessinerCoteAngulaire", "formatStudioAngle", "measureStudioAngularDimension", "STUDIO_TEXT_JUSTIFICATIONS", "STUDIO_TEXT_MAX",
     "studioAngularFromSegments", "studioAngularValue", "studioStraightSegment", "studioTextBox", "studioTextRotationDegrees",
+    // Architecture (A.4).
+    "STUDIO_OPENING_KINDS", "STUDIO_WALL_JUSTIFICATIONS", "SCHEMA_ARCHITECTURE", "SCHEMA_MUR", "SCHEMA_OUVERTURE",
+    "controlerArchitecture", "validerElementArchitectural", "validerMur", "validerOuverture", "geometrieMur", "lateraux", "placerOuverture",
+    "studioPlanArchitecture", "studioMaillageArchitecture", "studioQuantitesArchitecture",
+    // Rapport de fidélité des exports (E.6-03, `echanges/rapport-fidelite.ts`).
+    "STUDIO_CAPACITES_EXPORT", "STUDIO_FORMATS_ECHANGE", "STUDIO_LISTES_ECHANGE", "STUDIO_RAISONS_FIDELITE", "STUDIO_RAPPORT_FIDELITE_SCHEMA",
+    "STUDIO_STATUTS_FIDELITE", "studioRapportFidelite",
   ]),
 };
 function sansAjouts(value: unknown): unknown {
@@ -318,7 +327,7 @@ function sansAjouts(value: unknown): unknown {
   if (!value || typeof value !== "object") return value;
   const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
   const props = out.properties as Record<string, unknown> | undefined;
-  if (props && "schemaVersion" in props) delete props.annotations;
+  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; }
   return out;
 }
 
