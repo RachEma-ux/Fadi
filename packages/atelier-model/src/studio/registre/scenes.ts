@@ -1,7 +1,7 @@
-import { common, mutation } from "../registre/communs.js";
-import { ids } from "../registre/schemas.js";
-import { id } from "../registre/schemas-base.js";
-import { SCHEMA_APPARENCE, SCHEMA_SCENE } from "./scenes.js";
+import { common, mutation } from "./communs.js";
+import { ids } from "./schemas.js";
+import { id } from "./schemas-base.js";
+import { SCHEMA_APPARENCE, SCHEMA_SCENE } from "../scenes/scenes.js";
 
 /**
  * Famille « Visualisation » du registre (lot E.5) : scènes enregistrées et apparences d'affichage. Raccourcis libres et

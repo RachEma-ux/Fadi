@@ -1,4 +1,4 @@
-import { editable, freeId, type Etat, type Gestionnaire } from "../noyau/etat.js";
+import { editable, freeId, type Etat, type Gestionnaire } from "./etat.js";
 import { fail, finite, identifier, idList, record } from "../noyau/validation.js";
 import { validerSolide, type StudioSolid } from "../objets-3d/solides.js";
 

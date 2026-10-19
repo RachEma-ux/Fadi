@@ -3,14 +3,16 @@ import { validerForme } from "../objets/index.js";
 import { validerSolide, type StudioSolid } from "../objets-3d/solides.js";
 import { controlerLiensAnnotation, validerAnnotation } from "../objets/annotation.js";
 import { studioAngularValue } from "../objets/cote-angulaire.js";
-import { validerCalque } from "./calques.js";
+import { etatCalque, validerCalque, type StudioLayerState } from "../noyau/calques.js";
 import type { StudioArchitectureItem } from "../architecture/types.js";
 import { controlerArchitecture, validerElementArchitectural } from "../architecture/validation.js";
 import { validerProprietes, type StudioPropriete } from "../exigences/proprietes.js";
-import { STUDIO_LIMITS } from "./limites.js";
+import { STUDIO_LIMITS } from "../noyau/limites.js";
 import { controlerVisualisation, validerElementVisualisation, type StudioElementVisualisation } from "../scenes/scenes.js";
-import type { StudioAnnotation, StudioDocument, StudioLayer, StudioShape } from "./types.js";
-import { array, fail, identifier, record } from "./validation.js";
+import type { StudioLayer } from "../noyau/types.js";
+import { array, fail, identifier, record } from "../noyau/validation.js";
+import type { StudioAnnotation, StudioShape } from "../objets/formes.js";
+import type { StudioDocument } from "./types.js";
 
 /** Document Studio : forme canonique, validation complète, création, lectures (sélection, mesure d'une cote). */
 
@@ -112,6 +114,11 @@ export function measureStudioAngularDimension(document: StudioDocument, id: stri
   if (!found || found.type !== "angular-dimension") return null;
   const value = studioAngularValue(found);
   return { id, status: value === null ? "to-resolve" : "resolved", value, unit: "deg", frame: "local-2d" };
+}
+
+/** État d'affichage et d'édition d'un calque du document ; le calque implicite non matérialisé est visible et déverrouillé. */
+export function studioLayerState(doc: StudioDocument, layerId: string | undefined): StudioLayerState | null {
+  return etatCalque(doc.layers, layerId);
 }
 
 export function newStudioDocument(id: string): StudioDocument {

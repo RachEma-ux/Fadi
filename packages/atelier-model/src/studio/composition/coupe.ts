@@ -1,8 +1,8 @@
-import { studioLayerState } from "../noyau/calques.js";
-import { validateStudioDocument } from "../noyau/document.js";
-import type { StudioDocument, StudioPoint } from "../noyau/types.js";
+import type { StudioPoint } from "../noyau/types.js";
 import { fail, finite, record } from "../noyau/validation.js";
-import { cotesSolide, empriseSolide } from "./solides.js";
+import { cotesSolide, empriseSolide } from "../objets-3d/solides.js";
+import { studioLayerState, validateStudioDocument } from "./document.js";
+import type { StudioDocument } from "./types.js";
 
 /**
  * Coupe plane dérivée (A.3-07) : section des solides libres par un plan horizontal z = cote du repère `local-3d`. Le

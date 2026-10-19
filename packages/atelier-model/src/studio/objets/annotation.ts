@@ -1,5 +1,6 @@
 import type { DxfWriter } from "../exporteurs/dxf.js";
-import type { StudioAnnotation, StudioPoint, StudioShape } from "../noyau/types.js";
+import type { StudioPoint } from "../noyau/types.js";
+import type { StudioAnnotation, StudioShape } from "./formes.js";
 import { discriminator, fail } from "../noyau/validation.js";
 import {
   controlerLiensAngulaires, coteAngulaireDxf, coteAngulairePoints, coteAngulaireSvg, dessinerCoteAngulaire, validerCoteAngulaire, type DessinCoteAngulaire,

@@ -8,7 +8,7 @@ import { OUTILS_PROPRIETES } from "./registre/proprietes.js";
 import { STUDIO_DOCUMENT_SCHEMA } from "./registre/schemas.js";
 import { OUTILS_VOLUME } from "./registre/volume.js";
 import { OUTILS_VOLUME_LIBRE } from "./registre/volume-libre.js";
-import { OUTILS_SCENES } from "./scenes/registre.js";
+import { OUTILS_SCENES } from "./registre/scenes.js";
 
 /**
  * Native registry, single source for the toolbar, shortcuts and the API enum. These tools never expose an agent or MCP entry point.

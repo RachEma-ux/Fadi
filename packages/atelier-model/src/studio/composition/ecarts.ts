@@ -1,7 +1,7 @@
-import type { StudioDocument } from "../noyau/types.js";
-import { validateStudioDocument } from "../noyau/document.js";
+import type { StudioDocument } from "./types.js";
+import { validateStudioDocument } from "./document.js";
 import { quantitesStudio, type QuantitesStudio } from "../quantites.js";
-import { exigenceUtilisable, UNITE_NOMBRE, type ComparaisonExigence, type ExigenceStudio, type JeuExigences, type MetriqueExigence } from "./exigences.js";
+import { exigenceUtilisable, UNITE_NOMBRE, type ComparaisonExigence, type ExigenceStudio, type JeuExigences, type MetriqueExigence } from "../exigences/exigences.js";
 
 /**
  * Écarts entre un jeu d'exigences (une version) et le métré d'une révision (E.1-02 / E.1-03 / E.1-05). Pur : le

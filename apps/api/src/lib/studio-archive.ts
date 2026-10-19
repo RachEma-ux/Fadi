@@ -24,7 +24,7 @@ import { signManifestHash, verifyArchiveSignature, type ArchiveTrust } from "./a
 import { currentSigningKey, verificationKeys } from "./archive-signing-key.js";
 import {
   STUDIO_ARCHIVE_SCHEMA, STUDIO_ARCHIVE_SCHEMA_VERSION, STUDIO_ARCHIVE_TABLES, STUDIO_IDENTITY_TABLES, STUDIO_TABLE_KEYS,
-  buildStudioManifest, checkStudioArchive, distrustRequirementSets, distrustStudioPublications,emptyStudioTables, mapStudioAccounts, packageVolumeIds, remapStudioRows, studioAccountIds,
+  buildStudioManifest, checkStudioArchive, distrustRequirementSets, distrustStudioPublications, emptyStudioTables, mapStudioAccounts, packageVolumeIds, remapStudioJsonAccounts, remapStudioRows, studioExportAccountIds,
   type StudioArchiveRow, type StudioArchiveSection, type StudioArchiveTable,
 } from "./studio-archive-manifest.js";
 
@@ -71,7 +71,8 @@ export async function exportStudioArchive(q: Querier, project: { id: string; own
   const tables = await loadStudioTables(q, project.id, project.ownerId);
   const meaningful = STUDIO_ARCHIVE_TABLES.some((t) => t !== "studio_tool_preferences" && tables[t].length > 0);
   if (!meaningful) return null;
-  const ids = studioAccountIds(tables, project.ownerId);
+  // Comptes des colonnes et des champs JSON (acceptations de référence partenaire) : chacun part avec son adresse.
+  const ids = studioExportAccountIds(tables, project.ownerId);
   const found = await rows(q, sql`SELECT jsonb_build_object('id', id, 'email', email) AS row FROM users WHERE id IN (${sql.join(ids.map((id) => sql`${id}`), sql`, `)}) ORDER BY id`);
   const emails = new Map(found.map((r) => [r["id"] as string, r["email"] as string]));
   // Un compte supprimé depuis (cascade impossible : RESTRICT) n'arrive pas ici ; l'adresse vide le signalerait.
@@ -121,10 +122,14 @@ export async function importStudioArchive(tx: Tx, projectId: string, importerId:
 
   let map: Map<string, string>;
   let reassigned: string[] = [];
+  let targetEmails = new Map<string, string>();
   if (trusted) {
     const emails = [...new Set(section.accounts.map((a) => a.email.toLowerCase()).filter(Boolean))];
     const found = emails.length ? await rows(tx, sql`SELECT jsonb_build_object('id', id, 'email', lower(email)) AS row FROM users WHERE lower(email) IN (${sql.join(emails.map((e) => sql`${e}`), sql`, `)})`) : [];
     ({ map, reassigned } = mapStudioAccounts(section.accounts, new Map(found.map((r) => [r["email"] as string, r["id"] as string])), importerId));
+    const targets = [...new Set([...map.values(), importerId])];
+    const targetRows = await rows(tx, sql`SELECT jsonb_build_object('id', id, 'email', email) AS row FROM users WHERE id IN (${sql.join(targets.map((id) => sql`${id}`), sql`, `)})`);
+    targetEmails = new Map(targetRows.map((r) => [r["id"] as string, r["email"] as string]));
   } else {
     // Rien n'est cru : tout acteur cité (auteur, approbateur, diffuseur, responsable) devient le compte qui restaure.
     map = new Map(section.accounts.map((a) => [a.id, importerId]));
@@ -156,7 +161,21 @@ export async function importStudioArchive(tx: Tx, projectId: string, importerId:
     let extraEvents: StudioArchiveRow[] = [];
     let requirementSets = tables.studio_requirement_sets;
     let clearedAcceptances = 0;
-    if (!trusted) {
+    if (trusted) {
+      // Comptes cités dans les champs JSON (STUDIO_JSON_ACCOUNT_FIELDS) : même correspondance que les colonnes. L'archive
+      // a déjà été vérifiée telle qu'écrite (manifeste, empreintes, signature) : la réattribution vient après.
+      // Seuls les comptes RETROUVÉS par leur adresse sont repris : une acceptation d'un compte absent de cette base est
+      // retirée (jamais attribuée au compte qui restaure, qui n'a pas accepté).
+      const reassignedIds = new Set(section.accounts.filter((a) => reassigned.includes(a.email || a.id)).map((a) => a.id));
+      const found = new Map([...map].filter(([source]) => !reassignedIds.has(source)).map(([source, target]) => [source, { id: target, email: targetEmails.get(target) ?? "" }]));
+      const j = remapStudioJsonAccounts(requirementSets, found);
+      requirementSets = j.sets;
+      if (j.cleared) {
+        const emailOf = new Map(section.accounts.map((a) => [a.id, a.email]));
+        const who = j.clearedAccounts.map((id) => emailOf.get(id) || id).join(", ");
+        warnings.push(`Exigences : ${j.cleared} acceptation(s) de référence partenaire non reprise(s) (acceptant absent de cette base : ${who}) : les références redeviennent « non acceptées » et doivent être acceptées à nouveau.`);
+      }
+    } else {
       const d = distrustStudioPublications(publications, tables.studio_variants, importerId, new Date().toISOString(), () => newId("studio_publication_event"));
       ({ publications, downgraded } = d);
       extraEvents = d.events;

@@ -49,6 +49,7 @@ const couches = {
   [`${ST}/exporteurs/texte.ts`]: 'export const nb = 1;\n',
   [`${ST}/architecture/types.ts`]: 'export type Mur = { m: 1 };\n',
   [`${ST}/echanges/rapport.ts`]: 'export const rapport = 1;\n',
+  [`${ST}/composition/document.ts`]: 'export const valider = 1;\n',
 };
 
 test('le dépôt réel est conforme à la table (CLI)', () => {
@@ -78,8 +79,59 @@ test('témoin : couches Studio sans import montant, fichiers de la racine de stu
     [`${ST}/commandes/modif.ts`]: 'import { ligne } from "../objets/ligne.js";\nimport { solide } from "../objets-3d/solides.js";\nexport const m = [ligne, solide];\n',
     [`${ST}/echanges/x.ts`]: 'import { OUTILS } from "../registre/dessin.js";\nexport const x = OUTILS;\n',
     [`${ST}/registry.ts`]: 'import { OUTILS } from "./registre/dessin.js";\nimport { dessiner } from "./commandes/dessin.js";\nimport { rapport } from "./echanges/rapport.js";\nexport const r = [OUTILS, dessiner, rapport];\n',
+    [`${ST}/composition/document.ts`]: 'import { ligne } from "../objets/ligne.js";\nimport { solide } from "../objets-3d/solides.js";\nimport type { Mur } from "../architecture/types.js";\nimport { dessiner } from "../commandes/dessin.js";\nimport { fail } from "../noyau/validation.js";\nexport type M = Mur;\nexport const d = [ligne, solide, dessiner, fail];\n',
   });
   assert.deepEqual(erreurs, []);
+});
+
+test('témoin : exigences et scenes lisent le socle, les objets et les schémas de base', (t) => {
+  const erreurs = controler(t, {
+    ...couches,
+    [`${ST}/exigences/schemas.ts`]: 'import { id } from "../registre/schemas-base.js";\nimport { ligne } from "../objets/ligne.js";\nimport { fail } from "../noyau/validation.js";\nexport const s = [id, ligne, fail];\n',
+    [`${ST}/scenes/scenes.ts`]: 'import { id } from "../registre/schemas-base.js";\nimport { nb } from "../exporteurs/texte.js";\nexport const s = [id, nb];\n',
+  });
+  assert.deepEqual(erreurs, []);
+});
+
+test('cycle entre dossiers Studio refusé, même entre couches sans règle ; un test ne crée pas de cycle', (t) => {
+  const cycle = controler(t, {
+    ...couches,
+    [`${ST}/alpha/a.ts`]: 'import { b } from "../beta/b.js";\nexport const a = b;\n',
+    [`${ST}/beta/b.ts`]: 'export const b = 1;\n',
+    [`${ST}/beta/c.ts`]: 'import { a } from "../alpha/a.js";\nexport const c = a;\n',
+  });
+  assert.ok(avec(cycle, 'STUDIO_LAYER_CYCLE', 'alpha → beta → alpha'), JSON.stringify(cycle));
+  assert.ok(avec(cycle, 'STUDIO_LAYER_CYCLE', 'beta/c.ts → ../alpha/a.js'), JSON.stringify(cycle));
+  const parTest = controler(t, {
+    ...couches,
+    [`${ST}/alpha/a.ts`]: 'import { b } from "../beta/b.js";\nexport const a = b;\n',
+    [`${ST}/beta/b.ts`]: 'export const b = 1;\n',
+    [`${ST}/beta/b.test.ts`]: 'import { a } from "../alpha/a.js";\nexport const t = a;\n',
+  });
+  assert.ok(!avec(parTest, 'STUDIO_LAYER_CYCLE'), JSON.stringify(parTest));
+});
+
+test('cycle : une primitive déclarée distincte (registre/schemas-base) forme son propre nœud', (t) => {
+  const fichiers = {
+    ...couches,
+    [`${ST}/objets/arc.ts`]: 'import { id } from "../registre/schemas-base.js";\nexport const arc = id;\n',
+    [`${ST}/registre/dessin.ts`]: 'import { arc } from "../objets/arc.js";\nexport const OUTILS = [arc];\n',
+  };
+  assert.deepEqual(controler(t, fichiers), []);
+  const table = sansExceptions();
+  table.studioModele = { ...table.studioModele, cycles: { noeudsDistincts: [] } };
+  assert.ok(avec(controler(t, fichiers, table), 'STUDIO_LAYER_CYCLE', 'objets → registre → objets'));
+});
+
+test('le noyau n\'a plus aucune exception : le socle n\'importe aucune couche supérieure', () => {
+  assert.deepEqual(TABLE.studioModele.exceptions.filter((e) => e.fichier.startsWith('noyau/')), []);
+  const noyau = TABLE.studioModele.regles.find((r) => r.de === 'noyau');
+  for (const c of ['composition', 'exigences', 'scenes']) assert.ok(noyau.interdits.includes(c), c);
+  for (const de of ['exigences', 'scenes']) {
+    const regle = TABLE.studioModele.regles.find((r) => r.de === de);
+    for (const c of ['composition', 'registre', 'echanges']) assert.ok(regle?.interdits.includes(c), `${de} → ${c}`);
+  }
+  assert.deepEqual(TABLE.studioModele.exceptions, []);
 });
 
 for (const [cas, fichier, spec, interdit] of [
@@ -94,6 +146,17 @@ for (const [cas, fichier, spec, interdit] of [
   ['registre → commandes', 'registre/modif.ts', '../commandes/dessin.js', 'registre → commandes'],
   ['commandes → registre', 'commandes/calques.ts', '../registre/dessin.js', 'commandes → registre'],
   ['objets → echanges (feuille)', 'objets/arc.ts', '../echanges/rapport.js', 'objets → echanges'],
+  ['noyau → composition', 'noyau/types.ts', '../composition/document.js', 'noyau → composition'],
+  ['objets → composition', 'objets/arc.ts', '../composition/document.js', 'objets → composition'],
+  ['commandes → composition', 'commandes/calques.ts', '../composition/document.js', 'commandes → composition'],
+  ['composition → registre', 'composition/document.ts', '../registre/dessin.js', 'composition → registre'],
+  ['exigences → composition', 'exigences/ecarts.ts', '../composition/document.js', 'exigences → composition'],
+  ['exigences → registre hors schémas de base', 'exigences/schemas.ts', '../registre/dessin.js', 'exigences → registre'],
+  ['exigences → echanges', 'exigences/proprietes.ts', '../echanges/rapport.js', 'exigences → echanges'],
+  ['scenes → composition', 'scenes/affichage.ts', '../composition/document.js', 'scenes → composition'],
+  ['scenes → registre hors schémas de base', 'scenes/registre.ts', '../registre/dessin.js', 'scenes → registre'],
+  ['scenes → echanges', 'scenes/scenes.ts', '../echanges/rapport.js', 'scenes → echanges'],
+  ['scenes → commandes', 'scenes/commandes.ts', '../commandes/dessin.js', 'scenes → commandes'],
 ]) {
   test(`refusé : couche ${cas}`, (t) => {
     const erreurs = controler(t, { ...couches, [`${ST}/${fichier}`]: `import { x } from "${spec}";\nexport const y = x;\n` });

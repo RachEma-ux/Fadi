@@ -260,6 +260,8 @@ jobs:
           npx --workspace=@fadi/api tsx test-corpus/ifc/generer.ts ../../ifc-sortie
           npx --workspace=@fadi/api tsx test-corpus/ifc/generer-studio.ts ../../ifc-sortie
           for f in petit p118 p118-reimporte studio; do python3 apps/api/test-corpus/ifc/valider.py ifc-sortie/$f.ifc ifc-sortie/$f.attendus.json; done
+          # Propriétés déclarées de Studio (E.1-01) relues : jeu Fadi_ProprietesDeclarees, types, valeurs, descriptions.
+          python3 apps/api/test-corpus/ifc/valider-proprietes.py ifc-sortie/studio.ifc ifc-sortie/studio.proprietes.json
 
   # Scénario Playwright de bout en bout (apps/web/e2e/parcours-scenario.mjs) :
   # le parcours complet sur P.118 — import, 21 étapes, Atelier, parcelle,

@@ -1,5 +1,6 @@
 import type { StudioAnchor } from "../noyau/ancres.js";
-import type { StudioPoint, StudioShape } from "../noyau/types.js";
+import type { StudioPoint } from "../noyau/types.js";
+import type { StudioShape } from "./formes.js";
 import { discriminator, fail } from "../noyau/validation.js";
 import { ARC } from "./arc.js";
 import { CERCLE } from "./cercle.js";

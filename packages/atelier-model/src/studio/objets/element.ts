@@ -1,4 +1,4 @@
-import type { StudioItem } from "../noyau/types.js";
+import type { StudioItem } from "./formes.js";
 import { discriminator } from "../noyau/validation.js";
 import { estAnnotation, validerAnnotation } from "./annotation.js";
 import { validerCote } from "./cote.js";

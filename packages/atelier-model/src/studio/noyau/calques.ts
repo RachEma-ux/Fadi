@@ -1,5 +1,5 @@
 import { STUDIO_DEFAULT_LAYER_ID, STUDIO_LIMITS } from "./limites.js";
-import type { StudioDocument, StudioLayer } from "./types.js";
+import type { StudioLayer } from "./types.js";
 import { boolean, fail, identifier, record } from "./validation.js";
 
 /** Calques du document Studio : validation d'un calque et état d'affichage / d'édition (calque implicite compris). */
@@ -18,9 +18,13 @@ export interface StudioLayerState {
   locked: boolean;
   implicit: boolean;
 }
-export function studioLayerState(doc: StudioDocument, layerId: string | undefined): StudioLayerState | null {
+/**
+ * État d'un calque parmi `layers` (calques matérialisés d'un document, ou d'un lot de commandes en cours) ; `null` si le
+ * calque est inconnu. Lecture publique sur un document : `studioLayerState` (`composition/document.ts`).
+ */
+export function etatCalque(layers: readonly StudioLayer[] | undefined, layerId: string | undefined): StudioLayerState | null {
   const id = layerId ?? STUDIO_DEFAULT_LAYER_ID;
-  const found = doc.layers?.find((l) => l.id === id);
+  const found = layers?.find((l) => l.id === id);
   if (found) return { id, visible: found.visible, locked: found.locked, implicit: false };
   return id === STUDIO_DEFAULT_LAYER_ID ? { id, visible: true, locked: false, implicit: true } : null;
 }

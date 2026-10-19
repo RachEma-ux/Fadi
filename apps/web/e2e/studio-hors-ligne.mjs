@@ -144,6 +144,29 @@ try {
   await outils.waitFor();
   await attendreEtat("en-ligne");
   check("en ligne : état « En ligne », aucun brouillon conservé", (await page.locator("[data-studio-connexion]").textContent()) === "En ligne" && (await brouillonLocal(page, cle)) === null);
+  // Cache versionné par build : un seul cache `fadi-shell-<build>`, celui de la page servie ; sa coquille porte le même
+  // identifiant ; aucune réponse de l'API n'y figure.
+  const cacheSw = await page.evaluate(async () => {
+    const build = document.querySelector('meta[name="fadi-build"]')?.getAttribute("content") ?? null;
+    const noms = (await caches.keys()).filter((n) => n.startsWith("fadi-shell-"));
+    const cache = build ? await caches.open(`fadi-shell-${build}`) : null;
+    const coquille = cache ? await (await cache.match("/index.html"))?.text() : null;
+    const chemins = cache ? (await cache.keys()).map((r) => new URL(r.url).pathname) : [];
+    return { build, noms, coquilleDuBuild: !!coquille && coquille.includes(`<meta name="fadi-build" content="${build}">`), api: chemins.filter((p) => /^\/(auth|projects|examples|library|notifications|preferences|health)(\/|$)/.test(p)) };
+  });
+  check("service worker : un cache par build (celui de la page), coquille du même build, aucune réponse de l'API en cache", !!cacheSw.build && JSON.stringify(cacheSw.noms) === JSON.stringify([`fadi-shell-${cacheSw.build}`]) && cacheSw.coquilleDuBuild && cacheSw.api.length === 0, JSON.stringify(cacheSw));
+  // Mise en cache anticipée manquée (fichier Parcelle non empreint retiré du cache) : réparée à la première lecture
+  // réussie, dans le cache de ce build ; une réponse de l'API lue par la page n'y entre toujours pas.
+  const reparation = await page.evaluate(async (build) => {
+    const cache = await caches.open(`fadi-shell-${build}`);
+    const avant = await cache.delete("/parcelle/parcelle-bridge.js");
+    const lu = (await fetch("/parcelle/parcelle-bridge.js")).ok;
+    await fetch("/auth/me").catch(() => undefined);
+    const apres = !!(await cache.match("/parcelle/parcelle-bridge.js"));
+    const api = (await cache.keys()).some((r) => new URL(r.url).pathname.startsWith("/auth"));
+    return { avant, lu, apres, api };
+  }, cacheSw.build);
+  check("service worker : fichier non empreint manqué à l'installation réparé à sa lecture (cache du build), API jamais mise en cache", reparation.avant && reparation.lu && reparation.apres && !reparation.api, JSON.stringify(reparation));
   const depart = (await revisions()).length;
 
   // 1. Dessin hors ligne, rechargement hors ligne, enveloppe conservée, retour en ligne.

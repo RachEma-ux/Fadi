@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { applyStudioCommands, newStudioDocument, validateStudioDocument, type StudioCommand, type StudioDocument } from "../document-2d.js";
 import { STUDIO_COMMAND_TOOL_IDS, STUDIO_DOCUMENT_SCHEMA, STUDIO_TOOLS } from "../registry.js";
-import { studioRapportFidelite } from "../echanges/rapport-fidelite.js";
+import { studioRapportFidelite } from "../../index.js";
 import {
   accepterExigence, controlerExigences, exigenceUtilisable, mesurerMetrique, preparerVersion, proprietesDe, validerExigence, validerExigences,
   valeurPropriete, type ExigenceStudio,
-} from "./index.js";
+} from "../facade-exigences.js";
 import { quantitesStudio } from "../quantites.js";
+import { exportStudioIfc, studioIfcSummary } from "../ifc.js";
 
 const unchecked = (c: unknown) => c as StudioCommand[];
 
@@ -58,6 +59,9 @@ describe("Propriétés BIM déclarées (E.1-01)", () => {
     expect(() => applyStudioCommands(base(), unchecked([definir({ cibleId: "zz", nom: "x" })]))).toThrow(/objet introuvable : zz/);
     expect(() => applyStudioCommands(base(), unchecked([definir({ cibleId: "m1", nom: "x", valeur: 2 })]))).toThrow(/unité déclarée attendue/);
     expect(() => applyStudioCommands(base(), unchecked([definir({ cibleId: "m1", nom: "x", valeur: Number.NaN, unite: "m" })]))).toThrow(/nombre fini/);
+    for (const v of [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+      expect(() => applyStudioCommands(base(), unchecked([definir({ cibleId: "m1", nom: "x", valeur: v, unite: "m" })]))).toThrow(/nombre fini/);
+    }
     expect(() => applyStudioCommands(base(), unchecked([definir({ cibleId: "m1", nom: " x" })]))).toThrow(/espace de bord/);
     expect(() => applyStudioCommands(base(), unchecked([definir({ cibleId: "m1", nom: "x", defaut: 1 })]))).toThrow(/champs absents ou inconnus/);
   });
@@ -86,12 +90,99 @@ describe("Propriétés BIM déclarées (E.1-01)", () => {
     expect(STUDIO_DOCUMENT_SCHEMA.properties.proprietes.type).toBe("array");
   });
 
-  it("rapport de fidélité : chaque propriété est comptée « non couverte » dans chaque format, jamais omise", () => {
-    const doc = applyStudioCommands(base(), unchecked([definir({ cibleId: "m1", nom: "Code", valeur: "M-01" })]));
-    for (const f of ["svg", "dxf", "ifc"] as const) {
+  it("rapport de fidélité : exacte en IFC si valuée, non évaluée sinon ; non couverte en SVG et DXF, jamais omise", () => {
+    const doc = applyStudioCommands(base(), unchecked([definir({ cibleId: "m1", nom: "Code", valeur: "M-01" }), definir({ cibleId: "r1", nom: "Matériau" })]));
+    for (const f of ["svg", "dxf"] as const) {
       const l = studioRapportFidelite(doc, f).lignes.find((x) => x.categorie === "proprietes");
-      expect(l).toMatchObject({ type: "propriete", statut: "non-couvert", raison: "propriete-non-exportee", nombre: 1, ids: ["m1#Code"] });
+      expect(l).toMatchObject({ type: "propriete", statut: "non-couvert", raison: "propriete-non-exportee", nombre: 2, ids: ["m1#Code", "r1#Matériau"] });
     }
+    expect(studioRapportFidelite(doc, "ifc").lignes.filter((x) => x.categorie === "proprietes")).toEqual([
+      { categorie: "proprietes", type: "propriete", statut: "exact", raison: "propriete-en-pset", nombre: 1, ids: ["m1#Code"] },
+      { categorie: "proprietes", type: "propriete", statut: "non-couvert", raison: "propriete-non-evaluee", nombre: 1, ids: ["r1#Matériau"] },
+    ]);
+  });
+
+  const meta = { studyName: "E", variantName: "V", timestamp: "2026-10-19T00:00:00" };
+  const numero = (l: string) => l.slice(0, l.indexOf("="));
+  /** Jeu `Fadi_ProprietesDeclarees` relié à l'entité de la ligne `entite`, et ses propriétés (lignes). */
+  const jeuDe = (lignes: string[], entite: string): string[] => {
+    const e = numero(entite);
+    const set = lignes.find((p) => p.includes("'Fadi_ProprietesDeclarees'") && lignes.some((r) => r.includes("IFCRELDEFINESBYPROPERTIES") && r.endsWith(`,(${e}),${numero(p)});`)));
+    if (!set) return [];
+    const refs = set.slice(set.lastIndexOf("(")).match(/#\d+/g) ?? [];
+    return refs.map((r) => lignes.find((l) => l.startsWith(`${r}=`))!);
+  };
+
+  it("IFC : jeu de projet Fadi_ProprietesDeclarees sur l'entité de chaque objet, valeur typée, source en description", () => {
+    const doc = applyStudioCommands(base(), unchecked([
+      definir({ cibleId: "m1", nom: "Résistance au feu", valeur: "EI 60", source: "CCTP lot 02" }),
+      definir({ cibleId: "m1", nom: "Longueur déclarée", valeur: 10, unite: "m", source: "Relevé" }),
+      definir({ cibleId: "f1", nom: "Uw", valeur: 1.3, unite: "W/m2.K" }),
+      definir({ cibleId: "f1", nom: "Surface vitrée", valeur: 0.9, unite: "m2" }),
+      definir({ cibleId: "r1", nom: "Volume déclaré", valeur: 18, unite: "m³" }),
+      definir({ cibleId: "r1", nom: "Matériau" }),
+      definir({ cibleId: "r1", nom: "Note", valeur: "x".repeat(300) }),
+    ]));
+    const lignes = exportStudioIfc(doc, meta).split("\n");
+    const entite = (prefixe: string) => lignes.find((l) => l.includes(`=${prefixe}(`))!;
+    const corps = (l: string) => l.slice(l.indexOf("=") + 1);
+    expect(jeuDe(lignes, entite("IFCWALL")).map(corps)).toEqual([
+      "IFCPROPERTYSINGLEVALUE('R\\X2\\00E9\\X0\\sistance au feu','Source d\\X2\\00E9\\X0\\clar\\X2\\00E9\\X0\\e : CCTP lot 02',IFCLABEL('EI 60'),$);",
+      "IFCPROPERTYSINGLEVALUE('Longueur d\\X2\\00E9\\X0\\clar\\X2\\00E9\\X0\\e','Source d\\X2\\00E9\\X0\\clar\\X2\\00E9\\X0\\e : Relev\\X2\\00E9\\X0\\',IFCLENGTHMEASURE(10.),$);",
+    ]);
+    // Fenêtre déclarée : les propriétés de l'ouverture vont à son IfcWindow.
+    expect(jeuDe(lignes, entite("IFCWINDOW")).map(corps)).toEqual([
+      "IFCPROPERTYSINGLEVALUE('Uw','Unit\\X2\\00E9\\X0\\ d\\X2\\00E9\\X0\\clar\\X2\\00E9\\X0\\e : W/m2.K',IFCREAL(1.3),$);",
+      "IFCPROPERTYSINGLEVALUE('Surface vitr\\X2\\00E9\\X0\\e',$,IFCAREAMEASURE(0.9),$);",
+    ]);
+    expect(jeuDe(lignes, entite("IFCOPENINGELEMENT"))).toEqual([]);
+    const proxy = jeuDe(lignes, entite("IFCBUILDINGELEMENTPROXY")).map(corps);
+    expect(proxy).toHaveLength(2);
+    expect(proxy[0]).toBe("IFCPROPERTYSINGLEVALUE('Volume d\\X2\\00E9\\X0\\clar\\X2\\00E9\\X0\\',$,IFCVOLUMEMEASURE(18.),$);");
+    expect(proxy[1]).toMatch(/^IFCPROPERTYSINGLEVALUE\('Note',\$,IFCTEXT\('x{300}'\),\$\);$/);
+    // Non évaluée : jamais écrite, comptée.
+    expect(lignes.some((l) => l.includes("Mat\\X2\\00E9\\X0\\riau"))).toBe(false);
+    expect(lignes.filter((l) => l.includes("'Fadi_ProprietesDeclarees'"))).toHaveLength(3);
+    expect(lignes.some((l) => l.endsWith("=IFCPROPERTYSINGLEVALUE('DeclaredPropertiesExported',$,IFCINTEGER(6),$);"))).toBe(true);
+    expect(lignes.some((l) => l.endsWith("=IFCPROPERTYSINGLEVALUE('DeclaredPropertiesNotEvaluated',$,IFCINTEGER(1),$);"))).toBe(true);
+    expect(studioIfcSummary(doc).proprietes).toEqual({ exported: 6, notEvaluated: 1 });
+    expect(studioIfcSummary(base()).proprietes).toBeUndefined();
+    expect(exportStudioIfc(base(), meta)).not.toMatch(/DeclaredProperties|Fadi_ProprietesDeclarees/);
+  });
+
+  it("IFC : valeurs extrêmes écrites sans arrondi (aller-retour exact), STEP valide", () => {
+    const extremes = [1e300, -1.7976931348623157e308, 2.5e-10, 5e-324, 1e21, 123456.789, 0.1 + 0.2, -0];
+    const doc = applyStudioCommands(base(), unchecked(extremes.map((valeur, i) => definir({ cibleId: "r1", nom: `v${i}`, valeur, unite: i % 2 ? "m" : "kg" }))));
+    const lignes = exportStudioIfc(doc, meta).split("\n");
+    const ecrits = extremes.map((_, i) => lignes.find((l) => l.includes(`IFCPROPERTYSINGLEVALUE('v${i}',`))!.match(/IFC(?:REAL|LENGTHMEASURE)\(([^)]*)\)/)![1]!);
+    expect(ecrits).toEqual(["1.E300", "-1.7976931348623157E308", "2.5E-10", "5.E-324", "1.E21", "123456.789", "0.30000000000000004", "0."]);
+    // Grammaire STEP d'un réel, et relecture du même nombre.
+    for (const [i, e] of ecrits.entries()) {
+      expect(e).toMatch(/^-?\d+\.\d*(E-?\d+)?$/);
+      expect(Number(e)).toBe(Object.is(extremes[i], -0) ? 0 : extremes[i]);
+    }
+    expect(lignes.join("\n")).not.toMatch(/Infinity|NaN/);
+  });
+
+  it("IFC : un identifiant d'objet ne peut pas reproduire le GlobalId du jeu d'un autre objet", () => {
+    const doc = applyStudioCommands(base(), unchecked([
+      { toolId: "studio.dessin.rectangle", params: { id: "pset|declared|r1", type: "rectangle", origin: { x: 5, y: 5 }, width: 1, height: 1 } },
+      { toolId: "studio.objet.extruder", params: { ids: ["pset|declared|r1"], base: 0, height: 1 } },
+      definir({ cibleId: "r1", nom: "Code", valeur: "R-01" }),
+    ]));
+    const ids = exportStudioIfc(doc, meta).split("\n").flatMap((l) => (/^#\d+=IFC\w+\('([0-9A-Za-z_$]{22})'/.exec(l) ?? []).slice(1));
+    expect(ids.length).toBeGreaterThan(10);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("IFC : une ouverture sans type déclaré porte ses propriétés sur son IfcOpeningElement", () => {
+    const doc = applyStudioCommands(base(), unchecked([
+      { toolId: "studio.architecture.ouverture", params: { id: "b1", type: "opening", hostId: "m1", position: 6, width: 1, height: 1, sill: 1 } },
+      definir({ cibleId: "b1", nom: "Repère", valeur: "B-01" }),
+    ]));
+    const lignes = exportStudioIfc(doc, meta).split("\n");
+    const ouverture = lignes.find((l) => l.includes("=IFCOPENINGELEMENT(") && l.includes(",'b1',"))!;
+    expect(jeuDe(lignes, ouverture)).toEqual([expect.stringContaining("IFCLABEL('B-01')")]);
   });
 });
 

@@ -40,6 +40,16 @@ describe("Propriétés BIM — interface (E.1-01)", () => {
     expect(valeurAffichee({ cibleId: "m1", nom: "x" }, "fr-FR")).toBe("non évaluée");
     expect(lireNombreSaisi("abc")).toBeNull();
   });
+
+  it("nombre hors des valeurs représentables : refusé avec son message, jamais borné", () => {
+    expect(lireNombreSaisi("1e400")).toBeNull();
+    expect(lireNombreSaisi("1e300")).toBe(1e300);
+    expect(lireNombreSaisi("2,5e-10")).toBe(2.5e-10);
+    const s = { ...SAISIE_PROPRIETE_VIDE, nom: "Masse", type: "nombre" as const, unite: "kg" };
+    expect(commandePropriete("m1", { ...s, valeur: "-1e400" })).toEqual({ erreur: "Nombre hors des valeurs représentables : saisissez un nombre fini." });
+    expect(commandePropriete("m1", { ...s, valeur: "abc" })).toEqual({ erreur: "Saisissez une valeur numérique, ou choisissez « Non évaluée »." });
+    expect(commandePropriete("m1", { ...s, valeur: "1e300" })).toMatchObject({ commandes: [{ params: { valeur: 1e300 } }] });
+  });
 });
 
 describe("Exigences — interface (E.1-02)", () => {

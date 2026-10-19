@@ -1,5 +1,5 @@
 import { studioTriangulate } from "../courbes.js";
-import type { StudioPoint, StudioShape } from "../noyau/types.js";
+import type { StudioPoint, StudioShapeType } from "../noyau/types.js";
 
 /**
  * Primitives de la vue 3D dérivée (`studioMesh3d`) : repère `local-3d`, conversion explicite depuis le `local-2d`,
@@ -23,7 +23,7 @@ export function studioLocal2dVers3d(p: StudioPoint, z: number): StudioPoint3 {
 /** Volume d'un objet extrudé : sommets, triangles (indices, faces extérieures en sens direct) et arêtes. */
 export interface StudioSolid3d {
   id: string;
-  type: StudioShape["type"];
+  type: StudioShapeType;
   layerId?: string;
   /**
    * `prism` : emprise fermée (rectangle, cercle, polyligne fermée, ligne ou arc avec épaisseur) ; `wall-surface` : ligne,

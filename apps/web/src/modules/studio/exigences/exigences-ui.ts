@@ -64,10 +64,13 @@ export function cibleSelection(doc: StudioDocument, selectionArchi: string | nul
 
 export type ResultatPropriete = { commandes: StudioCommand[] } | { erreur: string };
 
-/** Lit un nombre saisi (virgule ou point décimal). */
+/** Écriture d’un nombre saisi (point décimal, après remplacement de la virgule). */
+const NOMBRE_SAISI = /^[-+]?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?$/i;
+
+/** Lit un nombre saisi (virgule ou point décimal) ; `null` s'il est mal écrit ou non fini. */
 export function lireNombreSaisi(s: string): number | null {
   const t = s.trim().replace(",", ".");
-  if (!/^[-+]?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?$/i.test(t)) return null;
+  if (!NOMBRE_SAISI.test(t)) return null;
   const v = Number(t);
   return Number.isFinite(v) ? v : null;
 }
@@ -80,7 +83,13 @@ export function commandePropriete(cibleId: string | null, s: SaisiePropriete): R
   const p: StudioPropriete = { cibleId, nom, ...(unite ? { unite } : {}), ...(source ? { source } : {}) };
   if (s.type === "nombre") {
     const v = lireNombreSaisi(s.valeur);
-    if (v === null) return { erreur: "Saisissez une valeur numérique, ou choisissez « Non évaluée »." };
+    if (v === null) {
+      // Nombre bien écrit mais hors des nombres représentables (1e400…) : refusé, jamais remplacé par une borne.
+      if (NOMBRE_SAISI.test(s.valeur.trim().replace(",", "."))) {
+        return { erreur: "Nombre hors des valeurs représentables : saisissez un nombre fini." };
+      }
+      return { erreur: "Saisissez une valeur numérique, ou choisissez « Non évaluée »." };
+    }
     if (!unite) return { erreur: "Saisissez l’unité de la valeur numérique : aucune unité n’est proposée." };
     p.valeur = v;
   } else if (s.type === "texte") {

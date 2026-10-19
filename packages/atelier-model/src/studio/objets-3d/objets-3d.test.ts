@@ -3,7 +3,7 @@ import { applyStudioCommands, newStudioDocument, StudioValidationError, validate
 import { exportStudioIfc, studioIfcSummary } from "../ifc.js";
 import { studioMesh3d } from "../mesh-3d.js";
 import { STUDIO_COMMAND_TOOL_IDS, STUDIO_DOCUMENT_SCHEMA, STUDIO_TOOLS } from "../registry.js";
-import { couperStudio, empriseSolide, studioQuantitesSolides, studioSolideVers3d, studioVolumeSolide, type StudioBox, type StudioProfilePrism } from "./index.js";
+import { couperStudio, empriseSolide, studioQuantitesSolides, studioSolideVers3d, studioVolumeSolide, type StudioBox, type StudioProfilePrism } from "../solides-libres.js";
 
 /** Volume libre (A.3-02, A.3-05, A.3-07, A.3-09) : solides créés dans l'espace, coupe dérivée, IFC, quantités. */
 

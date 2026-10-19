@@ -1,6 +1,6 @@
 import { STUDIO_TYPES_OBJETS, validerForme } from "../objets/index.js";
-import { editable, enteredDimension, freeId, type Gestionnaire } from "../noyau/etat.js";
-import type { StudioShape } from "../noyau/types.js";
+import { editable, enteredDimension, freeId, type Gestionnaire } from "./etat.js";
+import type { StudioShape } from "../objets/formes.js";
 import { fail } from "../noyau/validation.js";
 import { validerTexte } from "../objets/texte.js";
 import { coteAngulaireSaisie } from "./annotations.js";
