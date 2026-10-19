@@ -10539,5 +10539,11 @@
 "Non vérifiée : le serveur n’a pas répondu ; l’accès sera contrôlé à l’ouverture.": "Not verified: the server did not answer; access will be checked on opening.",
 "Études et variantes — {0}": "Studies and variants — {0}",
 "Gérer les études du projet": "Manage the project studies",
-"Archivée — lecture seule": "Archived — read only"
+"Archivée — lecture seule": "Archived — read only",
+"Exemple protégé : cette référence se consulte sans modification. Pour dessiner, travaillez dans une copie (la référence reste intacte).": "Protected example: this reference can be viewed but not changed. To draw, work in a copy (the reference stays intact).",
+"Copie du projet…": "Copying the project…",
+"Installation de l’étude exemple dans la copie…": "Installing the example study in the copy…",
+"Travailler dans une copie": "Work in a copy",
+"La copie a été créée, mais l’étude exemple n’a pas pu y être installée. Ouvrez la copie depuis Projets et chargez l’exemple Studio.": "The copy was created, but the example study could not be installed in it. Open the copy from Projects and load the Studio example.",
+"La copie n’a pas pu être créée.": "The copy could not be created."
 }

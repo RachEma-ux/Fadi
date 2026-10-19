@@ -106,6 +106,22 @@ try {
   const nav = page.getByRole("navigation", { name: "Domaines du Studio" });
   check("variante RDC : les quatre domaines sont visibles", (await nav.getByRole("link").count()) === 4 && await nav.isVisible());
   check("variante RDC : la barre d'outils de dessin est visible", await page.locator('[role="toolbar"][aria-label="Outils de dessin"]').first().isVisible());
+  // Référence protégée : outils désactivés avec leur raison ; « Travailler dans une copie » (action explicite) ouvre la
+  // même variante dans une copie de travail, outils actifs, même domaine et même planche.
+  const ligne = (p) => p.locator('[role="toolbar"][aria-label="Outils de dessin"] [data-studio-outil="studio.dessin.ligne"]').first();
+  const outilActif = async (p) => { const b = ligne(p); return !(await b.isDisabled()) && (await b.getAttribute("aria-disabled")) !== "true"; };
+  check("référence protégée : outil Ligne désactivé", !(await outilActif(page)));
+  const bandeau = page.locator("[data-studio-reference-protegee]");
+  check("référence protégée : bandeau « Exemple protégé » et action « Travailler dans une copie »", await bandeau.isVisible() && (await page.locator("[data-studio-copie-travail]").textContent())?.trim() === "Travailler dans une copie");
+  await page.goto(`${BASE}/studio/projets/${pid}/etudes/${sid}/variantes/${rdc.id}?domaine=dessin&planche=3d`);
+  await page.locator("[data-studio-copie-travail]").click();
+  await page.waitForURL((u) => u.pathname.startsWith("/studio/projets/") && !u.pathname.startsWith(`/studio/projets/${pid}/`), { timeout: 120_000 });
+  const [, , , pidTravail, , sidTravail, , vidTravail] = new URL(page.url()).pathname.split("/");
+  const ctxTravail = (await api("get", `${studio(pidTravail)}/studies/${sidTravail}/variants/${vidTravail}`)).body;
+  check("copie de travail ouverte : variante « RDC », modifiable, même domaine et même planche", ctxTravail?.variant?.name === rdc.name && ctxTravail?.canWrite === true && new URL(page.url()).search === "?domaine=dessin&planche=3d", `${ctxTravail?.variant?.name} ${ctxTravail?.canWrite} ${new URL(page.url()).search}`);
+  await page.locator('[data-studio-planche="2d"]').click();
+  await ligne(page).waitFor();
+  check("copie de travail : outil Ligne actif, plus de bandeau « Exemple protégé »", await outilActif(page) && (await page.locator("[data-studio-reference-protegee]").count()) === 0);
 
   // 3. Projet déjà importé sans étude : une copie de travail (provenance conservée, Studio non copié).
   const copie = await api("post", `/projects/${pid}/copies`, {});
