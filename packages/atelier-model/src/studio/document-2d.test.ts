@@ -116,10 +116,11 @@ describe("Studio : document 2D natif", () => {
 });
 
 describe("Registry Studio minimal", () => {
-  it("publie vingt identités, icônes et raccourcis propres (volume libre compris), sans agent", () => {
-    expect(STUDIO_TOOLS).toHaveLength(20);
+  it("publie vingt-quatre identités, icônes et raccourcis propres (volume libre et transformations compris), sans agent", () => {
+    // Seize outils de base, le volume libre (boîte, prisme, déplacer, supprimer), puis Copier, Rotation, Symétrie et Échelle.
+    expect(STUDIO_TOOLS).toHaveLength(24);
     for (const key of ["toolId", "iconeSymbolique", "raccourci"] as const) {
-      expect(new Set(STUDIO_TOOLS.map((tool) => tool[key])).size).toBe(20);
+      expect(new Set(STUDIO_TOOLS.map((tool) => tool[key])).size).toBe(24);
     }
     for (const tool of STUDIO_TOOLS) {
       expect(tool.agentExposure).toBe("none");

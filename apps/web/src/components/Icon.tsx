@@ -85,7 +85,11 @@ export type IconName =
   | "studio-solid-move"
   | "studio-solid-delete"
   | "studio-nav-plan"
-  | "studio-section-plane";
+  | "studio-section-plane"
+  | "studio-copy"
+  | "studio-rotate"
+  | "studio-mirror"
+  | "studio-scale";
 
 const PATHS: Record<IconName, string> = {
   search: "M10.5 3.5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 5 5",
@@ -181,6 +185,12 @@ const PATHS: Record<IconName, string> = {
   "studio-solid-delete": "M3 9l6-3 8 2v8l-6 3-8-2ZM3 9l8 2 6-3M11 11v8M16 16l6 6M22 16l-6 6",
   "studio-nav-plan": "M3 17l9 4 9-4-9-4ZM12 3v7M9 7l3 3 3-3M7 3h10",
   "studio-section-plane": "M8 3h8v18H8ZM2 13l4-3h16l-4 3ZM2 13h16",
+  // Transformations : deux carrés décalés (copier), flèche circulaire (rotation), axe et deux triangles opposés
+  // (symétrie), petit carré et flèche diagonale vers un coin agrandi (échelle).
+  "studio-copy": "M9 9h11v11H9ZM5 15H4V4h11v1",
+  "studio-rotate": "M20 12a8 8 0 1 1-2.34-5.66M20 3v4h-4",
+  "studio-mirror": "M12 2v3M12 9v6M12 19v3M9 6 3 18h6ZM15 6l6 12h-6Z",
+  "studio-scale": "M3 21h7v-7H3ZM10 14l10-10M14 4h6v6",
 };
 
 export function Icon({ name, size = 20, className }: { name: IconName; size?: number; className?: string }) {

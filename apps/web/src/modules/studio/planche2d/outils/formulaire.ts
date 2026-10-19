@@ -9,9 +9,11 @@ import type { StudioToolId } from "../raccourcis";
 import { commandeArc, commandeCercle, commandePolyligne } from "./courbes";
 import { commandeCote, commandeTrace } from "./trace";
 import type { ActionOutil, ContexteCreation } from "./type";
+import { BOUTONS_TRANSFORMATION, CHAMPS_TRANSFORMATION, estTransformation, libelleTransformation, soumettreTransformation, type SaisieTransformation } from "./modification";
 
-export type Valeurs = { x: number; y: number; a: number; b: number; dx: number; dy: number; offset: number; r: number; a0: number; a1: number; distance: number };
-export const VALEURS_INITIALES: Valeurs = { x: 0, y: 0, a: 4, b: 3, dx: 1, dy: 0, offset: 0.5, r: 1, a0: 0, a1: 90, distance: 0.5 };
+export type Valeurs = { x: number; y: number; a: number; b: number; dx: number; dy: number; offset: number; r: number; a0: number; a1: number; distance: number }
+  & Pick<SaisieTransformation, "angle" | "facteur" | "copies" | "garder" | "volumes">;
+export const VALEURS_INITIALES: Valeurs = { x: 0, y: 0, a: 4, b: 3, dx: 1, dy: 0, offset: 0.5, r: 1, a0: 0, a1: 90, distance: 0.5, angle: 90, facteur: 2, copies: 1, garder: 1, volumes: 0 };
 export const SOMMETS_INITIAUX = "0 0; 4 0; 4 3";
 
 export const enDegres = (a: number) => Math.round(((a * 180) / Math.PI) * 1e6) / 1e6;
@@ -21,6 +23,7 @@ type Selectionne = StudioShape | StudioDimension | null;
 
 /** Champs du formulaire, libellés, et forme de la saisie pour l'outil actif (et l'objet sélectionné pour Modifier). */
 export function champsFormulaire(tool: StudioToolId, selected: Selectionne) {
+  if (estTransformation(tool)) return { fields: [...CHAMPS_TRANSFORMATION[tool]] as (keyof Valeurs)[], label: (k: keyof Valeurs) => libelleTransformation(tool, k as keyof SaisieTransformation), saisiePolyligne: false, bouton: BOUTONS_TRANSFORMATION[tool] };
   const typeSaisi = tool === "studio.dessin.modifier" ? selected?.type : ({ "studio.dessin.cercle": "circle", "studio.dessin.arc": "arc", "studio.dessin.polyligne": "polyline" } as const)[tool as string];
   const centreEtAngles: (keyof Valeurs)[] = ["x", "y", "r", "a0", "a1"];
   const fields: (keyof Valeurs)[] = tool === "studio.dessin.deplacer" ? ["dx", "dy"] : tool === "studio.dessin.decaler" ? ["distance"]
@@ -29,14 +32,14 @@ export function champsFormulaire(tool: StudioToolId, selected: Selectionne) {
   const saisiePolyligne = typeSaisi === "polyline";
   const sized = selected?.type === "rectangle" && tool === "studio.dessin.modifier" || tool === "studio.dessin.rectangle";
   const centre = typeSaisi === "circle" || typeSaisi === "arc";
-  const label = (k: keyof Valeurs) => ({ x: centre ? "Centre X" : "X", y: centre ? "Centre Y" : "Y", a: sized ? "Largeur" : "X final", b: sized ? "Hauteur" : "Y final", dx: "Déplacement X", dy: "Déplacement Y", offset: "Décalage", r: "Rayon", a0: "Angle de début (°)", a1: "Angle de fin (°)", distance: "Distance" })[k];
+  const label = (k: keyof Valeurs) => ({ x: centre ? "Centre X" : "X", y: centre ? "Centre Y" : "Y", a: sized ? "Largeur" : "X final", b: sized ? "Hauteur" : "Y final", dx: "Déplacement X", dy: "Déplacement Y", offset: "Décalage", r: "Rayon", a0: "Angle de début (°)", a1: "Angle de fin (°)", distance: "Distance" } as Partial<Record<keyof Valeurs, string>>)[k] ?? k;
   const bouton = tool === "studio.dessin.deplacer" ? "Déplacer la sélection" : tool === "studio.dessin.decaler" ? "Décaler la sélection" : tool === "studio.dessin.modifier" ? "Modifier la sélection" : "Ajouter au dessin";
   return { fields, label, saisiePolyligne, bouton };
 }
 
 /** Le formulaire attend une sélection (Déplacer, Décaler) ou un objet unique (Modifier). */
 export const formulaireInactif = (tool: StudioToolId, selectionIds: readonly string[], selected: Selectionne): boolean =>
-  tool === "studio.dessin.deplacer" || tool === "studio.dessin.decaler" ? selectionIds.length === 0 : tool === "studio.dessin.modifier" ? !selected : false;
+  tool === "studio.dessin.deplacer" || tool === "studio.dessin.decaler" || estTransformation(tool) ? selectionIds.length === 0 : tool === "studio.dessin.modifier" ? !selected : false;
 
 /** Valeurs reprises d'un objet sélectionné (jamais une proposition) : mise à jour des champs, ou des sommets d'une polyligne. */
 export function valeursObjet(o: StudioShape | StudioDimension): { maj?: (v: Valeurs) => Valeurs; sommets?: { texte: string; fermee: boolean } } {
@@ -80,6 +83,7 @@ export function soumettre(s: Saisie): ActionFormulaire {
   if (fields.includes("a0") && enRadians(values.a0) === enRadians(values.a1)) return { type: "erreur", message: "Les angles de début et de fin doivent être différents." };
   if (tool === "studio.dessin.deplacer" && s.selectionIds.length) return { type: "deplacer", dx: values.dx, dy: values.dy };
   if (tool === "studio.dessin.decaler") return { type: "decaler", distance: values.distance };
+  if (estTransformation(tool)) return soumettreTransformation(tool, values, s.selectionIds, creation);
   if (tool === "studio.dessin.modifier" && selected) {
     if (selected.type === "dimension") return { type: "commandes", commandes: [{ toolId: "studio.dessin.modifier", params: { ...selected, offset: values.offset } }] };
     let modifie: StudioShape;

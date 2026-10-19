@@ -44,6 +44,16 @@ export type ActionOutil =
 /** Contexte d'un clic : tolérance d'accrochage (mètres), pour fermer une polyligne sur son premier sommet. */
 export interface ContexteClic extends ContexteCreation {
   tolerance: number;
+  /** Transformations (Copier, Rotation, Symétrie, Échelle) : sélection courante et options saisies. */
+  selection?: readonly string[];
+  options?: OptionsTransformation;
+}
+
+/** Options saisies des transformations : nombre de copies, source conservée (Symétrie), extrusions aussi (Échelle). */
+export interface OptionsTransformation {
+  copies: number;
+  garder: boolean;
+  volumes: boolean;
 }
 
 export interface OutilPlanche {
@@ -54,6 +64,8 @@ export interface OutilPlanche {
   clic(e: EtatTrace & { trace: PointPose }, p: PointPose, c: ContexteClic): ActionOutil;
   /** Aperçu d'une courbe en cours de tracé, jamais une donnée du document. */
   apercu?(e: EtatTrace & { trace: PointPose }, fin: StudioPoint): StudioShape | null;
+  /** Aperçu d'une transformation : commandes que le clic en `fin` produirait, appliquées à une copie du brouillon. */
+  apercuCommandes?(e: EtatTrace & { trace: PointPose }, fin: StudioPoint, c: ContexteClic): StudioCommand[] | null;
   /** Aide pendant le tracé ; « Premier point placé… » par défaut. */
   aideTrace?(e: EtatTrace & { trace: PointPose }): string;
   /** Aide avant le premier point ; l'aide générale par défaut. */

@@ -51,6 +51,7 @@ import { aidePlanche, apercuPlanche, outilPlanche } from "./planche2d/outils";
 import { formulaireInactif, SOMMETS_INITIAUX, soumettre, VALEURS_INITIALES, valeursObjet, type Valeurs } from "./planche2d/outils/formulaire";
 import { useGestesPlanche } from "./planche2d/outils/gestes";
 import { ChampMesures } from "./planche2d/accrochage/ChampMesures";
+import { estTransformation, optionsDeSaisie } from "./planche2d/outils/modification";
 import { commandePolyligne } from "./planche2d/outils/courbes";
 import type { ContexteCreation, ModeArc } from "./planche2d/outils/type";
 import { commandesAplatir, commandesExtrusion, formesSelectionnees, valeursDe, VALEURS_VIDES, type ValeursExtrusion } from "./vue3d/extrusion";
@@ -146,7 +147,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   useEffect(() => { if (actif) setNomCalque(actif.name); }, [actif?.id, actif?.name]);
 
   // ——— Planche : outil au pointeur, gestes et vue ———
-  const moveWithPointer = tool === "studio.dessin.deplacer" && selectionIds.length > 0;
+  const moveWithPointer = (tool === "studio.dessin.deplacer" || estTransformation(tool)) && selectionIds.length > 0;
   const pointsActifs = OUTILS_TRACE.has(tool) || moveWithPointer;
   const outil = outilPlanche(tool);
   const gestes = useGestesPlanche({
@@ -198,6 +199,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   }
   const layerId = () => layerIdPour(actif?.id ?? STUDIO_DEFAULT_LAYER_ID);
   const creation = (): ContexteCreation => ({ nouvelId: () => crypto.randomUUID(), layerId: layerId(), decalageCote: values.offset });
+  const contexteClic = () => ({ ...creation(), tolerance: gestes.tolerance(), selection: selectionIds, options: optionsDeSaisie(values) });
   /** Termine la polyligne en cours (ouverte, ou fermée sur son premier sommet). */
   function finishPolyline(closed: boolean) {
     if (tool !== "studio.dessin.polyligne" || !trace) return;
@@ -235,7 +237,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   function poser(p: PointPose) {
     if (!writable || !outil) return;
     if (!trace) { setTrace(p); setSuite([]); return; }
-    const action = outil.clic({ outil: tool, trace, suite, modeArc }, p, { ...creation(), tolerance: gestes.tolerance() });
+    const action = outil.clic({ outil: tool, trace, suite, modeArc }, p, contexteClic());
     switch (action.type) {
       case "deplacer": if (moveSelection(selectionIds, action.dx, action.dy)) { setTrace(null); gestes.setSurvol(null); } return;
       case "sommet": setSuite(action.suite); setError(""); return;
@@ -379,6 +381,12 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const toResolve = drawing?.dimensions?.filter(d => d.toResolve).length ?? 0;
   const etatTrace = { outil: tool, trace, suite, modeArc };
   const apercuForme = apercuPlanche(etatTrace, survol?.point);
+  // Aperçu d'une transformation (Copier, Rotation, Symétrie, Échelle) : le brouillon tel que le clic le donnerait.
+  const apercuTransformation = (() => {
+    const cs = drawing && trace && survol && writable ? outil?.apercuCommandes?.({ ...etatTrace, trace }, survol.point, contexteClic()) : null;
+    if (!cs) return null;
+    try { return applyStudioCommands(drawing!, cs); } catch { return null; }
+  })();
   const hint = aidePlanche({ ...etatTrace, moveWithPointer, lectureSeule: !writable && !historical && context?.canWrite === false });
   const pasAffiche = pas.toLocaleString(LOCALE, { maximumFractionDigits: 3 });
   const etat = historical ? "Révision historique" : pending ? "Sauvegarde en cours…" : uncertain ? "Sauvegarde non confirmée" : commands.length ? "Brouillon non enregistré" : enr.saved ? "Enregistré sur le serveur" : "Version serveur chargée";
@@ -396,9 +404,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     <div className="studio-editor"><div className="studio-sheet"><div className="studio-sheet-caption"><span>Dessin et modélisation</span><span data-studio-pas-grille={pas}>{`Grille ${pasAffiche} m`}</span><span>1 unité = 1 m</span></div>
       {vue3d && <Vue3D doc={drawing} outil={tool} modifiable={writable} navigation={navigation3d} coupe={coupe3d} selection={solide3d} layerId={actif?.id ?? STUDIO_DEFAULT_LAYER_ID}
         surSelection={setSolide3d} surCommandes={apply} />}
-      {!vue3d && <Dessin2D svgRef={gestes.refPlanche} doc={apercuDoc ?? drawing} cadre={cadre} pas={pas} outil={tool} selection={selectionSet} trace={trace} survol={survol} rectangle={gestes.rectangle} glissement={!!gestes.apercu}
+      {!vue3d && <Dessin2D svgRef={gestes.refPlanche} doc={apercuDoc ?? apercuTransformation ?? drawing} cadre={cadre} pas={pas} outil={tool} selection={selectionSet} trace={trace} survol={survol} rectangle={gestes.rectangle} glissement={!!gestes.apercu}
         apercuForme={apercuForme} sommetsPoses={suite}
-        clicsVersPlanche={o => OUTILS_TRACE.has(tool) || (tool === "studio.dessin.deplacer" && (!!trace || selectionSet.has(o.id)))}
+        clicsVersPlanche={o => OUTILS_TRACE.has(tool) || (moveWithPointer && (!!trace || selectionSet.has(o.id)))}
         surPlanche={board} surSurvol={gestes.pointerMove} surPointeurBas={gestes.pointerDown} surPointeurHaut={gestes.pointerUp} surClicCapture={gestes.clickCapture} surSelection={(id, plus) => select(plus ? basculer(selectionIds, id) : [id])} />}
       {!vue3d && trace && pointsActifs && <ChampMesures base={suite[suite.length - 1] ?? trace.point} survol={survol?.point ?? null} direction={gestes.directionCourante()} verrou={gestes.verrouAngle}
         pasPolaire={gestes.bascules.pasPolaire} surPasPolaire={gestes.poserPasPolaire} desactive={!writable}

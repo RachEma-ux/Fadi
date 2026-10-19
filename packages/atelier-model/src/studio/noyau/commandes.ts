@@ -1,6 +1,7 @@
 import { creerCalque, modifierCalque, placerSurCalque } from "../commandes/calques.js";
 import { CREATION_FORMES, creerCote } from "../commandes/dessin.js";
 import { decaler, deplacer, modifier, supprimer } from "../commandes/modification.js";
+import { copier, echelle, rotation, symetrie } from "../commandes/modification.js";
 import { aplatir, extruder } from "../commandes/volume.js";
 import { creerBoite, creerPrisme, deplacerSolide, supprimerSolides } from "../commandes/volume-libre.js";
 import { studioExtrudedRingVertices } from "../objets/polyligne.js";
@@ -28,6 +29,10 @@ const HANDLERS: Record<StudioCommandToolId, Gestionnaire> = {
   "studio.dessin.decaler": decaler,
   "studio.dessin.cote": creerCote,
   "studio.dessin.supprimer": supprimer,
+  "studio.dessin.copier": copier,
+  "studio.dessin.rotation": rotation,
+  "studio.dessin.symetrie": symetrie,
+  "studio.dessin.echelle": echelle,
   "studio.calque.creer": creerCalque,
   "studio.calque.modifier": modifierCalque,
   "studio.objet.calque": placerSurCalque,
