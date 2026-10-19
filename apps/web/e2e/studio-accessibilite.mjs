@@ -141,7 +141,7 @@ try {
   check("préparation : seule « e-rect-1 » est sélectionnée", JSON.stringify(await choisis()) === '["e-rect-1"]');
   await page.keyboard.press("Delete");
   await liste.locator('[data-studio-element="e-rect-1"]').waitFor({ state: "detached" });
-  check("Suppr : l'élément est supprimé par la commande existante (une commande en attente)", ((await page.locator("[data-studio-annuler-portee]").textContent()) ?? "").includes("(1 commande(s)"));
+  check("Suppr : l'élément est supprimé par la commande existante (une commande en attente)", (await page.locator("[data-studio-annuler-portee]").getAttribute("data-studio-en-attente-nombre")) === "1");
   await page.waitForFunction(() => document.activeElement?.getAttribute("data-studio-element") === "e-ligne-2");
   check("Suppr : le focus passe à la ligne suivante", (await focus()) === "e-ligne-2");
   await annonce.filter({ hasText: "1 élément(s) retiré(s) du dessin" }).waitFor();
@@ -154,7 +154,8 @@ try {
   check("après Ctrl+S : le focus reste sur la ligne de la liste", (await focus()) === "e-ligne-2");
 
   // ——— Repli du calque actif ———
-  const outils = page.getByRole("toolbar", { name: "Outils de dessin" });
+  // Palette du domaine affiché et barre de l'espace (Outils, palette, Annuler, Rétablir, Enregistrer).
+  const outils = page.locator('[role="toolbar"][aria-label^="Outils"], [role="toolbar"][data-studio-actions-espace]');
   await cliquerBouton(outils, "Nouveau calque");
   const rangees = page.locator("[data-studio-calque-ligne]");
   check("calques : un nouveau calque actif", (await rangees.count()) === 3 && (await rangees.nth(2).getAttribute("aria-current")) === "true");
@@ -207,9 +208,15 @@ try {
     check(`${nom} : Échap ferme (même focus perdu), le focus revient à l'origine`, await page.evaluate(revenu, origine), await focus());
   };
   await essai("Outils", () => cliquerBouton(outils, "Outils"), '[data-studio-commande="outils"]');
+  await essai("Palette (Ctrl+K depuis la liste)", async () => { await liste.locator('[role="option"][tabindex="0"]').focus(); await page.keyboard.press("Control+k"); }, '[role="option"][tabindex="0"]');
+  // « Feuille » est une commande de Documentation, métrés et collaboration : sa palette la porte (l'import, « à
+  // définir », est proposé dans chaque palette).
+  await page.locator('[data-studio-domaine-lien="documentation"]').click();
+  await page.waitForSelector('[data-studio-domaine-affiche="documentation"]');
   await essai("Feuille", () => atteindre(outils, '[data-studio-commande="feuille"]').then((b) => b.click()), '[data-studio-commande="feuille"]');
   await essai("Importer DXF", () => atteindre(outils, '[data-studio-commande="importer-dxf"]').then((b) => b.click()), '[data-studio-commande="importer-dxf"]');
-  await essai("Palette (Ctrl+K depuis la liste)", async () => { await liste.locator('[role="option"][tabindex="0"]').focus(); await page.keyboard.press("Control+k"); }, '[role="option"][tabindex="0"]');
+  await page.locator('[data-studio-domaine-lien="dessin"]').click();
+  await page.waitForSelector('[data-studio-domaine-affiche="dessin"]');
 
   // Passage direct d'une boîte à l'autre (palette → Feuille) : la nouvelle boîte prend le focus ; un portail marqué
   // data-studio-dialogue-portail, rendu hors de la boîte, garde le focus ; Échap rend le focus à l'origine de la palette.

@@ -2,7 +2,7 @@
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope } from "@parcours/atelier-model";
+import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope, type StudioPhaseWorkflow } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { projectMembers, studioRevisions, studioStudies, studioVariants, type StudioContext, type StudioExampleInstall, type StudioProvenance } from "../db/schema.js";
 import { newId } from "./ids.js";
@@ -121,7 +121,7 @@ export async function readStudioContext(q: Querier, scope: StudioScope, actorId:
 /** Études du projet ; les archivées seulement avec `includeArchived` (`?archives=1`). */
 export async function listStudioStudies(projectId: string, actorId: string, includeArchived = false) {
   assertAccess(await loadProjectAccess(projectId, actorId), actorId, "read");
-  const rows = await db.select({ id: studioStudies.id, name: studioStudies.name, initialVariantId: studioStudies.initialVariantId, createdAt: studioStudies.createdAt, updatedAt: studioStudies.updatedAt, archivedAt: studioStudies.archivedAt })
+  const rows = await db.select({ id: studioStudies.id, name: studioStudies.name, initialVariantId: studioStudies.initialVariantId, createdAt: studioStudies.createdAt, updatedAt: studioStudies.updatedAt, archivedAt: studioStudies.archivedAt, workflowPhase: studioStudies.workflowPhase })
     .from(studioStudies).where(includeArchived ? eq(studioStudies.projectId, projectId) : and(eq(studioStudies.projectId, projectId), isNull(studioStudies.archivedAt)))
     .orderBy(asc(studioStudies.createdAt), asc(studioStudies.id));
   return { studies: rows.map(({ archivedAt, ...row }) => ({ ...row, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt?.toISOString() ?? null, archived: archivedAt !== null })) };
@@ -129,7 +129,8 @@ export async function listStudioStudies(projectId: string, actorId: string, incl
 
 export interface StudioVariantSummary { id: string; name: string; headRevisionId: string; archived: boolean; derivedFrom: StudioProvenance | null }
 export interface StudioStudyRead {
-  study: { id: string; name: string; projectId: string; initialVariantId: string; createdAt: string; updatedAt: string | null; archived: boolean };
+  /** `workflowPhase` : phase DÉCLARÉE du workflow de conception (REF-01 §06), `null` = non déclarée. */
+  study: { id: string; name: string; projectId: string; initialVariantId: string; createdAt: string; updatedAt: string | null; archived: boolean; workflowPhase: StudioPhaseWorkflow | null };
   variants: StudioVariantSummary[];
   /** Écriture dans l'étude (droit `modify` et étude active). */
   canWrite: boolean;
@@ -169,7 +170,7 @@ export async function readStudioStudy(q: Querier, projectId: string, studyId: st
   return {
     study: {
       id: study.id, name: study.name, projectId: study.projectId, initialVariantId: study.initialVariantId, createdAt: study.createdAt.toISOString(),
-      updatedAt: study.updatedAt?.toISOString() ?? null, archived: study.archivedAt !== null,
+      updatedAt: study.updatedAt?.toISOString() ?? null, archived: study.archivedAt !== null, workflowPhase: study.workflowPhase ?? null,
     },
     variants: await variantsOf(q, study, includeArchived),
     canWrite: canManage && study.archivedAt === null, canManage,

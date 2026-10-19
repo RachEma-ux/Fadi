@@ -104,6 +104,7 @@ export const ROUTES: Route[] = [
   { route: "POST /studies", besoin: "modification", url: () => `${S}/studies`, body: { name: "Nouvelle" } },
   { route: "GET /studies/:studyId", besoin: "lecture", url: () => `${S}/studies/s` },
   { route: "PATCH /studies/:studyId", besoin: "modification", url: () => `${S}/studies/s`, body: { name: "Renommée" } },
+  { route: "PATCH /studies/:studyId/workflow", besoin: "modification", url: () => `${S}/studies/s/workflow`, body: { phase: "controler" }, note: "phase déclarée du workflow (REF-01 §06) : propriétaire ou éditeur ; aucune donnée de conception modifiée" },
   {
     route: "POST /exemple", besoin: "proprietaire", url: () => `${S}/exemple`, acteurs: { "proprietaire-verrou": "admis" },
     note: "étude exemple P.118 : écriture système du propriétaire, admise dans la référence protégée ; projet hors exemple → 409 exemple_indisponible avant tout verrou ; le verrou d'édition d'un autre compte (423) ne s'oppose qu'à une installation qui écrit, jamais à la lecture d'une étude exemple complète (lib/studio-exemple.test.ts)",
@@ -337,6 +338,16 @@ describe("X.2-02 — matrice rôle × route Studio × attendu (routeur réel, ba
       verdicts.length = 0;
       const res = await request(app)[r.route.split(" ")[0]!.toLowerCase() as Methode](r.url({}));
       expect(res.status, r.route).toBe(401);
+      expect(verdicts).toEqual([]);
+    }
+  });
+
+  it("phase déclarée du workflow : une phase inconnue, un champ en plus ou une valeur absente sont refusés (400) avant tout accès", async () => {
+    for (const corps of [{ phase: "inconnue" }, { phase: "Contrôler" }, { phase: "controler", autre: 1 }, {}, { phase: 3 }]) {
+      verdicts.length = 0;
+      const res = await comme("proprietaire")(request(app).patch(`${S}/studies/s/workflow`)).send(corps);
+      expect(res.status, JSON.stringify(corps)).toBe(400);
+      expect(res.body.error).toBe("invalid_input");
       expect(verdicts).toEqual([]);
     }
   });

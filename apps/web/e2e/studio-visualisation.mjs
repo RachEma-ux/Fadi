@@ -78,16 +78,18 @@ try {
   const envois = [];
   page.on("request", (r) => { if (r.method() === "POST" && /\/variants\/[^/]+\/commands$/.test(new URL(r.url()).pathname)) envois.push(r.postDataJSON()); });
   const adresse = `${BASE}/studio/projets/${projet.id}/etudes/${studyId}/variantes/${variantId}`;
-  await page.goto(adresse);
-  const outils = page.getByRole("toolbar", { name: "Outils de dessin" });
+  // Domaine « Visualisation, rendu et immersion » : vue 3D d'examen (même moteur que la Planche 3D) et ses panneaux.
+  await page.goto(`${adresse}?domaine=visualisation`);
+  const outils = page.getByRole("toolbar", { name: "Outils — Visualisation, rendu et immersion" });
   await outils.waitFor();
   const ouvrir3d = async () => {
-    await page.evaluate(() => document.activeElement?.blur());
-    await page.keyboard.press("Shift+D");
     await page.locator("[data-studio-vue3d] canvas[data-studio-vue3d-canvas]").waitFor();
+    await page.locator("[data-studio-visualisation-panneaux] [data-studio-scenes]").waitFor();
     await page.waitForTimeout(300);
   };
+  // La vue (attributs d'état, canevas) et son panneau « Scènes, apparence et rendus » (colonne des panneaux du domaine).
   const vue = page.locator("[data-studio-vue3d]");
+  const panneauVue = page.locator("[data-studio-vue3d], [data-studio-visualisation-panneaux]");
   const sansFocus = () => page.evaluate(() => document.activeElement?.blur());
 
   // Règle d'or : chaque outil de la famille Visualisation a son bouton, son icône et son raccourci dans la barre.
@@ -97,20 +99,20 @@ try {
 
   // E.5-04 : types de rendu ; seuls le rendu du modèle a un bouton.
   await ouvrir3d();
-  check("rendus : « Rendu du modèle » disponible avec un bouton d'export", (await vue.locator('[data-studio-rendu="rendu-modele"][data-studio-disponible="oui"] [data-studio-exporter-png]').count()) === 1);
+  check("rendus : « Rendu du modèle » disponible avec un bouton d'export", (await panneauVue.locator('[data-studio-rendu="rendu-modele"][data-studio-disponible="oui"] [data-studio-exporter-png]').count()) === 1);
   for (const id of ["illustration-ia", "exploration-libre"]) {
-    const li = vue.locator(`[data-studio-rendu="${id}"]`);
+    const li = panneauVue.locator(`[data-studio-rendu="${id}"]`);
     check(`rendus : ${id} annoncé non disponible, sans aucun bouton`, (await li.getAttribute("data-studio-disponible")) === "non" && (await li.locator("button, a").count()) === 0 && (await li.textContent()).includes("Non disponible"));
   }
 
   // E.5-01 : nouvelle scène par son raccourci V, après réglages (nom, mode filaire, calques montrés).
-  await vue.locator("[data-studio-scene-nom]").fill("Vue de recette");
-  await vue.locator("[data-studio-scene-mode]").selectOption("wireframe");
+  await panneauVue.locator("[data-studio-scene-nom]").fill("Vue de recette");
+  await panneauVue.locator("[data-studio-scene-mode]").selectOption("wireframe");
   await sansFocus();
   check("mode d'affichage filaire appliqué à la vue", (await vue.getAttribute("data-studio-affichage")) === "wireframe");
   await page.keyboard.press("v");
-  await vue.locator("[data-studio-scene]").first().waitFor();
-  const sceneId = await vue.locator("[data-studio-scene]").first().getAttribute("data-studio-scene");
+  await panneauVue.locator("[data-studio-scene]").first().waitFor();
+  const sceneId = await panneauVue.locator("[data-studio-scene]").first().getAttribute("data-studio-scene");
   check("Nouvelle scène (V) : scène listée et active", !!sceneId && (await vue.getAttribute("data-studio-scene-active")) === sceneId);
   const avantEnr = envois.length;
   await page.keyboard.press("Control+s");
@@ -128,32 +130,32 @@ try {
   await page.reload();
   await outils.waitFor();
   await ouvrir3d();
-  check("après actualisation : scène relue, vue du dessin (aucune scène active, mode initial)", (await vue.locator(`[data-studio-scene="${sceneId}"]`).count()) === 1 && (await vue.getAttribute("data-studio-scene-active")) === "" && (await vue.getAttribute("data-studio-affichage")) === "shaded-edges");
-  const canevas = vue.locator("canvas[data-studio-vue3d-canvas]");
+  check("après actualisation : scène relue, vue du dessin (aucune scène active, mode initial)", (await panneauVue.locator(`[data-studio-scene="${sceneId}"]`).count()) === 1 && (await vue.getAttribute("data-studio-scene-active")) === "" && (await vue.getAttribute("data-studio-affichage")) === "shaded-edges");
+  const canevas = panneauVue.locator("canvas[data-studio-vue3d-canvas]");
   const boite = await canevas.boundingBox();
   await page.mouse.move(boite.x + boite.width / 2, boite.y + boite.height / 2);
   await page.mouse.down();
   await page.mouse.move(boite.x + boite.width / 2 + 120, boite.y + boite.height / 2 + 40, { steps: 8 });
   await page.mouse.up();
-  await vue.locator(`[data-studio-scene="${sceneId}"]`).click();
+  await panneauVue.locator(`[data-studio-scene="${sceneId}"]`).click();
   const envoisAvantRappel = envois.length;
   await sansFocus();
   await page.keyboard.press("z");
   await page.locator(`[data-studio-vue3d][data-studio-scene-active="${sceneId}"]`).waitFor();
   check("Rappeler (Z) : la vue reprend la scène (caméra, calques, mode filaire)", (await vue.getAttribute("data-studio-affichage")) === "wireframe" && (await vue.getAttribute("data-studio-calques-montres")).split(" ").sort().join() === "default,murs");
-  check("Rappeler : aucune commande, aucune modification en attente", envois.length === envoisAvantRappel && (await page.locator("[data-studio-annuler-portee]").textContent()).includes("(0 commande(s)"));
+  check("Rappeler : aucune commande, aucune modification en attente", envois.length === envoisAvantRappel && (await page.locator("[data-studio-annuler-portee]").getAttribute("data-studio-en-attente-nombre")) === "0");
 
   // E.5-02 : apparence d'affichage du mur, géométrie et données constructives inchangées.
   const docAvant = (await json("get", variantePath)).revision;
   const exporter = async (format, revision) => (await api("get", `${variantePath}/export?format=${format}&revision=${encodeURIComponent(revision)}`)).text();
   const [svgAvant, dxfAvant, ifcAvant] = [await exporter("svg", docAvant.id), await exporter("dxf", docAvant.id), await exporter("ifc", docAvant.id)];
-  await vue.locator("[data-studio-apparence-cible]").selectOption("object:m1");
-  await vue.locator("[data-studio-apparence-couleur]").fill("#c0392b");
-  await vue.locator("[data-studio-apparence-finition]").selectOption("gloss");
+  await panneauVue.locator("[data-studio-apparence-cible]").selectOption("object:m1");
+  await panneauVue.locator("[data-studio-apparence-couleur]").fill("#c0392b");
+  await panneauVue.locator("[data-studio-apparence-finition]").selectOption("gloss");
   await sansFocus();
   await page.keyboard.press("t");
-  await vue.locator('[data-studio-apparence-etat="definie"]').waitFor();
-  check("brouillon non enregistré : export PNG désactivé, raison affichée", await vue.locator("[data-studio-exporter-png]").isDisabled() && (await vue.locator("[data-studio-rendu-raison]").textContent()).includes("Enregistrez d’abord"));
+  await panneauVue.locator('[data-studio-apparence-etat="definie"]').waitFor();
+  check("brouillon non enregistré : export PNG désactivé, raison affichée", await panneauVue.locator("[data-studio-exporter-png]").isDisabled() && (await panneauVue.locator("[data-studio-rendu-raison]").textContent()).includes("Enregistrez d’abord"));
   await page.keyboard.press("Control+s");
   await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
   const docApres = (await json("get", variantePath)).revision;
@@ -167,12 +169,12 @@ try {
   check("IFC : mêmes entités constructives, aucune couleur ni matériau ajouté", effectif(ifcApres) === effectif(ifcAvant) && !ifcApres.includes("c0392b"), `${effectif(ifcAvant)} / ${effectif(ifcApres)}`);
 
   // E.5-03 : rendu du modèle (F4) de la scène rappelée, provenance incluse.
-  await vue.locator(`[data-studio-scene="${sceneId}"]`).click();
+  await panneauVue.locator(`[data-studio-scene="${sceneId}"]`).click();
   await sansFocus();
   await page.keyboard.press("z");
   await page.locator(`[data-studio-vue3d][data-studio-scene-active="${sceneId}"]`).waitFor();
   // Le maillage de la scène (tous calques affichés, filtré) est calculé en tâche de fond : l'export attend qu'il soit à jour.
-  await vue.locator("[data-studio-exporter-png]:not([disabled])").waitFor();
+  await panneauVue.locator("[data-studio-exporter-png]:not([disabled])").waitFor();
   const telechargement = page.waitForEvent("download");
   await page.keyboard.press("F4");
   const fichier = await telechargement;
@@ -184,13 +186,13 @@ try {
   check("PNG : nom de fichier dérivé de la variante, de la scène et de la révision", fichier.suggestedFilename() === `rendu-Variante-initiale-Vue-de-recette-${docApres.id.slice(-8).replace(/[^A-Za-z0-9]+/g, "-")}.png`, fichier.suggestedFilename());
 
   // Révision historique (celle de la scène seule) : lecture seule, l'export porte cette révision.
-  await page.goto(`${adresse}?revision=${encodeURIComponent(tete1.revision.id)}`);
+  await page.goto(`${adresse}?revision=${encodeURIComponent(tete1.revision.id)}&domaine=visualisation`);
   await outils.waitFor();
   await ouvrir3d();
-  check("révision historique : création de scène indisponible (lecture seule)", await vue.locator('[data-studio-scene-action="studio.scene.creer"]').isDisabled());
-  await vue.locator("[data-studio-exporter-png]:not([disabled])").waitFor();
+  check("révision historique : création de scène indisponible (lecture seule)", await panneauVue.locator('[data-studio-scene-action="studio.scene.creer"]').isDisabled());
+  await panneauVue.locator("[data-studio-exporter-png]:not([disabled])").waitFor();
   const telechargementHist = page.waitForEvent("download");
-  await vue.locator("[data-studio-exporter-png]").click();
+  await panneauVue.locator("[data-studio-exporter-png]").click();
   const pHist = JSON.parse(textesPng(readFileSync(await (await telechargementHist).path()))?.["fadi:rendu"] ?? "null");
   check("révision historique : la provenance porte la révision affichée", pHist?.revisionId === tete1.revision.id && pHist.revisionId !== docApres.id && pHist.nature === "rendu du modèle", JSON.stringify(pHist));
   check("aucune erreur de page", erreurs.length === 0, erreurs.join(" | "));

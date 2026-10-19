@@ -1,6 +1,6 @@
 /** Barre compacte de la planche 2D : familles, disposition en une rangée, navigation clavier, position des menus. */
 import { describe, expect, it } from "vitest";
-import { disposerBarre, ELEMENTS_FAMILLE, familleDeOutil, FAMILLES_STUDIO, indexNavigation, placementMenu, type IdFamille, type MesureFamille } from "./barre-compacte";
+import { disposerBarre, ELEMENTS_FAMILLE, familleDeOutil, FAMILLES_STUDIO, indexNavigation, placementMenu, placementMenuLateral, type IdFamille, type MesureFamille } from "./barre-compacte";
 
 /** Mesures types : bouton « ▾ » 56 px, élément 44 px (icône seule, écart compris). */
 const mesures = (menu = 56, element = 44): MesureFamille[] =>
@@ -97,5 +97,12 @@ describe("Barre compacte — clavier et menus", () => {
     expect(placementMenu({ left: 300, bottom: 50 }, 240, { largeur: 390, hauteur: 844 }).left).toBe(142);
     expect(placementMenu({ left: -20, bottom: 50 }, 240, { largeur: 390, hauteur: 844 }).left).toBe(8);
     expect(placementMenu({ left: 10, bottom: 800 }, 240, { largeur: 390, hauteur: 844 }).hauteurMax).toBe(120);
+  });
+
+  it("menu de la palette verticale : à droite du bouton, ramené dans la fenêtre", () => {
+    expect(placementMenuLateral({ top: 200, right: 60 }, 240, 300, { largeur: 1440, hauteur: 900 })).toEqual({ left: 64, top: 200, hauteurMax: 692 });
+    expect(placementMenuLateral({ top: 800, right: 60 }, 240, 300, { largeur: 1440, hauteur: 900 }).top).toBe(592);
+    expect(placementMenuLateral({ top: 10, right: 1400 }, 240, 300, { largeur: 1440, hauteur: 900 }).left).toBe(1192);
+    expect(placementMenuLateral({ top: -50, right: 60 }, 240, 2000, { largeur: 1440, hauteur: 900 })).toMatchObject({ top: 8, hauteurMax: 884 });
   });
 });

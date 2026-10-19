@@ -13,44 +13,11 @@
  * nouvelle organisation. Quand la référence ne fixe pas le domaine, il est « à définir » (`A_DEFINIR`), jamais deviné.
  * La mise en page de l'espace d'une variante est dérivée de ces tables. Pur : ni React ni DOM.
  */
-import type { StudioToolGroup } from "@parcours/atelier-model";
+import { STUDIO_TOOLS, type StudioToolGroup } from "@parcours/atelier-model";
 import { COMMANDES_EDITEUR, type CibleRaccourci, type IdCommandeEditeur } from "../planche2d/raccourcis";
 
-export type DomaineStudio = "dessin" | "bim" | "visualisation" | "documentation";
-export type PlancheStudio = "2d" | "3d";
-
-export interface DefinitionDomaine {
-  readonly id: DomaineStudio;
-  /** Numéro d'ordre de REF-01 (« 01 » à « 04 »). */
-  readonly numero: string;
-  /** Nom exact du domaine (REF-01 §02). */
-  readonly libelleFR: string;
-  /** Responsabilité exacte du domaine (REF-01 §02). */
-  readonly responsabiliteFR: string;
-}
-
-/** REF-01 §02, dans l'ordre de la référence. */
-export const DOMAINES_STUDIO: readonly DefinitionDomaine[] = Object.freeze([
-  { id: "dessin", numero: "01", libelleFR: "Dessin et modélisation", responsabiliteFR: "Concevoir et modifier dans Planche 2D ⇄ Planche 3D." },
-  { id: "bim", numero: "02", libelleFR: "BIM et coordination", responsabiliteFR: "Structurer les informations et contrôler la cohérence des modèles." },
-  { id: "visualisation", numero: "03", libelleFR: "Visualisation, rendu et immersion", responsabiliteFR: "Examiner et présenter les solutions architecturales." },
-  { id: "documentation", numero: "04", libelleFR: "Documentation, métrés et collaboration", responsabiliteFR: "Produire les documents, quantités, observations, revues et publications." },
-]);
-
-/** Le domaine du profil standard ouvert par défaut : celui des planches. */
-export const DOMAINE_PAR_DEFAUT: DomaineStudio = "dessin";
-/** La planche ouverte par défaut (comportement antérieur à I.4 : la planche 2D). */
-export const PLANCHE_PAR_DEFAUT: PlancheStudio = "2d";
-
-/** Les deux planches (REF-01 §02) et leur seul domaine (NAV-005). */
-export const PLANCHES_STUDIO: readonly { readonly id: PlancheStudio; readonly libelleFR: string; readonly domaine: DomaineStudio }[] = Object.freeze([
-  { id: "2d", libelleFR: "Planche 2D", domaine: "dessin" },
-  { id: "3d", libelleFR: "Planche 3D", domaine: "dessin" },
-]);
-
-export const estDomaineStudio = (v: string): v is DomaineStudio => DOMAINES_STUDIO.some((d) => d.id === v);
-export const estPlancheStudio = (v: string): v is PlancheStudio => PLANCHES_STUDIO.some((p) => p.id === v);
-export const definitionDomaine = (id: DomaineStudio): DefinitionDomaine => DOMAINES_STUDIO.find((d) => d.id === id)!;
+export * from "./definitions";
+import type { DomaineStudio } from "./definitions";
 
 /** Domaine d'une fonction, d'une commande ou d'un outil : un des quatre domaines, ou « à définir » (REF-01 muet). */
 export const A_DEFINIR = "a-definir" as const;
@@ -127,3 +94,78 @@ export const commandesDuDomaine = (d: DomaineStudio): IdCommandeEditeur[] => COM
 
 /** Identifiant DOM de la section d'un domaine (cible des liens de la navigation des domaines). */
 export const idSectionDomaine = (id: DomaineStudio): string => `studio-domaine-${id}`;
+
+// ——— Espace de travail d'un domaine (un domaine affiché à la fois) ———
+
+/**
+ * Actions de l'espace, dans la barre du haut quel que soit le domaine : Annuler, Rétablir, Enregistrer, le Tool Manager
+ * (« Outils ») et la palette (Ctrl+K). Elles quittent la palette d'outils (chaque commande n'est rendue qu'une fois) et
+ * gardent leur icône et leur raccourci (règle d'or). Le système d'outils est commun aux quatre domaines (REF-01 §03).
+ */
+export const ACTIONS_ESPACE: readonly IdCommandeEditeur[] = Object.freeze(["annuler", "retablir", "enregistrer", "outils", "palette"]);
+
+/**
+ * Éléments montrés dans la palette de chaque domaine en plus des siens : la sélection et la vue du canevas (chaque
+ * domaine travaille sur le même modèle et y désigne ses objets). Leur domaine de rattachement reste Dessin et
+ * modélisation (`DOMAINES_COMMANDES`) : seule la palette les reprend.
+ */
+export const ELEMENTS_COMMUNS: ReadonlySet<string> = new Set([
+  "studio.dessin.selection", "tout-selectionner", "zoom-avant", "zoom-arriere", "cadrer", "plein-ecran",
+]);
+
+/** Éléments d'un autre domaine repris dans la palette d'un domaine (examiner en 3D : orbite / plan, coupe). */
+export const ELEMENTS_REPRIS: Readonly<Record<DomaineStudio, ReadonlySet<string>>> = Object.freeze({
+  dessin: new Set<string>(),
+  bim: new Set<string>(),
+  visualisation: new Set<string>(["navigation-3d", "coupe-3d"]),
+  documentation: new Set<string>(),
+});
+
+const OUTILS_PAR_ID = new Map(STUDIO_TOOLS.map((t) => [t.toolId as string, t]));
+const ACTIONS = new Set<string>(ACTIONS_ESPACE);
+
+/** Domaine d'un élément de la barre (outil du registre ou commande de l'éditeur). */
+export function domaineElement(e: { readonly type: "outil" | "commande"; readonly id: string }): DomaineAttribue {
+  if (e.type === "commande") return (DOMAINES_COMMANDES as Record<string, DomaineAttribue>)[e.id] ?? A_DEFINIR;
+  const t = OUTILS_PAR_ID.get(e.id);
+  return t ? DOMAINES_FAMILLES_OUTILS[t.groupe] : A_DEFINIR;
+}
+
+/**
+ * Un élément figure-t-il dans la palette du domaine ? Ses propres outils et commandes, les éléments communs et repris,
+ * et ceux dont le domaine reste « à définir » (imports, exports, matrice d'échanges : rangés nulle part par REF-01,
+ * donc proposés partout) ; jamais les actions de l'espace (barre du haut).
+ */
+export function dansPaletteDuDomaine(e: { readonly type: "outil" | "commande"; readonly id: string }, d: DomaineStudio): boolean {
+  if (ACTIONS.has(e.id)) return false;
+  if (ELEMENTS_COMMUNS.has(e.id) || ELEMENTS_REPRIS[d].has(e.id)) return true;
+  const de = domaineElement(e);
+  return de === d || de === A_DEFINIR;
+}
+
+/**
+ * Commandes qui s'exécutent sur place quel que soit le domaine (raccourci, palette) : Échap (annuler le tracé /
+ * désélectionner), fin de polyligne, accrochages et repérages, boîtes Feuille et Feuilles et dossier. Elles ne changent jamais de domaine : appuyer sur Échap
+ * ou sur une touche d'accrochage dans BIM ne doit pas ouvrir Dessin et modélisation.
+ */
+const SANS_BASCULE = (e: { readonly type: "outil" | "commande"; readonly id: string }): boolean =>
+  e.type === "commande" && (e.id === "annuler-trace" || e.id === "terminer-polyligne" || e.id === "fermer-polyligne"
+    || e.id.startsWith("accrochage-") || e.id.startsWith("reperage-") || e.id === "pas-polaire"
+    // Boîtes de dialogue (Feuille, Feuilles et dossier) : ouvertes par-dessus le domaine affiché, qui ne change pas — le
+    // focus revient à son origine à la fermeture (accessibilité).
+    || e.id === "feuille" || e.id === "dossier");
+
+/**
+ * Domaine où s'exécute un élément lancé depuis le domaine `actif` (raccourci, palette, Tool Manager) : le domaine actif
+ * si l'élément est dans sa palette ou dans la barre de l'espace, sinon le domaine de l'élément, qui s'ouvre alors.
+ */
+export function domaineExecution(e: { readonly type: "outil" | "commande"; readonly id: string }, actif: DomaineStudio): DomaineStudio {
+  if (ACTIONS.has(e.id) || dansPaletteDuDomaine(e, actif) || SANS_BASCULE(e)) return actif;
+  const de = domaineElement(e);
+  return de === A_DEFINIR ? actif : de;
+}
+
+/** Fonctions rendues en panneaux latéraux repliables (toutes sauf la palette, le canevas et la barre d'état). */
+const HORS_PANNEAUX: ReadonlySet<FonctionStudio> = new Set<FonctionStudio>(["outils", "planches", "portee-annuler"]);
+/** Panneaux latéraux d'un domaine, dans l'ordre de `FONCTIONS_STUDIO`. */
+export const panneauxDuDomaine = (d: DomaineStudio): FonctionStudio[] => fonctionsDuDomaine(d).filter((f) => !HORS_PANNEAUX.has(f));

@@ -16,12 +16,16 @@ import type { StudioDocument } from "@parcours/atelier-model";
 import type { StudioContext } from "../../../lib/api";
 import { CATALOGUE } from "../planche2d/catalogue";
 import { COMMANDES_EDITEUR } from "../planche2d/raccourcis";
-import { BandeauVariante, EnTeteStudio } from "../variante/BandeauVariante";
-import { ATTRIBUT_SANS_GARDE, lienQuitteLaVariante } from "../variante/useGardeNavigation";
-import { AccesDomaine, ApercuVisualisation, clicSimple, NavigationDomaines, SectionDomaine, SelecteurPlanche, TitreLegende } from "./DomainesStudio";
+import { STUDIO_PHASES_WORKFLOW, STUDIO_TOOLS } from "@parcours/atelier-model";
+import { BarreOutils } from "../planche2d/BarreOutils";
+import { ariaRaccourci } from "../planche2d/raccourcis";
+import { BandeauHistorique, libelleModePlanche, SOUS_TITRE_PLANCHE, TitreEspace } from "../variante/BandeauVariante";
+import { ActionsEspace, libellePhase, PastilleWorkflow, SUGGESTIONS_PHASE } from "../espace/EspaceStudio";
+import { ATTRIBUT_SANS_GARDE, lienQuitteLaVariante, resteDansLaVariante } from "../variante/useGardeNavigation";
+import { clicSimple, NavigationDomaines, SectionDomaine, SelecteurPlanche } from "./DomainesStudio";
 import {
-  A_DEFINIR, commandesDuDomaine, domaineDeFonction, domaineEntree, DOMAINES_COMMANDES, DOMAINES_FAMILLES_OUTILS, DOMAINES_STUDIO, estDomaineStudio, estPlancheStudio,
-  FONCTIONS_STUDIO, fonctionsDuDomaine, PLANCHES_STUDIO,
+  A_DEFINIR, ACTIONS_ESPACE, commandesDuDomaine, dansPaletteDuDomaine, domaineDeFonction, domaineDeLAdresse, domaineElement, domaineEntree, domaineExecution, DOMAINES_COMMANDES,
+  DOMAINES_FAMILLES_OUTILS, DOMAINES_STUDIO, ELEMENTS_COMMUNS, EXTENSIONS_PROPOSEES, estDomaineStudio, estModePlanche, estPlancheStudio, FONCTIONS_STUDIO, fonctionsDuDomaine, MODES_PLANCHE, panneauxDuDomaine, PLANCHES_STUDIO,
 } from "./domaines";
 
 const studioDocumentVide = (): StudioDocument => ({ id: "d1", schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects: [] });
@@ -126,11 +130,88 @@ describe("rattachement exhaustif aux domaines (I-1)", () => {
     expect(fonctionsDuDomaine("bim")).toEqual(["exigences"]);
     expect(fonctionsDuDomaine("visualisation")).toEqual(["scenes-rendus"]);
     expect(fonctionsDuDomaine("documentation")).toEqual(["publications", "commentaires-observations", "revisions", "metre"]);
-    // L'espace d'une variante rend ses sections depuis ces tables, sans liste manuelle de commandes.
-    expect(ESPACE).toContain("fonctionsDuDomaine(d.id)");
-    expect(ESPACE).toContain("commandesDuDomaine(d.id)");
+    // Panneaux latéraux : tous les blocs sauf la palette, le canevas et la barre d'état.
+    expect(panneauxDuDomaine("dessin")).toEqual(["elements"]);
+    expect(panneauxDuDomaine("documentation")).toEqual(["publications", "commentaires-observations", "revisions", "metre"]);
+    // L'espace rend panneaux et palette depuis ces tables, sans liste manuelle de commandes.
+    expect(ESPACE).toContain("panneauxDuDomaine(d.id)");
+    expect(ESPACE).toContain("FILTRES_PALETTE[domaineActif]");
     expect(ESPACE).not.toMatch(/commandes=\{\[/);
     for (const f of Object.keys(FONCTIONS_STUDIO)) expect(ESPACE, f).toContain(`case "${f}":`);
+  });
+});
+
+describe("palette d'un domaine et actions de l'espace", () => {
+  const elementsRegistre = [
+    ...STUDIO_TOOLS.map((t) => ({ type: "outil" as const, id: t.toolId as string })),
+    ...COMMANDES_EDITEUR.map((c) => ({ type: "commande" as const, id: c.id as string })),
+  ];
+
+  it("les actions de l'espace (Annuler, Rétablir, Enregistrer, Outils, palette) ne sont dans aucune palette", () => {
+    expect([...ACTIONS_ESPACE]).toEqual(["annuler", "retablir", "enregistrer", "outils", "palette"]);
+    for (const d of DOMAINES_STUDIO) for (const id of ACTIONS_ESPACE) expect(dansPaletteDuDomaine({ type: "commande", id }, d.id), `${d.id}:${id}`).toBe(false);
+  });
+
+  it("chaque outil et chaque commande est atteignable depuis son domaine (palette ou barre de l'espace)", () => {
+    for (const e of elementsRegistre) {
+      const d = domaineElement(e);
+      if (d === A_DEFINIR) {
+        // « À définir » : proposé dans chaque domaine (ou dans la barre de l'espace pour Outils et la palette).
+        for (const x of DOMAINES_STUDIO) expect(dansPaletteDuDomaine(e, x.id) || ACTIONS_ESPACE.includes(e.id as never), `${x.id}:${e.id}`).toBe(true);
+      } else {
+        expect(dansPaletteDuDomaine(e, d) || ACTIONS_ESPACE.includes(e.id as never), e.id).toBe(true);
+      }
+    }
+  });
+
+  it("une palette ne montre que son domaine, les éléments communs (sélection, vue) et ceux « à définir »", () => {
+    expect(dansPaletteDuDomaine({ type: "outil", id: "studio.dessin.ligne" }, "bim")).toBe(false);
+    expect(dansPaletteDuDomaine({ type: "outil", id: "studio.propriete.definir" }, "bim")).toBe(true);
+    expect(dansPaletteDuDomaine({ type: "outil", id: "studio.propriete.definir" }, "dessin")).toBe(false);
+    expect(dansPaletteDuDomaine({ type: "outil", id: "studio.scene.creer" }, "visualisation")).toBe(true);
+    expect(dansPaletteDuDomaine({ type: "outil", id: "studio.scene.creer" }, "dessin")).toBe(false);
+    expect(dansPaletteDuDomaine({ type: "commande", id: "feuille" }, "documentation")).toBe(true);
+    expect(dansPaletteDuDomaine({ type: "commande", id: "feuille" }, "dessin")).toBe(false);
+    for (const d of DOMAINES_STUDIO) {
+      for (const id of ELEMENTS_COMMUNS) expect(dansPaletteDuDomaine({ type: id.startsWith("studio.") ? "outil" : "commande", id }, d.id), `${d.id}:${id}`).toBe(true);
+      expect(dansPaletteDuDomaine({ type: "commande", id: "exporter-ifc" }, d.id)).toBe(true);
+    }
+  });
+
+  it("un outil d'un autre domaine (raccourci, palette) ouvre son domaine ; un élément de la palette active reste sur place", () => {
+    expect(domaineExecution({ type: "outil", id: "studio.dessin.ligne" }, "bim")).toBe("dessin");
+    expect(domaineExecution({ type: "outil", id: "studio.scene.creer" }, "dessin")).toBe("visualisation");
+    expect(domaineExecution({ type: "commande", id: "exigences" }, "dessin")).toBe("bim");
+    // Boîtes de dialogue : ouvertes par-dessus le domaine affiché (le focus revient à son origine).
+    expect(domaineExecution({ type: "commande", id: "feuille" }, "bim")).toBe("bim");
+    expect(domaineExecution({ type: "commande", id: "dossier" }, "dessin")).toBe("dessin");
+    expect(domaineExecution({ type: "commande", id: "zoom-avant" }, "documentation")).toBe("documentation");
+    expect(domaineExecution({ type: "commande", id: "exporter-svg" }, "visualisation")).toBe("visualisation");
+    expect(domaineExecution({ type: "commande", id: "navigation-3d" }, "visualisation")).toBe("visualisation");
+    expect(domaineExecution({ type: "commande", id: "palette" }, "bim")).toBe("bim");
+    // Commandes d'état du canevas (Échap, accrochages, repérages, fin de polyligne) : sur place, jamais de changement de domaine.
+    for (const id of ["annuler-trace", "accrochage-grille", "reperage-polaire", "pas-polaire", "terminer-polyligne"]) expect(domaineExecution({ type: "commande", id }, "documentation"), id).toBe("documentation");
+  });
+
+  it("barre de l'espace : chaque action une fois, icône, nom, raccourci ; palette du domaine sans ces actions (règle d'or)", () => {
+    const actions = renderToStaticMarkup(createElement(ActionsEspace, { disponible: () => true, surCommande: () => {} }));
+    expect(actions).toContain('role="toolbar" aria-label="Actions de l’espace"');
+    for (const id of ACTIONS_ESPACE) {
+      const c = COMMANDES_EDITEUR.find((x) => x.id === id)!;
+      expect(actions.split(`data-studio-commande="${id}"`).length - 1, id).toBe(1);
+      expect(actions).toMatch(new RegExp(`aria-label="${c.libelleFR}" aria-keyshortcuts="${ariaRaccourci(c.raccourci).replace(/[+]/g, "\\+")}"`));
+    }
+    for (const d of DOMAINES_STUDIO) {
+      const html = renderToStaticMarkup(createElement(BarreOutils, {
+        outil: "studio.dessin.selection", outilDisponible: () => true, commandeDisponible: () => true, surOutil: () => {}, surCommande: () => {},
+        filtre: (e) => dansPaletteDuDomaine(e, d.id), orientation: "verticale", libelle: `Outils — ${d.libelleFR}`,
+      }));
+      expect(html).toContain('aria-orientation="vertical"');
+      for (const e of elementsRegistre) {
+        const attribut = e.type === "outil" ? "data-studio-outil" : "data-studio-commande";
+        expect(html.split(`${attribut}="${e.id}"`).length - 1, `${d.id}:${e.id}`).toBe(dansPaletteDuDomaine(e, d.id) ? 1 : 0);
+      }
+    }
   });
 });
 
@@ -142,7 +223,7 @@ const CONTEXTE: StudioContext = {
 describe("présentation des domaines", () => {
   const adresse = (id: string) => `/studio/projets/p/etudes/s/variantes/v?domaine=${id}`;
 
-  it("navigation : quatre liens vers l'adresse de la variante avec leur domaine, exemptés de la garde, l'actif marqué aria-current", () => {
+  it("navigation : quatre liens vers l'adresse de la variante avec leur domaine, exemptés de la garde, l'affiché marqué aria-current", () => {
     const html = renderToStaticMarkup(createElement(NavigationDomaines, { actif: "bim", adresse, surChoix: () => {} }));
     expect(html).toContain('aria-label="Domaines du Studio"');
     expect(html.match(/<a /g)).toHaveLength(4);
@@ -151,8 +232,19 @@ describe("présentation des domaines", () => {
       expect(html).toContain(`<span>${d.libelleFR}</span>`);
     }
     expect(html.match(new RegExp(`${ATTRIBUT_SANS_GARDE}=""`, "g"))).toHaveLength(4);
-    expect(html.match(/aria-current="true"/g)).toHaveLength(1);
-    expect(html).toMatch(/aria-current="true"[^>]*data-studio-domaine-lien="bim"/);
+    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(html).toMatch(/aria-current="page"[^>]*data-studio-domaine-lien="bim"/);
+    expect(html).not.toContain("data-studio-domaines-menu");
+  });
+
+  it("navigation compacte (téléphone) : un bouton nomme le domaine affiché et déplie les quatre liens", () => {
+    const html = renderToStaticMarkup(createElement(NavigationDomaines, { actif: "documentation", adresse, surChoix: () => {}, compacte: true }));
+    expect(html).toMatch(/<button type="button" class="studio-domaines-menu" aria-expanded="false" aria-controls="([^"]+)"[^>]*>.*Documentation, métrés et collaboration/);
+    const id = /aria-controls="([^"]+)"/.exec(html)![1]!;
+    expect(html).toMatch(new RegExp(`<ol id="${id.replace(/[:]/g, "\\:")}" hidden="">`));
+    expect(html.match(/<a /g)).toHaveLength(4);
+    // Le bouton précède la liste ; la barre est en haut de l'espace (ordre du document).
+    expect(html.indexOf("data-studio-domaines-menu")).toBeLessThan(html.indexOf("<ol"));
   });
 
   it("liens de domaine : seul le clic simple est traité sur place ; Ctrl, Cmd, Maj, Alt ou un autre bouton suivent l'adresse", () => {
@@ -169,59 +261,96 @@ describe("présentation des domaines", () => {
     expect(lienQuitteLaVariante(lien({ href: adresse("bim") }))).toBe(true);
   });
 
-  it("section : titre du domaine et responsabilité ; Dessin et modélisation titré dans la légende de sa planche", () => {
-    const visible = renderToStaticMarkup(createElement(SectionDomaine, { id: "documentation", actif: true, children: null }));
-    expect(visible).toContain('aria-labelledby="studio-domaine-documentation-titre"');
-    expect(visible).toContain("data-studio-domaine-actif");
-    expect(visible).toContain("Produire les documents, quantités, observations, revues et publications.");
-    expect(visible).toMatch(/<h2 id="studio-domaine-documentation-titre" tabindex="-1">/);
-    expect(visible).not.toMatch(/<section[^>]*tabindex/);
-    const dessin = renderToStaticMarkup(createElement(SectionDomaine, { id: "dessin", actif: false, titreVisible: false, children: createElement(TitreLegende, { id: "dessin" }) }));
-    expect(dessin).toContain('aria-labelledby="studio-domaine-dessin-titre"');
-    expect(dessin).toContain('<h2 id="studio-domaine-dessin-titre" class="studio-legende-titre" tabindex="-1">Dessin et modélisation</h2>');
-    expect(dessin.match(/<h2/g)).toHaveLength(1);
-    expect(dessin).not.toContain("data-studio-domaine-actif");
+  it("historique : un retour qui reste dans la variante et la révision (changement de domaine) n'est pas une sortie", () => {
+    const v = { chemin: "/studio/projets/p/etudes/s/variantes/v", revision: null };
+    expect(resteDansLaVariante({ pathname: "/studio/projets/p/etudes/s/variantes/v", search: "?domaine=bim" }, v)).toBe(true);
+    expect(resteDansLaVariante({ pathname: "/studio/projets/p/etudes/s/variantes/v/", search: "" }, v)).toBe(true);
+    expect(resteDansLaVariante({ pathname: "/studio/projets/p/etudes/s/variantes/v", search: "?revision=r1&domaine=bim" }, v)).toBe(false);
+    expect(resteDansLaVariante({ pathname: "/studio/projets/p/etudes/s/variantes/w", search: "?domaine=bim" }, v)).toBe(false);
+    expect(resteDansLaVariante({ pathname: "/studio/projets/p", search: "" }, v)).toBe(false);
+    expect(resteDansLaVariante({ pathname: "/studio/projets/p/etudes/s/variantes/v", search: "?revision=r1" }, { ...v, revision: "r1" })).toBe(true);
   });
 
-  it("choix de planche : deux boutons enfoncés ou non ; le raccourci de la bascule « Vue 3D » n'est annoncé que sur le bouton inactif", () => {
-    const html = renderToStaticMarkup(createElement(SelecteurPlanche, { active: "3d", surChoix: () => {} }));
+  it("section : région nommée par le nom exact du domaine ; un seul domaine affiché, les autres masqués (montés)", () => {
+    const affiche = renderToStaticMarkup(createElement(SectionDomaine, { id: "documentation", actif: true, children: null }));
+    expect(affiche).toContain('aria-labelledby="studio-domaine-documentation-titre"');
+    expect(affiche).toContain("data-studio-domaine-actif");
+    expect(affiche).toMatch(/<h2 id="studio-domaine-documentation-titre" class="studio-masque" tabindex="-1">Documentation, métrés et collaboration<\/h2>/);
+    expect(affiche).not.toContain("hidden");
+    const masque = renderToStaticMarkup(createElement(SectionDomaine, { id: "dessin", actif: false, children: null }));
+    expect(masque).toMatch(/<section[^>]*hidden=""/);
+    expect(masque).not.toContain("data-studio-domaine-actif");
+  });
+
+  it("mode des planches : 2D, 3D, Double vue ; le raccourci de « Vue 3D » n'est annoncé que sur le bouton qu'il activerait", () => {
     const bascule = COMMANDES_EDITEUR.find((c) => c.id === "vue-3d")!;
     expect(bascule.raccourci).toBe("Shift+D");
-    expect(html.match(/aria-keyshortcuts=/g)).toHaveLength(1);
-    expect(html).toMatch(/aria-pressed="false" aria-keyshortcuts="Shift\+D"[^>]*data-studio-planche="2d"/);
-    expect(html).toMatch(/<button type="button" aria-pressed="true" data-studio-planche="3d">/);
+    expect(MODES_PLANCHE.map((m) => m.libelleFR)).toEqual(["Planche 2D", "Planche 3D", "Double vue"]);
+    for (const [active, annonce] of [["2d", "3d"], ["3d", "2d"], ["double", "2d"]] as const) {
+      const html = renderToStaticMarkup(createElement(SelecteurPlanche, { active, surChoix: () => {} }));
+      expect(html.match(/aria-keyshortcuts=/g), active).toHaveLength(1);
+      expect(html).toMatch(new RegExp(`aria-keyshortcuts="Shift\\+D"[^>]*data-studio-planche="${annonce}"`));
+      expect(html).toMatch(new RegExp(`aria-pressed="true" aria-label="[^"]*"[^>]*data-studio-planche="${active}"`));
+      expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
+    }
+    expect(["2d", "3d", "double"].every(estModePlanche)).toBe(true);
+    expect(estModePlanche("triple")).toBe(false);
+    // Double vue : extension PROPOSÉE (hors références), étiquetée comme telle et désactivable.
+    expect(EXTENSIONS_PROPOSEES.doubleVue).toBe(true);
+    expect(MODES_PLANCHE.filter((m) => m.extension).map((m) => m.id)).toEqual(["double"]);
+    const html = renderToStaticMarkup(createElement(SelecteurPlanche, { active: "2d", surChoix: () => {} }));
+    expect(html).toMatch(/aria-label="Double vue \(extension proposée\)"[^>]*data-studio-planche="double" data-studio-extension-proposee=""/);
+    expect(html).toContain('<span class="studio-extension" aria-hidden="true">proposée</span>');
   });
 
-  it("accès d'un domaine : les commandes dérivées de la table, avec leur icône et leur raccourci ; aucun accès vide", () => {
-    const html = renderToStaticMarkup(createElement(AccesDomaine, { domaine: "documentation", commandes: commandesDuDomaine("documentation"), disponible: (c) => c.id === "feuille", surCommande: () => {} }));
-    expect(html).toMatch(/aria-keyshortcuts="Shift\+P"[^>]*data-studio-domaine-commande="feuille"/);
-    expect(html).toMatch(/disabled=""[^>]*aria-keyshortcuts="Control\+Shift\+D"[^>]*data-studio-domaine-commande="dossier"/);
-    expect(html.match(/<svg/g)?.length).toBe(2);
-    expect(renderToStaticMarkup(createElement(AccesDomaine, { domaine: "visualisation", commandes: [], disponible: () => true, surCommande: () => {} }))).toBe("");
+  it("titre de l'espace et sous-titre de la planche affichée (2D, 3D, Double vue)", () => {
+    expect(renderToStaticMarkup(createElement(TitreEspace, { context: CONTEXTE }))).toBe('<h1 class="studio-masque" data-studio-titre-espace="true"><span translate="no">Étude</span></h1>');
+    expect(SOUS_TITRE_PLANCHE["2d"]).toBe("Dessin 2D · Repère local · Mètres");
+    expect(SOUS_TITRE_PLANCHE["3d"]).toBe("Vue 3D · Repère local · Mètres");
+    expect(libelleModePlanche("double")).toBe("Double vue");
   });
 
-  it("visualisation : un aperçu, l'édition des scènes et du rendu restant dans la Planche 3D", () => {
-    const html = renderToStaticMarkup(createElement(ApercuVisualisation, { doc: studioDocumentVide(), surOuvrir3d: () => {} }));
-    expect(html).toContain("Aperçu ; l’édition des scènes et du rendu se fait dans la Planche 3D.");
-    expect(html).toContain(">Ouvrir la Planche 3D</button>");
-  });
-
-  it("en-tête : badge et sous-titre suivent la planche active", () => {
-    const deux = renderToStaticMarkup(createElement(EnTeteStudio, { context: null, planche: "2d" }));
-    const trois = renderToStaticMarkup(createElement(EnTeteStudio, { context: null, planche: "3d" }));
-    expect(deux).toContain(">Dessin 2D · Repère local · Mètres</p>");
-    expect(deux).toContain(">Planche 2D</span>");
-    expect(trois).toContain(">Vue 3D · Repère local · Mètres</p>");
-    expect(trois).toContain(">Planche 3D</span>");
+  it("adresse : commentaires ouverts sans domaine → Documentation ; sinon le domaine de l'adresse ou Dessin", () => {
+    expect(domaineDeLAdresse(null, false)).toBe("dessin");
+    expect(domaineDeLAdresse(null, true)).toBe("documentation");
+    expect(domaineDeLAdresse("bim", true)).toBe("bim");
   });
 
   it("révision historique : « Revenir à la version courante » garde le domaine et la planche de l'adresse", () => {
-    const rendre = (adresse?: { domaine: "dessin" | "bim"; planche: "3d" | null }) => renderToStaticMarkup(createElement(MemoryRouter, null, createElement(BandeauVariante, {
-      projectId: "p", studyId: "s", variantId: "v", context: CONTEXTE, historical: true, etat: "Révision historique", commentaires: false, surCommentaires: () => {}, adresse,
+    const rendre = (adresse?: { domaine: "dessin" | "bim"; planche: "3d" | "double" | null }) => renderToStaticMarkup(createElement(MemoryRouter, null, createElement(BandeauHistorique, {
+      projectId: "p", studyId: "s", variantId: "v", adresse,
     })));
     const lien = (html: string) => /data-studio-version-courante="true" href="([^"]*)"/.exec(html)?.[1];
     expect(lien(rendre())).toBe("/studio/projets/p/etudes/s/variantes/v");
     expect(lien(rendre({ domaine: "dessin", planche: "3d" }))).toBe("/studio/projets/p/etudes/s/variantes/v?domaine=dessin&amp;planche=3d");
+    expect(lien(rendre({ domaine: "dessin", planche: "double" }))).toBe("/studio/projets/p/etudes/s/variantes/v?domaine=dessin&amp;planche=double");
     expect(lien(rendre({ domaine: "bim", planche: null }))).toBe("/studio/projets/p/etudes/s/variantes/v?domaine=bim");
+  });
+});
+
+describe("workflow de conception déclaré (REF-01 §06)", () => {
+  it("les sept phases sont celles du document de référence, dans l'ordre", () => {
+    const texte = DOCX.replace(/<[^>]+>/g, "");
+    expect(texte).toContain(`Le workflow de conception est : ${STUDIO_PHASES_WORKFLOW.map((p) => p.libelleFR).join(" → ")}.`);
+    expect(texte).toContain("ne remplace pas la méthode des 21 étapes du Parcours");
+  });
+
+  it("pastille : « Non déclarée » par défaut ; menu des phases ; suggestions = liens vers les domaines concernés", () => {
+    const adresses = { domaine: (d: string) => `/v?domaine=${d}`, etude: "/e", comparer: "/c" };
+    const vide = renderToStaticMarkup(createElement(PastilleWorkflow, { phase: null, adresses, surDomaine: () => {} }));
+    expect(vide).toContain(">Non déclarée<");
+    expect(vide).toContain('data-studio-workflow-phase="non-declaree"');
+    expect(vide).toContain("data-studio-workflow-lecture");
+    expect(vide).not.toContain("data-studio-declarer-phase");
+    const controle = renderToStaticMarkup(createElement(PastilleWorkflow, { phase: "controler", declarer: async () => {}, adresses, surDomaine: () => {} }));
+    expect(controle).toContain(">Contrôler<");
+    expect(controle.match(/data-studio-declarer-phase="/g)).toHaveLength(8);
+    expect(controle).toMatch(/<li aria-current="step" data-studio-phase="controler">/);
+    expect(controle).toMatch(/href="\/v\?domaine=bim" data-studio-sans-garde="" data-studio-suggestion-domaine="bim">02 · BIM et coordination</);
+    expect(SUGGESTIONS_PHASE.publier).toEqual([{ type: "domaine", domaine: "documentation" }]);
+    expect(SUGGESTIONS_PHASE.concevoir).toEqual([{ type: "domaine", domaine: "dessin" }]);
+    expect(libellePhase(undefined)).toBe("Non déclarée");
+    // Aucun cinquième domaine : les suggestions ne désignent que les quatre domaines, l'étude ou la comparaison.
+    for (const s of Object.values(SUGGESTIONS_PHASE).flat()) if (s.type === "domaine") expect(estDomaineStudio(s.domaine)).toBe(true);
   });
 });

@@ -30,6 +30,7 @@
  * `studio.scene.*` / `studio.apparence.*` et la commande `exporter-png` par `demande`.
  */
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { mesurerRendu3d } from "../chargement/mesures-studio";
@@ -88,6 +89,15 @@ export interface Vue3DStudioProps {
   surNavigation?: (n: Navigation3d) => void;
   /** Provenance du rendu : étude, variante, révision affichée ; `nonEnregistre` : le brouillon diffère de la révision. */
   provenance?: { etude: { id: string; nom: string }; variante: { id: string; nom: string }; revisionId: string; nonEnregistre: boolean };
+  /**
+   * Espace de travail : panneaux de la vue (saisie des solides, solides libres, murs et ouvertures, scènes et rendus,
+   * coupe) rendus dans ce conteneur du panneau latéral (portail React : l'état reste celui de la vue). Absent : sous la vue.
+   */
+  hotePanneaux?: HTMLElement | null;
+  /** Panneau « Scènes, apparence et rendus » montré (domaine Visualisation, rendu et immersion) ; vrai par défaut. */
+  visualisation?: boolean;
+  /** La vue remplit la hauteur de son conteneur (canevas de l'espace de travail) au lieu d'un rapport fixe. */
+  remplir?: boolean;
 }
 
 interface Moteur {
@@ -326,7 +336,7 @@ function Champ({ nom, libelle, valeur, surValeur, requis = true }: { nom: string
   </label>;
 }
 
-export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbite", coupe = false, selection = null, layerId, surSelection, surCommandes, selectionArchitecture = null, surSelectionArchitecture, demande = null, surDemandeTraitee, surNavigation, provenance }: Vue3DStudioProps) {
+export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbite", coupe = false, selection = null, layerId, surSelection, surCommandes, selectionArchitecture = null, surSelectionArchitecture, demande = null, surDemandeTraitee, surNavigation, provenance, hotePanneaux, visualisation: avecVisualisation = true, remplir = false }: Vue3DStudioProps) {
   const hote = useRef<HTMLDivElement>(null);
   const moteur = useRef<Moteur | null>(null);
   const cadre = useRef(false);
@@ -459,7 +469,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     moteur.current = m;
     poserControles(m, navigation);
     const taille = () => {
-      const w = Math.max(el.clientWidth, 1), h = Math.max(Math.round(w * 0.62), 240);
+      // Canevas de l'espace : la hauteur du conteneur (fixée par la mise en page, jamais par le canevas lui-même).
+      const w = Math.max(el.clientWidth, 1), h = el.dataset.studioRemplir !== undefined && el.clientHeight >= 160 ? el.clientHeight : Math.max(Math.round(w * 0.62), 240);
       renderer.setSize(w, h);
       perspective.aspect = w / h; perspective.updateProjectionMatrix();
       const demi = (plan.top - plan.bottom) / 2;
@@ -674,12 +685,22 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       {maillage.message && <p className="studio-alert" role="alert" data-studio-maillage-erreur>{maillage.message}</p>}
       {maillage.valeur === undefined && !maillage.message && <p className="studio-hint" role="status">{MESSAGES_TACHE.enCours}</p>}
       {indisponible && <p className="studio-alert" role="alert" data-studio-vue3d-indisponible>Vue 3D indisponible : WebGL n’est pas pris en charge par ce navigateur.</p>}
-      <div ref={hote} className="studio-vue3d-hote" data-studio-vue3d-outil={outil} />
-      <p className="studio-hint">{navigation === "plan"
+      <div ref={hote} className="studio-vue3d-hote" data-studio-vue3d-outil={outil} data-studio-remplir={remplir ? "" : undefined}
+        title={navigation === "plan"
+          ? "Repère local 3D : z vers le haut, en mètres. Vue en plan : glisser : déplacer ; molette : zoom."
+          : "Repère local 3D : z vers le haut, en mètres. Glisser : orbite ; clic droit ou Maj + glisser : déplacer ; molette : zoom."} />
+      {!remplir && <p className="studio-hint">{navigation === "plan"
         ? "Repère local 3D : z vers le haut, en mètres. Vue en plan : glisser : déplacer ; molette : zoom."
-        : "Repère local 3D : z vers le haut, en mètres. Glisser : orbite ; clic droit ou Maj + glisser : déplacer ; molette : zoom."}</p>
+        : "Repère local 3D : z vers le haut, en mètres. Glisser : orbite ; clic droit ou Maj + glisser : déplacer ; molette : zoom."}</p>}
       {erreur && <p className="studio-alert" role="alert" data-studio-volume-erreur>{erreur}</p>}
       {statut && <p className="studio-info" role="status" data-studio-visualisation-statut>{statut}</p>}
+      {(() => { const panneauVisualisation = avecVisualisation && <PanneauVisualisation doc={doc} modifiable={modifiable} sceneChoisie={sceneChoisie} sceneActive={sceneActive} nom={nomScene} calques={calquesVue} mode={mode}
+        cible={cibleApparence} couleur={couleur} finition={finition} rendu={{ possible: !raisonRendu, raison: raisonRendu }}
+        surChoix={choisirScene} surNom={setNomScene} surCalques={(ids) => setCalquesMontres(ids)} surMode={setMode} surVueDessin={() => { setCalquesMontres(null); setMode(MODE_INITIAL); setSceneChoisie(null); setStatut(""); }}
+        surCible={(c) => { setCibleApparence(c); const a = apparenceDe(doc, c); if (a) { setCouleur(a.color); setFinition(a.finish ?? ""); } }} surCouleur={setCouleur} surFinition={setFinition} surAction={visualisation} />;
+      // Espace de travail (domaine Visualisation) : les scènes et rendus en tête du panneau latéral.
+      const panneaux = <>
+      {hotePanneaux && panneauVisualisation}
 
       {outil === "studio.solide.boite" && <form className="studio-vue3d-formulaire" onSubmit={poserBoite} data-studio-boite aria-labelledby="studio-boite-titre">
         <h3 id="studio-boite-titre"><Icon name="studio-solid-box" size={18} /> Boîte</h3>
@@ -754,10 +775,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         </ul>
       </div>}
 
-      <PanneauVisualisation doc={doc} modifiable={modifiable} sceneChoisie={sceneChoisie} sceneActive={sceneActive} nom={nomScene} calques={calquesVue} mode={mode}
-        cible={cibleApparence} couleur={couleur} finition={finition} rendu={{ possible: !raisonRendu, raison: raisonRendu }}
-        surChoix={choisirScene} surNom={setNomScene} surCalques={(ids) => setCalquesMontres(ids)} surMode={setMode} surVueDessin={() => { setCalquesMontres(null); setMode(MODE_INITIAL); setSceneChoisie(null); setStatut(""); }}
-        surCible={(c) => { setCibleApparence(c); const a = apparenceDe(doc, c); if (a) { setCouleur(a.color); setFinition(a.finish ?? ""); } }} surCouleur={setCouleur} surFinition={setFinition} surAction={visualisation} />
+      {!hotePanneaux && panneauVisualisation}
 
       {coupe && <div className="studio-vue3d-coupe" data-studio-coupe data-studio-coupe-z={Number.isFinite(coteCoupe) ? coteCoupe : ""} data-studio-coupe-segments={resultatCoupe?.segments.length ?? 0}
         data-studio-coupe-sources={resultatCoupe?.sources.map((s) => s.id).join(" ") ?? ""}>
@@ -770,6 +788,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
           {resultatCoupe.sources.map((s) => <li key={s.id} data-studio-coupe-source={s.id}>{`Contour de ${s.segments} segment(s), provenance : solide ${s.id}`}</li>)}
         </ul>}
       </div>}
+      </>; return hotePanneaux ? createPortal(<div className="studio-vue3d-panneaux" data-studio-vue3d-panneaux>{panneaux}</div>, hotePanneaux) : panneaux; })()}
     </section>
   );
 }
