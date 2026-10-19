@@ -14,6 +14,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 import { Icon } from "../../../components/Icon";
 import { api } from "../../../lib/api";
+import { useAuth } from "../../../lib/auth-context";
 import { lireRouteStudio } from "../routes-studio";
 import { CATALOGUE, groupesCatalogue, rechercher, separerFavoris, type EntreeCatalogue } from "./catalogue";
 import {
@@ -32,43 +33,91 @@ export interface CatalogueProps {
 
 /*
  * Préférences d'outils du compte (favoris, profil des barres), partagées par la barre d'outils, le gestionnaire et la
- * palette : un seul état en mémoire, relu du serveur, enregistré sur le serveur à chaque changement (PUT complet).
- * Visibilité seulement (B.2-06) : ni la disponibilité, ni les raccourcis, ni le droit d'exécution n'en dépendent.
+ * palette : un état en mémoire **par compte**, relu du serveur, enregistré sur le serveur à chaque changement (PUT
+ * complet). Changer de compte (déconnexion, autre connexion dans le même onglet) remet l'état à zéro et écarte toute
+ * réponse tardive de l'ancien compte. Visibilité seulement (B.2-06) : ni disponibilité, ni raccourcis, ni droits.
  */
 type EtatChargement = "initial" | "chargement" | "pret" | "erreur";
 type EtatEnregistrement = "aucun" | "en-cours" | "enregistre" | "echec";
-interface EtatPreferences { prefs: PreferencesOutils; etat: EtatChargement; enregistrement: EtatEnregistrement; erreur: string | null }
-let etatPreferences: EtatPreferences = { prefs: PREFERENCES_DEFAUT, etat: "initial", enregistrement: "aucun", erreur: null };
-const abonnes = new Set<() => void>();
-const publier = (suivant: Partial<EtatPreferences>) => { etatPreferences = { ...etatPreferences, ...suivant }; for (const f of abonnes) f(); };
-const abonner = (f: () => void) => { abonnes.add(f); return () => { abonnes.delete(f); }; };
-const lireEtat = () => etatPreferences;
-/** Enregistrements en cours : une relecture du serveur n'écrase pas un changement pas encore enregistré. */
-let enVol = 0;
-let file: Promise<unknown> = Promise.resolve();
+export interface EtatPreferences {
+  /** Compte auquel appartiennent ces préférences ; null = aucun compte (rien n'est lu ni écrit). */
+  compte: string | null;
+  prefs: PreferencesOutils;
+  etat: EtatChargement;
+  enregistrement: EtatEnregistrement;
+  erreur: string | null;
+}
+export interface ApiPreferencesOutils {
+  studioToolPreferences: (projectId: string) => Promise<unknown>;
+  setStudioToolPreferences: (projectId: string, corps: { profil: string; favoris: string[]; personnel: string[] }) => Promise<unknown>;
+}
+const etatVierge = (compte: string | null): EtatPreferences => ({ compte, prefs: PREFERENCES_DEFAUT, etat: "initial", enregistrement: "aucun", erreur: null });
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-function charger(projectId: string) {
-  if (etatPreferences.etat === "chargement" || enVol > 0) return;
-  if (etatPreferences.etat !== "pret") publier({ etat: "chargement" });
-  api.studioToolPreferences(projectId)
-    .then((r) => { if (enVol === 0) publier({ prefs: normaliserPreferences(r), etat: "pret", erreur: null }); })
-    .catch((e: unknown) => { publier(etatPreferences.etat === "pret" ? { erreur: message(e) } : { etat: "erreur", erreur: message(e) }); });
+/** État montré à un compte : celui du magasin s'il lui appartient, sinon l'état vierge (jamais celui d'un autre). */
+export const etatPourCompte = (etat: EtatPreferences, compte: string | null): EtatPreferences => (etat.compte === compte ? etat : etatVierge(compte));
+
+/** Magasin des préférences d'outils, rattaché à un compte ; `api` injectée (essais). */
+export function creerMagasinPreferences(source: ApiPreferencesOutils) {
+  let etat = etatVierge(null);
+  /** Génération du compte : toute réponse d'une génération passée est ignorée. */
+  let generation = 0;
+  /** Enregistrements en cours : une relecture du serveur n'écrase pas un changement pas encore enregistré. */
+  let enVol = 0;
+  let file: Promise<unknown> = Promise.resolve();
+  const abonnes = new Set<() => void>();
+  const publier = (suivant: Partial<EtatPreferences>) => { etat = { ...etat, ...suivant }; for (const f of abonnes) f(); };
+
+  /** Rattache le magasin au compte ; un autre compte (ou la déconnexion) remet tout à zéro. */
+  function adopterCompte(compte: string | null) {
+    if (etat.compte === compte) return;
+    generation += 1;
+    enVol = 0;
+    file = Promise.resolve();
+    etat = etatVierge(compte);
+    for (const f of abonnes) f();
+  }
+
+  function charger(compte: string, projectId: string) {
+    adopterCompte(compte);
+    if (etat.etat === "chargement" || enVol > 0) return;
+    const g = generation;
+    if (etat.etat !== "pret") publier({ etat: "chargement" });
+    source.studioToolPreferences(projectId)
+      .then((r) => { if (g === generation && enVol === 0) publier({ prefs: normaliserPreferences(r as Parameters<typeof normaliserPreferences>[0]), etat: "pret", erreur: null }); })
+      .catch((e: unknown) => { if (g === generation) publier(etat.etat === "pret" ? { erreur: message(e) } : { etat: "erreur", erreur: message(e) }); });
+  }
+
+  function enregistrer(compte: string, projectId: string, f: (p: PreferencesOutils) => PreferencesOutils) {
+    if (etat.compte !== compte || etat.etat !== "pret") return;
+    const g = generation;
+    const suivant = f(etat.prefs);
+    publier({ prefs: suivant, enregistrement: "en-cours", erreur: null });
+    enVol += 1;
+    const corps = { profil: suivant.profil, favoris: [...suivant.favoris], personnel: [...suivant.personnel] };
+    file = file.then(() => (g === generation ? source.setStudioToolPreferences(projectId, corps) : null))
+      .then((r) => {
+        if (g !== generation) return;
+        enVol -= 1;
+        if (enVol === 0) publier({ prefs: normaliserPreferences(r as Parameters<typeof normaliserPreferences>[0]), enregistrement: "enregistre" });
+      })
+      .catch((e: unknown) => {
+        if (g !== generation) return;
+        enVol -= 1;
+        // Refus ou réseau : relire l'état du serveur plutôt que de garder une préférence non enregistrée.
+        publier({ enregistrement: "echec", erreur: message(e) });
+        if (enVol === 0) charger(compte, projectId);
+      });
+  }
+
+  return {
+    lire: () => etat,
+    abonner: (f: () => void) => { abonnes.add(f); return () => { abonnes.delete(f); }; },
+    adopterCompte, charger, enregistrer,
+  };
 }
 
-function enregistrer(projectId: string, suivant: PreferencesOutils) {
-  publier({ prefs: suivant, enregistrement: "en-cours", erreur: null });
-  enVol += 1;
-  const corps = { profil: suivant.profil, favoris: [...suivant.favoris], personnel: [...suivant.personnel] };
-  file = file.then(() => api.setStudioToolPreferences(projectId, corps))
-    .then((r) => { enVol -= 1; if (enVol === 0) publier({ prefs: normaliserPreferences(r), enregistrement: "enregistre" }); })
-    .catch((e: unknown) => {
-      enVol -= 1;
-      // Refus ou réseau : relire l'état du serveur plutôt que de garder une préférence non enregistrée.
-      publier({ enregistrement: "echec", erreur: message(e) });
-      if (enVol === 0) charger(projectId);
-    });
-}
+const magasin = creerMagasinPreferences(api);
 
 const projetDeLAdresse = (): string | null => {
   if (typeof window === "undefined") return null;
@@ -76,18 +125,33 @@ const projetDeLAdresse = (): string | null => {
   return "projectId" in r ? r.projectId : null;
 };
 
+/** Compte connecté ; hors du fournisseur d'authentification (rendu isolé, essais) : aucun compte. */
+function useCompte(): string | null {
+  try {
+    return useAuth().user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Préférences d'outils du compte pour la barre d'outils, le gestionnaire et la palette. `visible(toolId)` ne règle
  * que la présence dans les barres : un outil masqué reste au catalogue, à la palette et à son raccourci clavier.
- * Avant la lecture du serveur (ou en cas d'échec), tout est visible (profil Standard) et aucun favori n'est montré.
+ * Avant la lecture du serveur (ou en cas d'échec, ou sans compte), tout est visible (profil Standard) et aucun favori
+ * n'est montré ; les préférences d'un autre compte ne sont jamais montrées, même un instant.
  */
 export function useProfilOutils(projectId?: string | null) {
   const projet = projectId ?? projetDeLAdresse();
-  const etat = useSyncExternalStore(abonner, lireEtat, lireEtat);
-  useEffect(() => { if (projet) charger(projet); }, [projet]);
+  const compte = useCompte();
+  const brut = useSyncExternalStore(magasin.abonner, magasin.lire, magasin.lire);
+  const etat = etatPourCompte(brut, compte);
+  useEffect(() => {
+    magasin.adopterCompte(compte);
+    if (compte && projet) magasin.charger(compte, projet);
+  }, [compte, projet]);
   const visible = useMemo(() => filtreBarres(etat.prefs), [etat.prefs]);
-  const modifiable = projet !== null && etat.etat === "pret";
-  const modifier = (f: (p: PreferencesOutils) => PreferencesOutils) => { if (projet && modifiable) enregistrer(projet, f(etatPreferences.prefs)); };
+  const modifiable = compte !== null && projet !== null && etat.etat === "pret";
+  const modifier = (f: (p: PreferencesOutils) => PreferencesOutils) => { if (compte && projet && modifiable) magasin.enregistrer(compte, projet, f); };
   return {
     visible,
     favoris: etat.prefs.favoris as readonly string[],
