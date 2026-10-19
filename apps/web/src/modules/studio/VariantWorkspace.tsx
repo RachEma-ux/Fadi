@@ -28,13 +28,13 @@
  */
 import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { applyStudioCommands, STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, studioVersionProjection, type StudioCommand, type StudioDocument, type StudioLayer, type StudioPoint, type StudioWall } from "@parcours/atelier-model";
+import { STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, studioVersionProjection, type StudioCommand, type StudioDocument, type StudioLayer, type StudioPoint, type StudioWall } from "@parcours/atelier-model";
 import { api, studioExportUrl, type StudioContext } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
 import { LOCALE } from "../../lib/i18n";
 import { StudioRefus } from "./studio-ecrans";
 import { BarreOutils } from "./planche2d/BarreOutils";
-import { annulerBrouillon, appliquerBrouillon, commandesEnAttente, creerBrouillon, documentBrouillon, messageRefus, peutAnnuler, peutRetablir, retablirBrouillon, type Brouillon } from "./planche2d/brouillon";
+import { annulerBrouillon, apercuBrouillon, appliquerBrouillon, commandesEnAttente, creerBrouillon, documentBrouillon, messageRefus, peutAnnuler, peutRetablir, retablirBrouillon, type Brouillon } from "./planche2d/brouillon";
 import { commandeDisponible, outilDisponible } from "./variante/disponibilite";
 import { calqueActifOuPremier, commandeReglage, estVisible, layerIdPour, listeCalques, prochainNomCalque } from "./planche2d/calques";
 import { ListeElements } from "./planche2d/ListeElements";
@@ -71,6 +71,7 @@ import { PanneauProprietes } from "./variante/PanneauProprietes";
 import { RevisionsPanel } from "./variante/PanneauRevisions";
 import { useClavierStudio } from "./variante/useClavierStudio";
 import { useEnregistrement } from "./variante/useEnregistrement";
+import { lectureApplicable } from "./variante/revision-courante";
 import { useChargementVariante } from "./hors-ligne/useChargementVariante";
 import { useGardeNavigation } from "./variante/useGardeNavigation";
 import { Vue3D } from "./variante/Vue3D";
@@ -131,6 +132,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [parametresArchi, setParametresArchi] = useState<ParametresArchitecture>(PARAMETRES_ARCHITECTURE_VIDES);
   const [selectionArchi, setSelectionArchi] = useState<string | null>(null);
   const alive = useRef(true), dirty = useRef(false);
+  /** Contexte et brouillon du dernier rendu (comparés par les lectures asynchrones avant de s'appliquer, A.5-10). */
+  const affiche = useRef({ context, brouillon });
+  affiche.current = { context, brouillon };
   const shell = useRef<HTMLElement>(null), nomRef = useRef<HTMLInputElement>(null);
   const historical = revisionId !== null;
   const drawing = brouillon ? documentBrouillon(brouillon) : null;
@@ -191,9 +195,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   // Aperçu du glisser : le document tel que le relâchement le donnerait (les cotes liées suivent).
   const apercuDoc = useMemo(() => {
     if (!drawing || !gestes.apercu) return null;
-    const { commandes } = commandesDeplacement(drawing, gestes.apercu.ids, gestes.apercu.dx, gestes.apercu.dy);
-    if (!commandes.length) return null;
-    try { return applyStudioCommands(drawing, commandes); } catch { return null; }
+    return apercuBrouillon(drawing, commandesDeplacement(drawing, gestes.apercu.ids, gestes.apercu.dx, gestes.apercu.dy).commandes);
   }, [drawing, gestes.apercu]);
 
   function properties(o: Element2D) {
@@ -464,8 +466,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   // Aperçu d'une transformation (Copier, Rotation, Symétrie, Échelle) : le brouillon tel que le clic le donnerait.
   const apercuTransformation = (() => {
     const cs = drawing && trace && survol && writable ? outil?.apercuCommandes?.({ ...etatTrace, trace }, survol.point, contexteClic()) : null;
-    if (!cs) return null;
-    try { return applyStudioCommands(drawing!, cs); } catch { return null; }
+    return cs ? apercuBrouillon(drawing!, cs) : null;
   })();
   const hint = aidePlanche({ ...etatTrace, moveWithPointer, lectureSeule: !writable && !historical && context?.canWrite === false });
   const pasAffiche = pas.toLocaleString(LOCALE, { maximumFractionDigits: 3 });
@@ -475,7 +476,13 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     <AlerteStudio error={error} blocked={blocked && !enr.horsLigne.conflit} surRecharger={() => void enr.rechargerServeur()} />
     {loading && <p role="status">Chargement de la planche…</p>}
     {context && drawing && !historical && <AvisRevision projectId={projectId} studyId={studyId} variantId={variantId} teteAffichee={context.variant.headRevisionId} actif={!pending && !blocked && !uncertain && !enr.horsLigne.conflit} nonEnregistre={commands.length > 0}
-      surRecharger={async () => { const c = await api.studioContext(projectId, studyId, variantId); if (!alive.current) return; setContext(c); setBrouillon(creerBrouillon(c.revision.document)); cancelTrace(); enr.setSaved(false); setError(""); }} />}
+      surRecharger={async () => {
+        const depart = context.revision.id, brouillonDepart = brouillon;
+        const c = await api.studioContext(projectId, studyId, variantId);
+        // A.5-10 : une lecture dépassée par un enregistrement ou un rechargement survenu entre-temps n'est pas appliquée.
+        if (!alive.current) return;
+        if (!lectureApplicable(depart, affiche.current.context, affiche.current.brouillon, brouillonDepart)) throw new Error("lecture dépassée");
+        setContext(c); setBrouillon(creerBrouillon(c.revision.document)); cancelTrace(); enr.setSaved(false); setError(""); }} />}
     {context && drawing && <><BandeauVariante projectId={projectId} studyId={studyId} variantId={variantId} context={context} historical={historical} etat={etat} commentaires={commentaires} surCommentaires={() => setCommentaires(v => !v)}
       connexion={{ etat: enr.horsLigne, surRecharger: () => void enr.rechargerServeur(), surReporter: () => void enr.reporter() }} />
     <BarreOutils outil={tool} outilDisponible={toolAvailable} commandeDisponible={commandAvailable} libelleCommande={uncertain ? { enregistrer: "Réessayer la sauvegarde" } : undefined}

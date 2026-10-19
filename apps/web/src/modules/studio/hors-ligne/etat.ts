@@ -21,7 +21,10 @@ export interface EtatHorsLigne { code: CodeHorsLigne; texte: string; detail: str
 
 export function etatHorsLigne(e: EntreeEtatHorsLigne): EtatHorsLigne {
   if (e.autreOnglet) return { code: "conflit", texte: "Conflit", detail: "Brouillon modifié dans un autre onglet : rien n’a été écrasé." };
-  if (e.conflit) return { code: "conflit", texte: "Conflit", detail: "Brouillon hors ligne conservé : une autre révision est devenue la version courante. Rien n’a été écrasé." };
+  if (e.conflit) {
+    // Conflit en ligne (A.5-06) : le brouillon reste dans cette page, il n'est pas écrit sur l'appareil.
+    return { code: "conflit", texte: "Conflit", detail: e.conserve || !e.enLigne ? "Brouillon hors ligne conservé : une autre révision est devenue la version courante. Rien n’a été écrasé." : "Brouillon conservé dans cette page : une autre révision est devenue la version courante. Rien n’a été écrasé." };
+  }
   if (e.enAttente > 0) {
     return {
       code: "en-attente",

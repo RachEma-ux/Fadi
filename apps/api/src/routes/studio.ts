@@ -4,7 +4,7 @@ import { z } from "zod";
 import { studioRapportFidelite } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
-import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioStudy, STUDIO_EXPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
+import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioRevisionChanges, readStudioStudy, STUDIO_EXPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
 import { createStudioComment, createStudioObservation, deleteStudioComment, listStudioComments, studioCommentSchema, studioObservationSchema, studioObservationTransitionSchema, transitionStudioObservation } from "../lib/studio-commentaires.js";
 import { listStudiesOfStep, listStudioStudySteps, setStudioStudySteps, studioStudyStepsSchema } from "../lib/studio-liens.js";
 import { renameStudioStudy, renameStudioVariant, setStudioStudyArchived, setStudioVariantArchived, studioRenameSchema } from "../lib/studio-variantes.js";
@@ -123,6 +123,11 @@ studioRouter.get("/studies/:studyId/variants/:variantId/revisions", endpoint(asy
 }));
 studioRouter.get("/studies/:studyId/variants/:variantId", endpoint(async (req, res) => {
   res.json(await readStudioContext(db, scope(req), req.user!.id));
+}));
+/** Historique hybride (A.5-07) : commandes enregistrées et delta d'une révision ; lecture seule. */
+studioRouter.get("/studies/:studyId/variants/:variantId/revisions/:revisionId/changes", endpoint(async (req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await readStudioRevisionChanges(db, scope(req), req.user!.id, req.params["revisionId"] as string));
 }));
 studioRouter.get("/studies/:studyId/variants/:variantId/revisions/:revisionId", endpoint(async (req, res) => {
   res.json(await readStudioContext(db, scope(req), req.user!.id, req.params["revisionId"] as string));

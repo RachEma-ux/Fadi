@@ -9939,5 +9939,8 @@
 "à revoir : total du calque proposé, non appliqué": "to review: layer total proposed, not applied",
 "partiel : {0} ajustement(s) sur des valeurs non évaluées": "partial: {0} adjustment(s) on unevaluated values",
 "Choix prudent : un ajustement d’objet enregistré après celui du total de son calque rend ce total « à revoir » ; une évolution du métré (nouvelle grandeur, motif « non évalué » renommé) rend aussi « à revoir » les ajustements concernés, à reconfirmer.": "Cautious choice: an object adjustment saved after its layer total’s adjustment makes that total “to review”; a change in the take-off (new quantity, renamed “not evaluated” reason) also makes the affected adjustments “to review”, to be confirmed again.",
-"Le journal des ajustements de cette variante est complet ({0} ajustements) : aucun nouvel ajustement n’est accepté.": "This variant’s adjustment log is full ({0} adjustments): no new adjustment is accepted."
+"Le journal des ajustements de cette variante est complet ({0} ajustements) : aucun nouvel ajustement n’est accepté.": "This variant’s adjustment log is full ({0} adjustments): no new adjustment is accepted.",
+"Brouillon conservé dans cette page : une autre révision est devenue la version courante. Rien n’a été écrasé.": "Draft kept in this page: another revision became the current version. Nothing was overwritten.",
+"Élément(s) modifié(s) aussi dans la nouvelle version courante : {0}. Reporter vos commandes remplacerait ces changements. Reporter quand même ?": "Element(s) also changed in the new current version: {0}. Carrying over your commands would replace these changes. Carry over anyway?",
+"Report abandonné : rien n’a été modifié. Votre brouillon reste conservé ; rechargez la version serveur ou reportez après vérification.": "Carry-over cancelled: nothing was changed. Your draft is still kept; reload the server version or carry over after checking."
 }

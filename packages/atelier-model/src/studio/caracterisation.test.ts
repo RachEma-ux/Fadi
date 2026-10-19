@@ -333,6 +333,8 @@ const AJOUTS = {
     "studioFusionnerMorceaux", "studioJsonStable", "studioMaillerObjets", "studioMesh3dIncremental", "studioVersionProjection",
     // Ajustements de quantités enregistrés (E.3-05, `quantites-ajustements.ts`, extension additive).
     "STUDIO_LIMITES_AJUSTEMENTS", "appliquerAjustementsEnregistres", "controlerSaisieAjustement", "etatCibleQuantite", "evaluerAjustementsQuantites", "jsonCanoniqueQuantites",
+    // Concurrence des écritures (A.5-06, A.5-08, `concurrence.ts`).
+    "studioChevauchements", "studioElementsModifies",
   ]),
 };
 function sansAjouts(value: unknown): unknown {
