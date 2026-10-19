@@ -21,6 +21,7 @@ import type { IdCommandeEditeur, StudioToolId } from "../raccourcis";
 import { ajouter, modeRectangle, selectionParRectangle } from "../selection";
 import { ecranVersPlanche, facteurMolette, glisserVue, pasGrille, pincer, surGrille, zoomer, type Rect } from "../vue";
 import { ecart } from "./type";
+import { mesurerAccrochage, mesurerApercu, mesurerCadrage } from "../../chargement/mesures-studio";
 
 /** Tolérance d'accrochage, en pixels d'écran. */
 const ACCROCHE_PX = 12;
@@ -83,7 +84,7 @@ export function useGestesPlanche(o: OptionsGestes) {
   const pas = pasGrille(cadre);
 
   // ——— Vue : zoom et panoramique (jamais une commande) ———
-  function poserCadre(c: Cadre) { cadreRef.current = c; setCadre(c); }
+  function poserCadre(c: Cadre) { cadreRef.current = c; setCadre(c); mesurerCadrage(); }
   molette.current = (e: WheelEvent) => {
     const svg = sheet.current; if (!svg) return;
     e.preventDefault();
@@ -131,8 +132,8 @@ export function useGestesPlanche(o: OptionsGestes) {
     const matrix = sheet.current?.getScreenCTM(); if (!matrix || !drawing || !index) return null;
     const raw = new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix.inverse());
     const tol = ACCROCHE_PX / Math.max(Math.abs(matrix.a), 1e-9);
-    const repere = resoudre(index, { curseur: { x: raw.x, y: raw.y }, tolerance: tol, base, vue: vueVisible(matrix), exclure, verrouAngle, pasLongueur: o.accrocheGrille ? pas : 0.01 },
-      { objets: o.accrocheSommets, modes: bascules.modes, orthogonal: bascules.orthogonal || e.shiftKey === true, polaire: bascules.polaire, pasPolaire: bascules.pasPolaire });
+    const repere = mesurerAccrochage(drawing.objects.length, () => resoudre(index, { curseur: { x: raw.x, y: raw.y }, tolerance: tol, base, vue: vueVisible(matrix), exclure, verrouAngle, pasLongueur: o.accrocheGrille ? pas : 0.01 },
+      { objets: o.accrocheSommets, modes: bascules.modes, orthogonal: bascules.orthogonal || e.shiftKey === true, polaire: bascules.polaire, pasPolaire: bascules.pasPolaire }));
     if (repere) return { point: repere.ancre ? { ...repere.ancre.point } : { ...repere.point }, accroche: repere.ancre, repere };
     return { point: o.accrocheGrille ? surGrille(raw, pas) : auCentimetre(raw), accroche: null, repere: null };
   }
@@ -156,6 +157,7 @@ export function useGestesPlanche(o: OptionsGestes) {
   function hover(e: PointerEvent<SVGSVGElement>) {
     if (!o.pointsActifs) { if (survol) setSurvol(null); return; }
     setSurvol(pose(e, o.exclureAuSurvol));
+    mesurerApercu(e.timeStamp, o.drawing?.objects.length ?? 0);
   }
 
   // ——— Pointeur ———

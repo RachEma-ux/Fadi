@@ -32,6 +32,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { mesurerRendu3d } from "../chargement/mesures-studio";
 import {
   couperStudio, projectionsAInvalider, studioApparenceResolue, studioAssemblerMaillage, studioDocumentToutVisible, studioFiltrerMaillageScene, studioFusionnerMorceaux, studioMaillerObjets,
   studioNomFichierRendu, studioProvenanceRendu, studioScenes, studioVersionProjection, studioVolumeSolide,
@@ -447,7 +448,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       renderer, scene, perspective, plan, camera: perspective, controls: null, contenu, libres, architecture, surimpression,
       rendus: { contenu: new SceneRendu(contenu), libres: new SceneRendu(libres), architecture: new SceneRendu(architecture) },
       rendre: () => {
-        renderer.render(scene, m.camera);
+        mesurerRendu3d(() => renderer.render(scene, m.camera));
         // Compteurs GPU (recette D.3-02) : ils reviennent à leur ligne de base après chaque reconstruction.
         const c = compteGpu(renderer);
         renderer.domElement.dataset.studioGpuGeometries = String(c.geometries);
