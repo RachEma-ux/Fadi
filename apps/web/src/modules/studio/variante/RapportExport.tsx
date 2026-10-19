@@ -17,9 +17,13 @@ async function lireRapport(url: string): Promise<Rapport> {
   return (await res.json()) as Rapport;
 }
 
-export function RapportExport({ format, urlExport, surFermer }: { format: StudioFormatEchange; urlExport: string; surFermer: () => void }) {
+/**
+ * `exportId` identifie un lancement d'export (révision affichée + compteur) : une adresse de tête ne porte pas la révision,
+ * le rapport d'un nouvel export n'est donc jamais servi depuis le cache d'un export précédent.
+ */
+export function RapportExport({ format, urlExport, exportId, surFermer }: { format: StudioFormatEchange; urlExport: string; exportId: string; surFermer: () => void }) {
   const url = urlRapportExport(urlExport);
-  const q = useQuery({ queryKey: ["studio-rapport-export", url], queryFn: () => lireRapport(url), retry: false, staleTime: 30_000 });
+  const q = useQuery({ queryKey: ["studio-rapport-export", url, exportId], queryFn: () => lireRapport(url), retry: false, staleTime: 30_000 });
   const r = q.data;
   return <section className="studio-rapport-export" role="dialog" aria-modal="false" aria-labelledby="studio-rapport-export-titre" data-studio-rapport-export={format}>
     <header>
