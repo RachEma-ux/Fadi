@@ -42,6 +42,32 @@ describe("Intersections exactes", () => {
     expect(cercleCercle({ x: 0, y: 0 }, 1, { x: 5, y: 0 }, 1)).toEqual([]);
   });
 
+  it("tangences au bruit flottant près, y compris loin de l'origine (~1e5 m) et quand B ≈ 0", () => {
+    const X = 100000.1, Y = 100000.2, R = 0.3;
+    // Segment qui part exactement du point de tangence (B ≈ 0) : un seul point, pas de perte par le bruit.
+    const t1 = segmentCercle({ x: X, y: Y + R }, { x: X + 5, y: Y + R }, { x: X, y: Y }, R);
+    expect(t1).toHaveLength(1);
+    expect(t1[0]!.x).toBeCloseTo(X, 7); expect(t1[0]!.y).toBeCloseTo(Y + R, 7);
+    // Segment tangent traversant, loin de l'origine.
+    const t2 = segmentCercle({ x: X - 5, y: Y + R }, { x: X + 5, y: Y + R }, { x: X, y: Y }, R);
+    expect(t2).toHaveLength(1);
+    expect(t2[0]!.x).toBeCloseTo(X, 6);
+    // Sécante à 1e5 : deux points exacts au nanomètre.
+    expect(segmentCercle({ x: 1e5 - 5, y: 1e5 }, { x: 1e5 + 5, y: 1e5 }, { x: 1e5, y: 1e5 }, 3)).toEqual([{ x: 1e5 - 3, y: 1e5 }, { x: 1e5 + 3, y: 1e5 }]);
+    // Cercles tangents extérieurement et intérieurement à 1e5 (rayons décimaux) : un point chacun.
+    const ext = cercleCercle({ x: X, y: Y }, 0.1, { x: X + 0.3, y: Y }, 0.2);
+    expect(ext).toHaveLength(1);
+    expect(ext[0]!.x).toBeCloseTo(X + 0.1, 7); expect(ext[0]!.y).toBeCloseTo(Y, 7);
+    const int = cercleCercle({ x: X, y: Y }, 0.3, { x: X + 0.1, y: Y }, 0.2);
+    expect(int).toHaveLength(1);
+    expect(int[0]!.x).toBeCloseTo(X + 0.3, 7);
+    // Sécants à 1e5 : triangle 3-4-5 exact.
+    expect(cercleCercle({ x: 1e5, y: 1e5 }, 5, { x: 1e5 + 8, y: 1e5 }, 5)).toEqual([{ x: 1e5 + 4, y: 1e5 + 3 }, { x: 1e5 + 4, y: 1e5 - 3 }]);
+    // Disjoints de 1 µm à 1e5 : aucun point (la tolérance relative reste très inférieure).
+    expect(cercleCercle({ x: X, y: Y }, 0.1, { x: X + 0.300001, y: Y }, 0.2)).toEqual([]);
+    expect(segmentCercle({ x: X - 5, y: Y + R + 1e-6 }, { x: X + 5, y: Y + R + 1e-6 }, { x: X, y: Y }, R)).toEqual([]);
+  });
+
   it("arcs : seuls les points de l'étendue (objet Arc et renflement de polyligne)", () => {
     const [arc] = entitesDe({ id: "a", type: "arc", center: { x: 0, y: 0 }, radius: 5, startAngle: 0, endAngle: Math.PI / 2 });
     const [cercle] = entitesDe({ id: "c", type: "circle", center: { x: 8, y: 0 }, radius: 5 });
