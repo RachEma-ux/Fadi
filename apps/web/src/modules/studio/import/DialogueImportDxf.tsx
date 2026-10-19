@@ -4,7 +4,7 @@
  * pas (aucune n'est présélectionnée), puis « Ajouter au brouillon » : un seul lot local, annulable par Ctrl+Z, envoyé
  * au serveur seulement à l'enregistrement. Rien n'est lu ni écrit côté serveur ici.
  *
- * La lecture (jusqu'à 5 Mo) se fait hors du fil principal (`workers/client-studio.ts`) : l'interface reste réactive,
+ * La lecture (jusqu'à 5 Mo) est une tâche de fond de l'ordonnanceur (`taches/`, groupe de Workers) : l'interface reste réactive,
  * l'étape en cours est annoncée et « Annuler la lecture » arrête le calcul. Un nouveau choix (fichier, unité,
  * brouillon) remplace la lecture en cours ; seul le dernier résultat est retenu et « Ajouter » attend qu'il soit prêt.
  */
@@ -13,8 +13,11 @@ import type { StudioCommand, StudioDocument, StudioDxfResultat, StudioDxfUnite }
 import { Icon } from "../../../components/Icon";
 import { LOCALE } from "../../../lib/i18n";
 import { Dialogue } from "../planche2d/CatalogueOutils";
-import { estEcartee, type Progression } from "../workers/hote-worker";
-import { calculSurFilPrincipal, lireDxfHorsFil, MESSAGE_REPLI, messageHote } from "../workers/client-studio";
+import { calculSurFilPrincipal, MESSAGE_REPLI } from "../workers/client-studio";
+import { empreinteDe, revisionDocument } from "../taches/empreinte";
+import { messageTache } from "../taches/messages";
+import type { Progression } from "../taches/ordonnanceur";
+import { DELAI_LECTURE_DXF_MS, ordonnanceurStudio } from "../taches/pool-studio";
 import { CIBLES_CALQUE, MESSAGE_TROP_GROS, metres, TAILLE_MAX_OCTETS, typeNonPris, UNITES_PROPOSEES, type LectureDxf } from "./import-dxf-ui";
 import "./import-dxf.css";
 
@@ -56,9 +59,16 @@ export function DialogueImportDxf({ doc, modifiable, surAjouter, surFermer }: Di
     const c = new AbortController();
     controleur.current = c;
     setAttendue(n); setEtape("attente"); setErreurCalcul("");
-    lireDxfHorsFil({ source: fichier.source, document: doc, unite }, { signal: c.signal, canal: "studio.import-dxf", surProgression: (p: Progression) => { if (numero.current === n) setEtape(p.etape); } })
-      .then((valeur) => { if (numero.current === n) setLecture({ n, valeur }); })
-      .catch((e: unknown) => { if (numero.current === n && !estEcartee(e)) { setErreurCalcul(messageHote(e) ?? ""); setLecture(null); } });
+    const tache = ordonnanceurStudio().soumettre<unknown, LectureDxf>({
+      cle: "studio.import-dxf", classe: "fond", nature: "dxf.lire", charge: { source: fichier.source, document: doc, unite },
+      empreinte: empreinteDe(doc, { fichier: revisionDocument(fichier.source), unite }), delaiMs: DELAI_LECTURE_DXF_MS, signal: c.signal,
+      surProgression: (p: Progression) => { if (numero.current === n) setEtape(p.etape); },
+      surResultat: (valeur) => { if (numero.current === n) setLecture({ n, valeur }); },
+    });
+    void tache.issue.then((i) => {
+      const message = messageTache(i);
+      if (numero.current === n && message !== null) { setErreurCalcul(message); setLecture(null); }
+    });
     return () => c.abort();
   }, [fichier, doc, unite]);
 
