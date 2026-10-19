@@ -72,3 +72,25 @@ test('empreintes des documents de révision et rapport', () => {
   assert.match(md, /Anomalies : \*\*0\*\*/);
   assert.match(md, /refusée \(studio_revision_immutable\)/);
 });
+
+test('lot E.4 : colonnes nouvelles comparées, remplaçant compté comme compte, manifeste contrôlé', () => {
+  const withE4 = (projectId, owner, editor, work = 'approuve') => {
+    const t = side(projectId, owner, editor);
+    const manifest = { schema: 'studio-publication-manifest/1', sources: [{ role: 'principale', variantId: 'v1', revisionId: 'r1', documentHash: sha(canonicalJson(doc)) }] };
+    t.studio_publications[0] = { ...t.studio_publications[0], work_status: work, diffusion_status: 'diffuse', manifest, manifest_hash: sha(canonicalJson(manifest)), approved_manifest_hash: sha(canonicalJson(manifest)), replaced_by: owner };
+    t.studio_publication_events = [{ id: 'e1', publication_id: 'p1', action: 'actualiser', work_status: 'brouillon', manifest_hash: sha(canonicalJson(manifest)), related_publication_id: null, author_id: owner }];
+    return t;
+  };
+  assert.deepEqual(integrityAnomalies(withE4('pA', 'uA1', 'uA2'), 'A'), []);
+  const a = normalizeTables(withE4('pA', 'uA1', 'uA2'), { projectId: 'pA', emails: emailsA });
+  assert.deepEqual(compareTables(a, normalizeTables(withE4('pB', 'uB1', 'uB2'), { projectId: 'pB', emails: emailsB })).anomalies, []);
+  const diff = compareTables(a, normalizeTables(withE4('pB', 'uB1', 'uB2', 'en-revue'), { projectId: 'pB', emails: emailsB })).anomalies;
+  assert.ok(diff.some((x) => x.table === 'studio_publications' && /work_status/.test(x.detail)));
+  const bad = withE4('pA', 'uA1', 'uA2');
+  bad.studio_publications[0].manifest_hash = '0'.repeat(64);
+  bad.studio_publications[0].replaced_by_publication_id = 'absent';
+  const details = integrityAnomalies(bad, 'B').map((x) => x.detail);
+  assert.ok(details.includes('B : empreinte du manifeste différente'));
+  assert.ok(details.includes('B : approbation d\'un autre manifeste'));
+  assert.ok(details.includes('B : dossier remplaçant absent'));
+});

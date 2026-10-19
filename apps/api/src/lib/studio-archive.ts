@@ -14,7 +14,7 @@
  * manifeste, clé du serveur). À l'import, seule une signature vérifiée par une clé de CE serveur conserve les auteurs et
  * les approbations (comptes retrouvés par adresse). Signature absente, inconnue ou invalide : l'import reste permis mais
  * rien n'est cru — tout acteur devient le compte qui restaure, les adresses d'origine ne restent qu'en réserve
- * (« auteurs d'origine déclarés »), les publications approuvées ou diffusées reviennent « à relire » (soumis), droits et
+ * (« auteurs d'origine déclarés »), les publications approuvées ou diffusées reviennent « à relire » (travail en revue, diffusion retirée à la restauration : modèle E.4), droits et
  * préférences ne sont pas repris. Les contrôles d'intégrité (manifeste, empreintes) refusent toujours (422).
  */
 import { sql } from "drizzle-orm";
@@ -163,7 +163,7 @@ export async function importStudioArchive(tx: Tx, projectId: string, importerId:
     await insertRows(tx, "studio_publications", publications);
     await insertRows(tx, "studio_publication_events", [...tables.studio_publication_events, ...extraEvents]);
     restored = true;
-    if (downgraded) warnings.push(`${downgraded} publication(s) approuvée(s) ou diffusée(s) remise(s) « à relire » : contenu conservé et lisible, nouvelle approbation exigée avant toute publication.`);
+    if (downgraded) warnings.push(`${downgraded} publication(s) approuvée(s) ou diffusée(s) remise(s) « à relire » (en revue, diffusion retirée à la restauration) : manifeste et paquet conservés et lisibles, nouvelle approbation exigée avant toute diffusion.`);
     if (reassigned.length) warnings.push(`Historique Studio : auteur technique réattribué au compte qui restaure pour ${reassigned.length} compte(s) absent(s) de cette base (${reassigned.join(", ")}).`);
   }
   if (!trusted) return { warnings, trust, restored, downgraded };

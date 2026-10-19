@@ -3963,6 +3963,8 @@
 "Auteurs d'origine déclarés (non vérifiés) : {0}.": "Declared original authors (unverified): {0}.",
 "{0} publication(s) approuvée(s) ou diffusée(s) remise(s) « à relire » : contenu conservé et lisible, nouvelle approbation exigée avant toute publication.": "{0} approved or issued publication(s) returned to “to review”: content kept and readable, a new approval is required before any publication.",
 "Restauration d'une archive non vérifiée : approbation d'origine non reprise, nouvelle approbation exigée.": "Restore of an unverified archive: original approval not carried over, a new approval is required.",
+"{0} publication(s) approuvée(s) ou diffusée(s) remise(s) « à relire » (en revue, diffusion retirée à la restauration) : manifeste et paquet conservés et lisibles, nouvelle approbation exigée avant toute diffusion.": "{0} approved or issued publication(s) returned to “to review” (in review, issue withdrawn on restore): manifest and package kept and readable, a new approval is required before any issue.",
+"Restauration d'une archive non vérifiée : approbation d'origine non reprise, diffusion d'origine retirée à la restauration (paquet conservé et lisible, plus en vigueur) ; nouvelle approbation exigée avant toute diffusion.": "Restore of an unverified archive: original approval not carried over, original issue withdrawn on restore (package kept and readable, no longer current); a new approval is required before any issue.",
 "Pièce liée à aucun espace programmé.": "Room linked to no programmed space.",
 "Pièce mécanique": "Mechanical part",
 "Pièce non fermée": "Room not closed",

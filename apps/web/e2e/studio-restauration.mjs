@@ -125,14 +125,26 @@ check('A : étude liée aux étapes 3 et 7 du Parcours', (await ownerA('PUT', `$
 const pubs = `${root}/studies/${studyId}/publications`;
 const pub = await editorA('POST', `${vPath(v1)}/publications`, { title: 'Dossier restauré' });
 await editorA('POST', `${pubs}/${pub.body.id}/soumettre`, { comment: 'Pour revue' });
-await ownerA('POST', `${pubs}/${pub.body.id}/approuver`, { revisionId: pub.body.revisionId, documentHash: pub.body.documentHash });
-const diffused = await editorA('POST', `${pubs}/${pub.body.id}/diffuser`, { comment: 'Diffusion' });
+// Lot E.4 : l'éditeur prépare et soumet, le propriétaire approuve (empreinte du manifeste examiné) et diffuse.
+await ownerA('POST', `${pubs}/${pub.body.id}/approuver`, { manifestHash: pub.body.manifestHash });
+const diffused = await ownerA('POST', `${pubs}/${pub.body.id}/diffuser`, { comment: 'Diffusion' });
 check('A : publication diffusée, paquet de quatre fichiers', diffused.status === 200 && diffused.body.diffusion?.files?.length === 4, short(diffused.body));
 const filesA = {};
 for (const f of diffused.body.diffusion.files) filesA[f.format] = (await ownerA('GET', `${pubs}/${pub.body.id}/files/${f.format}`, undefined, true)).bytes;
+// Lot E.4 : remplacement (action « remplacer », dossier lié) et actualisation du manifeste (action « actualiser »).
+const pubR = await editorA('POST', `${vPath(v1)}/publications`, { title: 'Dossier remplaçant' });
+await editorA('POST', `${pubs}/${pubR.body.id}/soumettre`, {});
+await ownerA('POST', `${pubs}/${pubR.body.id}/approuver`, { manifestHash: pubR.body.manifestHash });
+const diffR = await ownerA('POST', `${pubs}/${pubR.body.id}/diffuser`, { comment: 'Remplace le dossier restauré' });
+const replacedA = (await ownerA('GET', `${pubs}/${pub.body.id}`)).body;
+check('A : seconde diffusion — premier dossier remplacé (diffusion « remplace », action « remplacer », dossier lié)', diffR.body?.diffusionStatus === 'diffuse' && replacedA?.diffusionStatus === 'remplace' && replacedA.replacedBy === pubR.body.id && replacedA.events?.at(-1)?.action === 'remplacer' && replacedA.events.at(-1).relatedPublicationId === pubR.body.id, short(replacedA));
+const pubU = await editorA('POST', `${vPath(v1)}/publications`, { title: 'Dossier à actualiser' });
+check('A : étude renommée (manifeste du brouillon périmé)', (await ownerA('PATCH', `${root}/studies/${studyId}`, { name: 'Étude restaurée (renommée)' })).status === 200);
+const updU = await editorA('POST', `${pubs}/${pubU.body.id}/actualiser`, { comment: 'Nom de l\'étude changé' });
+check('A : manifeste actualisé (action « actualiser », nouvelle empreinte)', updU.status === 200 && updU.body.manifestHash !== pubU.body.manifestHash && updU.body.events?.at(-1)?.action === 'actualiser', short(updU.body));
 
 // Second projet (archive falsifiée plus bas) : révision et commentaire de l'éditeur, observation confiée à l'éditeur,
-// publication préparée par l'éditeur, approuvée par le propriétaire, diffusée par l'éditeur.
+// publication préparée par l'éditeur, approuvée par le propriétaire, diffusée par le propriétaire (lot E.4).
 const project2 = await ownerA('POST', '/projects', { code: `RSF_${randomUUID().slice(0, 8)}`, name: 'Studio — archive falsifiée (recette synthétique)' });
 const p2 = project2.body?.id;
 await ownerA('POST', `/projects/${p2}/members`, { email: accounts.editor.email, role: 'editeur' });
@@ -146,8 +158,8 @@ const fObs = await editorA('POST', `${v2Path}/comments/${fRemark.body?.id}/obser
 const pubs2 = `/projects/${p2}/studio/studies/${s2}/publications`;
 const fPub = await editorA('POST', `${v2Path}/publications`, { title: 'Dossier falsifié' });
 await editorA('POST', `${pubs2}/${fPub.body?.id}/soumettre`, {});
-await ownerA('POST', `${pubs2}/${fPub.body?.id}/approuver`, { revisionId: fPub.body?.revisionId, documentHash: fPub.body?.documentHash });
-const fDiff = await editorA('POST', `${pubs2}/${fPub.body?.id}/diffuser`, {});
+await ownerA('POST', `${pubs2}/${fPub.body?.id}/approuver`, { manifestHash: fPub.body?.manifestHash });
+const fDiff = await ownerA('POST', `${pubs2}/${fPub.body?.id}/diffuser`, {});
 check('A : second projet — révision, commentaire et observation de l\'éditeur, publication approuvée par le propriétaire et diffusée', f1.status === 200 && fRemark.status === 201 && fObs.status === 201 && fDiff.status === 200 && fDiff.body.status === 'diffuse', short([f1.status, fRemark.status, fObs.status, fDiff.body]));
 const files2 = {};
 for (const f of fDiff.body?.diffusion?.files ?? []) files2[f.format] = (await ownerA('GET', `${pubs2}/${fPub.body.id}/files/${f.format}`, undefined, true)).bytes;
@@ -180,9 +192,9 @@ fs.writeFileSync(path.join(OUT, 'archive.json'), archiveText);
 const st = archive.studio;
 const counts = st ? Object.fromEntries(Object.entries(st.manifest.tables).map(([t, m]) => [t, m.count])) : {};
 check('sauvegarde : section Studio présente (schéma, version, manifeste)', archiveRes.status === 200 && st?.schema === 'fadi-studio-archive/1' && st.schemaVersion?.document === 'studio-document/1' && /^[0-9a-f]{64}$/.test(st.manifest?.hash ?? ''), short(st?.manifest ?? archive).slice(0, 200));
-check('sauvegarde : effectifs du manifeste (1 étude, 2 variantes, 7 révisions, 2 commentaires, 1 observation, 2 passages, 2 liens, 1 publication, 4 évènements, 4 volumes, 1 membre, 1 préférence)',
+check('sauvegarde : effectifs du manifeste (1 étude, 2 variantes, 7 révisions, 2 commentaires, 1 observation, 2 passages, 2 liens, 3 publications, 11 évènements, au moins 4 volumes, 1 membre, 1 préférence)',
   counts.studio_studies === 1 && counts.studio_variants === 2 && counts.studio_revisions === 7 && counts.studio_comments === 2 && counts.studio_observations === 1 && counts.studio_observation_events === 2
-  && counts.studio_study_steps === 2 && counts.studio_publications === 1 && counts.studio_publication_events === 4 && counts.volumes === 4 && counts.project_members === 1 && counts.studio_tool_preferences === 1, JSON.stringify(counts));
+  && counts.studio_study_steps === 2 && counts.studio_publications === 3 && counts.studio_publication_events === 11 && counts.volumes >= 4 && counts.project_members === 1 && counts.studio_tool_preferences === 1, JSON.stringify(counts));
 check('sauvegarde : empreintes des documents de la publication et du paquet conformes', st?.tables.studio_publications[0]?.document_hash === pub.body.documentHash && st?.tables.studio_publications[0]?.package_hash === diffused.body.diffusion.packageHash);
 
 check('sauvegarde : archive signée (HMAC-SHA256, clé de l\'environnement désignée par son identifiant, clé absente du fichier)', st?.signature?.algorithm === 'HMAC-SHA256' && /^env-[0-9a-f]{16}$/.test(st.signature.keyId ?? '') && /^[0-9a-f]{64}$/.test(st.signature.value ?? '') && !archiveText.includes(SIGNING_KEY), short(st?.signature));
@@ -243,9 +255,10 @@ try {
     const idB = (email) => partsB.find((p) => p.email === email)?.id;
     const authorOf = (id) => histB.find((x) => x.id === id)?.authorId;
     const pubB = (await ownerB('GET', `/projects/${pB}/studio/studies/${studyId}/publications/${pub.body.id}`)).body;
-    check('B (signée) : auteurs conservés — révision 1 du propriétaire, révision 2 de l\'éditeur ; approbation du propriétaire, diffusion de l\'éditeur',
+    check('B (signée) : auteurs conservés — révision 1 du propriétaire, révision 2 de l\'éditeur ; dossier préparé par l\'éditeur, approuvé (manifeste) et diffusé par le propriétaire',
       authorOf(r1.body.revision.id) === idB(accounts.owner.email) && authorOf(r2.body.revision.id) === idB(accounts.editor.email) && idB(accounts.owner.email) !== idB(accounts.editor.email)
-      && pubB?.status === 'diffuse' && pubB.approval?.by?.email === accounts.owner.email && pubB.diffusion?.by?.email === accounts.editor.email, short({ histB, pub: pubB?.approval }));
+      && pubB?.status === 'diffuse' && pubB.workStatus === 'approuve' && pubB.diffusionStatus === 'remplace' && pubB.replacedBy === pubR.body.id && pubB.approval?.by?.email === accounts.owner.email && pubB.approval?.manifestHash === pub.body.manifestHash
+      && pubB.diffusion?.by?.email === accounts.owner.email && pubB.createdBy?.email === accounts.editor.email, short({ histB, pub: pubB?.approval }));
   }
 
   // Documents de révision : identiques octet pour octet (JSON canonique via l'API, texte jsonb dans la base).
@@ -277,8 +290,11 @@ try {
   check('liens vers les étapes 3 et 7 du Parcours repris', JSON.stringify(sb?.steps?.map((x) => x.number)) === '[3,7]', short(sb));
   const pa = (await ownerA('GET', `${pubs}/${pub.body.id}`)).body;
   const pbv = (await ownerB('GET', `${rootB}/studies/${studyId}/publications/${pub.body.id}`)).body;
-  const pview = (p) => ({ status: p?.status, revisionId: p?.revisionId, documentHash: p?.documentHash, packageHash: p?.diffusion?.packageHash, files: p?.diffusion?.files, events: p?.events?.map((e) => [e.id, e.action, e.toStatus, e.author.email, e.comment, e.createdAt]) });
-  check('publication, approbation, paquet et journal de publication identiques', JSON.stringify(pview(pa)) === JSON.stringify(pview(pbv)) && pbv?.events?.length === 4, short({ a: pview(pa), b: pview(pbv) }));
+  const pview = (p) => ({ status: p?.status, workStatus: p?.workStatus, diffusionStatus: p?.diffusionStatus, manifestHash: p?.manifestHash, manifest: p?.manifest,
+    approval: p?.approval && { ...p.approval, by: p.approval.by?.email }, replacement: p?.replacement && { ...p.replacement, by: p.replacement.by?.email },
+    revisionId: p?.revisionId, documentHash: p?.documentHash, packageHash: p?.diffusion?.packageHash, files: p?.diffusion?.files,
+    events: p?.events?.map((e) => [e.id, e.action, e.toStatus, e.workStatus, e.diffusionStatus, e.manifestHash, e.relatedPublicationId, e.author.email, e.comment, e.createdAt]) });
+  check('publication, approbation, paquet et journal de publication identiques', JSON.stringify(pview(pa)) === JSON.stringify(pview(pbv)) && pbv?.events?.length === 5, short({ a: pview(pa), b: pview(pbv) }));
   let filesOk = 0;
   for (const f of diffused.body.diffusion.files) {
     const got = await ownerB('GET', `${rootB}/studies/${studyId}/publications/${pub.body.id}/files/${f.format}`, undefined, true);
@@ -388,7 +404,8 @@ try {
     const pubF = (await editorB('GET', `${rootF}/publications/${fPub.body.id}`)).body;
     const evF = pubF?.events ?? [];
     check('archive falsifiée : publication diffusée remise « à relire » (soumise), approbation retirée, journal complété d\'un passage daté de la restauration',
-      pubF?.status === 'soumis' && pubF.approval === null && evF.length === 5 && evF.every((e) => e.author.email === accounts.editor.email) && evF.at(-1)?.action === 'soumettre' && evF.at(-1)?.fromStatus === 'diffuse' && /archive non vérifiée/.test(evF.at(-1)?.comment ?? ''), short({ status: pubF?.status, approval: pubF?.approval, ev: evF.map((e) => [e.action, e.fromStatus, e.toStatus, e.author.email]) }));
+      pubF?.status === 'soumis' && pubF.workStatus === 'en-revue' && pubF.diffusionStatus === 'non-diffuse' && pubF.approval === null && pubF.manifestHash === fPub.body.manifestHash && pubF.manifest !== null
+      && evF.at(-1)?.workStatus === 'en-revue' && evF.at(-1)?.diffusionStatus === 'non-diffuse' && evF.at(-1)?.manifestHash === fPub.body.manifestHash && evF.length === 5 && evF.every((e) => e.author.email === accounts.editor.email) && evF.at(-1)?.action === 'soumettre' && evF.at(-1)?.fromStatus === 'diffuse' && /archive non vérifiée/.test(evF.at(-1)?.comment ?? ''), short({ status: pubF?.status, approval: pubF?.approval, ev: evF.map((e) => [e.action, e.fromStatus, e.toStatus, e.author.email]) }));
     let readable = 0;
     for (const f of fDiff.body.diffusion.files) {
       const got = await editorB('GET', `${rootF}/publications/${fPub.body.id}/files/${f.format}`, undefined, true);
@@ -398,9 +415,15 @@ try {
     const membersF = (await editorB('GET', `/projects/${pForged}/members`)).body;
     check('archive falsifiée : droits non repris (aucun membre ; le propriétaire d\'origine n\'a pas accès)', !JSON.stringify(membersF).includes(accounts.owner.email) && [403, 404].includes((await ownerB('GET', `/projects/${pForged}`)).status), short(membersF));
     check('archive falsifiée : diffusion refusée tant qu\'une nouvelle approbation manque (409 invalid_transition)', (await editorB('POST', `${rootF}/publications/${fPub.body.id}/diffuser`, {})).body?.error === 'invalid_transition');
-    const reapproved = await editorB('POST', `${rootF}/publications/${fPub.body.id}/approuver`, { revisionId: pubF?.revisionId, documentHash: pubF?.documentHash, comment: 'Relue après restauration' });
+    // Le nom du projet restauré (« · import ») périme le manifeste figé : le circuit E.4 complet est exigé.
+    let cur = pubF;
+    if (cur?.freshness === 'perimee') {
+      cur = (await editorB('POST', `${rootF}/publications/${fPub.body.id}/actualiser`, { comment: 'Manifeste actualisé après restauration' })).body;
+      cur = (await editorB('POST', `${rootF}/publications/${fPub.body.id}/soumettre`, {})).body;
+    }
+    const reapproved = await editorB('POST', `${rootF}/publications/${fPub.body.id}/approuver`, { manifestHash: cur?.manifestHash, comment: 'Relue après restauration' });
     const rediffused = await editorB('POST', `${rootF}/publications/${fPub.body.id}/diffuser`, {});
-    check('archive falsifiée : nouvelle approbation par le propriétaire du projet restauré, puis nouvelle diffusion', reapproved.status === 200 && reapproved.body.approval?.by?.email === accounts.editor.email && rediffused.status === 200 && rediffused.body.status === 'diffuse', short([reapproved.body, rediffused.body]));
+    check('archive falsifiée : nouvelle approbation (manifeste examiné) par le propriétaire du projet restauré, puis nouvelle diffusion', reapproved.status === 200 && reapproved.body.workStatus === 'approuve' && reapproved.body.approval?.by?.email === accounts.editor.email && rediffused.status === 200 && rediffused.body.diffusionStatus === 'diffuse' && rediffused.body.status === 'diffuse', short([reapproved.body, rediffused.body]));
   }
 
   // Contrôle négatif : réimport dans la base d'origine (identifiants déjà présents) → Studio non écrasé, réserve.

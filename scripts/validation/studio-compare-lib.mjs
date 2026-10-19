@@ -21,7 +21,7 @@ export const KEYS = Object.freeze({
 export const USER_COLUMNS = Object.freeze({
   studio_studies: [], studio_variants: [], studio_revisions: ['author_id'], studio_comments: ['author_id'],
   studio_observations: ['responsable_id', 'created_by'], studio_observation_events: ['actor_id', 'responsable_id'],
-  studio_study_steps: ['created_by'], volumes: [], studio_publications: ['approved_by', 'diffused_by', 'created_by'],
+  studio_study_steps: ['created_by'], volumes: [], studio_publications: ['approved_by', 'diffused_by', 'created_by', 'replaced_by'],
   // `invited_by` est l'adresse de l'invitant (texte), comparée telle quelle.
   studio_publication_events: ['author_id'], project_members: ['user_id'], studio_tool_preferences: ['user_id'],
 });
@@ -109,6 +109,17 @@ export function integrityAnomalies(tables, side) {
       if (sha256(canonicalJson(p.package)) !== p.package_hash) push('studio_publications', p.id, 'empreinte du paquet différente');
       for (const f of p.package.files ?? []) if (!vols.has(f.sha256)) push('studio_publications', p.id, `fichier ${f.format} absent (${f.sha256})`);
     }
+    // Lot E.4 : manifeste figé (empreinte, sources), approbation liée au manifeste, dossier remplaçant présent.
+    if (p.manifest) {
+      if (sha256(canonicalJson(p.manifest)) !== p.manifest_hash) push('studio_publications', p.id, 'empreinte du manifeste différente');
+      for (const s of p.manifest.sources ?? []) {
+        const src = revisions.get(s.revisionId);
+        if (!src || src.variant_id !== s.variantId) push('studio_publications', p.id, `source ${s.variantId} absente`);
+        else if (sha256(canonicalJson(src.document)) !== s.documentHash) push('studio_publications', p.id, `empreinte de la source ${s.variantId} différente`);
+      }
+    }
+    if (p.approved_manifest_hash && p.approved_manifest_hash !== p.manifest_hash) push('studio_publications', p.id, 'approbation d\'un autre manifeste');
+    if (p.replaced_by_publication_id && !(tables.studio_publications ?? []).some((x) => x.id === p.replaced_by_publication_id)) push('studio_publications', p.id, 'dossier remplaçant absent');
   }
   return anomalies;
 }
