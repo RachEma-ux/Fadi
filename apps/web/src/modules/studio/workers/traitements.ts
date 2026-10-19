@@ -5,11 +5,13 @@
  * - `dxf.lire` : lecture d'un DXF par `lireDxf` (`import/import-dxf-ui.ts`, lecteur pur `lireDxfStudio`) ; la source
  *   est le fichier choisi (lu dans le Worker) ou son texte.
  * - `feuille.composer` : composition de la feuille (`composerFeuilleStudio`), puis SVG et PDF.
+ * - `maillage.3d` : maillage dérivé de la vue 3D (`studioMesh3d`), tâche de fond (D.1-01).
+ * - `quantites.calculer` : métré brut (`quantitesStudio`), tâche de fond (D.1-01).
  *
  * Pur : ni React ni DOM (seul `Blob.text()` est appelé, disponible dans un Worker).
  */
 import {
-  composerFeuilleStudio, studioSheetPdf, studioSheetSvg,
+  composerFeuilleStudio, quantitesStudio, studioMesh3d, studioSheetPdf, studioSheetSvg,
   type StudioDocument, type StudioDxfUnite, type StudioSheet, type StudioSheetOptions,
 } from "@parcours/atelier-model";
 import { lireDxf, type LectureDxf } from "../import/import-dxf-ui";
@@ -64,4 +66,6 @@ export const TRAITEMENTS_STUDIO: Traitements = {
     executer: (c: { document: StudioDocument; options: StudioSheetOptions }) => composerFeuille(c.document, c.options),
     transfert: (r: ResultatFeuille) => (r.pdf ? [r.pdf.buffer as ArrayBuffer] : []),
   },
+  "maillage.3d": { executer: (c: { document: StudioDocument }) => studioMesh3d(c.document) },
+  "quantites.calculer": { executer: (c: { document: StudioDocument }) => quantitesStudio(c.document) },
 };

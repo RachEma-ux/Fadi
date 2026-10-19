@@ -10,11 +10,18 @@
  * les commandes `studio.solide.*` du brouillon ; aucun geste de navigation ne modifie le document.
  * Coupe horizontale (A.3-07, Maj+K) : `couperStudio` à la cote saisie, dessinée en surimpression dérivée, non
  * modifiable, chaque contour rattaché à son solide. Studio n'importe aucun module de l'Atelier.
+ * Maillage en tâche de fond (D.1/D.2, `taches/`) : `studioMesh3d` tourne dans le groupe de Workers ; le maillage
+ * précédent reste affiché jusqu'au suivant et un maillage remplacé n'est jamais affiché. Ressources GPU libérées à
+ * chaque reconstruction et au démontage (`ressources-gpu.ts`, D.3-02) ; compteurs exposés sur le canevas.
  */
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { couperStudio, studioMesh3d, studioVolumeSolide, type StudioCommand, type StudioCoupe, type StudioDocument, type StudioMesh3d } from "@parcours/atelier-model";
+import { empreinteDe } from "../taches/empreinte";
+import { useTache } from "../taches/useTache";
+import { MESSAGES_TACHE } from "../taches/messages";
+import { compteGpu, libererObjet, vider } from "./ressources-gpu";
 import { Icon } from "../../../components/Icon";
 import { LOCALE } from "../../../lib/i18n";
 import {
@@ -62,15 +69,10 @@ interface Moteur {
 
 const nombre = (v: number) => v.toLocaleString(LOCALE, { maximumFractionDigits: 3 });
 
-function vider(groupe: THREE.Group) {
-  for (const enfant of [...groupe.children]) {
-    groupe.remove(enfant);
-    const o = enfant as THREE.Mesh;
-    o.geometry?.dispose();
-    const m = o.material as THREE.Material | THREE.Material[] | undefined;
-    if (Array.isArray(m)) m.forEach((x) => x.dispose()); else m?.dispose();
-  }
-}
+/** Maillage affiché tant que le premier calcul n'est pas rendu (rien n'est cadré dessus). */
+const MAILLAGE_VIDE: StudioMesh3d = Object.freeze({
+  frame: "local-3d", units: "m", source: { frame: "local-2d", conversion: "(x, y) → (x, y, z)" }, solids: [], outlines: [], nonExtruded: 0, hidden: 0, bounds: null,
+}) as StudioMesh3d;
 
 function solide(groupe: THREE.Group, s: { id: string; vertices: { x: number; y: number; z: number }[]; triangles: [number, number, number][]; edges: [number, number][] }, couleur: number, double: boolean, libre: boolean) {
   const g = new THREE.BufferGeometry();
@@ -189,7 +191,12 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const [deplacement, setDeplacement] = useState<ValeursDeplacement>(DEPLACEMENT_VIDE);
   const [coteCoupe, setCoteCoupe] = useState(Number.NaN);
   const [erreur, setErreur] = useState("");
-  const mesh = useMemo(() => studioMesh3d(doc), [doc]);
+  const empreinte = empreinteDe(doc);
+  const maillage = useTache<{ document: StudioDocument }, StudioMesh3d>(
+    { cle: "studio.maillage-3d", classe: "fond", nature: "maillage.3d", charge: { document: doc }, empreinte },
+    { initial: () => studioMesh3d(doc) },
+  );
+  const mesh = maillage.valeur ?? MAILLAGE_VIDE;
   const solides = doc.solides ?? [];
   const choisi = solides.find((s) => s.id === selection) ?? null;
   const resultatCoupe = useMemo(() => (coupe && Number.isFinite(coteCoupe) ? couperStudio(doc, { z: coteCoupe }) : null), [doc, coupe, coteCoupe]);
@@ -239,7 +246,16 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     scene.add(grille);
     const contenu = new THREE.Group(), libres = new THREE.Group(), architecture = new THREE.Group(), surimpression = new THREE.Group();
     scene.add(contenu, libres, architecture, surimpression);
-    const m: Moteur = { renderer, scene, perspective, plan, camera: perspective, controls: null, contenu, libres, architecture, surimpression, rendre: () => renderer.render(scene, m.camera) };
+    const m: Moteur = {
+      renderer, scene, perspective, plan, camera: perspective, controls: null, contenu, libres, architecture, surimpression,
+      rendre: () => {
+        renderer.render(scene, m.camera);
+        // Compteurs GPU (recette D.3-02) : ils reviennent à leur ligne de base après chaque reconstruction.
+        const c = compteGpu(renderer);
+        renderer.domElement.dataset.studioGpuGeometries = String(c.geometries);
+        renderer.domElement.dataset.studioGpuTextures = String(c.textures);
+      },
+    };
     moteur.current = m;
     poserControles(m, navigation);
     const taille = () => {
@@ -269,8 +285,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       m.controls?.removeEventListener("change", m.rendre);
       m.controls?.dispose();
       vider(contenu); vider(libres); vider(architecture); vider(surimpression);
-      grille.geometry.dispose();
-      (grille.material as THREE.Material).dispose();
+      libererObjet(grille);
       renderer.forceContextLoss();
       renderer.dispose();
       renderer.domElement.remove();
@@ -293,7 +308,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     const m = moteur.current; if (!m) return;
     construire(m, mesh, selection);
     construireArchitecture(m, mesh, selectionArchitecture);
-    if (!cadre.current) { cadrer(m, mesh); cadre.current = true; }
+    if (!cadre.current && mesh !== MAILLAGE_VIDE) { cadrer(m, mesh); cadre.current = true; }
     else m.rendre();
   }, [mesh, selection, selectionArchitecture, indisponible]);
 
@@ -330,11 +345,13 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const libres = mesh.freeSolids?.length ?? 0;
   const architecture = mesh.architecture ?? [];
   return (
-    <section className="studio-vue3d" aria-label="Vue 3D" data-studio-vue3d data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-architecture-3d={architecture.length} data-studio-navigation={navigation}>
+    <section className="studio-vue3d" aria-label="Vue 3D" data-studio-vue3d data-studio-maillage={maillage.etat} data-studio-maillage-revision={maillage.revision ?? ""} data-studio-revision-courante={empreinte.revision} data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-architecture-3d={architecture.length} data-studio-navigation={navigation}>
       <div className="studio-vue3d-bandeau">
         <span role="status" data-studio-vue3d-decompte><span>{`${mesh.solids.length} volume(s)`}</span>{" · "}<span>{`${mesh.nonExtruded} objet(s) non extrudé(s), dessinés à plat`}</span>{libres > 0 && <>{" · "}<span>{`${libres} solide(s) libre(s)`}</span></>}</span>
         <button type="button" onClick={() => { const m = moteur.current; if (m) cadrer(m, mesh); }} disabled={indisponible}>Recadrer la vue 3D</button>
       </div>
+      {maillage.message && <p className="studio-alert" role="alert" data-studio-maillage-erreur>{maillage.message}</p>}
+      {maillage.valeur === undefined && !maillage.message && <p className="studio-hint" role="status">{MESSAGES_TACHE.enCours}</p>}
       {indisponible && <p className="studio-alert" role="alert" data-studio-vue3d-indisponible>Vue 3D indisponible : WebGL n’est pas pris en charge par ce navigateur.</p>}
       <div ref={hote} className="studio-vue3d-hote" data-studio-vue3d-outil={outil} />
       <p className="studio-hint">{navigation === "plan"
