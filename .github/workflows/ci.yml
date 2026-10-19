@@ -11,9 +11,12 @@ concurrency:
 permissions:
   contents: read
 jobs:
+  # Recette Studio sur profil PostGIS neuf (#166, D-H) : sur chaque push dans `main` et sur toute PR qui touche Studio
+  # (API, schéma init.sql, module web, modèle, recette, scripts de validation, ce fichier). Hors périmètre, le job
+  # réussit sans exécuter la recette et le dit dans son résumé : il peut donc être un contrôle requis.
   studio-v1-validation:
     name: Studio V1 — API, navigateur et réouverture sur PostGIS neuf
-    if: ${{ github.event_name == 'pull_request' && github.repository == 'RachEma-ux/Fadi' && github.event.pull_request.head.repo.full_name == 'RachEma-ux/Fadi' && github.head_ref == 'feat/156-studio-v1' && (github.base_ref == 'main' || github.base_ref == 'fix/157-test-database-guard') }}
+    if: ${{ github.repository == 'RachEma-ux/Fadi' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -25,27 +28,78 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Périmètre Studio touché ? (push sur main = toujours)
+        id: perimetre
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          python3 - <<'PY_SCOPE'
+          import os, re, subprocess
+          out = open(os.environ["GITHUB_OUTPUT"], "a")
+          if os.environ["EVENT"] != "pull_request":
+              print("push : recette Studio exécutée sans filtre.")
+              out.write("studio=true\n")
+              raise SystemExit(0)
+          base = os.environ.get("BASE_SHA", "")
+          if not re.fullmatch(r"[0-9a-f]{40}", base):
+              raise SystemExit("Refus : SHA de base PR invalide ou absent.")
+          result = subprocess.run(["git", "diff", "--name-only", "--no-renames", "-z", f"{base}...HEAD"],
+                                  check=True, capture_output=True)
+          paths = [p.decode("utf-8") for p in result.stdout.split(b"\0") if p]
+          motif = re.compile(r"^(apps/api/src/lib/studio-[^/]*|apps/api/src/routes/studio\.ts|apps/api/src/db/init\.sql"
+                             r"|apps/web/src/modules/studio/.*|packages/atelier-model/src/studio/.*|scripts/validation/.*"
+                             r"|apps/web/e2e/studio-v1[^/]*\.mjs|\.github/workflows/ci\.yml)$")
+          touches = [p for p in paths if motif.match(p)]
+          for path in touches:
+              print("Studio :", ascii(path))
+          out.write(f"studio={'true' if touches else 'false'}\n")
+          print(f"{len(touches)} chemin(s) Studio sur {len(paths)} modifiés.")
+          PY_SCOPE
+      - name: Recette non exécutée (PR hors périmètre Studio)
+        if: ${{ steps.perimetre.outputs.studio != 'true' }}
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
+          ## Studio V1 — recette non exécutée
+          Cette PR ne touche aucun chemin du périmètre Studio : aucun profil PostGIS neuf n'a été créé.
+          Ce succès ne prouve pas la recette ; elle tourne sur chaque push dans `main`.
+          SUMMARY
       - uses: actions/setup-node@v4
+        if: ${{ steps.perimetre.outputs.studio == 'true' }}
         with:
           node-version: 22
-      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - if: ${{ steps.perimetre.outputs.studio == 'true' }}
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Refuser les endpoints de validation étrangers sans connexion
+        if: ${{ steps.perimetre.outputs.studio == 'true' }}
         run: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/validation -p 'test_studio_profile_guard.py' -v
-      - run: npm run typecheck
-      - name: Régression des paquets purs et du web sans setup DB historique
-        run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
-      - run: npm run test:db-guard
-      - run: npm run build
+      # Types, tests purs et web : déjà couverts par `validate` sur le même commit ; seul ce qui sert la recette reste ici.
+      - if: ${{ steps.perimetre.outputs.studio == 'true' }}
+        run: npm run test:db-guard
+      - if: ${{ steps.perimetre.outputs.studio == 'true' }}
+        run: npm run build
       - name: Installer le Chromium attendu par Playwright
+        if: ${{ steps.perimetre.outputs.studio == 'true' }}
         run: npx playwright install --with-deps chromium
       - name: Profil neuf, recette réelle et redémarrage borné
+        if: ${{ steps.perimetre.outputs.studio == 'true' }}
         run: python3 scripts/validation/studio-v1-functional.py
+      - name: Verdicts expurgés des rapports en cas d'échec
+        if: ${{ failure() && steps.perimetre.outputs.studio == 'true' }}
+        run: |
+          for f in work/studio-v1-proof/report-*.json; do
+            [ -f "$f" ] || continue
+            python3 -c "import json,sys; r=json.load(open(sys.argv[1])); print(sys.argv[1], r.get('result'), r.get('failure'), r.get('failedResponses'), r.get('browserErrors') or r.get('pageErrors'))" "$f"
+          done
+          # Journal du serveur web seulement (aucune chaîne de connexion) ; api.log reste protégé.
+          for f in ../studio-v1-private/*/vite.log; do [ -f "$f" ] && tail -n 30 "$f"; done || true
       - name: Publier seulement les preuves expurgées
-        if: always()
+        if: ${{ always() && steps.perimetre.outputs.studio == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: studio-v1-validation-${{ github.event.pull_request.head.sha }}
+          name: studio-v1-validation-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             work/studio-v1-proof/report-*.json
             work/studio-v1-proof/studio-*.png
