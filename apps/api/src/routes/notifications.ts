@@ -15,7 +15,9 @@
  *                               verrous fins (étage, zone, objet) pris ou
  *                               libérés par un autre membre (D-143) ;
  *                               commentaires des autres sur les variantes
- *                               Studio de ces projets (non supprimés) ;
+ *                               Studio de ces projets (non supprimés) et
+ *                               passages des observations Studio dont vous
+ *                               êtes responsable ou auteur ;
  *                               « non lue » = postérieure à votre dernière
  *                               consultation ; types masqués et projets mis
  *                               en sourdine par vos préférences retirés avant
@@ -29,7 +31,7 @@
 import { Router } from "express";
 import { db } from "../db/client.js";
 import { and, desc, eq, gt, inArray, isNull, ne, or } from "drizzle-orm";
-import { atelierCommands, atelierLockEvents, atelierLocks, drawingExports, projectComments, projectMembers, projects, studioComments, studioStudies, studioVariants, users } from "../db/schema.js";
+import { atelierCommands, atelierLockEvents, atelierLocks, drawingExports, projectComments, projectMembers, projects, studioComments, studioObservationEvents, studioObservations, studioStudies, studioVariants, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { activeLock, type ProjectRole } from "../lib/owned-project.js";
 import { ROLE_LABEL } from "./members.js";
@@ -155,6 +157,39 @@ export async function notificationsFor(userId: string, email: string): Promise<{
         stepNumber: null,
         studio: { studyId: c.studyId, variantId: c.variantId },
         text: `${c.email} a commenté la variante « ${c.variantName} » de l’étude Studio « ${c.studyName} » (${c.code}) : « ${excerpt} »`,
+        unread: false,
+      });
+    }
+    // Observations Studio (E.2), même type « commentaire-studio » : chaque passage du journal fait par un autre est
+    // signalé à son responsable et à l'auteur du commentaire, 30 derniers jours (révision et note : dans le journal).
+    const passages = await db
+      .select({ id: studioObservationEvents.id, action: studioObservationEvents.action, at: studioObservationEvents.at, responsableId: studioObservations.responsableId, authorId: studioComments.authorId, body: studioComments.body, variantId: studioVariants.id, variantName: studioVariants.name, studyId: studioStudies.id, projectId: projects.id, code: projects.code, name: projects.name, email: users.email })
+      .from(studioObservationEvents)
+      .innerJoin(studioObservations, eq(studioObservations.commentId, studioObservationEvents.observationId))
+      .innerJoin(studioComments, eq(studioComments.id, studioObservations.commentId))
+      .innerJoin(studioVariants, eq(studioVariants.id, studioObservations.variantId))
+      .innerJoin(studioStudies, eq(studioStudies.id, studioVariants.studyId))
+      .innerJoin(projects, eq(projects.id, studioStudies.projectId))
+      .innerJoin(users, eq(users.id, studioObservationEvents.actorId))
+      .where(and(
+        inArray(studioStudies.projectId, projectIds), ne(studioObservationEvents.actorId, userId), gt(studioObservationEvents.at, since),
+        or(eq(studioObservations.responsableId, userId), eq(studioComments.authorId, userId)),
+      ))
+      .orderBy(desc(studioObservationEvents.at))
+      .limit(LIMIT);
+    const VERBE: Record<string, string> = { ouvrir: "a ouvert l’observation", corriger: "a déclaré corrigée l’observation", recontroler: "a recontrôlé l’observation", cloturer: "a clôturé l’observation", rouvrir: "a rouvert l’observation", reattribuer: "a réattribué l’observation" };
+    for (const p of passages) {
+      const excerpt = p.body.length > 80 ? `${p.body.slice(0, 80)}…` : p.body;
+      items.push({
+        id: `observation-studio:${p.id}`,
+        at: p.at.toISOString(),
+        kind: "commentaire-studio",
+        projectId: p.projectId,
+        projectCode: p.code,
+        projectName: p.name,
+        stepNumber: null,
+        studio: { studyId: p.studyId, variantId: p.variantId },
+        text: `${p.email} ${VERBE[p.action] ?? p.action} « ${excerpt} » (variante « ${p.variantName} », ${p.code}).`,
         unread: false,
       });
     }

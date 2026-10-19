@@ -2,17 +2,21 @@
  * Boîte « Feuille » (Maj+P) : format ISO, orientation, échelle (normalisée ou ajustée), cartouche prérempli par les
  * données réelles (modifiable), échelle graphique et flèche du nord à la demande, aperçu en direct. « Imprimer / PDF »
  * imprime la seule feuille à sa taille réelle (feuille de style d'impression, `@page` à la taille du format) ;
- * « Télécharger la feuille SVG / PDF » produit le fichier dans le navigateur (`composerFeuilleStudio`). Présentation
+ * « Télécharger la feuille SVG / PDF » produit le fichier dans le navigateur (`composerFeuilleStudio`, composé hors du
+ * fil principal par le Worker de Studio ; l'aperçu précédent reste affiché jusqu'au résultat suivant). Présentation
  * seulement : rien n'est écrit dans le document, la boîte reste ouverte en lecture seule.
  */
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  composerFeuilleStudio, STUDIO_SHEET_FORMATS, STUDIO_SHEET_SCALES, studioSheetPdf, studioSheetSvg,
-  type StudioDocument, type StudioSheetFormat, type StudioSheetScaleChoice, type StudioSheetTitleBlock,
+  STUDIO_SHEET_FORMATS, STUDIO_SHEET_SCALES,
+  type StudioDocument, type StudioSheetFormat, type StudioSheetOptions, type StudioSheetScaleChoice, type StudioSheetTitleBlock,
 } from "@parcours/atelier-model";
 import { Icon } from "../../../components/Icon";
 import { Dialogue } from "../planche2d/CatalogueOutils";
+import { calculSurFilPrincipal, composerFeuilleHorsFil, MESSAGE_REPLI, messageHote } from "../workers/client-studio";
+import { estEcartee } from "../workers/hote-worker";
+import { composerFeuille, MESSAGE_FEUILLE_IMPOSSIBLE, type ResultatFeuille } from "../workers/traitements";
 import {
   angleNord, CHAMPS_CARTOUCHE, cartoucheCourant, nomFichierFeuille, REGLAGES_INITIAUX, svgSansProlog, type ReglagesFeuille,
 } from "./feuille-ui";
@@ -27,6 +31,8 @@ export interface PanneauFeuilleProps {
   brouillonNonEnregistre: boolean;
   surFermer: () => void;
 }
+
+const VIDE: ResultatFeuille = Object.freeze({ feuille: null, svg: null, pdf: null, erreur: "" });
 
 /** Adresse `blob:` d'un contenu, libérée quand il change ou à la fermeture. */
 function useAdresseBlob(contenu: string | Uint8Array | null, type: string): string | null {
@@ -48,16 +54,25 @@ export function PanneauFeuille({ doc, cartouche, brouillonNonEnregistre, surFerm
   const angle = angleNord(reglages);
   const regler = (r: Partial<ReglagesFeuille>) => setReglages((v) => ({ ...v, ...r }));
 
-  const resultat = useMemo(() => {
-    try {
-      const feuille = composerFeuilleStudio(doc, { format: reglages.format, orientation: reglages.orientation, scale: reglages.scale, titleBlock: champs, scaleBar: reglages.scaleBar, north: angle === null ? null : { angle } });
-      return { feuille, svg: studioSheetSvg(feuille), erreur: "" };
-    } catch {
-      return { feuille: null, svg: null, erreur: "La feuille n’a pas pu être composée avec ces réglages." };
-    }
-    // `champs` est recalculé à chaque rendu : sa clé JSON tient lieu de dépendance.
-  }, [doc, reglages.format, reglages.orientation, reglages.scale, reglages.scaleBar, angle, cleChamps]);
-  const pdf = useMemo(() => (resultat.feuille ? studioSheetPdf(resultat.feuille) : null), [resultat.feuille]);
+  // `champs` est recalculé à chaque rendu : sa clé JSON tient lieu de dépendance.
+  const options = useMemo<StudioSheetOptions>(
+    () => ({ format: reglages.format, orientation: reglages.orientation, scale: reglages.scale, titleBlock: champs, scaleBar: reglages.scaleBar, north: angle === null ? null : { angle } }),
+    [reglages.format, reglages.orientation, reglages.scale, reglages.scaleBar, angle, cleChamps],
+  );
+  // Composition (SVG et PDF) hors du fil principal ; sans Worker (rendu serveur, tests), directement au premier rendu.
+  const [resultat, setResultat] = useState<ResultatFeuille>(() => (typeof Worker === "undefined" ? composerFeuille(doc, options) : VIDE));
+  const [enCours, setEnCours] = useState(false);
+  useEffect(() => {
+    let actif = true;
+    setEnCours(true);
+    // Canal unique : un réglage plus récent écarte le résultat d'une composition plus ancienne, sans arrêter le
+    // Worker (une composition est courte ; l'arrêter coûterait un redémarrage à chaque frappe).
+    composerFeuilleHorsFil(doc, options, { canal: "studio.feuille" })
+      .then((r) => { if (actif) { setResultat(r); setEnCours(false); } })
+      .catch((e: unknown) => { if (actif && !estEcartee(e)) { setResultat({ ...VIDE, erreur: messageHote(e) ?? MESSAGE_FEUILLE_IMPOSSIBLE }); setEnCours(false); } });
+    return () => { actif = false; };
+  }, [doc, options]);
+  const pdf = resultat.pdf;
   const lienSvg = useAdresseBlob(resultat.svg, "image/svg+xml");
   const lienPdf = useAdresseBlob(pdf, "application/pdf");
   const apercu = resultat.svg ? svgSansProlog(resultat.svg) : "";
@@ -101,7 +116,9 @@ export function PanneauFeuille({ doc, cartouche, brouillonNonEnregistre, surFerm
             ))}
           </fieldset>
         </form>
-        <div className="studio-feuille-apercu-zone">
+        <div className="studio-feuille-apercu-zone" aria-busy={enCours || undefined} data-studio-feuille-en-cours={enCours ? "oui" : "non"}>
+          {enCours && !f && <p className="studio-dialogue-aide" role="status">Composition de la feuille…</p>}
+          {calculSurFilPrincipal() && <p className="studio-dialogue-aide" role="status" data-studio-calcul-repli>{MESSAGE_REPLI}</p>}
           {brouillonNonEnregistre && <p className="studio-info" role="status">La feuille porte sur la révision enregistrée affichée : les modifications non enregistrées n’y figurent pas.</p>}
           {resultat.erreur && <p role="alert">{resultat.erreur}</p>}
           {f && <p className="studio-dialogue-aide studio-feuille-resume" data-studio-feuille-resume>

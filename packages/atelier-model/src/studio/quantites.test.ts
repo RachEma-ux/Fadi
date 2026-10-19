@@ -54,11 +54,103 @@ describe("métré Studio (quantités brutes)", () => {
   });
 
   it("type inconnu : rapporté non évalué par son type, et chaque total devient partiel", () => {
-    const inconnu = { ...d, objects: [...d.objects, { id: "cercle", type: "circle", center: { x: 0, y: 0 }, radius: 1 }] } as unknown as StudioDocument;
+    const inconnu = { ...d, objects: [...d.objects, { id: "ell", type: "ellipse", center: { x: 0, y: 0 }, rx: 2, ry: 1 }] } as unknown as StudioDocument;
     const qi = quantitesStudio(inconnu);
-    expect(qi.objets.at(-1)).toMatchObject({ objetId: "cercle", type: "circle", nature: "non-pris-en-charge", motif: "type-non-pris-en-charge", valeurs: [] });
+    expect(qi.objets.at(-1)).toMatchObject({ objetId: "ell", type: "ellipse", nature: "non-pris-en-charge", motif: "type-non-pris-en-charge", valeurs: [] });
     expect(qi.nonPrisEnCharge).toBe(1);
     expect(qi.totaux.find((t) => t.grandeur === "longueur")!.nonEvalues).toBe(1);
+  });
+
+  describe("courbes : valeurs analytiques exactes", () => {
+    const PI = Math.PI;
+    const qc = quantitesStudio(doc({
+      objects: [
+        { id: "c", type: "circle", center: { x: 1, y: 1 }, radius: 2 },
+        { id: "cyl", type: "circle", center: { x: 0, y: 0 }, radius: 2, extrusion: { base: 0, height: 3 } },
+        { id: "a", type: "arc", center: { x: 0, y: 0 }, radius: 2, startAngle: 0, endAngle: PI / 2 },
+        { id: "a-tour", type: "arc", center: { x: 0, y: 0 }, radius: 1, startAngle: (3 * PI) / 2, endAngle: PI / 2 },
+        { id: "a-voile", type: "arc", center: { x: 0, y: 0 }, radius: 2, startAngle: 0, endAngle: PI / 2, extrusion: { base: 0, height: 3 } },
+        { id: "a-mur", type: "arc", center: { x: 0, y: 0 }, radius: 2, startAngle: 0, endAngle: PI / 2, extrusion: { base: 0, height: 3, thickness: 0.4 } },
+        { id: "po", type: "polyline", points: [{ x: 0, y: 0 }, { x: 3, y: 0 }, { x: 3, y: 4 }], closed: false },
+        { id: "po-b", type: "polyline", points: [{ x: 0, y: 0 }, { x: 3, y: 0 }, { x: 3, y: 4 }], closed: false, bulges: [1, 0], extrusion: { base: 0, height: 2 } },
+        { id: "carre", type: "polyline", points: [{ x: 0, y: 0 }, { x: 2, y: 0 }, { x: 2, y: 2 }, { x: 0, y: 2 }], closed: true },
+        { id: "bosse", type: "polyline", points: [{ x: 0, y: 0 }, { x: 2, y: 0 }, { x: 2, y: 2 }, { x: 0, y: 2 }], closed: true, bulges: [1, 0, 0, 0] },
+        { id: "creux", type: "polyline", points: [{ x: 0, y: 0 }, { x: 2, y: 0 }, { x: 2, y: 2 }, { x: 0, y: 2 }], closed: true, bulges: [-1, 0, 0, 0] },
+        { id: "disque", type: "polyline", points: [{ x: -1, y: 0 }, { x: 1, y: 0 }], closed: true, bulges: [1, 1] },
+        { id: "secteur", type: "polyline", points: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 0, y: 1 }], closed: true, bulges: [0, Math.tan(PI / 8), 0], extrusion: { base: 0, height: 2 } },
+        { id: "noeud", type: "polyline", points: [{ x: 0, y: 0 }, { x: 2, y: 2 }, { x: 2, y: 0 }, { x: 0, y: 2 }], closed: true },
+      ] as StudioDocument["objects"],
+    }));
+    const o = (id: string) => qc.objets.find((x) => x.objetId === id)!;
+    const proche = (id: string, attendu: Record<string, number | null>) => {
+      const lu = v(qc, id);
+      expect(Object.keys(lu).sort()).toEqual(Object.keys(attendu).sort());
+      for (const [g, x] of Object.entries(attendu)) {
+        if (x === null) expect(lu[g]).toBeNull();
+        else expect(lu[g]).toBeCloseTo(x, 12);
+      }
+    };
+
+    it("cercle : périmètre 2πr, surface πr² ; cylindre : volume πr²h", () => {
+      proche("c", { perimetre: 4 * PI, surface: 4 * PI, volume: null });
+      expect(o("c")).toMatchObject({ nature: "cercle" });
+      expect(o("c").valeurs.find((x) => x.grandeur === "volume")!.motif).toBe("non-extrude");
+      proche("cyl", { perimetre: 4 * PI, surface: 4 * PI, hauteur: 3, volume: 12 * PI });
+      expect(o("cyl").nature).toBe("cylindre");
+    });
+
+    it("arc : longueur rθ, y compris un arc qui passe par l'angle 0", () => {
+      proche("a", { longueur: PI, volume: null });
+      proche("a-tour", { longueur: PI, volume: null });
+      expect(o("a").nature).toBe("arc");
+    });
+
+    it("arc extrudé sans épaisseur : surface verticale rθh, volume non évalué", () => {
+      proche("a-voile", { longueur: PI, hauteur: 3, "surface-verticale": 3 * PI, volume: null });
+      expect(o("a-voile")).toMatchObject({ nature: "arc-extrude" });
+      expect(o("a-voile").valeurs.find((x) => x.grandeur === "volume")!.motif).toBe("epaisseur-non-declaree");
+    });
+
+    it("mur courbe : faces (r ± e/2)θh, volume = secteur annulaire × hauteur", () => {
+      proche("a-mur", { longueur: PI, hauteur: 3, "surface-laterale": 6 * PI, volume: 1.2 * PI });
+      expect(o("a-mur").nature).toBe("mur-courbe");
+      const lat = o("a-mur").valeurs.find((x) => x.grandeur === "surface-laterale")!;
+      expect(lat.faces!.interieure).toBeCloseTo(1.8 * (PI / 2) * 3, 12);
+      expect(lat.faces!.exterieure).toBeCloseTo(2.2 * (PI / 2) * 3, 12);
+      // θ/2 · (rₑ² − rᵢ²) · h
+      expect(v(qc, "a-mur").volume).toBeCloseTo((PI / 4) * (2.2 ** 2 - 1.8 ** 2) * 3, 12);
+    });
+
+    it("polyligne ouverte : longueur (arc de renflement compris), surface verticale extrudée, aucun volume", () => {
+      proche("po", { longueur: 7 });
+      expect(o("po").nature).toBe("polyligne-ouverte");
+      // bulge 1 : demi-cercle sur une corde de 3.
+      proche("po-b", { longueur: 1.5 * PI + 4, hauteur: 2, "surface-verticale": 2 * (1.5 * PI + 4) });
+      expect(o("po-b").nature).toBe("polyligne-ouverte-extrudee");
+    });
+
+    it("polyligne fermée : périmètre et surface, renflements vers l'extérieur ou l'intérieur", () => {
+      proche("carre", { perimetre: 8, surface: 4, volume: null });
+      expect(o("carre").nature).toBe("polyligne-fermee");
+      proche("bosse", { perimetre: 6 + PI, surface: 4 + PI / 2, volume: null });
+      proche("creux", { perimetre: 6 + PI, surface: 4 - PI / 2, volume: null });
+      proche("disque", { perimetre: 2 * PI, surface: PI, volume: null });
+    });
+
+    it("prisme sur polyligne fermée : quart de disque (renflement tan(π/8)), volume aire × h", () => {
+      proche("secteur", { perimetre: 2 + PI / 2, surface: PI / 4, hauteur: 2, volume: PI / 2 });
+      expect(o("secteur").nature).toBe("prisme-polyligne");
+    });
+
+    it("polyligne fermée qui se croise : surface non évaluée, périmètre évalué", () => {
+      proche("noeud", { perimetre: 4 + 4 * Math.SQRT2, surface: null, volume: null });
+      expect(o("noeud").valeurs.find((x) => x.grandeur === "surface")!.motif).toBe("contour-non-simple");
+    });
+
+    it("rien n'est hors métré : aucun objet non pris en charge", () => {
+      expect(qc.nonPrisEnCharge).toBe(0);
+      expect(total(qc.totaux, "surface-verticale")).toBeCloseTo(3 * PI + 2 * (1.5 * PI + 4), 12);
+    });
   });
 
   it("document vide : aucun calque, aucun total", () => {

@@ -2,7 +2,9 @@ import { creerCalque, modifierCalque, placerSurCalque } from "../commandes/calqu
 import { CREATION_FORMES, creerCote } from "../commandes/dessin.js";
 import { decaler, deplacer, modifier, supprimer } from "../commandes/modification.js";
 import { aplatir, extruder } from "../commandes/volume.js";
+import { studioExtrudedRingVertices } from "../objets/polyligne.js";
 import { sortie, validateStudioDocument } from "./document.js";
+import { STUDIO_LIMITS } from "./limites.js";
 import type { Etat, Gestionnaire } from "./etat.js";
 import type { StudioCommand, StudioCommandToolId, StudioDocument } from "./types.js";
 import { array, fail, record } from "./validation.js";
@@ -38,6 +40,8 @@ export const STUDIO_APPLIED_TOOL_IDS: readonly StudioCommandToolId[] = Object.fr
 /** Apply to a private clone; a rejected lot never mutates document or caller inputs. */
 export function applyStudioCommands(document: StudioDocument, commands: readonly StudioCommand[]): StudioDocument {
   const current = validateStudioDocument(document);
+  // Charge avant le lot, relevée avant toute mutation (l'état partage les tableaux de `current`).
+  const avant = studioExtrudedRingVertices(current.objects);
   const state: Etat = {
     id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [],
     ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id)]),
@@ -52,5 +56,12 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
     HANDLERS[toolId as StudioCommandToolId](state, c.params, path);
   }
   // Contrôle final : limites, unicité et liens sur le document entier, avant de rendre la copie.
-  return validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions));
+  const result = validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions));
+  // Budget d'écriture des extrusions de polylignes fermées : un lot ne peut pas le dépasser ni l'aggraver une fois
+  // dépassé ; une révision enregistrée reste toujours lisible (le budget ne s'applique qu'aux écritures).
+  const apres = studioExtrudedRingVertices(result.objects);
+  if (apres > STUDIO_LIMITS.extrudedRingsTotal && apres > avant) {
+    fail("studioDocument.objects", `${STUDIO_LIMITS.extrudedRingsTotal} sommets discrétisés au plus pour l’ensemble des polylignes fermées extrudées du document`);
+  }
+  return result;
 }

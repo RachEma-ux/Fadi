@@ -60,9 +60,9 @@ describe("CSV du métré Studio", () => {
   });
 
   it("type inconnu : une ligne non évaluée, et chaque total partiel", () => {
-    const inconnu = { ...doc, objects: [...doc.objects, { id: "c", type: "circle" }] } as unknown as StudioDocument;
+    const inconnu = { ...doc, objects: [...doc.objects, { id: "c", type: "ellipse" }] } as unknown as StudioDocument;
     const l = lignes(csvQuantites(appliquerAjustementsQuantites(quantitesStudio(inconnu), []), { decimal: "," }));
-    expect(l).toContain("Calque par défaut;non;c;circle;Type non pris en charge;;;non évalué;;non évalué;;;;type non pris en charge par le métré");
+    expect(l).toContain("Calque par défaut;non;c;ellipse;Type non pris en charge;;;non évalué;;non évalué;;;;type non pris en charge par le métré");
     expect(l.find((x) => x.startsWith(";;TOTAL GÉNÉRAL;;;Longueur"))).toContain("partiel : 1 non évalué(s)");
   });
 

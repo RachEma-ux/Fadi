@@ -27,6 +27,8 @@ import { archiveHash, recordProducedDocument } from "../lib/documents.js";
 import { loadStepContext } from "../lib/step-context.js";
 import { historyRouter } from "./history.js";
 import { studioRouter } from "./studio.js";
+import { lockProject } from "../lib/step-rows.js";
+import { PUBLICATIONS_DIFFUSEES_MESSAGE, projectHasIssuedStudioPublications } from "../lib/studio-publications.js";
 
 export const projectsRouter = Router();
 projectsRouter.use(requireAuth);
@@ -228,6 +230,13 @@ projectsRouter.get("/:projectId", async (req, res) => {
 projectsRouter.delete("/:projectId", async (req, res) => {
   const project = await projectOr404(req, res, "owner");
   if (!project) return;
-  await db.delete(projects).where(eq(projects.id, project.id));
+  // Publications Studio diffusées ou retirées : jamais supprimées (E.4-06) ; vérifié sous le verrou du projet.
+  const refused = await db.transaction(async (tx) => {
+    await lockProject(tx, project.id);
+    if (await projectHasIssuedStudioPublications(tx, project.id)) return true;
+    await tx.delete(projects).where(eq(projects.id, project.id));
+    return false;
+  });
+  if (refused) { res.status(409).json({ error: "publications_diffusees", message: PUBLICATIONS_DIFFUSEES_MESSAGE }); return; }
   res.status(204).end();
 });

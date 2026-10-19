@@ -11,7 +11,7 @@
  * typé par `@parcours/domain-model`. Mélanger les deux serait exactement
  * l'erreur de repères que `docs/architecture.md` interdit.
  */
-import { boolean, customType, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, customType, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import type { StudioDocument, StudioEnvelope } from "@parcours/atelier-model";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
@@ -690,6 +690,50 @@ export const studioComments = pgTable("studio_comments", {
   uniqueIndex("studio_comments_variant_id_unique").on(t.variantId, t.id),
 ]);
 
+/** Statuts d'une observation Studio (E.2) ; `rouverte` se corrige comme `ouverte`. */
+export type StudioObservationStatut = "ouverte" | "corrigee" | "recontrolee" | "cloturee" | "rouverte";
+export type StudioObservationAction = "ouvrir" | "corriger" | "recontroler" | "cloturer" | "rouvrir" | "reattribuer";
+
+/**
+ * Observation Studio : un commentaire d'origine promu (même identifiant, une seule identité), responsable membre du
+ * projet, échéance facultative, statut et révisions de correction / recontrôle (FK composites « même variante »,
+ * init.sql). Le journal des passages est `studioObservationEvents`.
+ */
+export const studioObservations = pgTable("studio_observations", {
+  commentId: text("comment_id").primaryKey(),
+  variantId: text("variant_id").notNull().references(() => studioVariants.id, { onDelete: "cascade" }),
+  responsableId: text("responsable_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  echeance: date("echeance", { mode: "string" }),
+  statut: text("statut").$type<StudioObservationStatut>().notNull(),
+  correctionRevisionId: text("correction_revision_id"),
+  recontroleRevisionId: text("recontrole_revision_id"),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_observations_variant_idx").on(t.variantId), index("studio_observations_responsable_idx").on(t.responsableId)]);
+
+/** Journal append-only des passages d'une observation (qui, quand, révision, note), ordonné par `seq`. */
+export const studioObservationEvents = pgTable("studio_observation_events", {
+  id: text("id").primaryKey(),
+  observationId: text("observation_id").notNull().references(() => studioObservations.commentId, { onDelete: "cascade" }),
+  seq: integer("seq").notNull(),
+  action: text("action").$type<StudioObservationAction>().notNull(),
+  fromStatut: text("from_statut").$type<StudioObservationStatut | null>(),
+  toStatut: text("to_statut").$type<StudioObservationStatut>().notNull(),
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  revisionId: text("revision_id"),
+  // Responsable désigné par ce passage (ouverture, réattribution) ; null pour les autres passages.
+  responsableId: text("responsable_id"),
+  note: text("note"),
+  // Passage idempotent : unique par observation quand renseigné (index partiel, init.sql).
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  at: timestamp("at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex("studio_observation_events_seq_unique").on(t.observationId, t.seq),
+  index("studio_observation_events_at_idx").on(t.at),
+]);
+
 /**
  * Étapes du Parcours auxquelles une étude Studio est rattachée (lien de lecture, facultatif) : une ligne par étude et
  * par numéro d'étape (`project_steps.step_number`, 1 à 21) du même projet, vérifiée par le serveur à l'écriture.
@@ -704,3 +748,72 @@ export const studioStudySteps = pgTable("studio_study_steps", {
   uniqueIndex("studio_study_steps_unique").on(t.studyId, t.stepNumber),
   index("studio_study_steps_step_idx").on(t.stepNumber),
 ]);
+
+/** Statuts d'une publication Studio : travail → soumis → approuve | refuse → diffuse ; retire (jamais supprimée). */
+export type StudioPublicationStatus = "travail" | "soumis" | "approuve" | "refuse" | "diffuse" | "retire";
+export type StudioPublicationAction = "creer" | "soumettre" | "approuver" | "refuser" | "diffuser" | "retirer";
+export type StudioPackageFormat = "svg" | "dxf" | "ifc" | "pdf";
+/** Fichier figé d'un paquet diffusé : contenu dans `volumes` (identifiant = SHA-256 du contenu). */
+export interface StudioPackageFile { format: StudioPackageFormat; fileName: string; mime: string; size: number; sha256: string }
+/** Paquet figé à la diffusion : révision, empreinte du document, métadonnées gelées des exports et fichiers. */
+export interface StudioPublicationPackage {
+  schema: "studio-publication-package/1";
+  revisionId: string;
+  documentHash: string;
+  meta: { projectCode: string; projectName: string; studyName: string; variantName: string; revisionCreatedAt: string };
+  files: StudioPackageFile[];
+}
+
+/** Publication d'une révision de variante Studio (FK composites « même étude / même variante » dans init.sql). */
+export const studioPublications = pgTable("studio_publications", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  studyId: text("study_id").notNull(),
+  variantId: text("variant_id").notNull(),
+  revisionId: text("revision_id").notNull(),
+  documentHash: text("document_hash").notNull(),
+  title: text("title").notNull(),
+  status: text("status").$type<StudioPublicationStatus>().notNull().default("travail"),
+  approvedRevisionId: text("approved_revision_id"),
+  approvedDocumentHash: text("approved_document_hash"),
+  approvedBy: text("approved_by").references(() => users.id, { onDelete: "restrict" }),
+  approvedAt: timestamp("approved_at", { withTimezone: true }),
+  package: jsonb("package").$type<StudioPublicationPackage | null>(),
+  packageHash: text("package_hash"),
+  diffusedBy: text("diffused_by").references(() => users.id, { onDelete: "restrict" }),
+  diffusedAt: timestamp("diffused_at", { withTimezone: true }),
+  requestId: text("request_id"),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("studio_publications_project_idx").on(t.projectId, t.createdAt),
+  index("studio_publications_study_idx").on(t.studyId, t.createdAt),
+]);
+
+/** Journal append-only des transitions d'une publication (UPDATE refusée par déclencheur, init.sql). */
+export const studioPublicationEvents = pgTable("studio_publication_events", {
+  id: text("id").primaryKey(),
+  publicationId: text("publication_id").notNull().references(() => studioPublications.id, { onDelete: "cascade" }),
+  action: text("action").$type<StudioPublicationAction>().notNull(),
+  fromStatus: text("from_status").$type<StudioPublicationStatus | null>(),
+  toStatus: text("to_status").$type<StudioPublicationStatus>().notNull(),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  comment: text("comment"),
+  revisionId: text("revision_id").notNull(),
+  documentHash: text("document_hash").notNull(),
+  headRevisionId: text("head_revision_id").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_publication_events_publication_idx").on(t.publicationId, t.createdAt)]);
+/**
+ * Préférences d'outils Studio d'un compte (lib/studio-preferences.ts) : profil des barres (`standard`,
+ * `metier:<id>`, `personnel`), favoris et liste personnelle, identifiants du registre `STUDIO_TOOLS`. Une ligne par
+ * compte, sans rapport avec les documents : ni géométrie, ni révision, ni droit (B.2-07).
+ */
+export const studioToolPreferences = pgTable("studio_tool_preferences", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  profile: text("profile").notNull().default("standard"),
+  favorites: jsonb("favorites").$type<string[]>().notNull().default([]),
+  personal: jsonb("personal").$type<string[]>().notNull().default([]),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});

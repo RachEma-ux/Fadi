@@ -4,7 +4,7 @@ import { nb, xml } from "../exporteurs/texte.js";
 import { STUDIO_INDEXED_ANCHOR } from "../noyau/ancres.js";
 import { STUDIO_BULGE_MAX, STUDIO_LIMITS } from "../noyau/limites.js";
 import { array, boolean, extrusionRef, fail, finite, identifier, layerRef, point, record, REFUS_EPAISSEUR_COURBE, same } from "../noyau/validation.js";
-import type { StudioExtrusion, StudioPoint } from "../noyau/types.js";
+import type { StudioExtrusion, StudioPoint, StudioShape } from "../noyau/types.js";
 import { id, layerId, point as pointSchema, rectangleExtrusion } from "../registre/schemas-base.js";
 import type { StudioTypeObjet } from "./type.js";
 
@@ -31,6 +31,30 @@ export const SCHEMA_POLYLIGNE = {
     bulges: { type: "array", maxItems: STUDIO_LIMITS.polylinePoints, items: { type: "number", minimum: -STUDIO_BULGE_MAX, maximum: STUDIO_BULGE_MAX } }, extrusion: rectangleExtrusion,
   },
 } as const;
+
+/**
+ * Contrôle de simplicité (O(n²)) mémorisé par contour : un document relu (chaque lecture, chaque lot) ne repaie pas le
+ * contrôle de ses contours déjà vus. Mémoire bornée (les plus anciens contours sont oubliés). Le résultat ne dépend que
+ * des coordonnées : la mémoire ne change jamais une décision.
+ */
+const MEMO_ANNEAUX = new Map<string, boolean>();
+const MEMO_ANNEAUX_MAX = 4096;
+function anneauSimpleMemo(ring: readonly StudioPoint[]): boolean {
+  const cle = ring.map((p) => `${p.x},${p.y}`).join(";");
+  const vu = MEMO_ANNEAUX.get(cle);
+  if (vu !== undefined) return vu;
+  const simple = studioRingSimple(ring);
+  if (MEMO_ANNEAUX.size >= MEMO_ANNEAUX_MAX) MEMO_ANNEAUX.delete(MEMO_ANNEAUX.keys().next().value!);
+  MEMO_ANNEAUX.set(cle, simple);
+  return simple;
+}
+
+/** Sommets discrétisés des polylignes fermées extrudées d'un document (charge des contrôles de simplicité). */
+export function studioExtrudedRingVertices(objects: readonly StudioShape[]): number {
+  let n = 0;
+  for (const o of objects) if (o.type === "polyline" && o.closed && o.extrusion) n += studioPolylinePath(o).length;
+  return n;
+}
 
 export const POLYLIGNE: StudioTypeObjet<StudioPolyline> = {
   type: "polyline",
@@ -62,7 +86,7 @@ export const POLYLIGNE: StudioTypeObjet<StudioPolyline> = {
     if (extrusion.extrusion && closed) {
       const ring = studioPolylinePath(out);
       if (ring.length > STUDIO_LIMITS.extrudedRing) fail(`${path}.extrusion`, `contour de ${STUDIO_LIMITS.extrudedRing} sommets discrétisés au plus pour une extrusion`);
-      if (!studioRingSimple(ring)) fail(`${path}.extrusion`, "une polyligne fermée extrudée doit avoir un contour simple (sans croisement)");
+      if (!anneauSimpleMemo(ring)) fail(`${path}.extrusion`, "une polyligne fermée extrudée doit avoir un contour simple (sans croisement)");
     }
     return out;
   },

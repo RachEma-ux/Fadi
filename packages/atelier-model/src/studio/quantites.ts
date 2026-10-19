@@ -1,4 +1,5 @@
-import { STUDIO_DEFAULT_LAYER_ID, type StudioDocument } from "./document-2d.js";
+import { studioArcSweep, studioBulgeArc, studioPolylinePath, studioPolylineSegments, studioRingSimple, studioSignedArea } from "./courbes.js";
+import { STUDIO_DEFAULT_LAYER_ID, STUDIO_LIMITS, type StudioDocument, type StudioPoint } from "./document-2d.js";
 
 /**
  * Métré du document 2D Studio (E.3-04 / E.3-05). Pur : ni React, ni DOM, ni stockage.
@@ -9,6 +10,12 @@ import { STUDIO_DEFAULT_LAYER_ID, type StudioDocument } from "./document-2d.js";
  *   extrudé n'a pas de volume, une ligne extrudée sans épaisseur non plus. Aucune valeur par défaut n'est inventée.
  * - **Déductions : non déclarées.** Aucune ouverture n'est devinée d'un recouvrement (un prisme posé sur un mur n'est pas
  *   une baie) : les quantités nettes restent non évaluées tant qu'aucune déduction n'est déclarée.
+ * - Courbes (cercle, arc, polyligne) : valeurs **exactes** tirées de la courbe saisie, jamais de sa discrétisation —
+ *   longueur d'arc rθ, renflement `bulge = tan(θ/4)` porté par un arc de rayon c(1 + b²) / (4|b|), aire d'une polyligne
+ *   fermée = aire du polygone des sommets + segments circulaires signés R²(θ − sin θ) / 2. Mur courbe (arc + épaisseur e,
+ *   centré, e < 2r) : faces r ± e/2, surface des deux faces 2rθh, volume = secteur annulaire θ·r·e × h (exact).
+ *   Une polyligne fermée dont le contour se croise n'a pas d'aire définie : non évaluée (`contour-non-simple`).
+ *   Une polyligne ouverte ne prend pas d'épaisseur (refusée) : elle n'a pas de volume, pas même « non évalué ».
  * - Les cotes sont exclues ; les objets des calques masqués sont comptés mais signalés.
  * - Un type d'objet inconnu de ce métré est rapporté « non évalué » par son `type`, jamais ignoré en silence.
  * - Aucun arrondi ici : l'arrondi appartient à l'affichage.
@@ -31,11 +38,23 @@ export const GRANDEUR_CUMULABLE: Readonly<Record<GrandeurQuantite, boolean>> = O
 
 /**
  * Nature métrée d'un objet : `ligne` / `rectangle` non extrudés, `mur` (ligne + épaisseur extrudée), `ligne-extrudee`
- * (sans épaisseur : surface verticale seulement), `prisme` (rectangle extrudé), `non-pris-en-charge` (type inconnu).
+ * (sans épaisseur : surface verticale seulement), `prisme` (rectangle extrudé), `cercle` / `cylindre` (cercle extrudé),
+ * `arc` / `mur-courbe` (arc + épaisseur) / `arc-extrude` (sans épaisseur : surface verticale), `polyligne-ouverte` /
+ * `polyligne-ouverte-extrudee` (surface verticale), `polyligne-fermee` / `prisme-polyligne`, `non-pris-en-charge` (type
+ * inconnu).
  */
-export type NatureQuantite = "ligne" | "rectangle" | "mur" | "ligne-extrudee" | "prisme" | "non-pris-en-charge";
+export type NatureQuantite =
+  | "ligne" | "rectangle" | "mur" | "ligne-extrudee" | "prisme"
+  | "cercle" | "cylindre" | "arc" | "mur-courbe" | "arc-extrude"
+  | "polyligne-ouverte" | "polyligne-ouverte-extrudee" | "polyligne-fermee" | "prisme-polyligne"
+  | "non-pris-en-charge";
 
-export type MotifNonEvalue = "non-extrude" | "epaisseur-non-declaree" | "type-non-pris-en-charge" | "geometrie-invalide";
+export type MotifNonEvalue =
+  | "non-extrude" | "epaisseur-non-declaree" | "type-non-pris-en-charge" | "geometrie-invalide"
+  /** Polyligne fermée dont le contour se croise : aire non définie. */
+  | "contour-non-simple"
+  /** Contour discrétisé au-delà de la borne de contrôle de simplicité (`STUDIO_LIMITS.extrudedRing`) : non évaluée. */
+  | "contour-non-controle";
 
 export interface ValeurQuantite {
   grandeur: GrandeurQuantite;
@@ -43,6 +62,8 @@ export interface ValeurQuantite {
   /** Valeur brute dérivée, pleine précision ; null = non évaluée. */
   valeur: number | null;
   motif?: MotifNonEvalue;
+  /** Mur courbe : surface de chaque face (intérieure r − e/2, extérieure r + e/2) ; leur somme est `valeur`. */
+  faces?: { interieure: number; exterieure: number };
 }
 
 export interface QuantitesObjet {
@@ -111,6 +132,63 @@ const extrusionLue = (o: Record<string, unknown>): ExtrusionLue | null => {
 };
 const mult = (...v: (number | null)[]): number | null => (v.some((x) => x === null) ? null : v.reduce<number>((a, b) => a * b!, 1));
 
+const TWO_PI = 2 * Math.PI;
+/** Angle d'arc lu dans [0 ; 2π[. */
+const angleLu = (v: unknown): number | null => {
+  const a = num(v);
+  return a !== null && a >= 0 && a < TWO_PI ? a : null;
+};
+const rayonLu = (v: unknown): number | null => {
+  const r = num(v);
+  return r !== null && r > 0 ? r : null;
+};
+
+interface PolyligneLue { points: StudioPoint[]; closed: boolean; bulges?: number[] }
+function polyligneLue(o: Record<string, unknown>): PolyligneLue | null {
+  if (!Array.isArray(o.points) || typeof o.closed !== "boolean" || o.points.length < 2) return null;
+  const points: StudioPoint[] = [];
+  for (const p of o.points) {
+    const q = pt(p);
+    if (!q) return null;
+    points.push(q);
+  }
+  if (o.bulges === undefined) return { points, closed: o.closed };
+  if (!Array.isArray(o.bulges) || o.bulges.length !== (o.closed ? points.length : points.length - 1)) return null;
+  const bulges: number[] = [];
+  for (const b of o.bulges) {
+    const x = num(b);
+    if (x === null) return null;
+    bulges.push(x);
+  }
+  return { points, closed: o.closed, bulges };
+}
+
+/** Longueur exacte d'une polyligne (cordes et arcs de renflement) ; null si un segment est de longueur nulle. */
+function longueurPolyligne(p: PolyligneLue): number | null {
+  let l = 0;
+  for (const s of studioPolylineSegments(p)) {
+    const c = Math.hypot(s.b.x - s.a.x, s.b.y - s.a.y);
+    if (!(c > 0)) return null;
+    const arc = studioBulgeArc(s.a, s.b, s.bulge);
+    l += arc ? arc.radius * Math.abs(arc.sweep) : c;
+  }
+  return l;
+}
+
+/** Aire exacte d'une polyligne fermée : polygone des sommets + segments circulaires signés ; contour simple exigé. */
+function surfacePolyligne(p: PolyligneLue): { valeur: number | null; motif?: MotifNonEvalue } {
+  const anneau = studioPolylinePath(p);
+  if (anneau.length > STUDIO_LIMITS.extrudedRing) return { valeur: null, motif: "contour-non-controle" };
+  if (!studioRingSimple(anneau)) return { valeur: null, motif: "contour-non-simple" };
+  // Deux sommets (fermeture courbe) : polygone d'aire nulle, l'aire est celle des segments circulaires.
+  let a = studioSignedArea(p.points);
+  for (const s of studioPolylineSegments(p)) {
+    const arc = studioBulgeArc(s.a, s.b, s.bulge);
+    if (arc) a += (arc.radius * arc.radius * (arc.sweep - Math.sin(arc.sweep))) / 2;
+  }
+  return { valeur: Math.abs(a) };
+}
+
 function objet(o: Record<string, unknown>, calqueId: string, calqueMasque: boolean): QuantitesObjet {
   const type = typeof o.type === "string" ? o.type : String(o.type);
   const base = { objetId: String(o.id), type, calqueId, calqueMasque };
@@ -136,6 +214,46 @@ function objet(o: Record<string, unknown>, calqueId: string, calqueMasque: boole
     const surface = mult(w, h);
     if (!ext) return { ...base, nature: "rectangle", valeurs: [val("perimetre", perimetre), val("surface", surface), val("volume", null, "non-extrude")] };
     return { ...base, nature: "prisme", valeurs: [val("perimetre", perimetre), val("surface", surface), val("hauteur", ext.height), val("volume", mult(surface, ext.height))] };
+  }
+  if (type === "circle") {
+    const r = rayonLu(o.radius);
+    const perimetre = r === null ? null : TWO_PI * r;
+    const surface = r === null ? null : Math.PI * r * r;
+    if (!ext) return { ...base, nature: "cercle", valeurs: [val("perimetre", perimetre), val("surface", surface), val("volume", null, "non-extrude")] };
+    return { ...base, nature: "cylindre", valeurs: [val("perimetre", perimetre), val("surface", surface), val("hauteur", ext.height), val("volume", mult(surface, ext.height))] };
+  }
+  if (type === "arc") {
+    const r = rayonLu(o.radius), a0 = angleLu(o.startAngle), a1 = angleLu(o.endAngle);
+    const theta = a0 === null || a1 === null || a0 === a1 ? null : studioArcSweep(a0, a1);
+    const longueur = mult(r, theta);
+    if (!ext) return { ...base, nature: "arc", valeurs: [val("longueur", longueur), val("volume", null, "non-extrude")] };
+    if (ext.thickness === null) {
+      return { ...base, nature: "arc-extrude", valeurs: [
+        val("longueur", longueur), val("hauteur", ext.height), val("surface-verticale", mult(longueur, ext.height)), val("volume", null, "epaisseur-non-declaree"),
+      ] };
+    }
+    const e = ext.thickness, h = ext.height;
+    // Mur centré sur l'arc : rayons r ± e/2, épaisseur inférieure au diamètre.
+    const valide = r !== null && theta !== null && h !== null && e > 0 && e < 2 * r;
+    const laterale = val("surface-laterale", valide ? 2 * r * theta * h : null);
+    if (valide) laterale.faces = { interieure: (r - e / 2) * theta * h, exterieure: (r + e / 2) * theta * h };
+    return { ...base, nature: "mur-courbe", valeurs: [
+      val("longueur", longueur), val("hauteur", h), laterale,
+      // Secteur annulaire θ/2 · ((r + e/2)² − (r − e/2)²) = θ·r·e, fois la hauteur.
+      val("volume", valide ? theta * r * e * h : null),
+    ] };
+  }
+  if (type === "polyline") {
+    const p = polyligneLue(o);
+    const longueur = p ? longueurPolyligne(p) : null;
+    if (!p || !p.closed) {
+      if (!ext) return { ...base, nature: "polyligne-ouverte", valeurs: [val("longueur", longueur)] };
+      return { ...base, nature: "polyligne-ouverte-extrudee", valeurs: [val("longueur", longueur), val("hauteur", ext.height), val("surface-verticale", mult(longueur, ext.height))] };
+    }
+    const s = longueur === null ? { valeur: null } : surfacePolyligne(p);
+    const surface = val("surface", s.valeur, s.motif);
+    if (!ext) return { ...base, nature: "polyligne-fermee", valeurs: [val("perimetre", longueur), surface, val("volume", null, "non-extrude")] };
+    return { ...base, nature: "prisme-polyligne", valeurs: [val("perimetre", longueur), surface, val("hauteur", ext.height), val("volume", mult(s.valeur, ext.height), s.motif)] };
   }
   return { ...base, nature: "non-pris-en-charge", motif: "type-non-pris-en-charge", valeurs: [] };
 }

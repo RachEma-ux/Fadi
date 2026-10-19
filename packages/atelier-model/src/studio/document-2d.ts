@@ -29,5 +29,5 @@ export type { StudioLine } from "./objets/ligne.js";
 export type { StudioRectangle } from "./objets/rectangle.js";
 export type { StudioCircle } from "./objets/cercle.js";
 export type { StudioArc } from "./objets/arc.js";
-export type { StudioPolyline } from "./objets/polyligne.js";
+export { studioExtrudedRingVertices, type StudioPolyline } from "./objets/polyligne.js";
 export type { StudioDimension, StudioDimensionLink } from "./objets/cote.js";

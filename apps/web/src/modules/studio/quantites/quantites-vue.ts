@@ -13,11 +13,16 @@ export const LIBELLE_GRANDEUR: Readonly<Record<GrandeurQuantite, string>> = {
 export const SYMBOLE_UNITE: Readonly<Record<UniteQuantite, string>> = { m: "m", m2: "m²", m3: "m³" };
 export const LIBELLE_NATURE: Readonly<Record<NatureQuantite, string>> = {
   ligne: "Ligne", rectangle: "Rectangle", mur: "Mur (ligne extrudée avec épaisseur)", "ligne-extrudee": "Ligne extrudée sans épaisseur",
-  prisme: "Prisme (rectangle extrudé)", "non-pris-en-charge": "Type non pris en charge",
+  prisme: "Prisme (rectangle extrudé)",
+  cercle: "Cercle", cylindre: "Cylindre (cercle extrudé)", arc: "Arc", "mur-courbe": "Mur courbe (arc extrudé avec épaisseur)",
+  "arc-extrude": "Arc extrudé sans épaisseur", "polyligne-ouverte": "Polyligne ouverte",
+  "polyligne-ouverte-extrudee": "Polyligne ouverte extrudée", "polyligne-fermee": "Polyligne fermée",
+  "prisme-polyligne": "Prisme (polyligne fermée extrudée)", "non-pris-en-charge": "Type non pris en charge",
 };
 export const LIBELLE_MOTIF: Readonly<Record<MotifNonEvalue, string>> = {
   "non-extrude": "non extrudé", "epaisseur-non-declaree": "épaisseur non déclarée",
   "type-non-pris-en-charge": "type non pris en charge par le métré", "geometrie-invalide": "géométrie illisible",
+  "contour-non-simple": "contour qui se croise : surface non définie", "contour-non-controle": "contour trop détaillé pour être contrôlé",
 };
 export const LIBELLE_REFUS: Readonly<Record<RefusAjustement, string>> = {
   "objet-inconnu": "objet absent du métré", "grandeur-non-applicable": "grandeur sans objet pour cet objet",

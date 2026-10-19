@@ -4,13 +4,16 @@ import { z } from "zod";
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioStudy, STUDIO_EXPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
-import { createStudioComment, deleteStudioComment, listStudioComments, studioCommentSchema } from "../lib/studio-commentaires.js";
+import { createStudioComment, createStudioObservation, deleteStudioComment, listStudioComments, studioCommentSchema, studioObservationSchema, studioObservationTransitionSchema, transitionStudioObservation } from "../lib/studio-commentaires.js";
 import { listStudiesOfStep, listStudioStudySteps, setStudioStudySteps, studioStudyStepsSchema } from "../lib/studio-liens.js";
 import { renameStudioStudy, renameStudioVariant, setStudioStudyArchived, setStudioVariantArchived, studioRenameSchema } from "../lib/studio-variantes.js";
+import { studioPublicationsRouter } from "./studio-publications.js";
+import { studioPreferencesRouter } from "./studio-preferences.js";
 
 export const studioRouter = Router({ mergeParams: true });
 studioRouter.use(requireAuth);
 studioRouter.use(json({ limit: "1mb" }));
+studioRouter.use("/preferences", studioPreferencesRouter);
 // `requestId` facultatif : même règle d'identifiant que les enveloppes de commandes ; rejeu = réponse 201 d'origine.
 const studySchema = z.object({ name: z.string().trim().min(1).max(200), requestId: studioIdentifierSchema.optional() }).strict();
 // Dérivation facultative : `fromVariantId` (même étude) et, si donnée, `fromRevisionId` (de cette variante ; tête sinon).
@@ -160,6 +163,25 @@ studioRouter.delete(`${commentsPath}/:commentId`, endpoint(async (req, res) => {
   res.status(204).end();
 }));
 /**
+ * Observations (E.2) : un commentaire d'origine devient une observation (POST …/observation, 201, auteur ou
+ * propriétaire) ; passages corriger / recontroler / cloturer / rouvrir (POST …/observation/transitions, 200),
+ * journalisés. Rôles et refus : `lib/studio-observations.ts`. Idempotents par `requestId`.
+ */
+studioRouter.post(`${commentsPath}/:commentId/observation`, endpoint(async (req, res) => {
+  const parsed = studioObservationSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
+  const observation = await createStudioObservation(scope(req), req.user!.id, req.params["commentId"] as string, parsed.data);
+  res.setHeader("Idempotent-Replayed", String(observation.replayed));
+  res.status(201).json(observation);
+}));
+studioRouter.post(`${commentsPath}/:commentId/observation/transitions`, endpoint(async (req, res) => {
+  const parsed = studioObservationTransitionSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
+  const observation = await transitionStudioObservation(scope(req), req.user!.id, req.params["commentId"] as string, parsed.data);
+  res.setHeader("Idempotent-Replayed", String(observation.replayed));
+  res.json(observation);
+}));
+/**
  * Étapes du Parcours rattachées à une étude : lecture `read`, remplacement de la liste complète avec `modify`
  * (PUT idempotent) ; une étape absente du projet → 400 ; une étude d'un autre projet → 404.
  */
@@ -181,3 +203,4 @@ studioRouter.get("/steps/:stepNumber/studies", endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await listStudiesOfStep(scope(req).projectId, Number(raw), req.user!.id));
 }));
+studioRouter.use(studioPublicationsRouter);

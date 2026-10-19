@@ -563,6 +563,65 @@ CREATE TABLE IF NOT EXISTS studio_comments (
 CREATE INDEX IF NOT EXISTS studio_comments_variant_idx ON studio_comments(variant_id, created_at);
 CREATE UNIQUE INDEX IF NOT EXISTS studio_comments_request_unique ON studio_comments(variant_id, request_id)
   WHERE request_id IS NOT NULL;
+-- Observations Studio (E.2) : un commentaire d'origine devient au plus une observation (même identifiant que le
+-- commentaire : une seule identité), avec un responsable (membre du projet), une échéance facultative et un statut
+-- ouverte → corrigée (révision de la correction) → recontrôlée (révision ≥ correction) → clôturée, ou rouverte. Chaque
+-- passage est journalisé (qui, quand, révision, note) dans un journal append-only, ordonné par `seq`. Tables nouvelles,
+-- additives : aucun commentaire existant n'est réécrit.
+CREATE TABLE IF NOT EXISTS studio_observations (
+  comment_id text PRIMARY KEY,
+  variant_id text NOT NULL REFERENCES studio_variants(id) ON DELETE CASCADE,
+  responsable_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  echeance date,
+  statut text NOT NULL CONSTRAINT studio_observations_statut_check
+    CHECK (statut IN ('ouverte', 'corrigee', 'recontrolee', 'cloturee', 'rouverte')),
+  correction_revision_id text,
+  recontrole_revision_id text,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT studio_observations_comment_same_variant FOREIGN KEY(variant_id, comment_id)
+    REFERENCES studio_comments(variant_id, id) ON DELETE CASCADE,
+  CONSTRAINT studio_observations_correction_same_variant FOREIGN KEY(variant_id, correction_revision_id)
+    REFERENCES studio_revisions(variant_id, id),
+  CONSTRAINT studio_observations_recontrole_same_variant FOREIGN KEY(variant_id, recontrole_revision_id)
+    REFERENCES studio_revisions(variant_id, id)
+);
+CREATE INDEX IF NOT EXISTS studio_observations_variant_idx ON studio_observations(variant_id);
+CREATE INDEX IF NOT EXISTS studio_observations_responsable_idx ON studio_observations(responsable_id);
+CREATE TABLE IF NOT EXISTS studio_observation_events (
+  id text PRIMARY KEY,
+  observation_id text NOT NULL REFERENCES studio_observations(comment_id) ON DELETE CASCADE,
+  seq integer NOT NULL CHECK (seq >= 1),
+  action text NOT NULL CONSTRAINT studio_observation_events_action_check
+    CHECK (action IN ('ouvrir', 'corriger', 'recontroler', 'cloturer', 'rouvrir', 'reattribuer')),
+  from_statut text,
+  to_statut text NOT NULL,
+  actor_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  revision_id text,
+  note text CONSTRAINT studio_observation_events_note_length CHECK (note IS NULL OR length(note) BETWEEN 1 AND 2000),
+  request_id text,
+  payload_hash text CONSTRAINT studio_observation_events_payload_hash_check CHECK (payload_hash IS NULL OR payload_hash ~ '^[0-9a-f]{64}$'),
+  at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT studio_observation_events_seq_unique UNIQUE(observation_id, seq)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_observation_events_request_unique ON studio_observation_events(observation_id, request_id)
+  WHERE request_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS studio_observation_events_at_idx ON studio_observation_events(at);
+-- Réattribution (propriétaire seul, journalisée) : action admise et responsable désigné par le passage. Colonne
+-- nullable ajoutée sans réécrire le journal ; contrainte recréée à chaque application, NOT VALID.
+ALTER TABLE studio_observation_events ADD COLUMN IF NOT EXISTS responsable_id text REFERENCES users(id) ON DELETE RESTRICT;
+ALTER TABLE studio_observation_events DROP CONSTRAINT IF EXISTS studio_observation_events_action_check,
+  ADD CONSTRAINT studio_observation_events_action_check
+  CHECK (action IN ('ouvrir', 'corriger', 'recontroler', 'cloturer', 'rouvrir', 'reattribuer')) NOT VALID;
+-- Le journal ne se réécrit pas : toute UPDATE d'un passage est refusée (les suppressions suivent la cascade).
+CREATE OR REPLACE FUNCTION studio_observation_event_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_observation_event_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_observation_events_no_update BEFORE UPDATE ON studio_observation_events
+  FOR EACH ROW EXECUTE FUNCTION studio_observation_event_immutable();
 -- Rattachement facultatif d'une étude Studio à des étapes du Parcours du même projet (numéro d'étape de
 -- project_steps, vérifié par le serveur). Table nouvelle, additive : aucune étape ni aucune étude n'est réécrite.
 CREATE TABLE IF NOT EXISTS studio_study_steps (
@@ -589,3 +648,106 @@ ALTER TABLE studio_variants DROP CONSTRAINT IF EXISTS studio_variants_derived_fr
 ALTER TABLE studio_variants DROP CONSTRAINT IF EXISTS studio_variants_derived_from_revision,
   ADD CONSTRAINT studio_variants_derived_from_revision FOREIGN KEY(derived_from_variant_id, derived_from_revision_id)
   REFERENCES studio_revisions(variant_id, id) DEFERRABLE INITIALLY DEFERRED NOT VALID;
+-- Publications Studio (E.4-01 à E.4-06, E.3-06) : une publication porte sur UNE révision d'une variante, identifiée par
+-- son identifiant et l'empreinte SHA-256 de son document ; statuts travail → soumis → approuve | refuse → diffuse, et
+-- retire (jamais de suppression). L'approbation est liée à la révision et à l'empreinte examinées ; la diffusion fige
+-- un paquet d'exports (SVG, DXF, IFC, feuille PDF) rangés dans les volumes immuables (SHA-256). Chaque transition est
+-- journalisée (auteur, date, commentaire) dans studio_publication_events, dont les lignes ne sont jamais modifiées.
+-- Additif et idempotent : tables nouvelles, aucune ligne existante réécrite.
+CREATE TABLE IF NOT EXISTS studio_publications (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  study_id text NOT NULL,
+  variant_id text NOT NULL,
+  revision_id text NOT NULL,
+  document_hash text NOT NULL CONSTRAINT studio_publications_document_hash_check CHECK (document_hash ~ '^[0-9a-f]{64}$'),
+  title text NOT NULL CONSTRAINT studio_publications_title_length CHECK (length(title) BETWEEN 1 AND 200),
+  status text NOT NULL DEFAULT 'travail' CONSTRAINT studio_publications_status_check
+    CHECK (status IN ('travail', 'soumis', 'approuve', 'refuse', 'diffuse', 'retire')),
+  approved_revision_id text,
+  approved_document_hash text,
+  approved_by text REFERENCES users(id) ON DELETE RESTRICT,
+  approved_at timestamptz,
+  package jsonb,
+  package_hash text CONSTRAINT studio_publications_package_hash_check CHECK (package_hash IS NULL OR package_hash ~ '^[0-9a-f]{64}$'),
+  diffused_by text REFERENCES users(id) ON DELETE RESTRICT,
+  diffused_at timestamptz,
+  request_id text,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT studio_publications_variant_of_study FOREIGN KEY(study_id, variant_id)
+    REFERENCES studio_variants(study_id, id) ON DELETE CASCADE,
+  CONSTRAINT studio_publications_revision_of_variant FOREIGN KEY(variant_id, revision_id)
+    REFERENCES studio_revisions(variant_id, id) ON DELETE CASCADE,
+  CONSTRAINT studio_publications_approval_same_revision CHECK (approved_revision_id IS NULL OR approved_revision_id = revision_id),
+  CONSTRAINT studio_publications_approval_complete CHECK ((approved_revision_id IS NULL) = (approved_document_hash IS NULL)),
+  CONSTRAINT studio_publications_package_complete CHECK ((package IS NULL) = (package_hash IS NULL))
+);
+CREATE INDEX IF NOT EXISTS studio_publications_project_idx ON studio_publications(project_id, created_at);
+CREATE INDEX IF NOT EXISTS studio_publications_study_idx ON studio_publications(study_id, created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_publications_request_unique ON studio_publications(variant_id, request_id)
+  WHERE request_id IS NOT NULL;
+CREATE TABLE IF NOT EXISTS studio_publication_events (
+  id text PRIMARY KEY,
+  publication_id text NOT NULL REFERENCES studio_publications(id) ON DELETE CASCADE,
+  action text NOT NULL CONSTRAINT studio_publication_events_action_check
+    CHECK (action IN ('creer', 'soumettre', 'approuver', 'refuser', 'diffuser', 'retirer')),
+  from_status text,
+  to_status text NOT NULL,
+  author_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  comment text CONSTRAINT studio_publication_events_comment_length CHECK (comment IS NULL OR length(comment) BETWEEN 1 AND 2000),
+  revision_id text NOT NULL,
+  document_hash text NOT NULL,
+  head_revision_id text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_publication_events_publication_idx ON studio_publication_events(publication_id, created_at);
+-- Journal append-only : toute UPDATE d'un évènement de publication est refusée (les suppressions suivent la cascade du projet).
+CREATE OR REPLACE FUNCTION studio_publication_event_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_publication_event_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_publication_events_no_update BEFORE UPDATE ON studio_publication_events
+  FOR EACH ROW EXECUTE FUNCTION studio_publication_event_immutable();
+-- Préférences d'outils Studio d'un compte (B.2-02/04/05) : profil des barres d'outils, favoris et liste personnelle
+-- (identifiants du registre STUDIO_TOOLS, vérifiés par le serveur). Visibilité seulement : aucune géométrie,
+-- révision ni droit n'en dépend (B.2-06/07). Table nouvelle, additive ; disparaît avec le compte (cascade).
+CREATE TABLE IF NOT EXISTS studio_tool_preferences (
+  user_id text PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  profile text NOT NULL DEFAULT 'standard',
+  favorites jsonb NOT NULL DEFAULT '[]'::jsonb,
+  personal jsonb NOT NULL DEFAULT '[]'::jsonb,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_preferences_profile_check,
+  ADD CONSTRAINT studio_tool_preferences_profile_check
+  CHECK (profile ~ '^(standard|personnel|metier:[a-z0-9-]{1,40})$') NOT VALID;
+ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_preferences_lists_check,
+  ADD CONSTRAINT studio_tool_preferences_lists_check
+  CHECK (jsonb_typeof(favorites) = 'array' AND jsonb_typeof(personal) = 'array') NOT VALID;
+-- Publications Studio, jamais de suppression (E.4-06) : une DELETE directe d'un évènement du journal est refusée tant
+-- que sa publication existe ; une DELETE directe d'une publication diffusée ou retirée est refusée tant que son projet
+-- existe. Seule la cascade (parent déjà supprimé dans la même instruction, donc invisible) passe ; la route
+-- DELETE /projects/:id refuse elle-même (409 publications_diffusees) un projet portant une publication diffusée ou retirée.
+CREATE OR REPLACE FUNCTION studio_publication_event_no_delete() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM studio_publications WHERE id = OLD.publication_id) THEN
+    RAISE EXCEPTION 'studio_publication_event_undeletable';
+  END IF;
+  RETURN OLD;
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_publication_events_no_delete BEFORE DELETE ON studio_publication_events
+  FOR EACH ROW EXECUTE FUNCTION studio_publication_event_no_delete();
+CREATE OR REPLACE FUNCTION studio_publication_no_delete() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF OLD.status IN ('diffuse', 'retire') AND EXISTS (SELECT 1 FROM projects WHERE id = OLD.project_id) THEN
+    RAISE EXCEPTION 'studio_publication_undeletable';
+  END IF;
+  RETURN OLD;
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_publications_no_delete BEFORE DELETE ON studio_publications
+  FOR EACH ROW EXECUTE FUNCTION studio_publication_no_delete();

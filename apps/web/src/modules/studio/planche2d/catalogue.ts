@@ -65,6 +65,16 @@ export function rechercher(recherche: string, autres: (e: EntreeCatalogue) => re
     .map((x) => x.e);
 }
 
+/**
+ * Groupe « Favoris » de la palette : les entrées favorites (registre seulement), dans l'ordre reçu (pertinence de la
+ * recherche), puis les autres. Une entrée n'apparaît qu'une fois ; rien n'est retiré.
+ */
+export function separerFavoris(entrees: readonly EntreeCatalogue[], favoris: readonly string[]): { favoris: EntreeCatalogue[]; autres: EntreeCatalogue[] } {
+  const f = new Set(favoris);
+  const estFavori = (e: EntreeCatalogue) => e.outil !== null && f.has(e.identifiant);
+  return { favoris: entrees.filter(estFavori), autres: entrees.filter((e) => !estFavori(e)) };
+}
+
 /** Groupes du gestionnaire : une section par barre, dans l'ordre des barres. */
 export const groupesCatalogue = (entrees: readonly EntreeCatalogue[]): { barre: (typeof BARRES_STUDIO)[number]; entrees: EntreeCatalogue[] }[] =>
   BARRES_STUDIO.map((barre) => ({ barre, entrees: entrees.filter((e) => e.barre === barre.id) })).filter((g) => g.entrees.length > 0);

@@ -3,13 +3,19 @@
  * mètre, objets ajoutés, calques, étendue, entités non prises par type), choix de l'unité quand le fichier n'en déclare
  * pas (aucune n'est présélectionnée), puis « Ajouter au brouillon » : un seul lot local, annulable par Ctrl+Z, envoyé
  * au serveur seulement à l'enregistrement. Rien n'est lu ni écrit côté serveur ici.
+ *
+ * La lecture (jusqu'à 5 Mo) se fait hors du fil principal (`workers/client-studio.ts`) : l'interface reste réactive,
+ * l'étape en cours est annoncée et « Annuler la lecture » arrête le calcul. Un nouveau choix (fichier, unité,
+ * brouillon) remplace la lecture en cours ; seul le dernier résultat est retenu et « Ajouter » attend qu'il soit prêt.
  */
-import { useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import type { StudioCommand, StudioDocument, StudioDxfResultat, StudioDxfUnite } from "@parcours/atelier-model";
 import { Icon } from "../../../components/Icon";
 import { LOCALE } from "../../../lib/i18n";
 import { Dialogue } from "../planche2d/CatalogueOutils";
-import { CIBLES_CALQUE, lireDxf, MESSAGE_TROP_GROS, metres, TAILLE_MAX_OCTETS, typeNonPris, UNITES_PROPOSEES } from "./import-dxf-ui";
+import { estEcartee, type Progression } from "../workers/hote-worker";
+import { calculSurFilPrincipal, lireDxfHorsFil, MESSAGE_REPLI, messageHote } from "../workers/client-studio";
+import { CIBLES_CALQUE, MESSAGE_TROP_GROS, metres, TAILLE_MAX_OCTETS, typeNonPris, UNITES_PROPOSEES, type LectureDxf } from "./import-dxf-ui";
 import "./import-dxf.css";
 
 export interface DialogueImportDxfProps {
@@ -21,36 +27,85 @@ export interface DialogueImportDxfProps {
   surFermer: () => void;
 }
 
+/** Libellé de l'étape annoncée par le Worker (texte d'interface). */
+export const ETAPES_LECTURE: Readonly<Record<string, string>> = Object.freeze({
+  attente: "Lecture en préparation…",
+  lecture: "Lecture du fichier…",
+  analyse: "Analyse des entités du DXF…",
+});
+
 export function DialogueImportDxf({ doc, modifiable, surAjouter, surFermer }: DialogueImportDxfProps) {
-  const [fichier, setFichier] = useState<{ nom: string; texte: string } | null>(null);
+  const [fichier, setFichier] = useState<{ nom: string; source: Blob } | null>(null);
   const [unite, setUnite] = useState<StudioDxfUnite | null>(null);
   const [erreurFichier, setErreurFichier] = useState("");
   const [refus, setRefus] = useState(false);
-  // Relu seulement quand le fichier, l'unité choisie ou le brouillon changent (un fichier peut peser 5 Mo).
-  const lecture = useMemo(() => (fichier ? lireDxf(fichier.texte, doc, unite) : null), [fichier, doc, unite]);
+  const [annulee, setAnnulee] = useState(false);
+  // Numéro de la dernière lecture demandée, et dernier résultat reçu (avec le numéro de sa demande).
+  const [attendue, setAttendue] = useState(0);
+  const [lecture, setLecture] = useState<{ n: number; valeur: LectureDxf } | null>(null);
+  const [etape, setEtape] = useState("attente");
+  const [erreurCalcul, setErreurCalcul] = useState("");
+  const [cleChamp, setCleChamp] = useState(0);
+  const numero = useRef(0);
+  const controleur = useRef<AbortController | null>(null);
 
-  async function choisir(e: ChangeEvent<HTMLInputElement>) {
+  // Relue quand le fichier, l'unité choisie ou le brouillon changent ; la lecture précédente est arrêtée.
+  useEffect(() => {
+    if (!fichier) return;
+    const n = ++numero.current;
+    const c = new AbortController();
+    controleur.current = c;
+    setAttendue(n); setEtape("attente"); setErreurCalcul("");
+    lireDxfHorsFil({ source: fichier.source, document: doc, unite }, { signal: c.signal, canal: "studio.import-dxf", surProgression: (p: Progression) => { if (numero.current === n) setEtape(p.etape); } })
+      .then((valeur) => { if (numero.current === n) setLecture({ n, valeur }); })
+      .catch((e: unknown) => { if (numero.current === n && !estEcartee(e)) { setErreurCalcul(messageHote(e) ?? ""); setLecture(null); } });
+    return () => c.abort();
+  }, [fichier, doc, unite]);
+
+  const enCours = fichier !== null && !erreurCalcul && lecture?.n !== attendue;
+  const courante = fichier && !enCours && lecture?.n === attendue ? lecture.valeur : null;
+  // Pendant une relecture (autre unité), le rapport précédent reste affiché, marqué « en cours » : le choix d'unité
+  // garde sa place et son focus ; « Ajouter » attend le nouveau résultat.
+  const affichee = fichier ? lecture?.valeur ?? null : null;
+
+  function choisir(e: ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
-    setFichier(null); setUnite(null); setErreurFichier(""); setRefus(false);
+    setFichier(null); setUnite(null); setErreurFichier(""); setRefus(false); setAnnulee(false); setLecture(null); setErreurCalcul("");
     if (!f) return;
     if (f.size > TAILLE_MAX_OCTETS) { setErreurFichier(MESSAGE_TROP_GROS); return; }
-    try { setFichier({ nom: f.name, texte: await f.text() }); }
-    catch { setErreurFichier("Lecture du fichier impossible."); }
+    // Le fichier lui-même part au Worker : son texte n'est jamais décodé sur le fil principal.
+    setFichier({ nom: f.name, source: f });
+  }
+
+  function annuler() {
+    controleur.current?.abort();
+    numero.current += 1;
+    setFichier(null); setUnite(null); setLecture(null); setAnnulee(true);
+    // Nouveau champ de fichier : le même fichier peut être choisi de nouveau.
+    setCleChamp((k) => k + 1);
   }
 
   return (
     <Dialogue titre="Importer DXF" id="studio-import-dxf-titre" classe="studio-import-dxf" surFermer={surFermer}>
-      <div data-studio-import-dxf>
+      <div data-studio-import-dxf aria-busy={enCours || undefined}>
         <p className="studio-dialogue-aide">DXF ASCII (R12 ou suivant). Lignes et polylignes deviennent des lignes et des rectangles du brouillon ; les autres entités sont listées, jamais écartées en silence. Rien n’est enregistré avant « Enregistrer ».</p>
-        <label>Fichier DXF<input type="file" accept=".dxf,application/dxf,image/vnd.dxf" disabled={!modifiable} onChange={(e) => void choisir(e)} data-studio-import-fichier /></label>
+        <label>Fichier DXF<input key={cleChamp} type="file" accept=".dxf,application/dxf,image/vnd.dxf" disabled={!modifiable} onChange={choisir} data-studio-import-fichier /></label>
         {erreurFichier && <p role="alert" data-studio-import-erreur>{erreurFichier}</p>}
-        {lecture && "erreur" in lecture && <p role="alert" data-studio-import-erreur>{lecture.erreur}</p>}
-        {lecture && "resultat" in lecture && fichier && <Rapport nom={fichier.nom} resultat={lecture.resultat} unite={unite} surUnite={setUnite} />}
+        {enCours && <div className="studio-import-en-cours" role="status" data-studio-import-en-cours data-studio-import-etape={etape}>
+          <progress aria-label="Lecture du DXF en cours" />
+          <span>{ETAPES_LECTURE[etape] ?? ETAPES_LECTURE["attente"]}</span>
+          <button type="button" onClick={annuler} data-studio-import-annuler><Icon name="studio-cancel" size={16} /> Annuler la lecture</button>
+        </div>}
+        {fichier && calculSurFilPrincipal() && <p className="studio-dialogue-aide" role="status" data-studio-calcul-repli>{MESSAGE_REPLI}</p>}
+        {annulee && <p role="status" data-studio-import-annulee>Lecture annulée : rien n’est ajouté. Choisissez de nouveau un fichier.</p>}
+        {erreurCalcul && <p role="alert" data-studio-import-erreur>{erreurCalcul}</p>}
+        {affichee && "erreur" in affichee && <p role="alert" data-studio-import-erreur>{affichee.erreur}</p>}
+        {affichee && "resultat" in affichee && fichier && <Rapport nom={fichier.nom} resultat={affichee.resultat} unite={unite} surUnite={setUnite} enCours={enCours} />}
         {refus && <p role="alert" data-studio-import-erreur>Ajout refusé par le modèle : le brouillon est inchangé.</p>}
         {!modifiable && <p role="status">Lecture seule : l’import est indisponible.</p>}
         <div className="studio-import-actions">
-          <button type="button" disabled={!modifiable || !lecture || !("resultat" in lecture) || lecture.resultat.statut !== "pret" || lecture.resultat.commandes.length === 0}
-            onClick={() => { if (lecture && "resultat" in lecture) { const ok = surAjouter(lecture.resultat.commandes, lecture.resultat); setRefus(!ok); } }} data-studio-import-ajouter>
+          <button type="button" disabled={!modifiable || !courante || !("resultat" in courante) || courante.resultat.statut !== "pret" || courante.resultat.commandes.length === 0}
+            onClick={() => { if (courante && "resultat" in courante) { const ok = surAjouter(courante.resultat.commandes, courante.resultat); setRefus(!ok); } }} data-studio-import-ajouter>
             <Icon name="studio-import-dxf" size={18} /> Ajouter au brouillon
           </button>
         </div>
@@ -59,12 +114,12 @@ export function DialogueImportDxf({ doc, modifiable, surAjouter, surFermer }: Di
   );
 }
 
-export function Rapport({ nom, resultat, unite, surUnite }: { nom: string; resultat: StudioDxfResultat; unite: StudioDxfUnite | null; surUnite: (u: StudioDxfUnite | null) => void }) {
+export function Rapport({ nom, resultat, unite, surUnite, enCours = false }: { nom: string; resultat: StudioDxfResultat; unite: StudioDxfUnite | null; surUnite: (u: StudioDxfUnite | null) => void; enCours?: boolean }) {
   const r = resultat.rapport;
   const inconnue = r.unite.origine !== "fichier";
   const nonPris = r.nonPris.reduce((n, x) => n + x.nombre, 0);
   return (
-    <section className="studio-import-rapport" aria-label="Rapport d’import" data-studio-import-rapport data-studio-import-statut={resultat.statut}
+    <section className="studio-import-rapport" aria-label="Rapport d’import" data-studio-import-rapport data-studio-import-statut={resultat.statut} aria-busy={enCours || undefined} data-studio-import-a-jour={enCours ? "non" : "oui"}
       data-studio-import-objets={r.entites.total} data-studio-import-non-pris={nonPris} data-studio-import-unite={r.unite.valeur ?? ""}>
       <p>Fichier : <span translate="no">{nom}</span></p>
       {r.unite.origine === "fichier"
