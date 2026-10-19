@@ -751,7 +751,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
           if (!lectureApplicable(depart, affiche.current.context, affiche.current.brouillon, brouillonDepart)) throw new Error("lecture dépassée");
           setContext(c); setBrouillon(creerBrouillon(c.revision.document)); cancelTrace(); enr.setSaved(false); setError(""); }} />}
       {historical && <BandeauHistorique projectId={projectId} studyId={studyId} variantId={variantId} adresse={adresseDomaine} />}
-      {!historical && context && catalogueAutorise.data?.droits.motif === "reference-protegee" && <CopieDeTravail projectId={projectId} nomVariante={context.variant.name} adresse={adresseDomaine} />}
+      {/* Exemple protégé : par le mode du projet (un lecteur reçoit le motif « role », mais peut copier — revue #208). */}
+      {!historical && context && (projet.data?.exampleMode === "reference" || catalogueAutorise.data?.droits.motif === "reference-protegee") && <CopieDeTravail projectId={projectId} nomVariante={context.variant.name} adresse={adresseDomaine} />}
       {!historical && <ChoixConflitStudio etat={enr.horsLigne} surRecharger={() => void enr.rechargerServeur()} surReporter={() => void enr.reporter()} />}
       {context && drawing && <div className="studio-corps" data-studio-corps>
         {!telephone && palette}
