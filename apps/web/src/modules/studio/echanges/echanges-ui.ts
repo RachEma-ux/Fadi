@@ -28,7 +28,11 @@ export const TEXTES_ECHANGES = Object.freeze({
   tous: "Tous",
   colonnes: ["Format", "Version du format", "Sens", "Objet", "Statut", "Limite de couverture"] as const,
   details: "Entités, contrôle et sources",
+  /** Nom propre de chaque bloc de détails : format, sens et objet (deux entrées n'ont jamais le même, test). */
+  detailsDe: "Entités, contrôle et sources de {0} ({1}) : {2}",
   entites: "Entités",
+  ecritureIfc: "Entités IFC écrites",
+  jeuxIfc: "Jeux de propriétés IFC écrits",
   couvertureFidelite: "Couverture par type (rapport de fidélité)",
   colonnesFidelite: ["Catégorie", "Type", "Sort à l’export"] as const,
   controle: "Contrôle",
@@ -64,9 +68,13 @@ export function lignesFidelite(e: StudioEntreeEchange): { categorie: string; typ
   }));
 }
 
+/** Nom du bloc de détails d'une entrée (résumé du `<details>`) : distinct pour chaque entrée. */
+export const nomDetails = (e: StudioEntreeEchange): string => gabarit(TEXTES_ECHANGES.detailsDe, e.format, LIBELLES_SENS_ECHANGE[e.sens], e.objet);
+
 /**
- * Textes français affichés par la boîte (hors chemins du dépôt, routes et sources, marqués `translate="no"`) : chacun
- * doit avoir sa traduction dans `en.json` (test).
+ * Textes français affichés par la boîte (hors chemins du dépôt, routes, noms d'entités IFC et références des sources,
+ * marqués `translate="no"`) : chacun doit avoir sa traduction dans `en.json` (test). Le commentaire d'une source est
+ * de la prose : il est traduit.
  */
 export function textesAffiches(): string[] {
   const t = new Set<string>();
@@ -74,8 +82,11 @@ export function textesAffiches(): string[] {
   for (const v of Object.values(TEXTES_ECHANGES)) (Array.isArray(v) ? v : [v]).forEach((x) => ajouter(x as string));
   for (const tab of [LIBELLES_STATUT_ECHANGE, LIBELLES_SENS_ECHANGE, LIBELLES_COUVERTURE_ENTITE, LIBELLES_FAMILLE_ECHANGE]) Object.values(tab).forEach(ajouter);
   for (const e of STUDIO_MATRICE_ECHANGES.entrees) {
-    [e.format, e.versionFormat, e.objet, e.limite, e.controle, e.raison].forEach(ajouter);
+    [e.format, e.versionFormat, e.objet, e.limite, e.controle, e.raison, nomDetails(e)].forEach(ajouter);
     for (const x of e.entites) { ajouter(x.entite); ajouter(x.detail); }
+    for (const s of e.sources) ajouter(s.commentaire);
+    for (const x of e.ecritureIfc?.elements ?? []) ajouter(x.detail);
+    for (const x of e.ecritureIfc?.jeuxDeProprietes ?? []) ajouter(x.detail);
     for (const l of lignesFidelite(e)) { ajouter(l.categorie); ajouter(l.type); l.sorts.forEach(ajouter); }
   }
   return [...t];

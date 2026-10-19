@@ -78,6 +78,15 @@ try {
   const dwg = boite.locator('tr[data-studio-echange="dwg-export"]');
   await dwg.locator("summary").click();
   check("DWG : raison et source D-179 (Atelier) affichées, jamais conforme", /ne vaut pas pour Studio/.test(await dwg.innerText()) && (await dwg.innerText()).includes("D-179"));
+  const ecritureIfc = ifc.locator("[data-studio-echange-ecriture-ifc]");
+  check("IFC : entités réellement écrites listées (IfcWall, IfcTriangulatedFaceSet, IfcDoor), noms non traduits", (await ecritureIfc.locator('[translate="no"]').count()) >= 10
+    && /IfcWall/.test(await ecritureIfc.innerText()) && /IfcTriangulatedFaceSet/.test(await ecritureIfc.innerText()) && /IfcDoor/.test(await ecritureIfc.innerText()));
+  const sources = dwg.locator("[data-studio-echange-sources] li");
+  check("sources : référence non traduite, commentaire en prose traduisible", (await sources.count()) >= 2 && (await sources.locator('cite[translate="no"]').count()) === (await sources.count())
+    && (await dwg.locator("[data-studio-echange-sources]").getAttribute("translate")) === null);
+  const noms = await boite.locator("summary").allInnerTexts();
+  check("chaque bloc de détails a un nom distinct (format, sens, objet)", noms.length === n && new Set(noms).size === n, `${new Set(noms).size}/${noms.length}`);
+  check("intertitres hiérarchisés : h3 sous le h2 de la boîte, aucun h4", (await boite.locator("h2").count()) === 1 && (await boite.locator("h4").count()) === 0 && (await boite.locator("h3").count()) > 0);
 
   // 3. Lecture seule : aucun champ hors du filtre ; filtre par statut.
   check("aucun champ de saisie dans la boîte", (await boite.locator("input, textarea, [contenteditable]").count()) === 0);

@@ -2,13 +2,15 @@
  * Boîte « Matrice d'échanges » (Q, barre Exporter) — E.6-01 à E.6-05, en lecture seule : chaque format lu ou écrit par
  * Studio, par sens, objet, entité et version, avec sa limite de couverture et son statut (livré, non livré, renoncé).
  * La donnée est celle du modèle (`STUDIO_MATRICE_ECHANGES`), recoupée par test avec le code réel ; rien n'est saisi ici
- * et aucune entrée n'est une déclaration de conformité. Chemins du dépôt, routes et sources : `translate="no"`.
+ * et aucune entrée n'est une déclaration de conformité. Chemins du dépôt, routes, noms d'entités IFC et références des
+ * sources : `translate="no"` ; le commentaire d'une source, en prose, est traduit. Chaque bloc de détails porte un nom
+ * propre (format, sens, objet) ; ses intertitres sont des `h3` sous le `h2` de la boîte.
  */
 import { useState } from "react";
 import { STUDIO_MATRICE_ECHANGES, type StudioEntreeEchange } from "@parcours/atelier-model";
 import { Dialogue } from "../planche2d/CatalogueOutils";
 import {
-  entreesFiltrees, FILTRES_STATUT, LIBELLES_COUVERTURE_ENTITE, LIBELLES_FAMILLE_ECHANGE, LIBELLES_SENS_ECHANGE, LIBELLES_STATUT_ECHANGE, lignesFidelite, resumeMatrice,
+  entreesFiltrees, FILTRES_STATUT, LIBELLES_COUVERTURE_ENTITE, LIBELLES_FAMILLE_ECHANGE, LIBELLES_SENS_ECHANGE, LIBELLES_STATUT_ECHANGE, lignesFidelite, nomDetails, resumeMatrice,
   TEXTES_ECHANGES as T, type FiltreStatut,
 } from "./echanges-ui";
 import "./echanges.css";
@@ -52,14 +54,20 @@ function Ligne({ e }: { e: StudioEntreeEchange }) {
       <td>
         {e.limite}
         <details className="studio-echanges-details">
-          <summary>{T.details}</summary>
+          <summary data-studio-echange-details={e.id}>{nomDetails(e)}</summary>
           {e.raison && <p><strong>{T.raison}</strong> {e.raison}</p>}
           {e.entites.length > 0 && <>
-            <h4>{T.entites}</h4>
+            <h3>{T.entites}</h3>
             <ul>{e.entites.map((x) => <li key={x.entite} data-studio-echange-entite={x.couverture}><strong>{x.entite}</strong> — {LIBELLES_COUVERTURE_ENTITE[x.couverture]} — {x.detail}</li>)}</ul>
           </>}
+          {e.ecritureIfc && <>
+            <h3>{T.ecritureIfc}</h3>
+            <ul data-studio-echange-ecriture-ifc>{e.ecritureIfc.elements.map((x) => <li key={x.entites.join()}><span translate="no">{x.entites.map((n, i) => <span key={n}>{i > 0 && ", "}<code>{n}</code></span>)}</span> — {x.detail}</li>)}</ul>
+            <h3>{T.jeuxIfc}</h3>
+            <ul>{e.ecritureIfc.jeuxDeProprietes.map((x) => <li key={x.nom}><code translate="no">{x.nom}</code> — {x.detail}</li>)}</ul>
+          </>}
           {fidelite.length > 0 && <>
-            <h4>{T.couvertureFidelite}</h4>
+            <h3>{T.couvertureFidelite}</h3>
             <table className="studio-echanges-fidelite" data-studio-echange-fidelite={e.fidelite}>
               <thead><tr>{T.colonnesFidelite.map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
               <tbody>{fidelite.map((l) => <tr key={`${l.categorie}-${l.type}`}><td>{l.categorie}</td><td>{l.type}</td><td><ul>{l.sorts.map((s) => <li key={s}>{s}</li>)}</ul></td></tr>)}</tbody>
@@ -68,13 +76,13 @@ function Ligne({ e }: { e: StudioEntreeEchange }) {
           {e.controle && <p><strong>{T.controle}</strong> {e.controle}</p>}
           {e.route && <p><strong>{T.route}</strong> <code translate="no">{e.route}</code></p>}
           {e.preuves && <>
-            <h4>{T.preuves}</h4>
+            <h3>{T.preuves}</h3>
             <ul translate="no" className="studio-echanges-preuves">
               {[...e.preuves.code, ...e.preuves.tests, ...(e.preuves.routes ?? []), ...(e.preuves.interfaces ?? [])].map((x) => <li key={`${x.fichier}#${x.motif}`}><code>{x.fichier}</code> · <code>{x.motif}</code></li>)}
             </ul>
           </>}
-          <h4>{T.sources}</h4>
-          <ul translate="no">{e.sources.map((s) => <li key={s}>{s}</li>)}</ul>
+          <h3>{T.sources}</h3>
+          <ul data-studio-echange-sources>{e.sources.map((s) => <li key={s.reference}><cite translate="no">{s.reference}</cite>{s.commentaire && <> — <span>{s.commentaire}</span></>}</li>)}</ul>
         </details>
       </td>
     </tr>

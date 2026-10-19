@@ -33,6 +33,9 @@ export const STUDIO_STATUTS_FIDELITE: readonly StudioStatutFidelite[] = Object.f
 export const STUDIO_RAISONS_FIDELITE = Object.freeze([
   // Exact
   "trace-exact", "arcs-exacts", "renflements-exacts", "cote-tracee", "texte-exact", "extrusion-exacte", "profil-exact", "ouverture-evidee",
+  // Exact, en surface : ligne ou polyligne ouverte droite extrudée sans épaisseur → `IfcTriangulatedFaceSet` ouvert
+  // (aucun solide extrudé n'est écrit).
+  "surface-exacte",
   // Approché
   "extrusion-non-portee", "arcs-discretises", "cote-eclatee", "texte-police-generique", "texte-ascii-echappe", "texte-remplace", "texte-tronque",
   "ouverture-en-lacune",
@@ -86,7 +89,9 @@ function texteDxf(content: string): StudioJugementFidelite {
  *   (ligne, attaches, valeur) ; texte en police générique (`sans-serif`, corps = hauteur) ; solides libres absents ;
  * - DXF R12 : LINE, POLYLINE fermée, CIRCLE, ARC exacts, renflements en code 42 ; cotes éclatées en LINE + TEXT (non
  *   associatives, hauteur du texte = réglage d'export) ; TEXT à la hauteur saisie, ASCII échappé ; solides absents ;
- * - IFC : objets extrudés seulement (non extrudés : non couverts) ; cercle en profil exact ; arcs et renflements
+ * - IFC : objets extrudés seulement (non extrudés : non couverts) ; ligne avec épaisseur, rectangle et polyligne fermée
+ *   en extrusion exacte ; ligne sans épaisseur et polyligne ouverte droite en surface verticale exacte
+ *   (`IfcTriangulatedFaceSet`, aucun solide extrudé) ; cercle en profil exact ; arcs et renflements
  *   discrétisés (`STUDIO_SEGMENTS_PAR_TOUR`) ; cotes et annotations non écrites ; solides libres en profils exacts ;
  * - architecture (A.4) : mur en SVG / DXF tracé en plan (contour, lacunes aux ouvertures) sans sa hauteur ni sa base
  *   (approché, comme une extrusion déclarée), extrusion exacte en IFC
@@ -109,14 +114,14 @@ export const STUDIO_CAPACITES_EXPORT: {
   readonly scenes: { readonly [K in StudioElementVisualisation["type"]]: ParFormat<Extract<StudioElementVisualisation, { type: K }>> };
 } = Object.freeze({
   objets: {
-    line: { svg: trace2d("trace-exact"), dxf: trace2d("trace-exact"), ifc: ifc3d(() => exact("extrusion-exacte")) },
+    line: { svg: trace2d("trace-exact"), dxf: trace2d("trace-exact"), ifc: ifc3d((o) => exact(o.extrusion && "thickness" in o.extrusion && o.extrusion.thickness !== undefined ? "extrusion-exacte" : "surface-exacte")) },
     rectangle: { svg: trace2d("trace-exact"), dxf: trace2d("trace-exact"), ifc: ifc3d(() => exact("extrusion-exacte")) },
     circle: { svg: trace2d("trace-exact"), dxf: trace2d("trace-exact"), ifc: ifc3d(() => exact("profil-exact")) },
     arc: { svg: trace2d("arcs-exacts"), dxf: trace2d("arcs-exacts"), ifc: ifc3d(() => approche("arcs-discretises")) },
     polyline: {
       svg: (o) => trace2d(aRenflement(o) ? "arcs-exacts" : "trace-exact")(o),
       dxf: (o) => trace2d(aRenflement(o) ? "renflements-exacts" : "trace-exact")(o),
-      ifc: (o) => ifc3d(() => (aRenflement(o) ? approche("arcs-discretises") : exact("extrusion-exacte")))(o),
+      ifc: (o) => ifc3d(() => (aRenflement(o) ? approche("arcs-discretises") : exact(o.closed ? "extrusion-exacte" : "surface-exacte")))(o),
     },
   },
   cotes: {
