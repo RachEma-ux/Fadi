@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
-import { projectMembers, studioRevisions, studioStudies, studioVariants, type StudioContext, type StudioProvenance } from "../db/schema.js";
+import { projectMembers, studioRevisions, studioStudies, studioVariants, type StudioContext, type StudioExampleInstall, type StudioProvenance } from "../db/schema.js";
 import { newId } from "./ids.js";
 import { loadProjectAccess, projectAccessRefusal, type AccessibleProject, type ProjectNeed } from "./owned-project.js";
 import { orchestrerCommandesDansTransaction, type Tx } from "./atelier-validation.js";
@@ -67,6 +67,17 @@ export function assertAccess(access: AccessibleProject | null, actorId: string, 
  * l'utilisateur). Aucune route ne la reçoit du client : seule `lib/studio-exemple.ts` la passe.
  */
 export type StudioEcriture = "modify" | "installation-exemple";
+
+/**
+ * Préfixe RÉSERVÉ des identifiants de requête de l'installation d'une étude exemple (`lib/studio-exemple.ts`). Un
+ * identifiant client (étude, variante, lot de commandes) qui commence par lui est refusé (400) : il ne peut ni rejouer
+ * ni préempter une étape de l'installation. Comparaison sans casse.
+ */
+export const STUDIO_PREFIXE_EXEMPLE = "exemple-studio-";
+function refuserPrefixeReserve(requestId: string | undefined, ecriture: StudioEcriture): void {
+  if (ecriture !== "modify" || requestId === undefined || !requestId.toLowerCase().startsWith(STUDIO_PREFIXE_EXEMPLE)) return;
+  throw new StudioRequestError(400, { error: "invalid_input", code: "request_id_reserve", message: `Identifiant de requête réservé à l'installation de l'exemple Studio (préfixe « ${STUDIO_PREFIXE_EXEMPLE} »).` });
+}
 function assertEcriture(access: AccessibleProject, actorId: string, ecriture: StudioEcriture): void {
   if (ecriture === "modify") { assertAccess(access, actorId, "modify"); return; }
   assertAccess(access, actorId, "owner");
@@ -239,10 +250,14 @@ async function replayCreation(tx: Tx, variantId: string, sources: InitialSource[
   return { ...structuredClone(initial.response), replayed: true };
 }
 
-/** Options internes d'une création (jamais lues du corps d'une requête) : droit d'écriture, nom de la variante initiale. */
-export interface StudioCreationOptions { ecriture?: StudioEcriture; nomVarianteInitiale?: string }
+/**
+ * Options internes d'une création (jamais lues du corps d'une requête) : droit d'écriture, nom de la variante initiale,
+ * marquage d'étude exemple (`example_install`, écrit dans la même transaction que l'étude).
+ */
+export interface StudioCreationOptions { ecriture?: StudioEcriture; nomVarianteInitiale?: string; exampleInstall?: StudioExampleInstall }
 
 export async function createStudioStudy(projectId: string, actorId: string, name: string, requestId?: string, options: StudioCreationOptions = {}): Promise<StudioCreation> {
+  refuserPrefixeReserve(requestId, options.ecriture ?? "modify");
   return db.transaction(async (tx) => {
     // Verrou du projet avant la recherche du rejeu : deux créations concurrentes du même requestId sont sérialisées.
     assertEcriture(await lockedAccess(tx, projectId, actorId), actorId, options.ecriture ?? "modify");
@@ -257,7 +272,7 @@ export async function createStudioStudy(projectId: string, actorId: string, name
       variant: { id: variantId, name: options.nomVarianteInitiale ?? "Variante initiale", studyId, headRevisionId: revisionId },
       revision: { id: revisionId, parentRevisionId: null, document: newStudioDocument(newId("studio_document")) }, canWrite: true,
     };
-    await tx.insert(studioStudies).values({ id: studyId, projectId, name, initialVariantId: variantId, creationRequestId: requestId ?? null });
+    await tx.insert(studioStudies).values({ id: studyId, projectId, name, initialVariantId: variantId, creationRequestId: requestId ?? null, exampleInstall: options.exampleInstall ?? null });
     await tx.insert(studioVariants).values({ id: variantId, studyId, name: response.variant.name, headRevisionId: revisionId });
     await tx.insert(studioRevisions).values({
       id: revisionId, variantId, parentRevisionId: null, document: response.revision.document, envelope: null,
@@ -278,6 +293,7 @@ export interface StudioDerivationSource { variantId: string; revisionId?: string
  * nom et même source, sinon 409 request_conflict ; une étude archivée refuse toute nouvelle variante (409 archived).
  */
 export async function createStudioVariant(projectId: string, studyId: string, actorId: string, name: string, requestId?: string, from?: StudioDerivationSource, ecriture: StudioEcriture = "modify"): Promise<StudioCreation> {
+  refuserPrefixeReserve(requestId, ecriture);
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
@@ -427,6 +443,7 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
   // Capture avant le premier await : aucun changement du payload durant les verrous/rejeu.
   scope = Object.freeze({ projectId: scope.projectId, studyId: scope.studyId, variantId: scope.variantId });
   const envelope = parseStudioEnvelope(input);
+  refuserPrefixeReserve(envelope.requestId, ecriture);
   const payloadHash = studioPayloadHash(envelope);
   return db.transaction(async (tx) => {
     let current: StudioRead | undefined;

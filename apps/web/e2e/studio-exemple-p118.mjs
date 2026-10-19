@@ -10,9 +10,13 @@
  *      ce que le convertisseur a produit (rapport renvoyé par POST …/studio/exemple) ; domaines et barre d'outils
  *      visibles ;
  *   3. « projet déjà importé sans étude » : une copie de travail du P.118 (POST /projects/:id/copies, provenance
- *      conservée, Studio non copié) n'a aucune étude → bouton « Charger l'exemple Studio P.118 » (propriétaire) →
- *      étude créée et ouverte ; un second appel est idempotent (200, même étude, rien écrit) ; un projet hors exemple
- *      reçoit 409 exemple_indisponible et ne voit pas le bouton ;
+ *      conservée, Studio non copié) n'a aucune étude (état `absente` dans la liste des études) → bouton « Charger
+ *      l'exemple Studio P.118 » (propriétaire ; aria-busy et zone aria-live pendant le chargement) → étude créée,
+ *      rapport des absents affichable (replié), lien vers l'étude ; un second appel est idempotent (200, même étude,
+ *      rien écrit) ; le préfixe réservé est refusé dans un identifiant de requête du client (400) ; un projet hors
+ *      exemple reçoit 409 exemple_indisponible, `exemple: null`, et ne voit pas le bouton. La REPRISE d'une installation
+ *      interrompue (état `partielle`, libellé « Reprendre l'installation de l'exemple ») n'est pas provoquable par l'API
+ *      publique : elle est couverte sans base par `apps/api/src/lib/studio-exemple.test.ts` ;
  *   4. archive : sauvegarder la copie (GET /projects/:id/archive), la supprimer, la restaurer (POST /projects/import) →
  *      l'étude exemple et ses 6 variantes sont restaurées (identifiants et documents identiques) ; l'installation la
  *      reconnaît complète (200).
@@ -54,9 +58,11 @@ try {
   // 1. Import de l'exemple : l'étude exemple est installée avec le projet.
   const t0 = Date.now();
   const imp = await api("post", "/examples/p118-exemple-complet/import");
-  check("import de l'exemple P.118 : 201, référence protégée", imp.status === 201 && imp.body?.exampleMode === "reference", `${imp.status} en ${Date.now() - t0} ms`);
+  check("import de l'exemple P.118 : 201, référence protégée, studio.installe", imp.status === 201 && imp.body?.exampleMode === "reference" && imp.body?.studio?.installe === true, `${imp.status} en ${Date.now() - t0} ms ${JSON.stringify(imp.body?.studio)}`);
   const pid = imp.body.id;
-  const etudes = (await api("get", `${studio(pid)}/studies`)).body?.studies ?? [];
+  const liste = (await api("get", `${studio(pid)}/studies`)).body;
+  const etudes = liste?.studies ?? [];
+  check("liste des études : état de l'exemple « complete », étude désignée", liste?.exemple?.etat === "complete" && liste.exemple.studyId === etudes[0]?.id, JSON.stringify(liste?.exemple));
   check("import : une étude « Exemple Studio — P.118 »", etudes.length === 1 && etudes[0].name === NOM_ETUDE, JSON.stringify(etudes.map((s) => s.name)));
   const sid = etudes[0]?.id;
   const variantes = await variantesDe(pid, sid);
@@ -65,6 +71,9 @@ try {
   check("installation déjà faite : 200, created false, même étude (rien écrit)", installe.status === 200 && installe.body?.created === false && installe.body?.etude?.study?.id === sid, String(installe.status));
   const rapport = installe.body?.rapport?.niveaux ?? [];
   check("rapport de conversion : 6 niveaux, poteaux / escaliers / métadonnées rooms déclarés absents", rapport.length === 6 && rapport.every((n) => ["columns", "stairs", "rooms"].every((f) => n.rapport.absents.some((a) => a.famille === f))));
+  check("rapport enregistré : version, empreinte, chaque niveau relié à sa variante (même ordre)", typeof installe.body?.rapport?.version === "number" && /^[0-9a-f]{12}$/.test(installe.body?.rapport?.empreinte ?? "")
+    && JSON.stringify(rapport.map((n) => n.variantId)) === JSON.stringify(variantes.map((v) => v.id)));
+  check("rapport exhaustif : clés non reprises déclarées (ex. walls · color, paths · height)", rapport.some((n) => n.rapport.absents.some((a) => a.famille === "walls · color")) && rapport.some((n) => n.rapport.absents.some((a) => a.famille === "paths · height")));
   const rdc = variantes.find((v) => v.name === "RDC");
   const revisions = (await api("get", `${studio(pid)}/studies/${sid}/variants/${rdc.id}/revisions`)).body?.revisions ?? [];
   check("RDC peuplé par le contrat de commandes : initialisation puis lots de commandes (aucune insertion directe)", revisions.length >= 2 && revisions.at(-1).source === "variant-initialization" && revisions.slice(0, -1).every((r) => r.source === "authenticated-session"), revisions.map((r) => r.source).join(", "));
@@ -104,11 +113,30 @@ try {
   const projetCopie = (await api("get", `/projects/${cid}`)).body;
   const etudesCopie = (await api("get", `${studio(cid)}/studies`)).body?.studies ?? [];
   check("copie de l'exemple : provenance P.118 conservée, aucune étude Studio", copie.status === 201 && projetCopie?.sourceExampleId === "p118-exemple-complet" && etudesCopie.length === 0, `${copie.status} ${etudesCopie.length}`);
+  const listeCopie = (await api("get", `${studio(cid)}/studies`)).body;
+  check("copie : état de l'exemple « absente »", listeCopie?.exemple?.etat === "absente" && listeCopie.exemple.studyId === null, JSON.stringify(listeCopie?.exemple));
+  const reserve = await api("post", `${studio(cid)}/studies`, { name: "Préfixe réservé", requestId: "exemple-studio-p118.v2.000000000000" });
+  check("préfixe réservé de l'exemple refusé dans un identifiant de requête client (400, rien créé)", reserve.status === 400 && reserve.body?.code === "request_id_reserve"
+    && ((await api("get", `${studio(cid)}/studies`)).body?.studies ?? []).length === 0, `${reserve.status} ${JSON.stringify(reserve.body)}`);
   await page.goto(`${BASE}/studio/projets/${cid}`);
   const bouton = page.locator("[data-studio-charger-exemple]");
   await bouton.waitFor();
   check("page Studio d'un projet P.118 sans étude : bouton « Charger l'exemple Studio P.118 »", (await bouton.textContent())?.trim() === "Charger l’exemple Studio P.118");
+  check("zone d'état aria-live présente", (await page.locator("[data-studio-exemple-statut]").getAttribute("aria-live")) === "polite");
+  const apercuAvant = await page.locator("[data-studio-apercu-domaines]").evaluate((d) => d.open);
+  check("aperçu des domaines ouvert sans étude", apercuAvant === true);
   await bouton.click();
+  const occupe = await page.locator("[data-studio-exemple-p118]").getAttribute("aria-busy").catch(() => null);
+  await page.locator("[data-studio-ouvrir-exemple]").waitFor({ timeout: 120000 });
+  check("pendant le chargement : aria-busy posé (ou chargement déjà fini)", occupe === "true" || occupe === "false", String(occupe));
+  check("après installation : statut « Étude exemple installée. », aria-busy retombé", (await page.locator("[data-studio-exemple-statut]").textContent())?.trim() === "Étude exemple installée."
+    && (await page.locator("[data-studio-exemple-p118]").getAttribute("aria-busy")) === "false");
+  const rapportUi = page.locator("[data-studio-exemple-rapport]");
+  check("rapport des absents replié par défaut, 6 niveaux", !(await rapportUi.evaluate((d) => d.open)) && (await rapportUi.locator("[data-studio-exemple-niveau]").count()) === 6);
+  await rapportUi.locator("summary").click();
+  check("rapport des absents déplié : poteaux déclarés absents", await rapportUi.getByText("columns", { exact: true }).first().isVisible());
+  check("aperçu des domaines : pas de bascule pendant / après le chargement", (await page.locator("[data-studio-apercu-domaines]").evaluate((d) => d.open)) === apercuAvant);
+  await page.locator("[data-studio-ouvrir-exemple]").click();
   await page.waitForURL(/\/etudes\/studio_study_/, { timeout: 120000 });
   const sidCopie = decodeURIComponent(page.url().split("/etudes/")[1].split(/[/?]/)[0]);
   await page.getByText("R+3 · Direction").first().waitFor();
@@ -122,6 +150,7 @@ try {
   const autre = (await api("post", "/projects", { code: `P.EX.${randomUUID().slice(0, 6)}`, name: "Hors exemple (recette)" })).body;
   const horsExemple = await api("post", `${studio(autre.id)}/exemple`);
   check("projet hors exemple : 409 exemple_indisponible", horsExemple.status === 409 && horsExemple.body?.error === "exemple_indisponible", String(horsExemple.status));
+  check("projet hors exemple : exemple null dans la liste des études", (await api("get", `${studio(autre.id)}/studies`)).body?.exemple === null);
   await page.goto(`${BASE}/studio/projets/${autre.id}`);
   await page.locator("[data-studio-aucune-etude]").waitFor();
   check("projet hors exemple : aucun bouton de chargement", (await page.locator("[data-studio-charger-exemple]").count()) === 0);

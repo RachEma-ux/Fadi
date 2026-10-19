@@ -743,6 +743,11 @@ CREATE INDEX IF NOT EXISTS studio_study_steps_step_idx ON studio_study_steps(ste
 -- nullables ajoutées sans réécrire les lignes existantes ; contraintes recréées à chaque application, NOT VALID.
 ALTER TABLE studio_studies ADD COLUMN IF NOT EXISTS updated_at timestamptz;
 ALTER TABLE studio_studies ADD COLUMN IF NOT EXISTS archived_at timestamptz;
+-- Étude exemple installée par le serveur (`lib/studio-exemple.ts`) : marquage EXPLICITE (exemple, version et empreinte
+-- de la conversion, préfixe des identifiants de requête, état complet ou non, rapport de conversion enregistré avec
+-- l'installation). NULL = étude ordinaire. Colonne nullable additive : les archives antérieures se restaurent telles
+-- quelles (colonne absente → NULL), la version des tables archivées est inchangée.
+ALTER TABLE studio_studies ADD COLUMN IF NOT EXISTS example_install jsonb;
 ALTER TABLE studio_variants ADD COLUMN IF NOT EXISTS updated_at timestamptz;
 ALTER TABLE studio_variants ADD COLUMN IF NOT EXISTS archived_at timestamptz;
 ALTER TABLE studio_variants ADD COLUMN IF NOT EXISTS derived_from_variant_id text;

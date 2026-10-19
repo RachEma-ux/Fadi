@@ -171,13 +171,17 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
   // Étude exemple de Studio (P.118) : installée APRÈS la validation de l'import, par le contrat de commandes Studio
   // (ses propres transactions, `lib/studio-exemple.ts`). Choix le plus sûr : un échec n'annule pas l'import (le projet
   // reste valable et complet) ; il est journalisé, et le propriétaire relance l'installation depuis la page Studio du
-  // projet (`POST /projects/:id/studio/exemple`, idempotente, reprend où elle s'est arrêtée).
+  // projet (`POST /projects/:id/studio/exemple`, idempotente, reprend où elle s'est arrêtée). La réponse le dit :
+  // `studio: { installe }` (exemple P.118 seulement ; absent pour un exemple sans étude Studio).
   if (estProjetExempleP118(exampleId)) {
-    try { await installerExempleStudio(id, req.user!.id); }
+    let installe = false;
+    try { await installerExempleStudio(id, req.user!.id); installe = true; }
     catch (error) {
       // eslint-disable-next-line no-console
       console.error(JSON.stringify({ level: "warn", message: `exemple Studio non installé pour ${id} : ${error instanceof Error ? error.message : String(error)}` }));
     }
+    res.status(201).json({ ...created, studio: { installe } });
+    return;
   }
 
   res.status(201).json(created);

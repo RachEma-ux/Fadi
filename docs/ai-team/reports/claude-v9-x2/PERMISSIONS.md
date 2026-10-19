@@ -20,7 +20,7 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `POST /studies` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 |  |
 | `GET /studies/:studyId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `PATCH /studies/:studyId` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 |  |
-| `POST /exemple` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 409 exemple_indisponible | étude exemple P.118 : écriture système du propriétaire, admise dans la référence protégée ; projet hors exemple → 409 exemple_indisponible |
+| `POST /exemple` | proprietaire | 404 | 403 | 403 | 403 | admis | admis | admis | 409 exemple_indisponible | étude exemple P.118 : écriture système du propriétaire, admise dans la référence protégée ; projet hors exemple → 409 exemple_indisponible avant tout verrou ; le verrou d'édition d'un autre compte (423) ne s'oppose qu'à une installation qui écrit, jamais à la lecture d'une étude exemple complète (lib/studio-exemple.test.ts) |
 | `POST /studies/:studyId/archive` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 |  |
 | `POST /studies/:studyId/unarchive` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 |  |
 | `GET /studies/:studyId/compare` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |

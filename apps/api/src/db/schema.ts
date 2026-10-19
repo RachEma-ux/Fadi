@@ -631,7 +631,21 @@ export const studioStudies = pgTable("studio_studies", {
   // Cycle de vie : dernier renommage ou (dés)archivage ; archivée = masquée des listes, lisible, non modifiable.
   updatedAt: timestamp("updated_at", { withTimezone: true }),
   archivedAt: timestamp("archived_at", { withTimezone: true }),
+  // Étude exemple installée par le serveur (`lib/studio-exemple.ts`) : marquage explicite ; null = étude ordinaire.
+  exampleInstall: jsonb("example_install").$type<StudioExampleInstall>(),
 }, (t) => [index("studio_studies_project_idx").on(t.projectId)]);
+
+/** Marquage d'une étude exemple (`studio_studies.example_install`). `rapport` : rapport de conversion enregistré. */
+export interface StudioExampleInstall {
+  exampleId: string;
+  /** Version du convertisseur et empreinte (SHA-256 tronquée) des commandes produites. */
+  version: number;
+  empreinte: string;
+  /** Préfixe des identifiants de requête de l'installation (étude, variantes, lots). */
+  prefixe: string;
+  complete: boolean;
+  rapport: unknown;
+}
 
 export const studioVariants = pgTable("studio_variants", {
   id: text("id").primaryKey(),

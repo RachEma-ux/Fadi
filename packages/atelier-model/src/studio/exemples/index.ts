@@ -4,7 +4,7 @@
  * la caractérisation, ne changent pas.
  */
 export {
-  CALQUE_NOMS_LOCAUX_P118, CONVENTION_HAUTEUR_TEXTE_P118, SOURCE_PROPRIETES_P118,
+  CALQUE_NOMS_LOCAUX_P118, CLES_CONSOMMEES_P118, CONVENTION_HAUTEUR_TEXTE_P118, FAMILLES_P118, SOURCE_PROPRIETES_P118, VERSION_CONVERSION_P118,
   convertirExempleP118, convertirNiveauP118, lotsDeCommandes,
-  type AbsentConversion, type ComptesConversion, type ConventionConversion, type ConversionExempleP118, type ConversionNiveauP118, type LigneConversion, type RefusConversion,
+  type AbsentConversion, type ComptesConversion, type ConventionConversion, type ConversionExempleP118, type ConversionNiveauP118, type FamilleP118, type LigneConversion, type RefusConversion,
 } from "./p118.js";

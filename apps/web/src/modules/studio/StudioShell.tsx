@@ -263,8 +263,8 @@ function StudioProjet({ projectId, archives }: { projectId: string; archives: bo
           ))}
         </ul>
       )}
-      {p.role === "proprietaire" && p.sourceExampleId === EXEMPLE_P118 && etudes.data?.studies.length === 0 && <ChargerExempleP118 projectId={p.id} />}
-      <ApercuDomaines ouvert={etudes.data?.studies.length === 0} />
+      {p.role === "proprietaire" && etudes.data?.exemple && <ChargerExempleP118 key={p.id} projectId={p.id} etat={etudes.data.exemple.etat} />}
+      <ApercuDomaines key={p.id} ouvert={etudes.data ? etudes.data.studies.length === 0 : undefined} />
       {lecteur
         ? <p data-studio-lecture-seule>Ce projet vous est partagé en lecture : la création d’études est réservée à son propriétaire et à ses éditeurs.</p>
         : <CreerEtude projectId={p.id} indisponible={etudes.isError} />}
@@ -272,39 +272,77 @@ function StudioProjet({ projectId, archives }: { projectId: string; archives: bo
   );
 }
 
-/** Exemple importable P.118 : seul exemple dont le serveur sait installer une étude Studio (`lib/studio-exemple.ts`). */
-const EXEMPLE_P118 = "p118-exemple-complet";
+/** Motif d'un refus de l'installation de l'exemple, restitué en clair (statut et code du serveur). */
+function echecExemple(err: unknown): string {
+  if (!(err instanceof ApiError) || err.status >= 500) return "Chargement non confirmé. Réessayez : l’installation reprend sans doublon.";
+  if (err.status === 423) return "Chargement refusé : un autre compte modifie ce projet en ce moment. Réessayez quand il aura terminé.";
+  if (err.status === 403) return "Chargement refusé : seul le propriétaire du projet peut installer l’étude exemple.";
+  if (err.status === 409 && err.code === "exemple_version_changee") return "Chargement refusé : l’installation interrompue vient d’une autre version de l’exemple. Archivez cette étude pour installer la version actuelle.";
+  if (err.status === 409) return "Chargement refusé : ce projet ne vient pas de l’exemple P.118.";
+  return "Chargement refusé par le serveur.";
+}
+
+type RapportExemple = Awaited<ReturnType<typeof api.installStudioExample>>;
 
 /**
  * « Charger l’exemple Studio P.118 » : ACTION DE PAGE (comme « Créer l’étude »), pas un outil d’éditeur — elle ne
  * figure donc ni au registre des outils, ni dans une barre, et n’a pas de raccourci (la règle d’or porte sur les outils
- * et commandes de l’éditeur). Propriétaire seulement, projet issu de l’exemple sans étude : le serveur installe l’étude
- * exemple (une variante par niveau, par le contrat de commandes), de façon idempotente, puis l’étude s’ouvre.
+ * et commandes de l’éditeur). Propriétaire seulement, projet issu de l’exemple (le serveur le dit : `exemple` de la
+ * liste des études) tant que l’étude exemple n’est pas complète ; « Reprendre l’installation de l’exemple » si elle est
+ * partielle. Le serveur installe l’étude (une variante par niveau, par le contrat de commandes), de façon idempotente ;
+ * la page garde ensuite le lien vers l’étude et le rapport des éléments déclarés absents (replié).
  */
-function ChargerExempleP118({ projectId }: { projectId: string }) {
+function ChargerExempleP118({ projectId, etat }: { projectId: string; etat: "absente" | "partielle" | "complete" }) {
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState("");
-  const navigate = useNavigate();
+  const [resultat, setResultat] = useState<RapportExemple | null>(null);
   const client = useQueryClient();
   async function charger() {
     if (enCours) return;
     setEnCours(true); setErreur("");
+    let r: RapportExemple | null = null;
     try {
-      const r = await api.installStudioExample(projectId);
-      await client.invalidateQueries({ queryKey: ["studio-studies", projectId] });
-      navigate(cheminEtudeStudio(projectId, r.etude.study.id));
+      r = await api.installStudioExample(projectId);
     } catch (err) {
-      setErreur(err instanceof ApiError && err.status < 500 ? "Chargement refusé par le serveur." : "Chargement non confirmé. Réessayez : l’installation reprend sans doublon.");
-    } finally {
-      setEnCours(false);
+      setErreur(echecExemple(err));
     }
+    // Résultat et fin du chargement dans le même rendu (aria-busy retombe avec l'annonce), puis relecture de la liste.
+    if (r) setResultat(r);
+    setEnCours(false);
+    if (r) await client.invalidateQueries({ queryKey: ["studio-studies", projectId] });
   }
+  if (etat === "complete" && !resultat) return null;
+  const absents = resultat?.rapport.niveaux.reduce((n, x) => n + x.rapport.absents.length, 0) ?? 0;
   return (
-    <div className="studio-create" data-studio-exemple-p118>
+    <div className="studio-create" data-studio-exemple-p118 data-studio-exemple-etat={resultat ? "complete" : etat} aria-busy={enCours}>
       <h3>Exemple Studio</h3>
       <p>Ce projet vient de l’exemple P.118 : son étude exemple dessine chaque niveau à partir des plans de l’exemple (murs, ouvertures, cotes, textes, contours). Ce que Studio ne sait pas représenter est déclaré absent, jamais simulé.</p>
-      <button type="button" disabled={enCours} onClick={() => void charger()} data-studio-charger-exemple>{enCours ? "Chargement de l’exemple…" : "Charger l’exemple Studio P.118"}</button>
+      {!resultat && (
+        <button type="button" disabled={enCours} aria-busy={enCours} onClick={() => void charger()} data-studio-charger-exemple>
+          {enCours ? "Chargement de l’exemple…" : etat === "partielle" ? "Reprendre l’installation de l’exemple" : "Charger l’exemple Studio P.118"}
+        </button>
+      )}
+      <p role="status" aria-live="polite" data-studio-exemple-statut>
+        {enCours ? "Installation de l’étude exemple en cours : chaque niveau est dessiné par lots de commandes." : resultat ? "Étude exemple installée." : ""}
+      </p>
       {erreur && <p role="alert">{erreur}</p>}
+      {resultat && (
+        <>
+          <Link to={cheminEtudeStudio(projectId, resultat.etude.study.id)} data-studio-ouvrir-exemple>Ouvrir l’étude exemple →</Link>
+          <details data-studio-exemple-rapport>
+            <summary>{`Rapport de conversion : éléments déclarés absents (${absents})`}</summary>
+            {resultat.rapport.niveaux.map((n) => (
+              <section key={n.niveauId} data-studio-exemple-niveau={n.niveauId}>
+                <h4 translate="no">{n.nom}</h4>
+                {n.rapport.absents.length ? (
+                  <ul translate="no">{n.rapport.absents.map((a, i) => <li key={`${i}-${a.famille}`}><code>{a.famille}</code> × {a.nombre} — {a.raison}</li>)}</ul>
+                ) : <p>Aucun élément déclaré absent.</p>}
+                {n.rapport.refus.length > 0 && <p>{`Éléments refusés : ${n.rapport.refus.length}.`}</p>}
+              </section>
+            ))}
+          </details>
+        </>
+      )}
     </div>
   );
 }

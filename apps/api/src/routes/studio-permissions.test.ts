@@ -104,7 +104,10 @@ export const ROUTES: Route[] = [
   { route: "POST /studies", besoin: "modification", url: () => `${S}/studies`, body: { name: "Nouvelle" } },
   { route: "GET /studies/:studyId", besoin: "lecture", url: () => `${S}/studies/s` },
   { route: "PATCH /studies/:studyId", besoin: "modification", url: () => `${S}/studies/s`, body: { name: "Renommée" } },
-  { route: "POST /exemple", besoin: "proprietaire", url: () => `${S}/exemple`, note: "étude exemple P.118 : écriture système du propriétaire, admise dans la référence protégée ; projet hors exemple → 409 exemple_indisponible" },
+  {
+    route: "POST /exemple", besoin: "proprietaire", url: () => `${S}/exemple`, acteurs: { "proprietaire-verrou": "admis" },
+    note: "étude exemple P.118 : écriture système du propriétaire, admise dans la référence protégée ; projet hors exemple → 409 exemple_indisponible avant tout verrou ; le verrou d'édition d'un autre compte (423) ne s'oppose qu'à une installation qui écrit, jamais à la lecture d'une étude exemple complète (lib/studio-exemple.test.ts)",
+  },
   { route: "POST /studies/:studyId/archive", besoin: "modification", url: () => `${S}/studies/s/archive` },
   { route: "POST /studies/:studyId/unarchive", besoin: "modification", url: () => `${S}/studies/s/unarchive` },
   { route: "GET /studies/:studyId/compare", besoin: "lecture", url: () => `${S}/studies/s/compare?from=v&to=v` },

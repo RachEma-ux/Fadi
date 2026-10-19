@@ -4,7 +4,7 @@ import { applyStudioCommands } from "../composition/commandes.js";
 import { newStudioDocument, validateStudioDocument } from "../composition/document.js";
 import type { StudioCommand, StudioDocument } from "../composition/types.js";
 import type { StudioOpening, StudioWall } from "../architecture/types.js";
-import { CALQUE_NOMS_LOCAUX_P118, CONVENTION_HAUTEUR_TEXTE_P118, convertirExempleP118, convertirNiveauP118, lotsDeCommandes, type ConversionNiveauP118 } from "./index.js";
+import { CALQUE_NOMS_LOCAUX_P118, CLES_CONSOMMEES_P118, CONVENTION_HAUTEUR_TEXTE_P118, convertirExempleP118, convertirNiveauP118, FAMILLES_P118, lotsDeCommandes, VERSION_CONVERSION_P118, type ConversionNiveauP118, type FamilleP118 } from "./index.js";
 
 type Brut = Record<string, any>;
 const JEU = JSON.parse(readFileSync(new URL("../../../../../apps/api/src/data/examples/p118-native-model.json", import.meta.url), "utf8")) as { domains: Brut };
@@ -151,13 +151,66 @@ describe("Exemple P.118 → commandes Studio (convertisseur pur)", () => {
       expect(absent("columns")?.nombre).toBe(n.columns.length);
       expect(absent("stairs")?.nombre).toBe(n.stairs.length);
       expect(absent("rooms")?.raison).toMatch(/repère distinct/);
-      expect(absent("areas")).toBeDefined();
+      expect(absent("niveau · areas")).toBeDefined();
       expect(c.rapport.conventions.map((x) => x.nom)).toContain("texte · hauteur");
       // Aucun solide, aucune extrusion, aucun objet hors des familles déclarées.
       const doc = DOCS.get(c.niveauId)!;
       expect(doc.solides ?? []).toEqual([]);
       expect(doc.objects.every((o) => o.type === "polyline" && !("extrusion" in o))).toBe(true);
     }
+  });
+
+  it("rapport exhaustif : union des clés du jeu P.118 − clés consommées − clés déclarées absentes = ∅", () => {
+    const objets = (n: Brut, f: FamilleP118): Brut[] => f === "niveau" ? [n] : f === "layers" ? Object.values(n.layers ?? {}) as Brut[]
+      : f === "paths · holes" ? (n.paths as Brut[]).flatMap((p) => p.holes ?? []) : (n[f] ?? []) as Brut[];
+    expect(conversion.version).toBe(VERSION_CONVERSION_P118);
+    for (const c of conversion.niveaux) {
+      const n = NIVEAUX[c.niveauId]!;
+      for (const f of FAMILLES_P118) {
+        const presentes = new Map<string, number>();
+        for (const o of objets(n, f)) for (const k of Object.keys(o)) presentes.set(k, (presentes.get(k) ?? 0) + 1);
+        const declarees = new Set(c.rapport.absents.filter((a) => a.origine?.famille === f).flatMap((a) => a.origine!.cles));
+        const reste = [...presentes.keys()].filter((k) => !CLES_CONSOMMEES_P118[f].includes(k) && !declarees.has(k));
+        expect(reste, `${c.niveauId} · ${f}`).toEqual([]);
+        // Une clé consommée n'est jamais déclarée absente ; chaque clé déclarée porte le compte des éléments qui l'ont.
+        if (["rooms", "columns", "stairs"].includes(f)) {
+          if (objets(n, f).length) expect(c.rapport.absents.find((a) => a.famille === f)?.nombre).toBe(objets(n, f).length);
+          continue;
+        }
+        for (const a of c.rapport.absents.filter((x) => x.origine?.famille === f)) {
+          expect(a.origine!.cles).toHaveLength(1);
+          expect(CLES_CONSOMMEES_P118[f]).not.toContain(a.origine!.cles[0]);
+          expect(a.nombre).toBe(presentes.get(a.origine!.cles[0]!));
+        }
+      }
+    }
+    // Échantillon : clés connues de l'exemple bien déclarées.
+    const rdc = conversion.niveaux.find((c) => c.niveauId === "rdc")!;
+    for (const f of ["walls · color", "walls · designRevision", "doors · layer", "doors · openingType", "paths · height", "paths · stairGroup", "layers · fill", "niveau · activeLayer", "niveau · exteriorWallIds"]) {
+      expect(rdc.rapport.absents.some((a) => a.famille === f), f).toBe(true);
+    }
+  });
+
+  it("nom d'un tracé hors local déclaré absent ; kind inattendu refusé ; étiquette d'un local jamais dans un trou", () => {
+    const rdc = conversion.niveaux.find((c) => c.niveauId === "rdc")!;
+    const horsLocaux = (NIVEAUX["rdc"]!.paths as Brut[]).filter((p) => p.name && !(p.role === "room" && p.closed !== false)).length;
+    expect(rdc.rapport.absents.find((a) => a.famille === "paths · name (hors locaux)")?.nombre).toBe(horsLocaux);
+    const carre = [[0, 0], [10, 0], [10, 10], [0, 10]];
+    const c = convertirNiveauP118({
+      id: "x", name: "Essai", elevation: 0,
+      walls: [{ id: "w1", kind: "door", a: [0, 0], b: [4, 0], thickness: 0.2, height: 3 }],
+      paths: [
+        { id: "P1", kind: "path", role: "room", name: "Patio", closed: true, points: carre, holes: [{ id: "H1", kind: "poly", poly: [[2, 2], [8, 2], [8, 8], [2, 8]] }] },
+        { id: "P2", kind: "path", role: "room", name: "Hall", closed: true, points: carre.map(([x, y]) => [x! + 20, y!]) },
+      ],
+    });
+    expect(c.rapport.refus).toEqual(expect.arrayContaining([
+      expect.objectContaining({ famille: "walls", id: "w1" }),
+      expect.objectContaining({ famille: "paths · room (nom)", id: "P1", raison: expect.stringMatching(/trou/) }),
+    ]));
+    expect(c.comptes.nomsLocaux).toBe(1);
+    expect(de(c, "studio.dessin.texte").map((x) => (x.params as Brut).content)).toEqual(["Hall"]);
+    validateStudioDocument(applyStudioCommands(newStudioDocument("essai-trou"), c.commandes));
   });
 
   it("noms des locaux : texte sur un calque dédié, à l'intérieur du tracé role = room, contenu = nom de l'exemple", () => {
