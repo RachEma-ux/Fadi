@@ -253,7 +253,16 @@ async function exerciseStudioUI(page, projectId) {
   await page.getByRole('heading', { name: 'Étude QA Studio', exact: true }).waitFor();
   const tools = page.getByRole('toolbar', { name: 'Outils de dessin' });
   const props = page.getByRole('complementary', { name: 'Propriétés du dessin' });
-  const tool = (name) => tools.getByRole('button', { name: new RegExp('^' + name) });
+  // Barre compacte : un outil rangé dans le menu « ▾ » de sa famille (ou « Plus ») est montré en ouvrant ce menu d'abord.
+  const tool = (name) => ({ click: async () => {
+    const el = tools.locator(`button[aria-label="${name}"]`).first();
+    await el.waitFor({ state: 'attached' });
+    if (!(await el.isVisible())) {
+      const menu = await el.evaluate((n) => n.closest('[data-studio-menu-liste]')?.id ?? null);
+      if (menu) await tools.locator(`[aria-controls="${menu}"]`).click();
+    }
+    await el.click();
+  } });
   const numeric = async (pairs) => { for (const [name, value] of pairs) await props.getByLabel(name, { exact: true }).fill(String(value)); };
   await tool('Ligne').click();
   const board = page.getByRole('group', { name: 'Planche de dessin 2D', exact: true });
@@ -286,7 +295,7 @@ async function exerciseStudioUI(page, projectId) {
   await props.getByRole('button', { name: 'Déplacer la sélection', exact: true }).click();
   check('draft gestures and selection do not write before explicit save', () => assert.equal(commandRequests.length, 0));
   const acknowledgement = page.waitForResponse((r) => /\/studio\/studies\/[^/]+\/variants\/[^/]+\/commands$/.test(new URL(r.url()).pathname) && r.request().method() === 'POST' && r.status() === 200);
-  await tools.getByRole('button', { name: 'Enregistrer', exact: true }).click();
+  await tool('Enregistrer').click();
   await acknowledgement;
   await page.getByRole('status').filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
   check('save ACK comes from one real API command batch', () => assert.equal(commandRequests.length, 1));

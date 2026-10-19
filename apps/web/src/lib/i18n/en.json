@@ -9364,5 +9364,22 @@
 "{0} a recontrôlé l’observation « {1} » (variante « {2} », {3}).": "{0} rechecked the observation “{1}” (variant “{2}”, {3}).",
 "{0} a clôturé l’observation « {1} » (variante « {2} », {3}).": "{0} closed the observation “{1}” (variant “{2}”, {3}).",
 "{0} a rouvert l’observation « {1} » (variante « {2} », {3}).": "{0} reopened the observation “{1}” (variant “{2}”, {3}).",
-"Ce projet porte des publications Studio diffusées ou retirées : elles sont conservées et le projet ne peut pas être supprimé.": "This project carries issued or withdrawn Studio publications: they are kept and the project cannot be deleted."
+"Ce projet porte des publications Studio diffusées ou retirées : elles sont conservées et le projet ne peut pas être supprimé.": "This project carries issued or withdrawn Studio publications: they are kept and the project cannot be deleted.",
+"Courbes": "Curves",
+"Annotation": "Annotation",
+"Vue / Accrochage": "View / Snapping",
+"Importer / Exporter": "Import / Export",
+"Plus d’outils": "More tools",
+"Menu Sélection": "Select menu",
+"Menu Dessin": "Drawing menu",
+"Menu Courbes": "Curves menu",
+"Menu Annotation": "Annotation menu",
+"Menu Modification": "Change menu",
+"Menu Calques": "Layers menu",
+"Menu Volume": "Volume menu",
+"Menu Vue / Accrochage": "View / Snapping menu",
+"Menu Présentation": "Presentation menu",
+"Menu Importer / Exporter": "Import / Export menu",
+"Menu Édition": "Edition menu",
+"Menu Catalogue": "Catalogue menu"
 }
