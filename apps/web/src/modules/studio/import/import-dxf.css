@@ -6,3 +6,7 @@
 .studio-import-non-pris,.studio-import-calques{margin:4px 0 8px;padding-left:20px}
 .studio-import-actions{display:flex;justify-content:flex-end;margin-top:10px}
 .studio-import-actions button{display:inline-flex;align-items:center;gap:6px}
+.studio-import-en-cours{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0;font-size:13px}
+.studio-import-en-cours progress{flex:1 1 120px;min-width:0}
+.studio-import-en-cours button{display:inline-flex;align-items:center;gap:6px}
+.studio-import-rapport[aria-busy=true]{opacity:.6}
