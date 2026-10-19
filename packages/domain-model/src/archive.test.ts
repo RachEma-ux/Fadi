@@ -193,3 +193,16 @@ describe("manifeste du paquet natif (lot 6)", () => {
     expect(() => manifesteOf({ ...manifeste, schemas: { contratCommandes: "autre/1" } })).toThrow(/contrat de commandes inconnu/);
   });
 });
+
+describe("archive : section Studio présente mais mal formée (revue #198)", () => {
+  it("est transmise telle quelle à la relecture Studio (refus 422), jamais retirée en silence ; absente, elle reste absente", () => {
+    const [imp] = normalizeImportedProjects(prototypeExport(), DEFS, OPTIONS);
+    const exported = JSON.parse(JSON.stringify(imp!.archive)) as Record<string, unknown>;
+    for (const studio of [null, [], "tronqué", { schema: "autre" }]) {
+      const [back] = normalizeImportedProjects({ ...exported, studio }, DEFS, OPTIONS);
+      expect(back!.archive.studio).toEqual(studio);
+    }
+    const [sans] = normalizeImportedProjects(exported, DEFS, OPTIONS);
+    expect("studio" in sans!.archive).toBe(false);
+  });
+});

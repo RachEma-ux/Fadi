@@ -4,6 +4,7 @@
  * progressions éventuelles puis une seule réponse, valeur ou erreur. Ni React ni DOM.
  */
 import type { DemandeWorker, Progression, ReponseWorker } from "./hote-worker";
+import { posterAvecTransfert } from "../taches/transferts";
 
 export interface Traitement {
   executer: (charge: never, progresser: (p: Progression) => void) => unknown;
@@ -25,7 +26,8 @@ export function brancher(portee: PorteeWorker, traitements: Traitements): void {
     if (!t) { portee.postMessage({ id, erreur: `Traitement inconnu : ${nature}` }); return; }
     try {
       const valeur = await t.executer(charge as never, (progression) => portee.postMessage({ id, progression }));
-      portee.postMessage({ id, valeur }, t.transfert?.(valeur as never) ?? []);
+      // D.3-01 : propriété des tampons affirmée avant le transfert ; la valeur n'est plus lue ici ensuite.
+      posterAvecTransfert((m: ReponseWorker, tr) => portee.postMessage(m, tr), { id, valeur }, t.transfert?.(valeur as never) ?? []);
     } catch (err) {
       portee.postMessage({ id, erreur: err instanceof Error ? err.message : String(err) });
     }

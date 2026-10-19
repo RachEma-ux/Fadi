@@ -870,23 +870,44 @@ export interface StudioStudySteps {
 }
 /** Publication Studio d'une révision de variante (statuts, approbation liée, paquet figé ; le serveur fait autorité). */
 export type StudioPublicationStatus = "travail" | "soumis" | "approuve" | "refuse" | "diffuse" | "retire";
-export type StudioPublicationTransition = "soumettre" | "approuver" | "refuser" | "diffuser" | "retirer";
+export type StudioPublicationTransition = "soumettre" | "approuver" | "refuser" | "diffuser" | "retirer" | "actualiser";
+/** Dimensions distinctes (lot E.4) : travail, diffusion ; l'actualité est `freshness`. */
+export type StudioPublicationWorkStatus = "brouillon" | "en-revue" | "approuve" | "refuse";
+export type StudioPublicationDiffusionStatus = "non-diffuse" | "diffuse" | "retire" | "remplace";
 export interface StudioPackageFile { format: "svg" | "dxf" | "ifc" | "pdf"; fileName: string; mime: string; size: number; sha256: string }
+/** Manifeste figé multi-sources d'un dossier : sources coordonnées, métadonnées gelées, empreintes des documents. */
+export interface StudioPublicationManifest {
+  schema: "studio-publication-manifest/1";
+  sources: { role: "principale" | "coordonnee"; variantId: string; revisionId: string; documentHash: string }[];
+  meta: { projectCode: string; projectName: string; studyName: string; variantName: string; revisionCreatedAt: string };
+  documents: { format: string; fileName: string; mime: string; size: number; sha256: string }[];
+}
+export type StudioManifestDrift =
+  | { type: "source"; role: "principale" | "coordonnee"; variantId: string; revisionFigee: string; revisionCourante: string | null }
+  | { type: "meta"; champ: string; figee: string; courante: string }
+  | { type: "documents"; formats: string[] };
 export interface StudioPublicationEvent {
-  id: string; action: "creer" | StudioPublicationTransition; fromStatus: StudioPublicationStatus | null; toStatus: StudioPublicationStatus;
+  id: string; action: "creer" | "remplacer" | StudioPublicationTransition; fromStatus: StudioPublicationStatus | null; toStatus: StudioPublicationStatus;
+  workStatus?: StudioPublicationWorkStatus | null; diffusionStatus?: StudioPublicationDiffusionStatus | null; manifestHash?: string | null; relatedPublicationId?: string | null;
   author: { id: string; email: string }; comment: string | null; revisionId: string; documentHash: string; headRevisionId: string; createdAt: string;
 }
 export interface StudioPublication {
   id: string; projectId: string; studyId: string; variantId: string; variantName: string; title: string;
   revisionId: string; documentHash: string; status: StudioPublicationStatus;
+  workStatus: StudioPublicationWorkStatus; diffusionStatus: StudioPublicationDiffusionStatus;
+  manifest: StudioPublicationManifest | null; manifestHash: string | null; manifestBuiltAt: string | null;
   createdBy: { id: string; email: string }; createdAt: string; updatedAt: string;
-  approval: { revisionId: string; documentHash: string; by: { id: string; email: string } | null; at: string | null } | null;
-  diffusion: { by: { id: string; email: string } | null; at: string | null; packageHash: string; files: StudioPackageFile[] } | null;
-  headRevisionId: string; freshness: "a-jour" | "perimee"; replacedBy: string | null;
+  approval: { revisionId: string; documentHash: string; manifestHash?: string | null; by: { id: string; email: string } | null; at: string | null } | null;
+  diffusion: { by: { id: string; email: string } | null; at: string | null; packageHash: string; manifestHash?: string | null; files: StudioPackageFile[] } | null;
+  headRevisionId: string; freshness: "a-jour" | "perimee"; drift: StudioManifestDrift[]; replacedBy: string | null;
+  /** Documents régénérés comparés, ou non vérifiés (liste sans régénération en cache) ; l'actualité ne vaut alors que pour les sources et les noms. */
+  documentsCheck?: "verifiee" | "non-verifiee";
+  replacement: { publicationId: string; by: { id: string; email: string } | null; at: string | null } | null;
+  withdrawal: { by: { id: string; email: string }; at: string; comment: string | null } | null;
   allowed: StudioPublicationTransition[];
   events?: StudioPublicationEvent[];
 }
-export interface StudioPublicationTransitionInput { comment?: string; revisionId?: string; documentHash?: string }
+export interface StudioPublicationTransitionInput { comment?: string; manifestHash?: string; revisionId?: string; documentHash?: string }
 const studioPublicationPath = (p: string, s: string, id: string) => `${studioStudyPath(p, s)}/publications/${encodeURIComponent(id)}`;
 /** Fichier figé d'un paquet diffusé (téléchargement direct). */
 export function studioPackageFileUrl(p: string, s: string, id: string, format: StudioPackageFile["format"]): string {
@@ -939,7 +960,7 @@ export const api = {
   /** Détail d'une publication avec son journal. */
   studioPublication: (p: string, s: string, id: string) => request<StudioPublication>(studioPublicationPath(p, s, id)),
   /** Nouvelle publication `travail` d'une révision (tête par défaut) ; `requestId` : renvoi sans doublon. */
-  createStudioPublication: (p: string, s: string, v: string, input: { title?: string; revisionId?: string; comment?: string; requestId?: string }) => request<StudioPublication & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/publications`, { method: "POST", body: JSON.stringify(input) }),
+  createStudioPublication: (p: string, s: string, v: string, input: { title?: string; revisionId?: string; coordinatedVariantIds?: string[]; comment?: string; requestId?: string }) => request<StudioPublication & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/publications`, { method: "POST", body: JSON.stringify(input) }),
   /** Transition (soumettre, approuver, refuser, diffuser, retirer) ; l'approbation porte revisionId + documentHash examinés. */
   transitionStudioPublication: (p: string, s: string, id: string, action: StudioPublicationTransition, input: StudioPublicationTransitionInput) => request<StudioPublication>(`${studioPublicationPath(p, s, id)}/${action}`, { method: "POST", body: JSON.stringify(input) }),
   /** Paquets diffusés du projet (pour le module Documents). */

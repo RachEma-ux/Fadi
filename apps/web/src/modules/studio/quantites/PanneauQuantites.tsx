@@ -3,17 +3,22 @@
  * CSV, et journal d'ajustements manuels. La valeur dérivée n'est jamais effacée : une valeur ajustée s'affiche à côté,
  * avec son motif (obligatoire), son auteur et sa date. Les ajustements vivent dans l'état du panneau (aucune API
  * encore) : ils ne sont pas enregistrés avec la révision, et le panneau le dit.
+ * Le métré est une tâche de fond (`taches/`, D.1-01) : le métré précédent reste affiché pendant le calcul suivant ; la
+ * saisie d'un ajustement attend le métré de la révision affichée.
  */
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   appliquerAjustementsQuantites, controlerAjustementQuantite, GRANDEURS_QUANTITE, quantitesStudio, UNITE_GRANDEUR,
-  type AjustementQuantite, type GrandeurQuantite, type NatureQuantite, type StudioDocument, type TotalAjuste, type ValeurAjustee,
+  type AjustementQuantite, type GrandeurQuantite, type NatureQuantite, type QuantitesStudio, type StudioDocument, type TotalAjuste, type ValeurAjustee,
 } from "@parcours/atelier-model";
+import { empreinteDe } from "../taches/empreinte";
+import { MESSAGES_TACHE } from "../taches/messages";
+import { useTache } from "../taches/useTache";
 import { LOCALE } from "../../../lib/i18n";
 import { useAuth } from "../../../lib/auth-context";
 import { csvQuantites, nomFichierCsvQuantites, type SeparateurDecimal } from "./csv-quantites";
 import {
-  FILTRE_INITIAL, filtrerQuantites, formaterQuantite, LIBELLE_GRANDEUR, LIBELLE_MOTIF, LIBELLE_NATURE, LIBELLE_REFUS, lireNombre, NON_EVALUE, SYMBOLE_UNITE,
+  FILTRE_INITIAL, filtrerQuantites, lienCsvExportable, formaterQuantite, LIBELLE_GRANDEUR, LIBELLE_MOTIF, LIBELLE_NATURE, LIBELLE_REFUS, lireNombre, NON_EVALUE, SYMBOLE_UNITE,
   type FiltreQuantites,
 } from "./quantites-vue";
 import "./quantites.css";
@@ -67,11 +72,19 @@ export function PanneauQuantites({ doc, lectureSeule, ajustementsInitiaux, surAj
   const [ajustements, setAjustements] = useState<readonly AjustementQuantite[]>(ajustementsInitiaux ?? []);
   const [filtre, setFiltre] = useState<FiltreQuantites>(FILTRE_INITIAL);
   const [decimal, setDecimal] = useState<SeparateurDecimal>(",");
-  const brut = useMemo(() => quantitesStudio(doc), [doc]);
+  const empreinte = empreinteDe(doc);
+  const metre = useTache<{ document: StudioDocument }, QuantitesStudio>(
+    { cle: "studio.quantites", classe: "fond", nature: "quantites.calculer", charge: { document: doc }, empreinte },
+    { initial: () => quantitesStudio(doc) },
+  );
+  const brut = useMemo<QuantitesStudio>(() => metre.valeur ?? {
+    documentId: doc.id, unites: "m", repere: "local-2d", deductions: "non-declarees", calques: [], objets: [], totaux: [], cotesExclues: 0, nonPrisEnCharge: 0,
+  }, [metre.valeur, doc.id]);
+  const aJour = metre.valeur !== undefined && metre.revision === empreinte.revision;
   const complet = useMemo(() => appliquerAjustementsQuantites(brut, ajustements), [brut, ajustements]);
   const vue = useMemo(() => appliquerAjustementsQuantites(filtrerQuantites(brut, filtre), ajustements), [brut, filtre, ajustements]);
   const csv = useMemo(() => csvQuantites(vue, { decimal }), [vue, decimal]);
-  const lienCsv = useLienCsv(csv);
+  const lienCsv = lienCsvExportable(useLienCsv(csv), aJour);
   const grandeurs = GRANDEURS_QUANTITE.filter((g) => brut.objets.some((o) => o.valeurs.some((v) => v.grandeur === g)));
 
   // Formulaire d'ajustement.
@@ -97,10 +110,11 @@ export function PanneauQuantites({ doc, lectureSeule, ajustementsInitiaux, surAj
     setErreur(null); setSaisie(""); setMotif(""); setRetour(false);
   };
 
-  return <section className="studio-quantites" aria-labelledby="studio-quantites-titre" data-studio-quantites={doc.id}>
+  return <section className="studio-quantites" aria-labelledby="studio-quantites-titre" data-studio-quantites={doc.id} data-studio-quantites-etat={metre.etat}>
     <h2 id="studio-quantites-titre">Quantités</h2>
     <p>Quantités brutes dérivées du dessin, en mètres (repère local). Arrondi à l’affichage seulement.</p>
-    {brut.deductions === "ouvertures-declarees"
+    {metre.message && <p role="alert" data-studio-quantites-erreur>{metre.message}</p>}
+    {metre.valeur === undefined ? <p role="status">{MESSAGES_TACHE.enCours}</p> : brut.deductions === "ouvertures-declarees"
       ? <p data-studio-quantites-deductions="ouvertures-declarees"><strong>Déductions : ouvertures déclarées seulement</strong> — chaque mur architectural déduit les ouvertures créées dans ce mur (volume net) ; rien n’est déduit d’un recouvrement.</p>
       : <p data-studio-quantites-deductions><strong>Déductions : non déclarées</strong> — aucune ouverture n’est déduite d’un recouvrement ; les quantités nettes ne sont pas évaluées.</p>}
     {brut.cotesExclues > 0 && <p>{`${brut.cotesExclues} cote(s) exclue(s) du métré.`}</p>}
@@ -129,7 +143,7 @@ export function PanneauQuantites({ doc, lectureSeule, ajustementsInitiaux, surAj
       <a className="studio-quantites-bouton" href={lienCsv ?? undefined} aria-disabled={lienCsv ? undefined : true} download={nomFichierCsvQuantites(doc.id)} data-studio-quantites-csv>Exporter en CSV</a>
     </div>
 
-    {vue.calques.length === 0 && <p role="status">Aucun objet à métrer.</p>}
+    {metre.valeur !== undefined && vue.calques.length === 0 && <p role="status">Aucun objet à métrer.</p>}
     {vue.calques.map((c) => <div key={c.calqueId} className="studio-quantites-calque" data-studio-quantites-calque={c.calqueId} data-masque={c.masque || undefined}>
       <h3>{c.implicite ? "Calque par défaut" : <span translate="no">{c.nom}</span>}{c.masque && <> <span className="studio-quantites-masque">(calque masqué : compté)</span></>}</h3>
       <div className="studio-quantites-defile" tabIndex={0} role="region" aria-label="Tableau défilant des quantités">
@@ -159,7 +173,7 @@ export function PanneauQuantites({ doc, lectureSeule, ajustementsInitiaux, surAj
     <h3>Ajustements manuels</h3>
     <p>La valeur dérivée reste affichée ; l’ajustement s’y ajoute avec son motif, son auteur et sa date. Ajustements conservés dans cette session seulement : ils ne sont pas enregistrés avec la révision.</p>
     {!lectureSeule && <form className="studio-quantites-ajustement" onSubmit={ajouter} data-studio-quantites-ajustement>
-      <fieldset disabled={!auteur || brut.objets.length === 0}>
+      <fieldset disabled={!auteur || !aJour || brut.objets.length === 0}>
         <legend>Nouvel ajustement</legend>
         <label>Objet
           <select required value={objetId} onChange={(e) => { setObjetId(e.target.value); setGrandeur(""); }}>

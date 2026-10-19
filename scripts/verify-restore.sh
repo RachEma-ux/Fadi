@@ -10,7 +10,7 @@ sh "$(dirname "$0")/backup.sh" "$HOST" "$USER" "$SRC" "$DIR"
 FILE="$(ls "$DIR"/fadi-*.dump | head -1)"
 psql -h "$HOST" -U "$USER" -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS \"$DST\";" -c "CREATE DATABASE \"$DST\";"
 sh "$(dirname "$0")/restore.sh" "$HOST" "$USER" "$DST" "$FILE"
-TABLES="users projects project_steps atelier_niveaux atelier_objets atelier_relations atelier_definitions atelier_calques atelier_groupes atelier_references atelier_problemes atelier_site atelier_commands atelier_outbox atelier_versions atelier_variants atelier_publications atelier_locks volumes parcels programme_cases programme_repartitions project_members project_comments produced_documents step_files drawing_exports"
+TABLES="users projects project_steps atelier_niveaux atelier_objets atelier_relations atelier_definitions atelier_calques atelier_groupes atelier_references atelier_problemes atelier_site atelier_commands atelier_outbox atelier_versions atelier_variants atelier_publications atelier_locks volumes parcels programme_cases programme_repartitions project_members project_comments produced_documents step_files drawing_exports studio_studies studio_variants studio_revisions studio_comments studio_observations studio_observation_events studio_study_steps studio_publications studio_publication_events studio_tool_preferences studio_requirement_sets studio_requirement_checks"
 for t in $TABLES; do
   a="$(psql -h "$HOST" -U "$USER" -d "$SRC" -tAc "SELECT count(*) FROM $t")"
   b="$(psql -h "$HOST" -U "$USER" -d "$DST" -tAc "SELECT count(*) FROM $t")"
@@ -24,4 +24,20 @@ for q in "SELECT coalesce(md5(string_agg(project_id || ':' || step_number || ':'
   if [ "$a" != "$b" ]; then echo "❌ empreinte différente : $q"; exit 1; fi
 done
 echo "✓ empreintes des étapes, du modèle de l'Atelier, de son journal, des versions, des publications et des volumes identiques"
+# Studio (R.1-02) : révisions immuables (document, empreinte de requête), journaux et publications identiques.
+for q in "SELECT coalesce(md5(string_agg(id || ':' || variant_id || ':' || coalesce(parent_revision_id, '-') || ':' || payload_hash || ':' || md5(document::text) || ':' || created_at, ',' ORDER BY id)), 'vide') FROM studio_revisions" "SELECT coalesce(md5(string_agg(id || ':' || head_revision_id || ':' || name, ',' ORDER BY id)), 'vide') FROM studio_variants" "SELECT coalesce(md5(string_agg(id || ':' || md5(body) || ':' || coalesce(deleted_at::text, '-'), ',' ORDER BY id)), 'vide') FROM studio_comments" "SELECT coalesce(md5(string_agg(id || ':' || seq || ':' || action || ':' || at, ',' ORDER BY id)), 'vide') FROM studio_observation_events" "SELECT coalesce(md5(string_agg(id || ':' || status || ':' || document_hash || ':' || coalesce(package_hash, '-') || ':' || coalesce(work_status, '-') || ':' || coalesce(diffusion_status, '-') || ':' || coalesce(manifest_hash, '-') || ':' || coalesce(md5(manifest::text), '-') || ':' || coalesce(manifest_built_at::text, '-') || ':' || coalesce(approved_manifest_hash, '-') || ':' || coalesce(replaced_by_publication_id, '-') || ':' || coalesce(replaced_by, '-') || ':' || coalesce(replaced_at::text, '-'), ',' ORDER BY id)), 'vide') FROM studio_publications" "SELECT coalesce(md5(string_agg(id || ':' || action || ':' || created_at || ':' || coalesce(manifest_hash, '-') || ':' || coalesce(work_status, '-') || ':' || coalesce(diffusion_status, '-') || ':' || coalesce(related_publication_id, '-'), ',' ORDER BY id)), 'vide') FROM studio_publication_events" "SELECT coalesce(md5(string_agg(id || ':' || study_id || ':' || version || ':' || md5(requirements::text) || ':' || coalesce(motif, '-') || ':' || coalesce(payload_hash, '-') || ':' || created_at, ',' ORDER BY id)), 'vide') FROM studio_requirement_sets" "SELECT coalesce(md5(string_agg(id || ':' || revision_id || ':' || coalesce(set_version::text, '-') || ':' || execution || ':' || coalesce(conclusion, '-') || ':' || md5(result::text) || ':' || document_hash || ':' || created_at, ',' ORDER BY id)), 'vide') FROM studio_requirement_checks"; do
+  a="$(psql -h "$HOST" -U "$USER" -d "$SRC" -tAc "$q")"
+  b="$(psql -h "$HOST" -U "$USER" -d "$DST" -tAc "$q")"
+  if [ "$a" != "$b" ]; then echo "❌ empreinte Studio différente : $q"; exit 1; fi
+done
+t="$(psql -h "$HOST" -U "$USER" -d "$DST" -tAc "SELECT count(*) FROM pg_trigger WHERE tgname IN ('studio_revisions_no_update', 'studio_observation_events_no_update', 'studio_publication_events_no_update', 'studio_publication_events_no_delete', 'studio_publications_no_delete', 'studio_requirement_sets_no_update', 'studio_requirement_checks_no_update') AND tgenabled <> 'D'")"
+if [ "$t" != "7" ]; then echo "❌ déclencheurs d'immuabilité Studio absents après restauration ($t / 7)"; exit 1; fi
+echo "✓ Studio : révisions, variantes, commentaires, observations, publications identiques ; déclencheurs d'immuabilité présents"
+# Comparaison ligne à ligne de chaque projet Studio (outil R.1-03) quand Node est disponible.
+if command -v node > /dev/null 2>&1 && [ -f "$(dirname "$0")/validation/studio-compare-restore.mjs" ]; then
+  PORT_PG="${PGPORT:-5432}"
+  node "$(dirname "$0")/validation/studio-compare-restore.mjs" --all \
+    --a "postgresql://$USER:${PGPASSWORD:-}@$HOST:$PORT_PG/$SRC" --b "postgresql://$USER:${PGPASSWORD:-}@$HOST:$PORT_PG/$DST" \
+    --out "$DIR/studio-compare-restore.md"
+fi
 echo "✅ restauration vérifiée ($FILE → $DST)"

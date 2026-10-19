@@ -17,8 +17,10 @@ export type IdCommandeEditeur =
   | "accrochage-perpendiculaire" | "accrochage-tangente" | "accrochage-proche"
   | "reperage-orthogonal" | "reperage-polaire" | "pas-polaire"
   | "importer-dxf" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille"
-  | "outils" | "palette";
-export type GroupeCommande = "edition" | "vue" | "accrochage" | "reperage" | "import" | "export" | "presentation" | "catalogue";
+  | "exporter-png"
+  | "outils" | "palette"
+  | "exigences";
+export type GroupeCommande = "edition" | "vue" | "accrochage" | "reperage" | "visualisation" | "import" | "export" | "presentation" | "catalogue" | "exigences";
 export type BarreStudio = StudioToolGroup | GroupeCommande;
 export type IconeCommande =
   | "studio-undo" | "studio-redo" | "studio-cancel" | "studio-save" | "studio-select-all"
@@ -29,7 +31,9 @@ export type IconeCommande =
   | "studio-snap-perpendicular" | "studio-snap-tangent" | "studio-snap-nearest"
   | "studio-track-ortho" | "studio-track-polar" | "studio-track-polar-step"
   | "studio-import-dxf" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet"
-  | "studio-catalog" | "studio-palette";
+  | "studio-export-png"
+  | "studio-catalog" | "studio-palette"
+  | "studio-requirements";
 
 export interface CommandeEditeur {
   readonly id: IdCommandeEditeur;
@@ -88,6 +92,8 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "reperage-orthogonal", libelleFR: "Mode orthogonal", raccourci: "F8", iconeSymbolique: "studio-track-ortho", groupe: "reperage", ecrit: false, bascule: true },
   { id: "reperage-polaire", libelleFR: "Repérage polaire", raccourci: "F10", iconeSymbolique: "studio-track-polar", groupe: "reperage", ecrit: false, bascule: true },
   { id: "pas-polaire", libelleFR: "Pas polaire suivant", raccourci: "Shift+Y", iconeSymbolique: "studio-track-polar-step", groupe: "reperage", ecrit: false },
+  // Rendu du modèle (lot E.5-03) : image PNG de la vue 3D, provenance incluse ; F4, libre et non réservé (F3 l'est).
+  { id: "exporter-png", libelleFR: "Exporter le rendu PNG", raccourci: "F4", iconeSymbolique: "studio-export-png", groupe: "visualisation", ecrit: false },
   // Import DXF vers le brouillon (aperçu, unité, entités non prises) : Maj+U (U comme « upload »), libre et non réservé.
   { id: "importer-dxf", libelleFR: "Importer DXF", raccourci: "Shift+U", iconeSymbolique: "studio-import-dxf", groupe: "import", ecrit: true },
   { id: "exporter-svg", libelleFR: "Exporter SVG", raccourci: "Shift+V", iconeSymbolique: "studio-export-svg", groupe: "export", ecrit: false, telechargement: "svg" },
@@ -98,6 +104,8 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "feuille", libelleFR: "Feuille", raccourci: "Shift+P", iconeSymbolique: "studio-sheet", groupe: "presentation", ecrit: false },
   { id: "outils", libelleFR: "Outils", raccourci: "Shift+O", iconeSymbolique: "studio-catalog", groupe: "catalogue", ecrit: false },
   { id: "palette", libelleFR: "Palette de commandes", raccourci: "Ctrl+K", iconeSymbolique: "studio-palette", groupe: "catalogue", ecrit: false, dansUnChamp: true },
+  // Exigences et écarts (E.1) : F comme « fiche d’exigences » (lettre seule libre et non réservée ; V appartient à la Visualisation) ; lecture admise.
+  { id: "exigences", libelleFR: "Exigences et écarts", raccourci: "F", iconeSymbolique: "studio-requirements", groupe: "exigences", ecrit: false },
 ] as const);
 
 /** Ordre et nom des barres, toutes rangées dans la barre « Outils de dessin ». */
@@ -108,10 +116,13 @@ export const BARRES_STUDIO: readonly { id: BarreStudio; libelleFR: string }[] = 
   { id: "volume", libelleFR: "Volume" },
   { id: "volume-libre", libelleFR: "Volume libre" },
   { id: "architecture", libelleFR: "Architecture" },
+  { id: "proprietes", libelleFR: "Propriétés" },
+  { id: "exigences", libelleFR: "Exigences" },
   { id: "edition", libelleFR: "Édition" },
   { id: "vue", libelleFR: "Vue" },
   { id: "accrochage", libelleFR: "Accrochage" },
   { id: "reperage", libelleFR: "Repérage" },
+  { id: "visualisation", libelleFR: "Visualisation" },
   { id: "import", libelleFR: "Importer" },
   { id: "export", libelleFR: "Exporter" },
   { id: "presentation", libelleFR: "Présentation" },

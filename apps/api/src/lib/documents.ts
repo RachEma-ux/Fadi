@@ -243,6 +243,8 @@ export interface StudioPackageDocument {
   /** Huit derniers caractères de la révision (comme dans les noms de fichiers du paquet). */
   revisionShort: string;
   status: "diffuse" | "retire";
+  /** Diffusion (lot E.4) : un seul paquet `diffuse` en vigueur par variante ; les précédents sont `remplace` ou `retire`. */
+  diffusionStatus: "diffuse" | "remplace" | "retire";
   diffusedAt: string | null;
   diffusedBy: string | null;
   /** Date du retrait (dernière transition d'un paquet retiré), sinon null. */
@@ -273,6 +275,7 @@ export async function studioPackageDocuments(projectId: string, actorId: string)
       revisionId: p.revisionId,
       revisionShort: p.revisionId.slice(-8),
       status: p.status,
+      diffusionStatus: p.diffusionStatus === "non-diffuse" ? "diffuse" as const : p.diffusionStatus,
       diffusedAt: p.diffusion.at,
       diffusedBy: p.diffusion.by?.email ?? null,
       withdrawnAt: p.status === "retire" ? p.updatedAt : null,

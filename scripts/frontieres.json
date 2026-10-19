@@ -1,0 +1,157 @@
+{
+  "$commentaire": "Table unique des frontières contrôlées par scripts/check-module-deps.mjs (lot X.4). Chaque règle porte son motif ; chaque exception porte sa raison et reste visible ici. Une exception qui ne sert plus fait échouer le contrôle (EXCEPTION_PERIMEE) : on la retire, on ne la laisse pas dormir.",
+  "web": {
+    "$commentaire": "Frontières Studio ↔ Atelier (ADR-STUDIO-NAV-01, #173), sur le chemin RÉSOLU de chaque import de apps/web/src. La Planche web vit sous modules/atelier/nouveau/planche : elle est couverte par le préfixe modules/atelier, dans les deux sens. Studio a sa propre planche2d (modules/studio/planche2d), interne à Studio.",
+    "racine": "apps/web/src",
+    "regles": [
+      {
+        "de": "modules/studio",
+        "interdits": ["modules/atelier", "modules/parcours", "routes/ProjectShell", "lib/use-immersive"],
+        "motif": "Studio n'importe ni l'Atelier (Planche comprise), ni le Parcours, ni ProjectShell, ni le mode immersif (ADR-STUDIO-NAV-01)"
+      },
+      {
+        "de": "modules/atelier",
+        "interdits": ["modules/studio"],
+        "motif": "l'Atelier (Planche comprise) ne dépend pas de Studio (ADR-STUDIO-NAV-01)"
+      }
+    ],
+    "interfacesPubliques": {
+      "$commentaire": "Points d'entrée publics ouverts à travers la frontière : aucun n'est décidé. Une entrée s'ajoute ici avec sa décision.",
+      "liste": []
+    }
+  },
+  "studioModele": {
+    "$commentaire": "Couches du modèle Studio (packages/atelier-model/src/studio), dérivées du code au 19 octobre 2026. Socle : noyau (types, limites, validation, calques, ancres). Primitives d'écriture : exporteurs (texte, maillage, ifc-step, dxf) et registre/schemas-base. Objets 2D (objets), solides (objets-3d) et architecture se branchent sur le socle et les primitives. registre décrit les outils à partir des schémas d'objets ; commandes les exécute ; echanges est une feuille. Les fichiers à la racine de studio/ (façades export, registry, document-2d…) ne sont pas contraints. Les imports « type » (import type, export type) sont distingués des imports de valeur dans les exceptions.",
+    "racine": "packages/atelier-model/src/studio",
+    "regles": [
+      {
+        "de": "noyau",
+        "interdits": ["objets", "objets-3d", "commandes", "registre", "exporteurs", "architecture", "echanges"],
+        "motif": "le noyau est le socle : il n'importe aucune couche supérieure"
+      },
+      {
+        "de": "exporteurs",
+        "interdits": ["objets", "objets-3d", "commandes", "registre", "architecture", "echanges"],
+        "motif": "les exporteurs sont des primitives d'écriture : ils ne connaissent que le noyau"
+      },
+      {
+        "de": "objets",
+        "interdits": ["objets-3d", "commandes", "registre", "architecture", "echanges"],
+        "sauf": ["registre/schemas-base"],
+        "motif": "un objet 2D se décrit avec le socle, les primitives d'écriture et les schémas de base, sans commande ni registre d'outils"
+      },
+      {
+        "de": "objets-3d",
+        "interdits": ["objets", "commandes", "registre", "architecture", "echanges"],
+        "sauf": ["registre/schemas-base"],
+        "motif": "un solide se décrit avec le socle, les primitives d'écriture et les schémas de base"
+      },
+      {
+        "de": "architecture",
+        "interdits": ["objets", "objets-3d", "commandes", "registre", "echanges"],
+        "sauf": ["registre/schemas-base"],
+        "motif": "l'architecture se décrit avec le socle, les primitives d'écriture et les schémas de base"
+      },
+      {
+        "de": "registre",
+        "interdits": ["commandes", "exporteurs", "echanges"],
+        "motif": "le registre décrit les outils (schémas, libellés) sans dépendre de leur exécution ni des exporteurs"
+      },
+      {
+        "de": "commandes",
+        "interdits": ["registre", "exporteurs", "echanges"],
+        "motif": "les commandes valident elles-mêmes leurs paramètres : elles ne s'appuient pas sur le registre déclaratif (X.2-03)"
+      }
+    ],
+    "exceptions": [
+      {
+        "fichier": "noyau/types.ts",
+        "cible": "objets",
+        "nature": "type",
+        "raison": "union StudioShape et types des cotes : types seulement, effacés à la compilation. Inverser exigerait de déplacer l'union hors du noyau (refonte, hors lot X.4)."
+      },
+      {
+        "fichier": "noyau/types.ts",
+        "cible": "objets-3d",
+        "nature": "type",
+        "raison": "types StudioSolid / StudioBox / StudioProfilePrism du document : types seulement."
+      },
+      {
+        "fichier": "noyau/types.ts",
+        "cible": "architecture",
+        "nature": "type",
+        "raison": "types StudioArchitectureItem / StudioWall / StudioOpening du document : types seulement."
+      },
+      {
+        "fichier": "noyau/etat.ts",
+        "cible": "objets",
+        "nature": "valeur",
+        "raison": "VIOLATION RÉELLE : l'état des lots appelle controlerLiens, validerCote (objets/cote) et studioAnchorPoint (objets/index). Correction non triviale (injection des contrôles d'objets dans l'état) : signalée, à traiter dans un lot de refonte."
+      },
+      {
+        "fichier": "noyau/etat.ts",
+        "cible": "objets-3d",
+        "nature": "type",
+        "raison": "type StudioSolid de l'état : type seulement."
+      },
+      {
+        "fichier": "noyau/etat.ts",
+        "cible": "architecture",
+        "nature": "type",
+        "raison": "type StudioArchitectureItem de l'état : type seulement."
+      },
+      {
+        "fichier": "noyau/document.ts",
+        "cible": "objets",
+        "nature": "valeur",
+        "raison": "VIOLATION RÉELLE : validateStudioDocument délègue aux validateurs des objets (validerForme, validerCote, validerAnnotation, studioAngularValue). Le validateur de document est un agrégateur placé dans le noyau ; le déplacer hors du noyau change l'API interne (non trivial)."
+      },
+      {
+        "fichier": "noyau/document.ts",
+        "cible": "objets-3d",
+        "nature": "valeur",
+        "raison": "VIOLATION RÉELLE : validateStudioDocument appelle validerSolide (objets-3d/solides). Même cause que ci-dessus."
+      },
+      {
+        "fichier": "noyau/document.ts",
+        "cible": "architecture",
+        "nature": "valeur",
+        "raison": "VIOLATION RÉELLE : validateStudioDocument appelle controlerArchitecture et validerElementArchitectural (architecture/validation). Même cause que ci-dessus."
+      },
+      {
+        "fichier": "noyau/commandes.ts",
+        "cible": "commandes",
+        "nature": "valeur",
+        "raison": "VIOLATION RÉELLE : applyStudioCommands (répartiteur des commandes) vit dans le noyau et importe chaque famille de commandes. Le répartiteur est un orchestrateur, pas un élément du socle ; le déplacer vers studio/ (racine) est une refonte des chemins d'import, hors lot X.4."
+      },
+      {
+        "fichier": "noyau/commandes.ts",
+        "cible": "objets",
+        "nature": "valeur",
+        "raison": "VIOLATION RÉELLE : le répartiteur appelle studioExtrudedRingVertices (objets/polyligne) pour le budget global des contours extrudés. Même cause que ci-dessus."
+      }
+    ]
+  },
+  "modelePur": {
+    "$commentaire": "Le modèle pur (packages/*) n'importe ni React, ni le DOM, ni three, ni apps/*, même si un manifeste venait à le déclarer. Les globals du navigateur sont refusés par BROWSER_API ; apps/* par FORBIDDEN_BOUNDARY (tous deux déjà en place).",
+    "de": "packages",
+    "paquetsInterdits": ["react", "react-dom", "react-dom/*", "react/*", "three", "three/*", "@react-three/*", "@fadi/web", "@fadi/api"],
+    "motif": "le modèle pur reste indépendant de React, du DOM, de three et des applications",
+    "libDom": {
+      "$commentaire": "La bibliothèque de types DOM ne doit pas être déclarée dans le tsconfig d'un paquet pur. Les paquets listés la déclarent aujourd'hui : exception explicite, à retirer après vérification (hors lot X.4 : changement de configuration produit).",
+      "exceptions": [
+        { "paquet": "packages/core-geometry", "raison": "lib DOM déclarée ; aucun usage d'API navigateur relevé dans src. À retirer dans un lot de configuration." },
+        { "paquet": "packages/geometry-exact", "raison": "lib DOM déclarée : chargement du module occt-wasm (Worker / fetch du .wasm) côté navigateur (D-177). À isoler dans un lot dédié." },
+        { "paquet": "packages/planche-model", "raison": "lib DOM déclarée ; aucun usage d'API navigateur relevé dans src. À retirer dans un lot de configuration." }
+      ]
+    }
+  },
+  "apiStudio": {
+    "$commentaire": "Les bibliothèques et routes Studio de l'API (apps/api/src/lib/studio-*, apps/api/src/routes/studio*) n'importent aucun code web. Préfixes bruts relatifs à racine.",
+    "racine": "apps/api/src",
+    "de": ["lib/studio-", "routes/studio"],
+    "cheminsInterdits": ["apps/web"],
+    "paquetsInterdits": ["react", "react-dom", "react-dom/*", "react/*", "three", "three/*", "@react-three/*", "@fadi/web"],
+    "motif": "le Studio de l'API ne dépend d'aucun code web (ni apps/web, ni React, ni three)"
+  }
+}

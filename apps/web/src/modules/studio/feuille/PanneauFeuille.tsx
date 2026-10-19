@@ -14,8 +14,10 @@ import {
 } from "@parcours/atelier-model";
 import { Icon } from "../../../components/Icon";
 import { Dialogue } from "../planche2d/CatalogueOutils";
-import { calculSurFilPrincipal, composerFeuilleHorsFil, MESSAGE_REPLI, messageHote } from "../workers/client-studio";
-import { estEcartee } from "../workers/hote-worker";
+import { calculSurFilPrincipal, DELAI_FEUILLE_MS, MESSAGE_REPLI } from "../workers/client-studio";
+import { empreinteDe } from "../taches/empreinte";
+import { messageTache } from "../taches/messages";
+import { ordonnanceurStudio } from "../taches/pool-studio";
 import { composerFeuille, MESSAGE_FEUILLE_IMPOSSIBLE, type ResultatFeuille } from "../workers/traitements";
 import {
   angleNord, CHAMPS_CARTOUCHE, cartoucheCourant, nomFichierFeuille, REGLAGES_INITIAUX, svgSansProlog, type ReglagesFeuille,
@@ -65,12 +67,18 @@ export function PanneauFeuille({ doc, cartouche, brouillonNonEnregistre, surFerm
   useEffect(() => {
     let actif = true;
     setEnCours(true);
-    // Canal unique : un réglage plus récent écarte le résultat d'une composition plus ancienne, sans arrêter le
-    // Worker (une composition est courte ; l'arrêter coûterait un redémarrage à chaque frappe).
-    composerFeuilleHorsFil(doc, options, { canal: "studio.feuille" })
-      .then((r) => { if (actif) { setResultat(r); setEnCours(false); } })
-      .catch((e: unknown) => { if (actif && !estEcartee(e)) { setResultat({ ...VIDE, erreur: messageHote(e) ?? MESSAGE_FEUILLE_IMPOSSIBLE }); setEnCours(false); } });
-    return () => { actif = false; };
+    // Tâche interactive (aperçu), une seule clé : un réglage plus récent remplace la composition plus ancienne, dont le
+    // résultat est périmé, sans arrêter le Worker (une composition est courte ; l'arrêter coûterait un redémarrage).
+    const tache = ordonnanceurStudio().soumettre<unknown, ResultatFeuille>({
+      cle: "studio.feuille", classe: "interactive", nature: "feuille.composer", charge: { document: doc, options },
+      empreinte: empreinteDe(doc, options), delaiMs: DELAI_FEUILLE_MS,
+      surResultat: (r) => { if (actif) { setResultat(r); setEnCours(false); } },
+    });
+    void tache.issue.then((i) => {
+      const message = messageTache(i);
+      if (actif && message !== null) { setResultat({ ...VIDE, erreur: message ?? MESSAGE_FEUILLE_IMPOSSIBLE }); setEnCours(false); }
+    });
+    return () => { actif = false; tache.abandonner(); };
   }, [doc, options]);
   const pdf = resultat.pdf;
   const lienSvg = useAdresseBlob(resultat.svg, "image/svg+xml");

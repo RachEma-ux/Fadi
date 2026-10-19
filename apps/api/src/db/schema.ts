@@ -12,7 +12,7 @@
  * l'erreur de repères que `docs/architecture.md` interdit.
  */
 import { boolean, customType, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
-import type { StudioDocument, StudioEnvelope } from "@parcours/atelier-model";
+import type { ConclusionControle, EtatExecution, ExigenceStudio, ResultatControle, StudioDocument, StudioEnvelope } from "@parcours/atelier-model";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
 const geography = customType<{ data: string; driverData: string }>({
@@ -751,7 +751,17 @@ export const studioStudySteps = pgTable("studio_study_steps", {
 
 /** Statuts d'une publication Studio : travail → soumis → approuve | refuse → diffuse ; retire (jamais supprimée). */
 export type StudioPublicationStatus = "travail" | "soumis" | "approuve" | "refuse" | "diffuse" | "retire";
-export type StudioPublicationAction = "creer" | "soumettre" | "approuver" | "refuser" | "diffuser" | "retirer";
+export type StudioPublicationAction = "creer" | "soumettre" | "approuver" | "refuser" | "diffuser" | "retirer" | "actualiser" | "remplacer";
+/** Dimensions distinctes du lot E.4 (lib/studio-publication-statuts.ts) ; NULL sur une ligne antérieure (déduites du statut combiné). */
+export type StudioPublicationWorkStatus = "brouillon" | "en-revue" | "approuve" | "refuse";
+export type StudioPublicationDiffusionStatus = "non-diffuse" | "diffuse" | "retire" | "remplace";
+/** Manifeste figé multi-sources d'un dossier (E.4-03) : sources coordonnées, métadonnées gelées, documents du paquet. */
+export interface StudioPublicationManifest {
+  schema: "studio-publication-manifest/1";
+  sources: { role: "principale" | "coordonnee"; variantId: string; revisionId: string; documentHash: string }[];
+  meta: { projectCode: string; projectName: string; studyName: string; variantName: string; revisionCreatedAt: string };
+  documents: { format: string; fileName: string; mime: string; size: number; sha256: string }[];
+}
 export type StudioPackageFormat = "svg" | "dxf" | "ifc" | "pdf";
 /** Fichier figé d'un paquet diffusé : contenu dans `volumes` (identifiant = SHA-256 du contenu). */
 export interface StudioPackageFile { format: StudioPackageFormat; fileName: string; mime: string; size: number; sha256: string }
@@ -762,6 +772,8 @@ export interface StudioPublicationPackage {
   documentHash: string;
   meta: { projectCode: string; projectName: string; studyName: string; variantName: string; revisionCreatedAt: string };
   files: StudioPackageFile[];
+  /** Empreinte du manifeste approuvé dont le paquet est issu (lot E.4 ; absente des paquets antérieurs). */
+  manifestHash?: string;
 }
 
 /** Publication d'une révision de variante Studio (FK composites « même étude / même variante » dans init.sql). */
@@ -782,6 +794,15 @@ export const studioPublications = pgTable("studio_publications", {
   packageHash: text("package_hash"),
   diffusedBy: text("diffused_by").references(() => users.id, { onDelete: "restrict" }),
   diffusedAt: timestamp("diffused_at", { withTimezone: true }),
+  workStatus: text("work_status").$type<StudioPublicationWorkStatus | null>(),
+  diffusionStatus: text("diffusion_status").$type<StudioPublicationDiffusionStatus | null>(),
+  manifest: jsonb("manifest").$type<StudioPublicationManifest | null>(),
+  manifestHash: text("manifest_hash"),
+  manifestBuiltAt: timestamp("manifest_built_at", { withTimezone: true }),
+  approvedManifestHash: text("approved_manifest_hash"),
+  replacedByPublicationId: text("replaced_by_publication_id"),
+  replacedBy: text("replaced_by").references(() => users.id, { onDelete: "restrict" }),
+  replacedAt: timestamp("replaced_at", { withTimezone: true }),
   requestId: text("request_id"),
   createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -803,6 +824,10 @@ export const studioPublicationEvents = pgTable("studio_publication_events", {
   revisionId: text("revision_id").notNull(),
   documentHash: text("document_hash").notNull(),
   headRevisionId: text("head_revision_id").notNull(),
+  manifestHash: text("manifest_hash"),
+  workStatus: text("work_status").$type<StudioPublicationWorkStatus | null>(),
+  diffusionStatus: text("diffusion_status").$type<StudioPublicationDiffusionStatus | null>(),
+  relatedPublicationId: text("related_publication_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("studio_publication_events_publication_idx").on(t.publicationId, t.createdAt)]);
 /**
@@ -817,3 +842,35 @@ export const studioToolPreferences = pgTable("studio_tool_preferences", {
   personal: jsonb("personal").$type<string[]>().notNull().default([]),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+/**
+ * Exigences Studio (E.1-02 à E.1-06, lib/studio-exigences.ts) : versions append-only d'un jeu d'exigences par étude
+ * (UPDATE refusée par déclencheur, init.sql) et résultats de contrôle liés à la révision et à la version examinées
+ * (FK composites et contrôles dans init.sql). Aucune exigence n'est fournie par Fadi.
+ */
+export const studioRequirementSets = pgTable("studio_requirement_sets", {
+  id: text("id").primaryKey(),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  version: integer("version").notNull(),
+  requirements: jsonb("requirements").$type<ExigenceStudio[]>().notNull(),
+  motif: text("motif"),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [uniqueIndex("studio_requirement_sets_version_unique").on(t.studyId, t.version)]);
+
+export const studioRequirementChecks = pgTable("studio_requirement_checks", {
+  id: text("id").primaryKey(),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  variantId: text("variant_id").notNull(),
+  revisionId: text("revision_id").notNull(),
+  setVersion: integer("set_version"),
+  execution: text("execution").$type<EtatExecution>().notNull(),
+  conclusion: text("conclusion").$type<ConclusionControle | null>(),
+  result: jsonb("result").$type<ResultatControle>().notNull(),
+  documentHash: text("document_hash").notNull(),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  requestId: text("request_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_requirement_checks_variant_idx").on(t.variantId, t.createdAt)]);

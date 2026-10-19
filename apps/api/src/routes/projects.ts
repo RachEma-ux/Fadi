@@ -9,6 +9,7 @@ import { newId } from "../lib/ids.js";
 import { EMPTY_STEP_CONTENT, PARCOURS_STEPS, exampleBaseDocuments } from "../data/parcours.js";
 import { activeLock, projectOr404 } from "../lib/owned-project.js";
 import { APPLICATION_VERSION, ArchiveModeleError, SOURCE_VERSION, exportProjectArchive, importProjectArchive } from "../lib/project-archive.js";
+import { StudioArchiveError } from "../lib/studio-archive.js";
 import { parcoursStepsRouter } from "./parcours-steps.js";
 import { projectPlanningRouter } from "./project-planning.js";
 import { programmeRouter } from "./programme.js";
@@ -140,7 +141,7 @@ projectsRouter.post("/import", archiveBody, archiveBodyError, async (req: Reques
       const out = [];
       for (const { origin, archive } of imports) {
         const r = await importProjectArchive(tx, req.user!.id, archive, now);
-        out.push({ id: r.project.id, code: r.project.code, name: r.project.name, origin, warnings: r.warnings });
+        out.push({ id: r.project.id, code: r.project.code, name: r.project.name, origin, warnings: r.warnings, studio: r.studio });
       }
       return out;
     });
@@ -152,6 +153,10 @@ projectsRouter.post("/import", archiveBody, archiveBodyError, async (req: Reques
     }
     if (err instanceof ArchiveModeleError) {
       res.status(422).json({ error: "archive_model", message: err.message, details: err.erreurs.slice(0, 50) });
+      return;
+    }
+    if (err instanceof StudioArchiveError) {
+      res.status(422).json({ error: "archive_studio", message: err.message, details: err.erreurs.slice(0, 50) });
       return;
     }
     throw err;
@@ -194,7 +199,8 @@ projectsRouter.post("/:projectId/copies", async (req, res) => {
   const name = parsed.data.name ?? (project.exampleMode === "reference" ? "ma variante de l’exemple résolu" : `${project.name} — copie`);
   const created = await db.transaction(async (tx) => {
     const archive = await exportProjectArchive(tx, project, now);
-    return importProjectArchive(tx, req.user!.id, { ...archive, project: { ...archive.project, name, exampleMode: project.exampleMode ? "editable" : null } }, now);
+    // La copie reprend le dossier, pas le Studio ni les droits de l'original (identifiants Studio globaux, membres choisis par le propriétaire).
+    return importProjectArchive(tx, req.user!.id, { ...archive, studio: undefined, project: { ...archive.project, name, exampleMode: project.exampleMode ? "editable" : null } }, now);
   });
   res.status(201).json({ id: created.project.id, code: created.project.code, name: created.project.name, warnings: created.warnings });
 });

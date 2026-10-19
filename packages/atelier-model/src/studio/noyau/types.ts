@@ -10,6 +10,8 @@ import type { StudioBox, StudioProfilePrism, StudioSolid } from "../objets-3d/so
 import type { StudioText } from "../objets/texte.js";
 import type { STUDIO_CONTRACT } from "./limites.js";
 import type { StudioArchitectureItem, StudioOpening, StudioWall } from "../architecture/types.js";
+import type { StudioPropriete } from "../exigences/proprietes.js";
+import type { StudioApparence, StudioElementVisualisation, StudioScene } from "../scenes/scenes.js";
 
 /**
  * Types communs du document 2D natif de Studio (`studio-document/1`). Chaque type d'objet déclare son interface dans son
@@ -66,6 +68,16 @@ export interface StudioDocument {
    * l’utilisateur (`architecture/`) ; absent ou vide : aucun (forme canonique).
    */
   architecture?: StudioArchitectureItem[];
+  /**
+   * Propriétés BIM déclarées (extension additive, facultative, E.1-01) sur les murs, ouvertures et objets extrudés
+   * (`exigences/proprietes.ts`) ; absent ou vide : aucune (forme canonique). Une valeur absente est « non évaluée ».
+   */
+  proprietes?: StudioPropriete[];
+  /**
+   * Visualisation (extension additive, facultative, lot E.5) : scènes enregistrées (repère `local-3d`) et apparences
+   * d’affichage (`scenes/`) ; réglages de vue seulement, jamais lus par la géométrie, les quantités ni les exports.
+   */
+  scenes?: StudioElementVisualisation[];
 }
 export type StudioCommand =
   | { toolId: "studio.dessin.ligne"; params: StudioLine }
@@ -96,7 +108,14 @@ export type StudioCommand =
   | { toolId: "studio.architecture.mur"; params: StudioWall }
   | { toolId: "studio.architecture.ouverture"; params: StudioOpening }
   | { toolId: "studio.architecture.modifier"; params: StudioArchitectureItem }
-  | { toolId: "studio.architecture.supprimer"; params: { ids: string[]; cascade: boolean } };
+  | { toolId: "studio.architecture.supprimer"; params: { ids: string[]; cascade: boolean } }
+  | { toolId: "studio.propriete.definir"; params: StudioPropriete }
+  | { toolId: "studio.propriete.retirer"; params: { cibleId: string; nom: string } }
+  | { toolId: "studio.scene.creer"; params: StudioScene }
+  | { toolId: "studio.scene.modifier"; params: StudioScene }
+  | { toolId: "studio.scene.supprimer"; params: { ids: string[] } }
+  | { toolId: "studio.apparence.definir"; params: StudioApparence }
+  | { toolId: "studio.apparence.retirer"; params: { ids: string[] } };
 export type StudioCommandToolId = StudioCommand["toolId"];
 export interface StudioEnvelope {
   contractVersion: typeof STUDIO_CONTRACT;

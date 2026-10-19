@@ -13,6 +13,8 @@ export * from "./studio/quantites.js";
 export * from "./studio/echanges/rapport-fidelite.js";
 export * from "./studio/objets-3d/index.js";
 export * from "./studio/architecture/index.js";
+export * from "./studio/exigences/index.js";
+export * from "./studio/scenes/index.js";
 export * from "./ontologie.js";
 export * from "./modele.js";
 export * from "./geometrie.js";
