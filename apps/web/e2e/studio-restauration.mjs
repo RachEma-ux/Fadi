@@ -13,7 +13,8 @@
  * conservés ; archive d'un second projet falsifiée avec manifeste recalculé, importée par l'éditeur depuis la page
  * Projets → import permis, réserve affichée, tout acteur = compte qui restaure, publication diffusée remise « à relire »,
  * droits non repris, nouvelle approbation exigée ; API B relancée sans clé d'environnement → clé propre à la base,
- * archive de A « clé inconnue ».
+ * archive de A « clé inconnue ». Comptes cités dans les champs JSON : un troisième projet (référence partenaire
+ * acceptée) restauré par son archive signée → l'acceptant (`par`) désigne le compte de B retrouvé par son adresse.
  *
  *   ARCHIVE_SIGNING_KEY=… (la même que l'API A) BASE_URL=http://localhost:3001 DATABASE_URL_A=postgresql://… DATABASE_URL_B=postgresql://… \
  *   [RESTORE_PORT=3002] [WEB_DIST=apps/web/dist] [OUT=dossier] node apps/web/e2e/studio-restauration.mjs
@@ -175,6 +176,19 @@ const files2 = {};
 for (const f of fDiff.body?.diffusion?.files ?? []) files2[f.format] = (await ownerA('GET', `${pubs2}/${fPub.body.id}/files/${f.format}`, undefined, true)).bytes;
 const archive2 = (await ownerA('GET', `/projects/${p2}/archive`)).body;
 
+// Troisième projet (archive intacte, signée) : référence partenaire acceptée par le propriétaire. Après restauration
+// vérifiée dans B, l'acceptant (`par`, champ JSON du jeu d'exigences) doit désigner le compte de B, pas celui de A.
+const project3 = await ownerA('POST', '/projects', { code: `RSJ_${randomUUID().slice(0, 8)}`, name: 'Studio — acceptation restaurée (recette synthétique)' });
+const p3 = project3.body?.id;
+const study3 = await ownerA('POST', `/projects/${p3}/studio/studies`, { name: 'Étude acceptation' });
+const s3 = study3.body?.study?.id;
+await ownerA('POST', `/projects/${p3}/studio/studies/${s3}/exigences`, { baseVersion: 0, exigences: [{ ...exigenceObjets, id: 'ex-partenaire-3', source: 'Référence partenaire de recette', origine: { reference: 'Partenaire R-13' } }] });
+const acc3 = await ownerA('POST', `/projects/${p3}/studio/studies/${s3}/exigences/acceptations`, { baseVersion: 1, exigenceId: 'ex-partenaire-3' });
+const parA3 = acc3.body?.exigences?.[0]?.origine?.acceptation?.par;
+check('A : troisième projet — référence partenaire acceptée par le propriétaire (par = compte de A)', acc3.status === 201 && typeof parA3 === 'string' && acc3.body.exigences[0].origine.acceptation.parEmail === accounts.owner.email, short(acc3.body));
+const archive3 = (await ownerA('GET', `/projects/${p3}/archive`)).body;
+check('sauvegarde (troisième projet) : l\'acceptant figure parmi les comptes cités, avec son adresse', archive3?.studio?.accounts?.some((a) => a.id === parA3 && a.email === accounts.owner.email), short(archive3?.studio?.accounts));
+
 /**
  * Archive falsifiée « proprement » : contenu modifié (texte d'un commentaire, auteur de la révision attribué au
  * propriétaire) puis manifeste recalculé selon la règle publique — l'intégrité passe, seule la signature échoue.
@@ -270,6 +284,23 @@ try {
   const warnings = imported.body.projects?.[0]?.warnings ?? [];
   check('B : aucune réserve Studio (comptes retrouvés par adresse, aucun écrasement)', !warnings.some((w) => /Studio|Droits|rien n'en est cru/.test(w)), JSON.stringify(warnings));
   check('B : archive intacte signée par la clé partagée → signature vérifiée', imported.body.projects?.[0]?.studio?.trust === 'verifiee' && imported.body.projects[0].studio.restored === true && imported.body.projects[0].studio.downgraded === 0, short(imported.body.projects?.[0]?.studio));
+  // Archive signée du troisième projet : l'acceptation partenaire (`par`, dans le JSON du jeu) désigne un compte de B.
+  {
+    const imp3 = await ownerB('POST', '/projects/import', JSON.stringify(archive3));
+    const p3B = imp3.body?.projects?.[0]?.id;
+    const ex3 = (await ownerB('GET', `/projects/${p3B}/studio/studies/${s3}/exigences`)).body;
+    const a3 = ex3?.courante?.exigences?.[0]?.origine?.acceptation;
+    const userB = a3?.par ? (await pgB.query('SELECT id, email FROM users WHERE id = $1', [a3.par])).rows[0] : null;
+    const ownerIdB = (await pgB.query('SELECT id FROM users WHERE lower(email) = lower($1)', [accounts.owner.email])).rows[0]?.id;
+    const dbSets = (await pgB.query("SELECT version, requirements::text AS r FROM studio_requirement_sets WHERE study_id = $1 ORDER BY version", [s3])).rows;
+    check('B (signée) : acceptation partenaire restaurée — `par` désigne un compte existant de B (le propriétaire), plus le compte de A ; adresse conservée ; aucune réserve',
+      imp3.status === 201 && imp3.body.projects[0].studio?.trust === 'verifiee' && imp3.body.projects[0].studio.restored === true
+      && a3?.par === ownerIdB && userB?.id === ownerIdB && a3.par !== parA3 && a3.parEmail === accounts.owner.email
+      && dbSets.length === 2 && dbSets.every((x) => !x.r.includes(parA3)) && !(imp3.body.projects[0].warnings ?? []).some((w) => /Exigences|Studio|rien n'en est cru/.test(w)),
+      short({ status: imp3.status, studio: imp3.body?.projects?.[0]?.studio, warnings: imp3.body?.projects?.[0]?.warnings, a3, ownerIdB, parA3 }));
+    const ctl3 = await ownerB('POST', `/projects/${p3B}/studio/studies/${s3}/variants/${study3.body?.variant?.id}/controles`, {});
+    check('B (signée) : la référence acceptée reste utilisée par un nouveau contrôle (version 2)', ctl3.status === 201 && ctl3.body.version === 2 && ['satisfaite', 'non-satisfaite'].includes(ctl3.body.resultat?.ecarts?.[0]?.statut), short(ctl3.body));
+  }
   {
     const histB = (await ownerB('GET', `/projects/${pB}/studio/studies/${studyId}/variants/${v1}/revisions`)).body?.revisions ?? [];
     const partsB = (await ownerB('GET', `/projects/${pB}/studio/studies/${studyId}/variants/${v1}/comments`)).body?.participants ?? [];
